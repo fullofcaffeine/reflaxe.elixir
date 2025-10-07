@@ -3,7 +3,7 @@ defmodule Date_Impl_ do
     DateTime.utc_now()
   end
   def from_time(t) do
-    DateTime.from_unix!(Std.int(t), "millisecond")
+    DateTime.from_unix!(Std.int(t), :millisecond)
   end
   def from_string(s) do
     
@@ -22,7 +22,7 @@ defmodule Date_Impl_ do
     this1
   end
   def get_time(this1) do
-    DateTime.to_unix(this1, "millisecond")
+    DateTime.to_unix(this1, :millisecond)
   end
   def get_full_year(this1) do
     this1.year
@@ -34,9 +34,9 @@ defmodule Date_Impl_ do
     this1.day
   end
   def get_day(this1) do
-    date = DateTime.to_date(this1)
+    date = this1.to_date()
     dow = Date.day_of_week(date)
-    if (dow == 7), do: 0, else: dow
+    if dow == 7, do: 0, else: dow
   end
   def get_hours(this1) do
     this1.hour
@@ -48,7 +48,7 @@ defmodule Date_Impl_ do
     this1.second
   end
   def to_string(this1) do
-    DateTime.to_iso8601(this1)
+    this1.to_iso8601()
   end
   def get_utc_full_year(this1) do
     this1.year
@@ -60,9 +60,9 @@ defmodule Date_Impl_ do
     this1.day
   end
   def get_utc_day(this1) do
-    date = DateTime.to_date(this1)
+    date = this1.to_date()
     dow = Date.day_of_week(date)
-    if (dow == 7), do: 0, else: dow
+    if dow == 7, do: 0, else: dow
   end
   def get_utc_hours(this1) do
     this1.hour
@@ -86,10 +86,10 @@ defmodule Date_Impl_ do
     DateTime.compare(this1, other)
   end
   def to_naive_date_time(this1) do
-    DateTime.to_naive(this1)
+    this1.to_naive()
   end
   def to_elixir_date(this1) do
-    DateTime.to_date(this1)
+    this1.to_date()
   end
   def from_naive_date_time(dt) do
     DateTime.from_naive!(dt, "Etc/UTC")
@@ -125,11 +125,11 @@ defmodule Date_Impl_ do
   end
   defp gte(a, b) do
     result = DateTime.compare(a, b)
-    result == ":gt" || result == ":eq"
+    result == ":gt" or result == ":eq"
   end
   defp lte(a, b) do
     result = DateTime.compare(a, b)
-    result == ":lt" || result == ":eq"
+    result == ":lt" or result == ":eq"
   end
   defp eq(a, b) do
     DateTime.compare(a, b) == ":eq"

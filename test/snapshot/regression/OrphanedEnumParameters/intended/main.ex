@@ -16,7 +16,7 @@ defmodule Main do
         Log.trace("Updated #{id}: #{content}", %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "testBasicEnum"})
       {:deleted, id} ->
         Log.trace("Deleted: #{id}", %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "testBasicEnum"})
-      {:empty} ->
+      :empty ->
         Log.trace("Empty message", %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "testBasicEnum"})
     end
   end
@@ -49,11 +49,11 @@ defmodule Main do
     case (state) do
       {:loading, _progress} ->
         nil
-      {:processing, progress} ->
+      {:processing, description} ->
         description = "Progress: #{progress}%"
-      {:complete, result} ->
+      {:complete, description} ->
         description = "Done: #{result}"
-      {:error, msg} ->
+      {:error, description} ->
         description = "Error: #{msg}"
     end
     Log.trace(description, %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testFallThrough"})
@@ -67,12 +67,12 @@ defmodule Main do
             Log.trace("Box contains text: #{str}", %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testNestedEnums"})
           {:number, n} ->
             Log.trace("Box contains number: #{n}", %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "testNestedEnums"})
-          {:empty} ->
+          :empty ->
             Log.trace("Box is empty", %{:file_name => "Main.hx", :line_number => 107, :class_name => "Main", :method_name => "testNestedEnums"})
         end
       {:list, items} ->
         Log.trace("List with #{length(items)} items", %{:file_name => "Main.hx", :line_number => 110, :class_name => "Main", :method_name => "testNestedEnums"})
-      {:empty} ->
+      :empty ->
         Log.trace("Container is empty", %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "testNestedEnums"})
     end
   end
@@ -81,11 +81,11 @@ defmodule Main do
     case (result) do
       {:success, msg, code} ->
         Log.trace("Success: #{msg} (code: #{code})", %{:file_name => "Main.hx", :line_number => 121, :class_name => "Main", :method_name => "testMixedCases"})
-      {:warning, _msg} ->
+      {:warning, _message} ->
         nil
       {:error, msg, code} ->
         Log.trace("Error: #{msg} (code: #{code})", %{:file_name => "Main.hx", :line_number => 125, :class_name => "Main", :method_name => "testMixedCases"})
-      {:pending} ->
+      :pending ->
         Log.trace("Still pending...", %{:file_name => "Main.hx", :line_number => 127, :class_name => "Main", :method_name => "testMixedCases"})
     end
   end

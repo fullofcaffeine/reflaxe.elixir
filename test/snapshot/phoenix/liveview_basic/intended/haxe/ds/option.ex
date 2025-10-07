@@ -1,8 +1,8 @@
 defmodule Haxe.Ds.Option do
   def some(arg0) do
-    arg0
+    {:some, arg0}
   end
   def none() do
-    :none
+    {:none}
   end
 end

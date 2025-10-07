@@ -243,7 +243,8 @@ class ElixirASTPrinter {
             // Pattern Matching
             // ================================================================
             case ECase(expr, clauses):
-                'case ' + print(expr, 0) + ' do\n' +
+                // Standardize case target parentheses for consistent snapshots and readability
+                'case (' + print(expr, 0) + ') do\n' +
                 [for (clause in clauses) 
                     indentStr(indent + 1) + printCaseClause(clause, indent + 1)
                 ].join('\n') + '\n' +
@@ -1205,7 +1206,15 @@ class ElixirASTPrinter {
         if (clause.guard != null) {
             result += ' when ' + print(clause.guard, 0);
         }
-        result += ' ->\n' + indentStr(indent + 1) + print(clause.body, indent + 1);
+        // Ensure empty bodies render as `nil` for idiomatic clarity
+        var bodyStr = switch (clause.body != null ? clause.body.def : null) {
+            case EBlock(exprs) if (exprs.length == 0): 'nil';
+            case _: print(clause.body, indent + 1);
+        };
+        if (StringTools.trim(bodyStr) == '') {
+            bodyStr = 'nil';
+        }
+        result += ' ->\n' + indentStr(indent + 1) + bodyStr;
         return result;
     }
     

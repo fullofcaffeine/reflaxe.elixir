@@ -364,31 +364,64 @@ class EnumHandler {
      */
     public static function isEnumParameterUsedAtIndex(index: Int, caseBody: TypedExpr): Bool {
         var isUsed = false;
-        
-        function checkUsage(expr: TypedExpr): Void {
-            if (isUsed) return;
-            
+
+        /**
+         * Traverse with context awareness to distinguish extraction from usage.
+         * inExtractionContext = true when descending into TVar init of a pattern-extracted binding.
+         */
+        function checkUsage(expr: TypedExpr, inExtractionContext: Bool): Void {
+            if (isUsed || expr == null) return;
+
             switch(expr.expr) {
-                case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
-                    isUsed = true;
-                
+                case TEnumParameter(_, _, paramIndex):
+                    // Count only when NOT inside extraction (e.g., directly used in expressions)
+                    if (!inExtractionContext && paramIndex == index) {
+                        isUsed = true;
+                    }
+
                 case TVar(v, init) if (init != null):
+                    // If this TVar binds from the enum parameter, treat as extraction only;
+                    // we only mark used if the bound variable is referenced elsewhere.
                     switch(init.expr) {
                         case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
-                            // Variable is assigned from this parameter
-                            // Check if the variable is used
                             var varName = v.name;
-                            isUsed = isVariableUsedInExpression(varName, caseBody);
+                            if (isVariableUsedInExpression(varName, caseBody)) {
+                                isUsed = true;
+                            }
                         case _:
+                            // Explore init normally but mark as extraction context to avoid false positives
+                            checkUsage(init, true);
                     }
-                
+
                 default:
-                    TypedExprTools.iter(expr, checkUsage);
+                    // Recurse into children preserving the current context
+                    TypedExprTools.iter(expr, function(e) checkUsage(e, inExtractionContext));
             }
         }
-        
-        checkUsage(caseBody);
+
+        checkUsage(caseBody, false);
         return isUsed;
+    }
+
+    /**
+     * Check if a variable name is referenced (as TLocal) within a case body.
+     * This ignores mere extraction bindings (TVar) and only counts true usages.
+     */
+    public static function isVariableNameUsedInBody(varName: String, caseBody: TypedExpr): Bool {
+        var used = false;
+        function check(e: TypedExpr): Void {
+            if (used || e == null) return;
+            switch (e.expr) {
+                case TLocal(v) if (v.name == varName):
+                    used = true;
+                case TVar(_, _):
+                    // Declarations do not count as usage
+                default:
+                    TypedExprTools.iter(e, check);
+            }
+        }
+        check(caseBody);
+        return used;
     }
     
     /**

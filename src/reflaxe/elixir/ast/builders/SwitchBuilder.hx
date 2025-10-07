@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
+import haxe.PosInfos;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -56,6 +57,19 @@ using StringTools;
  */
 @:nullSafety(Off)
 class SwitchBuilder {
+    // Debug logging helper: disabled unless -D debug_switch_builder
+    static inline function dbg(msg:Dynamic):Void {
+        #if debug_switch_builder
+        haxe.Log.trace(msg, null);
+        #end
+    }
+
+    // Override local trace within this class to be conditional on debug flag
+    static inline function trace(v:Dynamic, ?pos:PosInfos):Void {
+        #if debug_switch_builder
+        haxe.Log.trace(v, pos);
+        #end
+    }
     
     /**
      * Build switch/case expression
@@ -73,8 +87,8 @@ class SwitchBuilder {
     public static function build(e: TypedExpr, cases: Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
 
         // DEBUG: Log ALL switch compilations
-        trace('[SwitchBuilder START] Compiling switch at ${e.pos}');
-        trace('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
+        dbg('[SwitchBuilder START] Compiling switch at ${e.pos}');
+        dbg('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
 
         // CRITICAL: Detect TEnumIndex optimization and recover enum type
         // This is the KEY to eliminating integer-based switch cases!
@@ -122,14 +136,14 @@ class SwitchBuilder {
         var targetVarName = extractTargetVarName(actualSwitchExpr);
 
         // DEBUG: Output switch target info
-        trace('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
+        dbg('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
         if (targetVarName != null) {
-            trace('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
-            trace('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
+            dbg('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
+            dbg('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
         }
 
         if (targetVarName != null && isInfrastructureVar(targetVarName)) {
-            trace('[SwitchBuilder DEBUG] Infrastructure variable detected but not handled!');
+            dbg('[SwitchBuilder DEBUG] Infrastructure variable detected but not handled!');
         }
 
         // Build the switch target expression (use actual enum, not index)
@@ -146,7 +160,18 @@ class SwitchBuilder {
                     trace('[SwitchBuilder DEBUG] EVar variable name: "${name}"');
                 default:
             }
-            result;
+            // Resolve infrastructure variable names to canonical mappings if available
+            var fixed = switch(result.def) {
+                case EVar(varName) if (isInfrastructureVar(varName) && context.tempVarRenameMap != null && context.tempVarRenameMap.exists(varName)):
+                    var mapped = context.tempVarRenameMap.get(varName);
+                    #if debug_infrastructure_vars
+                    trace('[SwitchBuilder] Resolving infra target ' + varName + ' -> ' + mapped);
+                    #end
+                    makeAST(EVar(mapped));
+                default:
+                    result;
+            };
+            fixed;
         } else {
             return null;  // Can't proceed without compiler
         }
@@ -312,16 +337,66 @@ class SwitchBuilder {
                 null;
             };
 
-            if (body != null) {
-                clauses.push({
-                    pattern: pattern,
-                    guard: null,
-                    body: body
-                });
+            // Ensure empty case bodies produce explicit nil for deterministic, idiomatic output
+            var finalBody: ElixirAST = null;
+            if (body == null) {
+                finalBody = makeAST(ENil);
+            } else {
+                switch (body.def) {
+                    case EBlock(expressions) if (expressions.length == 0):
+                        finalBody = makeAST(ENil);
+                    default:
+                        finalBody = body;
+                }
             }
+
+            // If the body is effectively empty (nil), underscore-bind any pattern variables
+            // so we do not generate unused variable warnings and to reflect true non-usage.
+            var finalPattern = switch (finalBody.def) {
+                case ENil:
+                    underscorePatternVars(pattern);
+                default:
+                    pattern;
+            };
+            clauses.push({
+                pattern: finalPattern,
+                guard: null,
+                body: finalBody
+            });
         }
 
         return clauses;
+    }
+
+    /**
+     * Recursively underscore all variable names in a pattern when case body is empty.
+     * Keeps existing underscores and non-variable patterns intact.
+     */
+    static inline function underscorePatternVars(p: EPattern): EPattern {
+        return switch (p) {
+            case PVar(name):
+                var newName = name.startsWith("_") ? name : "_" + name;
+                PVar(newName);
+            case PTuple(elements):
+                PTuple([for (el in elements) underscorePatternVars(el)]);
+            case PList(elements):
+                PList([for (el in elements) underscorePatternVars(el)]);
+            case PCons(head, tail):
+                PCons(underscorePatternVars(head), underscorePatternVars(tail));
+            case PMap(pairs):
+                PMap([for (kv in pairs) {key: kv.key, value: underscorePatternVars(kv.value)}]);
+            case PStruct(module, fields):
+                PStruct(module, [for (f in fields) {key: f.key, value: underscorePatternVars(f.value)}]);
+            case PAlias(varName, pat):
+                var newVar = varName.startsWith("_") ? varName : "_" + varName;
+                PAlias(newVar, underscorePatternVars(pat));
+            case PPin(inner):
+                PPin(underscorePatternVars(inner));
+            case PBinary(segments):
+                PBinary([for (s in segments) {pattern: underscorePatternVars(s.pattern), size: s.size, type: s.type, modifiers: s.modifiers}]);
+            default:
+                p;
+        };
     }
 
     /**
@@ -394,12 +469,16 @@ class SwitchBuilder {
                     trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause');
                     // Reached final else (not a TIf) - create clause without guard
                     var substitutedBody = context.substituteIfNeeded(current);
-                    var body = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+                    var builtBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+                    var finalBody = (builtBody == null) ? makeAST(ENil) : switch (builtBody.def) {
+                        case EBlock(exprs) if (exprs.length == 0): makeAST(ENil);
+                        default: builtBody;
+                    };
 
                     clauses.push({
                         pattern: pattern,
                         guard: null,
-                        body: body
+                        body: finalBody
                     });
                     break;
             }
@@ -462,8 +541,19 @@ class SwitchBuilder {
                 // Enum constructor patterns
                 trace('[SwitchBuilder]   Found TCall, checking if enum constructor');
                 if (isEnumConstructor(e)) {
-                    trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern');
-                    return buildEnumPattern(e, args, guardVars, context);
+                    trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern (usage-aware)');
+                    // Extract EnumField from constructor expression
+                    var ef: EnumField = switch (e.expr) {
+                        case TField(_, FEnum(_, enumField)): enumField;
+                        default: null;
+                    };
+                    if (ef != null) {
+                        // Use usage-aware generator with caseBody analysis to prefix underscores for unused params
+                        return generateIdiomaticEnumPatternWithBody(ef, guardVars, caseBody, context);
+                    } else {
+                        // Fallback to legacy builder if extraction fails
+                        return buildEnumPattern(e, args, guardVars, context);
+                    }
                 }
                 trace('[SwitchBuilder]     Not an enum constructor');
                 return null;
@@ -517,8 +607,8 @@ class SwitchBuilder {
                 var sourceName = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var baseParamName = VariableAnalyzer.toElixirVarName(sourceName);
 
-                // CRITICAL: Analyze case body to determine if this parameter is actually used
-                var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
+                // CRITICAL: Analyze case body by NAME to determine if this parameter is actually used
+                var isUsed = EnumHandler.isVariableNameUsedInBody(sourceName, caseBody);
 
                 // Apply underscore prefix for unused parameters
                 var paramName = isUsed ? baseParamName : "_" + baseParamName;
@@ -538,7 +628,7 @@ class SwitchBuilder {
 
             var finalNames = [for (i in 0...parameterNames.length) {
                 var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
-                var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
+                var isUsed = EnumHandler.isVariableNameUsedInBody(base, caseBody);
                 isUsed ? base : "_" + base;
             }];
             trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}');
