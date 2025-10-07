@@ -459,12 +459,6 @@ class PatternMatchingTransforms {
                                 }
                             }
                             collectBinderBases(run[0].pattern);
-                            if (!binderBases.exists("r") && !binderBases.exists("g") && !binderBases.exists("b") && tag == "rgb") {
-                                binderBases.set("r", true); binderBases.set("g", true); binderBases.set("b", true);
-                            }
-                            if (!binderBases.exists("h") && !binderBases.exists("s") && !binderBases.exists("l") && tag == "hsl") {
-                                binderBases.set("h", true); binderBases.set("s", true); binderBases.set("l", true);
-                            }
                             function fixVarRefsBounded(n: ElixirAST): ElixirAST {
                                 if (n == null) return n;
                                 return switch (n.def) {
@@ -513,12 +507,6 @@ class PatternMatchingTransforms {
                                 }
                             }
                             collectBases(tmpCanon);
-                            if (!binderBasesSingle.exists("r") && !binderBasesSingle.exists("g") && !binderBasesSingle.exists("b") && tag == "rgb") {
-                                binderBasesSingle.set("r", true); binderBasesSingle.set("g", true); binderBasesSingle.set("b", true);
-                            }
-                            if (!binderBasesSingle.exists("h") && !binderBasesSingle.exists("s") && !binderBasesSingle.exists("l") && tag == "hsl") {
-                                binderBasesSingle.set("h", true); binderBasesSingle.set("s", true); binderBasesSingle.set("l", true);
-                            }
                             function fixVarRefsBoundedSingle(n: ElixirAST): ElixirAST {
                                 if (n == null) return n;
                                 return switch (n.def) {
@@ -542,6 +530,47 @@ class PatternMatchingTransforms {
                                 case EIf(_, _, _): ifChainToCond(bodyOrInner);
                                 default: fixedBody;
                             };
+                            // If we produced a cond with a true -> if(...) tail, flatten it
+                            switch (newBody.def) {
+                                case ECond(clauses):
+                                    if (clauses.length > 0) {
+                                        var last = clauses[clauses.length - 1];
+                                        var isTrue = switch (last.condition.def) {
+                                            case EBoolean(true): true;
+                                            case EAtom(a): (a:String) == "true";
+                                            default: false;
+                                        };
+                                        if (isTrue) {
+                                            var tail = unwrapSingleStmtBlock(last.body);
+                                            switch (tail.def) {
+                                                case EIf(_, _, _):
+                                                    var tailCond = ifChainToCond(tail);
+                                                    switch (tailCond.def) {
+                                                        case ECond(tailClauses):
+                                                            var merged = [];
+                                                            for (k in 0...clauses.length - 1) merged.push(clauses[k]);
+                                                            for (tc in tailClauses) merged.push(tc);
+                                                            newBody = makeAST(ECond(merged));
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                        }
+                                    }
+                                default:
+                            }
+                            // Normalize suffixed refs in cond branches using binder base set
+                            switch (newBody.def) {
+                                case ECond(clauses):
+                                    var normClauses:Array<ECondClause> = [];
+                                    for (clc in clauses) {
+                                        var nc = fixVarRefsBoundedSingle(clc.condition);
+                                        var nb = fixVarRefsBoundedSingle(clc.body);
+                                        normClauses.push({ condition: nc, body: nb });
+                                    }
+                                    newBody = makeAST(ECond(normClauses));
+                                default:
+                            }
                             newClauses.push({ pattern: canonPat, guard: fixedGuard, body: newBody });
                             i++;
                             continue;
@@ -614,7 +643,7 @@ class PatternMatchingTransforms {
                                 default: null;
                             };
                         }
-                        var runTag = tagOfPat(clauses[start].pattern);
+                        var runTag = tagOfPat(clauses[start].pattern); // informative only; do not special-case logic by tag
                         // Heuristic: Prefer header guards when all guards are guard-safe and
                         // reference exactly one binder variable across the run (e.g., n > 0, n < 0).
                         // Prefer cond when guards reference multiple distinct binder vars (e.g., r/g/b),
@@ -688,12 +717,6 @@ class PatternMatchingTransforms {
                             }
                         }
                         collectBinderBases(clauses[start].pattern);
-                        if (!binderBases.exists("r") && !binderBases.exists("g") && !binderBases.exists("b") && runTag == "rgb") {
-                            binderBases.set("r", true); binderBases.set("g", true); binderBases.set("b", true);
-                        }
-                        if (!binderBases.exists("h") && !binderBases.exists("s") && !binderBases.exists("l") && runTag == "hsl") {
-                            binderBases.set("h", true); binderBases.set("s", true); binderBases.set("l", true);
-                        }
                         function fixVarRefsBounded(node: ElixirAST): ElixirAST {
                             if (node == null) return node;
                             return switch (node.def) {
@@ -806,14 +829,7 @@ class PatternMatchingTransforms {
                         }
                     }
                     collectBasesFromPattern(cl.pattern);
-                    // Fallback to domain bases when pattern binders are missing
-                    var domTag = getTag(cl.pattern);
-                    if (!binderBasesLocal.exists("r") && !binderBasesLocal.exists("g") && !binderBasesLocal.exists("b") && domTag == "rgb") {
-                        binderBasesLocal.set("r", true); binderBasesLocal.set("g", true); binderBasesLocal.set("b", true);
-                    }
-                    if (!binderBasesLocal.exists("h") && !binderBasesLocal.exists("s") && !binderBasesLocal.exists("l") && domTag == "hsl") {
-                        binderBasesLocal.set("h", true); binderBasesLocal.set("s", true); binderBasesLocal.set("l", true);
-                    }
+                    // No tag-specific fallbacks: binder bases come strictly from the pattern
                     function fixVarRefsWithBases(n: ElixirAST): ElixirAST {
                         if (n == null) return n;
                         return switch (n.def) {
@@ -824,6 +840,12 @@ class PatternMatchingTransforms {
                             case ECall(t, nm, args): makeAST(ECall(t != null ? fixVarRefsWithBases(t) : null, nm, [for (a in args) fixVarRefsWithBases(a)]));
                             case ERemoteCall(mod, fnm, args): makeAST(ERemoteCall(mod != null ? fixVarRefsWithBases(mod) : null, fnm, [for (a in args) fixVarRefsWithBases(a)]));
                             case EIf(c,t,e): makeAST(EIf(fixVarRefsWithBases(c), fixVarRefsWithBases(t), e != null ? fixVarRefsWithBases(e) : null));
+                            case ECond(clauses):
+                                var mapped = [];
+                                for (clc in clauses) {
+                                    mapped.push({ condition: fixVarRefsWithBases(clc.condition), body: fixVarRefsWithBases(clc.body) });
+                                }
+                                makeAST(ECond(mapped));
                             case EBlock(sts): makeAST(EBlock([for (s in sts) fixVarRefsWithBases(s)]));
                             case EParen(e): makeAST(EParen(fixVarRefsWithBases(e)));
                             default: n;
