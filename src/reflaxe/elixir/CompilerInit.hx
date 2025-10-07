@@ -22,6 +22,19 @@ class CompilerInit {
      * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
      */
     public static function Start() {
+        #if macro
+        // Target-conditional classpath injection for staged .cross.hx overrides
+        // Only add Elixir-specific std when compiling for the Elixir target
+        try {
+            var tname = haxe.macro.Context.definedValue("target.name");
+            if (tname == "elixir") {
+                // Ensure staged cross files are available only for Elixir target
+                haxe.macro.Compiler.addClassPath("std/_std/");
+            }
+        } catch (e:Dynamic) {
+            // In some macro contexts, definedValue may be unavailable; fail-safe noop
+        }
+        #end
         // Platform check for Haxe 5.0+ only: ensures compiler only runs when
         // --custom-target elixir=output_dir is specified in compilation command.
         // This prevents Reflaxe targets from activating on every compilation.
