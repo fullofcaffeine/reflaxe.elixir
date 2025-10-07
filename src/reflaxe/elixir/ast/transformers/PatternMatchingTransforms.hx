@@ -248,6 +248,7 @@ class PatternMatchingTransforms {
 
         // Extract remote Map.get/2 calls used in the guard and pre-bind them in the body
         var preBinds: Array<ElixirAST> = [];
+        var varMap = new Map<String, {key: String, expr: ElixirAST}>();
 
         function collectBindings(expr: ElixirAST): Void {
             if (expr == null) return;
@@ -263,6 +264,7 @@ class PatternMatchingTransforms {
                         if (varName != null && varName.length > 0) {
                             // Create binding: varName = Map.get(...)
                             preBinds.push(makeAST(EMatch(PVar(varName), expr)));
+                            varMap.set(varName, {key: varName, expr: expr});
                         }
                     }
                     // Recurse into module and args
@@ -285,8 +287,51 @@ class PatternMatchingTransforms {
 
         collectBindings(clause.guard);
 
-        // Build new body: [preBinds..., if guard do: body end]
-        var guardedBody = makeAST(EIf(clause.guard, clause.body, null));
+        // Replace occurrences of Map.get(..., :key) in body with the bound variable name
+        function replaceMapGetWithVar(node: ElixirAST): ElixirAST {
+            if (node == null) return node;
+            return switch (node.def) {
+                case ERemoteCall(module, funcName, args):
+                    var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
+                    if (isMapGet && funcName == "get" && args.length == 2) {
+                        switch (args[1].def) {
+                            case EAtom(atom):
+                                var keyName = Std.string(atom);
+                                if (varMap.exists(keyName)) {
+                                    makeAST(EVar(keyName));
+                                } else {
+                                    node;
+                                }
+                            default: node;
+                        }
+                    } else {
+                        // Recurse into module and args
+                        var newMod = module != null ? replaceMapGetWithVar(module) : null;
+                        var newArgs = [for (a in args) replaceMapGetWithVar(a)];
+                        makeAST(ERemoteCall(newMod, funcName, newArgs));
+                    }
+                case EBinary(op, l, r):
+                    makeAST(EBinary(op, replaceMapGetWithVar(l), replaceMapGetWithVar(r)));
+                case EUnary(op, e):
+                    makeAST(EUnary(op, replaceMapGetWithVar(e)));
+                case EIf(c, t, e):
+                    makeAST(EIf(replaceMapGetWithVar(c), replaceMapGetWithVar(t), e != null ? replaceMapGetWithVar(e) : null));
+                case EBlock(stmts):
+                    makeAST(EBlock([for (s in stmts) replaceMapGetWithVar(s)]));
+                case ECall(target, name, args):
+                    makeAST(ECall(target != null ? replaceMapGetWithVar(target) : null, name, [for (a in args) replaceMapGetWithVar(a)]));
+                case ERemoteCall(mod, name, args):
+                    makeAST(ERemoteCall(replaceMapGetWithVar(mod), name, [for (a in args) replaceMapGetWithVar(a)]));
+                case EParen(e):
+                    makeAST(EParen(replaceMapGetWithVar(e)));
+                default:
+                    node;
+            };
+        }
+
+        // Build new body: [preBinds..., if guard do: (body with replacements) end]
+        var replacedBody = replaceMapGetWithVar(clause.body);
+        var guardedBody = makeAST(EIf(clause.guard, replacedBody, null));
         var newBody: ElixirAST = null;
         if (preBinds.length > 0) {
             var stmts = [];
