@@ -12,6 +12,26 @@ This file contains compiler-specific development guidance for agents working on 
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 - **schema/** directory - Schema introspection and metadata processing
 
+## ❌ No Example-App Coupling (Hard Rule)
+
+Never hardcode example app details (e.g., TodoApp, TodoLive, UserController, routes like "/todos") in compiler or stdlib sources. The compiler must remain target-agnostic and derive structure only from:
+
+- Input Haxe AST and metadata (e.g., @:router, @:appName)
+- Generic Phoenix/Ecto externs and proper AST constructs
+- User-provided module bodies/macros
+
+Avoid:
+- Injecting example routes, modules, or pipelines (e.g., TodoLive, /todos)
+- Special-casing classes by name (e.g., if class == "TodoApp") even under debug flags
+- Any project-specific assumptions in transformers/printers/builders
+
+Allowed:
+- Generic scaffolding (e.g., add `use Phoenix.Router`, `import Phoenix.LiveView.Router`)
+- Preserving user-provided bodies, metadata-driven transforms
+- Examples in comments/docstrings only (not executed code)
+
+If you find app-specific strings in code paths, replace them with generic AST or delete them. Add or use metadata-driven hooks instead of literals.
+
 ## ⚠️ CRITICAL: Haxe Metadata Storage Behavior
 
 **FUNDAMENTAL RULE: Haxe ALWAYS strips the colon prefix from metadata when storing internally.**

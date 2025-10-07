@@ -267,16 +267,9 @@ class ElixirCompiler extends GenericCompiler<
      * @return True if the class should be compiled
      */
     public override function shouldGenerateClass(classType: ClassType): Bool {
-        // Debug for TodoApp investigation
+        // Generic debug hook retained via flags (no app-specific checks)
         #if debug_annotation_transforms
-        if (classType.name == "TodoApp") {
-            trace('[shouldGenerateClass] Checking TodoApp...');
-            trace('[shouldGenerateClass]   isExtern: ${classType.isExtern}');
-            trace('[shouldGenerateClass]   has @:application: ${classType.meta.has(":application")}');
-            trace('[shouldGenerateClass]   has @:native: ${classType.meta.has(":native")}');
-            var result = super.shouldGenerateClass(classType);
-            trace('[shouldGenerateClass]   super.shouldGenerateClass returns: ${result}');
-        }
+        // trace('[shouldGenerateClass] ${classType.name}: isExtern=${classType.isExtern}, has @:application=${classType.meta.has(":application")}, has @:native=${classType.meta.has(":native")}');
         #end
         
         // Skip internal Haxe types that shouldn't generate modules
@@ -503,24 +496,9 @@ class ElixirCompiler extends GenericCompiler<
 
         if (classType == null) return null;
 
-        // Debug output for TodoApp investigation
+        // Generic debug hook retained via flags (no app-specific checks)
         #if debug_annotation_transforms
-        if (classType.name == "TodoApp") {
-            trace('[ElixirCompiler.compileClassImpl] === TodoApp Debug Info ===');
-            trace('[ElixirCompiler.compileClassImpl] funcFields received: ${funcFields.length}');
-            for (f in funcFields) {
-                trace('[ElixirCompiler.compileClassImpl]   - Function: ${f.field.name}');
-            }
-            trace('[ElixirCompiler.compileClassImpl] isExtern: ${classType.isExtern}');
-            trace('[ElixirCompiler.compileClassImpl] metadata: [${[for (m in classType.meta.get()) m.name].join(", ")}]');
-            
-            // Check if GenericCompiler considers this class extern
-            trace('[ElixirCompiler.compileClassImpl] classType.fields.get().length: ${classType.fields.get().length}');
-            trace('[ElixirCompiler.compileClassImpl] classType.statics.get().length: ${classType.statics.get().length}');
-            for (field in classType.statics.get()) {
-                trace('[ElixirCompiler.compileClassImpl]   Static field: ${field.name}, kind: ${field.kind}');
-            }
-        }
+        // trace('[ElixirCompiler.compileClassImpl] Class=${classType.name}, extern=${classType.isExtern}, functions=${funcFields.length}');
         #end
 
         // Skip standard library classes that shouldn't generate Elixir modules
@@ -1359,12 +1337,7 @@ class ElixirCompiler extends GenericCompiler<
         #end
 
         #if debug_annotation_transforms
-        if (classType.name == "TodoApp") {
-            trace('[ElixirCompiler.buildClassAST] TodoApp received ${funcFields.length} functions');
-            for (f in funcFields) {
-                trace('[ElixirCompiler.buildClassAST] Function: ${f.field.name}');
-            }
-        }
+        // trace('[ElixirCompiler.buildClassAST] Building ${classType.name} with ${funcFields.length} functions');
         #end
 
         // Skip built-in types that shouldn't generate modules
@@ -1913,6 +1886,22 @@ class ElixirCompiler extends GenericCompiler<
             metadata.isSupervisor = true;
             #if debug_annotation_transforms
             trace('[ElixirCompiler] Set isSupervisor=true metadata for ${classType.name}');
+            #end
+        }
+
+        // Enable Router transformation pass for @:router modules
+        if (classType.meta.has(":router")) {
+            metadata.isRouter = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isRouter=true metadata for ${classType.name}');
+            #end
+        }
+
+        // Enable Presence transformation pass for @:presence modules
+        if (classType.meta.has(":presence")) {
+            metadata.isPresence = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isPresence=true metadata for ${classType.name}');
             #end
         }
         

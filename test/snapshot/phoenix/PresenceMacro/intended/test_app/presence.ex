@@ -1,4 +1,5 @@
 defmodule TestApp.Presence do
+  use Phoenix.Presence, otp_app: :test_app
   def track_test_user(socket, user_id, name) do
     meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => name, :status => "active"}
     Phoenix.Presence.track(self(), "presence:test", user_id, meta)

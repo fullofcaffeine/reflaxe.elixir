@@ -66,6 +66,10 @@ import phoenix.types.Socket;       // ✅ Phoenix concept
 - **Logical organization**: Directory structure reflects framework relationships
 - **Better reusability**: Each layer provides appropriate abstractions
 
+## ❌ No Example-App Coupling in std externs
+
+Extern files may contain example names (e.g., `TodoAppWeb`, `TodoLive`) for documentation purposes only. Compiler transforms MUST NOT rely on these literal names. Always resolve app/web module names dynamically (e.g., from `@:appName`, module paths, or user code) and generate AST accordingly. If an extern’s example name would leak into generated code, fix the transform to avoid it rather than renaming externs.
+
 ### ⚡ Dual-API Pattern **CRITICAL PHILOSOPHY**
 
 **Every standard library type MUST provide BOTH cross-platform AND native APIs** - Give developers maximum flexibility:
