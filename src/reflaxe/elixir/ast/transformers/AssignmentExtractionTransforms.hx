@@ -508,8 +508,46 @@ class AssignmentExtractionTransforms {
             }
         }
         
+        // Helper: Replace all occurrences of a variable with a replacement expression
+        function substituteVar(node: ElixirAST, varName: String, replacement: ElixirAST): ElixirAST {
+            if (node == null || node.def == null) return node;
+            return switch(node.def) {
+                case EVar(name) if (name == varName):
+                    // Replace variable reference with the replacement expression
+                    replacement;
+                case EBlock(statements):
+                    makeASTWithMeta(EBlock([for (s in statements) substituteVar(s, varName, replacement)]), node.metadata, node.pos);
+                case EIf(cond, thenB, elseB):
+                    makeASTWithMeta(EIf(
+                        substituteVar(cond, varName, replacement),
+                        substituteVar(thenB, varName, replacement),
+                        elseB != null ? substituteVar(elseB, varName, replacement) : null
+                    ), node.metadata, node.pos);
+                case ECase(target, branches):
+                    makeASTWithMeta(ECase(
+                        substituteVar(target, varName, replacement),
+                        [for (b in branches) { pattern: b.pattern, guard: b.guard, body: substituteVar(b.body, varName, replacement) }]
+                    ), node.metadata, node.pos);
+                case EBinary(op, left, right):
+                    makeASTWithMeta(EBinary(op, substituteVar(left, varName, replacement), substituteVar(right, varName, replacement)), node.metadata, node.pos);
+                case EUnary(op, operand):
+                    makeASTWithMeta(EUnary(op, substituteVar(operand, varName, replacement)), node.metadata, node.pos);
+                case ECall(target, name, args):
+                    makeASTWithMeta(ECall(target != null ? substituteVar(target, varName, replacement) : null, name, [for (a in args) substituteVar(a, varName, replacement)]), node.metadata, node.pos);
+                case ERemoteCall(mod, name, args):
+                    makeASTWithMeta(ERemoteCall(substituteVar(mod, varName, replacement), name, [for (a in args) substituteVar(a, varName, replacement)]), node.metadata, node.pos);
+                case EParen(inner):
+                    makeASTWithMeta(EParen(substituteVar(inner, varName, replacement)), node.metadata, node.pos);
+                case EMatch(pat, value):
+                    // Do not substitute within pattern; only substitute in value
+                    makeASTWithMeta(EMatch(pat, substituteVar(value, varName, replacement)), node.metadata, node.pos);
+                default:
+                    node;
+            };
+        }
+
         // Phase 2: Extract assignments with context awareness
-        function extractFromExpr(e: ElixirAST): ElixirAST {
+        function extractFromExpr(e: ElixirAST, inStmtContext: Bool = false): ElixirAST {
             switch(e.def) {
                 case EMatch(pattern, value):
                     #if debug_assignment_extraction
@@ -520,7 +558,7 @@ class AssignmentExtractionTransforms {
                     #end
                     
                     // First extract any assignments from the value expression itself
-                    var cleanValue = extractFromExpr(value);
+                    var cleanValue = extractFromExpr(value, false);
 
                     // Skip extraction for temp pattern variables (g, g1, etc.)
                     switch pattern {
@@ -607,7 +645,7 @@ class AssignmentExtractionTransforms {
                             
                             // Let extractFromExpr handle the block properly
                             // It will extract assignments and return the cleaned expression
-                            var cleanOperand = extractFromExpr(operand);
+                            var cleanOperand = extractFromExpr(operand, inStmtContext);
                             
                             #if debug_assignment_extraction
                             trace('[XRay AssignmentExtraction] After extraction, applying unary to: ${Type.enumConstructor(cleanOperand.def)}');
@@ -622,7 +660,7 @@ class AssignmentExtractionTransforms {
                             
                         default:
                             // Regular unary processing
-                            var cleanOperand = extractFromExpr(operand);
+                            var cleanOperand = extractFromExpr(operand, inStmtContext);
                             
                             return makeASTWithMeta(
                                 EUnary(op, cleanOperand),
@@ -649,8 +687,8 @@ class AssignmentExtractionTransforms {
                     trace('[XRay AssignmentExtraction] Has left assignment: $hasLeftAssignment');
                     trace('[XRay AssignmentExtraction] Has right assignment: $hasRightAssignment');
                     #end
-                    var cleanLeft = extractFromExpr(left);
-                    var cleanRight = extractFromExpr(right);
+                    var cleanLeft = extractFromExpr(left, false);
+                    var cleanRight = extractFromExpr(right, false);
                     
                     return makeASTWithMeta(
                         EBinary(op, cleanLeft, cleanRight),
@@ -678,8 +716,8 @@ class AssignmentExtractionTransforms {
                         }
                     }
                     #end
-                    var cleanTarget = target != null ? extractFromExpr(target) : null;
-                    var cleanArgs = args.map(extractFromExpr);
+                    var cleanTarget = target != null ? extractFromExpr(target, false) : null;
+                    var cleanArgs = [for (a in args) extractFromExpr(a, false)];
                     
                     return makeASTWithMeta(
                         ECall(cleanTarget, funcName, cleanArgs),
@@ -697,8 +735,8 @@ class AssignmentExtractionTransforms {
                         }
                     }
                     #end
-                    var cleanModule = extractFromExpr(module);
-                    var cleanArgs = args.map(extractFromExpr);
+                    var cleanModule = extractFromExpr(module, false);
+                    var cleanArgs = [for (a in args) extractFromExpr(a, false)];
                     
                     return makeASTWithMeta(
                         ERemoteCall(cleanModule, funcName, cleanArgs),
@@ -713,9 +751,9 @@ class AssignmentExtractionTransforms {
                     #end
                     
                     // Extract assignments from the condition
-                    var cleanCondition = extractFromExpr(condition);
-                    var cleanThen = extractFromExpr(thenBranch);
-                    var cleanElse = elseBranch != null ? extractFromExpr(elseBranch) : null;
+                    var cleanCondition = extractFromExpr(condition, false);
+                    var cleanThen = extractFromExpr(thenBranch, true);
+                    var cleanElse = elseBranch != null ? extractFromExpr(elseBranch, true) : null;
                     
                     return makeASTWithMeta(
                         EIf(cleanCondition, cleanThen, cleanElse),
@@ -725,7 +763,7 @@ class AssignmentExtractionTransforms {
                     
                 case EParen(inner):
                     // First extract from the inner expression
-                    var cleanInner = extractFromExpr(inner);
+                    var cleanInner = extractFromExpr(inner, inStmtContext);
                     
                     // If we extracted assignments, don't wrap in parentheses anymore
                     // since the extracted assignments need to be at statement level
@@ -791,27 +829,31 @@ class AssignmentExtractionTransforms {
                     for (i in 0...statements.length) {
                         trace('[XRay AssignmentExtraction] Statement $i: ${Type.enumConstructor(statements[i].def)}');
                     }
-                    var inStatementContext = isInStatementContext(e);
-                    trace('[XRay AssignmentExtraction] Block is in statement context: $inStatementContext');
+                    var inStatementContext = inStmtContext; // honor caller-provided context for expression vs statement
+                    trace('[XRay AssignmentExtraction] Block is in statement context (from caller): $inStatementContext');
                     #end
                     
                     // Only extract assignments if we're NOT in a statement context
                     // In statement contexts (like case clause bodies), preserve the block as-is
                     if (!isInStatementContext(e)) {
-                        // Special case: EBlock with assignments should have those assignments extracted
-                        // This happens when Haxe desugars complex expressions
+                        // Peephole: Inline simple bind-then-use blocks inside expression contexts
+                        // Pattern: [x = <value>, <expr-using-x>] -> substitute <value> into <expr-using-x>
                         if (statements.length == 2) {
-                            switch(statements[0].def) {
-                                case EMatch(pattern, value):
-                                    #if debug_assignment_extraction
-                                    trace('[XRay AssignmentExtraction] Found assignment in expression context block - extracting');
-                                    #end
-                                    // Extract the assignment
-                                    extracted.push(statements[0]);
-                                    // Return just the second statement (the actual expression)
-                                    return extractFromExpr(statements[1]);
+                            switch (statements[0].def) {
+                                case EMatch(PVar(varName), assignedValue):
+                                    // Clean the assigned value first (may extract deeper assignments)
+                                    var cleanAssigned = extractFromExpr(assignedValue, false);
+                                    var inlinedSecond = substituteVar(statements[1], varName, cleanAssigned);
+                                    return extractFromExpr(inlinedSecond, inStmtContext);
                                 default:
+                                    // Fall through to generic extraction
+                                    null;
                             }
+                        }
+                        // Generic case: if the first statement is an assignment, hoist it
+                        if (statements.length == 2 && Type.enumConstructor(statements[0].def) == "EMatch") {
+                            extracted.push(statements[0]);
+                            return extractFromExpr(statements[1], inStmtContext);
                         }
                     } else {
                         #if debug_assignment_extraction
@@ -828,19 +870,19 @@ class AssignmentExtractionTransforms {
                         if (isLast) {
                             // Last statement in block should be processed for extraction
                             // but kept as the return value
-                            var cleanStmt = extractFromExpr(stmt);
+                            var cleanStmt = extractFromExpr(stmt, inStmtContext);
                             cleanStatements.push(cleanStmt);
                         } else {
                             // Non-last statements that are assignments should be extracted
                             switch(stmt.def) {
                                 case EMatch(_, _):
                                     // Extract assignment to outer scope
-                                    var cleanStmt = extractFromExpr(stmt);
+                                    var cleanStmt = extractFromExpr(stmt, inStmtContext);
                                     // The extraction already added it to 'extracted' array
                                     // Don't add to cleanStatements
                                 default:
                                     // Keep other statements as-is
-                                    cleanStatements.push(extractFromExpr(stmt));
+                                    cleanStatements.push(extractFromExpr(stmt, inStmtContext));
                             }
                         }
                     }
