@@ -257,8 +257,14 @@ class ElixirASTPrinter {
             // Pattern Matching
             // ================================================================
             case ECase(expr, clauses):
-                // Standardize case target parentheses for consistent snapshots and readability
-                'case (' + print(expr, 0) + ') do\n' +
+                // Standardize case header: add parentheses only for non-trivial targets
+                var targetStr = print(expr, 0);
+                var needsParens = switch (expr.def) {
+                    case EVar(_): false;
+                    case EAtom(_)|EInteger(_)|EFloat(_)|EBoolean(_): false;
+                    default: true;
+                };
+                'case ' + (needsParens ? '(' + targetStr + ')' : targetStr) + ' do\n' +
                 [for (clause in clauses) 
                     indentStr(indent + 1) + printCaseClause(clause, indent + 1)
                 ].join('\n') + '\n' +

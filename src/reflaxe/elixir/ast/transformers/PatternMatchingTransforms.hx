@@ -240,6 +240,135 @@ class PatternMatchingTransforms {
     }
 
     /**
+     * Guard clause consolidation pass
+     * 
+     * WHY: Multiple case clauses with the same pattern but different guards are
+     *      more idiomatic as a single clause with a cond do ... end inside the body.
+     * WHAT: Detects runs of clauses sharing an identical pattern (structure-only,
+     *      variable names ignored) and rewrites them into one clause with a cond.
+     * HOW: Sequentially scans ECase clauses, groups adjacent clauses by normalized
+     *      pattern signature, builds ECond with each original guard/body as a branch,
+     *      and converts any unguarded variant into a final true branch.
+     */
+    public static function guardClauseConsolidationPass(ast: ElixirAST): ElixirAST {
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var consolidated:Array<ECaseClause> = [];
+
+                var i = 0;
+                while (i < clauses.length) {
+                    var start = i;
+                    var patKey = patternSignature(clauses[i].pattern);
+                    var run:Array<ECaseClause> = [clauses[i]];
+                    i++;
+                    while (i < clauses.length && patternSignature(clauses[i].pattern) == patKey) {
+                        run.push(clauses[i]);
+                        i++;
+                    }
+
+                    // Only consolidate if there are 2+ clauses in the run and at least one guard present
+                    var hasGuard = false;
+                    for (c in run) if (c.guard != null) { hasGuard = true; break; }
+
+                    if (run.length >= 2 && hasGuard) {
+                        var condClauses:Array<ECondClause> = [];
+                        var sawUnguarded = false;
+                        // Local helper to strip numeric suffixes from common short variable names
+                        function fixVarRefs(node: ElixirAST): ElixirAST {
+                            if (node == null) return node;
+                            return switch (node.def) {
+                                case EVar(name):
+                                    var fixed = name;
+                                    if (~/^[a-z]\d+$/.match(name)) {
+                                        fixed = name.charAt(0);
+                                    } else if (~/^(r|g|b|h|s|l)\d+$/.match(name)) {
+                                        fixed = ~/^([a-z]+)\d+$/.replace(name, "$1");
+                                    }
+                                    if (fixed != name) makeAST(EVar(fixed)) else node;
+                                case EBinary(op, l, r):
+                                    makeAST(EBinary(op, fixVarRefs(l), fixVarRefs(r)));
+                                case ECall(t, n, args):
+                                    makeAST(ECall(t != null ? fixVarRefs(t) : null, n, [for (a in args) fixVarRefs(a)]));
+                                case EIf(c, t, e):
+                                    makeAST(EIf(fixVarRefs(c), fixVarRefs(t), e != null ? fixVarRefs(e) : null));
+                                case EParen(e):
+                                    makeAST(EParen(fixVarRefs(e)));
+                                case EBlock(stmts):
+                                    makeAST(EBlock([for (s in stmts) fixVarRefs(s)]));
+                                default:
+                                    node;
+                            };
+                        }
+
+                        for (idx in 0...run.length) {
+                            var c = run[idx];
+                            var condition:ElixirAST = null;
+                            if (c.guard != null) {
+                                condition = c.guard;
+                            } else {
+                                // Use true as the final catch-all branch; if multiple unguarded appear, keep the last as true and treat earlier as explicit true as well
+                                condition = makeAST(EBoolean(true));
+                                sawUnguarded = true;
+                            }
+                            // Fix potential suffixed variables introduced earlier
+                            var fixedCond = fixVarRefs(condition);
+                            var fixedBody = fixVarRefs(c.body);
+                            condClauses.push({ condition: fixedCond, body: fixedBody });
+                        }
+
+                        var condAst = makeAST(ECond(condClauses));
+                        consolidated.push({ pattern: run[0].pattern, guard: null, body: condAst });
+                    } else {
+                        // No consolidation; copy run as-is
+                        for (c in run) consolidated.push(c);
+                    }
+                }
+
+                makeAST(ECase(guardClauseConsolidationPass(target), consolidated));
+
+            default:
+                recursiveTransform(ast, guardClauseConsolidationPass);
+        };
+    }
+
+    /**
+     * Compute a normalized signature string for a pattern, ignoring variable names.
+     */
+    static function patternSignature(p: EPattern): String {
+        return switch (p) {
+            case PVar(_): "var";
+            case PLiteral(v): 'lit:' + literalKey(v);
+            case PTuple(elems): 'tuple(' + elems.map(patternSignature).join(',') + ')';
+            case PList(elems): 'list[' + elems.map(patternSignature).join(',') + ']';
+            case PCons(h, t): 'cons(' + patternSignature(h) + '|' + patternSignature(t) + ')';
+            case PMap(pairs):
+                var parts = [];
+                for (kv in pairs) parts.push(literalKey(kv.key) + '=>' + patternSignature(kv.value));
+                'map{' + parts.join(',') + '}';
+            case PStruct(mod, fields):
+                var f = [];
+                for (fld in fields) f.push(fld.key + ':' + patternSignature(fld.value));
+                'struct(' + mod + '){' + f.join(',') + '}';
+            case PPin(inner): 'pin(' + patternSignature(inner) + ')';
+            case PWildcard: '_';
+            case PAlias(_, inner): 'alias(' + patternSignature(inner) + ')';
+            case PBinary(segments): 'bin<' + segments.length + '>';
+        };
+    }
+
+    static function literalKey(ast: ElixirAST): String {
+        return switch (ast.def) {
+            case EAtom(a): ':' + (a:String);
+            case EInteger(i): 'i:' + Std.string(i);
+            case EFloat(f): 'f:' + Std.string(f);
+            case EBoolean(b): b ? 'true' : 'false';
+            case EString(s): 's:"' + s + '"';
+            case ETuple(elems): 't(' + elems.map(literalKey).join(',') + ')';
+            default: Type.enumConstructor(ast.def); // fallback
+        };
+    }
+
+    /**
      * If a clause has a non-safe guard, remove the guard and push it into the body as an if.
      */
     static function ensureGuardSafety(clause: ECaseClause): ECaseClause {
@@ -591,6 +720,8 @@ class PatternMatchingTransforms {
                 EModule(name, attrs, body.map(b -> transform(b)));
             case EIf(cond, thenBranch, elseBranch):
                 EIf(transform(cond), transform(thenBranch), elseBranch != null ? transform(elseBranch) : null);
+            case EMatch(pattern, expr):
+                EMatch(pattern, transform(expr));
             case EDef(name, args, guard, body):
                 EDef(name, args, guard, transform(body));
             case EDefp(name, args, guard, body):
