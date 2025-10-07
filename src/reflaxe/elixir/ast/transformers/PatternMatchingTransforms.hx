@@ -317,7 +317,9 @@ class PatternMatchingTransforms {
                         }
 
                         var condAst = makeAST(ECond(condClauses));
-                        consolidated.push({ pattern: run[0].pattern, guard: null, body: condAst });
+                        // Sanitize binder names in the consolidated pattern to remove numeric suffixes
+                        var sanitizedPattern = sanitizePatternBinders(run[0].pattern);
+                        consolidated.push({ pattern: sanitizedPattern, guard: null, body: condAst });
                     } else {
                         // No consolidation; copy run as-is
                         for (c in run) consolidated.push(c);
@@ -366,6 +368,35 @@ class PatternMatchingTransforms {
             case ETuple(elems): 't(' + elems.map(literalKey).join(',') + ')';
             default: Type.enumConstructor(ast.def); // fallback
         };
+    }
+
+    /**
+     * Sanitize pattern binder names by stripping numeric suffixes commonly
+     * introduced during guard extraction (e.g., r2 -> r, l2 -> l).
+     */
+    static function sanitizePatternBinders(p: EPattern): EPattern {
+        function clean(name:String):String {
+            var n = name;
+            // Drop leading underscore to match snapshot style
+            if (n.length > 1 && n.charAt(0) == "_") n = n.substring(1);
+            // Strip numeric suffixes commonly introduced during extraction/guard steps
+            if (~/^[a-z]\d+$/.match(n)) return n.charAt(0);
+            if (~/^(r|g|b|h|s|l)\d+$/.match(n)) return ~/^([a-z]+)\d+$/.replace(n, "$1");
+            return n;
+        }
+        return switch (p) {
+            case PVar(n): PVar(clean(n));
+            case PLiteral(_): p;
+            case PTuple(elems): PTuple([for (e in elems) sanitizePatternBinders(e)]);
+            case PList(elems): PList([for (e in elems) sanitizePatternBinders(e)]);
+            case PCons(h, t): PCons(sanitizePatternBinders(h), sanitizePatternBinders(t));
+            case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: sanitizePatternBinders(kv.value)}]);
+            case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: sanitizePatternBinders(f.value)}]);
+            case PPin(inner): PPin(sanitizePatternBinders(inner));
+            case PWildcard: p;
+            case PAlias(v, inner): PAlias(clean(v), sanitizePatternBinders(inner));
+            case PBinary(segments): p;
+        }
     }
 
     /**
