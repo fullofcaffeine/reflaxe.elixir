@@ -618,6 +618,11 @@ class PatternBuilder {
         var aliasMap: Map<String, Array<String>> = new Map();
         var tempsByIndex: Map<Int, String> = new Map();
         var isUsed = false;
+        // Helper: strip trailing digit suffix from a Haxe variable name (e.g., g2 -> g, r3 -> r)
+        inline function baseName(s:String):String {
+            var re = ~/([0-9]+)$/;
+            return re.replace(s, "");
+        }
 
         // First pass: collect aliases and temp variable relationships
         function collectAliases(expr: TypedExpr): Void {
@@ -717,6 +722,12 @@ class PatternBuilder {
                     // Check if this local reference is any of our aliases
                     if (aliasesToCheck.indexOf(vName) != -1) {
                         isUsed = true;
+                    } else {
+                        // Treat suffix variants as usage of the base binder (e.g., g2 uses binder g)
+                        var vBase = baseName(vName);
+                        if (vBase == varName) {
+                            isUsed = true;
+                        }
                     }
 
                 case TVar(v, _):

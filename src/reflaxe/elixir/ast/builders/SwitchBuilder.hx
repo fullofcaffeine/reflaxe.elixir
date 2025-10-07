@@ -548,8 +548,10 @@ class SwitchBuilder {
                         default: null;
                     };
                     if (ef != null) {
-                        // Use usage-aware generator with caseBody analysis to prefix underscores for unused params
-                        return generateIdiomaticEnumPatternWithBody(ef, guardVars, caseBody, context);
+                        // Extract guard variable names (from TIf conditions) for usage awareness
+                        var guardNames = extractGuardVariables(caseBody);
+                        // Use usage-aware generator with guard+body analysis to avoid underscoring binders used in guards
+                        return generateIdiomaticEnumPatternWithBody(ef, guardNames, caseBody, context);
                     } else {
                         // Fallback to legacy builder if extraction fails
                         return buildEnumPattern(e, args, guardVars, context);
@@ -626,6 +628,19 @@ class SwitchBuilder {
             // Tuple pattern: {:some, value}
             var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
 
+            inline function baseName(s:String):String {
+                var re = ~/([0-9]+)$/;
+                return re.replace(s, "");
+            }
+            function guardHas(name:String):Bool {
+                if (guardVars == null) return false;
+                var b = baseName(name);
+                for (gv in guardVars) {
+                    if (gv == name || baseName(gv) == b) return true;
+                }
+                return false;
+            }
+
             for (i in 0...parameterNames.length) {
                 // Choose source name priority: (single-arg && body candidate) > guard var > enum param
                 var chosenSource: String = null;
@@ -638,7 +653,7 @@ class SwitchBuilder {
                 }
 
                 // Determine usage with Haxe name against case body
-                var isUsed = EnumHandler.isVariableNameUsedInBody(chosenSource, caseBody);
+                var isUsed = EnumHandler.isVariableNameUsedInBody(chosenSource, caseBody) || guardHas(chosenSource);
 
                 // Convert to Elixir variable and optionally underscore if unused
                 var chosenElixir = VariableAnalyzer.toElixirVarName(chosenSource);
@@ -660,7 +675,7 @@ class SwitchBuilder {
             var finalNames = [for (i in 0...parameterNames.length) {
                 var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var preferred = (parameterNames.length == 1 && bodyVarCandidates.length > 0) ? bodyVarCandidates[0].haxe : base;
-                var isUsed = EnumHandler.isVariableNameUsedInBody(preferred, caseBody) || EnumHandler.isVariableNameUsedInBody(base, caseBody);
+                var isUsed = EnumHandler.isVariableNameUsedInBody(preferred, caseBody) || EnumHandler.isVariableNameUsedInBody(base, caseBody) || guardHas(preferred) || guardHas(base);
                 isUsed ? preferred : "_" + preferred;
             }];
             trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}');
