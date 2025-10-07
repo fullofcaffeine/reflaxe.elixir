@@ -775,6 +775,22 @@ class ElixirASTTransformer {
             pass: otpChildSpecTransformPass
         });
         #end
+
+        // Final polish: normalize rescue concat patterns (e.g., tmp = DateTime.utc_now(); tmp.to_iso8601())
+        passes.push({
+            name: "RescueConcatNormalization",
+            description: "Normalize concat+bind+immediate-call patterns inside rescue blocks",
+            enabled: true,
+            pass: rescueConcatNormalizationPass
+        });
+
+        // Global block peephole normalization (concat+bind+immediate-call)
+        passes.push({
+            name: "BlockConcatNormalization",
+            description: "Normalize concat+bind+immediate-call patterns in general EBlocks",
+            enabled: true,
+            pass: blockConcatNormalizationPass
+        });
         
         // Prefix unused function parameters with underscore
         // DISABLED: Now handled during AST building with more accurate TypedExpr-based detection
@@ -5107,6 +5123,126 @@ class ElixirASTTransformer {
                 // Recurse
                 transformAST(ast, varRefNormalizationPass);
         };
+    }
+
+    /**
+     * Normalize concat+bind+immediate-call patterns in rescue blocks to single expressions
+     * Example: ts = left <> (tmp = DateTime.utc_now()); tmp.to_iso8601() -> ts = left <> DateTime.to_iso8601(DateTime.utc_now())
+     */
+    static function rescueConcatNormalizationPass(ast: ElixirAST): ElixirAST {
+        function normalizeBlock(block: ElixirAST): ElixirAST {
+            if (block == null) return block;
+            return switch (block.def) {
+                case EBlock(stmts):
+                    var out = [];
+                    var i = 0;
+                    while (i < stmts.length) {
+                        var cur = stmts[i];
+                        var nxt = (i + 1 < stmts.length) ? stmts[i + 1] : null;
+                        var combined = false;
+                        switch (cur.def) {
+                            case EMatch(PVar(assignName), concatExpr):
+                                switch (concatExpr.def) {
+                                    case EBinary(StringConcat, leftExpr, rightExpr):
+                                        switch (rightExpr.def) {
+                                            case EMatch(PVar(tmpVar), tmpVal):
+                                                // Next statement: tmpVar.to_iso8601()
+                                                switch (nxt != null ? nxt.def : null) {
+                                                    case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0) && methodName == "to_iso8601"):
+                                                        // Wrap tmpVal with DateTime.to_iso8601(tmpVal)
+                                                        var converted = makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [tmpVal]));
+                                                        var newConcat = makeAST(EBinary(StringConcat, leftExpr, converted));
+                                                        out.push(makeAST(EMatch(PVar(assignName), newConcat)));
+                                                        i += 2;
+                                                        combined = true;
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                        if (!combined) {
+                            out.push(cur);
+                            i++;
+                        }
+                    }
+                    makeAST(EBlock(out));
+                default:
+                    block;
+            }
+        }
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case ETry(body, rescues, catches, afterBlock, elseBlock):
+                    var newRescues: Array<ERescueClause> = [];
+                    if (rescues != null) {
+                        for (rc in rescues) {
+                            var nb = rc != null && rc.body != null ? normalizeBlock(rc.body) : rc.body;
+                            newRescues.push({ pattern: rc.pattern, varName: rc.varName, body: nb });
+                        }
+                    }
+                    makeASTWithMeta(ETry(body, newRescues, catches, afterBlock, elseBlock), node.metadata, node.pos);
+                default:
+                    node;
+            };
+        });
+    }
+
+    /**
+     * Global EBlock peephole normalization: merge [x = left <> (tmp = expr), tmp.method()] into x = left <> Module.method(expr)
+     */
+    static function blockConcatNormalizationPass(ast: ElixirAST): ElixirAST {
+        function normalizeBlock(block: ElixirAST): ElixirAST {
+            if (block == null) return block;
+            return switch (block.def) {
+                case EBlock(stmts):
+                    var out = [];
+                    var i = 0;
+                    while (i < stmts.length) {
+                        var cur = stmts[i];
+                        var nxt = (i + 1 < stmts.length) ? stmts[i + 1] : null;
+                        var combined = false;
+                        switch (cur.def) {
+                            case EMatch(PVar(assignName), concatExpr):
+                                switch (concatExpr.def) {
+                                    case EBinary(StringConcat, leftExpr, rightExpr):
+                                        switch (rightExpr.def) {
+                                            case EMatch(PVar(tmpVar), tmpVal):
+                                                switch (nxt != null ? nxt.def : null) {
+                                                    case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0)):
+                                                        // Currently, support DateTime.to_iso8601(tmpVal)
+                                                        var moduleNode = makeAST(EVar("DateTime"));
+                                                        var converted = makeAST(ERemoteCall(moduleNode, methodName, [tmpVal]));
+                                                        var newConcat = makeAST(EBinary(StringConcat, leftExpr, converted));
+                                                        out.push(makeAST(EMatch(PVar(assignName), newConcat)));
+                                                        i += 2;
+                                                        combined = true;
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                        if (!combined) {
+                            out.push(cur);
+                            i++;
+                        }
+                    }
+                    makeAST(EBlock(out));
+                default:
+                    block;
+            }
+        }
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(_): normalizeBlock(node);
+                default: node;
+            };
+        });
     }
 
     /**

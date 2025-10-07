@@ -255,14 +255,15 @@ class PatternMatchingTransforms {
             switch (expr.def) {
                 case ERemoteCall(module, funcName, args):
                     var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
-                    if (isMapGet && funcName == "get" && args.length == 2) {
+                    var isKeywordGet = switch (module.def) { case EVar(name) if (name == "Keyword"): true; default: false; };
+                    if ((isMapGet || isKeywordGet) && funcName == "get" && args.length >= 2) {
                         // If second arg is an atom we can derive a stable varName
                         var varName = switch (args[1].def) {
                             case EAtom(atom): Std.string(atom);
                             default: null;
                         };
                         if (varName != null && varName.length > 0) {
-                            // Create binding: varName = Map.get(...)
+                            // Create binding: varName = Map.get(...)/Keyword.get(...)
                             preBinds.push(makeAST(EMatch(PVar(varName), expr)));
                             varMap.set(varName, {key: varName, expr: expr});
                         }
