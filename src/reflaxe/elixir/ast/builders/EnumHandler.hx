@@ -409,11 +409,22 @@ class EnumHandler {
      */
     public static function isVariableNameUsedInBody(varName: String, caseBody: TypedExpr): Bool {
         var used = false;
+        inline function baseName(s:String):String {
+            var re = ~/([0-9]+)$/;
+            return re.replace(s, "");
+        }
+        var baseVar = baseName(varName);
         function check(e: TypedExpr): Void {
             if (used || e == null) return;
             switch (e.expr) {
-                case TLocal(v) if (v.name == varName):
-                    used = true;
+                case TLocal(v):
+                    var name = v.name;
+                    var base = baseName(name);
+                    if (name == varName || base == baseVar) {
+                        used = true;
+                    } else {
+                        TypedExprTools.iter(e, check);
+                    }
                 case TVar(_, _):
                     // Declarations do not count as usage
                 default:
@@ -429,18 +440,26 @@ class EnumHandler {
      */
     static function isVariableUsedInExpression(varName: String, expr: TypedExpr): Bool {
         var used = false;
-        
+        inline function baseName(s:String):String {
+            var re = ~/([0-9]+)$/;
+            return re.replace(s, "");
+        }
+        var baseVar = baseName(varName);
         function check(e: TypedExpr): Void {
             if (used) return;
-            
             switch(e.expr) {
-                case TLocal(v) if (v.name == varName):
-                    used = true;
+                case TLocal(v):
+                    var name = v.name;
+                    var base = baseName(name);
+                    if (name == varName || base == baseVar) {
+                        used = true;
+                    } else {
+                        TypedExprTools.iter(e, check);
+                    }
                 default:
                     TypedExprTools.iter(e, check);
             }
         }
-        
         check(expr);
         return used;
     }

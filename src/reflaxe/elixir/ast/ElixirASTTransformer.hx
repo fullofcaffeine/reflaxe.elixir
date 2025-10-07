@@ -705,7 +705,15 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
         });
-        
+
+        // Normalize suffixed variable refs back to pattern binders (generic, tag-agnostic)
+        passes.push({
+            name: "PatternBinderSuffixNormalization",
+            description: "Map suffixed variable references (e.g., x2) back to their base binder names when base exists in pattern",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternBinderSuffixNormalizationPass
+        });
+
         // Pattern variable binding pass
         passes.push({
             name: "PatternVariableBinding",
@@ -738,6 +746,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.exhaustivenessCheckPass
         });
         
+        // Late normalization of suffixed refs back to pattern binders to inform hygiene
+        passes.push({
+            name: "PatternBinderSuffixNormalizationLate",
+            description: "Late mapping of suffixed variable refs to base binder names prior to hygiene",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternBinderSuffixNormalizationPass
+        });
+
         // Underscore variable cleanup pass (should run late to catch all generated vars)
         #if !disable_underscore_cleanup
         passes.push({
@@ -5598,10 +5614,30 @@ class ElixirASTTransformer {
             var patternVars: Array<{ref: EPattern, name: String}> = [];
             collectPatternVars(clause.pattern, patternVars);
             var declared = new Map<String, Bool>();
-            for (pv in patternVars) declared.set(pv.name, true);
+            var declaredBase = new Map<String, Bool>();
+            for (pv in patternVars) {
+                declared.set(pv.name, true);
+                var base = (function(s:String){ var re = ~/([0-9]+)$/; return re.replace(s, ""); })(pv.name);
+                declaredBase.set(base, true);
+            }
 
             var used = new Map<String, Bool>();
             collectUsedVars(clause.body, used);
+
+            // Normalize used names: treat suffixed variants (e.g., g2) as base if the base exists
+            function stripDigitsSuffixLocal(s:String):String {
+                var re = ~/([0-9]+)$/;
+                return re.replace(s, "");
+            }
+            var usedNorm = new Map<String, Bool>();
+            for (uname in used.keys()) {
+                var base = stripDigitsSuffixLocal(uname);
+                if (base != uname && (declared.exists(base) || declaredBase.exists(base))) {
+                    usedNorm.set(base, true);
+                } else {
+                    usedNorm.set(uname, true);
+                }
+            }
 
             // Preferred names to align tuple pattern binders with body usage
             // Extended to cover common controller/LiveView variables
@@ -5611,7 +5647,7 @@ class ElixirASTTransformer {
             ];
 
             var newPattern = clause.pattern;
-            for (uname in used.keys()) {
+            for (uname in usedNorm.keys()) {
                 if (declared.exists(uname)) continue;
                 var targetName = uname;
                 if (!priorities.contains(uname)) {

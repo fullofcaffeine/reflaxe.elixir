@@ -430,9 +430,10 @@ class PatternMatchingTransforms {
                 var i = 0;
                 while (i < clauses.length) {
                     var c = clauses[i];
-                    var tag = tagOf(c.pattern);
-
-                    if (tag == "rgb" || tag == "hsl") {
+                    // Removed tag-specific handling; generic normalization handled elsewhere
+                    // Keep clause as-is here; downstream passes (suffix normalization and guard consolidation)
+                    // perform idiomatic transformations generically.
+                    if (false) {
                         // Accumulate a run of consecutive rgb/hsl clauses
                         var run:Array<ECaseClause> = [c];
                         var j = i + 1;
@@ -489,95 +490,6 @@ class PatternMatchingTransforms {
                             newClauses.push({ pattern: canonPat, guard: null, body: condAst });
                             i = j; // Skip the run
                             continue;
-                        } else {
-                            // Single clause - still apply binder canonicalization and if->cond for nested body
-                            // Build binder base set from (possibly canonicalized) pattern
-                            var tmpCanon = canonicalizePattern(c.pattern, tag);
-                            var binderBasesSingle = new Map<String, Bool>();
-                            function collectBases(p:EPattern):Void {
-                                switch (p) {
-                                    case PVar(v): binderBasesSingle.set(stripDigitsSuffix(v), true);
-                                    case PAlias(v, inner): binderBasesSingle.set(stripDigitsSuffix(v), true); collectBases(inner);
-                                    case PTuple(el): for (e in el) collectBases(e);
-                                    case PList(el): for (e in el) collectBases(e);
-                                    case PCons(h,t): collectBases(h); collectBases(t);
-                                    case PMap(pairs): for (kv in pairs) collectBases(kv.value);
-                                    case PStruct(_, fields): for (f in fields) collectBases(f.value);
-                                    default:
-                                }
-                            }
-                            collectBases(tmpCanon);
-                            function fixVarRefsBoundedSingle(n: ElixirAST): ElixirAST {
-                                if (n == null) return n;
-                                return switch (n.def) {
-                                    case EVar(name):
-                                        var base = ~/^(\w+?)(\d+)$/.match(name) ? ~/^(\w+?)(\d+)$/.replace(name, "$1") : name;
-                                        if (base != name && binderBasesSingle.exists(base)) makeAST(EVar(base)) else n;
-                                    case EBinary(op,l,r): makeAST(EBinary(op, fixVarRefsBoundedSingle(l), fixVarRefsBoundedSingle(r)));
-                                    case ECall(t, nm, args): makeAST(ECall(t != null ? fixVarRefsBoundedSingle(t) : null, nm, [for (a in args) fixVarRefsBoundedSingle(a)]));
-                                    case ERemoteCall(mod, fnm, args): makeAST(ERemoteCall(mod != null ? fixVarRefsBoundedSingle(mod) : null, fnm, [for (a in args) fixVarRefsBoundedSingle(a)]));
-                                    case EIf(c,t,e): makeAST(EIf(fixVarRefsBoundedSingle(c), fixVarRefsBoundedSingle(t), e != null ? fixVarRefsBoundedSingle(e) : null));
-                                    case EBlock(sts): makeAST(EBlock([for (s in sts) fixVarRefsBoundedSingle(s)]));
-                                    case EParen(e): makeAST(EParen(fixVarRefsBoundedSingle(e)));
-                                    default: n;
-                                };
-                            }
-                            var fixedBody = fixVarRefsBoundedSingle(c.body);
-                            var canonPat = canonicalizePattern(c.pattern, tag != null ? tag : inferTagFromBodyVars(fixedBody));
-                            var fixedGuard = c.guard != null ? fixVarRefsBoundedSingle(c.guard) : null;
-                            var bodyOrInner = unwrapSingleStmtBlock(fixedBody);
-                            var newBody = switch (bodyOrInner.def) {
-                                case EIf(_, _, _): ifChainToCond(bodyOrInner);
-                                default: fixedBody;
-                            };
-                            // If we produced a cond with a true -> if(...) tail, flatten it
-                            switch (newBody.def) {
-                                case ECond(clauses):
-                                    if (clauses.length > 0) {
-                                        var last = clauses[clauses.length - 1];
-                                        var isTrue = switch (last.condition.def) {
-                                            case EBoolean(true): true;
-                                            case EAtom(a): (a:String) == "true";
-                                            default: false;
-                                        };
-                                        if (isTrue) {
-                                            var tail = unwrapSingleStmtBlock(last.body);
-                                            switch (tail.def) {
-                                                case EIf(_, _, _):
-                                                    var tailCond = ifChainToCond(tail);
-                                                    switch (tailCond.def) {
-                                                        case ECond(tailClauses):
-                                                            var merged = [];
-                                                            for (k in 0...clauses.length - 1) merged.push(clauses[k]);
-                                                            for (tc in tailClauses) merged.push(tc);
-                                                            newBody = makeAST(ECond(merged));
-                                                        default:
-                                                    }
-                                                default:
-                                            }
-                                        }
-                                    }
-                                default:
-                            }
-                            // Normalize suffixed refs in cond branches using binder base set
-                            switch (newBody.def) {
-                                case ECond(clauses):
-                                    var normClauses:Array<ECondClause> = [];
-                                    for (clc in clauses) {
-                                        var nc = fixVarRefsBoundedSingle(clc.condition);
-                                        var nb = fixVarRefsBoundedSingle(clc.body);
-                                        normClauses.push({ condition: nc, body: nb });
-                                    }
-                                    newBody = makeAST(ECond(normClauses));
-                                default:
-                            }
-                            newClauses.push({ pattern: canonPat, guard: fixedGuard, body: newBody });
-                            i++;
-                            continue;
-                        }
-                    }
-
-                    // Non rgb/hsl clause - keep as-is
                     newClauses.push(c);
                     i++;
                 }
@@ -755,9 +667,50 @@ class PatternMatchingTransforms {
                         }
 
                         var condAst = makeAST(ECond(condClauses));
-                        // Sanitize binder names in the consolidated pattern to remove numeric suffixes
-                        var sanitizedPattern = sanitizePatternBinders(run[0].pattern);
-                        consolidated.push({ pattern: sanitizedPattern, guard: null, body: condAst });
+                        // Merge binder names across the run (tag-agnostic):
+                        // For each tuple arg slot, if any clause binds a non-underscore var, use its base name.
+                        function tupleArity(p:EPattern):Int {
+                            return switch (p) { case PTuple(el): el.length - 1; default: 0; };
+                        }
+                        var arity = tupleArity(run[0].pattern);
+                        var finalNames:Array<Null<String>> = [for (_ in 0...arity) null];
+                        for (rc in run) {
+                            switch (rc.pattern) {
+                                case PTuple(elems) if (elems.length - 1 == arity):
+                                    for (idx in 0...arity) {
+                                        if (finalNames[idx] != null) continue;
+                                        switch (elems[idx + 1]) {
+                                            case PVar(nm):
+                                                var base = stripDigitsSuffixLocal(nm);
+                                                if (base != "_" && (base.length == 1 || base.charAt(0) != '_')) finalNames[idx] = base;
+                                            case PAlias(nm, _):
+                                                var base2 = stripDigitsSuffixLocal(nm);
+                                                if (base2 != "_" && (base2.length == 1 || base2.charAt(0) != '_')) finalNames[idx] = base2;
+                                            default:
+                                        }
+                                    }
+                                default:
+                            }
+                        }
+                        // Build consolidated pattern: use discovered names when present; otherwise sanitize run[0] pattern
+                        var basePat = sanitizePatternBinders(run[0].pattern);
+                        var mergedPat:EPattern = switch (basePat) {
+                            case PTuple(elems) if (elems.length - 1 == arity):
+                                var out:Array<EPattern> = [];
+                                out.push(elems[0]);
+                                for (i in 0...arity) {
+                                    if (finalNames[i] != null) out.push(PVar(finalNames[i]));
+                                    else out.push(elems[i + 1]);
+                                }
+                                PTuple(out);
+                            default: basePat;
+                        };
+                        #if debug_binder_norm
+                        var fnames = [];
+                        for (i in 0...arity) fnames.push(finalNames[i]);
+                        trace('[BinderNorm] Consolidation finalNames: [' + fnames.join(', ') + ']');
+                        #end
+                        consolidated.push({ pattern: mergedPat, guard: null, body: condAst });
                     } else {
                         // No consolidation; copy run as-is
                         for (c in run) consolidated.push(c);
@@ -1346,6 +1299,94 @@ class PatternMatchingTransforms {
             result.pos = ast.pos;
         }
         return result;
+    }
+
+    /**
+     * PatternBinderSuffixNormalizationPass (tag-agnostic)
+     *
+     * WHY: Across clause groups or after consolidation, guard/body expressions may reference
+     * suffixed variants of pattern binders (e.g., g2, b3). This causes hygiene to consider
+     * the original binders unused and wildcard the pattern. We normalize references back to
+     * the base binder names strictly when the base exists in the clause's pattern.
+     *
+     * WHAT: For each case clause, collect binder names from the pattern and strip trailing
+     * digits from variable references in both guard and body only if the base name is a binder.
+     *
+     * SCOPE: Tag-agnostic, affects all case clauses. AST-pure.
+     */
+    public static function patternBinderSuffixNormalizationPass(ast: ElixirAST): ElixirAST {
+        function stripDigitsSuffixLocal(s:String):String {
+            var re = ~/([0-9]+)$/;
+            return re.replace(s, "");
+        }
+
+        function normalizeClause(c: ECaseClause): ECaseClause {
+            var binderBases = new Map<String, Bool>();
+            function collectBases(p:EPattern):Void {
+                switch (p) {
+                    case PVar(v): binderBases.set(stripDigitsSuffixLocal(v), true);
+                    case PAlias(v, inner): binderBases.set(stripDigitsSuffixLocal(v), true); collectBases(inner);
+                    case PTuple(el): for (e in el) collectBases(e);
+                    case PList(el): for (e in el) collectBases(e);
+                    case PCons(h,t): collectBases(h); collectBases(t);
+                    case PMap(pairs): for (kv in pairs) collectBases(kv.value);
+                    case PStruct(_, fields): for (f in fields) collectBases(f.value);
+                    default:
+                }
+            }
+            collectBases(c.pattern);
+            #if debug_binder_norm
+            var basesStr = [];
+            for (k in binderBases.keys()) basesStr.push(k);
+            trace('[BinderNorm] Clause binder bases: [' + basesStr.join(', ') + ']');
+            #end
+
+            function fixRef(n: ElixirAST): ElixirAST {
+                if (n == null) return n;
+                return switch (n.def) {
+                    case EVar(name):
+                        var base = stripDigitsSuffixLocal(name);
+                        if (base != name && binderBases.exists(base)) {
+                            #if debug_binder_norm
+                            trace('[BinderNorm]   EVar normalize: ' + name + ' -> ' + base);
+                            #end
+                            makeAST(EVar(base));
+                        } else n;
+                    case EBinary(op, l, r): makeAST(EBinary(op, fixRef(l), fixRef(r)));
+                    case ECall(t, nm, args): makeAST(ECall(t != null ? fixRef(t) : null, nm, [for (a in args) fixRef(a)]));
+                    case ERemoteCall(mod, nm, args): makeAST(ERemoteCall(mod != null ? fixRef(mod) : null, nm, [for (a in args) fixRef(a)]));
+                    case EIf(cond, tb, eb): makeAST(EIf(fixRef(cond), fixRef(tb), eb != null ? fixRef(eb) : null));
+                    case ECond(cls):
+                        var mapped = [];
+                        var idx = 0;
+                        for (clc in cls) {
+                            #if debug_binder_norm
+                            trace('[BinderNorm]   Visiting cond branch #' + idx);
+                            #end
+                            mapped.push({ condition: fixRef(clc.condition), body: fixRef(clc.body) });
+                            idx++;
+                        }
+                        makeAST(ECond(mapped));
+                    case EBlock(sts): makeAST(EBlock([for (s in sts) fixRef(s)]));
+                    case EParen(e): makeAST(EParen(fixRef(e)));
+                    default: n;
+                };
+            }
+
+            return {
+                pattern: sanitizePatternBinders(c.pattern),
+                guard: c.guard != null ? fixRef(c.guard) : null,
+                body: fixRef(c.body)
+            };
+        }
+
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var newClauses = [for (c in clauses) normalizeClause(c)];
+                makeAST(ECase(patternBinderSuffixNormalizationPass(target), newClauses));
+            default:
+                recursiveTransform(ast, patternBinderSuffixNormalizationPass);
+        };
     }
 }
 
