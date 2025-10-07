@@ -674,6 +674,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternMatchingPass
         });
         
+        // Consolidate multiple guard-bearing clauses with same pattern into cond
+        passes.push({
+            name: "GuardClauseConsolidation",
+            description: "Consolidate same-pattern guarded clauses into a single cond body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardClauseConsolidationPass
+        });
+        
         // Pattern matching guard optimization pass
         passes.push({
             name: "PatternMatchingGuardOptimization",
