@@ -163,15 +163,45 @@ class AssignmentExtractionTransforms {
                     node.pos
                 );
             case EIf(cond, thenBranch, elseBranch):
-                transformedNode = makeASTWithMeta(
-                    EIf(
-                        transformAssignments(cond),
-                        transformAssignments(thenBranch),
-                        elseBranch != null ? transformAssignments(elseBranch) : null
-                    ),
+                // Normalize condition: peel leading EBlock/EParen(EBlock) into pre-assignments
+                var condTrans = transformAssignments(cond);
+                var preExtract:Array<ElixirAST> = [];
+                function peel(n:ElixirAST):ElixirAST {
+                    return switch (n.def) {
+                        case EBlock(sts) if (sts.length > 0):
+                            for (i in 0...sts.length - 1) preExtract.push(sts[i]);
+                            peel(sts[sts.length - 1]);
+                        case EParen(inner):
+                            var peeled = peel(inner);
+                            if (preExtract.length > 0) makeAST(EVar("__peeled_marker__")); // marker no-op
+                            peeled;
+                        default:
+                            n;
+                    };
+                }
+                var condBase = peel(condTrans);
+                #if debug_assignment_extraction
+                if (preExtract.length > 0) {
+                    trace('[XRay AssignmentExtraction] Hoisting ' + preExtract.length + ' pre-statements from if condition');
+                }
+                #end
+                var condResult = extractAndTransformExpression(condBase);
+                var cleanThen = transformAssignments(thenBranch);
+                var cleanElse = elseBranch != null ? transformAssignments(elseBranch) : null;
+                var rebuiltIf = makeASTWithMeta(
+                    EIf(condResult.expression, cleanThen, cleanElse),
                     node.metadata,
                     node.pos
                 );
+                var hoisted = preExtract.copy();
+                if (condResult.hasExtracted) for (s in condResult.extracted) hoisted.push(s);
+                if (hoisted.length > 0) {
+                    var stmts = hoisted.copy();
+                    stmts.push(rebuiltIf);
+                    transformedNode = makeASTWithMeta(EBlock(stmts), node.metadata, node.pos);
+                } else {
+                    transformedNode = rebuiltIf;
+                }
             case EBinary(op, left, right):
                 transformedNode = makeASTWithMeta(
                     EBinary(op, transformAssignments(left), transformAssignments(right)),
@@ -262,7 +292,9 @@ class AssignmentExtractionTransforms {
                     statements.push(result.expression);
                     return makeAST(EBlock(statements));
                 }
-                return transformedNode;
+                // Even without extractions, use the cleaned expression to preserve
+                // structural normalizations (like operand parentheses)
+                return result.expression;
                 
             // Handle calls that might contain functions with assignments
             case ECall(_, _, _):
@@ -764,8 +796,27 @@ class AssignmentExtractionTransforms {
                     var cleanLeft = extractFromExpr(left, false);
                     var cleanRight = extractFromExpr(right, false);
 
+                    // Parenthesize nested do-end expressions used as operands to avoid
+                    // parser ambiguities like "... if case ... do ... end >= 0 do"
+                    inline function requiresParen(expr: ElixirAST): Bool {
+                        if (expr == null || expr.def == null) return false;
+                        return switch (expr.def) {
+                            case EIf(_, _, _): true;
+                            case ECase(_, _): true;
+                            case ECond(_): true;
+                            case EWith(_, _, _): true;
+                            case ETry(_, _, _, _, _): true;
+                            // Receive has a do/end block as well
+                            case EReceive(_, _): true;
+                            default: false;
+                        };
+                    }
+
+                    var leftOperand = requiresParen(cleanLeft) ? makeASTWithMeta(EParen(cleanLeft), cleanLeft.metadata, cleanLeft.pos) : cleanLeft;
+                    var rightOperand = requiresParen(cleanRight) ? makeASTWithMeta(EParen(cleanRight), cleanRight.metadata, cleanRight.pos) : cleanRight;
+
                     return makeASTWithMeta(
-                        EBinary(op, cleanLeft, cleanRight),
+                        EBinary(op, leftOperand, rightOperand),
                         e.metadata,
                         e.pos
                     );

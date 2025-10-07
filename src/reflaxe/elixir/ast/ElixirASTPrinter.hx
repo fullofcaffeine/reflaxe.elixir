@@ -369,25 +369,69 @@ class ElixirASTPrinter {
                 trace('[XRay InlineIf] isInline decision: $isInline');
                 #end
                 
+                // Hoist inline block statements from condition for readability/validity
+                var hoistedPrefix = "";
+                var condCore: ElixirAST = condition;
+                switch (condition.def) {
+                    case EParen(inner):
+                        switch (inner.def) {
+                            case EBlock(exprs) if (exprs.length > 0):
+                                for (i in 0...exprs.length - 1) {
+                                    hoistedPrefix += indentStr(indent) + print(exprs[i], indent) + '\n';
+                                }
+                                condCore = exprs[exprs.length - 1];
+                            default:
+                        }
+                    case EBlock(exprs) if (exprs.length > 0):
+                        for (i in 0...exprs.length - 1) {
+                            hoistedPrefix += indentStr(indent) + print(exprs[i], indent) + '\n';
+                        }
+                        condCore = exprs[exprs.length - 1];
+                    case EBinary(op, left, right):
+                        // Hoist from left operand block
+                        var newLeft = left;
+                        switch (left.def) {
+                            case EBlock(exprsL) if (exprsL.length > 0):
+                                for (i in 0...exprsL.length - 1) {
+                                    hoistedPrefix += indentStr(indent) + print(exprsL[i], indent) + '\n';
+                                }
+                                newLeft = exprsL[exprsL.length - 1];
+                            default:
+                        }
+                        // Hoist from right operand block
+                        var newRight = right;
+                        switch (right.def) {
+                            case EBlock(exprsR) if (exprsR.length > 0):
+                                for (i in 0...exprsR.length - 1) {
+                                    hoistedPrefix += indentStr(indent) + print(exprsR[i], indent) + '\n';
+                                }
+                                newRight = exprsR[exprsR.length - 1];
+                            default:
+                        }
+                        // Rebuild core condition with cleaned operands
+                        condCore = makeASTWithMeta(EBinary(op, newLeft, newRight), condition.metadata, condition.pos);
+                    default:
+                }
+
                 // Print condition without unnecessary parentheses
-                var conditionStr = printIfCondition(condition);
+                var conditionStr = printIfCondition(condCore);
                 
                 if (isInline && elseBranch != null) {
                     // Inline if-else expression: if condition, do: then_val, else: else_val
-                    'if ' + conditionStr + ', do: ' + print(thenBranch, 0) + ', else: ' + print(elseBranch, 0);
+                    hoistedPrefix + 'if ' + conditionStr + ', do: ' + print(thenBranch, 0) + ', else: ' + print(elseBranch, 0);
                 } else if (elseBranch != null) {
                     // Multi-line if-else block
-                    'if ' + conditionStr + ' do\n' +
+                    hoistedPrefix + 'if ' + conditionStr + ' do\n' +
                     indentStr(indent + 1) + print(thenBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'else\n' +
                     indentStr(indent + 1) + print(elseBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'end';
                 } else if (isInline) {
                     // Inline if without else: if condition, do: then_val
-                    'if ' + conditionStr + ', do: ' + print(thenBranch, 0);
+                    hoistedPrefix + 'if ' + conditionStr + ', do: ' + print(thenBranch, 0);
                 } else {
                     // Multi-line if without else
-                    'if ' + conditionStr + ' do\n' +
+                    hoistedPrefix + 'if ' + conditionStr + ' do\n' +
                     indentStr(indent + 1) + print(thenBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'end';
                 }
@@ -767,22 +811,31 @@ class ElixirASTPrinter {
                     var needsParens = needsParentheses(node);
                     var opStr = binaryOpToString(op);
 
-                    // Check if operands need parentheses (e.g., if expressions in comparisons)
-                    var leftStr = switch(left.def) {
-                        case EIf(_, _, _):
-                            // If expressions in binary operations need parentheses
-                            '(' + print(left, 0) + ')';
-                        default:
-                            print(left, 0);
-                    };
+                    // Check if operands need parentheses (e.g., do/end expressions in comparisons)
+                    inline function rawHasDoEnd(s: String): Bool {
+                        if (s == null) return false;
+                        var t = StringTools.trim(s);
+                        // Heuristic: contains a known do/end construct
+                        return (t.indexOf(" do") != -1 || t.indexOf(" do\n") != -1) &&
+                               (t.indexOf("case ") != -1 || t.indexOf("cond ") != -1 ||
+                                t.indexOf("receive") != -1 || t.indexOf("try ") != -1 || t.indexOf("if ") != -1);
+                    }
 
-                    var rightStr = switch(right.def) {
-                        case EIf(_, _, _):
-                            // If expressions in binary operations need parentheses
-                            '(' + print(right, 0) + ')';
-                        default:
-                            print(right, 0);
-                    };
+                    inline function needsOperandParens(e: ElixirAST): Bool {
+                        return switch (e.def) {
+                            case EIf(_, _, _): true;
+                            case ECase(_, _): true;
+                            case ECond(_): true;
+                            case EWith(_, _, _): true;
+                            case ETry(_, _, _, _, _): true;
+                            case EReceive(_, _): true;
+                            case ERaw(code): rawHasDoEnd(code);
+                            default: false;
+                        };
+                    }
+
+                    var leftStr = needsOperandParens(left) ? '(' + print(left, 0) + ')' : print(left, 0);
+                    var rightStr = needsOperandParens(right) ? '(' + print(right, 0) + ')' : print(right, 0);
                     
                     var result = leftStr + ' ' + opStr + ' ' + rightStr;
                     needsParens ? '(' + result + ')' : result;
@@ -1615,9 +1668,45 @@ class ElixirASTPrinter {
     static function printIfCondition(condition: ElixirAST): String {
         if (condition == null) return "";
         
+        #if debug_ast_printer
+        trace('[XRay Printer] If condition def: ' + Type.enumConstructor(condition.def));
+        #end
+        // If the condition contains nested do/end expressions (if/case/cond/with/try/receive)
+        // within a larger expression (e.g., binary op), wrap the whole condition in parentheses
+        function containsDoEndExpr(ast: ElixirAST): Bool {
+            if (ast == null || ast.def == null) return false;
+            return switch (ast.def) {
+                case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_, _, _) | ETry(_, _, _, _, _) | EReceive(_, _): true;
+                case ERaw(code):
+                    var t = StringTools.trim(code);
+                    (t.indexOf(" do") != -1 || t.indexOf(" do\n") != -1) &&
+                    (t.indexOf("case ") != -1 || t.indexOf("cond ") != -1 ||
+                     t.indexOf("receive") != -1 || t.indexOf("try ") != -1 || t.indexOf("if ") != -1);
+                case EBlock(exprs):
+                    var found = false;
+                    for (e in exprs) if (!found && e != null && containsDoEndExpr(e)) found = true;
+                    found;
+                case EBinary(_, l, r): containsDoEndExpr(l) || containsDoEndExpr(r);
+                case EUnary(_, e): containsDoEndExpr(e);
+                case ECall(t, _, args):
+                    var f = (t != null && containsDoEndExpr(t));
+                    if (!f) for (a in args) if (!f && containsDoEndExpr(a)) f = true;
+                    f;
+                case ERemoteCall(m, _, args):
+                    var f2 = containsDoEndExpr(m);
+                    if (!f2) for (a in args) if (!f2 && containsDoEndExpr(a)) f2 = true;
+                    f2;
+                case EParen(e): containsDoEndExpr(e);
+                default: false;
+            };
+        }
+
         // Check if this is a parenthesized simple expression
         switch(condition.def) {
             case EParen(inner):
+                #if debug_ast_printer
+                trace('[XRay Printer] If condition inner def: ' + Type.enumConstructor(inner.def));
+                #end
                 // If the inner expression is simple, don't add parentheses
                 if (isSimpleVariable(inner)) {
                     return print(inner, 0);
@@ -1625,7 +1714,12 @@ class ElixirASTPrinter {
                 // Otherwise keep the parentheses for complex expressions
                 return '(' + print(inner, 0) + ')';
             default:
-                return print(condition, 0);
+                var printed = print(condition, 0);
+                var needsWrap = containsDoEndExpr(condition);
+                #if debug_ast_printer
+                if (needsWrap) trace('[XRay Printer] Wrapping if condition due to nested do/end');
+                #end
+                return needsWrap ? '(' + printed + ')' : printed;
         }
     }
     
