@@ -192,16 +192,6 @@ class PatternBuilder {
                 }
                 
                 var args = [for (arg in el) convertPattern(arg, context)];
-                // Canonicalize common 3-arg color tuples to r,g,b / h,s,l
-                if (args.length == 3) {
-                    switch (tag) {
-                        case "rgb":
-                            args = [PVar("r"), PVar("g"), PVar("b")];
-                        case "hsl":
-                            args = [PVar("h"), PVar("s"), PVar("l")];
-                        default:
-                    }
-                }
                 // Create tuple pattern {:tag, arg1, arg2, ...}
                 PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
                 
@@ -221,21 +211,8 @@ class PatternBuilder {
     private static function convertEnumFieldPattern(ef: EnumField, args: Array<TypedExpr>, 
                                                     isIdiomatic: Bool,
                                                     context: BuildContext): EPattern {
-        var pat = isIdiomatic ? convertIdiomaticEnumPattern(ef, args, context)
-                               : convertRegularEnumPattern(ef, args, context);
-        // Canonicalize common 3-arg color tuples to r,g,b / h,s,l
-        return switch (pat) {
-            case PTuple(elements) if (elements.length == 4):
-                switch (elements[0]) {
-                    case PLiteral({def: EAtom(a)}):
-                        var tag = (a:String);
-                        if (tag == "rgb") PTuple([elements[0], PVar("r"), PVar("g"), PVar("b")])
-                        else if (tag == "hsl") PTuple([elements[0], PVar("h"), PVar("s"), PVar("l")])
-                        else pat;
-                    default: pat;
-                }
-            default: pat;
-        }
+        return isIdiomatic ? convertIdiomaticEnumPattern(ef, args, context)
+                            : convertRegularEnumPattern(ef, args, context);
     }
     
     /**
@@ -417,23 +394,10 @@ class PatternBuilder {
         if (hasIdiomaticMetadata(e)) {
             tag = tag.toSnakeCase();
         }
-
-        // Prefer canonical binder names for common 3‑arg color tuples
         var args = [];
-        var canon: Array<String> = null;
-        if (el.length == 3) {
-            switch (tag) {
-                case "rgb": canon = ["r","g","b"];
-                case "hsl": canon = ["h","s","l"];
-                default:
-            }
-        }
-
         for (i in 0...el.length) {
             var binderName:String = null;
-            if (canon != null && i < canon.length) {
-                binderName = canon[i];
-            } else if (i < extractedParams.length && extractedParams[i] != null) {
+            if (i < extractedParams.length && extractedParams[i] != null) {
                 binderName = extractedParams[i];
             }
 
@@ -479,19 +443,9 @@ class PatternBuilder {
         } else {
             // Constructor with arguments - use extracted param names
             var patterns = [PLiteral(makeAST(EAtom(atomName)))];
-            var canon: Array<String> = null;
-            if (paramCount == 3) {
-                switch (atomName) {
-                    case "rgb": canon = ["r","g","b"];
-                    case "hsl": canon = ["h","s","l"];
-                    default:
-                }
-            }
             for (i in 0...paramCount) {
                 var binderName:String = null;
-                if (canon != null && i < canon.length) {
-                    binderName = canon[i];
-                } else if (i < extractedParams.length && extractedParams[i] != null) {
+                if (i < extractedParams.length && extractedParams[i] != null) {
                     binderName = extractedParams[i];
                 }
                 patterns.push(binderName != null ? PVar(binderName) : PWildcard);

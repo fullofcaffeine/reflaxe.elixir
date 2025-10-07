@@ -674,12 +674,13 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternMatchingPass
         });
 
-        // Canonicalize tuple binders (clause‑local) before guard consolidation/grouping
+        // Binder suffix normalization (mid) before guard consolidation/grouping
+        // Unified, tag‑agnostic normalization — replaces older CanonicalizeTupleBinders
         passes.push({
-            name: "CanonicalizeTupleBinders",
-            description: "Clause‑local cleanup: binder‑scoped suffix normalization and single‑clause if→cond; domain hints (rgb/hsl) optional",
+            name: "PatternBinderSuffixNormalization",
+            description: "Mid-pass: strip trailing digit suffixes from refs that correspond to clause binders (tag‑agnostic)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.canonicalizeCommonTupleBindersPass
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternBinderSuffixNormalizationPass
         });
 
         // Consolidate multiple guard-bearing clauses with same pattern into cond
@@ -704,14 +705,6 @@ class ElixirASTTransformer {
             description: "Optimize pattern matching by extracting guards from case bodies",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
-        });
-
-        // Normalize suffixed variable refs back to pattern binders (generic, tag-agnostic)
-        passes.push({
-            name: "PatternBinderSuffixNormalization",
-            description: "Map suffixed variable references (e.g., x2) back to their base binder names when base exists in pattern",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternBinderSuffixNormalizationPass
         });
 
         // Pattern variable binding pass
@@ -746,10 +739,10 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.exhaustivenessCheckPass
         });
         
-        // Late normalization of suffixed refs back to pattern binders to inform hygiene
+        // Late normalization of suffixed refs back to pattern binders (post-analysis cleanup)
         passes.push({
             name: "PatternBinderSuffixNormalizationLate",
-            description: "Late mapping of suffixed variable refs to base binder names prior to hygiene",
+            description: "Late-pass: map suffixed variable refs to base binder names prior to underscore cleanup",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternBinderSuffixNormalizationPass
         });
@@ -876,13 +869,8 @@ class ElixirASTTransformer {
             contextualPass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPassWithContext
         });
 
-        // Re-run canonical tuple binder normalization late to ensure binder/body alignment
-        passes.push({
-            name: "CanonicalizeTupleBindersLate",
-            description: "Late normalization of rgb/hsl binders and suffixed refs after hygiene",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.canonicalizeCommonTupleBindersPass
-        });
+        // Deprecated: canonical tuple binder normalization (domain-specific) — replaced by unified suffix normalization
+        // Intentionally removed to keep tag‑agnostic behavior
         
         // Atom normalization pass (remove unnecessary quotes)
         passes.push({

@@ -549,29 +549,17 @@ class AssignmentExtractionTransforms {
         
         // Helper: Check if we're in a statement context (where variable declarations are allowed)
         function isInStatementContext(node: ElixirAST): Bool {
+            // Statement context is determined by the direct parent relationship only.
+            // This prevents leaking statement privileges into expression positions such as
+            // if/cond conditions, binary operands, etc.
             var parent = parentOf.get(node);
-            if (parent == null) {
-                // Top level is a statement context
-                return true;
-            }
-            
-            switch(parent.def) {
-                case ECase(_, _):
-                    // Case clause bodies are statement contexts
-                    return true;
-                    
-                case EBlock(_):
-                    // Blocks can contain statements
-                    return true;
-                    
-                case EFn(_):
-                    // Function clause bodies are statement contexts
-                    return true;
-                    
-                default:
-                    // Check parent's parent
-                    return isInStatementContext(parent);
-            }
+            if (parent == null) return true; // Top-level
+            return switch (parent.def) {
+                case EBlock(_): true;          // Direct child of block
+                case ECase(_, _): true;        // Direct clause body attached to case
+                case EFn(_): true;             // Direct function clause body
+                default: false;                // All other direct parents are expression contexts
+            };
         }
         
         // Helper: Replace all occurrences of a variable with a replacement expression
@@ -736,6 +724,26 @@ class AssignmentExtractionTransforms {
                     }
                     
                 case EBinary(op, left, right):
+                    // Handle binary match (assignment) specially when in expression context
+                    if (op == Match) {
+                        // Transform RHS first
+                        var cleanRight = extractFromExpr(right, false);
+                        switch (left.def) {
+                            case EVar(varName):
+                                if (inStmtContext) {
+                                    // Safe to keep as an assignment
+                                    return makeASTWithMeta(EBinary(Match, left, cleanRight), e.metadata, e.pos);
+                                } else {
+                                    // Hoist assignment and return variable reference
+                                    extracted.push(makeASTWithMeta(EMatch(PVar(varName), cleanRight), e.metadata, e.pos));
+                                    return makeAST(EVar(varName));
+                                }
+                            default:
+                                // Non-variable left-hand side: keep as assignment with cleaned RHS
+                                // Avoid hoisting to prevent type issues with non-pattern LHS
+                                return makeASTWithMeta(EBinary(Match, left, cleanRight), e.metadata, e.pos);
+                        }
+                    }
                     #if debug_assignment_extraction
                     trace("[XRay AssignmentExtraction] Processing binary in expression: " + Type.enumConstructor(op));
                     trace('[XRay AssignmentExtraction] Left: ${left.def}');
@@ -755,7 +763,7 @@ class AssignmentExtractionTransforms {
                     #end
                     var cleanLeft = extractFromExpr(left, false);
                     var cleanRight = extractFromExpr(right, false);
-                    
+
                     return makeASTWithMeta(
                         EBinary(op, cleanLeft, cleanRight),
                         e.metadata,
@@ -988,9 +996,17 @@ class AssignmentExtractionTransforms {
                             }
                         }
                         // Generic case: if the first statement is an assignment, hoist it
-                        if (statements.length == 2 && Type.enumConstructor(statements[0].def) == "EMatch") {
-                            extracted.push(statements[0]);
-                            return extractFromExpr(statements[1], inStmtContext);
+                        if (statements.length == 2) {
+                            var first = statements[0];
+                            var isAssign = switch (first.def) {
+                                case EMatch(_, _): true;
+                                case EBinary(Match, _, _): true;
+                                default: false;
+                            };
+                            if (isAssign) {
+                                extracted.push(first);
+                                return extractFromExpr(statements[1], inStmtContext);
+                            }
                         }
                     } else {
                         #if debug_assignment_extraction
@@ -1038,44 +1054,43 @@ class AssignmentExtractionTransforms {
                             i++;
                         }
                     }
-                    
+
+                    // If in expression context, hoist all non-last statements (assignments or otherwise)
+                    if (!inStmtContext) {
+                        if (combinedStatements.length == 0) return makeAST(ENil);
+                        // Hoist all but last
+                        for (i in 0...(combinedStatements.length - 1)) {
+                            var s = combinedStatements[i];
+                            extracted.push(extractFromExpr(s, true));
+                        }
+                        // The condition/value is the last expression
+                        return extractFromExpr(combinedStatements[combinedStatements.length - 1], false);
+                    }
+
+                    // Statement context: retain block structure but still clean internals
                     var cleanStatements = [];
                     for (i in 0...combinedStatements.length) {
                         var stmt = combinedStatements[i];
                         var isLast = (i == combinedStatements.length - 1);
-                        
                         if (isLast) {
-                            // Last statement in block should be processed for extraction
-                            // but kept as the return value
                             var cleanStmt = extractFromExpr(stmt, inStmtContext);
                             cleanStatements.push(cleanStmt);
                         } else {
-                            // Non-last statements that are assignments should be extracted
                             switch(stmt.def) {
-                                case EMatch(_, _):
-                                    // Extract assignment to outer scope
+                                case EMatch(_, _) | EBinary(Match, _, _):
                                     var cleanStmt = extractFromExpr(stmt, inStmtContext);
-                                    // The extraction already added it to 'extracted' array
-                                    // Don't add to cleanStatements
                                 default:
-                                    // Keep other statements as-is
                                     cleanStatements.push(extractFromExpr(stmt, inStmtContext));
                             }
                         }
                     }
-                    
-                    // If only one statement remains, unwrap the block
+
                     if (cleanStatements.length == 1) {
                         return cleanStatements[0];
                     } else if (cleanStatements.length == 0) {
-                        // Empty block becomes nil
                         return makeAST(ENil);
                     } else {
-                        return makeASTWithMeta(
-                            EBlock(cleanStatements),
-                            e.metadata,
-                            e.pos
-                        );
+                        return makeASTWithMeta(EBlock(cleanStatements), e.metadata, e.pos);
                     }
                     
                 default:
