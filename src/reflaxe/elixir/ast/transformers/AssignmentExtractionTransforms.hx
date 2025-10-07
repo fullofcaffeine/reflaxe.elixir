@@ -118,8 +118,47 @@ class AssignmentExtractionTransforms {
         // Manually recurse for node types that can contain assignments
         switch(node.def) {
             case EBlock(expressions):
+                // Combine adjacent concat+bind with immediate method call patterns in statement blocks
+                var combinedExprs = [];
+                var iBlk = 0;
+                while (iBlk < expressions.length) {
+                    var cur = expressions[iBlk];
+                    var nxt = (iBlk + 1 < expressions.length) ? expressions[iBlk + 1] : null;
+                    var matched = false;
+                    switch (cur.def) {
+                        case EMatch(PVar(assignName), concatExpr):
+                            switch (concatExpr.def) {
+                                case EBinary(StringConcat, leftExpr, rightExpr):
+                                    switch (rightExpr.def) {
+                                        case EMatch(PVar(tmpVar), tmpValue):
+                                            switch (nxt != null ? nxt.def : null) {
+                                                case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0)):
+                                                    switch (tmpValue.def) {
+                                                        case ERemoteCall({def: EVar(modName)}, fnName, args) if (modName == "DateTime" && fnName == "utc_now"):
+                                                            var moduleNode = makeAST(EVar("DateTime"));
+                                                            var converted = makeAST(ERemoteCall(moduleNode, methodName, [tmpValue]));
+                                                            var newConcat = makeAST(EBinary(StringConcat, cur, converted)); // cur will be transformed later; keep structure
+                                                            var newAssign = makeASTWithMeta(EMatch(PVar(assignName), makeAST(EBinary(StringConcat, leftExpr, converted))), cur.metadata, cur.pos);
+                                                            combinedExprs.push(newAssign);
+                                                            iBlk += 2;
+                                                            matched = true;
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    if (!matched) {
+                        combinedExprs.push(cur);
+                        iBlk++;
+                    }
+                }
                 transformedNode = makeASTWithMeta(
-                    EBlock(expressions.map(transformAssignments)),
+                    EBlock(combinedExprs.map(transformAssignments)),
                     node.metadata,
                     node.pos
                 );
@@ -136,6 +175,33 @@ class AssignmentExtractionTransforms {
             case EBinary(op, left, right):
                 transformedNode = makeASTWithMeta(
                     EBinary(op, transformAssignments(left), transformAssignments(right)),
+                    node.metadata,
+                    node.pos
+                );
+            case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+                // Recurse into try and its clauses so rescue bodies get assignment normalization
+                var newRescues: Array<ERescueClause> = [];
+                if (rescueClauses != null) {
+                    for (rc in rescueClauses) {
+                        var newBody = rc != null && rc.body != null ? transformAssignments(rc.body) : rc.body;
+                        newRescues.push({ pattern: rc.pattern, varName: rc.varName, body: newBody });
+                    }
+                }
+                var newCatches: Array<ECatchClause> = [];
+                if (catchClauses != null) {
+                    for (cc in catchClauses) {
+                        var newBody = cc != null && cc.body != null ? transformAssignments(cc.body) : cc.body;
+                        newCatches.push({ kind: cc.kind, pattern: cc.pattern, body: newBody });
+                    }
+                }
+                transformedNode = makeASTWithMeta(
+                    ETry(
+                        body != null ? transformAssignments(body) : null,
+                        newRescues,
+                        newCatches,
+                        afterBlock != null ? transformAssignments(afterBlock) : null,
+                        elseBlock != null ? transformAssignments(elseBlock) : null
+                    ),
                     node.metadata,
                     node.pos
                 );
@@ -835,6 +901,43 @@ class AssignmentExtractionTransforms {
                     
                     // Only extract assignments if we're NOT in a statement context
                     // In statement contexts (like case clause bodies), preserve the block as-is
+                    // Peephole (works in both expression and statement contexts):
+                    // Concat + inline binding + immediate method call
+                    // Pattern:
+                    //   [ ts = left <> (tmp = DateTime.utc_now()), tmp.to_iso8601() ]
+                    // Rewrite to:
+                    //   ts = left <> DateTime.to_iso8601(DateTime.utc_now())
+                    if (statements.length == 2) {
+                        switch (statements[0].def) {
+                            case EMatch(PVar(assignName), concatExpr):
+                                switch (concatExpr.def) {
+                                    case EBinary(StringConcat, leftExpr, rightExpr):
+                                        switch (rightExpr.def) {
+                                            case EMatch(PVar(tmpVar), tmpValue):
+                                                // Check second statement: tmpVar.method()
+                                                switch (statements[1].def) {
+                                                    case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0)):
+                                                        // Detect DateTime.utc_now() on the RHS to build DateTime.to_iso8601(tmpValue)
+                                                        switch (tmpValue.def) {
+                                                            case ERemoteCall({def: EVar(modName)}, fnName, args) if (modName == "DateTime" && fnName == "utc_now"):
+                                                                var moduleNode = makeAST(EVar("DateTime"));
+                                                                var converted = makeAST(ERemoteCall(moduleNode, methodName, [tmpValue]));
+                                                                var newConcat = makeAST(EBinary(StringConcat, extractFromExpr(leftExpr, false), converted));
+                                                                // Rebuild the assignment and return a single-node block if we are in statement context
+                                                                var newAssign = makeASTWithMeta(EMatch(PVar(assignName), newConcat), statements[0].metadata, statements[0].pos);
+                                                                return inStmtContext ? makeAST(EBlock([newAssign])) : newAssign;
+                                                            default:
+                                                        }
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                    }
+
                     if (!isInStatementContext(e)) {
                         // Peephole: Inline simple bind-then-use blocks inside expression contexts
                         // Pattern: [x = <value>, <expr-using-x>] -> substitute <value> into <expr-using-x>
@@ -850,6 +953,40 @@ class AssignmentExtractionTransforms {
                                     null;
                             }
                         }
+
+                        // Peephole: Concat + inline binding + immediate method call
+                        // Pattern:
+                        //   [ ts = left <> (tmp = DateTime.utc_now()), tmp.to_iso8601() ]
+                        // Rewrite to:
+                        //   ts = left <> DateTime.to_iso8601(DateTime.utc_now())
+                        if (statements.length == 2) {
+                            switch (statements[0].def) {
+                                case EMatch(PVar(assignName), concatExpr):
+                                    switch (concatExpr.def) {
+                                        case EBinary(StringConcat, leftExpr, rightExpr):
+                                            switch (rightExpr.def) {
+                                                case EMatch(PVar(tmpVar), tmpValue):
+                                                    // Check second statement: tmpVar.method()
+                                                    switch (statements[1].def) {
+                                                        case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0)):
+                                                            // Detect DateTime.utc_now() on the RHS to build DateTime.to_iso8601(tmpValue)
+                                                            switch (tmpValue.def) {
+                                                                case ERemoteCall({def: EVar(modName)}, fnName, args) if (modName == "DateTime" && fnName == "utc_now"):
+                                                                    var moduleNode = makeAST(EVar("DateTime"));
+                                                                    var converted = makeAST(ERemoteCall(moduleNode, methodName, [tmpValue]));
+                                                                    var newConcat = makeAST(EBinary(StringConcat, extractFromExpr(leftExpr, false), converted));
+                                                                    return makeASTWithMeta(EMatch(PVar(assignName), newConcat), statements[0].metadata, statements[0].pos);
+                                                                default:
+                                                            }
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
                         // Generic case: if the first statement is an assignment, hoist it
                         if (statements.length == 2 && Type.enumConstructor(statements[0].def) == "EMatch") {
                             extracted.push(statements[0]);
@@ -862,10 +999,50 @@ class AssignmentExtractionTransforms {
                     }
                     
                     // General block processing
+                    // First, combine adjacent concat+bind with immediate method call patterns
+                    var combinedStatements = [];
+                    var i = 0;
+                    while (i < statements.length) {
+                        var current = statements[i];
+                        var nextStmt = (i + 1 < statements.length) ? statements[i + 1] : null;
+                        var combined = false;
+                        switch (current.def) {
+                            case EMatch(PVar(assignName), concatExpr):
+                                switch (concatExpr.def) {
+                                    case EBinary(StringConcat, leftExpr, rightExpr):
+                                        switch (rightExpr.def) {
+                                            case EMatch(PVar(tmpVar), tmpValue):
+                                                switch (nextStmt != null ? nextStmt.def : null) {
+                                                    case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0)):
+                                                        switch (tmpValue.def) {
+                                                            case ERemoteCall({def: EVar(modName)}, fnName, args) if (modName == "DateTime" && fnName == "utc_now"):
+                                                                var moduleNode = makeAST(EVar("DateTime"));
+                                                                var converted = makeAST(ERemoteCall(moduleNode, methodName, [tmpValue]));
+                                                                var newConcat = makeAST(EBinary(StringConcat, extractFromExpr(leftExpr, false), converted));
+                                                                var newAssign = makeASTWithMeta(EMatch(PVar(assignName), newConcat), current.metadata, current.pos);
+                                                                combinedStatements.push(newAssign);
+                                                                i += 2; // Skip next statement
+                                                                combined = true;
+                                                            default:
+                                                        }
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                        if (!combined) {
+                            combinedStatements.push(current);
+                            i++;
+                        }
+                    }
+                    
                     var cleanStatements = [];
-                    for (i in 0...statements.length) {
-                        var stmt = statements[i];
-                        var isLast = (i == statements.length - 1);
+                    for (i in 0...combinedStatements.length) {
+                        var stmt = combinedStatements[i];
+                        var isLast = (i == combinedStatements.length - 1);
                         
                         if (isLast) {
                             // Last statement in block should be processed for extraction
