@@ -802,6 +802,20 @@ class HygieneTransforms {
      * - This: Uses context.tempVarRenameMap
      * - Result: Builder and transformer phases coordinate on variable names
      */
+    /**
+     * renameUnusedBindingsWithContext
+     *
+     * PURPOSE
+     * - Apply underscore‑prefix renames only to truly unused local bindings, using a shared
+     *   name mapping sourced from CompilationContext to preserve builder‑phase decisions.
+     *
+     * KEY GUARANTEES
+     * - Pattern binders (VarOrigin.PatternBinder) are never underscored here. They are
+     *   considered declared by the match and may be referenced in guards and cond bodies.
+     * - Usage analysis treats both clause guards and bodies as usage sites; a binder used
+     *   anywhere in either is not renamed.
+     * - Renames are applied via the shared context mapping to keep builder/transformer in sync.
+     */
     static function renameUnusedBindingsWithContext(ast: ElixirAST, allBindings: Array<Binding>,
                                                     context: reflaxe.elixir.CompilationContext): ElixirAST {
         // Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
