@@ -348,3 +348,27 @@ list += [item]        →  list = list ++ [item]        // List concatenation
 ---
 
 **Remember**: Every line added to ElixirASTBuilder.hx makes the compiler harder to maintain, debug, and extend. The prohibition is absolute and non-negotiable.
+
+## ✅ Snapshot Output Consistency (Mandatory)
+
+Enforce these output rules to keep snapshot tests deterministic and Elixir output idiomatic. Implement fixes in the right phase — never via string post-processing.
+
+- Main function visibility
+  - Rule: For top-level demo/test modules named `Main`, emit public `def main()` (not `defp main()`) unless explicit metadata requires private.
+  - Where: Module/function emission (transformer or dedicated builder), not after printing.
+
+- Case target parentheses style
+  - Rule: Standardize `case (expr) do` formatting for case targets to match snapshot expectations uniformly, even for simple variables, until a project-wide style decision and tests are updated.
+  - Where: Centralize in `ElixirASTPrinter` for `ECase` target printing.
+
+- String interpolation normalization (embedded expression hygiene)
+  - Rule: Before freezing interpolated strings, normalize embedded expressions so idioms are preserved inside `#{...}`. Example: `#{items.length}` must become `#{length(items)}`; tuple element and similar field→function rewrites must also apply.
+  - Where: In `stringInterpolationPass`, transform embedded AST with the same normalization passes (e.g., `arrayLengthFieldToFunctionPass`, tuple elem mapping) before converting to raw interpolation.
+
+- Enum parameter usage and redundant binders
+  - Rule: When a case pattern binds enum parameters, unused parameters get underscore prefix in the pattern; suppress redundant TVar rebinds from infrastructure temps (e.g., `x = _g`).
+  - Where: Usage analysis in `SwitchBuilder` (name-based body usage); suppression in `ElixirASTBuilder` TVar path when init comes from infrastructure temps and for self-assignments.
+
+Enforcement
+- No band‑aids: Implement in Builder/Transformer/Printer appropriately. Do not post-process emitted strings.
+- Tests: Existing snapshots for these patterns must pass; add regression tests for new behavior.

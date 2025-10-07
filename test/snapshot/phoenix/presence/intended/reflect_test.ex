@@ -1,8 +1,8 @@
 defmodule ReflectTest do
   def test_reflect_has_field(obj, field) do
-    Map.has_key?(obj, String.to_atom(field))
+    Map.has_key?(obj, field)
   end
   def test_reflect_field(obj, field) do
-    Map.get(obj, String.to_atom(field))
+    Map.get(obj, field)
   end
 end

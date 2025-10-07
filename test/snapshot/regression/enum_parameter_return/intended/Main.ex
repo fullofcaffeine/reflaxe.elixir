@@ -1,17 +1,17 @@
 defmodule Main do
   def main() do
     result = to_int({:custom, 418})
-    Log.trace(result, nil)
+    Log.trace(result, %{:file_name => "Main.hx", :line_number => 12, :class_name => "Main", :method_name => "main"})
   end
-  
   def to_int(status) do
-    case status do
-      {:ok} ->
+    __elixir_switch_result_1 = case (status) do
+      :ok ->
         200
-      {:error, _msg} ->  # msg is unused, correctly prefixed
+      {:error, _msg} ->
         500
-      {:custom, code} ->  # code is USED, no underscore
+      {:custom, code} ->
         code
     end
+    __elixir_switch_result_1
   end
 end

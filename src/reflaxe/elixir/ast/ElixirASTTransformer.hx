@@ -427,6 +427,21 @@ class ElixirASTTransformer {
             pass: function(ast) return ElixirASTTransformer.guardGroupingPass(ast)
         });
         
+        // PRE: Field access normalization before string interpolation
+        // Run these early so that expressions embedded into strings get normalized first.
+        passes.push({
+            name: "ArrayLengthFieldToFunction",
+            description: "Transform array.length field access to length(array) function calls",
+            enabled: true,
+            pass: arrayLengthFieldToFunctionPass
+        });
+        passes.push({
+            name: "TupleElemFieldToFunction",
+            description: "Transform tuple.elem field access to elem(tuple, index) function calls",
+            enabled: true,
+            pass: tupleElemFieldToFunctionPass
+        });
+        
         // Constant folding pass
         // String interpolation transformation (should run before constant folding)
         passes.push({
@@ -641,21 +656,7 @@ class ElixirASTTransformer {
             pass: fluentApiOptimizationPass
         });
 
-        // Array length field to function transformation (must run early to fix field access)
-        passes.push({
-            name: "ArrayLengthFieldToFunction",
-            description: "Transform array.length field access to length(array) function calls",
-            enabled: true,
-            pass: arrayLengthFieldToFunctionPass
-        });
-        
-        // Tuple element field to function transformation (must run before enum pattern matching)
-        passes.push({
-            name: "TupleElemFieldToFunction",
-            description: "Transform tuple.elem field access to elem(tuple, index) function calls",
-            enabled: true,
-            pass: tupleElemFieldToFunctionPass
-        });
+        // (moved earlier, before StringInterpolation)
         
         // Idiomatic enum pattern matching transformation (must run before underscore cleanup)
         passes.push({
@@ -706,6 +707,38 @@ class ElixirASTTransformer {
             pass: underscoreVariableCleanupPass
         });
         #end
+
+        // Normalize variable references to snake_case within function scope to align with declared vars
+        passes.push({
+            name: "VarRefNormalization",
+            description: "Normalize camelCase variable references to snake_case when a matching declaration exists",
+            enabled: true,
+            pass: varRefNormalizationPass
+        });
+
+        // Resolve ECase targets on infrastructure temps to canonical aliases based on preceding bindings
+        passes.push({
+            name: "InfraCaseTargetResolution",
+            description: "Replace case targets on _g/gX with mapped canonical vars when prior bindings exist in scope",
+            enabled: true,
+            pass: infraCaseTargetResolutionPass
+        });
+
+        // Main function visibility pass (ensure public def main() for top-level Main modules)
+        passes.push({
+            name: "MainFunctionVisibility",
+            description: "Flip defp main() to def main() for top-level Main modules",
+            enabled: true,
+            pass: mainFunctionVisibilityPass
+        });
+        
+        // Rename tuple pattern variables based on body usage
+        passes.push({
+            name: "PatternVarRenameByUsage",
+            description: "Rename tuple pattern PVar names to match variables used in clause bodies (e.g., todo, message, reason)",
+            enabled: true,
+            pass: patternVarRenameByUsagePass
+        });
         
         // Abstract method this reference fix (should run after underscore cleanup)
         passes.push({
@@ -2735,6 +2768,13 @@ class ElixirASTTransformer {
                                     default:
                                         transformedExpr;
                                 };
+                                
+                                // Normalize embedded expressions BEFORE freezing to raw string
+                                // Apply the same normalization passes used for regular code so idioms are preserved
+                                // Example: items.length -> length(items)
+                                exprToInterpolate = arrayLengthFieldToFunctionPass(exprToInterpolate);
+                                // Normalize tuple elem access and similar field→function idioms
+                                exprToInterpolate = tupleElemFieldToFunctionPass(exprToInterpolate);
                                 
                                 var exprStr = ElixirASTPrinter.printAST(exprToInterpolate);
                                 result += '#{' + exprStr + '}';
@@ -4909,6 +4949,294 @@ class ElixirASTTransformer {
             default:
                 // Recursively transform children
                 transformAST(ast, arrayLengthFieldToFunctionPass);
+        };
+    }
+
+    /**
+     * Main function visibility pass
+     *
+     * WHY: Snapshot and demo/test modules expect a public entry point `def main()` in `Main` modules
+     * WHAT: Convert EDefp("main", ...) to EDef("main", ...) when inside module "Main"
+     * HOW: Track module context during traversal and flip visibility for that function only
+     */
+    static function mainFunctionVisibilityPass(ast: ElixirAST): ElixirAST {
+        function transformInModule(node: ElixirAST, currentModule: String): ElixirAST {
+            return switch(node.def) {
+                case EDefp(name, args, guards, body) if (name == "main" && currentModule == "Main"):
+                    makeASTWithMeta(EDef(name, args, guards, body), node.metadata, node.pos);
+                case EModule(name, attributes, body):
+                    makeASTWithMeta(EModule(name, attributes, [for (b in body) transformInModule(b, name)]), node.metadata, node.pos);
+                default:
+                    // Recurse generically
+                    transformAST(node, n -> transformInModule(n, currentModule));
+            };
+        }
+        return transformInModule(ast, null);
+    }
+
+    /**
+     * VarRefNormalization pass: within each function, collect declared variable names (args + simple pattern matches)
+     * and normalize any EVar references whose snake_case form matches a declared name.
+     */
+    static function varRefNormalizationPass(ast: ElixirAST): ElixirAST {
+        function gatherNamesFromPattern(p: EPattern, acc: Map<String, Bool>) {
+            switch (p) {
+                case PVar(name): acc.set(name, true);
+                case PTuple(el): for (e in el) gatherNamesFromPattern(e, acc);
+                case PList(el): for (e in el) gatherNamesFromPattern(e, acc);
+                case PCons(h, t): gatherNamesFromPattern(h, acc); gatherNamesFromPattern(t, acc);
+                case PMap(pairs): for (pair in pairs) gatherNamesFromPattern(pair.value, acc);
+                case PStruct(_, fields): for (f in fields) gatherNamesFromPattern(f.value, acc);
+                case _: // ignore
+            }
+        }
+
+        function normalizeExpr(node: ElixirAST, declared: Map<String, Bool>): ElixirAST {
+            // Recursively normalize variable references using declared map
+            return ElixirASTTransformer.transformNode(node, function(n) {
+                return switch (n.def) {
+                    case EVar(name):
+                        var newName = if (declared.exists(name)) name else {
+                            if (name == "_g" && declared.exists("g")) "g" else {
+                                if (~/^_g(\d+)$/.match(name)) {
+                                    var suffix = name.substr(2);
+                                    var candidate = "g" + suffix;
+                                    if (declared.exists(candidate)) candidate else {
+                                        var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+                                        if (snake != null && snake != name && declared.exists(snake)) snake else name;
+                                    }
+                                } else {
+                                    var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+                                    if (snake != null && snake != name && declared.exists(snake)) snake else name;
+                                }
+                            };
+                        };
+                        if (newName != name) makeASTWithMeta(EVar(newName), n.metadata, n.pos) else n;
+                    default:
+                        n;
+                };
+            });
+        }
+
+        function normalizeInBody(body: ElixirAST, declared: Map<String, Bool>): ElixirAST {
+            function normalizeName(name: String): String {
+                // if name exists, keep; else try snake_case
+                if (declared.exists(name)) return name;
+                // Infra fallback: map _g or _gN to g/gN if declared
+                if (name == "_g" && declared.exists("g")) return "g";
+                if (~/^_g(\d+)$/.match(name)) {
+                    var suffix = name.substr(2);
+                    var candidate = "g" + suffix;
+                    if (declared.exists(candidate)) return candidate;
+                }
+                var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+                if (snake != null && snake != name && declared.exists(snake)) return snake;
+                return name;
+            }
+
+            // Sequential EBlock normalization to respect declaration order
+            switch (body.def) {
+                case EBlock(expressions):
+                    var localDeclared = new Map<String, Bool>();
+                    for (k in declared.keys()) localDeclared.set(k, true);
+                    var newExprs: Array<ElixirAST> = [];
+                    for (expr in expressions) {
+                        var norm = normalizeInBody(expr, localDeclared);
+                        newExprs.push(norm);
+                        switch (expr.def) {
+                            case EMatch(pat, _):
+                                var temp = new Map<String, Bool>();
+                                gatherNamesFromPattern(pat, temp);
+                                for (k in temp.keys()) localDeclared.set(k, true);
+                            default:
+                        }
+                    }
+                    return makeASTWithMeta(EBlock(newExprs), body.metadata, body.pos);
+                default:
+            }
+
+            return ElixirASTTransformer.transformNode(body, function(node) {
+                return switch (node.def) {
+                    case EVar(name):
+                        var newName = normalizeName(name);
+                        if (newName != name) makeASTWithMeta(EVar(newName), node.metadata, node.pos) else node;
+                    case ECase(target, clauses):
+                        // For each clause, extend declared with pattern vars and normalize body accordingly
+                        var newClauses: Array<ECaseClause> = [];
+                        var newTarget = normalizeExpr(target, declared);
+                        for (cl in clauses) {
+                            var localDeclared = new Map<String, Bool>();
+                            for (k in declared.keys()) localDeclared.set(k, true);
+                            gatherNamesFromPattern(cl.pattern, localDeclared);
+                            var newBody = normalizeInBody(cl.body, localDeclared);
+                            newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
+                        }
+                        makeASTWithMeta(ECase(newTarget, newClauses), node.metadata, node.pos);
+                    case EMatch(pattern, expr):
+                        // Track newly declared variables as we traverse
+                        var tmp = new Map<String, Bool>();
+                        gatherNamesFromPattern(pattern, tmp);
+                        for (k in tmp.keys()) declared.set(k, true);
+                        node;
+                    default:
+                        node;
+                };
+            });
+        }
+
+        return switch (ast.def) {
+            case EDef(name, args, guards, body):
+                var declared = new Map<String, Bool>();
+                for (a in args) gatherNamesFromPattern(a, declared);
+                var normalizedBody = normalizeInBody(body, declared);
+                makeASTWithMeta(EDef(name, args, guards, normalizedBody), ast.metadata, ast.pos);
+            case EDefp(name, args, guards, body):
+                var declared2 = new Map<String, Bool>();
+                for (a in args) gatherNamesFromPattern(a, declared2);
+                var normalizedBody2 = normalizeInBody(body, declared2);
+                makeASTWithMeta(EDefp(name, args, guards, normalizedBody2), ast.metadata, ast.pos);
+            default:
+                // Recurse
+                transformAST(ast, varRefNormalizationPass);
+        };
+    }
+
+    /**
+     * InfraCaseTargetResolution pass: within blocks, track simple alias bindings and remap case targets
+     * on infrastructure variables (_g, gX) to the canonical variable name.
+     */
+    static function infraCaseTargetResolutionPass(ast: ElixirAST): ElixirAST {
+        function isInfra(name: String): Bool {
+            return name == "_g" || name == "g" || ~/^_?g\d+$/.match(name);
+        }
+
+        function resolveInBlock(block: ElixirAST): ElixirAST {
+            return switch (block.def) {
+                case EBlock(stmts):
+                    var mapping = new Map<String, String>(); // infra -> alias
+                    var newStmts: Array<ElixirAST> = [];
+                    for (stmt in stmts) {
+                        var transformed = switch (stmt.def) {
+                            case EMatch(pattern, expr):
+                                // Track bindings of form alias = infraVar
+                                switch (pattern) {
+                                    case PVar(aliasName):
+                                        switch (expr.def) {
+                                            case EVar(src) if (isInfra(src)):
+                                                mapping.set(src, aliasName);
+                                            default:
+                                        }
+                                        // Also record underscore mapping for known temp aliases: _gX -> gX
+                                        if (~/^g\d*$/.match(aliasName) || aliasName == "g") {
+                                            var underscored = "_" + aliasName;
+                                            if (!mapping.exists(underscored)) mapping.set(underscored, aliasName);
+                                        }
+                                    default:
+                                }
+                                // Also transform inside the match
+                                stmt;
+                            case ECase(target, clauses):
+                                // If target is infra var and mapping exists, remap
+                                var newTarget = switch (target.def) {
+                                    case EVar(name) if (isInfra(name) && mapping.exists(name)):
+                                        makeAST(EVar(mapping.get(name)));
+                                    default:
+                                        target;
+                                };
+                                makeAST(ECase(newTarget, clauses));
+                            default:
+                                // Recurse within nested blocks
+                                transformAST(stmt, infraCaseTargetResolutionPass);
+                        };
+                        newStmts.push(transformed);
+                    }
+                    makeAST(EBlock(newStmts));
+                default:
+                    transformAST(block, infraCaseTargetResolutionPass);
+            };
+        }
+
+        return resolveInBlock(ast);
+    }
+    
+    /**
+     * Pattern variable rename by usage: Align tuple pattern PVars with names used in the clause body.
+     */
+    static function patternVarRenameByUsagePass(ast: ElixirAST): ElixirAST {
+        function collectPatternVars(p: EPattern, acc: Array<{ref: EPattern, name: String}>): Void {
+            switch (p) {
+                case PVar(name): acc.push({ref: p, name: name});
+                case PTuple(list): for (e in list) collectPatternVars(e, acc);
+                case PList(list): for (e in list) collectPatternVars(e, acc);
+                case PCons(h, t): collectPatternVars(h, acc); collectPatternVars(t, acc);
+                case PMap(pairs): for (pair in pairs) collectPatternVars(pair.value, acc);
+                case PStruct(_, fields): for (f in fields) collectPatternVars(f.value, acc);
+                default:
+            }
+        }
+
+        function patternRename(p: EPattern, from: String, to: String): EPattern {
+            return switch (p) {
+                case PVar(name) if (name == from): PVar(to);
+                case PTuple(list): PTuple([for (e in list) patternRename(e, from, to)]);
+                case PList(list): PList([for (e in list) patternRename(e, from, to)]);
+                case PCons(h, t): PCons(patternRename(h, from, to), patternRename(t, from, to));
+                case PMap(pairs): PMap([for (pair in pairs) {key: pair.key, value: patternRename(pair.value, from, to)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: patternRename(f.value, from, to)}]);
+                default: p;
+            };
+        }
+
+        function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EVar(name): acc.set(name, true);
+                default: iterateAST(node, v -> collectUsedVars(v, acc));
+            }
+        }
+
+        function isGenericName(n: String): Bool {
+            return n == "value" || n.charAt(0) == '_' || ~/^_?g\d*$/.match(n) || n == "socket";
+        }
+
+        function renameClauseIfNeeded(clause: ECaseClause): ECaseClause {
+            var patternVars: Array<{ref: EPattern, name: String}> = [];
+            collectPatternVars(clause.pattern, patternVars);
+            var declared = new Map<String, Bool>();
+            for (pv in patternVars) declared.set(pv.name, true);
+
+            var used = new Map<String, Bool>();
+            collectUsedVars(clause.body, used);
+
+            var priorities = ["todo", "message", "reason", "filter", "sort_by", "query", "flash_type", "id", "action"];
+
+            var newPattern = clause.pattern;
+            for (uname in used.keys()) {
+                if (declared.exists(uname)) continue;
+                var targetName = uname;
+                if (!priorities.contains(uname)) {
+                    var snake = NameUtils.toSnakeCase(uname);
+                    if (priorities.contains(snake)) targetName = snake;
+                }
+                var candidate: Null<String> = null;
+                for (pv in patternVars) {
+                    if (isGenericName(pv.name)) { candidate = pv.name; break; }
+                }
+                if (candidate != null && !declared.exists(targetName)) {
+                    newPattern = patternRename(newPattern, candidate, targetName);
+                    declared.set(targetName, true);
+                }
+            }
+
+            return { pattern: newPattern, guard: clause.guard, body: clause.body };
+        }
+
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var renamed = [for (cl in clauses) renameClauseIfNeeded(cl)];
+                makeASTWithMeta(ECase(target, renamed), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, patternVarRenameByUsagePass);
         };
     }
     

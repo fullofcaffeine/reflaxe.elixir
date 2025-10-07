@@ -666,6 +666,27 @@ class ElixirASTBuilder {
                     }
                 }
 
+                // Skip assignments that simply rebind from infrastructure temps (e.g., x = _g)
+                // When a case pattern has already extracted enum parameters, Haxe sometimes emits
+                // TVar binders that copy from the temporary infrastructure variables created during
+                // matching. These are redundant in Elixir and lead to orphaned assignments in empty
+                // case bodies. Suppress them at the source.
+                if (init != null) {
+                    switch (init.expr) {
+                        case TLocal(lv):
+                            if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(lv.name)) {
+                                #if debug_enum_extraction
+                                #if debug_ast_builder
+                                trace('[TVar] Skipping redundant binder assignment from infrastructure var: ' + lv.name + ' -> ' + v.name);
+                                #end
+                                #end
+                                return null;
+                            }
+                        case _:
+                            // continue
+                    }
+                }
+
                 // Delegate simple variable declarations to VariableBuilder
                 // Complex patterns (blocks, comprehensions) are handled below
                 if (init == null || isSimpleInit(init)) {
@@ -1641,51 +1662,38 @@ class ElixirASTBuilder {
                     #if debug_ast_builder
                     trace('[DEBUG TVar] Final decision for ${finalVarName}: shouldSkipAssignment=${shouldSkipAssignment}');
                     #end
+
+                    // Early-exit for enum parameter extractions bound by the case pattern.
+                    // If the initializer resolves to a temporary/infrastructure variable (e.g. g, _g, g1),
+                    // the value has already been introduced by the pattern in the case head. Emitting a
+                    // follow-up assignment like "x = _g" is redundant and causes orphaned assignments in
+                    // empty case bodies. Return null here to suppress the assignment; pattern binding owns it.
+                    if (!shouldSkipAssignment && initValue != null) {
+                        switch (initValue.def) {
+                            case EVar(varName):
+                                if (PatternDetector.isTempPatternVarName(varName)) {
+                                    #if debug_enum_extraction
+                                    #if debug_ast_builder
+                                    trace('[TVar] Skipping redundant assignment from infrastructure var: ' + varName + ' -> ' + finalVarName);
+                                    #end
+                                    #end
+                                    return null;
+                                }
+                            case _:
+                                // proceed
+                        }
+                    }
                     var result = if (shouldSkipAssignment) {
                         // Skip the assignment, return null to be filtered out by TBlock
                         // The TBlock handler at line 3036 filters out null expressions
                         null;
                     } else if (initValue == null) {
-                        // If initValue is null (e.g., from skipped TEnumParameter or failed TCall), handle carefully
-                        #if debug_ast_builder
-                        trace('[DEBUG EMBEDDED TVar] WARNING: initValue is null for: $finalVarName (extractedFromTemp: $extractedFromTemp)');
-                        trace('[TVar] This will cause undefined variable errors in generated code!');
-                        #end
-                        
-                        // CRITICAL FIX: When initialization expression fails to build (returns null),
-                        // we need to provide a fallback value to prevent undefined variables in the generated code.
-                        // This typically happens with complex expressions like TodoPubSub.subscribe(TodoUpdates)
-                        // that fail to build in certain contexts.
-                        // 
-                        // Generate a descriptive error value that will make the issue visible
-                        // rather than silently producing broken code with undefined variables.
-                        var fallbackValue = makeAST(ERaw('{:error, "[Compiler Error] Failed to build initialization for ' + finalVarName + '"}'));
-                        
-                        #if debug_ast_builder
-                        trace('[TVar] Using fallback error tuple for null initValue to prevent undefined variable');
-                        #end
-                        
-                        // Create the assignment with the fallback value
-                        var matchNode = makeAST(EMatch(
-                            PVar(finalVarName),
-                            fallbackValue
-                        ));
-                        
-                        // Add metadata to indicate this is a fallback
-                        if (matchNode.metadata == null) matchNode.metadata = {};
-                        // Using requiresTempVar to indicate special handling (isFallbackInit field doesn't exist)
-                        matchNode.metadata.requiresTempVar = true;
-                        matchNode.metadata.varOrigin = varOrigin;
-                        matchNode.metadata.varId = v.id;
-                        
-                        // But if this was supposed to be an assignment from a temp var, we have a problem!
-                        if (extractedFromTemp != null) {
-                            #if debug_ast_builder
-                            trace('[DEBUG g=g] ERROR: initValue is null but we need assignment from temp var $extractedFromTemp to $finalVarName');
-                            #end
-                        }
-                        
-                        matchNode;
+                        // Do not fabricate placeholder values. If the initializer failed to build,
+                        // return null so upstream builders/transformers can properly elide the
+                        // redundant assignment (eg. pattern-bound params or empty bodies).
+                        // Any truly unbuildable initializers should be surfaced by the
+                        // originating builder path, not patched here.
+                        return null;
                     } else {
                         // Check for self-assignment right before creating the match node
                         var shouldSkipSelfAssignment = false;

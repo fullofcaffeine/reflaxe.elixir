@@ -227,7 +227,10 @@ class PatternMatchingTransforms {
         
         return switch(ast.def) {
             case ECase(target, clauses):
-                var optimizedClauses = clauses.map(clause -> optimizeGuardClause(clause));
+                // 1) Ensure existing guards are guard-safe; if not, move condition into body
+                var safeClauses = clauses.map(clause -> ensureGuardSafety(clause));
+                // 2) Try converting top-level body ifs into guards when safe
+                var optimizedClauses = safeClauses.map(clause -> optimizeGuardClause(clause));
                 makeAST(ECase(target, optimizedClauses));
                 
             default:
@@ -235,7 +238,105 @@ class PatternMatchingTransforms {
                 recursiveTransform(ast, guardOptimizationPass);
         };
     }
-    
+
+    /**
+     * If a clause has a non-safe guard, remove the guard and push it into the body as an if.
+     */
+    static function ensureGuardSafety(clause: ECaseClause): ECaseClause {
+        if (clause.guard == null) return clause;
+        if (isGuardSafeExpr(clause.guard)) return clause;
+
+        // Extract remote Map.get/2 calls used in the guard and pre-bind them in the body
+        var preBinds: Array<ElixirAST> = [];
+
+        function collectBindings(expr: ElixirAST): Void {
+            if (expr == null) return;
+            switch (expr.def) {
+                case ERemoteCall(module, funcName, args):
+                    var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
+                    if (isMapGet && funcName == "get" && args.length == 2) {
+                        // If second arg is an atom we can derive a stable varName
+                        var varName = switch (args[1].def) {
+                            case EAtom(atom): Std.string(atom);
+                            default: null;
+                        };
+                        if (varName != null && varName.length > 0) {
+                            // Create binding: varName = Map.get(...)
+                            preBinds.push(makeAST(EMatch(PVar(varName), expr)));
+                        }
+                    }
+                    // Recurse into module and args
+                    if (module != null) collectBindings(module);
+                    for (a in args) collectBindings(a);
+                case EBinary(_, l, r):
+                    collectBindings(l); collectBindings(r);
+                case EUnary(_, e):
+                    collectBindings(e);
+                case EIf(c, t, e):
+                    collectBindings(c); collectBindings(t); if (e != null) collectBindings(e);
+                case EParen(e):
+                    collectBindings(e);
+                case EBlock(stmts):
+                    for (s in stmts) collectBindings(s);
+                default:
+                    // Other node types: no-op for binding collection
+            }
+        }
+
+        collectBindings(clause.guard);
+
+        // Build new body: [preBinds..., if guard do: body end]
+        var guardedBody = makeAST(EIf(clause.guard, clause.body, null));
+        var newBody: ElixirAST = null;
+        if (preBinds.length > 0) {
+            var stmts = [];
+            for (b in preBinds) stmts.push(b);
+            stmts.push(guardedBody);
+            newBody = makeAST(EBlock(stmts));
+        } else {
+            newBody = guardedBody;
+        }
+
+        return {
+            pattern: clause.pattern,
+            guard: null,
+            body: newBody
+        };
+    }
+
+    /**
+     * Determine if an expression is safe to use in a guard.
+     * Disallow remote/module calls (e.g., Map.get/2) and keep such conditions in the body.
+     */
+    static function isGuardSafeExpr(expr: ElixirAST): Bool {
+        if (expr == null) return false;
+        return switch (expr.def) {
+            case ERemoteCall(_, _, _):
+                // Remote calls are not allowed in guards
+                false;
+            case ECall(module, _, args):
+                // Local calls (module == null) may be allowed (e.g., is_nil/1), module calls are not
+                if (module != null) {
+                    false;
+                } else {
+                    var ok = true;
+                    for (a in args) {
+                        if (!isGuardSafeExpr(a)) { ok = false; break; }
+                    }
+                    ok;
+                }
+            case EBinary(_, l, r):
+                isGuardSafeExpr(l) && isGuardSafeExpr(r);
+            case EUnary(_, e):
+                isGuardSafeExpr(e);
+            case EVar(_)|EAtom(_)|EInteger(_)|EFloat(_)|EBoolean(_)|ENil|EField(_, _):
+                true;
+            default:
+                // Be conservative for other node types
+                false;
+        };
+    }
+
     /**
      * Optimize a single case clause by extracting guards from the body
      */
@@ -244,10 +345,15 @@ class PatternMatchingTransforms {
         switch(clause.body.def) {
             case EIf(cond, thenBranch, elseBranch) if (elseBranch == null || isRaiseOrThrow(elseBranch)):
                 // This if can be converted to a guard
-                var newGuard = clause.guard != null 
+                var candidate = clause.guard != null 
                     ? makeAST(EBinary(And, clause.guard, cond))
                     : cond;
-                    
+                // Only convert to guard if the expression is guard-safe (no remote calls, etc.)
+                if (!isGuardSafeExpr(candidate)) {
+                    return clause; // Keep as body-level if to preserve semantics and compile constraints
+                }
+                var newGuard = candidate;
+                
                 return {
                     pattern: clause.pattern,
                     guard: newGuard,

@@ -1265,7 +1265,7 @@ class LoopBuilder {
         }
         #end
 
-        // Simple reduce_while implementation
+        // Build the iteration stream (simple counter)
         var stream = makeAST(ERemoteCall(
             makeAST(EVar("Stream")),
             "iterate",
@@ -1278,32 +1278,73 @@ class LoopBuilder {
             ]
         ));
 
-        var initAcc = makeAST(EAtom("ok"));
+        // Analyze body for accumulator variables (assigned via pattern match)
+        var accVarNames = collectAssignedVars(body);
+
+        // Build initial accumulator
+        var initAcc: ElixirAST = if (accVarNames.length > 0) {
+            makeAST(ETuple([for (name in accVarNames) makeAST(EVar(name))]));
+        } else {
+            makeAST(EAtom("ok"));
+        };
 
         #if debug_loop_builder
         trace('[XRay LoopBuilder] Creating reducer body...');
+        trace('[XRay LoopBuilder]   acc vars: ' + accVarNames);
         trace('[XRay LoopBuilder]   body before wrapping: ${body != null ? ElixirASTPrinter.print(body, 0).substring(0, 200) : "null"}');
         #end
 
-        var reducerBody = makeAST(EIf(
-            cond,
-            makeAST(ETuple([
-                makeAST(EAtom("cont")),
-                makeAST(EBlock([body, makeAST(EAtom("ok"))]))
-            ])),
-            makeAST(ETuple([
-                makeAST(EAtom("halt")),
-                makeAST(EAtom("ok"))
-            ]))
-        ));
+        // Helper to build {:cont|:halt, accTuple}
+        function returnWithAcc(atom: String): ElixirAST {
+            var acc = if (accVarNames.length > 0) {
+                makeAST(ETuple([for (name in accVarNames) makeAST(EVar(name))]));
+            } else {
+                // Keep atom accumulator for degenerate cases
+                makeAST(EAtom("ok"));
+            };
+            return makeAST(ETuple([makeAST(EAtom(atom)), acc]));
+        }
+
+        var reducerBody: ElixirAST = null;
+        if (normalWhile) {
+            // while: check condition first, apply body updates, then return {:cont, acc} or {:halt, acc}
+            reducerBody = makeAST(EIf(
+                cond,
+                // then: execute body, return cont with acc tuple
+                makeAST(EBlock([
+                    body,
+                    returnWithAcc("cont")
+                ])),
+                // else: halt and return current acc
+                returnWithAcc("halt")
+            ));
+        } else {
+            // do-while: execute body first, then check condition to decide cont/halt
+            reducerBody = makeAST(EBlock([
+                body,
+                makeAST(EIf(
+                    cond,
+                    returnWithAcc("cont"),
+                    returnWithAcc("halt")
+                ))
+            ]));
+        }
 
         #if debug_loop_builder
         trace('[XRay LoopBuilder] Reducer body created');
         trace('[XRay LoopBuilder]   reducerBody toString: ${ElixirASTPrinter.print(reducerBody, 0).substring(0, 300)}');
         #end
 
+        // Build reducer function with accumulator pattern
+        var reducerArgs: Array<EPattern> = [];
+        reducerArgs.push(PWildcard);
+        if (accVarNames.length > 0) {
+            reducerArgs.push(PTuple([for (name in accVarNames) PVar(name)]));
+        } else {
+            reducerArgs.push(PVar("acc"));
+        }
         var reducerFn = makeAST(EFn([{
-            args: [PWildcard, PVar("acc")],
+            args: reducerArgs,
             body: reducerBody
         }]));
 
@@ -1312,6 +1353,41 @@ class LoopBuilder {
             "reduce_while",
             [stream, initAcc, reducerFn]
         ));
+    }
+
+    /**
+     * Collect variable names assigned via pattern matches inside a block.
+     * Only collects simple assignments like `name = ...` and ignores
+     * infrastructure temp names (g, _g, g1, etc.).
+     */
+    static function collectAssignedVars(node: ElixirAST): Array<String> {
+        var set = new Map<String, Bool>();
+
+        function isInfra(name: String): Bool {
+            return name == "g" || name == "_g" || ~/^_?g\d+$/.match(name);
+        }
+
+        function visit(n: ElixirAST): Void {
+            if (n == null) return;
+            switch (n.def) {
+                case EMatch(PVar(varName), _):
+                    if (!isInfra(varName)) set.set(varName, true);
+                case EBlock(exprs):
+                    for (e in exprs) visit(e);
+                case EIf(_, t, e):
+                    visit(t); if (e != null) visit(e);
+                case ECase(_, branches):
+                    for (b in branches) visit(b.body);
+                case EWith(clauses, doBlock, elseBlock):
+                    visit(doBlock); if (elseBlock != null) visit(elseBlock);
+                default:
+                    // For accumulator detection we only need common control-flow containers.
+                    // Other nodes are ignored.
+            }
+        }
+
+        visit(node);
+        return [for (k in set.keys()) k];
     }
 
     /**
@@ -2552,13 +2628,15 @@ class LoopBuilder {
         // Transform condition to use pattern-matched variables
         var transformedCondition = transformExpressionWithMapping(
             condition,
-            accVarList.map(item -> item.name)
+            accVarList.map(item -> item.name),
+            false
         );
         
         // Transform body similarly
         var transformedBody = transformExpressionWithMapping(
             body,
-            accVarList.map(item -> item.name)
+            accVarList.map(item -> item.name),
+            true
         );
 
         #if debug_loop_builder
@@ -2630,10 +2708,84 @@ class LoopBuilder {
      * Transform expression to use pattern-matched variables
      * This is a simplified version - real implementation would need proper AST traversal
      */
-    static function transformExpressionWithMapping(expr: ElixirAST, varNames: Array<String>): ElixirAST {
-        // For now, return as-is
-        // TODO: Implement proper variable mapping transformation
-        return expr;
+    static function transformExpressionWithMapping(expr: ElixirAST, varNames: Array<String>, isStatement: Bool = false): ElixirAST {
+        // Transform expressions inside loop bodies so bare mutations like
+        // `n - 1` or `n + 1` become proper reassignments when used as statements.
+        // Also ensure concatenations are reassigned if expressed bare.
+
+        var nameSet = new Map<String, Bool>();
+        for (n in varNames) nameSet.set(n, true);
+
+        function isTracked(name: String): Bool {
+            return nameSet.exists(name);
+        }
+
+        function transform(node: ElixirAST, isStatement: Bool): ElixirAST {
+            if (node == null) return node;
+            return switch (node.def) {
+                case EBlock(exprs):
+                    // Each entry in a block is a statement context
+                    var newExprs = [for (e in exprs) transform(e, true)];
+                    makeASTWithMeta(EBlock(newExprs), node.metadata, node.pos);
+
+                case EIf(cond, then_, else_):
+                    var nCond = transform(cond, false);
+                    var nThen = transform(then_, true);
+                    var nElse = else_ != null ? transform(else_, true) : null;
+                    makeASTWithMeta(EIf(nCond, nThen, nElse), node.metadata, node.pos);
+
+                case ECase(target, clauses):
+                    var nTarget = transform(target, false);
+                    var nClauses = [for (c in clauses) {
+                        var nBody = transform(c.body, true);
+                        { pattern: c.pattern, guard: c.guard, body: nBody };
+                    }];
+                    makeASTWithMeta(ECase(nTarget, nClauses), node.metadata, node.pos);
+
+                case ETuple(elements):
+                    makeASTWithMeta(ETuple([for (el in elements) transform(el, false)]), node.metadata, node.pos);
+
+                case EList(elements):
+                    makeASTWithMeta(EList([for (el in elements) transform(el, false)]), node.metadata, node.pos);
+
+                case EBinary(op, left, right):
+                    var nLeft = transform(left, false);
+                    var nRight = transform(right, false);
+                    // Only synthesize reassignment when in statement context and left is a tracked variable
+                    switch (nLeft.def) {
+                        case EVar(varName) if (isStatement && isTracked(varName)):
+                            // Wrap into assignment: varName = (left op right)
+                            makeASTWithMeta(
+                                EMatch(PVar(varName), makeAST(EBinary(op, nLeft, nRight))),
+                                node.metadata,
+                                node.pos
+                            );
+                        default:
+                            makeASTWithMeta(EBinary(op, nLeft, nRight), node.metadata, node.pos);
+                    }
+
+                case ECall(target, name, args):
+                    var nTarget = target != null ? transform(target, false) : null;
+                    var nArgs = [for (a in args) transform(a, false)];
+                    makeASTWithMeta(ECall(nTarget, name, nArgs), node.metadata, node.pos);
+
+                case ERemoteCall(mod, fname, rargs):
+                    var nMod = transform(mod, false);
+                    var nRArgs = [for (a in rargs) transform(a, false)];
+                    makeASTWithMeta(ERemoteCall(nMod, fname, nRArgs), node.metadata, node.pos);
+
+                case EMatch(pat, value):
+                    // Ensure value transformed, remain a statement
+                    var nVal = transform(value, false);
+                    makeASTWithMeta(EMatch(pat, nVal), node.metadata, node.pos);
+
+                default:
+                    // Transform children where applicable; otherwise return node as-is
+                    node;
+            };
+        }
+
+        return transform(expr, isStatement);
     }
     
     /**

@@ -2590,6 +2590,26 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 ## Test Status Summary
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
 
+## QA Sentinel Verification (Mandatory Before Confirming Completion)
+
+Use the QA Sentinel protocol to verify any claimed task completion (compiler fixes/features, changes impacting codegen). Reference: `.claude/agents/qa-sentinel.md`.
+
+- Scope
+  - Apply when an agent states a task is “done”. Treat every claim as unverified until proven.
+
+- Protocol
+  - Understand task: confirm success criteria/edge cases from the original brief.
+  - Run tests: `npm test` plus relevant categories; ensure new/updated tests exist and pass.
+  - Generated code quality: inspect `.ex` output for idioms; ensure no warnings; no band-aids.
+  - Todo-app integration: `cd examples/todo-app && npx haxe build-server.hxml && mix compile --force --warnings-as-errors && mix phx.server` (runtime sanity via HTTP 200).
+  - Deliverables: compare claims vs git diff; ensure required docs are updated; no regressions.
+
+- Reporting
+  - If complete: confirm specifics that work; note minor improvements; suggest prevention.
+  - If incomplete: provide failure analysis, remediation plan, CLAUDE.md directives to add, and process improvements.
+
+Zero tolerance for “good enough”: accept only empirically verified, architecturally correct outcomes.
+
 ## Development Resources & Reference Strategy
 - **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - **CRITICAL**: Contains working Reflaxe compiler patterns, Haxe API usage examples, and Phoenix integration patterns. ALWAYS check here first for:
   - Haxe macro API usage patterns
