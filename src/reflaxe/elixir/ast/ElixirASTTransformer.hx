@@ -674,6 +674,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternMatchingPass
         });
 
+        // Canonicalize tuple binders (clause‑local) before guard consolidation/grouping
+        passes.push({
+            name: "CanonicalizeTupleBinders",
+            description: "Clause‑local cleanup: binder‑scoped suffix normalization and single‑clause if→cond; domain hints (rgb/hsl) optional",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.canonicalizeCommonTupleBindersPass
+        });
+
         // Consolidate multiple guard-bearing clauses with same pattern into cond
         passes.push({
             name: "GuardClauseConsolidation",
@@ -850,6 +858,14 @@ class ElixirASTTransformer {
             enabled: true, // RE-ENABLED: Now using contextual pass for consistency
             pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass,
             contextualPass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPassWithContext
+        });
+
+        // Re-run canonical tuple binder normalization late to ensure binder/body alignment
+        passes.push({
+            name: "CanonicalizeTupleBindersLate",
+            description: "Late normalization of rgb/hsl binders and suffixed refs after hygiene",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.canonicalizeCommonTupleBindersPass
         });
         
         // Atom normalization pass (remove unnecessary quotes)
