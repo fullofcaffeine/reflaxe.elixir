@@ -689,6 +689,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
         });
+
+        // Event/controller binding preservation: pre-bind repeated Map.get(params, :key)
+        passes.push({
+            name: "EventBindingPreservation",
+            description: "Pre-bind repeated Map.get(params, :key) in event/controller handlers to preserve bindings and readability",
+            enabled: true,
+            pass: eventBindingPreservationPass
+        });
         
         // Pattern exhaustiveness check pass
         passes.push({
@@ -5099,6 +5107,123 @@ class ElixirASTTransformer {
                 // Recurse
                 transformAST(ast, varRefNormalizationPass);
         };
+    }
+
+    /**
+     * Event/controller binding preservation pass
+     * - Pre-bind repeated Map.get(params, :key) patterns in function bodies
+     * - Applies to common handler names: handle_event/handle_info/mount and REST actions
+     */
+    static function eventBindingPreservationPass(ast: ElixirAST): ElixirAST {
+        function replaceMapGets(node: ElixirAST, bound: Map<String, Bool>): ElixirAST {
+            if (node == null) return node;
+            return switch (node.def) {
+                case ERemoteCall(module, funcName, args):
+                    var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
+                    if (isMapGet && funcName == "get" && args.length == 2) {
+                        switch (args[0].def) {
+                            case EVar(paramName) if (paramName == "params"):
+                                switch (args[1].def) {
+                                    case EAtom(atom):
+                                        var key = Std.string(atom);
+                                        if (bound.exists(key)) makeAST(EVar(key)) else node;
+                                    default: node;
+                                }
+                            default: node;
+                        }
+                    } else {
+                        var newMod = module != null ? replaceMapGets(module, bound) : null;
+                        var newArgs = [for (a in args) replaceMapGets(a, bound)];
+                        makeAST(ERemoteCall(newMod, funcName, newArgs));
+                    }
+                case EBlock(stmts):
+                    makeAST(EBlock([for (s in stmts) replaceMapGets(s, bound)]));
+                case EIf(c, t, e):
+                    makeAST(EIf(replaceMapGets(c, bound), replaceMapGets(t, bound), e != null ? replaceMapGets(e, bound) : null));
+                case EBinary(op, l, r):
+                    makeAST(EBinary(op, replaceMapGets(l, bound), replaceMapGets(r, bound)));
+                case EUnary(op, e):
+                    makeAST(EUnary(op, replaceMapGets(e, bound)));
+                case ECall(target, name, args):
+                    makeAST(ECall(target != null ? replaceMapGets(target, bound) : null, name, [for (a in args) replaceMapGets(a, bound)]));
+                case ERemoteCall(mod, name, args):
+                    makeAST(ERemoteCall(replaceMapGets(mod, bound), name, [for (a in args) replaceMapGets(a, bound)]));
+                case EWith(clauses, doBlock, elseBlock):
+                    makeAST(EWith(clauses, replaceMapGets(doBlock, bound), elseBlock != null ? replaceMapGets(elseBlock, bound) : null));
+                default:
+                    node;
+            };
+        }
+        function countMapGets(node: ElixirAST, counts: Map<String, Int>): Void {
+            if (node == null) return;
+            switch (node.def) {
+                case ERemoteCall(module, funcName, args):
+                    var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
+                    if (isMapGet && funcName == "get" && args.length == 2) {
+                        switch (args[0].def) {
+                            case EVar(paramName) if (paramName == "params"):
+                                switch (args[1].def) {
+                                    case EAtom(atom):
+                                        var key = Std.string(atom);
+                                        var prev = counts.exists(key) ? counts.get(key) : 0;
+                                        counts.set(key, prev + 1);
+                                    default:
+                                }
+                            default:
+                        }
+                    }
+                    if (module != null) countMapGets(module, counts);
+                    for (a in args) countMapGets(a, counts);
+                case EBlock(stmts):
+                    for (s in stmts) countMapGets(s, counts);
+                case EIf(c, t, e):
+                    countMapGets(c, counts); countMapGets(t, counts); if (e != null) countMapGets(e, counts);
+                case EBinary(_, l, r):
+                    countMapGets(l, counts); countMapGets(r, counts);
+                case EUnary(_, e):
+                    countMapGets(e, counts);
+                case ECall(target, _, args):
+                    if (target != null) countMapGets(target, counts);
+                    for (a in args) countMapGets(a, counts);
+                case ERemoteCall(mod, _, args):
+                    countMapGets(mod, counts); for (a in args) countMapGets(a, counts);
+                case EWith(clauses, doBlock, elseBlock):
+                    countMapGets(doBlock, counts); if (elseBlock != null) countMapGets(elseBlock, counts);
+                default:
+            }
+        }
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EDef(name, args, guard, body) if (isHandlerName(name)):
+                    var counts: Map<String, Int> = new Map();
+                    countMapGets(body, counts);
+                    var toBind = [for (k in counts.keys()) if (counts.get(k) >= 2) k];
+                    if (toBind.length == 0) return node;
+                    var boundMap: Map<String, Bool> = new Map();
+                    var prebinds: Array<ElixirAST> = [];
+                    for (k in toBind) {
+                        boundMap.set(k, true);
+                        var getCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("params")), makeAST(EAtom(ElixirAtom.raw(k)))]));
+                        prebinds.push(makeAST(EMatch(PVar(k), getCall)));
+                    }
+                    var replacedBody = replaceMapGets(body, boundMap);
+                    var newBody = switch (replacedBody.def) {
+                        case EBlock(stmts): makeAST(EBlock(prebinds.concat(stmts)));
+                        default: makeAST(EBlock(prebinds.concat([replacedBody])));
+                    };
+                    makeASTWithMeta(EDef(name, args, guard, newBody), node.metadata, node.pos);
+                default:
+                    node;
+            };
+        });
+    }
+    static function isHandlerName(name: String): Bool {
+        if (name == null) return false;
+        switch (name) {
+            case "handle_event" | "handle_info" | "mount": return true;
+            default:
+                return name == "index" || name == "create" || name == "update" || name == "delete" || name == "show" || name == "new" || name == "edit";
+        }
     }
 
     /**
