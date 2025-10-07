@@ -370,7 +370,57 @@ class AnnotationTransforms {
         ]));
         statements.push(useStatement);
         
-        // Add existing functions from the body
+        // Helper: replace Presence.track/update/untrack with local calls and inject self() when required
+        // Rationale:
+        // - Inside modules that `use Phoenix.Presence`, the injected functions expect `self()`
+        //   as the first argument for track/update/untrack.
+        // - Tests cover both 3-arg (socket, key, meta) and 4-arg (socket_or_pid, topic, key, meta)
+        //   variants; in both cases we prepend `self()` to satisfy the behavior API.
+        function localizePresenceCalls(node: ElixirAST): ElixirAST {
+            if (node == null) return node;
+            return switch (node.def) {
+                case EDef(name, args, guard, body):
+                    makeAST(EDef(name, args, guard, localizePresenceCalls(body)));
+                case EDefp(name, args, guard, body):
+                    makeAST(EDefp(name, args, guard, localizePresenceCalls(body)));
+                case ERemoteCall(module, funcName, args):
+                    switch (module.def) {
+                        case EVar(modName) if (modName == "Presence"):
+                            // Map Presence.trackPid/updatePid/untrackPid to local track/update/untrack
+                            var localName = switch (funcName) {
+                                case "trackPid": "track";
+                                case "updatePid": "update";
+                                case "untrackPid": "untrack";
+                                default: funcName;
+                            };
+                            if (localName == "track" || localName == "update" || localName == "untrack") {
+                                // Convert Phoenix.Presence.<fn>(...) to local <fn>(...)
+                                // Self() injection is handled by PresenceBehaviorTransformer to avoid duplication.
+                                var newArgs = [for (a in args) localizePresenceCalls(a)];
+                                makeAST(ECall(null, localName, newArgs));
+                            } else if (funcName == "list" || funcName == "get_by_key") {
+                                // Localize list/get_by_key without self() injection
+                                var newArgs2 = [for (a in args) localizePresenceCalls(a)];
+                                makeAST(ECall(null, funcName, newArgs2));
+                            } else {
+                                // Leave other Presence.* calls (e.g., list/get_by_key) as remote calls
+                                makeAST(ERemoteCall(localizePresenceCalls(module), funcName, [for (a in args) localizePresenceCalls(a)]));
+                            }
+                        default:
+                            makeAST(ERemoteCall(localizePresenceCalls(module), funcName, [for (a in args) localizePresenceCalls(a)]));
+                    }
+                case ECall(target, name, args):
+                    makeAST(ECall(target != null ? localizePresenceCalls(target) : null, name, [for (a in args) localizePresenceCalls(a)]));
+                case EBlock(stmts):
+                    makeAST(EBlock([for (s in stmts) localizePresenceCalls(s)]));
+                case EIf(c, t, e):
+                    makeAST(EIf(localizePresenceCalls(c), localizePresenceCalls(t), e != null ? localizePresenceCalls(e) : null));
+                default:
+                    node;
+            };
+        }
+
+        // Add existing functions from the body (with localized calls)
         switch(existingBody.def) {
             case EBlock(stmts):
                 for (stmt in stmts) {
@@ -379,11 +429,11 @@ class AnnotationTransforms {
                         case ENil:
                             // Skip
                         default:
-                            statements.push(stmt);
+                            statements.push(localizePresenceCalls(stmt));
                     }
                 }
             default:
-                statements.push(existingBody);
+                statements.push(localizePresenceCalls(existingBody));
         }
         
         return makeAST(EBlock(statements));
@@ -405,8 +455,14 @@ class AnnotationTransforms {
                 #if debug_annotation_transforms
                 #end
                 
-                var routerBody = buildRouterBody(name, body);
+                var routerBody = buildRouterBodyAst(name, body);
                 return makeASTWithMeta(EDefmodule(name, routerBody), ast.metadata, ast.pos);
+            case EModule(name, attrs, body) if (ast.metadata?.isRouter == true):
+                // Support modules represented as EModule as well
+                var existing = makeAST(EBlock(body));
+                var routerBody2 = buildRouterBodyAst(name, existing);
+                // Keep attributes; wrap routerBody2 inside the module
+                return makeASTWithMeta(EModule(name, attrs, [routerBody2]), ast.metadata, ast.pos);
                 
             default:
                 return ast;
@@ -416,62 +472,23 @@ class AnnotationTransforms {
     /**
      * Build Phoenix router body with pipelines and routes
      */
-    static function buildRouterBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
+    // buildRouterBody removed: replaced by buildRouterBodyAst (no raw strings, no app coupling)
+
+    /**
+     * Build Phoenix router body using proper AST nodes (no raw strings)
+     */
+    static function buildRouterBodyAst(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
-        
-        // Add use Phoenix.Router
+        // Always include Phoenix.Router and LiveView router helpers
         statements.push(makeAST(EUse("Phoenix.Router", [])));
-        
-        // Import LiveView router helpers
         statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
-        
-        // For now, generate a simple working router structure using raw Elixir code
-        // TODO: Create proper AST nodes for router DSL elements
-        var routerCode = '
-  pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, {${StringTools.replace(moduleName, ".Router", "")}.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-  end
-
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
-  scope "/", ${StringTools.replace(moduleName, ".Router", "")} do
-    pipe_through :browser
-
-    live "/", TodoLive, :index
-    live "/todos", TodoLive, :index
-    live "/todos/:id", TodoLive, :show
-    live "/todos/:id/edit", TodoLive, :edit
-  end
-
-  scope "/api", ${StringTools.replace(moduleName, ".Router", "")} do
-    pipe_through :api
-
-    get "/users", UserController, :index
-    post "/users", UserController, :create
-    put "/users/:id", UserController, :update
-    delete "/users/:id", UserController, :delete
-  end
-
-  if Mix.env() in [:dev, :test] do
-    import Phoenix.LiveDashboard.Router
-
-    scope "/dev" do
-      pipe_through :browser
-
-      live_dashboard "/dashboard", metrics: ${StringTools.replace(moduleName, ".Router", "")}.Telemetry
-    end
-  end';
-        
-        // Use raw Elixir code injection for now
-        statements.push(makeAST(ERaw(routerCode)));
-        
+        // Preserve existing user-provided body (no hardcoded routes)
+        switch (existingBody.def) {
+            case EBlock(stmts):
+                for (s in stmts) statements.push(s);
+            default:
+                statements.push(existingBody);
+        }
         return makeAST(EBlock(statements));
     }
     

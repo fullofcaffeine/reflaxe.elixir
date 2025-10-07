@@ -288,13 +288,84 @@ class PatternMatchingTransforms {
 
         collectBindings(clause.guard);
 
-        // Replace occurrences of Map.get(..., :key) in body with the bound variable name
+        // Helper: replace Map.get(..., :key) with the inferred variable in an expression
+        function replaceMapGetInExpr(node: ElixirAST): ElixirAST {
+            if (node == null) return node;
+            return switch (node.def) {
+                case ERemoteCall(module, funcName, args):
+                    var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
+                    var isKeywordGet = switch (module.def) { case EVar(name) if (name == "Keyword"): true; default: false; };
+                    if ((isMapGet || isKeywordGet) && funcName == "get" && args.length >= 2) {
+                        switch (args[1].def) {
+                            case EAtom(atom):
+                                var keyName = Std.string(atom);
+                                if (varMap.exists(keyName)) {
+                                    makeAST(EVar(keyName));
+                                } else {
+                                    node;
+                                }
+                            default: node;
+                        }
+                    } else {
+                        var newMod = module != null ? replaceMapGetInExpr(module) : null;
+                        var newArgs = [for (a in args) replaceMapGetInExpr(a)];
+                        makeAST(ERemoteCall(newMod, funcName, newArgs));
+                    }
+                case EBinary(op, l, r):
+                    makeAST(EBinary(op, replaceMapGetInExpr(l), replaceMapGetInExpr(r)));
+                case EUnary(op, e):
+                    makeAST(EUnary(op, replaceMapGetInExpr(e)));
+                case EIf(c, t, e):
+                    makeAST(EIf(replaceMapGetInExpr(c), replaceMapGetInExpr(t), e != null ? replaceMapGetInExpr(e) : null));
+                case EBlock(stmts):
+                    makeAST(EBlock([for (s in stmts) replaceMapGetInExpr(s)]));
+                case ECall(target, name, args):
+                    makeAST(ECall(target != null ? replaceMapGetInExpr(target) : null, name, [for (a in args) replaceMapGetInExpr(a)]));
+                case EParen(e):
+                    makeAST(EParen(replaceMapGetInExpr(e)));
+                default:
+                    node;
+            };
+        }
+
+        // Helper: normalize guard-friendly predicates, eg `x != nil` -> `not is_nil(x)`
+        function normalizeGuardPredicate(node: ElixirAST): ElixirAST {
+            if (node == null) return node;
+            return switch (node.def) {
+                case EBinary(op, l, r):
+                    // First, normalize children
+                    var nl = normalizeGuardPredicate(l);
+                    var nr = normalizeGuardPredicate(r);
+                    // Transform equality with nil into is_nil
+                    switch op {
+                        case NotEqual:
+                            // x != nil  => not is_nil(x)
+                            if (nr.def == ENil) return makeAST(EUnary(Not, makeAST(ECall(null, "is_nil", [nl]))));
+                            if (nl.def == ENil) return makeAST(EUnary(Not, makeAST(ECall(null, "is_nil", [nr]))));
+                        case Equal:
+                            // x == nil  => is_nil(x)
+                            if (nr.def == ENil) return makeAST(ECall(null, "is_nil", [nl]));
+                            if (nl.def == ENil) return makeAST(ECall(null, "is_nil", [nr]));
+                        default:
+                    }
+                    makeAST(EBinary(op, nl, nr));
+                case EUnary(op, e):
+                    makeAST(EUnary(op, normalizeGuardPredicate(e)));
+                case EParen(e):
+                    makeAST(EParen(normalizeGuardPredicate(e)));
+                default:
+                    node;
+            };
+        }
+
+        // Replace occurrences of Map.get(..., :key) or Keyword.get(..., :key) in body with the bound variable name
         function replaceMapGetWithVar(node: ElixirAST): ElixirAST {
             if (node == null) return node;
             return switch (node.def) {
                 case ERemoteCall(module, funcName, args):
                     var isMapGet = switch (module.def) { case EVar(name) if (name == "Map"): true; default: false; };
-                    if (isMapGet && funcName == "get" && args.length == 2) {
+                    var isKeywordGet = switch (module.def) { case EVar(name) if (name == "Keyword"): true; default: false; };
+                    if ((isMapGet || isKeywordGet) && funcName == "get" && args.length == 2) {
                         switch (args[1].def) {
                             case EAtom(atom):
                                 var keyName = Std.string(atom);
@@ -330,9 +401,14 @@ class PatternMatchingTransforms {
             };
         }
 
-        // Build new body: [preBinds..., if guard do: (body with replacements) end]
+        // Build new body: [preBinds..., if simplifiedGuard do: (body with replacements) end]
+        // 1) Replace Map.get(...) in guard with the inferred variables
+        var guardNoRemote = replaceMapGetInExpr(clause.guard);
+        // 2) Normalize simple predicates for guard-friendly functions (is_nil)
+        var simplifiedGuard = normalizeGuardPredicate(guardNoRemote);
+        // 3) Replace Map.get(...) inside body with inferred variables
         var replacedBody = replaceMapGetWithVar(clause.body);
-        var guardedBody = makeAST(EIf(clause.guard, replacedBody, null));
+        var guardedBody = makeAST(EIf(simplifiedGuard, replacedBody, null));
         var newBody: ElixirAST = null;
         if (preBinds.length > 0) {
             var stmts = [];

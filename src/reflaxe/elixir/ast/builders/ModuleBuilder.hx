@@ -112,6 +112,19 @@ class ModuleBuilder {
         // Use provided metadata or create empty object
         var moduleMetadata = metadata != null ? metadata : {};
 
+        // Ensure critical annotation flags propagate even if caller forgot to set them
+        // This keeps downstream AnnotationTransforms robust.
+        #if (macro)
+        try {
+            // classType.meta is available at macro-time
+            if (classType.meta.has(":router")) {
+                moduleMetadata.isRouter = true;
+            }
+        } catch (e: Dynamic) {
+            // Ignore meta inspection failures
+        }
+        #end
+
         // Check if this is an exception class
         if (moduleMetadata.isException == true) {
             #if debug_inheritance
@@ -123,11 +136,24 @@ class ModuleBuilder {
             // Just keep the regular fields (methods like toString)
         }
 
-        var result = {
-            def: EModule(moduleName, attributes, fields),
-            metadata: moduleMetadata,
-            pos: classType.pos
-        };
+        var result: ElixirAST = null;
+
+        // Prefer EDefmodule form for special annotated modules that downstream transforms expect
+        if (moduleMetadata != null && (moduleMetadata.isRouter == true || moduleMetadata.isPresence == true)) {
+            // Wrap provided fields in a block as the module body
+            var body = makeAST(EBlock(fields));
+            result = {
+                def: EDefmodule(moduleName, body),
+                metadata: moduleMetadata,
+                pos: classType.pos
+            };
+        } else {
+            result = {
+                def: EModule(moduleName, attributes, fields),
+                metadata: moduleMetadata,
+                pos: classType.pos
+            };
+        }
 
         #if debug_compilation_hang
         var elapsed = (haxe.Timer.stamp() * 1000) - moduleStartTime;

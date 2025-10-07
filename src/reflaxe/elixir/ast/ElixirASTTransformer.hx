@@ -697,6 +697,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: eventBindingPreservationPass
         });
+
+        // Case-clause binding aliasing: synthesize missing vars in clause bodies from pattern binders
+        passes.push({
+            name: "CaseClauseBindingAlias",
+            description: "Alias undeclared body variables to clause pattern binders (e.g., data/changeset/user/message) to prevent undefined variables",
+            enabled: true,
+            pass: caseClauseBindingAliasPass
+        });
         
         // Pattern exhaustiveness check pass
         passes.push({
@@ -5130,6 +5138,13 @@ class ElixirASTTransformer {
      * Example: ts = left <> (tmp = DateTime.utc_now()); tmp.to_iso8601() -> ts = left <> DateTime.to_iso8601(DateTime.utc_now())
      */
     static function rescueConcatNormalizationPass(ast: ElixirAST): ElixirAST {
+        function unwrapParen(node: ElixirAST): ElixirAST {
+            var current = node;
+            while (current != null && Type.enumConstructor(current.def) == "EParen") {
+                switch (current.def) { case EParen(inner): current = inner; default: }
+            }
+            return current;
+        }
         function normalizeBlock(block: ElixirAST): ElixirAST {
             if (block == null) return block;
             return switch (block.def) {
@@ -5142,12 +5157,15 @@ class ElixirASTTransformer {
                         var combined = false;
                         switch (cur.def) {
                             case EMatch(PVar(assignName), concatExpr):
+                                concatExpr = unwrapParen(concatExpr);
                                 switch (concatExpr.def) {
                                     case EBinary(StringConcat, leftExpr, rightExpr):
+                                        rightExpr = unwrapParen(rightExpr);
                                         switch (rightExpr.def) {
                                             case EMatch(PVar(tmpVar), tmpVal):
                                                 // Next statement: tmpVar.to_iso8601()
-                                                switch (nxt != null ? nxt.def : null) {
+                                                var nextDef = nxt != null ? unwrapParen(nxt).def : null;
+                                                switch (nextDef) {
                                                     case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0) && methodName == "to_iso8601"):
                                                         // Wrap tmpVal with DateTime.to_iso8601(tmpVal)
                                                         var converted = makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [tmpVal]));
@@ -5194,6 +5212,13 @@ class ElixirASTTransformer {
      * Global EBlock peephole normalization: merge [x = left <> (tmp = expr), tmp.method()] into x = left <> Module.method(expr)
      */
     static function blockConcatNormalizationPass(ast: ElixirAST): ElixirAST {
+        function unwrapParen(node: ElixirAST): ElixirAST {
+            var current = node;
+            while (current != null && Type.enumConstructor(current.def) == "EParen") {
+                switch (current.def) { case EParen(inner): current = inner; default: }
+            }
+            return current;
+        }
         function normalizeBlock(block: ElixirAST): ElixirAST {
             if (block == null) return block;
             return switch (block.def) {
@@ -5206,11 +5231,14 @@ class ElixirASTTransformer {
                         var combined = false;
                         switch (cur.def) {
                             case EMatch(PVar(assignName), concatExpr):
+                                concatExpr = unwrapParen(concatExpr);
                                 switch (concatExpr.def) {
                                     case EBinary(StringConcat, leftExpr, rightExpr):
+                                        rightExpr = unwrapParen(rightExpr);
                                         switch (rightExpr.def) {
                                             case EMatch(PVar(tmpVar), tmpVal):
-                                                switch (nxt != null ? nxt.def : null) {
+                                                var nextDef = nxt != null ? unwrapParen(nxt).def : null;
+                                                switch (nextDef) {
                                                     case ECall({def: EVar(callVar)}, methodName, callArgs) if (callVar == tmpVar && (callArgs == null || callArgs.length == 0)):
                                                         // Currently, support DateTime.to_iso8601(tmpVal)
                                                         var moduleNode = makeAST(EVar("DateTime"));
@@ -5448,19 +5476,43 @@ class ElixirASTTransformer {
             };
         }
 
+        function isAtomTuple(p: EPattern): Bool {
+            return switch (p) {
+                case PTuple(list) if (list.length > 0):
+                    switch (list[0]) {
+                        case PLiteral(value):
+                            switch (value.def) {
+                                case EAtom(_): true;
+                                default: false;
+                            }
+                        default: false;
+                    }
+                default: false;
+            };
+        }
+
         function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
             if (node == null) return;
             switch (node.def) {
-                case EVar(name): acc.set(name, true);
+                case EVar(name):
+                    // Collect identifiers (including camelCase) but exclude dotted module names
+                    var isIdent = ~/^[A-Za-z_][A-Za-z0-9_]*$/.match(name);
+                    if (isIdent) acc.set(name, true);
                 default: iterateAST(node, v -> collectUsedVars(v, acc));
             }
         }
 
         function isGenericName(n: String): Bool {
-            return n == "value" || n.charAt(0) == '_' || ~/^_?g\d*$/.match(n) || n == "socket";
+            // Treat common temp/infra/placeholder names as generic (eligible for rename)
+            return n == "value" || n.charAt(0) == '_' || ~/^_?g\d*$/.match(n) || n == "socket" || n == "conn" || n == "this" || ~/^this\d+$/.match(n);
         }
 
         function renameClauseIfNeeded(clause: ECaseClause): ECaseClause {
+            // Do not rename tuple patterns that start with an atom (e.g., {:system_alert, message, level})
+            // These come from enum-like messages (PubSub) and already have meaningful param names
+            if (isAtomTuple(clause.pattern)) {
+                return clause;
+            }
             var patternVars: Array<{ref: EPattern, name: String}> = [];
             collectPatternVars(clause.pattern, patternVars);
             var declared = new Map<String, Bool>();
@@ -5469,7 +5521,12 @@ class ElixirASTTransformer {
             var used = new Map<String, Bool>();
             collectUsedVars(clause.body, used);
 
-            var priorities = ["todo", "message", "reason", "filter", "sort_by", "query", "flash_type", "id", "action"];
+            // Preferred names to align tuple pattern binders with body usage
+            // Extended to cover common controller/LiveView variables
+            var priorities = [
+                "todo", "message", "reason", "filter", "sort_by", "query", "flash_type", "id", "action",
+                "user", "data", "changeset", "conn", "params"
+            ];
 
             var newPattern = clause.pattern;
             for (uname in used.keys()) {
@@ -5478,6 +5535,10 @@ class ElixirASTTransformer {
                 if (!priorities.contains(uname)) {
                     var snake = NameUtils.toSnakeCase(uname);
                     if (priorities.contains(snake)) targetName = snake;
+                }
+                // Avoid renaming to names that collide with common function args
+                if (targetName == "conn" || targetName == "socket" || targetName == "params") {
+                    continue;
                 }
                 var candidate: Null<String> = null;
                 for (pv in patternVars) {
@@ -5498,6 +5559,126 @@ class ElixirASTTransformer {
                 makeASTWithMeta(ECase(target, renamed), ast.metadata, ast.pos);
             default:
                 transformAST(ast, patternVarRenameByUsagePass);
+        };
+    }
+
+    /**
+     * CaseClauseBindingAlias pass: within handler/controller functions, for each case clause,
+     * pre-bind missing variables in the body to appropriate pattern binders.
+     *
+     * Strategy:
+     * - Collect declared names from function args and preceding matches.
+     * - For each ECase clause: collect pattern var names and used body vars.
+     * - For each used var not declared:
+     *   - If its snake_case form exists in pattern vars, alias missingVar = snakeVar
+     *   - Else if the clause pattern has exactly one variable, alias missingVar = thatVar
+     *   - Else, skip (insufficient certainty)
+     * This prevents undefined variable errors like data/changeset/user/todo/message in clause bodies.
+     */
+    static function caseClauseBindingAliasPass(ast: ElixirAST): ElixirAST {
+        function gatherNamesFromPattern(p: EPattern, acc: Map<String, Bool>): Void {
+            switch (p) {
+                case PVar(name): acc.set(name, true);
+                case PTuple(el): for (e in el) gatherNamesFromPattern(e, acc);
+                case PList(el): for (e in el) gatherNamesFromPattern(e, acc);
+                case PCons(h, t): gatherNamesFromPattern(h, acc); gatherNamesFromPattern(t, acc);
+                case PMap(pairs): for (pair in pairs) gatherNamesFromPattern(pair.value, acc);
+                case PStruct(_, fields): for (f in fields) gatherNamesFromPattern(f.value, acc);
+                case _:
+            }
+        }
+
+        function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EVar(name): acc.set(name, true);
+                default: iterateAST(node, v -> collectUsedVars(v, acc));
+            }
+        }
+
+        function aliasMissingInClause(body: ElixirAST, patVars: Map<String, Bool>, declared: Map<String, Bool>, caseTarget: Null<String>): ElixirAST {
+            var used = new Map<String, Bool>();
+            collectUsedVars(body, used);
+            // Build missing set
+            var missing: Array<String> = [];
+            // Allowlist of names we will consider aliasing (to avoid over-aliasing)
+            var allow: Map<String, Bool> = [for (n in [
+                "user","data","changeset","todo","message","flash_type","reason","id","action",
+                // camelCase variants that map to snake_case
+                "flashType","sortBy","presenceSocket"
+            ]) n => true];
+            for (u in used.keys()) {
+                if (!declared.exists(u) && !patVars.exists(u) && allow.exists(u)) missing.push(u);
+            }
+            if (missing.length == 0) return body;
+
+            // Choose a single fallback binder if needed
+            var patList: Array<String> = [for (k in patVars.keys()) k];
+            var singleBinder: Null<String> = patList.length == 1 ? patList[0] : null;
+
+            var prebinds: Array<ElixirAST> = [];
+            for (m in missing) {
+                var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(m);
+                var source: Null<String> = null;
+                if (snake != null && patVars.exists(snake)) source = snake;
+                else if (patVars.exists(m)) source = m;
+                else if (snake != null && declared.exists(snake)) source = snake; // Map camelCase usage to declared var (e.g., flashType -> flash_type)
+                else if (m == "presenceSocket" && declared.exists("socket")) source = "socket";
+                // Do not alias to an arbitrary single binder (too risky, caused parsed_msg leakage)
+                // Never alias to case target (e.g., parsed_msg)
+                if (source != null && caseTarget != null && source == caseTarget) source = null;
+                if (source != null) {
+                    prebinds.push(makeAST(EMatch(PVar(m), makeAST(EVar(source)))));
+                    declared.set(m, true);
+                }
+            }
+
+            if (prebinds.length == 0) return body;
+            return switch (body.def) {
+                case EBlock(stmts): makeAST(EBlock(prebinds.concat(stmts)));
+                default: makeAST(EBlock(prebinds.concat([body])));
+            };
+        }
+
+        function transformFunc(node: ElixirAST, declared: Map<String, Bool>): ElixirAST {
+            return transformNode(node, function(n) {
+                return switch (n.def) {
+                    case EMatch(pat, expr):
+                        // Track new declarations
+                        var tmp = new Map<String, Bool>();
+                        gatherNamesFromPattern(pat, tmp);
+                        for (k in tmp.keys()) declared.set(k, true);
+                        // Recurse into the RHS to catch nested case clauses
+                        makeASTWithMeta(EMatch(pat, transformFunc(expr, declared)), n.metadata, n.pos);
+                    case ECase(target, clauses):
+                        var newClauses: Array<ECaseClause> = [];
+                        var caseTargetName: Null<String> = null;
+                        switch (target.def) { case EVar(nm): caseTargetName = nm; default: }
+                        for (cl in clauses) {
+                            var localDeclared = new Map<String, Bool>();
+                            for (k in declared.keys()) localDeclared.set(k, true);
+                            var patVars = new Map<String, Bool>();
+                            gatherNamesFromPattern(cl.pattern, patVars);
+                            // Also extend declared with pattern variables for inner normalization
+                            for (k in patVars.keys()) localDeclared.set(k, true);
+                            var newBody = aliasMissingInClause(cl.body, patVars, localDeclared, caseTargetName);
+                            newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
+                        }
+                        makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                    default:
+                        n;
+                };
+            });
+        }
+
+        return switch (ast.def) {
+            case EDef(name, args, guards, body) if (isHandlerName(name)):
+                var declared = new Map<String, Bool>();
+                for (a in args) gatherNamesFromPattern(a, declared);
+                var newBody = transformFunc(body, declared);
+                makeASTWithMeta(EDef(name, args, guards, newBody), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, caseClauseBindingAliasPass);
         };
     }
     

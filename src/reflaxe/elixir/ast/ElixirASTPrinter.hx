@@ -42,6 +42,9 @@ class ElixirASTPrinter {
 
     // Track current module's unused functions for dead code elimination
     static var currentUnusedFunctions: Null<Array<String>> = null;
+
+    // Phoenix printing context to enable DSL-specific formatting (eg. Router)
+    static var currentPhoenixContext: PhoenixContext = PhoenixContext.None;
     
     /**
      * Public API for printing a single AST (used by ElixirASTBuilder for injection)
@@ -94,7 +97,13 @@ class ElixirASTPrinter {
                     }
                 }
 
+                // Preserve and propagate Phoenix Router context during module body printing
+                var prevPhoenixCtx = currentPhoenixContext;
+                if (ast.metadata != null && (ast.metadata.isRouter == true || ast.metadata.phoenixContext == PhoenixContext.Router)) {
+                    currentPhoenixContext = PhoenixContext.Router;
+                }
                 moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
+                currentPhoenixContext = prevPhoenixCtx;
 
                 var moduleResult = 'defmodule ${name} do\n' +
                     moduleContent + '\n' +
@@ -139,9 +148,14 @@ class ElixirASTPrinter {
                     }
                     
                     // Print body
+                    var prevPhoenixCtx2 = currentPhoenixContext;
+                    if (ast.metadata != null && (ast.metadata.isRouter == true || ast.metadata.phoenixContext == PhoenixContext.Router)) {
+                        currentPhoenixContext = PhoenixContext.Router;
+                    }
                     for (expr in body) {
                         result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
                     }
+                    currentPhoenixContext = prevPhoenixCtx2;
                     
                     result += indentStr(indent) + 'end';
                     result;
@@ -633,8 +647,11 @@ class ElixirASTPrinter {
                     lines.push('end).()');
                     lines.join('\n' + indentStr(indent));
                 } else {
-                    // Normal function call
-                    var argStr = [for (a in args) printFunctionArg(a)].join(', ');
+                    // Normal function call (with Phoenix Router DSL special formatting)
+                    var isRouterDsl = (currentPhoenixContext == PhoenixContext.Router) && isRouterDslFunction(funcName);
+                    var argStr = isRouterDsl
+                        ? [for (a in args) printRouterArg(a)].join(', ')
+                        : [for (a in args) printFunctionArg(a)].join(', ');
                     if (target != null) {
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
@@ -683,7 +700,8 @@ class ElixirASTPrinter {
                             }
                         }
                     } else {
-                        funcName + '(' + argStr + ')';
+                        // Router DSL calls prefer no parentheses
+                        isRouterDsl ? (funcName + (argStr.length > 0 ? ' ' + argStr : '')) : (funcName + '(' + argStr + ')');
                     }
                 }
                 
@@ -775,7 +793,17 @@ class ElixirASTPrinter {
                 unaryOpToString(op) + print(expr, 0);
                 
             case EField(target, field):
-                print(target, 0) + '.' + field;
+                // Special-case: module alias formed via atom.field (e.g., :user_live.Show)
+                // Convert snake_case atom to CamelCase alias segments and drop ':'
+                // Result: UserLive.Show
+                switch (target.def) {
+                    case EAtom(atom):
+                        var base = Std.string(atom);
+                        var aliasName = toElixirAlias(base);
+                        aliasName + '.' + field;
+                    default:
+                        print(target, 0) + '.' + field;
+                }
                 
             case EAccess(target, key):
                 print(target, 0) + '[' + print(key, 0) + ']';
@@ -1159,6 +1187,32 @@ class ElixirASTPrinter {
                 '</' + tag + '>';
         }
     }
+
+    /**
+     * Convert snake_case (and dot-separated) names into Elixir Module alias format.
+     * Examples:
+     * - "user_live" -> "UserLive"
+     * - "my_app_web" -> "MyAppWeb"
+     * - "my_app_web.live" -> "MyAppWeb.Live"
+     */
+    static function toElixirAlias(name: String): String {
+        if (name == null) return "";
+        var parts = name.split('.');
+        var converted = [];
+        for (p in parts) {
+            if (p == null || p.length == 0) { converted.push(p); continue; }
+            var segs = p.split('_');
+            var out = [];
+            for (s in segs) {
+                if (s.length == 0) continue;
+                var head = s.charAt(0).toUpperCase();
+                var tail = s.length > 1 ? s.substr(1) : "";
+                out.push(head + tail);
+            }
+            converted.push(out.join(""));
+        }
+        return converted.join('.');
+    }
     
     /**
      * Print a pattern
@@ -1422,6 +1476,28 @@ class ElixirASTPrinter {
         }
     }
     
+    /**
+     * Determine if a function is part of Phoenix Router DSL and should be printed without parentheses
+     */
+    static function isRouterDslFunction(name: String): Bool {
+        return switch (name) {
+            case "plug" | "pipe_through" | "get" | "post" | "put" | "patch" | "delete" | "resources" | "live" | "live_session" | "forward" | "live_dashboard": true;
+            default: false;
+        }
+    }
+
+    /**
+     * Print an argument in router DSL context, omitting brackets for keyword lists
+     */
+    static function printRouterArg(arg: ElixirAST): String {
+        return switch (arg.def) {
+            case EKeywordList(pairs):
+                [for (p in pairs) p.key + ': ' + print(p.value, 0)].join(', ');
+            default:
+                print(arg, 0);
+        }
+    }
+
     /**
      * Check if expression needs parentheses
      */

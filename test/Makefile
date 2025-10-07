@@ -57,10 +57,10 @@ summary: $(TEST_TARGETS)
 	if [ $$failed -gt 0 ]; then \
 		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
 		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		exit 1; \
 	else \
 		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
-	fi; \
-	rm -f test-results*.tmp
+	fi
 
 # Pattern rule for running individual tests
 # Converts double underscores back to slashes for nested directories
@@ -392,8 +392,22 @@ test-pattern:
 		echo "       make test-pattern PATTERN=*date*"; \
 		exit 1; \
 	fi; \
+	rm -f test-results*.tmp >/dev/null 2>&1 || true; \
 	echo "Running tests matching pattern: $(PATTERN)"; \
-	$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR) -type d -name "$(PATTERN)" | xargs -I {} find {} -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	PATTERN_REGEX="$$(printf '%s' "$(PATTERN)" | sed 's/\*/.*/g')"; \
+	TEST_TARGETS="$$(find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | grep -E "$$PATTERN_REGEX" | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')"; \
+	if [ -z "$$TEST_TARGETS" ]; then \
+		echo "No tests matched pattern: $(PATTERN)"; \
+		exit 1; \
+	fi; \
+	$(MAKE) -f $(MAKEFILE_LIST) $$TEST_TARGETS; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌" || true); \
+	if [ "$$failed" -gt 0 ]; then \
+		echo "$(RED)Pattern run: $$failed test(s) failed$(RESET)"; \
+		exit 1; \
+	else \
+		echo "$(GREEN)Pattern run: all tests passed! ✅$(RESET)"; \
+	fi
 
 # Run only failed tests from last run
 .PHONY: test-failed

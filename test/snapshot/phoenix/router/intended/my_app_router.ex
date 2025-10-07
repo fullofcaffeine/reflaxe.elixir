@@ -23,12 +23,12 @@ _g end).(), fn ->
   resources("/products", :product_controller)
   resources("/orders", :order_controller)
 end)
-end), live("/dashboard", :dashboard_live, "index"), live("/users/:id", :user_live.Show, "show"), live("/users/:id/edit", :user_live.Edit, "edit"), live_session((fn -> g = %{}
+end), live("/dashboard", :dashboard_live, "index"), live("/users/:id", UserLive.Show, "show"), live("/users/:id/edit", UserLive.Edit, "edit"), live_session((fn -> g = %{}
 g.set("on_mount", "authenticated")
 g end).(), fn ->
   live("/profile", :profile_live, "index")
   live("/settings", :settings_live, "index")
-end), pipeline("browser", [accepts(["html"]), fetch_session(), fetch_live_flash(), put_root_layout([:my_app_web.LayoutView, "root.html"]), protect_from_forgery(), put_secure_browser_headers()]), pipeline("api", [accepts(["json"]), plug(:my_app_web.APIAuthPlug)]), forward("/admin", :admin_router), match("*path", :error_controller, "not_found")]
+end), pipeline("browser", [accepts(["html"]), fetch_session(), fetch_live_flash(), put_root_layout([MyAppWeb.LayoutView, "root.html"]), protect_from_forgery(), put_secure_browser_headers()]), pipeline("api", [accepts(["json"]), plug(MyAppWeb.APIAuthPlug)]), forward("/admin", :admin_router), match("*path", :error_controller, "not_found")]
   end
   defp get(_path, _controller, _action) do
     nil

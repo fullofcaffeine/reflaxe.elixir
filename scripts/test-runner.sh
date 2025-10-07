@@ -188,8 +188,8 @@ find_affected_tests() {
 
 # Function to get failed tests from last run
 get_failed_tests() {
-    if [ -f "$TEST_DIR/test-results.tmp" ]; then
-        grep "❌" "$TEST_DIR/test-results.tmp" | sed 's/❌ //' | sed 's/ -.*//' | tr '\n' ' '
+    if ls "$TEST_DIR"/test-results*.tmp >/dev/null 2>&1; then
+        cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep "❌" | sed 's/❌ //' | sed 's/ -.*//' | tr '\n' ' '
     else
         echo ""
     fi
@@ -263,6 +263,13 @@ run_tests() {
     else
         # Normal test run
         if make -f Makefile $make_args $make_target; then
+            # Double-check result logs in case the Make target didn't propagate failures
+            if ls test-results*.tmp >/dev/null 2>&1 && grep -q "❌" test-results*.tmp; then
+                echo -e "${RED}Some tests failed ❌${RESET}"
+                echo -e "${YELLOW}Run with --failed to re-run only failed tests${RESET}"
+                echo -e "${YELLOW}Run with --update to update intended outputs${RESET}"
+                exit 1
+            fi
             echo -e "${GREEN}All tests passed! ✅${RESET}"
             exit 0
         else
@@ -276,30 +283,21 @@ run_tests() {
 
 # Function to show test statistics
 show_stats() {
-    if [ -f "$TEST_DIR/test-results.tmp" ]; then
+    if ls "$TEST_DIR"/test-results*.tmp >/dev/null 2>&1; then
         local passed=0
         local failed=0
-        
-        if grep -q "✅" "$TEST_DIR/test-results.tmp" 2>/dev/null; then
-            passed=$(grep -c "✅" "$TEST_DIR/test-results.tmp")
-        fi
-        
-        if grep -q "❌" "$TEST_DIR/test-results.tmp" 2>/dev/null; then
-            failed=$(grep -c "❌" "$TEST_DIR/test-results.tmp")
-        fi
-        
+        passed=$(cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep -c "✅" || true)
+        failed=$(cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep -c "❌" || true)
         local total=$((passed + failed))
-        
         echo ""
         echo -e "${BLUE}Test Results Summary:${RESET}"
         echo -e "  Total:  $total"
         echo -e "  ${GREEN}Passed: $passed${RESET}"
         echo -e "  ${RED}Failed: $failed${RESET}"
-        
         if [ "$failed" -gt 0 ]; then
             echo ""
             echo -e "${YELLOW}Failed tests:${RESET}"
-            grep "❌" "$TEST_DIR/test-results.tmp" | sed 's/^/  /'
+            cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'
         fi
     fi
 }
