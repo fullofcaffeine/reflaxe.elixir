@@ -673,13 +673,21 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternMatchingPass
         });
-        
+
         // Consolidate multiple guard-bearing clauses with same pattern into cond
         passes.push({
             name: "GuardClauseConsolidation",
             description: "Consolidate same-pattern guarded clauses into a single cond body",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardClauseConsolidationPass
+        });
+
+        // Remove preserved switch temp wrappers introduced by preprocessors when safe
+        passes.push({
+            name: "RemoveSwitchResultWrapper",
+            description: "Eliminate __elixir_switch_result_* wrappers when block is [match; var]",
+            enabled: true,
+            pass: function(ast) return removeSwitchResultWrapper(ast)
         });
         
         // Pattern matching guard optimization pass
@@ -879,6 +887,56 @@ class ElixirASTTransformer {
 
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
+    }
+
+    /**
+     * Remove simple switch-result temp wrappers produced by preservation preprocessor:
+     * def f() do
+     *   __elixir_switch_result_1 = case ... do ... end
+     *   __elixir_switch_result_1
+     * end
+     * Becomes:
+     * def f() do
+     *   case ... do ... end
+     * end
+     */
+    static function removeSwitchResultWrapper(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node) {
+            switch (node.def) {
+                case EDef(name, args, guard, body):
+                    var newBody = simplifySwitchWrapper(body);
+                    return makeASTWithMeta(EDef(name, args, guard, newBody), node.metadata, node.pos);
+                case EDefp(name, args, guard, body):
+                    var newBody = simplifySwitchWrapper(body);
+                    return makeASTWithMeta(EDefp(name, args, guard, newBody), node.metadata, node.pos);
+                default:
+                    return node;
+            }
+        });
+    }
+
+    static function simplifySwitchWrapper(body: ElixirAST): ElixirAST {
+        return switch (body.def) {
+            case EBlock(stmts) if (stmts.length == 2):
+                var first = stmts[0];
+                var last = stmts[1];
+                switch (first.def) {
+                    case EMatch(PVar(varName), rhs):
+                        switch (last.def) {
+                            case EVar(name) if (name == varName):
+                                // Only simplify when RHS is a case expression
+                                return switch (rhs.def) {
+                                    case ECase(_, _): rhs;
+                                    default: body;
+                                }
+                            ;
+                            default: body;
+                        }
+                    default: body;
+                }
+            default:
+                body;
+        };
     }
 
     /**
