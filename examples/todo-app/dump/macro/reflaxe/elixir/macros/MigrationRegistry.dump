@@ -1,119 +1,453 @@
 class reflaxe.elixir.macros.MigrationRegistry {
 
 	@:value(new Map())
-	static var tables:Map<String, reflaxe.elixir.macros.TableMetadata> = {
-		{};
-		new haxe.ds.StringMap();
-	};
+	static var tables:Map<String, reflaxe.elixir.macros.TableMetadata> = [Block:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>;
 
 	@:value([])
-	static var migrationOrder:Array<String> = [];
+	static var migrationOrder:Array<String> = [ArrayDecl:Array<String>];
 
-	public static function registerTable(name:String, pos:haxe.macro.Position) {
-		if ({
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.exists(name);
-		}) {
-			haxe.macro.Context.warning("Table \"" + name + "\" already exists", pos, null);
-		};
-		{
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			var value = {name : name, columns : {
-				{};
-				new haxe.ds.StringMap();
-			}, indexes : [], constraints : [], createdAt : pos};
-			cast this.set(name, value);
-		};
-	}
+	public static function registerTable[Function:(name : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local name(13850):String]
+		[Arg:haxe.macro.Position] [Local pos(13851):haxe.macro.Position]
+		[Block:Void]
+			[If:Void]
+				[Block:Bool]
+					[Var this(13854):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+						[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+							[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+							[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								reflaxe.elixir.macros.MigrationRegistry
+								tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(13854):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+								exists:(key : String) -> Bool
+						[Local name(13850):String:String]
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+								haxe.macro.Context
+								warning:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Table \""
+								+
+								[Local name(13850):String:String]
+							+
+							[Const:String] "\" already exists"
+						[Local pos(13851):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+			[Block:Void]
+				[Var this(13858):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+					[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+						[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+						[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+							reflaxe.elixir.macros.MigrationRegistry
+							tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+				[Var value(13860):reflaxe.elixir.macros.TableMetadata]
+					[ObjectDecl:{ name : String, indexes : Array<reflaxe.elixir.macros.IndexMetadata>, createdAt : haxe.macro.Position, constraints : Array<reflaxe.elixir.macros.ConstraintMetadata>, columns : haxe.ds.Map<String, reflaxe.elixir.macros.ColumnMetadata> }]
+						name: [Local name(13850):String:String]
+						columns: [Block:haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>]
+							[Block:Void]
+							[New:haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>] haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>
+						indexes: [ArrayDecl:Array<reflaxe.elixir.macros.IndexMetadata>]
+						constraints: [ArrayDecl:Array<reflaxe.elixir.macros.ConstraintMetadata>]
+						createdAt: [Local pos(13851):haxe.macro.Position:haxe.macro.Position]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.macros.TableMetadata) -> Void]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(13858):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+						[FInstance:(key : String, value : reflaxe.elixir.macros.TableMetadata) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local name(13850):String:String]
+					[Local value(13860):reflaxe.elixir.macros.TableMetadata:reflaxe.elixir.macros.TableMetadata]
 
-	public static function unregisterTable(name:String) {
-		{
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.remove(name);
-		};
-	}
+	public static function unregisterTable[Function:(name : String) -> Void]
+		[Arg:String] [Local name(13884):String]
+		[Block:Bool]
+			[Block:Bool]
+				[Var this(13887):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+					[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+						[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+						[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+							reflaxe.elixir.macros.MigrationRegistry
+							tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+				[Call:Bool]
+					[Field:(key : String) -> Bool]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(13887):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+						[FInstance:(key : String) -> Bool]
+							haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+							remove:(key : String) -> Bool
+					[Local name(13884):String:String]
 
-	public static function registerColumn(table:String, column:String, type:String, nullable:Bool, pos:haxe.macro.Position) {
-		if (! {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.exists(table);
-		}) {
-			haxe.macro.Context.error("Table \"" + table + "\" does not exist", pos, null);
-			return;
-		};
-		var tableData = {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.get(table);
-		};
-		if ({
-			var this = tableData.columns;
-			cast this.exists(column);
-		}) {
-			haxe.macro.Context.warning("Column \"" + column + "\" already exists in table \"" + table + "\"", pos, null);
-		};
-		{
-			var this = tableData.columns;
-			cast this.set(column, {name : column, type : type, nullable : nullable});
-		};
-	}
+	public static function registerColumn[Function:(table : String, column : String, type : String, nullable : Bool, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local table(14031):String]
+		[Arg:String] [Local column(14032):String]
+		[Arg:String] [Local type(14033):String]
+		[Arg:Bool] [Local nullable(14034):Bool]
+		[Arg:haxe.macro.Position] [Local pos(14035):haxe.macro.Position]
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(14038):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+								[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+									reflaxe.elixir.macros.MigrationRegistry
+									tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(14038):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+									exists:(key : String) -> Bool
+							[Local table(14031):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Table \""
+								+
+								[Local table(14031):String:String]
+							+
+							[Const:String] "\" does not exist"
+						[Local pos(14035):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+					[Return:Dynamic]
+			[Var tableData(14044):Null<reflaxe.elixir.macros.TableMetadata>]
+				[Block:Null<reflaxe.elixir.macros.TableMetadata>]
+					[Var this(14042):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+						[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+							[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+							[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								reflaxe.elixir.macros.MigrationRegistry
+								tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+					[Call:Null<reflaxe.elixir.macros.TableMetadata>]
+						[Field:(key : String) -> Null<reflaxe.elixir.macros.TableMetadata>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(14042):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.macros.TableMetadata>]
+								haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local table(14031):String:String]
+			[If:Void]
+				[Block:Bool]
+					[Var this(14047):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+						[Field:Map<String, reflaxe.elixir.macros.ColumnMetadata>]
+							[Local tableData(14044):Null<reflaxe.elixir.macros.TableMetadata>:Null<reflaxe.elixir.macros.TableMetadata>]
+							[FAnon:Map<String, reflaxe.elixir.macros.ColumnMetadata>] columns:Map<String, reflaxe.elixir.macros.ColumnMetadata>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>] [Local this(14047):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>:haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>
+								exists:(key : String) -> Bool
+						[Local column(14032):String:String]
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+								haxe.macro.Context
+								warning:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "Column \""
+										+
+										[Local column(14032):String:String]
+									+
+									[Const:String] "\" already exists in table \""
+								+
+								[Local table(14031):String:String]
+							+
+							[Const:String] "\""
+						[Local pos(14035):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+			[Block:Void]
+				[Var this(14051):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+					[Field:Map<String, reflaxe.elixir.macros.ColumnMetadata>]
+						[Local tableData(14044):Null<reflaxe.elixir.macros.TableMetadata>:Null<reflaxe.elixir.macros.TableMetadata>]
+						[FAnon:Map<String, reflaxe.elixir.macros.ColumnMetadata>] columns:Map<String, reflaxe.elixir.macros.ColumnMetadata>
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.macros.ColumnMetadata) -> Void]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>] [Local this(14051):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>:haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+						[FInstance:(key : String, value : reflaxe.elixir.macros.ColumnMetadata) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local column(14032):String:String]
+					[ObjectDecl:{ type : String, nullable : Bool, name : String }]
+						name: [Local column(14032):String:String]
+						type: [Local type(14033):String:String]
+						nullable: [Local nullable(14034):Bool:Bool]
 
-	public static function validateTableExists(name:String, pos:haxe.macro.Position) {
-		if (! {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.exists(name);
-		}) {
-			haxe.macro.Context.error("Table \"" + name + "\" does not exist. Make sure the migration that creates it runs first.", pos, null);
-		};
-	}
+	public static function validateTableExists[Function:(name : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local name(13902):String]
+		[Arg:haxe.macro.Position] [Local pos(13903):haxe.macro.Position]
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(13906):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+								[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+									reflaxe.elixir.macros.MigrationRegistry
+									tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(13906):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+									exists:(key : String) -> Bool
+							[Local name(13902):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Table \""
+								+
+								[Local name(13902):String:String]
+							+
+							[Const:String] "\" does not exist. Make sure the migration that creates it runs first."
+						[Local pos(13903):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
 
-	public static function validateColumnExists(table:String, column:String, pos:haxe.macro.Position) {
-		if (! {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.exists(table);
-		}) {
-			haxe.macro.Context.error("Table \"" + table + "\" does not exist", pos, null);
-			return;
-		};
-		var tableData = {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.get(table);
-		};
-		if (! {
-			var this = tableData.columns;
-			cast this.exists(column);
-		}) {
-			haxe.macro.Context.error("Column \"" + column + "\" does not exist in table \"" + table + "\"", pos, null);
-		};
-	}
+	public static function validateColumnExists[Function:(table : String, column : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local table(14054):String]
+		[Arg:String] [Local column(14055):String]
+		[Arg:haxe.macro.Position] [Local pos(14056):haxe.macro.Position]
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(14059):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+								[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+									reflaxe.elixir.macros.MigrationRegistry
+									tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(14059):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+									exists:(key : String) -> Bool
+							[Local table(14054):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Table \""
+								+
+								[Local table(14054):String:String]
+							+
+							[Const:String] "\" does not exist"
+						[Local pos(14056):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+					[Return:Dynamic]
+			[Var tableData(14065):Null<reflaxe.elixir.macros.TableMetadata>]
+				[Block:Null<reflaxe.elixir.macros.TableMetadata>]
+					[Var this(14063):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+						[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+							[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+							[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								reflaxe.elixir.macros.MigrationRegistry
+								tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+					[Call:Null<reflaxe.elixir.macros.TableMetadata>]
+						[Field:(key : String) -> Null<reflaxe.elixir.macros.TableMetadata>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(14063):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.macros.TableMetadata>]
+								haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local table(14054):String:String]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(14068):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+							[Field:Map<String, reflaxe.elixir.macros.ColumnMetadata>]
+								[Local tableData(14065):Null<reflaxe.elixir.macros.TableMetadata>:Null<reflaxe.elixir.macros.TableMetadata>]
+								[FAnon:Map<String, reflaxe.elixir.macros.ColumnMetadata>] columns:Map<String, reflaxe.elixir.macros.ColumnMetadata>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>] [Local this(14068):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>:haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>
+									exists:(key : String) -> Bool
+							[Local column(14055):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "Column \""
+										+
+										[Local column(14055):String:String]
+									+
+									[Const:String] "\" does not exist in table \""
+								+
+								[Local table(14054):String:String]
+							+
+							[Const:String] "\""
+						[Local pos(14056):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
 
-	public static function validateColumnsExist(table:String, columns:Array<String>, pos:haxe.macro.Position) {
-		if (! {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.exists(table);
-		}) {
-			haxe.macro.Context.error("Table \"" + table + "\" does not exist", pos, null);
-			return;
-		};
-		var tableData = {
-			var this = reflaxe.elixir.macros.MigrationRegistry.tables;
-			cast this.get(table);
-		};
-		{
-			var ` = 0;
-			while (` < columns.length) {
-				var column = columns[`];
-				++ `;
-				if (! {
-					var this = tableData.columns;
-					cast this.exists(column);
-				}) {
-					haxe.macro.Context.error("Column \"" + column + "\" does not exist in table \"" + table + "\"", pos, null);
-				};
-			};
-		};
-	}
+	public static function validateColumnsExist[Function:(table : String, columns : Array<String>, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local table(13957):String]
+		[Arg:Array<String>] [Local columns(13958):Array<String>]
+		[Arg:haxe.macro.Position] [Local pos(13959):haxe.macro.Position]
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(13962):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+								[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+									reflaxe.elixir.macros.MigrationRegistry
+									tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(13962):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+									exists:(key : String) -> Bool
+							[Local table(13957):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Table \""
+								+
+								[Local table(13957):String:String]
+							+
+							[Const:String] "\" does not exist"
+						[Local pos(13959):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+					[Return:Dynamic]
+			[Var tableData(13968):Null<reflaxe.elixir.macros.TableMetadata>]
+				[Block:Null<reflaxe.elixir.macros.TableMetadata>]
+					[Var this(13966):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+						[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+							[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+							[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+								reflaxe.elixir.macros.MigrationRegistry
+								tables:Map<String, reflaxe.elixir.macros.TableMetadata>
+					[Call:Null<reflaxe.elixir.macros.TableMetadata>]
+						[Field:(key : String) -> Null<reflaxe.elixir.macros.TableMetadata>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>] [Local this(13966):haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>:haxe.IMap<String, reflaxe.elixir.macros.TableMetadata>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.macros.TableMetadata>]
+								haxe.ds.StringMap<reflaxe.elixir.macros.TableMetadata>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local table(13957):String:String]
+			[Block:Void]
+				[Var `(13974):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(13974):Int:Int]
+						<
+						[Field:Int]
+							[Local columns(13958):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var column(13969):String]
+							[Array:String]
+								[Local columns(13958):Array<String>:Array<String>]
+								[Local `(13974):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(13974):Int:Int]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Block:Bool]
+									[Var this(13972):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+										[Field:Map<String, reflaxe.elixir.macros.ColumnMetadata>]
+											[Local tableData(13968):Null<reflaxe.elixir.macros.TableMetadata>:Null<reflaxe.elixir.macros.TableMetadata>]
+											[FAnon:Map<String, reflaxe.elixir.macros.ColumnMetadata>] columns:Map<String, reflaxe.elixir.macros.ColumnMetadata>
+									[Call:Bool]
+										[Field:(key : String) -> Bool]
+											[Cast:haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>] [Local this(13972):haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>:haxe.IMap<String, reflaxe.elixir.macros.ColumnMetadata>]
+											[FInstance:(key : String) -> Bool]
+												haxe.ds.StringMap<reflaxe.elixir.macros.ColumnMetadata>
+												exists:(key : String) -> Bool
+										[Local column(13969):String:String]
+							[Then:Dynamic] [Block:Dynamic]
+								[Call:Dynamic]
+									[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+										[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+										[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+											haxe.macro.Context
+											error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Column \""
+													+
+													[Local column(13969):String:String]
+												+
+												[Const:String] "\" does not exist in table \""
+											+
+											[Local table(13957):String:String]
+										+
+										[Const:String] "\""
+									[Local pos(13959):haxe.macro.Position:haxe.macro.Position]
+									[Const:Null<Int>] null
 
-	public static function getAllTables() {
-		return reflaxe.elixir.macros.MigrationRegistry.tables;
-	}
+	public static function getAllTables[Function:() -> Map<String, reflaxe.elixir.macros.TableMetadata>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Field:Map<String, reflaxe.elixir.macros.TableMetadata>]
+					[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+					[FStatic:Map<String, reflaxe.elixir.macros.TableMetadata>]
+						reflaxe.elixir.macros.MigrationRegistry
+						tables:Map<String, reflaxe.elixir.macros.TableMetadata>
 }

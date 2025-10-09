@@ -1,117 +1,652 @@
 class reflaxe.helpers.BaseTypeHelper {
 
 	@:value("_Impl_")
-	static var IMPL_SUFFIX(default,never):String = "_Impl_";
+	static var IMPL_SUFFIX(default,never):String = [Const:String] "_Impl_";
 
 	@:value("_Fields_")
-	static var FIELDS_SUFFIX(default,never):String = "_Fields_";
+	static var FIELDS_SUFFIX(default,never):String = [Const:String] "_Fields_";
 
-	public static function namespaces(self:haxe.macro.BaseType) {
-		var moduleMembers = self.module.split(".");
-		var moduleName = moduleMembers[moduleMembers.length - 1];
-		if (moduleName != self.name && (moduleName + reflaxe.helpers.BaseTypeHelper.IMPL_SUFFIX) != self.name && (moduleName + reflaxe.helpers.BaseTypeHelper.FIELDS_SUFFIX) != self.name) {
-			return moduleMembers;
-		};
-		return moduleMembers.slice(0, moduleMembers.length - 2);
-	}
+	public static function namespaces[Function:(self : haxe.macro.BaseType) -> Array<String>]
+		[Arg:haxe.macro.BaseType] [Local self(3076):haxe.macro.BaseType]
+		[Block:Dynamic]
+			[Var moduleMembers(3077):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Field:String]
+							[Local self(3076):haxe.macro.BaseType:haxe.macro.BaseType]
+							[FAnon:String] module:String
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "."
+			[Var moduleName(3078):String]
+				[Array:String]
+					[Local moduleMembers(3077):Array<String>:Array<String>]
+					[Binop:Int]
+						[Field:Int]
+							[Local moduleMembers(3077):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						-
+						[Const:Int] 1
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local moduleName(3078):String:String]
+							!=
+							[Field:String]
+								[Local self(3076):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+						&&
+						[Binop:Bool]
+							[Parenthesis:String]
+								[Binop:String]
+									[Local moduleName(3078):String:String]
+									+
+									[Field:String]
+										[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+										[FStatic:String]
+											reflaxe.helpers.BaseTypeHelper
+											IMPL_SUFFIX:String
+							!=
+							[Field:String]
+								[Local self(3076):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+					&&
+					[Binop:Bool]
+						[Parenthesis:String]
+							[Binop:String]
+								[Local moduleName(3078):String:String]
+								+
+								[Field:String]
+									[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+									[FStatic:String]
+										reflaxe.helpers.BaseTypeHelper
+										FIELDS_SUFFIX:String
+						!=
+						[Field:String]
+							[Local self(3076):haxe.macro.BaseType:haxe.macro.BaseType]
+							[FAnon:String] name:String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local moduleMembers(3077):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Call:Array<String>]
+					[Field:(pos : Int, ?end : Null<Int>) -> Array<String>]
+						[Local moduleMembers(3077):Array<String>:Array<String>]
+						[FInstance:(pos : Int, ?end : Null<Int>) -> Array<String>]
+							Array<String>
+							slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+					[Const:Int] 0
+					[Binop:Int]
+						[Field:Int]
+							[Local moduleMembers(3077):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						-
+						[Const:Int] 2
 
 	@:value({ removeSpecialSuffixes : true })
-	public static function uniqueName(self:haxe.macro.BaseType, removeSpecialSuffixes:Bool = true) {
-		var prefix = reflaxe.helpers.BaseTypeHelper.namespaces(self).join("_");
-		var name = self.name;
-		if (removeSpecialSuffixes) {
-			name = reflaxe.helpers.BaseTypeHelper.removeNameSpecialSuffixes(name);
-		};
-		return (if (prefix.length > 0) {
-			(prefix + "_");
-		} else {
-			"";
-		}) + (if (self.module == self.name) {
-			"";
-		} else {
-			("_" + StringTools.replace(self.module, ".", "_") + "_");
-		}) + name;
-	}
+	public static function uniqueName[Function:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+		[Arg:haxe.macro.BaseType] [Local self(3079):haxe.macro.BaseType]
+		[Arg:Bool]
+			[Local removeSpecialSuffixes(3080):Bool]
+			[Const:Bool] true
+		[Block:Dynamic]
+			[Var prefix(3081):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(self : haxe.macro.BaseType) -> Array<String>]
+								[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+								[FStatic:(self : haxe.macro.BaseType) -> Array<String>]
+									reflaxe.helpers.BaseTypeHelper
+									namespaces:(self : haxe.macro.BaseType) -> Array<String>
+							[Local self(3079):haxe.macro.BaseType:haxe.macro.BaseType]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "_"
+			[Var name(3082):String]
+				[Field:String]
+					[Local self(3079):haxe.macro.BaseType:haxe.macro.BaseType]
+					[FAnon:String] name:String
+			[If:Void]
+				[Local removeSpecialSuffixes(3080):Bool:Bool]
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local name(3082):String:String]
+						=
+						[Call:String]
+							[Field:(name : String) -> String]
+								[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+								[FStatic:(name : String) -> String]
+									reflaxe.helpers.BaseTypeHelper
+									removeNameSpecialSuffixes:(name : String) -> String
+							[Local name(3082):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Parenthesis:String]
+							[If:String]
+								[Binop:Bool]
+									[Field:Int]
+										[Local prefix(3081):String:String]
+										[FInstance:Int]
+											String
+											length:Int
+									>
+									[Const:Int] 0
+								[Then:String] [Block:String]
+									[Parenthesis:String]
+										[Binop:String]
+											[Local prefix(3081):String:String]
+											+
+											[Const:String] "_"
+								[Else:String] [Block:String] [Const:String] ""
+						+
+						[Parenthesis:String]
+							[If:String]
+								[Binop:Bool]
+									[Field:String]
+										[Local self(3079):haxe.macro.BaseType:haxe.macro.BaseType]
+										[FAnon:String] module:String
+									==
+									[Field:String]
+										[Local self(3079):haxe.macro.BaseType:haxe.macro.BaseType]
+										[FAnon:String] name:String
+								[Then:String] [Block:String] [Const:String] ""
+								[Else:String] [Block:String]
+									[Parenthesis:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "_"
+												+
+												[Call:String]
+													[Field:(s : String, sub : String, by : String) -> String]
+														[TypeExpr StringTools:Class<StringTools>]
+														[FStatic:(s : String, sub : String, by : String) -> String]
+															StringTools
+															replace:(s : String, sub : String, by : String) -> String
+													[Field:String]
+														[Local self(3079):haxe.macro.BaseType:haxe.macro.BaseType]
+														[FAnon:String] module:String
+													[Const:String] "."
+													[Const:String] "_"
+											+
+											[Const:String] "_"
+					+
+					[Local name(3082):String:String]
 
 	@:value({ removeSpecialSuffixes : true })
-	public static function globalName(self:haxe.macro.BaseType, removeSpecialSuffixes:Bool = true) {
-		var prefix = reflaxe.helpers.BaseTypeHelper.namespaces(self).join("_");
-		var name = self.name;
-		if (removeSpecialSuffixes) {
-			name = reflaxe.helpers.BaseTypeHelper.removeNameSpecialSuffixes(name);
-		};
-		return (if (prefix.length > 0) {
-			(prefix + "_");
-		} else {
-			"";
-		}) + name;
-	}
+	public static function globalName[Function:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+		[Arg:haxe.macro.BaseType] [Local self(3085):haxe.macro.BaseType]
+		[Arg:Bool]
+			[Local removeSpecialSuffixes(3086):Bool]
+			[Const:Bool] true
+		[Block:Dynamic]
+			[Var prefix(3087):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(self : haxe.macro.BaseType) -> Array<String>]
+								[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+								[FStatic:(self : haxe.macro.BaseType) -> Array<String>]
+									reflaxe.helpers.BaseTypeHelper
+									namespaces:(self : haxe.macro.BaseType) -> Array<String>
+							[Local self(3085):haxe.macro.BaseType:haxe.macro.BaseType]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "_"
+			[Var name(3088):String]
+				[Field:String]
+					[Local self(3085):haxe.macro.BaseType:haxe.macro.BaseType]
+					[FAnon:String] name:String
+			[If:Void]
+				[Local removeSpecialSuffixes(3086):Bool:Bool]
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local name(3088):String:String]
+						=
+						[Call:String]
+							[Field:(name : String) -> String]
+								[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+								[FStatic:(name : String) -> String]
+									reflaxe.helpers.BaseTypeHelper
+									removeNameSpecialSuffixes:(name : String) -> String
+							[Local name(3088):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Parenthesis:String]
+						[If:String]
+							[Binop:Bool]
+								[Field:Int]
+									[Local prefix(3087):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								>
+								[Const:Int] 0
+							[Then:String] [Block:String]
+								[Parenthesis:String]
+									[Binop:String]
+										[Local prefix(3087):String:String]
+										+
+										[Const:String] "_"
+							[Else:String] [Block:String] [Const:String] ""
+					+
+					[Local name(3088):String:String]
 
-	public static function equals(self:haxe.macro.BaseType, other:haxe.macro.BaseType) {
-		return reflaxe.helpers.BaseTypeHelper.uniqueName(self, null) == reflaxe.helpers.BaseTypeHelper.uniqueName(other, null);
-	}
+	public static function equals[Function:(self : haxe.macro.BaseType, other : haxe.macro.BaseType) -> Bool]
+		[Arg:haxe.macro.BaseType] [Local self(3089):haxe.macro.BaseType]
+		[Arg:haxe.macro.BaseType] [Local other(3090):haxe.macro.BaseType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+							[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+							[FStatic:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+								reflaxe.helpers.BaseTypeHelper
+								uniqueName:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String
+						[Local self(3089):haxe.macro.BaseType:haxe.macro.BaseType]
+						[Const:Null<Bool>] null
+					==
+					[Call:String]
+						[Field:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+							[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+							[FStatic:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+								reflaxe.helpers.BaseTypeHelper
+								uniqueName:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String
+						[Local other(3090):haxe.macro.BaseType:haxe.macro.BaseType]
+						[Const:Null<Bool>] null
 
-	public static function removeNameSpecialSuffixes(name:String) {
-		var result = name;
-		if (StringTools.endsWith(name, reflaxe.helpers.BaseTypeHelper.IMPL_SUFFIX)) {
-			result = result.substring(0, result.length - reflaxe.helpers.BaseTypeHelper.IMPL_SUFFIX.length);
-		};
-		if (StringTools.endsWith(name, reflaxe.helpers.BaseTypeHelper.FIELDS_SUFFIX)) {
-			result = result.substring(0, result.length - reflaxe.helpers.BaseTypeHelper.FIELDS_SUFFIX.length);
-		};
-		return result;
-	}
+	public static function removeNameSpecialSuffixes[Function:(name : String) -> String]
+		[Arg:String] [Local name(3083):String]
+		[Block:Dynamic]
+			[Var result(3084):String] [Local name(3083):String:String]
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String, end : String) -> Bool]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, end : String) -> Bool]
+							StringTools
+							endsWith:(s : String, end : String) -> Bool
+					[Local name(3083):String:String]
+					[Field:String]
+						[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+						[FStatic:String]
+							reflaxe.helpers.BaseTypeHelper
+							IMPL_SUFFIX:String
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(3084):String:String]
+						=
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local result(3084):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Const:Int] 0
+							[Binop:Int]
+								[Field:Int]
+									[Local result(3084):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								-
+								[Field:Int]
+									[Field:String]
+										[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+										[FStatic:String]
+											reflaxe.helpers.BaseTypeHelper
+											IMPL_SUFFIX:String
+									[FInstance:Int]
+										String
+										length:Int
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String, end : String) -> Bool]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, end : String) -> Bool]
+							StringTools
+							endsWith:(s : String, end : String) -> Bool
+					[Local name(3083):String:String]
+					[Field:String]
+						[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+						[FStatic:String]
+							reflaxe.helpers.BaseTypeHelper
+							FIELDS_SUFFIX:String
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local result(3084):String:String]
+						=
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local result(3084):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Const:Int] 0
+							[Binop:Int]
+								[Field:Int]
+									[Local result(3084):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								-
+								[Field:Int]
+									[Field:String]
+										[TypeExpr reflaxe.helpers.BaseTypeHelper:Class<reflaxe.helpers.BaseTypeHelper>]
+										[FStatic:String]
+											reflaxe.helpers.BaseTypeHelper
+											FIELDS_SUFFIX:String
+									[FInstance:Int]
+										String
+										length:Int
+			[Return:Dynamic] [Local result(3084):String:String]
 
-	public static function moduleId(self:haxe.macro.BaseType) {
-		var module = self.module;
-		if (StringTools.startsWith(module, "/")) {
-			module = module.substring(1, null);
-		};
-		return StringTools.replace(module, ".", "_");
-	}
+	public static function moduleId[Function:(self : haxe.macro.BaseType) -> String]
+		[Arg:haxe.macro.BaseType] [Local self(3091):haxe.macro.BaseType]
+		[Block:Dynamic]
+			[Var module(3092):String]
+				[Field:String]
+					[Local self(3091):haxe.macro.BaseType:haxe.macro.BaseType]
+					[FAnon:String] module:String
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String, start : String) -> Bool]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, start : String) -> Bool]
+							StringTools
+							startsWith:(s : String, start : String) -> Bool
+					[Local module(3092):String:String]
+					[Const:String] "/"
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local module(3092):String:String]
+						=
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local module(3092):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Const:Int] 1
+							[Const:Null<Int>] null
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Local module(3092):String:String]
+					[Const:String] "."
+					[Const:String] "_"
 
-	public static function matchesDotPath(self:haxe.macro.BaseType, path:String) {
-		if (self.pack.length == 0) {
-			return self.name == path;
-		};
-		if ((self.pack.join(".") + "." + self.name) == path) {
-			return true;
-		};
-		if ((self.module + "." + self.name) == path) {
-			return true;
-		};
-		return false;
-	}
+	public static function matchesDotPath[Function:(self : haxe.macro.BaseType, path : String) -> Bool]
+		[Arg:haxe.macro.BaseType] [Local self(3095):haxe.macro.BaseType]
+		[Arg:String] [Local path(3096):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<String>]
+							[Local self(3095):haxe.macro.BaseType:haxe.macro.BaseType]
+							[FAnon:Array<String>] pack:Array<String>
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Field:String]
+								[Local self(3095):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+							==
+							[Local path(3096):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Parenthesis:String]
+						[Binop:String]
+							[Binop:String]
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Field:Array<String>]
+											[Local self(3095):haxe.macro.BaseType:haxe.macro.BaseType]
+											[FAnon:Array<String>] pack:Array<String>
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] "."
+								+
+								[Const:String] "."
+							+
+							[Field:String]
+								[Local self(3095):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+					==
+					[Local path(3096):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Parenthesis:String]
+						[Binop:String]
+							[Binop:String]
+								[Field:String]
+									[Local self(3095):haxe.macro.BaseType:haxe.macro.BaseType]
+									[FAnon:String] module:String
+								+
+								[Const:String] "."
+							+
+							[Field:String]
+								[Local self(3095):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+					==
+					[Local path(3096):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
 
-	public static function startsWithDotPath(self:haxe.macro.BaseType, path:String) {
-		if (self.pack.length == 0) {
-			return self.name == path;
-		};
-		if (StringTools.startsWith((self.pack.join(".") + "." + self.name), path)) {
-			return true;
-		};
-		if (self.pack.length > 0) {
-			var lastPackMember = self.pack[self.pack.length - 1];
-			if (lastPackMember.charCodeAt(0) == 95 && (@:mergeBlock {
-				var tmp = {
-					lastPackMember.charCodeAt(1);
-				};
-				if (tmp != null) tmp else {
-					91;
-				};
-			}) <= 90) {
-				if (self.pack.length <= 1 && self.module == path) {
-					return true;
-				};
-				if (StringTools.startsWith((self.pack.slice(0, self.pack.length - 1).join(".") + "." + self.module), path)) {
-					return true;
-				};
-			};
-		};
-		return false;
-	}
+	public static function startsWithDotPath[Function:(self : haxe.macro.BaseType, path : String) -> Bool]
+		[Arg:haxe.macro.BaseType] [Local self(3097):haxe.macro.BaseType]
+		[Arg:String] [Local path(3098):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<String>]
+							[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+							[FAnon:Array<String>] pack:Array<String>
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Field:String]
+								[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+							==
+							[Local path(3098):String:String]
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String, start : String) -> Bool]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, start : String) -> Bool]
+							StringTools
+							startsWith:(s : String, start : String) -> Bool
+					[Parenthesis:String]
+						[Binop:String]
+							[Binop:String]
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Field:Array<String>]
+											[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+											[FAnon:Array<String>] pack:Array<String>
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] "."
+								+
+								[Const:String] "."
+							+
+							[Field:String]
+								[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:String] name:String
+					[Local path(3098):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Field:Array<String>]
+							[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+							[FAnon:Array<String>] pack:Array<String>
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Var lastPackMember(3099):String]
+						[Array:String]
+							[Field:Array<String>]
+								[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+								[FAnon:Array<String>] pack:Array<String>
+							[Binop:Int]
+								[Field:Int]
+									[Field:Array<String>]
+										[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+										[FAnon:Array<String>] pack:Array<String>
+									[FInstance:Int]
+										Array<String>
+										length:Int
+								-
+								[Const:Int] 1
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Call:Null<Int>]
+									[Field:(index : Int) -> Null<Int>]
+										[Local lastPackMember(3099):String:String]
+										[FInstance:(index : Int) -> Null<Int>]
+											String
+											charCodeAt:(index : Int) -> Null<Int>
+									[Const:Int] 0
+								==
+								[Const:Int] 95
+							&&
+							[Binop:Bool]
+								[Parenthesis:Int]
+									[Meta:Int]
+										:mergeBlock
+										[Block:Int]
+											[Var tmp(3100):Null<Int>]
+												[Block:Null<Int>]
+													[Call:Null<Int>]
+														[Field:(index : Int) -> Null<Int>]
+															[Local lastPackMember(3099):String:String]
+															[FInstance:(index : Int) -> Null<Int>]
+																String
+																charCodeAt:(index : Int) -> Null<Int>
+														[Const:Int] 1
+											[If:Int]
+												[Binop:Bool]
+													[Local tmp(3100):Null<Int>:Null<Int>]
+													!=
+													[Const:Null<Int>] null
+												[Then:Null<Int>] [Local tmp(3100):Null<Int>:Null<Int>]
+												[Else:Int] [Block:Int] [Const:Int] 91
+								<=
+								[Const:Int] 90
+						[Then:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Field:Int]
+											[Field:Array<String>]
+												[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+												[FAnon:Array<String>] pack:Array<String>
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										<=
+										[Const:Int] 1
+									&&
+									[Binop:Bool]
+										[Field:String]
+											[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+											[FAnon:String] module:String
+										==
+										[Local path(3098):String:String]
+								[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+							[If:Void]
+								[Call:Bool]
+									[Field:(s : String, start : String) -> Bool]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, start : String) -> Bool]
+											StringTools
+											startsWith:(s : String, start : String) -> Bool
+									[Parenthesis:String]
+										[Binop:String]
+											[Binop:String]
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Call:Array<String>]
+															[Field:(pos : Int, ?end : Null<Int>) -> Array<String>]
+																[Field:Array<String>]
+																	[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+																	[FAnon:Array<String>] pack:Array<String>
+																[FInstance:(pos : Int, ?end : Null<Int>) -> Array<String>]
+																	Array<String>
+																	slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+															[Const:Int] 0
+															[Binop:Int]
+																[Field:Int]
+																	[Field:Array<String>]
+																		[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+																		[FAnon:Array<String>] pack:Array<String>
+																	[FInstance:Int]
+																		Array<String>
+																		length:Int
+																-
+																[Const:Int] 1
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] "."
+												+
+												[Const:String] "."
+											+
+											[Field:String]
+												[Local self(3097):haxe.macro.BaseType:haxe.macro.BaseType]
+												[FAnon:String] module:String
+									[Local path(3098):String:String]
+								[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
 
-	public static function isReflaxeExtern(self:haxe.macro.BaseType) {
-		return self.isExtern || reflaxe.helpers.NameMetaHelper.hasMeta(self, ":extern");
-	}
+	public static function isReflaxeExtern[Function:(self : haxe.macro.BaseType) -> Bool]
+		[Arg:haxe.macro.BaseType] [Local self(3101):haxe.macro.BaseType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:Bool]
+						[Local self(3101):haxe.macro.BaseType:haxe.macro.BaseType]
+						[FAnon:Bool] isExtern:Bool
+					||
+					[Call:Bool]
+						[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+							[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+							[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+								reflaxe.helpers.NameMetaHelper
+								hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+						[Local self(3101):haxe.macro.BaseType:haxe.macro.BaseType]
+						[Const:String] ":extern"
 }

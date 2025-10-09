@@ -34,7 +34,7 @@ end)
     end
   end
   result = result <> c
-  i + 1
+  i = i + 1
 end)
     result
   end
@@ -45,38 +45,38 @@ end)
     s = s |> replace("&gt;", ">") |> replace("&lt;", "<") |> replace("&quot;", "\"") |> replace("&#039;", "'") |> replace("&amp;", "&")
   end
   def starts_with(s, start) do
-    length(s) >= length(start) and len = length(start)
-if len == nil do
+    len = length(start)
+    len
+    len
+    length(s) >= length(start) and (if len == nil do
   String.slice(s, 0..-1)
 else
   String.slice(s, 0, len)
-end == start
+end) == start
   end
   def ends_with(s, end_param) do
     elen = length(end_param)
     slen = length(s)
-    slen >= elen and pos = (slen - elen)
-if elen == nil do
+    pos = (slen - elen)
+    pos
+    pos
+    slen >= elen and (if elen == nil do
   String.slice(s, pos..-1)
 else
   String.slice(s, pos, elen)
-end == end_param
+end) == end_param
   end
   def is_space(s, pos) do
-    c = result = :binary.at(s, pos)
-    if result == nil, do: nil, else: result
+    result = :binary.at(s, pos)
+    result
+    c = if result == nil, do: nil, else: result
     c > 8 and c < 14 or c == 32
   end
   def ltrim(s) do
     l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r}, fn _, {s, l, r} ->
-  if r < l and is_space(s, r) do
-    r + 1
-    {:cont, {s, l, r}}
-  else
-    {:halt, {s, l, r}}
-  end
+  if r < l and is_space(s, r), do: {:cont, {s, l, r + 1}}, else: {:halt, {s, l, r}}
 end)
     if r > 0 do
       len = (l - r)
@@ -93,12 +93,7 @@ end)
     l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r}, fn _, {s, l, r} ->
-  if r < l and is_space(s, ((l - r) - 1)) do
-    r + 1
-    {:cont, {s, l, r}}
-  else
-    {:halt, {s, l, r}}
-  end
+  if r < l and is_space(s, ((l - r) - 1)), do: {:cont, {s, l, r + 1}}, else: {:halt, {s, l, r}}
 end)
     if r > 0 do
       len = (l - r)
@@ -118,24 +113,14 @@ end)
     if length(c) <= 0, do: s
     buf = ""
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, buf}, fn _, {s, l, buf} ->
-  if length(buf) + length(s) < l do
-    buf = buf <> c
-    {:cont, {s, l, buf <> c}}
-  else
-    {:halt, {s, l, buf}}
-  end
+  if length(buf) + length(s) < l, do: {:cont, {s, l, buf <> c}}, else: {:halt, {s, l, buf}}
 end)
     "#{buf}#{s}"
   end
   def rpad(s, c, l) do
     if length(c) <= 0, do: s
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l}, fn _, {s, l} ->
-  if length(s) < l do
-    s = s <> c
-    {:cont, {s <> c, l}}
-  else
-    {:halt, {s, l}}
-  end
+  if length(s) < l, do: {:cont, {s <> c, l}}, else: {:halt, {s, l}}
 end)
     s
   end
@@ -147,8 +132,6 @@ end)
     hex_chars = "0123456789ABCDEF"
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {n, s} ->
   if n > 0 do
-    s = String.at(hex_chars, Bitwise.band(n, 15)) || "" <> s
-    n = Bitwise.bsr(n, 4)
     {:cont, {n, s}}
   else
     {:halt, {n, s}}
@@ -156,12 +139,7 @@ end)
 end)
     if digits != nil do
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s}, fn _, {digits, s} ->
-  if length(s) < digits do
-    s = "0" <> s
-    {:cont, {digits, "0" <> s}}
-  else
-    {:halt, {digits, s}}
-  end
+  if length(s) < digits, do: {:cont, {digits, "0" <> s}}, else: {:halt, {digits, s}}
 end)
     end
     s
@@ -171,10 +149,10 @@ end)
     if result == nil, do: nil, else: result
   end
   def contains(s, value) do
-    case :binary.match(s, value) do
+    (case :binary.match(s, value) do
                 {pos, _} -> pos
                 nil -> -1
-            end != -1
+            end) != -1
   end
   def is_eof(c) do
     c < 0
@@ -195,7 +173,6 @@ end)
   if 0 < length(special_chars) do
     char = special_chars[0]
     0 + 1
-    s = replace(s, char, "\\" <> char)
     {:cont, {s, special_chars}}
   else
     {:halt, {s, special_chars}}
@@ -205,8 +182,9 @@ end)
   end
   def parse_int(str) do
     if String.slice(str, 0, 2) == "0x" do
-      hex = len = nil
-      if len == nil do
+      len = nil
+      len
+      hex = if len == nil do
         String.slice(str, 2..-1)
       else
         String.slice(str, 2, len)
@@ -217,7 +195,6 @@ end)
     i = 0 + 1
     c = result2 = :binary.at(hex, i)
     if result2 == nil, do: nil, else: result2
-    result = result * 16
     cond do
       c >= 48 and c <= 57 -> result = result + (c - 48)
       c >= 65 and c <= 70 -> result = result + (c - 65) + 10

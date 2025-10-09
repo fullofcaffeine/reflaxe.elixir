@@ -1,167 +1,645 @@
 class reflaxe.compiler.MetadataCompiler {
 
-	public static function compileMetadata(options:reflaxe.BaseCompilerOptions, metaAccess:Null<haxe.macro.MetaAccess>, target:haxe.display.MetadataTarget) {
-		if (metaAccess == null) {
-			return null;
-		};
-		var compiledMeta = [];
-		if (options.allowMetaMetadata && options.autoNativeMetaFormat != null) {
-			var nativeMeta = reflaxe.helpers.NullableMetaAccessHelper.extractNativeMeta(metaAccess, null);
-			if (nativeMeta != null) {
-				{
-					var ` = 0;
-					while (` < nativeMeta.length) {
-						var m = nativeMeta[`];
-						++ `;
-						var tempMeta = StringTools.replace(options.autoNativeMetaFormat, "{}", m);
-						compiledMeta.push(tempMeta);
-					};
-				};
-			};
-		};
-		{
-			var ` = 0;
-			var ` = options.metadataTemplates;
-			while (` < `.length) {
-				var template = `[`];
-				++ `;
-				var name = template.meta.metadata;
-				var entries = metaAccess.extract(name);
-				if (template.disallowMultiple && entries.length > 1) {
-					reflaxe.compiler.MetadataCompiler.err("'@" + name + "' metadata can only be applied once.", entries[1].pos);
-				};
-				{
-					var ` = 0;
-					while (` < entries.length) {
-						var e = entries[`];
-						++ `;
-						if (template.meta.targets != null && ! template.meta.targets.contains(target)) {
-							reflaxe.compiler.MetadataCompiler.err("'@" + name + "' metadata expected to be used on " + Std.string(template.meta.targets) + " only.", e.pos);
-						};
-						var argsMatch = true;
-						if (template.paramTypes != null) {
-							var entryArgTypes = {
-								var _this = (if (e.params == null) {
-									[];
-								} else {
-									e.params;
-								});
-								var f = reflaxe.compiler.MetadataCompiler.getMetaArgInputType;
-								{
-									var ` = [];
-									{
-										var ` = 0;
-										var ` = _this;
-										while (` < `.length) {
-											var v = `[`];
-											++ `;
-											`.push(f(v));
-										};
-									};
-									`;
-								};
-							};
-							var paramTypes = {
-								var _this = template.paramTypes;
-								var f = reflaxe.compiler.MetadataCompiler.getMetaArgType;
-								{
-									var ` = [];
-									{
-										var ` = 0;
-										var ` = _this;
-										while (` < `.length) {
-											var v = `[`];
-											++ `;
-											`.push(f(v));
-										};
-									};
-									`;
-								};
-							};
-							if (entryArgTypes.length > paramTypes.length) {
-								argsMatch = false;
-								reflaxe.compiler.MetadataCompiler.err("Too many arguments supplied to meta '@" + name + "'.", e.pos);
-							};
-							{
-								var ` = 0;
-								var ` = paramTypes.length;
-								while (` < `) {
-									var i = ` ++;
-									var matches = false;
-									if (i < entryArgTypes.length) {
-										if (paramTypes[i].t == "any" || paramTypes[i].t == entryArgTypes[i]) {
-											matches = true;
-										};
-									};
-									if (! matches && paramTypes[i].opt) {
-										matches = true;
-									};
-									if (! matches) {
-										argsMatch = false;
-										var params = {
-											var maybe = e.params;
-											if (maybe != null) {
-												maybe;
-											} else {
-												[];
-											};
-										};
-										var pos = if (i < params.length) {
-											params[i].pos;
-										} else {
-											e.pos;
-										};
-										reflaxe.compiler.MetadataCompiler.err("Metadata argument of type '" + paramTypes[i].t + "' expected.", pos);
-									};
-								};
-							};
-						};
-						if (argsMatch) {
-							if (template.compileFunc != null) {
-								var args = {
-									var _this = (if (e.params == null) {
-										[];
-									} else {
-										e.params;
-									});
-									var f = haxe.macro.ExprTools.toString;
-									{
-										var ` = [];
-										{
-											var ` = 0;
-											var ` = _this;
-											while (` < `.length) {
-												var v = `[`];
-												++ `;
-												`.push(f(v));
-											};
-										};
-										`;
-									};
-								};
-								var result = template.compileFunc(e, args);
-								if (result != null) {
-									compiledMeta.push(result);
-								};
-							};
-						};
-					};
-				};
-			};
-		};
-		return if (compiledMeta.length > 0) {
-			compiledMeta.join("\n") + "\n";
-		} else {
-			"";
-		};
-	}
+	public static function compileMetadata[Function:(options : reflaxe.BaseCompilerOptions, metaAccess : Null<haxe.macro.MetaAccess>, target : haxe.display.MetadataTarget) -> Null<String>]
+		[Arg:reflaxe.BaseCompilerOptions] [Local options(2928):reflaxe.BaseCompilerOptions]
+		[Arg:Null<haxe.macro.MetaAccess>] [Local metaAccess(2929):Null<haxe.macro.MetaAccess>]
+		[Arg:haxe.display.MetadataTarget] [Local target(2930):haxe.display.MetadataTarget]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local metaAccess(2929):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+					==
+					[Const:Null<haxe.macro.MetaAccess>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var compiledMeta(2931):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Bool]
+						[Local options(2928):reflaxe.BaseCompilerOptions:reflaxe.BaseCompilerOptions]
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							allowMetaMetadata:Bool
+					&&
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Local options(2928):reflaxe.BaseCompilerOptions:reflaxe.BaseCompilerOptions]
+							[FInstance:Null<String>]
+								reflaxe.BaseCompilerOptions
+								autoNativeMetaFormat:Null<String>
+						!=
+						[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Var nativeMeta(2932):Null<Array<String>>]
+						[Call:Null<Array<String>>]
+							[Field:(metaAccess : Null<haxe.macro.MetaAccess>, ?allowMultiParam : Bool) -> Null<Array<String>>]
+								[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+								[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, ?allowMultiParam : Bool) -> Null<Array<String>>]
+									reflaxe.helpers.NullableMetaAccessHelper
+									extractNativeMeta:(metaAccess : Null<haxe.macro.MetaAccess>, ?allowMultiParam : Bool) -> Null<Array<String>>
+							[Local metaAccess(2929):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							[Const:Null<Bool>] null
+					[If:Void]
+						[Binop:Bool]
+							[Local nativeMeta(2932):Null<Array<String>>:Null<Array<String>>]
+							!=
+							[Const:Null<Array<String>>] null
+						[Then:Void] [Block:Void]
+							[Block:Void]
+								[Var `(2935):Int] [Const:Int] 0
+								[While:Void]
+									[Binop:Bool]
+										[Local `(2935):Int:Int]
+										<
+										[Field:Int]
+											[Local nativeMeta(2932):Null<Array<String>>:Null<Array<String>>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var m(2933):String]
+											[Array:String]
+												[Local nativeMeta(2932):Null<Array<String>>:Null<Array<String>>]
+												[Local `(2935):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(2935):Int:Int]
+										[Var tempMeta(2934):String]
+											[Call:String]
+												[Field:(s : String, sub : String, by : String) -> String]
+													[TypeExpr StringTools:Class<StringTools>]
+													[FStatic:(s : String, sub : String, by : String) -> String]
+														StringTools
+														replace:(s : String, sub : String, by : String) -> String
+												[Field:Null<String>]
+													[Local options(2928):reflaxe.BaseCompilerOptions:reflaxe.BaseCompilerOptions]
+													[FInstance:Null<String>]
+														reflaxe.BaseCompilerOptions
+														autoNativeMetaFormat:Null<String>
+												[Const:String] "{}"
+												[Local m(2933):String:String]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local compiledMeta(2931):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Local tempMeta(2934):String:String]
+			[Block:Void]
+				[Var `(3007):Int] [Const:Int] 0
+				[Var `(3008):Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+					[Field:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+						[Local options(2928):reflaxe.BaseCompilerOptions:reflaxe.BaseCompilerOptions]
+						[FInstance:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+							reflaxe.BaseCompilerOptions
+							metadataTemplates:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(3007):Int:Int]
+						<
+						[Field:Int]
+							[Local `(3008):Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+							[FInstance:Int]
+								Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>
+								length:Int
+					[Block:Void]
+						[Var template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+							[Array:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+								[Local `(3008):Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+								[Local `(3007):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(3007):Int:Int]
+						[Var name(2937):String]
+							[Field:String]
+								[Field:haxe.macro.MetadataDescription]
+									[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+									[FAnon:haxe.macro.MetadataDescription] meta:haxe.macro.MetadataDescription
+								[FAnon:String] metadata:String
+						[Var entries(2938):Array<haxe.macro.MetadataEntry>]
+							[Call:Array<haxe.macro.MetadataEntry>]
+								[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+									[Local metaAccess(2929):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+									[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+								[Local name(2937):String:String]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Bool]
+									[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+									[FAnon:Bool] disallowMultiple:Bool
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Local entries(2938):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+										[FInstance:Int]
+											Array<haxe.macro.MetadataEntry>
+											length:Int
+									>
+									[Const:Int] 1
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(msg : String, pos : haxe.macro.Position) -> Void]
+										[TypeExpr reflaxe.compiler.MetadataCompiler:Class<reflaxe.compiler.MetadataCompiler>]
+										[FStatic:(msg : String, pos : haxe.macro.Position) -> Void]
+											reflaxe.compiler.MetadataCompiler
+											err:(msg : String, pos : haxe.macro.Position) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "'@"
+											+
+											[Local name(2937):String:String]
+										+
+										[Const:String] "' metadata can only be applied once."
+									[Field:haxe.macro.Position]
+										[Array:haxe.macro.MetadataEntry]
+											[Local entries(2938):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+											[Const:Int] 1
+										[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+						[Block:Void]
+							[Var `(3006):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(3006):Int:Int]
+									<
+									[Field:Int]
+										[Local entries(2938):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+										[FInstance:Int]
+											Array<haxe.macro.MetadataEntry>
+											length:Int
+								[Block:Void]
+									[Var e(2941):haxe.macro.MetadataEntry]
+										[Array:haxe.macro.MetadataEntry]
+											[Local entries(2938):Array<haxe.macro.MetadataEntry>:Array<haxe.macro.MetadataEntry>]
+											[Local `(3006):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(3006):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Field:Array<haxe.display.MetadataTarget>]
+													[Field:haxe.macro.MetadataDescription]
+														[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+														[FAnon:haxe.macro.MetadataDescription] meta:haxe.macro.MetadataDescription
+													[FAnon:Array<haxe.display.MetadataTarget>] targets:Array<haxe.display.MetadataTarget>
+												!=
+												[Const:Array<haxe.display.MetadataTarget>] null
+											&&
+											[Unop:Bool]
+												!
+												Prefix
+												[Call:Bool]
+													[Field:(x : haxe.display.MetadataTarget) -> Bool]
+														[Field:Array<haxe.display.MetadataTarget>]
+															[Field:haxe.macro.MetadataDescription]
+																[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+																[FAnon:haxe.macro.MetadataDescription] meta:haxe.macro.MetadataDescription
+															[FAnon:Array<haxe.display.MetadataTarget>] targets:Array<haxe.display.MetadataTarget>
+														[FInstance:(x : haxe.display.MetadataTarget) -> Bool]
+															Array<haxe.display.MetadataTarget>
+															contains:(x : Array.T) -> Bool
+													[Local target(2930):haxe.display.MetadataTarget:haxe.display.MetadataTarget]
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(msg : String, pos : haxe.macro.Position) -> Void]
+													[TypeExpr reflaxe.compiler.MetadataCompiler:Class<reflaxe.compiler.MetadataCompiler>]
+													[FStatic:(msg : String, pos : haxe.macro.Position) -> Void]
+														reflaxe.compiler.MetadataCompiler
+														err:(msg : String, pos : haxe.macro.Position) -> Void
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "'@"
+																+
+																[Local name(2937):String:String]
+															+
+															[Const:String] "' metadata expected to be used on "
+														+
+														[Call:String]
+															[Field:(s : Dynamic) -> String]
+																[TypeExpr Std:Class<Std>]
+																[FStatic:(s : Dynamic) -> String]
+																	Std
+																	string:(s : Dynamic) -> String
+															[Field:Array<haxe.display.MetadataTarget>]
+																[Field:haxe.macro.MetadataDescription]
+																	[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+																	[FAnon:haxe.macro.MetadataDescription] meta:haxe.macro.MetadataDescription
+																[FAnon:Array<haxe.display.MetadataTarget>] targets:Array<haxe.display.MetadataTarget>
+													+
+													[Const:String] " only."
+												[Field:haxe.macro.Position]
+													[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+													[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[Var argsMatch(2942):Bool] [Const:Bool] true
+									[If:Void]
+										[Binop:Bool]
+											[Field:Null<Array<reflaxe.MetaArgumentType>>]
+												[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+												[FAnon:Null<Array<reflaxe.MetaArgumentType>>] paramTypes:Null<Array<reflaxe.MetaArgumentType>>
+											!=
+											[Const:Null<Array<reflaxe.MetaArgumentType>>] null
+										[Then:Void] [Block:Void]
+											[Var entryArgTypes(2971):Array<String>]
+												[Block:Array<String>]
+													[Var _this(2965):Null<Array<haxe.macro.Expr>>]
+														[Parenthesis:Null<Array<haxe.macro.Expr>>]
+															[If:Null<Array<haxe.macro.Expr>>]
+																[Binop:Bool]
+																	[Field:Null<Array<haxe.macro.Expr>>]
+																		[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+																		[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+																	==
+																	[Const:Null<Array<haxe.macro.Expr>>] null
+																[Then:Array<haxe.macro.Expr>] [Block:Array<haxe.macro.Expr>] [ArrayDecl:Array<haxe.macro.Expr>]
+																[Else:Null<Array<haxe.macro.Expr>>] [Block:Null<Array<haxe.macro.Expr>>]
+																	[Field:Null<Array<haxe.macro.Expr>>]
+																		[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+																		[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+													[Var f(2966):haxe.macro.Expr -> String]
+														[Field:(e : haxe.macro.Expr) -> String]
+															[TypeExpr reflaxe.compiler.MetadataCompiler:Class<reflaxe.compiler.MetadataCompiler>]
+															[FStatic:(e : haxe.macro.Expr) -> String]
+																reflaxe.compiler.MetadataCompiler
+																getMetaArgInputType:(e : haxe.macro.Expr) -> String
+													[Block:Array<String>]
+														[Var `(2967):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(2968):Int] [Const:Int] 0
+															[Var `(2969):Array<haxe.macro.Expr>] [Local _this(2965):Null<Array<haxe.macro.Expr>>:Array<haxe.macro.Expr>]
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(2968):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local `(2969):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																		[FInstance:Int]
+																			Array<haxe.macro.Expr>
+																			length:Int
+																[Block:Void]
+																	[Var v(2970):haxe.macro.Expr]
+																		[Array:haxe.macro.Expr]
+																			[Local `(2969):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																			[Local `(2968):Int:Int]
+																	[Unop:Int]
+																		++
+																		Prefix
+																		[Local `(2968):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local `(2967):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Call:String]
+																			[Local f(2966):haxe.macro.Expr -> String:haxe.macro.Expr -> String]
+																			[Local v(2970):haxe.macro.Expr:haxe.macro.Expr]
+														[Local `(2967):Array<String>:Array<String>]
+											[Var paramTypes(2986):Array<{ t : String, opt : Bool }>]
+												[Block:Array<{ t : String, opt : Bool }>]
+													[Var _this(2980):Null<Array<reflaxe.MetaArgumentType>>]
+														[Field:Null<Array<reflaxe.MetaArgumentType>>]
+															[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+															[FAnon:Null<Array<reflaxe.MetaArgumentType>>] paramTypes:Null<Array<reflaxe.MetaArgumentType>>
+													[Var f(2981):reflaxe.MetaArgumentType -> { t : String, opt : Bool }]
+														[Field:(arg : reflaxe.MetaArgumentType) -> { t : String, opt : Bool }]
+															[TypeExpr reflaxe.compiler.MetadataCompiler:Class<reflaxe.compiler.MetadataCompiler>]
+															[FStatic:(arg : reflaxe.MetaArgumentType) -> { t : String, opt : Bool }]
+																reflaxe.compiler.MetadataCompiler
+																getMetaArgType:(arg : reflaxe.MetaArgumentType) -> { t : String, opt : Bool }
+													[Block:Array<{ t : String, opt : Bool }>]
+														[Var `(2982):Array<{ t : String, opt : Bool }>] [ArrayDecl:Array<{ t : String, opt : Bool }>]
+														[Block:Void]
+															[Var `(2983):Int] [Const:Int] 0
+															[Var `(2984):Array<reflaxe.MetaArgumentType>] [Local _this(2980):Null<Array<reflaxe.MetaArgumentType>>:Array<reflaxe.MetaArgumentType>]
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(2983):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local `(2984):Array<reflaxe.MetaArgumentType>:Array<reflaxe.MetaArgumentType>]
+																		[FInstance:Int]
+																			Array<reflaxe.MetaArgumentType>
+																			length:Int
+																[Block:Void]
+																	[Var v(2985):reflaxe.MetaArgumentType]
+																		[Array:reflaxe.MetaArgumentType]
+																			[Local `(2984):Array<reflaxe.MetaArgumentType>:Array<reflaxe.MetaArgumentType>]
+																			[Local `(2983):Int:Int]
+																	[Unop:Int]
+																		++
+																		Prefix
+																		[Local `(2983):Int:Int]
+																	[Call:Int]
+																		[Field:(x : { t : String, opt : Bool }) -> Int]
+																			[Local `(2982):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+																			[FInstance:(x : { t : String, opt : Bool }) -> Int]
+																				Array<{ t : String, opt : Bool }>
+																				push:(x : Array.T) -> Int
+																		[Call:{ t : String, opt : Bool }]
+																			[Local f(2981):reflaxe.MetaArgumentType -> { t : String, opt : Bool }:reflaxe.MetaArgumentType -> { t : String, opt : Bool }]
+																			[Local v(2985):reflaxe.MetaArgumentType:reflaxe.MetaArgumentType]
+														[Local `(2982):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+											[If:Void]
+												[Binop:Bool]
+													[Field:Int]
+														[Local entryArgTypes(2971):Array<String>:Array<String>]
+														[FInstance:Int]
+															Array<String>
+															length:Int
+													>
+													[Field:Int]
+														[Local paramTypes(2986):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+														[FInstance:Int]
+															Array<{ t : String, opt : Bool }>
+															length:Int
+												[Then:Void] [Block:Void]
+													[Binop:Bool]
+														[Local argsMatch(2942):Bool:Bool]
+														=
+														[Const:Bool] false
+													[Call:Void]
+														[Field:(msg : String, pos : haxe.macro.Position) -> Void]
+															[TypeExpr reflaxe.compiler.MetadataCompiler:Class<reflaxe.compiler.MetadataCompiler>]
+															[FStatic:(msg : String, pos : haxe.macro.Position) -> Void]
+																reflaxe.compiler.MetadataCompiler
+																err:(msg : String, pos : haxe.macro.Position) -> Void
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "Too many arguments supplied to meta '@"
+																+
+																[Local name(2937):String:String]
+															+
+															[Const:String] "'."
+														[Field:haxe.macro.Position]
+															[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+															[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+											[Block:Void]
+												[Var `(2995):Int] [Const:Int] 0
+												[Var `(2996):Int]
+													[Field:Int]
+														[Local paramTypes(2986):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+														[FInstance:Int]
+															Array<{ t : String, opt : Bool }>
+															length:Int
+												[While:Void]
+													[Binop:Bool]
+														[Local `(2995):Int:Int]
+														<
+														[Local `(2996):Int:Int]
+													[Block:Void]
+														[Var i(2987):Int]
+															[Unop:Int]
+																++
+																Postfix
+																[Local `(2995):Int:Int]
+														[Var matches(2988):Bool] [Const:Bool] false
+														[If:Void]
+															[Binop:Bool]
+																[Local i(2987):Int:Int]
+																<
+																[Field:Int]
+																	[Local entryArgTypes(2971):Array<String>:Array<String>]
+																	[FInstance:Int]
+																		Array<String>
+																		length:Int
+															[Then:Void] [Block:Void]
+																[If:Void]
+																	[Binop:Bool]
+																		[Binop:Bool]
+																			[Field:String]
+																				[Array:{ t : String, opt : Bool }]
+																					[Local paramTypes(2986):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+																					[Local i(2987):Int:Int]
+																				[FAnon:String] t:String
+																			==
+																			[Const:String] "any"
+																		||
+																		[Binop:Bool]
+																			[Field:String]
+																				[Array:{ t : String, opt : Bool }]
+																					[Local paramTypes(2986):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+																					[Local i(2987):Int:Int]
+																				[FAnon:String] t:String
+																			==
+																			[Array:String]
+																				[Local entryArgTypes(2971):Array<String>:Array<String>]
+																				[Local i(2987):Int:Int]
+																	[Then:Bool] [Block:Bool]
+																		[Binop:Bool]
+																			[Local matches(2988):Bool:Bool]
+																			=
+																			[Const:Bool] true
+														[If:Void]
+															[Binop:Bool]
+																[Unop:Bool]
+																	!
+																	Prefix
+																	[Local matches(2988):Bool:Bool]
+																&&
+																[Field:Bool]
+																	[Array:{ t : String, opt : Bool }]
+																		[Local paramTypes(2986):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+																		[Local i(2987):Int:Int]
+																	[FAnon:Bool] opt:Bool
+															[Then:Bool] [Block:Bool]
+																[Binop:Bool]
+																	[Local matches(2988):Bool:Bool]
+																	=
+																	[Const:Bool] true
+														[If:Void]
+															[Unop:Bool]
+																!
+																Prefix
+																[Local matches(2988):Bool:Bool]
+															[Then:Void] [Block:Void]
+																[Binop:Bool]
+																	[Local argsMatch(2942):Bool:Bool]
+																	=
+																	[Const:Bool] false
+																[Var params(2993):Array<haxe.macro.Expr>]
+																	[Block:Array<haxe.macro.Expr>]
+																		[Var maybe(2991):Null<Array<haxe.macro.Expr>>]
+																			[Field:Null<Array<haxe.macro.Expr>>]
+																				[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+																				[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+																		[If:Array<haxe.macro.Expr>]
+																			[Binop:Bool]
+																				[Local maybe(2991):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+																				!=
+																				[Const:Null<Array<haxe.macro.Expr>>] null
+																			[Then:Null<Array<haxe.macro.Expr>>] [Block:Null<Array<haxe.macro.Expr>>] [Local maybe(2991):Null<Array<haxe.macro.Expr>>:Null<Array<haxe.macro.Expr>>]
+																			[Else:Array<haxe.macro.Expr>] [Block:Array<haxe.macro.Expr>] [ArrayDecl:Array<haxe.macro.Expr>]
+																[Var pos(2994):haxe.macro.Position]
+																	[If:haxe.macro.Position]
+																		[Binop:Bool]
+																			[Local i(2987):Int:Int]
+																			<
+																			[Field:Int]
+																				[Local params(2993):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																				[FInstance:Int]
+																					Array<haxe.macro.Expr>
+																					length:Int
+																		[Then:haxe.macro.Position] [Block:haxe.macro.Position]
+																			[Field:haxe.macro.Position]
+																				[Array:haxe.macro.Expr]
+																					[Local params(2993):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																					[Local i(2987):Int:Int]
+																				[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																		[Else:haxe.macro.Position] [Block:haxe.macro.Position]
+																			[Field:haxe.macro.Position]
+																				[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+																				[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																[Call:Void]
+																	[Field:(msg : String, pos : haxe.macro.Position) -> Void]
+																		[TypeExpr reflaxe.compiler.MetadataCompiler:Class<reflaxe.compiler.MetadataCompiler>]
+																		[FStatic:(msg : String, pos : haxe.macro.Position) -> Void]
+																			reflaxe.compiler.MetadataCompiler
+																			err:(msg : String, pos : haxe.macro.Position) -> Void
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] "Metadata argument of type '"
+																			+
+																			[Field:String]
+																				[Array:{ t : String, opt : Bool }]
+																					[Local paramTypes(2986):Array<{ t : String, opt : Bool }>:Array<{ t : String, opt : Bool }>]
+																					[Local i(2987):Int:Int]
+																				[FAnon:String] t:String
+																		+
+																		[Const:String] "' expected."
+																	[Local pos(2994):haxe.macro.Position:haxe.macro.Position]
+									[If:Void]
+										[Local argsMatch(2942):Bool:Bool]
+										[Then:Void] [Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Field:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>]
+														[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+														[FAnon:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>] compileFunc:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>
+													!=
+													[Const:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>] null
+												[Then:Void] [Block:Void]
+													[Var args(3004):Array<String>]
+														[Block:Array<String>]
+															[Var _this(2998):Null<Array<haxe.macro.Expr>>]
+																[Parenthesis:Null<Array<haxe.macro.Expr>>]
+																	[If:Null<Array<haxe.macro.Expr>>]
+																		[Binop:Bool]
+																			[Field:Null<Array<haxe.macro.Expr>>]
+																				[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+																				[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+																			==
+																			[Const:Null<Array<haxe.macro.Expr>>] null
+																		[Then:Array<haxe.macro.Expr>] [Block:Array<haxe.macro.Expr>] [ArrayDecl:Array<haxe.macro.Expr>]
+																		[Else:Null<Array<haxe.macro.Expr>>] [Block:Null<Array<haxe.macro.Expr>>]
+																			[Field:Null<Array<haxe.macro.Expr>>]
+																				[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+																				[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+															[Var f(2999):haxe.macro.Expr -> String]
+																[Field:(e : haxe.macro.Expr) -> String]
+																	[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																	[FStatic:(e : haxe.macro.Expr) -> String]
+																		haxe.macro.ExprTools
+																		toString:(e : haxe.macro.Expr) -> String
+															[Block:Array<String>]
+																[Var `(3000):Array<String>] [ArrayDecl:Array<String>]
+																[Block:Void]
+																	[Var `(3001):Int] [Const:Int] 0
+																	[Var `(3002):Array<haxe.macro.Expr>] [Local _this(2998):Null<Array<haxe.macro.Expr>>:Array<haxe.macro.Expr>]
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(3001):Int:Int]
+																			<
+																			[Field:Int]
+																				[Local `(3002):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																				[FInstance:Int]
+																					Array<haxe.macro.Expr>
+																					length:Int
+																		[Block:Void]
+																			[Var v(3003):haxe.macro.Expr]
+																				[Array:haxe.macro.Expr]
+																					[Local `(3002):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																					[Local `(3001):Int:Int]
+																			[Unop:Int]
+																				++
+																				Prefix
+																				[Local `(3001):Int:Int]
+																			[Call:Int]
+																				[Field:(x : String) -> Int]
+																					[Local `(3000):Array<String>:Array<String>]
+																					[FInstance:(x : String) -> Int]
+																						Array<String>
+																						push:(x : Array.T) -> Int
+																				[Call:String]
+																					[Local f(2999):haxe.macro.Expr -> String:haxe.macro.Expr -> String]
+																					[Local v(3003):haxe.macro.Expr:haxe.macro.Expr]
+																[Local `(3000):Array<String>:Array<String>]
+													[Var result(3005):Null<String>]
+														[Call:Null<String>]
+															[Field:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>]
+																[Local template(2936):{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }:{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }]
+																[FAnon:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>] compileFunc:Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>>
+															[Local e(2941):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+															[Local args(3004):Array<String>:Array<String>]
+													[If:Void]
+														[Binop:Bool]
+															[Local result(3005):Null<String>:Null<String>]
+															!=
+															[Const:Null<String>] null
+														[Then:Int] [Block:Int]
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local compiledMeta(2931):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Local result(3005):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Field:Int]
+							[Local compiledMeta(2931):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Call:String]
+								[Field:(sep : String) -> String]
+									[Local compiledMeta(2931):Array<String>:Array<String>]
+									[FInstance:(sep : String) -> String]
+										Array<String>
+										join:(sep : String) -> String
+								[Const:String] "\n"
+							+
+							[Const:String] "\n"
+					[Else:String] [Block:String] [Const:String] ""
 
-	static function err(msg:String, pos:haxe.macro.Position) {
-		haxe.macro.Context.error(msg, pos, null);
-	}
+	static function err[Function:(msg : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local msg(2939):String]
+		[Arg:haxe.macro.Position] [Local pos(2940):haxe.macro.Position]
+		[Block:Dynamic]
+			[Call:Dynamic]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+						haxe.macro.Context
+						error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+				[Local msg(2939):String:String]
+				[Local pos(2940):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
 
-	static function getMetaArgInputType(e:haxe.macro.Expr) {
-		return @:ast(switch (e.expr) {
+	static function getMetaArgInputType[Function:(e : haxe.macro.Expr) -> String]
+		[Arg:haxe.macro.Expr] [Local e(2943):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (e.expr) {
 	case EConst(CInt(_)) | EConst(CFloat(_)):
 		"number";	
 	case EConst(CString(_, _)):
@@ -174,71 +652,132 @@ class reflaxe.compiler.MetadataCompiler {
 		"array";	
 	case _:
 		"any";	
-}) {
-			var ` = e.expr;
-			switch (enumIndex `) {
-				case 0: {
-					var ` = `[0];
-					switch (enumIndex `) {
-						case 0: {
-							var ` = `[0];
-							var ` = `[1];
-							{
-								"number";
-							};
-						};
-						case 1: {
-							var ` = `[0];
-							var ` = `[1];
-							{
-								"number";
-							};
-						};
-						case 2: {
-							var ` = `[0];
-							var ` = `[1];
-							{
-								"string";
-							};
-						};
-						case 3: {
-							var ` = `[0];
-							switch (`) {
-								case "false", "true": {
-									{
-										"bool";
-									};
-								};
-								default: {
-									"ident";
-								}
-							};
-						};
-						default: {
-							"any";
-						}
-					};
-				};
-				case 6: {
-					var ` = `[0];
-					{
-						"array";
-					};
-				};
-				default: {
-					"any";
-				}
-			};
-		};
-	}
+})
+					[Block:String]
+						[Var `(2954):haxe.macro.ExprDef]
+							[Field:haxe.macro.ExprDef]
+								[Local e(2943):haxe.macro.Expr:haxe.macro.Expr]
+								[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+						[Switch:String]
+							[EnumIndex:Int] [Local `(2954):haxe.macro.ExprDef:haxe.macro.ExprDef]
+							[Case:String]
+								[Const:Int] 0
+								[Block:String]
+									[Var `(2955):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(2954):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[Switch:String]
+										[EnumIndex:Int] [Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+										[Case:String]
+											[Const:Int] 0
+											[Block:String]
+												[Var `(2956):String]
+													[EnumParameter:String]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CInt
+														0
+												[Var `(2957):Null<String>]
+													[EnumParameter:Null<String>]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CInt
+														1
+												[Block:String] [Const:String] "number"
+										[Case:String]
+											[Const:Int] 1
+											[Block:String]
+												[Var `(2958):String]
+													[EnumParameter:String]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CFloat
+														0
+												[Var `(2959):Null<String>]
+													[EnumParameter:Null<String>]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CFloat
+														1
+												[Block:String] [Const:String] "number"
+										[Case:String]
+											[Const:Int] 2
+											[Block:String]
+												[Var `(2960):String]
+													[EnumParameter:String]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CString
+														0
+												[Var `(2961):Null<haxe.macro.StringLiteralKind>]
+													[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CString
+														1
+												[Block:String] [Const:String] "string"
+										[Case:String]
+											[Const:Int] 3
+											[Block:String]
+												[Var `(2962):String]
+													[EnumParameter:String]
+														[Local `(2955):haxe.macro.Constant:haxe.macro.Constant]
+														CIdent
+														0
+												[Switch:String]
+													[Local `(2962):String:String]
+													[Case:String]
+														[Const:String] "false"
+														[Const:String] "true"
+														[Block:String] [Block:String] [Const:String] "bool"
+													[Default:String] [Block:String] [Const:String] "ident"
+										[Default:String] [Block:String] [Const:String] "any"
+							[Case:String]
+								[Const:Int] 6
+								[Block:String]
+									[Var `(2963):Array<haxe.macro.Expr>]
+										[EnumParameter:Array<haxe.macro.Expr>]
+											[Local `(2954):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EArrayDecl
+											0
+									[Block:String] [Const:String] "array"
+							[Default:String] [Block:String] [Const:String] "any"
 
-	static function getMetaArgType(arg:reflaxe.MetaArgumentType) {
-		var opt = false;
-		var s = (cast arg);
-		if (StringTools.endsWith(arg, "?")) {
-			opt = true;
-			s = s.substring(0, s.length - 2);
-		};
-		return {t : s, opt : opt};
-	}
+	static function getMetaArgType[Function:(arg : reflaxe.MetaArgumentType) -> { t : String, opt : Bool }]
+		[Arg:reflaxe.MetaArgumentType] [Local arg(2972):reflaxe.MetaArgumentType]
+		[Block:Dynamic]
+			[Var opt(2973):Bool] [Const:Bool] false
+			[Var s(2974):String] [Parenthesis:String] [Cast:String] [Local arg(2972):reflaxe.MetaArgumentType:reflaxe.MetaArgumentType]
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String, end : String) -> Bool]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, end : String) -> Bool]
+							StringTools
+							endsWith:(s : String, end : String) -> Bool
+					[Local arg(2972):reflaxe.MetaArgumentType:reflaxe.MetaArgumentType]
+					[Const:String] "?"
+				[Then:String] [Block:String]
+					[Binop:Bool]
+						[Local opt(2973):Bool:Bool]
+						=
+						[Const:Bool] true
+					[Binop:String]
+						[Local s(2974):String:String]
+						=
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local s(2974):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Const:Int] 0
+							[Binop:Int]
+								[Field:Int]
+									[Local s(2974):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								-
+								[Const:Int] 2
+			[Return:Dynamic]
+				[ObjectDecl:{ t : String, opt : Bool }]
+					t: [Local s(2974):String:String]
+					opt: [Local opt(2973):Bool:Bool]
 }

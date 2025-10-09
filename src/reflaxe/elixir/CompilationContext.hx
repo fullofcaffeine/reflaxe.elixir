@@ -92,6 +92,12 @@ class CompilationContext implements BuildContext {
     public var functionParameterIds: Map<String, Bool>;
 
     /**
+     * Tracks function parameter names (Elixir variable names) for collision avoidance
+     * Maps parameter name (snake_case) to existence flag
+     */
+    public var functionParameterNames: Map<String, Bool>;
+
+    /**
      * Flag indicating if we're currently compiling inside a class method
      * Affects how 'this' references are handled
      */
@@ -181,6 +187,15 @@ class CompilationContext implements BuildContext {
      * @see VariableBuilder.buildVariableReference() - Checks before creating EVar
      */
     public var infraVarSubstitutions: Map<Int, TypedExpr>;
+    /**
+     * Name-based infrastructure variable substitutions from TypedExprPreprocessor
+     * Maps variable name (e.g., "_g3" or "g3") to the TypedExpr that should replace it.
+     *
+     * WHY: In nested scenarios where no explicit TVar assignment exists, ID-based
+     * substitution may be unavailable. Name-based mapping provides a fallback to
+     * recover the original discriminant expression for case targets.
+     */
+    public var infraVarNameSubstitutions: Map<String, TypedExpr>;
 
     // ========================================================================
     // Module Context
@@ -267,6 +282,7 @@ class CompilationContext implements BuildContext {
         underscorePrefixedVars = new Map();
         variableUsageMap = new Map();
         functionParameterIds = new Map();
+        functionParameterNames = new Map();
         patternVariableRegistry = new Map();
 
         // Initialize clause context stack
@@ -289,6 +305,7 @@ class CompilationContext implements BuildContext {
         // Initialize infrastructure variable substitutions
         // Band-aid fix: Preserve preprocessor substitutions that builders lose
         infraVarSubstitutions = new Map();
+        infraVarNameSubstitutions = new Map();
 
         // Compiler references will be set by ElixirCompiler
         compiler = null;
@@ -377,6 +394,10 @@ class CompilationContext implements BuildContext {
         child.currentReceiverParamName = this.currentReceiverParamName;
         child.isInExUnitTest = this.isInExUnitTest;
         child.isInConstructorArgContext = this.isInConstructorArgContext;
+
+        // Inherit function parameter tracking to avoid collisions in nested builders
+        child.functionParameterIds = this.functionParameterIds;
+        child.functionParameterNames = this.functionParameterNames;
 
         return child;
     }

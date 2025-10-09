@@ -1,19 +1,55 @@
 class IntIterator {
 
-	public inline function new(min:Int, max:Int) {
-		this.min = min;
-		this.max = max;
-	}
+	public inline function new[Function:(min : Int, max : Int) -> Void]
+		[Arg:Int] [Local min(174):Int]
+		[Arg:Int] [Local max(175):Int]
+		[Block:Int]
+			[Binop:Int]
+				[Field:Int]
+					[Const:IntIterator] this
+					[FInstance:Int]
+						IntIterator
+						min:Int
+				=
+				[Local min(174):Int:Int]
+			[Binop:Int]
+				[Field:Int]
+					[Const:IntIterator] this
+					[FInstance:Int]
+						IntIterator
+						max:Int
+				=
+				[Local max(175):Int:Int]
 
 	var min:Int;
 
 	var max:Int;
 
-	public inline function hasNext() {
-		return this.min < this.max;
-	}
+	public inline function hasNext[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:Int]
+						[Const:IntIterator] this
+						[FInstance:Int]
+							IntIterator
+							min:Int
+					<
+					[Field:Int]
+						[Const:IntIterator] this
+						[FInstance:Int]
+							IntIterator
+							max:Int
 
-	public inline function next() {
-		return this.min ++;
-	}
+	public inline function next[Function:() -> Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Unop:Int]
+					++
+					Postfix
+					[Field:Int]
+						[Const:IntIterator] this
+						[FInstance:Int]
+							IntIterator
+							min:Int
 }

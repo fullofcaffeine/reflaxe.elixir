@@ -173,7 +173,7 @@ public static function generateMigrationModule(className: String): String {
 ### Immediate Actions (COMPLETED)
 1. ✅ **Use array join pattern** - Replace all string concatenation in macro blocks
 2. ✅ **Avoid StringBuf in macros** - Use alternatives like array join
-3. ✅ **Document the pattern** - Added to CLAUDE.md as hard rule
+3. ✅ **Document the pattern** - Added to AGENTS.md as hard rule
 
 ### Short Term
 1. **Audit existing macro code** - Check for string concatenation patterns:

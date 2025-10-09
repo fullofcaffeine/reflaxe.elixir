@@ -1,4 +1,4 @@
-@:realPath("phoenix.Component") @:directlyUsed @:used @:native("Phoenix.Component")
+@:realPath("phoenix.Component") @:native("Phoenix.Component")
 extern class Phoenix.Component {
 
 	@:templateHelper

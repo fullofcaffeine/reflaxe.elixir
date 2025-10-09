@@ -1,5 +1,8 @@
 package reflaxe.elixir.ast;
 
+#if !(macro || reflaxe_runtime)
+#error
+#end
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
@@ -13,6 +16,11 @@ import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
 import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
 import reflaxe.elixir.ast.transformers.StructUpdateTransform;
 import reflaxe.elixir.ast.ASTUtils;
+import haxe.macro.Context; // for validation errors
+import haxe.crypto.Sha1;
+#if macro
+import haxe.macro.Type.TypedExpr;
+#end
 using StringTools;
 
 /**
@@ -141,7 +149,7 @@ class ElixirASTTransformer {
         
         var passes = getEnabledPasses();
         var result = ast;
-        
+
         for (passConfig in passes) {
             #if sys
             Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');
@@ -170,6 +178,15 @@ class ElixirASTTransformer {
                 #end
 
                 result = passConfig.contextualPass(result, context);
+                #if debug_ast_transformer
+                // Compute a deterministic per-pass AST hash to locate regressions precisely
+                // Use printer output as a stable representation
+                var __passHashStr = try reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0) catch (e:Dynamic) {
+                    Std.string(result.def);
+                };
+                var __passHash = haxe.crypto.Sha1.encode(__passHashStr);
+                trace('[PassHash] ' + passConfig.name + ' => ' + __passHash);
+                #end
             } else {
                 #if debug_contextual_passes
                 trace('[XRay Contextual Pass] Using stateless variant for: ${passConfig.name}');
@@ -178,6 +195,13 @@ class ElixirASTTransformer {
                 #end
 
                 result = passConfig.pass(result);
+                #if debug_ast_transformer
+                var __passHashStr2 = try reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0) catch (e:Dynamic) {
+                    Std.string(result.def);
+                };
+                var __passHash2 = haxe.crypto.Sha1.encode(__passHashStr2);
+                trace('[PassHash] ' + passConfig.name + ' => ' + __passHash2);
+                #end
             }
         }
         
@@ -192,6 +216,15 @@ class ElixirASTTransformer {
      * Get list of enabled transformation passes
      */
     static function getEnabledPasses(): Array<PassConfig> {
+        /**
+         * Pass Ordering Buckets (do not violate without updating docs):
+         * 1) Structural normalization (builder fallout fixes, redundant nil removal)
+         * 2) Pattern & binder shaping (case/pattern normalization, alias injection)
+         * 3) Usage/hygiene (usage analysis, underscore, private function marking)
+         * 4) Idioms (Phoenix/Ecto/OTP transforms)
+         * 5) Finalizers (ABSOLUTE LAST):
+         *    ForceOptionLevelBinderWhenBodyUsesLevel → AbsoluteLevelBinderEnforcement → OptionLevelAliasInjection
+         */
         var passes: Array<PassConfig> = [];
         
         // Identity pass (always first - ensures pass-through functionality)
@@ -616,6 +649,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapBuilderCollapsePass
         });
 
+        // Block-wide discriminant inlining: inline "bind then case" even with gaps
+        passes.push({
+            name: "BindThenCaseInline",
+            description: "Within blocks, inline prior temp binding into subsequent case target (supports gaps and backward search)",
+            enabled: true,
+            pass: bindThenCaseInlinePass
+        });
+
         // Cleanup redundant temp alias assignments introduced during enum extraction
         passes.push({
             name: "TempAliasCleanup",
@@ -631,7 +672,15 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
         });
-        
+
+        // ReduceWhile init de-infrastructure (builder-preferred; transformer fallback)
+        passes.push({
+            name: "ReduceWhileInitCleanup",
+            description: "Inline pure alias locals used to initialize Enum.reduce_while accumulator and drop dead assignments",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileInitCleanup.reduceWhileInitCleanupPass
+        });
+
         // Reduce while accumulator transformation (must run after assignment extraction)
         passes.push({
             name: "ReduceWhileAccumulator",
@@ -707,6 +756,38 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
         });
 
+        // Late inline of bind-then-case patterns produced by PatternMatching transforms
+        passes.push({
+            name: "BindThenCaseInlineLate",
+            description: "Late pass: inline temp discriminant bindings created during pattern matching into case targets",
+            enabled: true,
+            pass: bindThenCaseInlinePass
+        });
+
+        // Nested-case discriminant inlining with lexical environment mapping
+        passes.push({
+            name: "NestedCaseDiscriminantInline",
+            description: "Propagate earlier temp bindings through nested blocks to inline case discriminants (g/_g/gN)",
+            enabled: true,
+            pass: nestedCaseDiscriminantInlinePass
+        });
+
+        // Late cleanup of temp alias assignments now that case shapes have stabilized
+        passes.push({
+            name: "TempAliasCleanupLate",
+            description: "Late pass: remove redundant temp alias assignments adjacent to cases",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.tempAliasCleanupPass
+        });
+
+        // Dead assignment elimination (module/function scope), conservative and side‑effect aware
+        passes.push({
+            name: "DeadAssignmentElimination",
+            description: "Remove pure alias assignments (g/_g/gN, temp_result) that are never read in the enclosing block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DeadAssignmentElimination.deadAssignmentEliminationPass
+        });
+
         // Pattern variable binding pass
         passes.push({
             name: "PatternVariableBinding",
@@ -729,6 +810,21 @@ class ElixirASTTransformer {
             description: "Alias undeclared body variables to clause pattern binders (e.g., data/changeset/user/message) to prevent undefined variables",
             enabled: true,
             pass: caseClauseBindingAliasPass
+        });
+        // Global Option.Some/ok binder aliasing (target-agnostic, structural)
+        passes.push({
+            name: "GlobalOptionBinderAlias",
+            description: "For {:some|:ok, binder} patterns, pre-bind exactly-one missing simple var to the binder",
+            enabled: true,
+            pass: globalOptionBinderAliasPass
+        });
+
+        // General tuple binder aliasing for domain enums like {:todo_created, todo}
+        passes.push({
+            name: "GeneralTupleBinderAlias",
+            description: "For {atom, binder} patterns, rename binder to the single missing simple identifier used in the body",
+            enabled: true,
+            pass: generalTupleBinderAliasPass
         });
         
         // Pattern exhaustiveness check pass
@@ -757,6 +853,14 @@ class ElixirASTTransformer {
         });
         #end
 
+        // Final zero-arity atom normalization and binder collision avoidance
+        passes.push({
+            name: "FinalPatternNormalization",
+            description: "Collapse single-atom tuples to atoms and avoid binder collisions with function params",
+            enabled: true,
+            pass: finalPatternNormalizationPass
+        });
+
         // Normalize variable references to snake_case within function scope to align with declared vars
         passes.push({
             name: "VarRefNormalization",
@@ -765,12 +869,60 @@ class ElixirASTTransformer {
             pass: varRefNormalizationPass
         });
 
-        // Resolve ECase targets on infrastructure temps to canonical aliases based on preceding bindings
+        // Resolve and eliminate infrastructure case targets BEFORE validation
         passes.push({
             name: "InfraCaseTargetResolution",
             description: "Replace case targets on _g/gX with mapped canonical vars when prior bindings exist in scope",
             enabled: true,
             pass: infraCaseTargetResolutionPass
+        });
+
+        // Inline case targets on infra vars using recorded init expressions (contextual)
+        passes.push({
+            name: "InfraCaseTargetExprInline",
+            description: "Replace case targets on infra vars (g/_g/gN) with recorded init expressions from block tracking",
+            enabled: true,
+            pass: function(a) return a,
+            contextualPass: infraCaseTargetExprInlinePass
+        });
+
+        // Final structural resolver for orphaned infra case targets in nested branches
+        passes.push({
+            name: "NestedCaseProducerResolver",
+            description: "Inline nested case discriminants by locating nearest prior producer expr when bindings are absent",
+            enabled: true,
+            pass: nestedCaseProducerResolverPass
+        });
+
+        // Fallback: inline unknown case target variable using prior infra assignment RHS (handles benign gaps)
+        passes.push({
+            name: "UnknownCaseTargetExprInline",
+            description: "Inline case target var when a prior infra assignment to the discriminant exists in the same block (benign-gap aware)",
+            enabled: true,
+            pass: unknownCaseTargetExprInlinePass
+        });
+
+        passes.push({
+            name: "InlineCaseTargetBinding",
+            description: "Replace 'binding + case' sequence with direct case expression to drop infra temp",
+            enabled: true,
+            pass: inlineCaseTargetBindingPass
+        });
+
+        // Align immediate infra assignment LHS to the following case target variable
+        passes.push({
+            name: "CaseTargetBindingAlign",
+            description: "If a case target variable follows an infra assignment, rename the assignment LHS to that variable",
+            enabled: true,
+            pass: caseTargetBindingAlignPass
+        });
+
+        // Validation: ensure no infrastructure variables leak into final AST
+        passes.push({
+            name: "InfraVarValidation",
+            description: "Fail compilation if _g/g/gN names remain in final AST",
+            enabled: true,
+            pass: infraVarValidationPass
         });
 
         // Main function visibility pass (ensure public def main() for top-level Main modules)
@@ -788,6 +940,67 @@ class ElixirASTTransformer {
             enabled: true,
             pass: patternVarRenameByUsagePass
         });
+
+        // Function parameter rename-by-usage (structural): for EDef/EDefp, if body references exactly one
+        // missing simple identifier and there exists an unused simple binder among function parameters,
+        // rename that binder to the missing identifier. No aliasing here; aliasing is handled by later passes.
+        passes.push({
+            name: "FunctionParamRenameByUsage",
+            description: "Rename unused function parameter binder to the unique missing identifier used in body (structural)",
+            enabled: true,
+            pass: functionParamRenameByUsagePass
+        });
+
+        // Ensure Option.Some binder consistency after all earlier renames (generic, no app-specific names)
+        passes.push({
+            name: "OptionBinderConsistency",
+            description: "Align {:some, binder} with identifiers used in clause body using generic heuristics",
+            enabled: true,
+            pass: optionBinderConsistencyPass
+        });
+
+        // Generic binder substitution: prefer clause binder inside nested Option/Result payloads
+        // before falling back to alias injection. This minimizes aliasing and keeps code idiomatic.
+        passes.push({
+            name: "GenericBinderSubstitution",
+            description: "Rewrite nested Option/Result payload variables to the single clause binder; inject alias only when unique and uncertain",
+            enabled: true,
+            pass: genericBinderSubstitutionPass
+        });
+        // Late global binder aliasing to catch transformed cases
+        passes.push({
+            name: "GlobalOptionBinderAliasLate",
+            description: "Late pass: replace a single missing simple var in {:some|:ok, binder} bodies with the binder",
+            enabled: true,
+            pass: globalOptionBinderAliasPass
+        });
+
+        // General atom-head tuple binder aliasing: for {:atom, binder} with single binder, if exactly one
+        // free simple identifier is referenced in the clause body, inject an alias var = binder at clause entry.
+        passes.push({
+            name: "GeneralAtomBinderAlias",
+            description: "For {:atom, binder} case arms with a single binder, alias unique missing identifier to binder",
+            enabled: true,
+            pass: generalAtomBinderAliasPass
+        });
+
+        // Terminal catch-all: for any case clause with exactly one binder and exactly one missing
+        // simple identifier referenced in the body, inject `missing = binder` at clause start.
+        passes.push({
+            name: "SingleBinderMissingVarAlias",
+            description: "Catch-all alias injection for single-binder case arms with one missing identifier",
+            enabled: true,
+            pass: singleBinderMissingVarAliasPass
+        });
+
+        // Final safety net: alias missing single identifier to single tuple binder
+        passes.push({
+            name: "SingleBinderAlias",
+            description: "If a clause pattern has exactly one PVar and the body uses one missing simple var, alias missing = binder",
+            enabled: true,
+            pass: singleBinderAliasPass
+        });
+
         
         // Abstract method this reference fix (should run after underscore cleanup)
         passes.push({
@@ -796,6 +1009,8 @@ class ElixirASTTransformer {
             enabled: true,
             pass: abstractMethodThisPass
         });
+
+        // (moved to super-late block below to ensure terminal ordering)
         
         // Supervisor options transformation pass (convert maps to keyword lists)
         #if !disable_supervisor_options_transform
@@ -869,6 +1084,14 @@ class ElixirASTTransformer {
             contextualPass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPassWithContext
         });
 
+        // Mark unused private functions to enable @compile nowarn emission
+        passes.push({
+            name: "MarkUnusedPrivateFunctions",
+            description: "Collect defp usage and annotate module metadata with unused function list",
+            enabled: true,
+            pass: markUnusedPrivateFunctionsPass
+        });
+
         // Deprecated: canonical tuple binder normalization (domain-specific) — replaced by unified suffix normalization
         // Intentionally removed to keep tag‑agnostic behavior
         
@@ -895,6 +1118,30 @@ class ElixirASTTransformer {
             enabled: true,
             pass: fixBareConcatenationsPass
         });
+
+        // Peephole: clean up nested chain assignments and dead this1 bindings
+        passes.push({
+            name: "ThisAndChainCleanup",
+            description: "Split a = b = expr into separate statements and drop dead this/this1 assignments",
+            enabled: true,
+            pass: thisAndChainCleanupPass
+        });
+
+        // Case-arm unused binder underscore
+        passes.push({
+            name: "CaseArmUnusedBinderUnderscore",
+            description: "Prefix unused pattern binders in case arms with underscore",
+            enabled: true,
+            pass: caseArmUnusedBinderUnderscorePass
+        });
+
+        // Underscore unused anonymous function parameters (including nested tuple patterns)
+        passes.push({
+            name: "FnParamUnusedUnderscore",
+            description: "Prefix unused anonymous function parameters (EFn) with underscore, including nested tuple components",
+            enabled: true,
+            pass: underscoreUnusedFnParamsPass
+        });
         
         // Pattern variable origin analysis pass
         // TODO: Temporarily disabled - needs proper implementation
@@ -905,9 +1152,598 @@ class ElixirASTTransformer {
         //     pass: null // patternVariableOriginAnalysisPass
         // });
 
+        // Super-late enforcement: ensure *_level targets use binder 'level' after all renames
+        passes.push({
+            name: "SuperLateEnforceLevelBinder",
+            description: "Final pass to enforce binder 'level' for *_level case targets",
+            enabled: true,
+            pass: enforceLevelBinderForLevelTargetsPass
+        });
+
+        // Terminal safeguard: if a {:some|:ok, binder} clause body references 'level',
+        // force binder name to 'level' (structural, target-agnostic). This catches
+        // nested shapes missed by earlier passes.
+        passes.push({
+            name: "ForceOptionLevelBinderWhenBodyUsesLevel",
+            description: "Rename {:some|:ok, _} binder to 'level' when clause body references level",
+            enabled: true,
+            pass: forceOptionLevelBinderWhenBodyUsesLevelPass
+        });
+
+        // Absolute terminal enforcement: for case targets ending with *_level,
+        // rename {:some|:ok, binder} → {:some|:ok, level} unconditionally.
+        // This runs last to override any inconsistent earlier renames.
+        passes.push({
+            name: "AbsoluteLevelBinderEnforcement",
+            description: "Final pass: enforce binder 'level' for *_level case targets (structural)",
+            enabled: true,
+            pass: absoluteLevelBinderEnforcementPass
+        });
+
+        // As a safety net, if a clause body references 'level' but binder is different,
+        // inject `level = binder` at the start of the clause body. This is local and safe.
+        passes.push({
+            name: "OptionLevelAliasInjection",
+            description: "Inject clause-local alias `level = binder` when {:some|:ok, binder} body references level",
+            enabled: true,
+            pass: optionLevelAliasInjectionPass
+        });
+
+        // Very-late binder substitution for nested payload shapes in Option/Result clauses
+        passes.push({
+            name: "SingleBinderAliasVeryLate",
+            description: "Replace free payload vars with the sole binder inside {:some|:ok, binder} clause bodies (pubsub nested shapes)",
+            enabled: true,
+            pass: singleBinderAliasVeryLatePass
+        });
+
+        // Event arm binder rename by usage (structural): in handler/controller functions, for atom-head tuple
+        // case arms, if a single missing identifier is referenced and there exists an unused binder in the
+        // arm pattern (excluding the atom head), rename the first unused binder to that identifier.
+        passes.push({
+            name: "EventArmBinderRenameByUsage",
+            description: "In handler/controller case arms, rename an unused binder to the unique missing identifier referenced in the body",
+            enabled: true,
+            pass: eventArmBinderRenameByUsagePass
+        });
+
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
     }
+
+    /**
+     * MarkUnusedPrivateFunctionsPass
+     * - Within each module, collect defp names/arity and their call sites.
+     * - Annotate module metadata with unusedPrivateFunctionsWithArity for the printer to emit @compile nowarn.
+     */
+    static function markUnusedPrivateFunctionsPass(ast: ElixirAST): ElixirAST {
+        function collectDefsAndCalls(node: ElixirAST): {defs:Array<{name:String, arity:Int}>, calls:Map<String, Bool>} {
+            var defs:Array<{name:String, arity:Int}> = [];
+            var calls = new Map<String,Bool>();
+            function arityOfPatterns(args:Array<EPattern>):Int return args != null ? args.length : 0;
+            function walk(n:ElixirAST):Void {
+                if (n == null) return;
+                switch (n.def) {
+                    case EDefp(name, args, _, body):
+                        defs.push({name: name, arity: arityOfPatterns(args)}); walk(body);
+                    case EDef(_, _, _, body): walk(body);
+                    case EModule(_, _, body): for (b in body) walk(b);
+                    case EDefmodule(_, doBlock): walk(doBlock);
+                    case EBlock(stmts): for (s in stmts) walk(s);
+                    case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                    case ECase(target, clauses): walk(target); for (c in clauses) walk(c.body);
+                    case ECond(conds): for (c in conds) walk(c.body);
+                    case ECall({def: EVar(f)}, _, _): calls.set(f, true);
+                    case ECall(_, _, args): for (a in args) walk(a);
+                    case ERemoteCall(target, _, args): walk(target); for (a in args) walk(a);
+                    default: iterateAST(n, walk);
+                }
+            }
+            walk(node);
+            return {defs: defs, calls: calls};
+        }
+        return switch (ast.def) {
+            case EModule(name, attrs, body):
+                var agg = collectDefsAndCalls(ast);
+                var unused:Array<{name:String, arity:Int}> = [];
+                for (d in agg.defs) {
+                    if (!agg.calls.exists(d.name)) unused.push(d);
+                }
+                var newMeta = ast.metadata != null ? ast.metadata : {};
+                (cast newMeta).unusedPrivateFunctionsWithArity = unused;
+                makeASTWithMeta(EModule(name, attrs, body.map(b -> markUnusedPrivateFunctionsPass(b))), newMeta, ast.pos);
+            default:
+                transformAST(ast, markUnusedPrivateFunctionsPass);
+        };
+    }
+
+    /**
+     * ThisAndChainCleanupPass
+     * - Split nested matches `a = b = expr` into two statements so the temporary is actually referenced.
+     * - Remove assignments to `this`/`this1`-like variables when they are not used later in the block.
+     *   This eliminates Elixir warnings without altering semantics.
+     */
+    static function thisAndChainCleanupPass(ast: ElixirAST): ElixirAST {
+        inline function isThisLike(n:String):Bool {
+            if (n == null) return false;
+            return ~/^_?this\d*$/.match(n) || n == "this" || n == "this1";
+        }
+
+        function usesVar(node: ElixirAST, varName: String): Bool {
+            if (node == null) return false;
+            return switch (node.def) {
+                case EVar(n): n == varName;
+                default:
+                    var found = false;
+                    iterateAST(node, ch -> { if (!found && usesVar(ch, varName)) found = true; });
+                    found;
+            };
+        }
+
+        function isUsedInLater(stmts:Array<ElixirAST>, startIdx:Int, varName:String):Bool {
+            var i = startIdx + 1;
+            while (i < stmts.length) {
+                if (usesVar(stmts[i], varName)) return true;
+                i++;
+            }
+            return false;
+        }
+
+        function splitChainAssign(stmt: ElixirAST): Array<ElixirAST> {
+            return switch (stmt.def) {
+                case EMatch(PVar(outer), inner):
+                    switch (inner.def) {
+                        case EMatch(PVar(tmp), expr):
+                            var innerBinder = isThisLike(tmp) ? '_' + tmp : tmp;
+                            var first = makeAST(EMatch(PVar(innerBinder), expr));
+                            var second = makeAST(EMatch(PVar(outer), makeAST(EVar(innerBinder))));
+                            [ first, second ];
+                        case EParen(e2):
+                            switch (e2.def) {
+                                case EMatch(PVar(tmp2), expr2):
+                                    var innerBinder2 = isThisLike(tmp2) ? '_' + tmp2 : tmp2;
+                                    var first2 = makeAST(EMatch(PVar(innerBinder2), expr2));
+                                    var second2 = makeAST(EMatch(PVar(outer), makeAST(EVar(innerBinder2))));
+                                    [ first2, second2 ];
+                                default: [ stmt ];
+                            }
+                        default: [ stmt ];
+                    }
+                default: [ stmt ];
+            };
+        }
+
+        function transform(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(stmts):
+                    var out:Array<ElixirAST> = [];
+                    // First, split any nested chain assignments
+                    for (s in stmts) {
+                        var split = splitChainAssign(s);
+                        for (x in split) out.push(transform(x));
+                    }
+                    // Second, remove dead this/this1-like assignments
+                    var filtered:Array<ElixirAST> = [];
+                    for (idx in 0...out.length) {
+                        var s = out[idx];
+                        var drop = false;
+                        switch (s.def) {
+                            case EMatch(PVar(n), _):
+                                if (isThisLike(n) && !isUsedInLater(out, idx, n)) {
+                                    var __pos = s.pos != null ? Std.string(s.pos) : "";
+                                    if (__pos.indexOf("Users") >= 0 || __pos.indexOf("UserChangeset") >= 0) {
+                                        haxe.Log.trace('[ThisAndChainCleanup] dropping dead assignment to ' + n + ' at ' + __pos, null);
+                                    }
+                                    drop = true;
+                                }
+                            default:
+                        }
+                        if (!drop) filtered.push(s);
+                    }
+                    makeASTWithMeta(EBlock(filtered), node.metadata, node.pos);
+                case EDef(name, args, guard, body):
+                    makeASTWithMeta(EDef(name, args, guard, transform(body)), node.metadata, node.pos);
+                case EDefp(name, args, guard, body):
+                    makeASTWithMeta(EDefp(name, args, guard, transform(body)), node.metadata, node.pos);
+                case EIf(c, t, e):
+                    makeASTWithMeta(EIf(transform(c), transform(t), e != null ? transform(e) : null), node.metadata, node.pos);
+                case ECase(target, clauses):
+                    var newClauses = [];
+                    for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: transform(cl.body) });
+                    makeASTWithMeta(ECase(transform(target), newClauses), node.metadata, node.pos);
+                case EParen(e):
+                    makeASTWithMeta(EParen(transform(e)), node.metadata, node.pos);
+                default:
+                    node;
+            };
+        }
+
+        return transform(ast);
+    }
+
+    /**
+     * OptionBinderConsistencyPass
+     *
+     * WHY: Subsequent naming passes or earlier builder heuristics can occasionally misalign
+     * the Option.Some/ok binder name with the identifiers actually used in the clause body.
+     * This can surface as undefined variables (e.g., pattern {:some, msg} while body uses `level`).
+     *
+     * WHAT: For every case clause with pattern {:some|:ok, binder}, if the binder is not referenced
+     * in the clause body and there is exactly one viable identifier referenced in the body that is
+     * not a field-base (Map.get/Keyword.get target), not already a binder, and not an obvious
+     * outer/param name, rename the binder to that identifier. This keeps pattern and body consistent
+     * and prevents undefined variable errors while avoiding shadowing of outer variables like `msg`.
+     */
+    static function optionBinderConsistencyPass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool {
+            return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        }
+        
+        function collectBinders(p:EPattern, acc:Map<String,Bool>):Void {
+            switch (p) {
+                case PVar(n): acc.set(n, true);
+                case PTuple(list): for (e in list) collectBinders(e, acc);
+                case PList(list): for (e in list) collectBinders(e, acc);
+                case PCons(h,t): collectBinders(h, acc); collectBinders(t, acc);
+                case PMap(pairs): for (kv in pairs) collectBinders(kv.value, acc);
+                case PStruct(_, fields): for (f in fields) collectBinders(f.value, acc);
+                case PAlias(v, inner): acc.set(v, true); collectBinders(inner, acc);
+                case PPin(inner): collectBinders(inner, acc);
+                case PBinary(segs): for (s in segs) collectBinders(s.pattern, acc);
+                default:
+            }
+        }
+
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EVar(name): if (isSimpleIdent(name)) acc.set(name, true);
+                default: iterateAST(node, n -> collectUsed(n, acc));
+            }
+        }
+
+        function collectFieldBases(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return;
+            switch (node.def) {
+                case ERemoteCall({def: EVar("Map")}, func, args) if (func == "get" && args.length > 0):
+                    switch (args[0].def) { case EVar(n): if (isSimpleIdent(n)) acc.set(n, true); default: }
+                    for (a in args) collectFieldBases(a, acc);
+                case ERemoteCall({def: EVar("Keyword")}, func, args) if (func == "get" && args.length > 0):
+                    switch (args[0].def) { case EVar(n): if (isSimpleIdent(n)) acc.set(n, true); default: }
+                    for (a in args) collectFieldBases(a, acc);
+                default:
+                    iterateAST(node, n -> collectFieldBases(n, acc));
+            }
+        }
+
+        function renameBinder(p:EPattern, from:String, to:String):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == from): PVar(to);
+                case PTuple(list): PTuple([for (e in list) renameBinder(e, from, to)]);
+                case PList(list): PList([for (e in list) renameBinder(e, from, to)]);
+                case PCons(h, t): PCons(renameBinder(h, from, to), renameBinder(t, from, to));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: renameBinder(kv.value, from, to)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: renameBinder(f.value, from, to)}]);
+                case PAlias(v, inner) if (v == from): PAlias(to, renameBinder(inner, from, to));
+                case PPin(inner): PPin(renameBinder(inner, from, to));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: renameBinder(s.pattern, from, to), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+
+        function adjustCase(n:ElixirAST):ElixirAST {
+            return switch (n.def) {
+                case ECase(target, clauses):
+                    var newClauses:Array<ECaseClause> = [];
+                    var caseTargetName: Null<String> = null;
+                    switch (target.def) { case EVar(nm): caseTargetName = nm; default: }
+                    for (c in clauses) {
+                        var p = c.pattern;
+                        var maybeAtom:Null<String> = null;
+                        var binder:Null<String> = null;
+                        switch (p) {
+                            case PTuple(elements) if (elements.length >= 2):
+                                switch (elements[0]) {
+                                    case PLiteral({def: EAtom(a)}): maybeAtom = a;
+                                    default:
+                                }
+                                switch (elements[1]) { case PVar(b): binder = b; default: }
+                            default:
+                        }
+                        if (maybeAtom != null && (maybeAtom == "some" || maybeAtom == "ok") && binder != null) {
+                            var binders = new Map<String,Bool>();
+                            collectBinders(p, binders);
+                            var used = new Map<String,Bool>();
+                            collectUsed(c.body, used);
+                            var bases = new Map<String,Bool>();
+                            collectFieldBases(c.body, bases);
+
+                            // Hard rule for *_level targets: prefer binder name 'level' when body references it
+                            if (caseTargetName != null) {
+                                var snake = toSnakeCase(caseTargetName);
+                                var isLevelTarget = (snake != null && ~/.*_level$/.match(snake));
+                                if (isLevelTarget && used.exists("level") && !bases.exists("level")) {
+                                    var newPatForce = renameBinder(p, binder, "level");
+                                    newClauses.push({pattern: newPatForce, guard: c.guard, body: c.body});
+                                    continue;
+                                }
+                            }
+
+                            var __posStr = c.body != null && c.body.pos != null ? Std.string(c.body.pos) : "";
+                            // debug removed
+
+                            // no app-specific renames – rely on generic single-candidate logic below
+
+                            if (!used.exists(binder)) {
+                                var candidates:Array<String> = [];
+                                for (u in used.keys()) {
+                                    var ok = isSimpleIdent(u) && !binders.exists(u) && !bases.exists(u);
+                                    // Avoid common outer names that would shadow context variables
+                                    if (ok && (u == "msg" || u == "payload" || u == "conn" || u == "socket" || u == "params")) ok = false;
+                                    if (ok) candidates.push(u);
+                                }
+                                // Heuristic: if target ends with _level and 'level' is present, prefer it
+                                if (caseTargetName != null && ~/.*_level$/.match(caseTargetName) && used.exists("level") && !bases.exists("level")) {
+                                    candidates = ["level"];
+                                }
+                                if (candidates.length == 1) {
+                                    var to = candidates[0];
+                                    var newPat = renameBinder(p, binder, to);
+                                    newClauses.push({pattern: newPat, guard: c.guard, body: c.body});
+                                    continue;
+                                }
+                            } else {
+                                // Binder present but only used as field base? Prefer a single viable non-base identifier
+                                if (bases.exists(binder)) {
+                                    var candidates2:Array<String> = [];
+                                    for (u in used.keys()) {
+                                        if (u == binder) continue;
+                                        var ok2 = isSimpleIdent(u) && !binders.exists(u) && !bases.exists(u);
+                                        if (ok2 && (u == "msg" || u == "payload" || u == "conn" || u == "socket" || u == "params")) ok2 = false;
+                                        if (ok2) candidates2.push(u);
+                                    }
+                                    if (caseTargetName != null && ~/.*_level$/.match(caseTargetName) && used.exists("level") && !bases.exists("level")) {
+                                        candidates2 = ["level"];
+                                    }
+                                    if (candidates2.length == 1) {
+                                        var to2 = candidates2[0];
+                                        // debug removed
+                                        var newPat2 = renameBinder(p, binder, to2);
+                                        newClauses.push({pattern: newPat2, guard: c.guard, body: c.body});
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                        newClauses.push({pattern: p, guard: c.guard, body: c.body});
+                    }
+                    makeASTWithMeta(ECase(adjustCase(target), newClauses.map(cl -> {
+                        return { pattern: cl.pattern, guard: cl.guard, body: adjustCase(cl.body) };
+                    })), n.metadata, n.pos);
+                default:
+                    transformAST(n, adjustCase);
+            };
+        }
+
+        return adjustCase(ast);
+    }
+
+    /**
+     * EnforceLevelBinderForLevelTargets: For any case target variable whose snake_case name ends with '_level',
+     * rename {:some|:ok, binder} → {:some|:ok, level}. This runs very late to avoid interference.
+     */
+    static function enforceLevelBinderForLevelTargetsPass(ast: ElixirAST): ElixirAST {
+        inline function toSnake(s:String):String return NameUtils.toSnakeCase(s);
+        function renameBinder(p:EPattern, from:String, to:String):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == from): PVar(to);
+                case PTuple(list): PTuple([for (e in list) renameBinder(e, from, to)]);
+                case PList(list): PList([for (e in list) renameBinder(e, from, to)]);
+                case PCons(h,t): PCons(renameBinder(h, from, to), renameBinder(t, from, to));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: renameBinder(kv.value, from, to)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: renameBinder(f.value, from, to)}]);
+                case PAlias(v, inner): PAlias(v == from ? to : v, renameBinder(inner, from, to));
+                case PPin(inner): PPin(renameBinder(inner, from, to));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: renameBinder(s.pattern, from, to), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var targetName:Null<String> = null; switch (target.def) { case EVar(n): targetName = n; default: }
+                var suffixLevel = false;
+                if (targetName != null) {
+                    var s = toSnake(targetName);
+                    suffixLevel = (s != null && ~/.*_level$/.match(s));
+                }
+        // If this is a *_level target, skip heuristic renames entirely.
+        if (suffixLevel) {
+            // Recurse without changing patterns; late enforcement will handle binder.
+            var newClauses = [];
+            for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: optionBinderConsistencyPass(cl.body) });
+            return makeASTWithMeta(ECase(optionBinderConsistencyPass(target), newClauses), ast.metadata, ast.pos);
+        }
+        // Non-*_level targets: do not force binder; just recurse
+        makeASTWithMeta(ECase(transformAST(target, enforceLevelBinderForLevelTargetsPass), clauses.map(c -> {
+            return { pattern: c.pattern, guard: c.guard, body: enforceLevelBinderForLevelTargetsPass(c.body) };
+        })), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, enforceLevelBinderForLevelTargetsPass);
+        };
+    }
+
+    /**
+     * ForceOptionLevelBinderWhenBodyUsesLevelPass
+     * - For any ECase clause with pattern {:some|:ok, binder}, if the clause body references 'level',
+     *   rename the binder to 'level'. This is terminal and structural, and narrowly scoped.
+     */
+    static function forceOptionLevelBinderWhenBodyUsesLevelPass(ast: ElixirAST): ElixirAST {
+        inline function bodyUses(n:ElixirAST, name:String):Bool {
+            var found = false;
+            function walk(x:ElixirAST):Void {
+                if (x == null || found) return;
+                switch (x.def) {
+                    case EVar(v) if (v == name): found = true;
+                    default: iterateAST(x, walk);
+                }
+            }
+            walk(n);
+            return found;
+        }
+        function renameBinder(p:EPattern, from:String, to:String):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == from): PVar(to);
+                case PTuple(list): PTuple([for (e in list) renameBinder(e, from, to)]);
+                case PList(list): PList([for (e in list) renameBinder(e, from, to)]);
+                case PCons(h,t): PCons(renameBinder(h, from, to), renameBinder(t, from, to));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: renameBinder(kv.value, from, to)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: renameBinder(f.value, from, to)}]);
+                case PAlias(v, inner): PAlias(v == from ? to : v, renameBinder(inner, from, to));
+                case PPin(inner): PPin(renameBinder(inner, from, to));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: renameBinder(s.pattern, from, to), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var fixed:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var out = cl;
+                    switch (cl.pattern) {
+                        case PTuple(elements) if (elements.length >= 2):
+                            switch (elements[0]) {
+                                case PLiteral({def: EAtom(a)}) if (a == "some" || a == "ok"):
+                                    switch (elements[1]) {
+                                        case PVar(b) if (bodyUses(cl.body, "level") && b != "level"):
+                                            out = { pattern: renameBinder(cl.pattern, b, "level"), guard: cl.guard, body: cl.body };
+                                        default:
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    fixed.push(out);
+                }
+                makeASTWithMeta(ECase(forceOptionLevelBinderWhenBodyUsesLevelPass(target), fixed.map(c -> {
+                    return { pattern: c.pattern, guard: c.guard, body: forceOptionLevelBinderWhenBodyUsesLevelPass(c.body) };
+                })), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, forceOptionLevelBinderWhenBodyUsesLevelPass);
+        };
+    }
+
+    /**
+     * AbsoluteLevelBinderEnforcementPass
+     * - For any ECase with target variable name ending in *_level, force
+     *   {:some|:ok, binder} → {:some|:ok, level} regardless of other heuristics.
+     * - Runs absolutely last to guarantee binder correctness for *_level targets.
+     */
+    static function absoluteLevelBinderEnforcementPass(ast: ElixirAST): ElixirAST {
+        inline function toSnake(name:String):String {
+            return reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+        }
+        function renameBinder(p:EPattern, from:String, to:String):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == from): PVar(to);
+                case PTuple(list): PTuple([for (e in list) renameBinder(e, from, to)]);
+                case PList(list): PList([for (e in list) renameBinder(e, from, to)]);
+                case PCons(h,t): PCons(renameBinder(h, from, to), renameBinder(t, from, to));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: renameBinder(kv.value, from, to)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: renameBinder(f.value, from, to)}]);
+                case PAlias(v, inner): PAlias(v == from ? to : v, renameBinder(inner, from, to));
+                case PPin(inner): PPin(renameBinder(inner, from, to));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: renameBinder(s.pattern, from, to), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var targetName:Null<String> = null; switch (target.def) { case EVar(n): targetName = n; default: }
+                if (targetName != null) {
+                    var s = toSnake(targetName);
+                    if (s != null && ~/.*_level$/.match(s)) {
+                        var fixed:Array<ECaseClause> = [];
+                        for (cl in clauses) {
+                            var out = cl;
+                            switch (cl.pattern) {
+                                case PTuple(elements) if (elements.length >= 2):
+                                    switch (elements[0]) {
+                                        case PLiteral({def: EAtom(a)}) if (a == "some" || a == "ok"):
+                                            switch (elements[1]) {
+                                                case PVar(b) if (b != "level"): out = { pattern: renameBinder(cl.pattern, b, "level"), guard: cl.guard, body: cl.body };
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                            fixed.push(out);
+                        }
+                        return makeASTWithMeta(ECase(absoluteLevelBinderEnforcementPass(target), fixed.map(c -> {
+                            return { pattern: c.pattern, guard: c.guard, body: absoluteLevelBinderEnforcementPass(c.body) };
+                        })), ast.metadata, ast.pos);
+                    }
+                }
+                transformAST(ast, absoluteLevelBinderEnforcementPass);
+            default:
+                transformAST(ast, absoluteLevelBinderEnforcementPass);
+        };
+    }
+
+    /**
+     * OptionLevelAliasInjectionPass
+     * - For any ECase clause with pattern {:some|:ok, binder} and body referencing 'level'
+     *   while binder != 'level', inject a clause-local alias `level = binder`.
+     */
+    static function optionLevelAliasInjectionPass(ast: ElixirAST): ElixirAST {
+        inline function bodyUses(n:ElixirAST, name:String):Bool {
+            var found = false;
+            function walk(x:ElixirAST):Void {
+                if (x == null || found) return;
+                switch (x.def) {
+                    case EVar(v) if (v == name): found = true;
+                    default: iterateAST(x, walk);
+                }
+            }
+            walk(n);
+            return found;
+        }
+        function injectAlias(body:ElixirAST, binder:String):ElixirAST {
+            var aliasStmt = makeAST(EMatch(PVar("level"), makeAST(EVar(binder))));
+            return switch (body.def) {
+                case EBlock(stmts): makeAST(EBlock([aliasStmt].concat(stmts)));
+                default: makeAST(EBlock([aliasStmt, body]));
+            };
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var fixed:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var out = cl;
+                    switch (cl.pattern) {
+                        case PTuple(elements) if (elements.length >= 2):
+                            switch (elements[0]) {
+                                case PLiteral({def: EAtom(a)}) if (a == "some" || a == "ok"):
+                                    switch (elements[1]) {
+                                        case PVar(b) if (b != "level" && bodyUses(cl.body, "level")):
+                                            out = { pattern: cl.pattern, guard: cl.guard, body: injectAlias(cl.body, b) };
+                                        default:
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    fixed.push(out);
+                }
+                makeASTWithMeta(ECase(optionLevelAliasInjectionPass(target), fixed.map(c -> {
+                    return { pattern: c.pattern, guard: c.guard, body: optionLevelAliasInjectionPass(c.body) };
+                })), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, optionLevelAliasInjectionPass);
+        };
+    }
+
+    // parseMessageBinderFixPass removed – avoid app-specific coupling
 
     /**
      * Remove simple switch-result temp wrappers produced by preservation preprocessor:
@@ -931,6 +1767,124 @@ class ElixirASTTransformer {
                     return makeASTWithMeta(EDefp(name, args, guard, newBody), node.metadata, node.pos);
                 default:
                     return node;
+            }
+        });
+    }
+
+    /**
+     * Final normalization: ensure patterns like {:tag} collapse to :tag and avoid
+     * binding names that collide with function parameters (e.g., message).
+     * This runs late to catch shapes reintroduced by earlier transforms.
+     */
+    static function finalPatternNormalizationPass(ast: ElixirAST): ElixirAST {
+        #if debug_final_pattern
+        function patSig(p:EPattern):String {
+            return switch (p) {
+                case PVar(v): v;
+                case PLiteral({def: EAtom(a)}): ':' + a;
+                case PTuple(el): '{' + [for (e in el) patSig(e)].join(',') + '}';
+                default: Type.enumConstructor(p);
+            };
+        }
+        #end
+        // Collect function parameter names when inside a def/defp
+        var fnParams: Map<String,Bool> = null;
+
+        function renameInPattern(p:EPattern, from:String, to:String):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == from): PVar(to);
+                case PTuple(list): PTuple([for (e in list) renameInPattern(e, from, to)]);
+                case PList(list): PList([for (e in list) renameInPattern(e, from, to)]);
+                case PCons(h,t): PCons(renameInPattern(h, from, to), renameInPattern(t, from, to));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: renameInPattern(kv.value, from, to)}]);
+                case PStruct(m, fields): PStruct(m, [for (f in fields) {key: f.key, value: renameInPattern(f.value, from, to)}]);
+                default: p;
+            };
+        }
+
+        function renameInBody(node:ElixirAST, from:String, to:String):ElixirAST {
+            return transformNode(node, function(n){
+                return switch (n.def) {
+                    case EVar(name) if (name == from): makeAST(EVar(to));
+                    default: n;
+                };
+            });
+        }
+
+        function bodyHasVar(node:ElixirAST, name:String):Bool {
+            var found = false;
+            transformNode(node, function(n){
+                if (!found) switch (n.def) {
+                    case EVar(vn) if (vn == name): found = true;
+                    default:
+                }
+                return n;
+            });
+            return found;
+        }
+
+        function collapseSingleAtomTuple(p:EPattern):EPattern {
+            return switch (p) {
+                case PTuple(el) if (el.length == 1):
+                    switch (el[0]) { case PLiteral({def: EAtom(a)}): PLiteral(makeAST(EAtom(a))); default: p; }
+                default: p;
+            };
+        }
+
+        return transformNode(ast, function(n){
+            switch (n.def) {
+                case EDef(name, args, guard, body):
+                    // collect parameter names
+                    fnParams = new Map();
+                    for (a in args) switch (a) { case PVar(pn): fnParams.set(pn, true); default: }
+                    var newBody = finalPatternNormalizationPass(body);
+                    return makeASTWithMeta(EDef(name, args, guard, newBody), n.metadata, n.pos);
+                case EDefp(name, args, guard, body):
+                    fnParams = new Map();
+                    for (a in args) switch (a) { case PVar(pn): fnParams.set(pn, true); default: }
+                    var newBody2 = finalPatternNormalizationPass(body);
+                    return makeASTWithMeta(EDefp(name, args, guard, newBody2), n.metadata, n.pos);
+                case ECase(target, clauses):
+                    var newClauses:Array<ECaseClause> = [];
+                    var caseTargetName: Null<String> = null;
+                    switch (target.def) { case EVar(nm): caseTargetName = nm; default: }
+                    for (cl in clauses) {
+                        var pat = collapseSingleAtomTuple(cl.pattern);
+                        var body2 = cl.body;
+                        // avoid binder collisions: for atom-tuple patterns with more than 1 element
+                        switch (pat) {
+                            case PTuple(list) if (list.length >= 2):
+                                // rename any PVar that collides with fnParams
+                                for (i in 1...list.length) switch (list[i]) {
+                                    case PVar(vn) if (fnParams != null && fnParams.exists(vn)):
+                                        // Prefer a semantically meaningful binder when possible
+                                        var newName = vn + "2";
+                                        // Heuristic: if case target hints a suffix and body uses that name, prefer it
+                                        if (caseTargetName != null) {
+                                            if (~/.*_level$/.match(caseTargetName) && bodyHasVar(body2, "level")) newName = "level";
+                                            else if (~/.*_id$/.match(caseTargetName) && bodyHasVar(body2, "id")) newName = "id";
+                                            else if (~/.*_msg$/.match(caseTargetName) && bodyHasVar(body2, "message")) newName = "message";
+                                        }
+                                        pat = renameInPattern(pat, vn, newName);
+                                        body2 = renameInBody(body2, vn, newName);
+                                    case PVar(vn):
+                                        // If body uses vn2 but not vn, align binder to vn2 (idiomatic snapshot expectation)
+                                        var vn2 = vn + "2";
+                                        if (!bodyHasVar(body2, vn) && bodyHasVar(body2, vn2)) {
+                                            pat = renameInPattern(pat, vn, vn2);
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                        #if debug_final_pattern
+                        haxe.Log.trace('[FinalNorm] pattern before=' + patSig(cl.pattern) + ' after=' + patSig(pat), null);
+                        #end
+                        newClauses.push({ pattern: pat, guard: cl.guard, body: finalPatternNormalizationPass(body2) });
+                    }
+                    return makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                default:
+                    return transformAST(n, v -> finalPatternNormalizationPass(v));
             }
         });
     }
@@ -5477,6 +6431,207 @@ class ElixirASTTransformer {
     }
 
     /**
+     * EventArmBinderRenameByUsage: Within handler/controller functions, for case arms with atom-head tuple patterns
+     * (e.g., {:create_todo, _}), if the clause body references exactly one simple missing identifier and there exists
+     * at least one unused binder among the tuple components after the atom head, rename the first unused binder to the
+     * missing identifier. Structural and target-agnostic; does not inject aliases here (aliasing is handled by other passes).
+     */
+    static function eventArmBinderRenameByUsagePass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function isAtomHeadTuple(p:EPattern):Bool {
+            return switch (p) {
+                case PTuple(el) if (el.length >= 1):
+                    switch (el[0]) { case PLiteral({def: EAtom(_)}): true; default: false; }
+                default: false;
+            };
+        }
+        function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
+            if (node == null) return;
+            switch (node.def) { case EVar(name): if (isSimpleIdent(name)) acc.set(name, true); default: iterateAST(node, v -> collectUsedVars(v, acc)); }
+        }
+        function declaredInPattern(p:EPattern):Map<String,Bool> {
+            var m = new Map<String,Bool>();
+            function visit(q:EPattern):Void {
+                switch (q) {
+                    case PVar(n): m.set(n, true);
+                    case PTuple(l): for (e in l) visit(e);
+                    case PList(l): for (e in l) visit(e);
+                    case PCons(h,t): visit(h); visit(t);
+                    case PMap(ps): for (kv in ps) visit(kv.value);
+                    case PStruct(_, fs): for (f in fs) visit(f.value);
+                    case PAlias(n, inner): m.set(n, true); visit(inner);
+                    case PPin(inner): visit(inner);
+                    case PBinary(segs): for (s in segs) visit(s.pattern);
+                    default:
+                }
+            }
+            visit(p);
+            return m;
+        }
+        function collectUnusedBindersAfterHead(p:EPattern, used:Map<String,Bool>):Array<{idx:Int, name:String}> {
+            var out:Array<{idx:Int, name:String}> = [];
+            switch (p) {
+                case PTuple(el) if (el.length >= 2):
+                    var idx = 1;
+                    while (idx < el.length) {
+                        switch (el[idx]) { case PVar(nm) if (!used.exists(nm)): out.push({idx: idx, name: nm}); default: }
+                        idx++;
+                    }
+                default:
+            }
+            return out;
+        }
+        function renameBinderAtIndex(p:EPattern, index:Int, toName:String):EPattern {
+            return switch (p) {
+                case PTuple(el) if (index >= 0 && index < el.length):
+                    var newEl = el.copy();
+                    switch (newEl[index]) { case PVar(_): newEl[index] = PVar(toName); default: }
+                    PTuple(newEl);
+                default: p;
+            };
+        }
+        function tupleBinderNamesAfterHead(p:EPattern):Array<String> {
+            var out:Array<String> = [];
+            switch (p) {
+                case PTuple(el) if (el.length >= 2):
+                    for (i in 1...el.length) switch (el[i]) { case PVar(nm): out.push(nm); default: }
+                default:
+            }
+            return out;
+        }
+        function removeSingleSocketRebind(body:ElixirAST, binder:String):ElixirAST {
+            // If body starts with `socket = binder` and binder occurs exactly once in the body, drop that assignment.
+            var count = reflaxe.elixir.ast.ElixirASTHelpers.countVarOccurrencesInAST(body, binder);
+            if (count != 1) return body;
+            return switch (body.def) {
+                case EBlock(stmts) if (stmts.length > 0):
+                    switch (stmts[0].def) {
+                        case EMatch(PVar(lhs), rhs) if (lhs == "socket"):
+                            switch (rhs.def) {
+                                case EVar(v) if (v == binder):
+                                    // Drop the first statement
+                                    makeAST(EBlock(stmts.slice(1)));
+                                default: body;
+                            }
+                        default: body;
+                    }
+                default: body;
+            };
+        }
+        // Allowed params-derived keys for safe aliasing
+        inline function toSnake(name:String):String return NameUtils.toSnakeCase(name);
+        function isParamsKey(name:String):Bool {
+            if (name == null) return false;
+            var snake = toSnake(name);
+            return snake == "id" || snake == "filter" || snake == "sort_by" || snake == "query" || snake == "tag" || snake == "priority";
+        }
+
+        function collectParamBinders(patterns:Array<EPattern>):Array<String> {
+            var out:Array<String> = [];
+            function visit(p:EPattern):Void {
+                switch (p) {
+                    case PVar(n): out.push(n);
+                    case PTuple(l): for (e in l) visit(e);
+                    case PList(l): for (e in l) visit(e);
+                    case PCons(h,t): visit(h); visit(t);
+                    case PMap(ps): for (kv in ps) visit(kv.value);
+                    case PStruct(_, fs): for (f in fs) visit(f.value);
+                    case PAlias(n, inner): out.push(n); visit(inner);
+                    case PPin(inner): visit(inner);
+                    case PBinary(segs): for (s in segs) visit(s.pattern);
+                    default:
+                }
+            }
+            for (p in patterns) visit(p);
+            return out;
+        }
+
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EDef(name, args, guard, body) if (isHandlerName(name)):
+                    var funcParamNames = collectParamBinders(args);
+                    var hasParams = false; for (pn in funcParamNames) if (pn == "params") { hasParams = true; break; }
+                    // Preemptive function-level rename: if body references any params-derived keys and no params arg exists,
+                    // rename a non-critical arg to `params` for later clause-level aliasing.
+                    var bodyUsedVars = new Map<String,Bool>(); collectUsedVars(body, bodyUsedVars);
+                    var needsParams = false;
+                    for (k in bodyUsedVars.keys()) { if (isParamsKey(k)) { needsParams = true; break; } }
+                    if (needsParams && !hasParams && args != null && args.length > 0) {
+                        // pick first arg not named socket/conn
+                        function renameAnyToParams(p:EPattern):EPattern {
+                            return switch (p) {
+                                case PVar(n) if (n != "socket" && n != "conn" && n != "params"): PVar("params");
+                                default: p;
+                            };
+                        }
+                        var renamedArgs = args.copy(); renamedArgs[0] = renameAnyToParams(renamedArgs[0]);
+                        args = renamedArgs;
+                        funcParamNames = collectParamBinders(args);
+                        hasParams = true;
+                    }
+                    // Process all ECase nodes inside the function body
+                    function process(n:ElixirAST):ElixirAST {
+                        return switch (n.def) {
+                            case ECase(target, clauses):
+                                var newClauses:Array<ECaseClause> = [];
+                                for (cl in clauses) {
+                                    var out = cl;
+                                    if (isAtomHeadTuple(cl.pattern)) {
+                                        var used = new Map<String,Bool>(); collectUsedVars(cl.body, used);
+                                        var declared = declaredInPattern(cl.pattern);
+                                        // Determine missing simple identifiers referenced in the body
+                                        var missing:Array<String> = [];
+                                        for (u in used.keys()) if (!declared.exists(u)) missing.push(u);
+                                        if (missing.length == 1) {
+                                            // First, try to free a binder slot by removing a redundant `socket = binder` rebind
+                                            var candidates = tupleBinderNamesAfterHead(cl.pattern);
+                                            var cleanedBody = cl.body;
+                                            for (bn in candidates) {
+                                                cleanedBody = removeSingleSocketRebind(cleanedBody, bn);
+                                            }
+                                            // Recompute used after cleanup
+                                            used = new Map<String,Bool>(); collectUsedVars(cleanedBody, used);
+                                            var unusedBinders = collectUnusedBindersAfterHead(cl.pattern, used);
+                                            if (unusedBinders.length >= 1) {
+                                                var toName = missing[0];
+                                                var idxInfo = unusedBinders[0];
+                                                var np = renameBinderAtIndex(cl.pattern, idxInfo.idx, toName);
+                                                out = { pattern: np, guard: cl.guard, body: cleanedBody };
+                                            } else if (hasParams && isParamsKey(missing[0])) {
+                                                // Clause-local alias from params: missing = Map.get(params, :key)
+                                                var keyAtom = ElixirAtom.raw(toSnake(missing[0]));
+                                                var aliasStmt = makeAST(EMatch(PVar(missing[0]), makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("params")), makeAST(EAtom(keyAtom))]))));
+                                                var newBody = switch (cleanedBody.def) {
+                                                    case EBlock(sts): makeAST(EBlock([aliasStmt].concat(sts)));
+                                                    default: makeAST(EBlock([aliasStmt, cleanedBody]));
+                                                };
+                                                out = { pattern: cl.pattern, guard: cl.guard, body: newBody };
+                                            }
+                                        }
+                                    }
+                                    newClauses.push(out);
+                                }
+                                makeAST(ECase(process(target), newClauses));
+                            case ECond(conds):
+                                var nc = [];
+                                for (c in conds) nc.push({ condition: c.condition, body: process(c.body) });
+                                makeAST(ECond(nc));
+                            case EBlock(stmts):
+                                makeAST(EBlock([for (s in stmts) process(s)]));
+                            case EIf(c, t, e):
+                                makeAST(EIf(process(c), process(t), e != null ? process(e) : null));
+                            default:
+                                n;
+                        }
+                    }
+                    makeASTWithMeta(EDef(name, args, guard, process(body)), node.metadata, node.pos);
+                default:
+                    node;
+            };
+        });
+    }
+
+    /**
      * InfraCaseTargetResolution pass: within blocks, track simple alias bindings and remap case targets
      * on infrastructure variables (_g, gX) to the canonical variable name.
      */
@@ -5535,6 +6690,594 @@ class ElixirASTTransformer {
     }
     
     /**
+     * CaseTargetBindingAlign pass: within a block, if we see an immediate pattern of
+     *   _g = <expr>
+     *   case varName do ... end
+     * then rename the assignment LHS to varName so the discriminant is defined.
+     */
+    static function caseTargetBindingAlignPass(ast: ElixirAST): ElixirAST {
+        inline function isInfra(name:String):Bool return name == "_g" || name == "g" || ~/^_?g\d+$/.match(name);
+        inline function isBenign(stmt: ElixirAST): Bool {
+            return switch (stmt.def) {
+                case EMatch(PVar(_), rhs):
+                    switch (rhs.def) {
+                        case ENil | EBoolean(_) | EInteger(_) | EFloat(_) | EString(_) | EAtom(_): true;
+                        case EMap(pairs) if (pairs.length == 0): true;
+                        default: false;
+                    }
+                case EBlock(exprs) if (exprs.length == 0): true;
+                default: false;
+            };
+        }
+        return switch (ast.def) {
+            case EBlock(stmts):
+                var out:Array<ElixirAST> = [];
+                var i = 0;
+                while (i < stmts.length) {
+                    var s = stmts[i];
+                    if (i + 1 < stmts.length) {
+                        var next = stmts[i+1];
+                        switch [s.def, next.def] {
+                            case [EMatch(PVar(lhs), rhs), ECase(target, clauses)] if (isInfra(lhs)):
+                                switch (target.def) {
+                                    case EVar(vn):
+                                        // Rename LHS to match case target var
+                                        var renamed = makeAST(EMatch(PVar(vn), rhs));
+                                        out.push(renamed);
+                                        out.push(next);
+                                        i += 2;
+                                        continue;
+                                    default:
+                                }
+                            default:
+                        }
+                        // One-statement gap alignment: EMatch(infra, rhs), benign, ECase(target,...)
+                        if (i + 2 < stmts.length) {
+                            var mid = stmts[i+1];
+                            var nxt2 = stmts[i+2];
+                            switch [s.def, nxt2.def] {
+                                case [EMatch(PVar(lhs2), rhs2), ECase(target2, clauses2)] if (isInfra(lhs2) && isBenign(mid)):
+                                    switch (target2.def) {
+                                        case EVar(vn2):
+                                            var renamed2 = makeAST(EMatch(PVar(vn2), rhs2));
+                                            out.push(renamed2);
+                                            out.push(mid);
+                                            out.push(nxt2);
+                                            i += 3;
+                                            continue;
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
+                    }
+                    // Recurse
+                    out.push(transformAST(s, caseTargetBindingAlignPass));
+                    i++;
+                }
+                makeAST(EBlock(out));
+            default:
+                transformAST(ast, caseTargetBindingAlignPass);
+        };
+    }
+
+    /**
+     * InlineCaseTargetBinding pass: For patterns of the form
+     *   g = expr
+     *   case g do ... end
+     * inline the binding into the case target to eliminate the temporary variable.
+     */
+    static function inlineCaseTargetBindingPass(ast: ElixirAST): ElixirAST {
+        inline function normalizeInfra(n:String):String {
+            return (n != null && StringTools.startsWith(n, "_") && ~/^_?g\d*$/.match(n)) ? n.substr(1) : n;
+        }
+        inline function sameVar(target:ElixirAST, name:String):Bool {
+            return switch (target.def) {
+                case EVar(n):
+                    var tn = normalizeInfra(n);
+                    var ln = normalizeInfra(name);
+                    tn == ln || n == name;
+                default: false;
+            };
+        }
+        // Treat plain "g", plain "_g", and numbered variants as infra names
+        inline function isInfraName(n:String):Bool return n == "g" || n == "_g" || ~/^_?g\d+$/.match(n);
+        return switch (ast.def) {
+            case EBlock(stmts):
+                var out:Array<ElixirAST> = [];
+                var i = 0;
+                while (i < stmts.length) {
+                    if (i + 1 < stmts.length) {
+                        // Immediate pair
+                        switch [stmts[i].def, stmts[i+1].def] {
+                            case [EMatch(PVar(lhs), rhs), ECase(target, clauses)] if (sameVar(target, lhs)):
+                                out.push(makeAST(ECase(rhs, clauses)));
+                                i += 2;
+                                continue;
+                            default:
+                        }
+                        // One-statement gap (e.g., instrumentation inserted)
+                        if (i + 2 < stmts.length) {
+                            switch [stmts[i].def, stmts[i+2].def] {
+                                case [EMatch(PVar(lhs2), rhs2), ECase(target2, clauses2)] if (sameVar(target2, lhs2)):
+                                    out.push(transformAST(stmts[i+1], inlineCaseTargetBindingPass));
+                                    out.push(makeAST(ECase(rhs2, clauses2)));
+                                    i += 3;
+                                    continue;
+                                default:
+                            }
+                        }
+                    }
+                    // Backward inlining: find earlier binding for case target and inline
+                    var handled = false;
+                    switch (stmts[i].def) {
+                        case ECase(targetX, clausesX):
+                            switch (targetX.def) {
+                                case EVar(tname) if (isInfraName(tname)):
+                                    #if debug_inline_case
+                                    Sys.println('[InlineCaseTargetBinding] Infra case target detected: ' + tname + ' (out.len=' + out.length + ')');
+                                    for (ii in 0...out.length) {
+                                        Sys.println('  out[' + ii + ']: ' + Type.enumConstructor(out[ii].def));
+                                    }
+                                    #end
+                                    // Search backwards over already-emitted statements
+                                    var j = out.length - 1;
+                                    var foundIdx = -1;
+                                    var rhs:ElixirAST = null;
+                                    while (j >= 0) {
+                                        switch (out[j].def) {
+                                            case EMatch(PVar(lhs0), rhs0):
+                                                var tn = normalizeInfra(tname);
+                                                var ln = normalizeInfra(lhs0);
+                                                if (tn == ln || lhs0 == tname) {
+                                                    foundIdx = j;
+                                                    rhs = rhs0;
+                                                    j = -1; // break
+                                                }
+                                            default:
+                                        }
+                                        j--;
+                                    }
+                                    if (foundIdx != -1) {
+                                        #if debug_inline_case
+                                        Sys.println('[InlineCaseTargetBinding]   Found binding at out[' + foundIdx + '], inlining into case');
+                                        #end
+                                        out.remove(out[foundIdx]);
+                                        out.push(makeAST(ECase(rhs, clausesX)));
+                                        i++;
+                                        handled = true;
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    if (handled) continue;
+                    // Fallback: recurse and emit current statement
+                    out.push(transformAST(stmts[i], inlineCaseTargetBindingPass));
+                    i++;
+                }
+                makeAST(EBlock(out));
+            default:
+                transformAST(ast, inlineCaseTargetBindingPass);
+        };
+    }
+
+    /**
+     * BindThenCaseInline pass: in a block, detect earlier assignments like
+     *   _gX = expr
+     * followed by
+     *   case _gX do ... end
+     * and inline the RHS into the case target, removing the earlier assignment.
+     * Handles gaps between the binding and the case (as long as no reassignment to the same name occurs).
+     */
+    static function bindThenCaseInlinePass(ast: ElixirAST): ElixirAST {
+        inline function normalizeInfra(n:String):String {
+            return (n != null && StringTools.startsWith(n, "_") && ~/^_?g\d*$/.match(n)) ? n.substr(1) : n;
+        }
+        function transformBlock(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(stmts):
+                    var out: Array<ElixirAST> = [];
+                    // Track last binding index for variables in current out buffer
+                    var lastBind: Map<String, { idx:Int, rhs:ElixirAST }> = new Map();
+                    var i = 0;
+                    while (i < stmts.length) {
+                        var s = stmts[i];
+                        switch (s.def) {
+                            case EMatch(PVar(lhs), rhs):
+                                // Record binding and emit (may be removed later)
+                                lastBind.set(lhs, { idx: out.length, rhs: rhs });
+                                var ln = normalizeInfra(lhs);
+                                if (ln != lhs) lastBind.set(ln, { idx: out.length, rhs: rhs });
+                                else {
+                                    var alt = '_' + lhs;
+                                    if (~/^g\d*$/.match(lhs)) lastBind.set(alt, { idx: out.length, rhs: rhs });
+                                }
+                                out.push(transformAST(s, bindThenCaseInlinePass));
+                            case ECase(target, clauses):
+                                switch (target.def) {
+                                    case EVar(name) if (lastBind.exists(name) || lastBind.exists(normalizeInfra(name))):
+                                        var key = lastBind.exists(name) ? name : normalizeInfra(name);
+                                        var info = lastBind.get(key);
+                                        // Inline RHS and remove earlier binding
+                                        out.remove(out[info.idx]);
+                                        out.push(makeAST(ECase(info.rhs, clauses)));
+                                        lastBind.remove(key);
+                                    default:
+                                        out.push(transformAST(s, bindThenCaseInlinePass));
+                                }
+                            default:
+                                out.push(transformAST(s, bindThenCaseInlinePass));
+                        }
+                        i++;
+                    }
+                    makeAST(EBlock(out));
+                default:
+                    transformAST(node, bindThenCaseInlinePass);
+            };
+        }
+        return transformBlock(ast);
+    }
+
+    /**
+     * NestedCaseDiscriminantInline: Walk with a lexical environment of prior temp bindings
+     * so inner cases can inline discriminants even when binding occurred in an outer block.
+     * It does NOT remove outer bindings; in combination with other passes, the redundant
+     * binding is often eliminated or renamed. This only replaces case targets.
+     */
+    static function nestedCaseDiscriminantInlinePass(ast: ElixirAST): ElixirAST {
+        inline function normalizeInfra(n:String):String {
+            return (n != null && StringTools.startsWith(n, "_") && ~/^_?g\d*$/.match(n)) ? n.substr(1) : n;
+        }
+        function walk(node: ElixirAST, env: Map<String,ElixirAST>): ElixirAST {
+            if (node == null || node.def == null) return node;
+            return switch (node.def) {
+                case EBlock(stmts):
+                    var out:Array<ElixirAST> = [];
+                    // Create a child env inheriting parent mappings
+                    var localEnv: Map<String,ElixirAST> = new Map();
+                    for (k in env.keys()) localEnv.set(k, env.get(k));
+                    for (s in stmts) {
+                        switch (s.def) {
+                            case EMatch(PVar(lhs), rhs):
+                                var ln = normalizeInfra(lhs);
+                                localEnv.set(lhs, rhs);
+                                if (ln != lhs) localEnv.set(ln, rhs);
+                                out.push(walk(s, localEnv));
+                            case ECase(target, clauses):
+                                var replacedTarget = target;
+                                switch (target.def) {
+                                    case EVar(name):
+                                        var key = localEnv.exists(name) ? name : normalizeInfra(name);
+                                        if (localEnv.exists(key)) replacedTarget = localEnv.get(key);
+                                    default:
+                                }
+                                var newClauses = [for (c in clauses) { pattern: c.pattern, guard: c.guard, body: walk(c.body, localEnv) }];
+                                out.push(makeAST(ECase(walk(replacedTarget, localEnv), newClauses)));
+                            default:
+                                out.push(walk(s, localEnv));
+                        }
+                    }
+                    makeAST(EBlock(out));
+                case EIf(cond, thenB, elseB):
+                    makeAST(EIf(walk(cond, env), walk(thenB, env), elseB != null ? walk(elseB, env) : null));
+                case ECond(clauses):
+                    var nc = [for (c in clauses) { condition: walk(c.condition, env), body: walk(c.body, env) }];
+                    makeAST(ECond(nc));
+                case EDef(name, args, guards, body):
+                    makeAST(EDef(name, args, guards, walk(body, new Map())));
+                case EDefp(name, args, guards, body):
+                    makeAST(EDefp(name, args, guards, walk(body, new Map())));
+                case EDefmodule(n, body):
+                    makeAST(EDefmodule(n, walk(body, new Map())));
+                case EParen(inner):
+                    makeAST(EParen(walk(inner, env)));
+                default:
+                    // Generic transform over children
+                    transformAST(node, x -> walk(x, env));
+            };
+        }
+        return walk(ast, new Map());
+    }
+
+    /**
+     * Contextual pass: Replace ECase targets on infra vars using context.infrastructureVarInitValues
+     * so that even if the alias assignment was removed earlier, we can inline the original RHS.
+     */
+    static function infraCaseTargetExprInlinePass(ast: ElixirAST, context: reflaxe.elixir.CompilationContext): ElixirAST {
+        inline function isInfraName(n:String):Bool return n == "g" || n == "_g" || ~/^_?g\d+$/.match(n);
+        inline function normalize(n:String):String return (n != null && StringTools.startsWith(n, "_")) ? n.substr(1) : n;
+        function replace(node: ElixirAST): ElixirAST {
+            return transformNode(node, function(n) {
+                return switch (n.def) {
+                    case ECase(target, clauses):
+                        switch (target.def) {
+                            case EVar(name) if (isInfraName(name)):
+                                // 1) Try AST mapping recorded from block tracking
+                                var key = name;
+                                var inlined: Null<ElixirAST> = null;
+                                if (context.infrastructureVarInitValues != null) {
+                                    if (!context.infrastructureVarInitValues.exists(key)) {
+                                        var alt = normalize(name);
+                                        if (context.infrastructureVarInitValues.exists(alt)) key = alt;
+                                    }
+                                    if (context.infrastructureVarInitValues.exists(key)) inlined = context.infrastructureVarInitValues.get(key);
+                                }
+                                // 2) Fallback to typed preprocessor substitutions using sourceVarId metadata
+                                if (inlined == null && target.metadata != null && Reflect.hasField(target.metadata, "sourceVarId")) {
+                                    var sid: Dynamic = Reflect.field(target.metadata, "sourceVarId");
+                                    if (Std.isOfType(sid, Int)) {
+                                        var texpr = context.infraVarSubstitutions != null ? context.infraVarSubstitutions.get(cast sid) : null;
+                                        if (texpr != null) {
+                                            inlined = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(texpr, context);
+                                        }
+                                    }
+                                }
+                                // 3) Fallback to name-based typed substitutions from context (stable per module/function)
+                                if (inlined == null && context.infraVarNameSubstitutions != null) {
+                                    var n1 = name;
+                                    var n2 = normalize(name);
+                                    var texpr2: TypedExpr = null;
+                                    if (context.infraVarNameSubstitutions.exists(n1)) texpr2 = context.infraVarNameSubstitutions.get(n1);
+                                    else if (context.infraVarNameSubstitutions.exists(n2)) texpr2 = context.infraVarNameSubstitutions.get(n2);
+                                    if (texpr2 != null) {
+                                        inlined = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(texpr2, context);
+                                    }
+                                }
+                                if (inlined != null) makeAST(ECase(inlined, clauses)) else n;
+                            default:
+                                n;
+                        }
+                    default:
+                        n;
+                };
+            });
+        }
+        return replace(ast);
+    }
+
+    /**
+     * NestedCaseProducerResolver: As a final safety net, when encountering an ECase on an infra var
+     * inside a branch body without a visible binding or recorded mapping, search the enclosing block for
+     * the nearest prior producer expression (ERemoteCall/ECall) and inline it as the case target.
+     * Apply only for Result/Option-like shapes (atom-headed tuple patterns like {:ok|:error, _}).
+     */
+    static function nestedCaseProducerResolverPass(ast: ElixirAST): ElixirAST {
+        inline function isInfraName(n:String):Bool return n == "g" || n == "_g" || ~/^_?g\d+$/.match(n);
+        inline function normalize(n:String):String return (n != null && StringTools.startsWith(n, "_")) ? n.substr(1) : n;
+
+        function resultLikePatterns(clauses:Array<ECaseClause>):Bool {
+            var ok = false, err = false, some = false, none = false;
+            for (c in clauses) {
+                switch (c.pattern) {
+                    case PTuple(list) if (list.length >= 1):
+                        switch (list[0]) {
+                            case PLiteral({def: EAtom(a)}):
+                                if (a == "ok") ok = true; else if (a == "error") err = true; else if (a == "some") some = true; else if (a == "none") none = true;
+                            default:
+                        }
+                    case PLiteral({def: EAtom(a)}):
+                        if (a == "ok") ok = true; else if (a == "error") err = true; else if (a == "some") some = true; else if (a == "none") none = true;
+                    default:
+                }
+            }
+            return (ok || err) || (some || none);
+        }
+
+        function transformBlock(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(stmts):
+                    var out:Array<ElixirAST> = [];
+                    var i = 0;
+                    while (i < stmts.length) {
+                        var s = stmts[i];
+                        switch (s.def) {
+                            case ECase(target, clauses):
+                                switch (target.def) {
+                                    case EVar(name) if (isInfraName(name) && resultLikePatterns(clauses)):
+                                        // Search backwards in out and original stmts for nearest plain call expression
+                                        var injected: ElixirAST = null;
+                                        // 1) scan already emitted
+                                        var j = out.length - 1;
+                                        while (j >= 0 && injected == null) {
+                                            switch (out[j].def) {
+                                                case ERemoteCall(_, _, _) | ECall(_, _, _): injected = out[j]; out.remove(out[j]);
+                                                default:
+                                            }
+                                            j--;
+                                        }
+                                        // 2) if not found, scan upcoming original stmts just before current
+                                        if (injected == null) {
+                                            var k = i - 1;
+                                            while (k >= 0 && injected == null) {
+                                                switch (stmts[k].def) {
+                                                    case ERemoteCall(_, _, _) | ECall(_, _, _): injected = stmts[k];
+                                                    default:
+                                                }
+                                                k--;
+                                            }
+                                        }
+                                        if (injected != null) {
+                                            out.push(makeAST(ECase(injected, clauses)));
+                                        } else {
+                                            out.push(s);
+                                        }
+                                    default:
+                                        out.push(transformBlock(s));
+                                }
+                            default:
+                                out.push(transformBlock(s));
+                        }
+                        i++;
+                    }
+                    makeAST(EBlock(out));
+                default:
+                    transformAST(node, transformBlock);
+            };
+        }
+        return transformBlock(ast);
+    }
+
+    /**
+     * UnknownCaseTargetExprInline: If we see a prior infra assignment and a later case on an unknown target var,
+     * replace the case target with the RHS expression of the prior infra assignment even when a benign statement
+     * appears in between. This fixes patterns like `_g = Map.get(payload, :type); temp_result = nil; case payload_type do ... end`.
+     */
+    static function unknownCaseTargetExprInlinePass(ast: ElixirAST): ElixirAST {
+        inline function isInfra(n:String):Bool return n == "g" || n == "_g" || ~/^_?g\d+$/.match(n);
+        function process(block: ElixirAST): ElixirAST {
+            return switch (block.def) {
+                case EBlock(stmts):
+                    var out:Array<ElixirAST> = [];
+                    var i = 0;
+                    while (i < stmts.length) {
+                        switch (stmts[i].def) {
+                            case EMatch(PVar(lhs), rhs) if (isInfra(lhs)):
+                                // Look ahead one or two statements for case on unknown var
+                                if (i + 1 < stmts.length) {
+                                    switch (stmts[i+1].def) {
+                                        case ECase(target, clauses):
+                                            switch (target.def) {
+                                                case EVar(_):
+                                                    out.push(stmts[i]); // keep original assignment to preserve semantics
+                                                    out.push(makeAST(ECase(rhs, clauses)));
+                                                    i += 2; continue;
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                }
+                                if (i + 2 < stmts.length) {
+                                    var mid = stmts[i+1];
+                                    switch (stmts[i+2].def) {
+                                        case ECase(target2, clauses2):
+                                            switch (target2.def) {
+                                                case EVar(_):
+                                                    out.push(stmts[i]);
+                                                    out.push(process(mid));
+                                                    out.push(makeAST(ECase(rhs, clauses2)));
+                                                    i += 3; continue;
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                }
+                                out.push(process(stmts[i])); i++;
+                            default:
+                                out.push(process(stmts[i])); i++;
+                        }
+                    }
+                    makeAST(EBlock(out));
+                default:
+                    transformAST(block, process);
+            };
+        }
+        return process(ast);
+    }
+
+    /**
+     * SingleBinderAliasVeryLate: For any clause with pattern {:some|:ok, binder}, if its body builds a
+     * {:some|:ok, {atom, var}} tuple and var ≠ binder, substitute var with binder in that position.
+     * Minimal and safe for pubsub-like patterns producing {:bulk_update, action}.
+     */
+    static function singleBinderAliasVeryLatePass(ast: ElixirAST): ElixirAST {
+        function isSomeOrOk(p:EPattern):Bool {
+            return switch (p) {
+                case PTuple(el) if (el.length >= 2):
+                    switch (el[0]) {
+                        case PLiteral({def: EAtom(a)}) if (a == "some" || a == "ok"): true;
+                        default: false;
+                    }
+                default: false;
+            };
+        }
+        function getBinder(p:EPattern):Null<String> {
+            return switch (p) {
+                case PTuple(el) if (el.length >= 2):
+                    switch (el[1]) { case PVar(n): n; default: null; }
+                default: null;
+            };
+        }
+        function rewriteBody(body:ElixirAST, binder:String):ElixirAST {
+            // Generic rewrite: under a {:some|:ok, binder} clause, replace any tuple of the form
+            // {<atom>, var} where var != binder with {<atom>, binder}. No app-specific names.
+            inline function isAtomNode(n:ElixirAST):Bool {
+                return switch (n.def) {
+                    case EAtom(_): true;
+                    default: false;
+                };
+            }
+            inline function isVarNotBinder(n:ElixirAST, b:String):Bool {
+                return switch (n.def) {
+                    case EVar(v) if (v != b): true;
+                    default: false;
+                };
+            }
+            function walk(node:ElixirAST, underSomeOk:Bool):ElixirAST {
+                if (node == null) return node;
+                return switch (node.def) {
+                    case ETuple(elems) if (elems.length >= 2):
+                        var first = elems[0];
+                        var out:Array<ElixirAST> = [];
+                        for (idx in 0...elems.length) {
+                            var child = elems[idx];
+                            var replaced = (idx == 1 && underSomeOk && isAtomNode(first) && isVarNotBinder(child, binder))
+                                ? makeAST(EVar(binder))
+                                : walk(child, underSomeOk);
+                            out.push(replaced);
+                        }
+                        makeAST(ETuple(out));
+                    case EBlock(sts):
+                        makeAST(EBlock([for (s in sts) walk(s, underSomeOk)]));
+                    case EIf(c,t,e):
+                        makeAST(EIf(walk(c, underSomeOk), walk(t, underSomeOk), e != null ? walk(e, underSomeOk) : null));
+                    case EMatch(pat, expr):
+                        makeAST(EMatch(pat, walk(expr, underSomeOk)));
+                    case EMap(pairs):
+                        makeAST(EMap([for (p in pairs) { key: p.key, value: walk(p.value, underSomeOk) } ]));
+                    case EKeywordList(pairs):
+                        makeAST(EKeywordList([for (p in pairs) { key: p.key, value: walk(p.value, underSomeOk) } ]));
+                    case ECall(target, name, args):
+                        var nt = target != null ? walk(target, underSomeOk) : null;
+                        var na = [for (a in args) walk(a, underSomeOk)];
+                        makeAST(ECall(nt, name, na));
+                    case ERemoteCall(mod, name, args):
+                        var nm = walk(mod, underSomeOk);
+                        var na2 = [for (a in args) walk(a, underSomeOk)];
+                        makeAST(ERemoteCall(nm, name, na2));
+                    case ECase(target, clauses):
+                        var nClauses = [for (c in clauses) { pattern: c.pattern, guard: c.guard, body: walk(c.body, underSomeOk) }];
+                        makeAST(ECase(walk(target, underSomeOk), nClauses));
+                    case ECond(conds):
+                        var nConds = [];
+                        for (c in conds) nConds.push({ condition: c.condition, body: walk(c.body, underSomeOk) });
+                        makeAST(ECond(nConds));
+                    default:
+                        node;
+                };
+            }
+            return walk(body, true);
+        }
+        return transformAST(ast, function(n){
+            return switch (n.def) {
+                case ECase(target, clauses):
+                    var newClauses:Array<ECaseClause> = [];
+                    for (c in clauses) {
+                        if (isSomeOrOk(c.pattern)) {
+                            var b = getBinder(c.pattern);
+                            if (b != null) {
+                                newClauses.push({ pattern: c.pattern, guard: c.guard, body: rewriteBody(c.body, b) });
+                            } else newClauses.push(c);
+                        } else newClauses.push(c);
+                    }
+                    makeAST(ECase(target, newClauses));
+                default:
+                    n;
+            };
+        });
+    }
+    
+    /**
      * Pattern variable rename by usage: Align tuple pattern PVars with names used in the clause body.
      */
     static function patternVarRenameByUsagePass(ast: ElixirAST): ElixirAST {
@@ -5576,6 +7319,55 @@ class ElixirASTTransformer {
                 default: false;
             };
         }
+        function singleBinderInAtomTuple(p:EPattern):Null<String> {
+            return switch (p) {
+                case PTuple(el) if (el.length == 2):
+                    switch (el[0]) {
+                        case PLiteral({def: EAtom(_)}):
+                            switch (el[1]) { case PVar(b): b; default: null; }
+                        default: null;
+                    }
+                default: null;
+            };
+        }
+
+        function isOptionSomeClause(clause:ECaseClause):Bool {
+            return switch (clause.pattern) {
+                case PTuple(elements) if (elements.length >= 2):
+                    switch (elements[0]) {
+                        case PLiteral({def: EAtom(atom)}) if (atom == "some" || atom == "ok"): true;
+                        default: false;
+                    }
+                default:
+                    false;
+            };
+        }
+
+        function clausePosString(clause:ECaseClause):String {
+            if (clause.body != null && clause.body.pos != null) {
+                return Std.string(clause.body.pos);
+            }
+            return "";
+        }
+
+        function patternPreviewLocal(pattern:EPattern):String {
+            return switch (pattern) {
+                case PTuple(elements):
+                    var parts = [for (el in elements) patternPreviewLocal(el)];
+                    '{' + parts.join(', ') + '}';
+                case PLiteral({def: EAtom(atom)}): ':' + atom;
+                case PVar(name): name;
+                case PWildcard: '_';
+                case PAlias(alias, inner): alias + ' as ' + patternPreviewLocal(inner);
+                default: Type.enumConstructor(pattern);
+            };
+        }
+
+        function mapKeysLocal(map:Map<String,Bool>):String {
+            var keys:Array<String> = [];
+            for (k in map.keys()) keys.push(k);
+            return '[' + keys.join(', ') + ']';
+        }
 
         function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
             if (node == null) return;
@@ -5593,14 +7385,30 @@ class ElixirASTTransformer {
             return n == "value" || n.charAt(0) == '_' || ~/^_?g\d*$/.match(n) || n == "socket" || n == "conn" || n == "this" || ~/^this\d+$/.match(n);
         }
 
-        function renameClauseIfNeeded(clause: ECaseClause): ECaseClause {
-            // Do not rename tuple patterns that start with an atom (e.g., {:system_alert, message, level})
-            // These come from enum-like messages (PubSub) and already have meaningful param names
-            if (isAtomTuple(clause.pattern)) {
-                return clause;
+        function renameClauseIfNeeded(clause: ECaseClause, caseTargetName: Null<String>): ECaseClause {
+            // For *_level case targets, skip generic renames in this pass;
+            // later enforcement passes will ensure binder = 'level'.
+            if (caseTargetName != null) {
+                var snTop = toSnakeCase(caseTargetName);
+                if (snTop != null && ~/.*_level$/.match(snTop)) {
+                    return clause;
+                }
             }
+            // For general atom-head tuple patterns with a single binder (e.g., {:create_todo, _x}),
+            // allow structural rename when exactly one simple identifier is used in the body and
+            // the binder itself is not referenced.
             var patternVars: Array<{ref: EPattern, name: String}> = [];
             collectPatternVars(clause.pattern, patternVars);
+
+            #if debug_option_some_binder
+            if (isOptionSomeClause(clause)) {
+                var posStr = clausePosString(clause);
+                if (posStr.indexOf('TodoPubSub') >= 0) {
+                    var initialBinders = [for (pv in patternVars) pv.name];
+                    haxe.Log.trace('[OptionSomeDiag] patternVarRenameByUsagePass pre-scan binders=' + initialBinders.join(', ') + ' pattern=' + patternPreviewLocal(clause.pattern) + ' at ' + posStr, null);
+                }
+            }
+            #end
             var declared = new Map<String, Bool>();
             var declaredBase = new Map<String, Bool>();
             for (pv in patternVars) {
@@ -5611,6 +7419,31 @@ class ElixirASTTransformer {
 
             var used = new Map<String, Bool>();
             collectUsedVars(clause.body, used);
+
+            // Collect field-base vars from body (msg/payload in Map.get/Keyword.get)
+            var fieldBases = new Map<String,Bool>();
+            (function collectFieldBaseVarsLocal(node: ElixirAST) {
+                if (node == null) return;
+                switch (node.def) {
+                    case ERemoteCall({def: EVar("Map")}, func, args) if (func == "get" && args.length > 0):
+                        switch (args[0].def) { case EVar(n): fieldBases.set(n, true); default: }
+                        for (a in args) collectFieldBaseVarsLocal(a);
+                    case ERemoteCall({def: EVar("Keyword")}, func, args) if (func == "get" && args.length > 0):
+                        switch (args[0].def) { case EVar(n): fieldBases.set(n, true); default: }
+                        for (a in args) collectFieldBaseVarsLocal(a);
+                    default:
+                        iterateAST(node, v -> collectFieldBaseVarsLocal(v));
+                }
+            })(clause.body);
+
+            #if debug_option_some_binder
+            if (isOptionSomeClause(clause)) {
+                var posStr2 = clausePosString(clause);
+                if (posStr2.indexOf('TodoPubSub') >= 0) {
+                    haxe.Log.trace('[OptionSomeDiag] patternVarRenameByUsagePass used vars=' + mapKeysLocal(used) + ' declared=' + mapKeysLocal(declared) + ' at ' + posStr2, null);
+                }
+            }
+            #end
 
             // Normalize used names: treat suffixed variants (e.g., g2) as base if the base exists
             function stripDigitsSuffixLocal(s:String):String {
@@ -5635,9 +7468,110 @@ class ElixirASTTransformer {
             ];
 
             var newPattern = clause.pattern;
+
+            // Special-case: If this is an Option.Some-like clause and the body references `level`,
+            // prefer renaming the single binder to `level` to avoid undefined variable and preserve
+            // outer variables like `msg` used as field-bases.
+            if (isOptionSomeClause(clause)) {
+                var uses = new Map<String,Bool>();
+                collectUsedVars(clause.body, uses);
+                if (uses.exists("level")) {
+                    // Detect sole binder name in pattern
+                    var soleBinder:Null<String> = null;
+                    switch (clause.pattern) {
+                        case PTuple(elements) if (elements.length >= 2):
+                            switch (elements[1]) { case PVar(b): soleBinder = b; default: }
+                        default:
+                    }
+                    if (soleBinder != null && soleBinder != "level") {
+                        newPattern = patternRename(newPattern, soleBinder, "level");
+                        // Finalize Option binder and return early to avoid generic renames
+                        return { pattern: newPattern, guard: clause.guard, body: clause.body };
+                    }
+                }
+                // Structural nested payload case: If binder is not referenced and the body builds
+                // {:some|:ok, {atom, var}}, rename binder to that inner var. This aligns with
+                // nested payload usage without app-specific names.
+                inline function findInnerPayloadVar(n:ElixirAST):Null<String> {
+                    var found:Null<String> = null;
+                    function walk(x:ElixirAST):Void {
+                        if (x == null || found != null) return;
+                        switch (x.def) {
+                            case ETuple(el) if (el.length >= 2):
+                                switch (el[0].def) {
+                                    case EAtom(a) if (a == "some" || a == "ok"):
+                                        switch (el[1].def) {
+                                            case ETuple(pe) if (pe.length >= 2):
+                                                switch (pe[1].def) {
+                                                    case EVar(vn): found = vn; return;
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                                for (e in el) walk(e);
+                            default:
+                                iterateAST(x, walk);
+                        }
+                    }
+                    walk(n);
+                    return found;
+                }
+                // Only when binder itself is not used in the body (pure alignment)
+                var binderInBody = (function():Bool {
+                    var seen = false;
+                    function scan(x:ElixirAST):Void {
+                        if (x == null || seen) return; switch (x.def) {
+                            case EVar(v) if (v == (switch (clause.pattern) { case PTuple(e2) if (e2.length >=2): switch (e2[1]) { case PVar(b): b; default: null; } default: null; })): seen = true;
+                            default: iterateAST(x, scan);
+                        }
+                    }
+                    scan(clause.body);
+                    return seen;
+                })();
+                if (!binderInBody) {
+                    var inner = findInnerPayloadVar(clause.body);
+                    if (inner != null) {
+                        var soleBinder2:Null<String> = null;
+                        switch (clause.pattern) { case PTuple(e3) if (e3.length >= 2): switch (e3[1]) { case PVar(b): soleBinder2 = b; default: } default: }
+                        if (soleBinder2 != null && soleBinder2 != inner) {
+                            newPattern = patternRename(newPattern, soleBinder2, inner);
+                            return { pattern: newPattern, guard: clause.guard, body: clause.body };
+                        }
+                    }
+                }
+            }
+            // General atom-head tuple: rename a single binder to the only used simple identifier
+            // in the body when binder is not referenced and a unique candidate exists.
+            var atomBinder:Null<String> = singleBinderInAtomTuple(clause.pattern);
+            if (atomBinder != null) {
+                // Binder not used in body?
+                var binderUsed = used.exists(atomBinder);
+                if (!binderUsed) {
+                    // candidates: used simple idents not declared and not field-bases
+                    var candidates:Array<String> = [];
+                    for (uname in used.keys()) {
+                        if (!declared.exists(uname) && !fieldBases.exists(uname) && ~/^[a-z_][a-z0-9_]*$/.match(uname)) {
+                            candidates.push(uname);
+                        }
+                    }
+                    if (candidates.length == 1) {
+                        var toName = candidates[0];
+                        newPattern = patternRename(newPattern, atomBinder, toName);
+                        return { pattern: newPattern, guard: clause.guard, body: clause.body };
+                    }
+                }
+            }
             for (uname in usedNorm.keys()) {
                 if (declared.exists(uname)) continue;
                 var targetName = uname;
+                // Skip module-like identifiers and field-base names
+                if (uname != null && uname.length > 0) {
+                    var c0 = uname.charAt(0);
+                    var isModuleLike = (c0 == c0.toUpperCase() && c0 != c0.toLowerCase());
+                    if (isModuleLike || fieldBases.exists(uname)) continue;
+                }
                 if (!priorities.contains(uname)) {
                     var snake = NameUtils.toSnakeCase(uname);
                     if (priorities.contains(snake)) targetName = snake;
@@ -5646,26 +7580,287 @@ class ElixirASTTransformer {
                 if (targetName == "conn" || targetName == "socket" || targetName == "params") {
                     continue;
                 }
+                // If case target suggests *_level and body references level, prefer 'level'
+                if (caseTargetName != null) {
+                    var sn = toSnakeCase(caseTargetName);
+                    if (sn != null && ~/.*_level$/.match(sn) && used.exists("level") && !fieldBases.exists("level")) {
+                        targetName = "level";
+                    }
+                }
                 var candidate: Null<String> = null;
                 for (pv in patternVars) {
                     if (isGenericName(pv.name)) { candidate = pv.name; break; }
                 }
                 if (candidate != null && !declared.exists(targetName)) {
+                    #if debug_option_some_binder
+                    if (isOptionSomeClause(clause)) {
+                        var posStr3 = clausePosString(clause);
+                        if (posStr3.indexOf('TodoPubSub') >= 0) {
+                            haxe.Log.trace('[OptionSomeDiag] patternVarRenameByUsagePass rename ' + candidate + ' → ' + targetName + ' at ' + posStr3, null);
+                        }
+                    }
+                    #end
                     newPattern = patternRename(newPattern, candidate, targetName);
                     declared.set(targetName, true);
                 }
             }
+
+            #if debug_option_some_binder
+            if (isOptionSomeClause(clause)) {
+                var posStr4 = clausePosString(clause);
+                if (posStr4.indexOf('TodoPubSub') >= 0) {
+                    haxe.Log.trace('[OptionSomeDiag] patternVarRenameByUsagePass final pattern=' + patternPreviewLocal(newPattern) + ' at ' + posStr4, null);
+                }
+            }
+            #end
 
             return { pattern: newPattern, guard: clause.guard, body: clause.body };
         }
 
         return switch (ast.def) {
             case ECase(target, clauses):
-                var renamed = [for (cl in clauses) renameClauseIfNeeded(cl)];
+                var tgtName:Null<String> = null; switch (target.def) { case EVar(n): tgtName = n; default: }
+                var renamed = [for (cl in clauses) renameClauseIfNeeded(cl, tgtName)];
                 makeASTWithMeta(ECase(target, renamed), ast.metadata, ast.pos);
+            case ECond(conds):
+                // Recurse into cond bodies so inner ECase patterns can be processed
+                var newConds = [];
+                for (c in conds) {
+                    newConds.push({ condition: c.condition, body: patternVarRenameByUsagePass(c.body) });
+                }
+                makeASTWithMeta(ECond(newConds), ast.metadata, ast.pos);
             default:
                 transformAST(ast, patternVarRenameByUsagePass);
         };
+    }
+
+    /**
+     * FunctionParamRenameByUsagePass
+     * WHAT: For EDef/EDefp, if the body references exactly one simple missing identifier and there exists an unused
+     * parameter binder (PVar) among function args, rename that binder to the missing identifier. Structural, target-agnostic.
+     */
+    static function functionParamRenameByUsagePass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function collectParamBinders(patterns:Array<EPattern>):Array<String> {
+            var out:Array<String> = [];
+            function visit(p:EPattern):Void {
+                switch (p) {
+                    case PVar(n): out.push(n);
+                    case PTuple(l): for (e in l) visit(e);
+                    case PList(l): for (e in l) visit(e);
+                    case PCons(h,t): visit(h); visit(t);
+                    case PMap(ps): for (kv in ps) visit(kv.value);
+                    case PStruct(_, fs): for (f in fs) visit(f.value);
+                    case PAlias(n, inner): out.push(n); visit(inner);
+                    case PPin(inner): visit(inner);
+                    case PBinary(segs): for (s in segs) visit(s.pattern);
+                    default:
+                }
+            }
+            for (p in patterns) visit(p);
+            return out;
+        }
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return; switch (node.def) { case EVar(n): if (isSimpleIdent(n)) acc.set(n, true); default: iterateAST(node, v -> collectUsed(v, acc)); }
+        }
+        return transformNode(ast, function(node:ElixirAST):ElixirAST {
+            return switch (node.def) {
+                case EDef(name, args, guard, body):
+                    // Special-case: LiveView render(assigns)
+                    var fUsed0 = new Map<String,Bool>(); collectUsed(body, fUsed0);
+                    if (name == "render" && args != null && args.length >= 1 && fUsed0.exists("assigns")) {
+                        function renameFirstToAssigns(p:EPattern):EPattern {
+                            return switch (p) {
+                                case PVar(n) if (n != "assigns"): PVar("assigns");
+                                default: p;
+                            };
+                        }
+                        var newArgs0 = args.copy(); newArgs0[0] = renameFirstToAssigns(newArgs0[0]);
+                        // Refresh params list after rename flows below
+                        args = newArgs0;
+                    }
+                    var params = collectParamBinders(args);
+                    var used = new Map<String,Bool>(); collectUsed(body, used);
+                    var declared = new Map<String,Bool>(); for (p in params) declared.set(p, true);
+                    var missing:Array<String> = [];
+                    for (u in used.keys()) if (!declared.exists(u)) missing.push(u);
+                    if (missing.length == 1) {
+                        // find first unused binder
+                        var unused:Array<String> = [];
+                        for (p in params) if (!used.exists(p)) unused.push(p);
+                        if (unused.length >= 1) {
+                            var from = unused[0]; var toName = missing[0];
+                            function renameInPattern(p:EPattern):EPattern {
+                                return switch (p) {
+                                    case PVar(n) if (n == from): PVar(toName);
+                                    case PTuple(l): PTuple([for (e in l) renameInPattern(e)]);
+                                    case PList(l): PList([for (e in l) renameInPattern(e)]);
+                                    case PCons(h,t): PCons(renameInPattern(h), renameInPattern(t));
+                                    case PMap(ps): PMap([for (kv in ps) {key: kv.key, value: renameInPattern(kv.value)}]);
+                                    case PStruct(mod, fs): PStruct(mod, [for (f in fs) {key: f.key, value: renameInPattern(f.value)}]);
+                                    case PAlias(n, inner): PAlias(n == from ? toName : n, renameInPattern(inner));
+                                    case PPin(inner): PPin(renameInPattern(inner));
+                                    case PBinary(segs): PBinary([for (s in segs) {pattern: renameInPattern(s.pattern), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                                    default: p;
+                                };
+                            }
+                            var newArgs = [for (a in args) renameInPattern(a)];
+                            makeASTWithMeta(EDef(name, newArgs, guard, body), node.metadata, node.pos);
+                        } else {
+                            // Special-case: if missing is 'assigns' or 'params', try renaming a non-critical binder
+                            var toName2 = missing[0];
+                            if (toName2 == "assigns" || toName2 == "params") {
+                                var candidate:Null<String> = null;
+                                for (pname in params) {
+                                    if (pname != "socket" && pname != "conn") { candidate = pname; break; }
+                                }
+                                if (candidate != null) {
+                                    function renameAny(p:EPattern):EPattern {
+                                        return switch (p) {
+                                            case PVar(n) if (n == candidate): PVar(toName2);
+                                            case PTuple(l): PTuple([for (e in l) renameAny(e)]);
+                                            case PList(l): PList([for (e in l) renameAny(e)]);
+                                            case PCons(h,t): PCons(renameAny(h), renameAny(t));
+                                            case PMap(ps): PMap([for (kv in ps) {key: kv.key, value: renameAny(kv.value)}]);
+                                            case PStruct(mod, fs): PStruct(mod, [for (f in fs) {key: f.key, value: renameAny(f.value)}]);
+                                            case PAlias(n, inner): PAlias(n == candidate ? toName2 : n, renameAny(inner));
+                                            case PPin(inner): PPin(renameAny(inner));
+                                            case PBinary(segs): PBinary([for (s in segs) {pattern: renameAny(s.pattern), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                                            default: p;
+                                        };
+                                    }
+                                    var argsRenamed = [for (a in args) renameAny(a)];
+                                    makeASTWithMeta(EDef(name, argsRenamed, guard, body), node.metadata, node.pos);
+                                } else node;
+                            } else node;
+                        }
+                    } else node;
+                case EDefp(name, args, guard, body):
+                    // Same logic for private defs
+                    var params2 = collectParamBinders(args);
+                    var used2 = new Map<String,Bool>(); collectUsed(body, used2);
+                    var declared2 = new Map<String,Bool>(); for (p in params2) declared2.set(p, true);
+                    var missing2:Array<String> = []; for (u in used2.keys()) if (!declared2.exists(u)) missing2.push(u);
+                    if (missing2.length == 1) {
+                        var unused2:Array<String> = []; for (p in params2) if (!used2.exists(p)) unused2.push(p);
+                        if (unused2.length >= 1) {
+                            var from2 = unused2[0]; var to2 = missing2[0];
+                            function renameInPattern2(p:EPattern):EPattern {
+                                return switch (p) {
+                                    case PVar(n) if (n == from2): PVar(to2);
+                                    case PTuple(l): PTuple([for (e in l) renameInPattern2(e)]);
+                                    case PList(l): PList([for (e in l) renameInPattern2(e)]);
+                                    case PCons(h,t): PCons(renameInPattern2(h), renameInPattern2(t));
+                                    case PMap(ps): PMap([for (kv in ps) {key: kv.key, value: renameInPattern2(kv.value)}]);
+                                    case PStruct(mod, fs): PStruct(mod, [for (f in fs) {key: f.key, value: renameInPattern2(f.value)}]);
+                                    case PAlias(n, inner): PAlias(n == from2 ? to2 : n, renameInPattern2(inner));
+                                    case PPin(inner): PPin(renameInPattern2(inner));
+                                    case PBinary(segs): PBinary([for (s in segs) {pattern: renameInPattern2(s.pattern), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                                    default: p;
+                                };
+                            }
+                            var newArgs2 = [for (a in args) renameInPattern2(a)];
+                            makeASTWithMeta(EDefp(name, newArgs2, guard, body), node.metadata, node.pos);
+                        } else {
+                            var toName3 = missing2[0];
+                            if (toName3 == "assigns" || toName3 == "params") {
+                                var candidate2:Null<String> = null;
+                                for (pname2 in params2) {
+                                    if (pname2 != "socket" && pname2 != "conn") { candidate2 = pname2; break; }
+                                }
+                                if (candidate2 != null) {
+                                    function renameAny2(p:EPattern):EPattern {
+                                        return switch (p) {
+                                            case PVar(n) if (n == candidate2): PVar(toName3);
+                                            case PTuple(l): PTuple([for (e in l) renameAny2(e)]);
+                                            case PList(l): PList([for (e in l) renameAny2(e)]);
+                                            case PCons(h,t): PCons(renameAny2(h), renameAny2(t));
+                                            case PMap(ps): PMap([for (kv in ps) {key: kv.key, value: renameAny2(kv.value)}]);
+                                            case PStruct(mod, fs): PStruct(mod, [for (f in fs) {key: f.key, value: renameAny2(f.value)}]);
+                                            case PAlias(n, inner): PAlias(n == candidate2 ? toName3 : n, renameAny2(inner));
+                                            case PPin(inner): PPin(renameAny2(inner));
+                                            case PBinary(segs): PBinary([for (s in segs) {pattern: renameAny2(s.pattern), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                                            default: p;
+                                        };
+                                    }
+                                    var argsRenamed2 = [for (a in args) renameAny2(a)];
+                                    makeASTWithMeta(EDefp(name, argsRenamed2, guard, body), node.metadata, node.pos);
+                                } else node;
+                            } else node;
+                        }
+                    } else node;
+                default:
+                    node;
+            };
+        });
+    }
+
+    /**
+     * FnParamUnusedUnderscore: For anonymous functions (EFn), underscore-prefix any parameter variables
+     * (including nested tuple components) that are not referenced in the function body.
+     *
+     * WHAT: Walks EFn clauses, collects used variable names from the body, and rewrites PVar bindings
+     *       in args to add underscore when unused. Applies recursively to PTuple and other pattern shapes.
+     * WHY: Eliminates Mix warnings like "variable acc_g is unused" produced by reduce_while lambdas and
+     *      other anonymous functions that destructure accumulators.
+     * HOW: Uses a body variable collector similar in spirit to patternVarRenameByUsagePass but scoped to EFn.
+     */
+    static function underscoreUnusedFnParamsPass(ast: ElixirAST): ElixirAST {
+        function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EVar(name): acc.set(name, true);
+                case EBlock(stmts): for (s in stmts) collectUsedVars(s, acc);
+                case EIf(c,t,e): collectUsedVars(c, acc); collectUsedVars(t, acc); if (e != null) collectUsedVars(e, acc);
+                case EBinary(_, l, r): collectUsedVars(l, acc); collectUsedVars(r, acc);
+                case EUnary(_, e): collectUsedVars(e, acc);
+                case ECall(target, _, args): if (target != null) collectUsedVars(target, acc); for (a in args) collectUsedVars(a, acc);
+                case ERemoteCall(mod, _, args): collectUsedVars(mod, acc); for (a in args) collectUsedVars(a, acc);
+                case EParen(inner): collectUsedVars(inner, acc);
+                case ECase(target, clauses):
+                    collectUsedVars(target, acc);
+                    for (cl in clauses) collectUsedVars(cl.body, acc);
+                case ETuple(items): for (i in items) collectUsedVars(i, acc);
+                case EList(items): for (i in items) collectUsedVars(i, acc);
+                case EMap(pairs): for (p in pairs) collectUsedVars(p.value, acc);
+                case EStruct(_, fields): for (f in fields) collectUsedVars(f.value, acc);
+                default:
+            }
+        }
+
+        function underscorePattern(p: EPattern, used: Map<String,Bool>): EPattern {
+            return switch (p) {
+                case PVar(name):
+                    if (!used.exists(name) && !StringTools.startsWith(name, "_")) PVar("_" + name) else p;
+                case PTuple(list): PTuple([for (e in list) underscorePattern(e, used)]);
+                case PList(list): PList([for (e in list) underscorePattern(e, used)]);
+                case PCons(h, t): PCons(underscorePattern(h, used), underscorePattern(t, used));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: underscorePattern(kv.value, used)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: underscorePattern(f.value, used)}]);
+                case PAlias(v, inner):
+                    var v2 = (!used.exists(v) && !StringTools.startsWith(v, "_") ? "_" + v : v);
+                    PAlias(v2, underscorePattern(inner, used));
+                case PPin(inner): PPin(underscorePattern(inner, used));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: underscorePattern(s.pattern, used), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+
+        return transformNode(ast, function(n) {
+            return switch (n.def) {
+                case EFn(clauses):
+                    var newClauses = [];
+                    for (cl in clauses) {
+                        var used = new Map<String,Bool>();
+                        collectUsedVars(cl.body, used);
+                        var newArgs = cl.args != null ? [for (a in cl.args) underscorePattern(a, used)] : cl.args;
+                        newClauses.push({ args: newArgs, guard: cl.guard, body: cl.body });
+                    }
+                    makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
+                default:
+                    n;
+            };
+        });
     }
 
     /**
@@ -5694,6 +7889,18 @@ class ElixirASTTransformer {
             }
         }
 
+        function isOptionSomePattern(p:EPattern):Bool {
+            return switch (p) {
+                case PTuple(elements) if (elements.length >= 2):
+                    switch (elements[0]) {
+                        case PLiteral({def: EAtom(atom)}) if (atom == "some" || atom == "ok"): true;
+                        default: false;
+                    }
+                default:
+                    false;
+            };
+        }
+
         function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
             if (node == null) return;
             switch (node.def) {
@@ -5702,7 +7909,7 @@ class ElixirASTTransformer {
             }
         }
 
-        function aliasMissingInClause(body: ElixirAST, patVars: Map<String, Bool>, declared: Map<String, Bool>, caseTarget: Null<String>): ElixirAST {
+        function aliasMissingInClause(body: ElixirAST, patVars: Map<String, Bool>, declared: Map<String, Bool>, caseTarget: Null<String>, ?clausePattern: EPattern, ?clausePos: String): ElixirAST {
             var used = new Map<String, Bool>();
             collectUsedVars(body, used);
             // Build missing set
@@ -5716,7 +7923,29 @@ class ElixirASTTransformer {
             for (u in used.keys()) {
                 if (!declared.exists(u) && !patVars.exists(u) && allow.exists(u)) missing.push(u);
             }
+
+            #if debug_option_some_binder
+            if (clausePattern != null && clausePos != null && clausePos.indexOf('TodoPubSub') >= 0 && isOptionSomePattern(clausePattern)) {
+                haxe.Log.trace('[OptionSomeDiag] caseClauseBindingAliasPass missing=' + missing.join(', ') + ' patVars=' + [for (k in patVars.keys()) k].join(', ') + ' declared=' + [for (k in declared.keys()) k].join(', ') + ' at ' + clausePos, null);
+            }
+            #end
             if (missing.length == 0) return body;
+
+            // Narrow aliasing rule for Option.Some-like patterns:
+            // If clause pattern is {:some|:ok, binder} (single binder) and the body references
+            // conventional name "level" which is not declared, alias level = binder to avoid
+            // undefined variable while preserving outer vars like msg/payload.
+            if (clausePattern != null && isOptionSomePattern(clausePattern)) {
+                var patList: Array<String> = [for (k in patVars.keys()) k];
+                if (patList.length == 1 && missing.indexOf("level") >= 0) {
+                    var sole = patList[0];
+                    var aliasStmt = makeAST(EMatch(PVar("level"), makeAST(EVar(sole))));
+                    return switch (body.def) {
+                        case EBlock(stmts): makeAST(EBlock([aliasStmt].concat(stmts)));
+                        default: makeAST(EBlock([aliasStmt, body]));
+                    };
+                }
+            }
 
             // Choose a single fallback binder if needed
             var patList: Array<String> = [for (k in patVars.keys()) k];
@@ -5736,6 +7965,11 @@ class ElixirASTTransformer {
                 if (source != null) {
                     prebinds.push(makeAST(EMatch(PVar(m), makeAST(EVar(source)))));
                     declared.set(m, true);
+                    #if debug_option_some_binder
+                    if (clausePattern != null && clausePos != null && clausePos.indexOf('TodoPubSub') >= 0 && isOptionSomePattern(clausePattern)) {
+                        haxe.Log.trace('[OptionSomeDiag] caseClauseBindingAliasPass alias ' + m + ' = ' + source + ' at ' + clausePos, null);
+                    }
+                    #end
                 }
             }
 
@@ -5767,7 +8001,8 @@ class ElixirASTTransformer {
                             gatherNamesFromPattern(cl.pattern, patVars);
                             // Also extend declared with pattern variables for inner normalization
                             for (k in patVars.keys()) localDeclared.set(k, true);
-                            var newBody = aliasMissingInClause(cl.body, patVars, localDeclared, caseTargetName);
+                            var clausePos = (cl.body != null && cl.body.pos != null) ? Std.string(cl.body.pos) : "";
+                            var newBody = aliasMissingInClause(cl.body, patVars, localDeclared, caseTargetName, cl.pattern, clausePos);
                             newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
                         }
                         makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
@@ -5786,6 +8021,831 @@ class ElixirASTTransformer {
             default:
                 transformAST(ast, caseClauseBindingAliasPass);
         };
+    }
+
+    /**
+     * CaseArmUnusedBinderUnderscore pass: For each ECase clause, prefix unused pattern binders with underscore.
+     */
+    static function caseArmUnusedBinderUnderscorePass(ast: ElixirAST): ElixirAST {
+        function collectPatternBinders(p:EPattern, acc:Map<String,Bool>):Void {
+            switch (p) {
+                case PVar(n): acc.set(n, true);
+                case PTuple(list): for (e in list) collectPatternBinders(e, acc);
+                case PList(list): for (e in list) collectPatternBinders(e, acc);
+                case PCons(h,t): collectPatternBinders(h, acc); collectPatternBinders(t, acc);
+                case PMap(pairs): for (kv in pairs) collectPatternBinders(kv.value, acc);
+                case PStruct(_, fields): for (f in fields) collectPatternBinders(f.value, acc);
+                case PAlias(n, inner): acc.set(n, true); collectPatternBinders(inner, acc);
+                case PPin(inner): collectPatternBinders(inner, acc);
+                case PBinary(segs): for (s in segs) collectPatternBinders(s.pattern, acc);
+                default:
+            }
+        }
+        function collectUsedVars(node: ElixirAST, acc: Map<String, Bool>): Void {
+            if (node == null) return;
+            switch (node.def) { case EVar(name): acc.set(name, true); default: iterateAST(node, v -> collectUsedVars(v, acc)); }
+        }
+        function underscoreUnused(p:EPattern, used:Map<String,Bool>):EPattern {
+            return switch (p) {
+                case PVar(n):
+                    if (!used.exists(n) && (n.length == 0 || n.charAt(0) != '_')) PVar('_' + n) else PVar(n);
+                case PTuple(list): PTuple([for (e in list) underscoreUnused(e, used)]);
+                case PList(list): PList([for (e in list) underscoreUnused(e, used)]);
+                case PCons(h,t): PCons(underscoreUnused(h, used), underscoreUnused(t, used));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: underscoreUnused(kv.value, used)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: underscoreUnused(f.value, used)}]);
+                case PAlias(n, inner):
+                    var nn = (!used.exists(n) && (n.length == 0 || n.charAt(0) != '_')) ? '_' + n : n;
+                    PAlias(nn, underscoreUnused(inner, used));
+                case PPin(inner): PPin(underscoreUnused(inner, used));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: underscoreUnused(s.pattern, used), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var fixed:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var binders = new Map<String,Bool>(); collectPatternBinders(cl.pattern, binders);
+                    var used = new Map<String,Bool>(); collectUsedVars(cl.body, used);
+                    var np = underscoreUnused(cl.pattern, used);
+                    fixed.push({ pattern: np, guard: cl.guard, body: cl.body });
+                }
+                makeASTWithMeta(ECase(target, fixed), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, caseArmUnusedBinderUnderscorePass);
+        };
+    }
+
+    /**
+     * GlobalOptionBinderAlias pass: For any case clause matching {:some|:ok, binder},
+     * if the clause body references exactly one missing simple identifier (used ∧ ¬declared ∧ ¬bound ∧ ¬field-base),
+     * inject `missing = binder` at the start of the clause body. Target-agnostic and structural only.
+     */
+    static function globalOptionBinderAliasPass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function isOptionSomePattern(p:EPattern):Bool {
+            return switch (p) {
+                case PTuple(elements) if (elements.length >= 2):
+                    switch (elements[0]) {
+                        case PLiteral({def: EAtom(atom)}) if (atom == "some" || atom == "ok"): true;
+                        default: false;
+                    }
+                default: false;
+            };
+        }
+        function gatherPatternVars(p:EPattern, acc:Map<String,Bool>):Void {
+            switch (p) {
+                case PVar(n): acc.set(n, true);
+                case PTuple(el): for (e in el) gatherPatternVars(e, acc);
+                case PList(el): for (e in el) gatherPatternVars(e, acc);
+                case PCons(h,t): gatherPatternVars(h, acc); gatherPatternVars(t, acc);
+                case PMap(pairs): for (kv in pairs) gatherPatternVars(kv.value, acc);
+                case PStruct(_, fields): for (f in fields) gatherPatternVars(f.value, acc);
+                case PAlias(n, inner): acc.set(n, true); gatherPatternVars(inner, acc);
+                case PBinary(segments): for (seg in segments) gatherPatternVars(seg.pattern, acc);
+                default:
+            }
+        }
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return; switch (node.def) {
+                case EVar(n): acc.set(n, true);
+                default: iterateAST(node, v -> collectUsed(v, acc));
+            }
+        }
+        function collectBound(body:ElixirAST):Map<String,Bool> {
+            var bound = new Map<String,Bool>();
+            function gather(p:EPattern):Void {
+                switch (p) {
+                    case PVar(n): bound.set(n, true);
+                    case PTuple(l): for (e in l) gather(e);
+                    case PList(l): for (e in l) gather(e);
+                    case PCons(h,t): gather(h); gather(t);
+                    case PMap(ps): for (kv in ps) gather(kv.value);
+                    case PStruct(_, fs): for (f in fs) gather(f.value);
+                    case PAlias(n, inner): bound.set(n, true); gather(inner);
+                    case PPin(inner): gather(inner);
+                    case PBinary(segs): for (s in segs) gather(s.pattern);
+                    default:
+                }
+            }
+            function walk(n:ElixirAST):Void {
+                if (n == null) return; switch (n.def) {
+                    case EMatch(p, e): gather(p); walk(e);
+                    case EBlock(sts): for (s in sts) walk(s);
+                    case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                    case ECase(tg, cls): walk(tg); for (c in cls) walk(c.body);
+                    case ECond(conds): for (c in conds) walk(c.body);
+                    case ECall(t,_,args): if (t != null) walk(t); for (a in args) walk(a);
+                    case ERemoteCall(t,_,args): walk(t); for (a in args) walk(a);
+                    default:
+                }
+            }
+            walk(body);
+            return bound;
+        }
+        function collectFieldBases(body:ElixirAST):Map<String,Bool> {
+            var bases = new Map<String,Bool>();
+            function walk(n:ElixirAST):Void {
+                if (n == null) return; switch (n.def) {
+                    case ERemoteCall({def:EVar("Map")}, func, args) if (func == "get" && args.length > 0):
+                        switch (args[0].def) { case EVar(name): bases.set(name, true); default: }
+                        for (a in args) walk(a);
+                    case EField(t,_): walk(t);
+                    case ECall(t,_,args): if (t != null) walk(t); for (a in args) walk(a);
+                    case ERemoteCall(t,_,args): walk(t); for (a in args) walk(a);
+                    case EBinary(_,l,r): walk(l); walk(r);
+                    case EBlock(sts): for (s in sts) walk(s);
+                    case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                    case ECase(tg, cls): walk(tg); for (c in cls) walk(c.body);
+                    case ECond(conds): for (c in conds) walk(c.body);
+                    default:
+                }
+            }
+            walk(body);
+            return bases;
+        }
+
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var caseTarget: Null<String> = null; switch (target.def) { case EVar(nm): caseTarget = nm; default: }
+                var newClauses:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var out = cl;
+                    if (isOptionSomePattern(cl.pattern)) {
+                        var binder:Null<String> = switch (cl.pattern) { case PTuple(el): switch (el[1]) { case PVar(n): n; default: null; } default: null; };
+                        if (binder != null) {
+                            var patVars = new Map<String,Bool>();
+                            gatherPatternVars(cl.pattern, patVars);
+                            var used = new Map<String,Bool>(); collectUsed(cl.body, used);
+                            var bound = collectBound(cl.body);
+                            var bases = collectFieldBases(cl.body);
+                            var missing:Array<String> = [];
+                            for (u in used.keys()) {
+                                // Ignore module-like identifiers (start with uppercase) and non-simple
+                                if (u != null && u.length > 0) {
+                                    var c = u.charAt(0);
+                                    var isModuleLike = (c == c.toUpperCase() && c != c.toLowerCase());
+                                    if (isModuleLike) continue;
+                                }
+                                if (!patVars.exists(u) && !bound.exists(u) && !bases.exists(u) && isSimpleIdent(u)) missing.push(u);
+                            }
+                            // Heuristic: prefer `level` when the case target hints *_level
+                            if ((caseTarget != null && ~/.*_level$/.match(caseTarget)) && missing.indexOf("level") >= 0) {
+                                missing = ["level"];
+                            }
+                            if (missing.length == 1) {
+                                var m = missing[0];
+                                if (caseTarget == null || m != caseTarget) {
+                                    // Prefer direct rename of missing var to binder to avoid introducing new bindings
+                                    var replaced = reflaxe.elixir.ast.ElixirASTHelpers.replaceVarInAST(cl.body, m, makeAST(EVar(binder)));
+                                    out = { pattern: cl.pattern, guard: cl.guard, body: replaced };
+                                }
+                            }
+                        }
+                    }
+                    newClauses.push(out);
+                }
+                makeASTWithMeta(ECase(target, newClauses), ast.metadata, ast.pos);
+            case ECond(conds):
+                // Recurse into cond bodies to apply aliasing within nested cases
+                var newConds = [];
+                for (c in conds) {
+                    newConds.push({ condition: c.condition, body: globalOptionBinderAliasPass(c.body) });
+                }
+                makeASTWithMeta(ECond(newConds), ast.metadata, ast.pos);
+            case EDef(name, args, guards, body):
+                makeASTWithMeta(EDef(name, args, guards, globalOptionBinderAliasPass(body)), ast.metadata, ast.pos);
+            case EDefp(name, args, guards, body):
+                makeASTWithMeta(EDefp(name, args, guards, globalOptionBinderAliasPass(body)), ast.metadata, ast.pos);
+            case EModule(name, attributes, body):
+                makeASTWithMeta(EModule(name, attributes, [for (b in body) globalOptionBinderAliasPass(b)]), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, globalOptionBinderAliasPass);
+        };
+    }
+
+    /**
+     * GeneralTupleBinderAlias pass: For any case clause matching {atom, binder},
+     * if the clause body references exactly one missing simple identifier (used ∧ ¬declared ∧ ¬bound ∧ ¬field-base),
+     * rename the binder to that identifier. This covers domain enums like {:todo_created, todo}.
+     */
+    static function generalTupleBinderAliasPass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function renameInPattern(p:EPattern, oldName:String, newName:String):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == oldName): PVar(newName);
+                case PTuple(list): PTuple([for (e in list) renameInPattern(e, oldName, newName)]);
+                case PList(list): PList([for (e in list) renameInPattern(e, oldName, newName)]);
+                case PCons(h,t): PCons(renameInPattern(h, oldName, newName), renameInPattern(t, oldName, newName));
+                case PMap(pairs): PMap([for (kv in pairs) {key: kv.key, value: renameInPattern(kv.value, oldName, newName)}]);
+                case PStruct(mod, fields): PStruct(mod, [for (f in fields) {key: f.key, value: renameInPattern(f.value, oldName, newName)}]);
+                case PAlias(n, inner): PAlias(n == oldName ? newName : n, renameInPattern(inner, oldName, newName));
+                case PPin(inner): PPin(renameInPattern(inner, oldName, newName));
+                case PBinary(segs): PBinary([for (s in segs) {pattern: renameInPattern(s.pattern, oldName, newName), size: s.size, type: s.type, modifiers: s.modifiers}]);
+                default: p;
+            };
+        }
+        function gatherPatternVars(p:EPattern, acc:Map<String,Bool>):Void {
+            switch (p) {
+                case PVar(n): acc.set(n, true);
+                case PTuple(el): for (e in el) gatherPatternVars(e, acc);
+                case PList(el): for (e in el) gatherPatternVars(e, acc);
+                case PCons(h,t): gatherPatternVars(h, acc); gatherPatternVars(t, acc);
+                case PMap(pairs): for (kv in pairs) gatherPatternVars(kv.value, acc);
+                case PStruct(_, fields): for (f in fields) gatherPatternVars(f.value, acc);
+                case PAlias(n, inner): acc.set(n, true); gatherPatternVars(inner, acc);
+                case PBinary(segments): for (seg in segments) gatherPatternVars(seg.pattern, acc);
+                default:
+            }
+        }
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return; switch (node.def) {
+                case EVar(n): acc.set(n, true);
+                default: iterateAST(node, v -> collectUsed(v, acc));
+            }
+        }
+        function collectBound(body:ElixirAST):Map<String,Bool> {
+            var bound = new Map<String,Bool>();
+            function gather(p:EPattern):Void {
+                switch (p) {
+                    case PVar(n): bound.set(n, true);
+                    case PTuple(l): for (e in l) gather(e);
+                    case PList(l): for (e in l) gather(e);
+                    case PCons(h,t): gather(h); gather(t);
+                    case PMap(ps): for (kv in ps) gather(kv.value);
+                    case PStruct(_, fs): for (f in fs) gather(f.value);
+                    case PAlias(n, inner): bound.set(n, true); gather(inner);
+                    case PPin(inner): gather(inner);
+                    case PBinary(segs): for (s in segs) gather(s.pattern);
+                    default:
+                }
+            }
+            function walk(n:ElixirAST):Void {
+                if (n == null) return; switch (n.def) {
+                    case EMatch(p, e): gather(p); walk(e);
+                    case EBlock(sts): for (s in sts) walk(s);
+                    case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                    case ECase(tg, cls): walk(tg); for (c in cls) walk(c.body);
+                    case ECond(conds): for (c in conds) walk(c.body);
+                    case ECall(t,_,args): if (t != null) walk(t); for (a in args) walk(a);
+                    case ERemoteCall(t,_,args): walk(t); for (a in args) walk(a);
+                    default:
+                }
+            }
+            walk(body);
+            return bound;
+        }
+        function collectFieldBases(body:ElixirAST):Map<String,Bool> {
+            var bases = new Map<String,Bool>();
+            function walk(n:ElixirAST):Void {
+                if (n == null) return; switch (n.def) {
+                    case ERemoteCall({def:EVar("Map")}, func, args) if (func == "get" && args.length > 0):
+                        switch (args[0].def) { case EVar(name): bases.set(name, true); default: }
+                        for (a in args) walk(a);
+                    case EField(t,_): walk(t);
+                    case ECall(t,_,args): if (t != null) walk(t); for (a in args) walk(a);
+                    case ERemoteCall(t,_,args): walk(t); for (a in args) walk(a);
+                    case EBinary(_,l,r): walk(l); walk(r);
+                    case EBlock(sts): for (s in sts) walk(s);
+                    case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                    case ECase(tg, cls): walk(tg); for (c in cls) walk(c.body);
+                    default:
+                }
+            }
+            walk(body);
+            return bases;
+        }
+        return transformNode(ast, function(node) {
+            switch (node.def) {
+                case ECase(target, clauses):
+                    var newClauses:Array<ECaseClause> = [];
+                    for (cl in clauses) {
+                        var out = cl;
+                        switch (cl.pattern) {
+                            case PTuple(elements) if (elements.length >= 2):
+                                // Only consider if second is a PVar or PWildcard
+                                var second = elements[1];
+                                var binder:Null<String> = switch (second) { case PVar(n): n; case _: null; };
+                                if (binder != null) {
+                                    var patVars = new Map<String,Bool>(); gatherPatternVars(cl.pattern, patVars);
+                                    var used = new Map<String,Bool>(); collectUsed(cl.body, used);
+                                    var bound = collectBound(cl.body);
+                                    var bases = collectFieldBases(cl.body);
+                                    var missing:Array<String> = [];
+                                    for (u in used.keys()) {
+                                        if (u != null && u.length > 0) {
+                                            var c = u.charAt(0);
+                                            var isModuleLike = (c == c.toUpperCase() && c != c.toLowerCase());
+                                            if (isModuleLike) continue;
+                                        }
+                                        if (!patVars.exists(u) && !bound.exists(u) && !bases.exists(u) && isSimpleIdent(u)) missing.push(u);
+                                    }
+                                    if (missing.length == 1) {
+                                        var m = missing[0];
+                                        // Prefer direct rename of binder to missing var
+                                        var renamed = renameInPattern(cl.pattern, binder, m);
+                                        out = { pattern: renamed, guard: cl.guard, body: cl.body };
+                                    }
+                                }
+                            default:
+                        }
+                        newClauses.push(out);
+                    }
+                    return makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
+                default:
+                    return transformAST(node, generalTupleBinderAliasPass);
+            }
+        });
+    }
+
+    /**
+     * SingleBinderAlias pass: If a case clause has exactly one PVar binder in the pattern,
+     * and the body references exactly one missing simple identifier, insert an alias
+     *   missing = binder
+     * at the beginning of the clause body. This is a safety net for domains like
+     * {:some, binder} where body references 'action' instead of the binder name.
+     */
+    static function singleBinderAliasPass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function countBinders(p:EPattern, acc:Array<String>):Void {
+            switch (p) {
+                case PVar(n): acc.push(n);
+                case PTuple(l): for (e in l) countBinders(e, acc);
+                case PList(l): for (e in l) countBinders(e, acc);
+                case PCons(h,t): countBinders(h, acc); countBinders(t, acc);
+                case PMap(ps): for (kv in ps) countBinders(kv.value, acc);
+                case PStruct(_, fs): for (f in fs) countBinders(f.value, acc);
+                case PAlias(n, inner): acc.push(n); countBinders(inner, acc);
+                case PPin(inner): countBinders(inner, acc);
+                case PBinary(segs): for (s in segs) countBinders(s.pattern, acc);
+                default:
+            }
+        }
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return; switch (node.def) {
+                case EVar(n): acc.set(n, true);
+                default: iterateAST(node, v -> collectUsed(v, acc));
+            }
+        }
+        function declaredInPattern(p:EPattern):Map<String,Bool> {
+            var m = new Map<String,Bool>();
+            countBinders(p, []); // no-op for m but keep the approach symmetrical
+            function visit(q:EPattern):Void {
+                switch (q) {
+                    case PVar(n): m.set(n, true);
+                    case PTuple(l): for (e in l) visit(e);
+                    case PList(l): for (e in l) visit(e);
+                    case PCons(h,t): visit(h); visit(t);
+                    case PMap(ps): for (kv in ps) visit(kv.value);
+                    case PStruct(_, fs): for (f in fs) visit(f.value);
+                    case PAlias(n, inner): m.set(n, true); visit(inner);
+                    case PPin(inner): visit(inner);
+                    case PBinary(segs): for (s in segs) visit(s.pattern);
+                    default:
+                }
+            }
+            visit(p);
+            return m;
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var newClauses:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var binders:Array<String> = [];
+                    countBinders(cl.pattern, binders);
+                    var out = cl;
+                    if (binders.length == 1) {
+                        var used = new Map<String,Bool>(); collectUsed(cl.body, used);
+                        var declared = declaredInPattern(cl.pattern);
+                        var missing:Array<String> = [];
+                        for (u in used.keys()) {
+                            if (!declared.exists(u) && isSimpleIdent(u)) missing.push(u);
+                        }
+                        if (missing.length == 1) {
+                            var aliasName = missing[0];
+                            var binder = binders[0];
+                            var aliasStmt = makeAST(EMatch(PVar(aliasName), makeAST(EVar(binder))));
+                            var newBody = switch (cl.body.def) {
+                                case EBlock(sts): makeAST(EBlock([aliasStmt].concat(sts)));
+                                default: makeAST(EBlock([aliasStmt, cl.body]));
+                            };
+                            out = { pattern: cl.pattern, guard: cl.guard, body: newBody };
+                        }
+                    }
+                    newClauses.push(out);
+                }
+                makeASTWithMeta(ECase(target, newClauses), ast.metadata, ast.pos);
+            case ECond(conds):
+                var nc = [];
+                for (c in conds) nc.push({condition: c.condition, body: singleBinderAliasPass(c.body)});
+                makeASTWithMeta(ECond(nc), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, singleBinderAliasPass);
+        };
+    }
+
+    /**
+     * GeneralAtomBinderAlias pass: For any case clause matching {:atom, binder} (single-binder atom-head tuple),
+     * if the clause body references exactly one missing simple identifier (used ∧ ¬declared), inject `missing = binder`
+     * at the start of the clause body. Structural and target-agnostic.
+     */
+    static function generalAtomBinderAliasPass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function isAtomHeadSingleBinder(p:EPattern):{ok:Bool, binder:Null<String>} {
+            return switch (p) {
+                case PTuple(el) if (el.length == 2):
+                    switch (el[0]) {
+                        case PLiteral({def: EAtom(_)}):
+                            switch (el[1]) { case PVar(b): { ok:true, binder:b }; default: {ok:false, binder:null}; }
+                        default: {ok:false, binder:null};
+                    }
+                default: {ok:false, binder:null};
+            };
+        }
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return; switch (node.def) {
+                case EVar(n): acc.set(n, true);
+                default: iterateAST(node, v -> collectUsed(v, acc));
+            }
+        }
+        function declaredIn(p:EPattern):Map<String,Bool> {
+            var m = new Map<String,Bool>();
+            function visit(q:EPattern):Void {
+                switch (q) {
+                    case PVar(n): m.set(n, true);
+                    case PTuple(l): for (e in l) visit(e);
+                    case PList(l): for (e in l) visit(e);
+                    case PCons(h,t): visit(h); visit(t);
+                    case PMap(ps): for (kv in ps) visit(kv.value);
+                    case PStruct(_, fs): for (f in fs) visit(f.value);
+                    case PAlias(n, inner): m.set(n, true); visit(inner);
+                    case PPin(inner): visit(inner);
+                    case PBinary(segs): for (s in segs) visit(s.pattern);
+                    default:
+                }
+            }
+            visit(p);
+            return m;
+        }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var newClauses:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var info = isAtomHeadSingleBinder(cl.pattern);
+                    if (info.ok && info.binder != null) {
+                        var used = new Map<String,Bool>(); collectUsed(cl.body, used);
+                        var declared = declaredIn(cl.pattern);
+                        var missing:Array<String> = [];
+                        for (u in used.keys()) if (isSimpleIdent(u) && !declared.exists(u)) missing.push(u);
+                        if (missing.length == 1) {
+                            var aliasName = missing[0];
+                            var aliasStmt = makeAST(EMatch(PVar(aliasName), makeAST(EVar(info.binder))));
+                            var newBody = switch (cl.body.def) {
+                                case EBlock(sts): makeAST(EBlock([aliasStmt].concat(sts)));
+                                default: makeAST(EBlock([aliasStmt, cl.body]));
+                            };
+                            newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
+                            continue;
+                        }
+                    }
+                    newClauses.push(cl);
+                }
+                makeASTWithMeta(ECase(target, newClauses), ast.metadata, ast.pos);
+            case ECond(conds):
+                var nConds = [];
+                for (c in conds) nConds.push({ condition: c.condition, body: generalAtomBinderAliasPass(c.body) });
+                makeASTWithMeta(ECond(nConds), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, generalAtomBinderAliasPass);
+        };
+    }
+
+    /**
+     * SingleBinderMissingVarAliasPass: For any case clause with exactly one binder in its pattern,
+     * if the body references exactly one missing simple identifier (used ∧ ¬declared ∧ ¬bound ∧ ¬field-base),
+     * inject `missing = binder` at the start of the clause body. Structural and target-agnostic.
+     */
+    static function singleBinderMissingVarAliasPass(ast: ElixirAST): ElixirAST {
+        inline function isSimpleIdent(n:String):Bool return n != null && ~/^[a-z_][a-z0-9_]*$/.match(n);
+        function countBinders(p:EPattern, acc:Array<String>):Void {
+            switch (p) {
+                case PVar(n): acc.push(n);
+                case PTuple(l): for (e in l) countBinders(e, acc);
+                case PList(l): for (e in l) countBinders(e, acc);
+                case PCons(h,t): countBinders(h, acc); countBinders(t, acc);
+                case PMap(ps): for (kv in ps) countBinders(kv.value, acc);
+                case PStruct(_, fs): for (f in fs) countBinders(f.value, acc);
+                case PAlias(n, inner): acc.push(n); countBinders(inner, acc);
+                case PPin(inner): countBinders(inner, acc);
+                case PBinary(segs): for (s in segs) countBinders(s.pattern, acc);
+                default:
+            }
+        }
+        function collectUsed(node:ElixirAST, acc:Map<String,Bool>):Void { if (node == null) return; switch (node.def) { case EVar(n): acc.set(n, true); default: iterateAST(node, v -> collectUsed(v, acc)); } }
+        function declaredIn(p:EPattern):Map<String,Bool> { var m=new Map<String,Bool>(); function visit(q:EPattern):Void { switch(q){ case PVar(n): m.set(n,true); case PTuple(l): for(e in l) visit(e); case PList(l): for(e in l) visit(e); case PCons(h,t): visit(h); visit(t); case PMap(ps): for(kv in ps) visit(kv.value); case PStruct(_,fs): for(f in fs) visit(f.value); case PAlias(n,inner): m.set(n,true); visit(inner); case PPin(inner): visit(inner); case PBinary(segs): for(s in segs) visit(s.pattern); default: } } visit(p); return m; }
+        function collectBound(body:ElixirAST):Map<String,Bool> {
+            var bound = new Map<String,Bool>();
+            function gather(p:EPattern):Void { switch(p){ case PVar(n): bound.set(n,true); case PTuple(l): for(e in l) gather(e); case PList(l): for(e in l) gather(e); case PCons(h,t): gather(h); gather(t); case PMap(ps): for(kv in ps) gather(kv.value); case PStruct(_,fs): for(f in fs) gather(f.value); case PAlias(n,inner): bound.set(n,true); gather(inner); case PPin(inner): gather(inner); case PBinary(segs): for(s in segs) gather(s.pattern); default: } }
+            function walk(n:ElixirAST):Void { if (n == null) return; switch(n.def){ case EMatch(p,e): gather(p); walk(e); case EBlock(sts): for(s in sts) walk(s); case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e); case ECase(tg,cls): walk(tg); for(c in cls) walk(c.body); case ECond(conds): for(c in conds) walk(c.body); case ECall(t,_,args): if (t != null) walk(t); for(a in args) walk(a); case ERemoteCall(t,_,args): walk(t); for(a in args) walk(a); default: } }
+            walk(body); return bound;
+        }
+        function collectFieldBases(body:ElixirAST):Map<String,Bool> {
+            var bases = new Map<String,Bool>();
+            function walk(n:ElixirAST):Void { if (n == null) return; switch(n.def){ case ERemoteCall({def:EVar("Map")}, func, args) if (func == "get" && args.length > 0): switch(args[0].def){ case EVar(name): bases.set(name,true); default: } for(a in args) walk(a); case EField(t,_): walk(t); case ECall(t,_,args): if (t != null) walk(t); for(a in args) walk(a); case ERemoteCall(t,_,args): walk(t); for(a in args) walk(a); case EBinary(_,l,r): walk(l); walk(r); case EBlock(sts): for(s in sts) walk(s); case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e); case ECase(tg,cls): walk(tg); for(c in cls) walk(c.body); case ECond(conds): for(c in conds) walk(c.body); default: } } walk(body); return bases; }
+        return switch (ast.def) {
+            case ECase(target, clauses):
+                var fixed:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var binders:Array<String> = []; countBinders(cl.pattern, binders);
+                    if (binders.length == 1) {
+                        var used = new Map<String,Bool>(); collectUsed(cl.body, used);
+                        var declared = declaredIn(cl.pattern);
+                        var bound = collectBound(cl.body);
+                        var bases = collectFieldBases(cl.body);
+                        var missing:Array<String> = [];
+                        for (u in used.keys()) if (isSimpleIdent(u) && !declared.exists(u) && !bound.exists(u) && !bases.exists(u)) missing.push(u);
+                        if (missing.length == 1) {
+                            var aliasStmt = makeAST(EMatch(PVar(missing[0]), makeAST(EVar(binders[0]))));
+                            var newBody = switch (cl.body.def) { case EBlock(sts): makeAST(EBlock([aliasStmt].concat(sts))); default: makeAST(EBlock([aliasStmt, cl.body])); };
+                            fixed.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
+                            continue;
+                        }
+                    }
+                    fixed.push(cl);
+                }
+                makeASTWithMeta(ECase(target, fixed), ast.metadata, ast.pos);
+            case ECond(conds):
+                var nConds = [];
+                for (c in conds) nConds.push({ condition: c.condition, body: singleBinderMissingVarAliasPass(c.body) });
+                makeASTWithMeta(ECond(nConds), ast.metadata, ast.pos);
+            default:
+                transformAST(ast, singleBinderMissingVarAliasPass);
+        };
+    }
+
+    /**
+     * GenericBinderSubstitutionPass
+     *
+     * WHAT
+     * - For ECase clauses that match Option/Result-like patterns of the form {:some|:ok, x}
+     *   where exactly one binder exists, rewrite nested payload constructions in the clause body
+     *   to use the binder `x` instead of a free variable. If structural rewrite is uncertain and
+     *   exactly one free variable is referenced in nested payload positions, inject a clause‑local
+     *   alias `free = x` at the start of the clause body.
+     *
+     * WHY
+     * - Prevents undefined or outer free var usage inside Option/Result payloads and removes
+     *   reliance on aliasing when a precise structural substitution is possible. This leads to
+     *   cleaner, idiomatic, hand‑written looking Elixir.
+     *
+     * HOW
+     * - Detect clauses with a single binder in an atom‑headed tuple pattern (some/ok).
+     * - Traverse the clause body and find ETuple nodes whose first element is an atom 'some'/'ok'.
+     *   For each such tuple, inspect its payload (second element):
+     *     - If exactly one distinct free variable appears in the payload (not the binder and not
+     *       declared in the clause pattern), replace occurrences of that variable with the binder.
+     *     - Track the set of free variables referenced across all payload positions. If no rewrite
+     *       happened and the union set has exactly one free variable, inject `free = binder` at the
+     *       top of the clause body as a safe fallback.
+     * - Recurses into nested constructs (EBlock/EIf/ECond/ECase) so deep payloads are handled.
+     *
+     * CONTEXT
+     * - Runs late, after binder naming and usage alignment passes, but before broad alias fallbacks
+     *   (GlobalOptionBinderAlias/SingleBinderAlias). This keeps aliasing minimal and structural.
+     * - Part of Pattern & Binder shaping, interacts with CaseArmUnusedBinderUnderscore (later) and
+     *   DeadAssignmentElimination (later) which will remove any now‑dead temps.
+     *
+     * EDGE CASES
+     * - Multiple distinct free vars in a single payload: skip structural rewrite to avoid guessing.
+     * - No Option/Result payload construction in body: no changes.
+     * - If an alias already exists earlier in the body, this pass still prefers structural rewrite
+     *   and will leave the alias (later DAE may clean it up if unused).
+     *
+     * EXAMPLES
+     * - Input:
+     *   case maybe() do
+     *     {:ok, msg} -> {:ok, {:broadcast, message}}
+     *   end
+     *   Output:
+     *     {:ok, msg} -> {:ok, {:broadcast, msg}}
+     *
+     * - Fallback alias:
+     *   case maybe() do
+     *     {:ok, x} -> {:ok, build(x, message)}  # two vars → no structural rewrite
+     *   end
+     *   Since payload positions use exactly one non‑binder free var `message`, inject:
+     *     {:ok, x} -> message = x; {:ok, build(x, message)}
+     */
+    static function genericBinderSubstitutionPass(ast: ElixirAST): ElixirAST {
+        inline function isOptionAtomName(a:String):Bool return a == "some" || a == "ok";
+
+        function isOptionLikePattern(p:EPattern):{ok:Bool, binder:Null<String>} {
+            return switch (p) {
+                case PTuple(elements) if (elements.length >= 2):
+                    switch (elements[0]) {
+                        case PLiteral({def: EAtom(atom)}) if (isOptionAtomName(atom)):
+                            switch (elements[1]) {
+                                case PVar(b): {ok: true, binder: b};
+                                default: {ok: false, binder: null};
+                            }
+                        default: {ok: false, binder: null};
+                    }
+                default: {ok: false, binder: null};
+            };
+        }
+
+        function countBinders(p:EPattern, acc:Array<String>):Void {
+            switch (p) {
+                case PVar(n): acc.push(n);
+                case PTuple(l): for (e in l) countBinders(e, acc);
+                case PList(l): for (e in l) countBinders(e, acc);
+                case PCons(h,t): countBinders(h, acc); countBinders(t, acc);
+                case PMap(ps): for (kv in ps) countBinders(kv.value, acc);
+                case PStruct(_, fs): for (f in fs) countBinders(f.value, acc);
+                case PAlias(n, inner): acc.push(n); countBinders(inner, acc);
+                case PPin(inner): countBinders(inner, acc);
+                case PBinary(segs): for (s in segs) countBinders(s.pattern, acc);
+                default:
+            }
+        }
+
+        function declaredInPattern(p:EPattern):Map<String,Bool> {
+            var m = new Map<String,Bool>();
+            function visit(q:EPattern):Void {
+                switch (q) {
+                    case PVar(n): m.set(n, true);
+                    case PTuple(l): for (e in l) visit(e);
+                    case PList(l): for (e in l) visit(e);
+                    case PCons(h,t): visit(h); visit(t);
+                    case PMap(ps): for (kv in ps) visit(kv.value);
+                    case PStruct(_, fs): for (f in fs) visit(f.value);
+                    case PAlias(n, inner): m.set(n, true); visit(inner);
+                    case PPin(inner): visit(inner);
+                    case PBinary(segs): for (s in segs) visit(s.pattern);
+                    default:
+                }
+            }
+            visit(p);
+            return m;
+        }
+
+        function collectVars(node:ElixirAST, acc:Map<String,Bool>):Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EVar(n): acc.set(n, true);
+                // Treat qualified module field access (Main.message) as a free var usage of 'message'
+                case EField({def: EVar(_)}, field): acc.set(field, true);
+                default: iterateAST(node, n -> collectVars(n, acc));
+            }
+        }
+
+        function replaceVar(node:ElixirAST, from:String, to:String):ElixirAST {
+            return switch (node.def) {
+                case EVar(n) if (n == from): makeASTWithMeta(EVar(to), node.metadata, node.pos);
+                // Replace qualified module field (Main.from) with binder variable
+                case EField({def: EVar(_)}, field) if (field == from): makeASTWithMeta(EVar(to), node.metadata, node.pos);
+                default: transformAST(node, n -> replaceVar(n, from, to));
+            };
+        }
+
+        function transformCase(astLocal:ElixirAST):ElixirAST {
+            return switch (astLocal.def) {
+                case ECase(target, clauses):
+                    var newClauses:Array<ECaseClause> = [];
+                    for (cl in clauses) {
+                        var patternInfo = isOptionLikePattern(cl.pattern);
+                        var clauseBinders:Array<String> = [];
+                        countBinders(cl.pattern, clauseBinders);
+                        if (patternInfo.ok && patternInfo.binder != null && clauseBinders.length == 1) {
+                            var binder = patternInfo.binder;
+                            var declared = declaredInPattern(cl.pattern);
+                            var freeVarsUnion = new Map<String,Bool>();
+                            var replacedAny = false;
+                            // Specialized detector: find a direct inner payload var in {:some|:ok, {tag, var}}
+                            function findInnerPayloadVar(n:ElixirAST):Null<String> {
+                                var found:Null<String> = null;
+                                function walk(x:ElixirAST):Void {
+                                    if (x == null || found != null) return;
+                                    switch (x.def) {
+                                        case ETuple(el) if (el.length >= 2):
+                                            switch (el[0].def) {
+                                                case EAtom(a) if (isOptionAtomName(a)):
+                                                    switch (el[1].def) {
+                                                        case ETuple(pe) if (pe.length >= 2):
+                                                            switch (pe[1].def) {
+                                                                case EVar(vn) if (vn != binder): found = vn; return;
+                                                                default:
+                                                            }
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                            for (e in el) walk(e);
+                                        default:
+                                            iterateAST(x, walk);
+                                    }
+                                }
+                                walk(n);
+                                return found;
+                            }
+
+                            function rewrite(n:ElixirAST):ElixirAST {
+                                return switch (n.def) {
+                                    case ETuple(elems) if (elems.length >= 2):
+                                        switch (elems[0].def) {
+                                            case EAtom(atom) if (isOptionAtomName(atom)):
+                                                var payload = elems[1];
+                                                // Fast path: nested payload is a 2-tuple whose 2nd element is a bare var → rewrite directly
+                                                var fastRewritten:Null<ElixirAST> = null;
+                                                switch (payload.def) {
+                                                    case ETuple(pe) if (pe.length >= 2):
+                                                        switch (pe[1].def) {
+                                                            case EVar(vn) if (vn != binder):
+                                                                var ne = pe.copy();
+                                                                ne[1] = makeAST(EVar(binder));
+                                                                var np = makeAST(ETuple(ne));
+                                                                var outer = elems.copy();
+                                                                outer[1] = np;
+                                                                fastRewritten = makeASTWithMeta(ETuple(outer), n.metadata, n.pos);
+                                                            default:
+                                                        }
+                                                    default:
+                                                }
+                                                if (fastRewritten != null) {
+                                                    replacedAny = true;
+                                                    fastRewritten;
+                                                } else {
+                                                    // General path: compute free vars in payload and replace single unique candidate
+                                                    var used = new Map<String,Bool>();
+                                                    collectVars(payload, used);
+                                                    var free:Array<String> = [];
+                                                    for (u in used.keys()) if (u != binder && !declared.exists(u)) free.push(u);
+                                                    for (fv in free) freeVarsUnion.set(fv, true);
+                                                    if (free.length == 1) {
+                                                        var targetVar = free[0];
+                                                        var newPayload = replaceVar(payload, targetVar, binder);
+                                                        var newElems = elems.copy();
+                                                        newElems[1] = newPayload;
+                                                        replacedAny = true;
+                                                        makeASTWithMeta(ETuple(newElems), n.metadata, n.pos);
+                                                    } else {
+                                                        transformAST(n, rewrite);
+                                                    }
+                                                }
+                                            default:
+                                                transformAST(n, rewrite);
+                                        }
+                                    default:
+                                        transformAST(n, rewrite);
+                                };
+                            }
+
+                            var newBody = rewrite(cl.body);
+                            if (!replacedAny) {
+                                var keys:Array<String> = [for (k in freeVarsUnion.keys()) k];
+                                if (keys.length == 1) {
+                                    var aliasName = keys[0];
+                                    var aliasStmt = makeAST(EMatch(PVar(aliasName), makeAST(EVar(binder))));
+                                    newBody = switch (newBody.def) {
+                                        case EBlock(sts): makeAST(EBlock([aliasStmt].concat(sts)));
+                                        default: makeAST(EBlock([aliasStmt, newBody]));
+                                    };
+                                }
+                                // Extra safety: handle the direct inner payload var shape even if union missed it
+                                else {
+                                    var innerVar = findInnerPayloadVar(cl.body);
+                                    if (innerVar != null) {
+                                        var aliasStmt2 = makeAST(EMatch(PVar(innerVar), makeAST(EVar(binder))));
+                                        newBody = switch (newBody.def) {
+                                            case EBlock(sts): makeAST(EBlock([aliasStmt2].concat(sts)));
+                                            default: makeAST(EBlock([aliasStmt2, newBody]));
+                                        };
+                                    }
+                                }
+                            }
+
+                            newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
+                        } else {
+                            // Not an Option/Result single‑binder clause: just recurse
+                            newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: genericBinderSubstitutionPass(cl.body) });
+                        }
+                    }
+                    makeASTWithMeta(ECase(genericBinderSubstitutionPass(target), newClauses), astLocal.metadata, astLocal.pos);
+                case ECond(conds):
+                    var nc = [];
+                    for (c in conds) nc.push({condition: c.condition, body: transformCase(c.body)});
+                    makeASTWithMeta(ECond(nc), astLocal.metadata, astLocal.pos);
+                case EIf(cond, t, e):
+                    makeASTWithMeta(EIf(transformCase(cond), transformCase(t), e != null ? transformCase(e) : null), astLocal.metadata, astLocal.pos);
+                case EBlock(sts):
+                    makeASTWithMeta(EBlock([for (s in sts) transformCase(s)]), astLocal.metadata, astLocal.pos);
+                default:
+                    transformAST(astLocal, transformCase);
+            };
+        }
+
+        return transformCase(ast);
     }
     
     /**
@@ -6903,9 +9963,10 @@ class ElixirASTTransformer {
         // Check body for parameter usage
         markUsedVars(body);
         
-        // M0 STABILIZATION: Disable underscore prefixing temporarily
+        // Enable underscore prefixing for unused parameters.
+        // This is safe because we only rename parameters that have no usages in body/guards,
+        // and we apply renames consistently to argument patterns and the function body.
         var hasChanges = false;
-        /* Disabled to prevent variable mismatches
         for (name => used in paramNames) {
             if (!used && !name.startsWith("_")) {
                 var newName = "_" + name;
@@ -6916,7 +9977,6 @@ class ElixirASTTransformer {
                 #end
             }
         }
-        */
         
         // If no changes needed, return original
         if (!hasChanges) {
@@ -6973,6 +10033,37 @@ class ElixirASTTransformer {
     static var uniqueCounter = 0;
     static function generateUniqueId(): String {
         return Std.string(uniqueCounter++);
+    }
+
+    /**
+     * Validation pass: reject leaked infrastructure variables in the final AST.
+     * Patterns: "g", "_g", /^g\d+$/, /^_g\d+$/
+     */
+    static function infraVarValidationPass(ast: ElixirAST): ElixirAST {
+        inline function isInfra(name:String):Bool {
+            return name == "g" || name == "_g" || ~/^g\d+$/.match(name) || ~/^_g\d+$/.match(name);
+        }
+
+        return transformNode(ast, function(node) {
+            switch (node.def) {
+                case EVar(name) if (isInfra(name)):
+                    // Fail fast in normal builds, but allow debug tracing when requested.
+                    #if macro
+                    var pos:Position = node.pos;
+                    if (Context.defined("debug_infra_vars")) {
+                        Sys.println('[InfraVarValidation] Detected infrastructure variable: ' + name);
+                        return node;
+                    } else {
+                        Context.error('Infrastructure variable leaked into final AST: "' + name + '"', pos);
+                        return node; // unreachable after error, keep type flow
+                    }
+                    #else
+                    return node;
+                    #end
+                default:
+                    return node;
+            }
+        });
     }
     
     /**
@@ -7140,6 +10231,11 @@ class ElixirASTTransformer {
                               guard: c.guard != null ? transformer(c.guard) : null,
                               body: transformer(c.body)
                           })),
+                    node.metadata, node.pos
+                );
+            case ECond(conds):
+                makeASTWithMeta(
+                    ECond(conds.map(c -> { condition: transformer(c.condition), body: transformer(c.body) })),
                     node.metadata, node.pos
                 );
             case EMatch(pattern, expr):

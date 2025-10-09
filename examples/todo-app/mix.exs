@@ -7,6 +7,7 @@ defmodule TodoApp.MixProject do
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
+      elixirc_options: elixirc_options(Mix.env()),
       compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -32,6 +33,14 @@ defmodule TodoApp.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp elixirc_options(env) do
+    if System.get_env("CI") == "true" or env == :ci do
+      [warnings_as_errors: true]
+    else
+      []
+    end
+  end
 
   # Specifies your project dependencies.
   defp deps do
@@ -67,6 +76,9 @@ defmodule TodoApp.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["haxe.compile.client", "tailwind todo_app", "esbuild todo_app"],
+      # Convenience: build server-side Elixir from Haxe before compiling
+      "haxe.compile.server": ["cmd haxe build-server.hxml"],
+      "haxe.compile.all": ["cmd haxe build-server.hxml", "cmd haxe build-client.hxml"],
       "assets.deploy": ["haxe.compile.client", "tailwind todo_app --minify", "esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"],
       "haxe.compile.client": ["cmd haxe build-client.hxml"]
     ]

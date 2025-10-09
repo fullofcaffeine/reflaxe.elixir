@@ -126,7 +126,7 @@
 ## 🤝 Contributing
 
 ### Development Guidelines
-- [**updating-claude-md.md**](../updating-claude-md.md) - AI context and unified documentation strategy
+- [**updating-agents-md.md**](../updating-agents-md.md) - AI context and unified documentation strategy
 - [**DOCUMENTATION_PHILOSOPHY.md**](../DOCUMENTATION_PHILOSOPHY.md) - Documentation principles
 
 ## 🔍 Cross-Cutting Topics

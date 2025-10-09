@@ -1,4 +1,4 @@
-@:realPath("elixir.DateTime") @:directlyUsed @:used @:native("DateTime")
+@:realPath("elixir.DateTime") @:native("DateTime")
 extern class DateTime {
 
 	var year:Int;

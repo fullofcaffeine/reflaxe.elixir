@@ -25,63 +25,198 @@ class Sys {
 
 	static function _command
 
-	public static function command(cmd:String, args:Null<Array<String>> = null) {
-		if (args == null) {
-			return Sys._command(cmd);
-		} else {
-			@:ast(switch (systemName()) {
+	public static function command[Function:(cmd : String, ?args : Null<Array<String>>) -> Int]
+		[Arg:String] [Local cmd(8878):String]
+		[Arg:Null<Array<String>>]
+			[Local args(8879):Null<Array<String>>]
+			[Const:Null<Array<String>>] null
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local args(8879):Null<Array<String>>:Null<Array<String>>]
+					==
+					[Const:Null<Array<String>>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:Int]
+							[Field:(cmd : String) -> Int]
+								[TypeExpr Sys:Class<Sys>]
+								[FStatic:(cmd : String) -> Int]
+									Sys
+									_command:(cmd : String) -> Int
+							[Local cmd(8878):String:String]
+				[Else:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (systemName()) {
 	case "Windows":
 		cmd = [for (a  in  [StringTools.replace(cmd, "/", "\\")].concat(args)) SysTools.quoteWinArg(a, true)].join(" ");
 		return _command(cmd);	
 	case _:
 		cmd = [cmd].concat(args).map(SysTools.quoteUnixArg).join(" ");
 		return _command(cmd);	
-}) {
-				var ` = Sys.systemName();
-				if (` == "Windows") {
-					{
-						cmd = {
-							var ` = [];
-							{
-								var ` = 0;
-								var ` = [StringTools.replace(cmd, "/", "\\")].concat(args);
-								while (` < `.length) {
-									var a = `[`];
-									++ `;
-									`.push(haxe.SysTools.quoteWinArg(a, true));
-								};
-							};
-							`;
-						}.join(" ");
-						return Sys._command(cmd);
-					};
-				} else {
-					cmd = {
-						var _this = [cmd].concat(args);
-						var f = haxe.SysTools.quoteUnixArg;
-						{
-							var ` = [];
-							{
-								var ` = 0;
-								var ` = _this;
-								while (` < `.length) {
-									var v = `[`];
-									++ `;
-									`.push(f(v));
-								};
-							};
-							`;
-						};
-					}.join(" ");
-					return Sys._command(cmd);
-				};
-			};
-		};
-	}
+})
+						[Block:Void]
+							[Var `(8892):String]
+								[Call:String]
+									[Field:() -> String]
+										[TypeExpr Sys:Class<Sys>]
+										[FStatic:() -> String]
+											Sys
+											systemName:() -> String
+							[If:Void]
+								[Binop:Bool]
+									[Local `(8892):String:String]
+									==
+									[Const:String] "Windows"
+								[Then:Dynamic] [Block:Dynamic]
+									[Block:Dynamic]
+										[Binop:String]
+											[Local cmd(8878):String:String]
+											=
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Block:Array<String>]
+														[Var `(8893):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(8894):Int] [Const:Int] 0
+															[Var `(8895):Array<String>]
+																[Call:Array<String>]
+																	[Field:(a : Array<String>) -> Array<String>]
+																		[ArrayDecl:Array<String>]
+																			[Call:String]
+																				[Field:(s : String, sub : String, by : String) -> String]
+																					[TypeExpr StringTools:Class<StringTools>]
+																					[FStatic:(s : String, sub : String, by : String) -> String]
+																						StringTools
+																						replace:(s : String, sub : String, by : String) -> String
+																				[Local cmd(8878):String:String]
+																				[Const:String] "/"
+																				[Const:String] "\\"
+																		[FInstance:(a : Array<String>) -> Array<String>]
+																			Array<String>
+																			concat:(a : Array<Array.T>) -> Array<Array.T>
+																	[Local args(8879):Null<Array<String>>:Null<Array<String>>]
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(8894):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local `(8895):Array<String>:Array<String>]
+																		[FInstance:Int]
+																			Array<String>
+																			length:Int
+																[Block:Void]
+																	[Var a(8896):String]
+																		[Array:String]
+																			[Local `(8895):Array<String>:Array<String>]
+																			[Local `(8894):Int:Int]
+																	[Unop:Int]
+																		++
+																		Prefix
+																		[Local `(8894):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local `(8893):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Call:String]
+																			[Field:(argument : String, escapeMetaCharacters : Bool) -> String]
+																				[TypeExpr haxe.SysTools:Class<haxe.SysTools>]
+																				[FStatic:(argument : String, escapeMetaCharacters : Bool) -> String]
+																					haxe.SysTools
+																					quoteWinArg:(argument : String, escapeMetaCharacters : Bool) -> String
+																			[Local a(8896):String:String]
+																			[Const:Bool] true
+														[Local `(8893):Array<String>:Array<String>]
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] " "
+										[Return:Dynamic]
+											[Call:Int]
+												[Field:(cmd : String) -> Int]
+													[TypeExpr Sys:Class<Sys>]
+													[FStatic:(cmd : String) -> Int]
+														Sys
+														_command:(cmd : String) -> Int
+												[Local cmd(8878):String:String]
+								[Else:Dynamic] [Block:Dynamic]
+									[Binop:String]
+										[Local cmd(8878):String:String]
+										=
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Block:Array<String>]
+													[Var _this(8897):Array<String>]
+														[Call:Array<String>]
+															[Field:(a : Array<String>) -> Array<String>]
+																[ArrayDecl:Array<String>] [Local cmd(8878):String:String]
+																[FInstance:(a : Array<String>) -> Array<String>]
+																	Array<String>
+																	concat:(a : Array<Array.T>) -> Array<Array.T>
+															[Local args(8879):Null<Array<String>>:Null<Array<String>>]
+													[Var f(8898):String -> String]
+														[Field:(argument : String) -> String]
+															[TypeExpr haxe.SysTools:Class<haxe.SysTools>]
+															[FStatic:(argument : String) -> String]
+																haxe.SysTools
+																quoteUnixArg:(argument : String) -> String
+													[Block:Array<String>]
+														[Var `(8899):Array<String>] [ArrayDecl:Array<String>]
+														[Block:Void]
+															[Var `(8900):Int] [Const:Int] 0
+															[Var `(8901):Array<String>] [Local _this(8897):Array<String>:Array<String>]
+															[While:Void]
+																[Binop:Bool]
+																	[Local `(8900):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local `(8901):Array<String>:Array<String>]
+																		[FInstance:Int]
+																			Array<String>
+																			length:Int
+																[Block:Void]
+																	[Var v(8902):String]
+																		[Array:String]
+																			[Local `(8901):Array<String>:Array<String>]
+																			[Local `(8900):Int:Int]
+																	[Unop:Int]
+																		++
+																		Prefix
+																		[Local `(8900):Int:Int]
+																	[Call:Int]
+																		[Field:(x : String) -> Int]
+																			[Local `(8899):Array<String>:Array<String>]
+																			[FInstance:(x : String) -> Int]
+																				Array<String>
+																				push:(x : Array.T) -> Int
+																		[Call:String]
+																			[Local f(8898):String -> String:String -> String]
+																			[Local v(8902):String:String]
+														[Local `(8899):Array<String>:Array<String>]
+												[FInstance:(sep : String) -> String]
+													Array<String>
+													join:(sep : String) -> String
+											[Const:String] " "
+									[Return:Dynamic]
+										[Call:Int]
+											[Field:(cmd : String) -> Int]
+												[TypeExpr Sys:Class<Sys>]
+												[FStatic:(cmd : String) -> Int]
+													Sys
+													_command:(cmd : String) -> Int
+											[Local cmd(8878):String:String]
 
-	public static function executablePath() {
-		return Sys.programPath();
-	}
+	public static function executablePath[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[TypeExpr Sys:Class<Sys>]
+						[FStatic:() -> String]
+							Sys
+							programPath:() -> String
 
 	public static function exit
 
@@ -99,8 +234,7 @@ class Sys {
 
 	public static function stderr
 
-	static function __init__() {
-		var _ = (null);
-		var _ = (null);
-	}
+	static function __init__() [Block:Void]
+		[Var _(8903):sys.io.FileOutput] [Parenthesis:sys.io.FileOutput] [Const:sys.io.FileOutput] null
+		[Var _(8904):sys.io.FileInput] [Parenthesis:sys.io.FileInput] [Const:sys.io.FileInput] null
 }

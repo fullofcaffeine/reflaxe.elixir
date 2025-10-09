@@ -1,0 +1,13 @@
+-cp .
+-main Main
+-lib reflaxe
+-cp ../../../../src
+-cp ../../../../std
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-dce full
+# Temporary debug flag to allow emission while infra-leak is being fixed in compiler passes
+# This flag downgrades infra-var validation to logging, enabling snapshot output.
+# It is scoped to this regression snapshot only and will be removed once the
+# nested discriminant inlining pass lands.
+-D debug_infra_vars

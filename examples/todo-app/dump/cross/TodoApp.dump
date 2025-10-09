@@ -2,15 +2,66 @@
 class TodoApp {
 
 	@:keep
-	public static function start(type:elixir.otp.ApplicationStartType, args:elixir.otp.ApplicationArgs) {
-		var children = [elixir.otp.ChildSpecFormat.ModuleRef("TodoApp.Repo"), elixir.otp.ChildSpecFormat.ModuleWithConfig("Phoenix.PubSub", [{key : "name", value : cast "TodoApp.PubSub"}]), elixir.otp.ChildSpecFormat.ModuleRef("TodoAppWeb.Telemetry"), elixir.otp.ChildSpecFormat.ModuleRef("TodoAppWeb.Endpoint")];
-		var opts = {strategy : elixir.otp.SupervisorStrategy.OneForOne, max_restarts : cast 3, max_seconds : cast 5};
-		var supervisorResult = Supervisor.start_link(children, opts);
-		return supervisorResult;
-	}
+	public static function start[Function:(type : elixir.otp.ApplicationStartType, args : elixir.otp.ApplicationArgs) -> elixir.otp.ApplicationResult]
+		[Arg:elixir.otp.ApplicationStartType] [Local type(14952):elixir.otp.ApplicationStartType]
+		[Arg:elixir.otp.ApplicationArgs] [Local args(14953):elixir.otp.ApplicationArgs]
+		[Block:Dynamic]
+			[Var children(14963):Array<elixir.otp.ChildSpecFormat>]
+				[ArrayDecl:Array<elixir.otp.ChildSpecFormat>]
+					[Call:elixir.otp.ChildSpecFormat]
+						[Field:(module : String) -> elixir.otp.ChildSpecFormat]
+							[TypeExpr elixir.otp.ChildSpecFormat:Enum<elixir.otp.ChildSpecFormat>]
+							[FEnum:(module : String) -> elixir.otp.ChildSpecFormat]
+								elixir.otp.ChildSpecFormat
+								ModuleRef
+						[Const:String] "TodoApp.Repo"
+					[Call:elixir.otp.ChildSpecFormat]
+						[Field:(module : String, config : Array<{ value : Dynamic, key : String }>) -> elixir.otp.ChildSpecFormat]
+							[TypeExpr elixir.otp.ChildSpecFormat:Enum<elixir.otp.ChildSpecFormat>]
+							[FEnum:(module : String, config : Array<{ value : Dynamic, key : String }>) -> elixir.otp.ChildSpecFormat]
+								elixir.otp.ChildSpecFormat
+								ModuleWithConfig
+						[Const:String] "Phoenix.PubSub"
+						[ArrayDecl:Array<{ value : Dynamic, key : String }>]
+							[ObjectDecl:{ value : Dynamic, key : String }]
+								key: [Const:String] "name"
+								value: [Cast:Dynamic] [Const:String] "TodoApp.PubSub"
+					[Call:elixir.otp.ChildSpecFormat]
+						[Field:(module : String) -> elixir.otp.ChildSpecFormat]
+							[TypeExpr elixir.otp.ChildSpecFormat:Enum<elixir.otp.ChildSpecFormat>]
+							[FEnum:(module : String) -> elixir.otp.ChildSpecFormat]
+								elixir.otp.ChildSpecFormat
+								ModuleRef
+						[Const:String] "TodoAppWeb.Telemetry"
+					[Call:elixir.otp.ChildSpecFormat]
+						[Field:(module : String) -> elixir.otp.ChildSpecFormat]
+							[TypeExpr elixir.otp.ChildSpecFormat:Enum<elixir.otp.ChildSpecFormat>]
+							[FEnum:(module : String) -> elixir.otp.ChildSpecFormat]
+								elixir.otp.ChildSpecFormat
+								ModuleRef
+						[Const:String] "TodoAppWeb.Endpoint"
+			[Var opts(14964):elixir.otp.SupervisorOptions]
+				[ObjectDecl:{ strategy : elixir.otp.SupervisorStrategy, max_seconds : Null<Int>, max_restarts : Null<Int> }]
+					strategy: [Field:elixir.otp.SupervisorStrategy]
+						[TypeExpr elixir.otp.SupervisorStrategy:Enum<elixir.otp.SupervisorStrategy>]
+						[FEnum:elixir.otp.SupervisorStrategy]
+							elixir.otp.SupervisorStrategy
+							OneForOne
+					max_restarts: [Cast:Null<Int>] [Const:Int] 3
+					max_seconds: [Cast:Null<Int>] [Const:Int] 5
+			[Var supervisorResult(14965):elixir.otp.ApplicationResult]
+				[Call:Dynamic]
+					[Field:(children : Array<elixir.otp.ChildSpecFormat>, options : elixir.otp.SupervisorOptions) -> Dynamic]
+						[TypeExpr Supervisor:Class<elixir.otp.SupervisorExtern>]
+						[FStatic:(children : Array<elixir.otp.ChildSpecFormat>, options : elixir.otp.SupervisorOptions) -> Dynamic]
+							Supervisor
+							start_link:(children : Array<elixir.otp.ChildSpecFormat>, options : elixir.otp.SupervisorOptions) -> Dynamic
+					[Local children(14963):Array<elixir.otp.ChildSpecFormat>:Array<elixir.otp.ChildSpecFormat>]
+					[Local opts(14964):elixir.otp.SupervisorOptions:elixir.otp.SupervisorOptions]
+			[Return:Dynamic] [Local supervisorResult(14965):elixir.otp.ApplicationResult:elixir.otp.ApplicationResult]
 
 	@:keep
-	public static function prep_stop(state:Dynamic) {
-		return state;
-	}
+	public static function prep_stop[Function:(state : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local state(14966):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Local state(14966):Dynamic:Dynamic]
 }

@@ -1,4 +1,4 @@
-@:realPath("phoenix.LiveView") @:directlyUsed @:used @:native("Phoenix.LiveView")
+@:realPath("phoenix.LiveView") @:native("Phoenix.LiveView")
 extern class Phoenix.LiveView {
 
 	static function mount<TAssigns>(params:phoenix.MountParams, session:phoenix.Session, socket:Phoenix.LiveView.Socket<mount.TAssigns>):phoenix.MountResult<mount.TAssigns>;

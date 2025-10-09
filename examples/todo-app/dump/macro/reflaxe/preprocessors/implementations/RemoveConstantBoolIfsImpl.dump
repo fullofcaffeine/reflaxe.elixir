@@ -1,20 +1,49 @@
 class reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl {
 
-	public static function process(el:Array<haxe.macro.TypedExpr>) {
-		var result = [];
-		{
-			var ` = 0;
-			while (` < el.length) {
-				var e = el[`];
-				++ `;
-				result.push(reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs(e));
-			};
-		};
-		return result;
-	}
+	public static function process[Function:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local el(6561):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var result(6562):Array<haxe.macro.TypedExpr>] [ArrayDecl:Array<haxe.macro.TypedExpr>]
+			[Block:Void]
+				[Var `(6588):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(6588):Int:Int]
+						<
+						[Field:Int]
+							[Local el(6561):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var e(6563):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local el(6561):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(6588):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(6588):Int:Int]
+						[Call:Int]
+							[Field:(x : haxe.macro.TypedExpr) -> Int]
+								[Local result(6562):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+									Array<haxe.macro.TypedExpr>
+									push:(x : Array.T) -> Int
+							[Call:haxe.macro.TypedExpr]
+								[Field:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+									[TypeExpr reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl:Class<reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl>]
+									[FStatic:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+										reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl
+										removeIfs:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+								[Local e(6563):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic] [Local result(6562):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
 
-	static function removeIfs(e:haxe.macro.TypedExpr) {
-		@:ast(switch (e.expr) {
+	static function removeIfs[Function:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local e(6564):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Meta:Void]
+				:ast(switch (e.expr) {
 	case TIf(econd, eif, eelse):
 		{
 			switch (econd.unwrapParenthesis().expr) {
@@ -36,19 +65,41 @@ class reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl {
 		};	
 	case _:
 		{ };	
-}) {
-			var ` = e.expr;
-			if (enumIndex ` == 16) {
-				var ` = `[0];
-				var ` = `[1];
-				var ` = `[2];
-				{
-					var econd = `;
-					var eif = `;
-					var eelse = `;
-					{
-						{
-							@:ast(switch (econd.unwrapParenthesis().expr) {
+})
+				[Block:Void]
+					[Var `(6578):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local e(6564):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(6578):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 16
+						[Then:Void] [Block:Void]
+							[Var `(6579):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(6578):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TIf
+									0
+							[Var `(6580):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(6578):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TIf
+									1
+							[Var `(6581):Null<haxe.macro.TypedExpr>]
+								[EnumParameter:Null<haxe.macro.TypedExpr>]
+									[Local `(6578):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TIf
+									2
+							[Block:Void]
+								[Var econd(6582):haxe.macro.TypedExpr] [Local `(6579):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Var eif(6583):haxe.macro.TypedExpr] [Local `(6580):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Var eelse(6584):Null<haxe.macro.TypedExpr>] [Local `(6581):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+								[Block:Void]
+									[Block:Void]
+										[Meta:Void]
+											:ast(switch (econd.unwrapParenthesis().expr) {
 	case TConst(TBool(true)):
 		{
 			return removeIfs(eif);
@@ -63,43 +114,100 @@ class reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl {
 		};	
 	case _:
 		{ };	
-}) {
-								var ` = reflaxe.helpers.TypedExprHelper.unwrapParenthesis(econd).expr;
-								if (enumIndex ` == 0) {
-									var ` = `[0];
-									if (enumIndex ` == 3) {
-										var ` = `[0];
-										if (`) {
-											{
-												{
-													return reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs(eif);
-												};
-											};
-										} else {
-											{
-												{
-													if (eelse != null) {
-														return reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs(eelse);
-													} else {
-														return {expr : haxe.macro.TypedExprDef.TBlock([]), pos : e.pos, t : e.t};
-													};
-												};
-											};
-										};
-									} else {
-										{};
-									};
-								} else {
-									{};
-								};
-							};
-						};
-					};
-				};
-			} else {
-				{};
-			};
-		};
-		return haxe.macro.TypedExprTools.map(e, reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs);
-	}
+})
+											[Block:Void]
+												[Var `(6585):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Call:haxe.macro.TypedExpr]
+															[Field:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																[FStatic:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																	reflaxe.helpers.TypedExprHelper
+																	unwrapParenthesis:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+															[Local econd(6582):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(6585):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 0
+													[Then:Void] [Block:Void]
+														[Var `(6586):haxe.macro.TConstant]
+															[EnumParameter:haxe.macro.TConstant]
+																[Local `(6585):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TConst
+																0
+														[If:Void]
+															[Binop:Bool]
+																[EnumIndex:Int] [Local `(6586):haxe.macro.TConstant:haxe.macro.TConstant]
+																==
+																[Const:Int] 3
+															[Then:Void] [Block:Void]
+																[Var `(6587):Bool]
+																	[EnumParameter:Bool]
+																		[Local `(6586):haxe.macro.TConstant:haxe.macro.TConstant]
+																		TBool
+																		0
+																[If:Void]
+																	[Local `(6587):Bool:Bool]
+																	[Then:Dynamic] [Block:Dynamic]
+																		[Block:Dynamic]
+																			[Block:Dynamic]
+																				[Return:Dynamic]
+																					[Call:haxe.macro.TypedExpr]
+																						[Field:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																							[TypeExpr reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl:Class<reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl>]
+																							[FStatic:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																								reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl
+																								removeIfs:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+																						[Local eif(6583):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[Else:Void] [Block:Void]
+																		[Block:Void]
+																			[Block:Void]
+																				[If:Void]
+																					[Binop:Bool]
+																						[Local eelse(6584):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																						!=
+																						[Const:Null<haxe.macro.TypedExpr>] null
+																					[Then:Dynamic] [Block:Dynamic]
+																						[Return:Dynamic]
+																							[Call:haxe.macro.TypedExpr]
+																								[Field:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																									[TypeExpr reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl:Class<reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl>]
+																									[FStatic:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																										reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl
+																										removeIfs:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+																								[Local eelse(6584):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																					[Else:Dynamic] [Block:Dynamic]
+																						[Return:Dynamic]
+																							[ObjectDecl:{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }]
+																								expr: [Call:haxe.macro.TypedExprDef]
+																									[Field:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																										[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																										[FEnum:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																											haxe.macro.TypedExprDef
+																											TBlock
+																									[ArrayDecl:Array<haxe.macro.TypedExpr>]
+																								pos: [Field:haxe.macro.Position]
+																									[Local e(6564):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																								t: [Field:haxe.macro.Type]
+																									[Local e(6564):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[FAnon:haxe.macro.Type] t:haxe.macro.Type
+															[Else:Void] [Block:Void] [Block:Void]
+													[Else:Void] [Block:Void] [Block:Void]
+						[Else:Void] [Block:Void] [Block:Void]
+			[Return:Dynamic]
+				[Call:haxe.macro.TypedExpr]
+					[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> haxe.macro.TypedExpr]
+						[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+						[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> haxe.macro.TypedExpr]
+							haxe.macro.TypedExprTools
+							map:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> haxe.macro.TypedExpr
+					[Local e(6564):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Field:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+						[TypeExpr reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl:Class<reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl>]
+						[FStatic:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+							reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl
+							removeIfs:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
 }

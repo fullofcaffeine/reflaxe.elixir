@@ -160,7 +160,7 @@ For every abstract type method using `__elixir__()`:
 
 1. **Added `extern inline`** to delay typing
 2. **Ensured proper placeholder syntax** (`{0}`, not `$var`)
-3. **Documented the requirement** in CLAUDE.md
+3. **Documented the requirement** in AGENTS.md
 
 Example fix in TypedQuery:
 ```haxe

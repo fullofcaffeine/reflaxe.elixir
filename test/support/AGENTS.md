@@ -12,7 +12,7 @@
 test/support/
 ├── haxe_test_helper.ex        # Elixir test helper module
 ├── test_reflaxe_elixir.hxml   # Haxe test configuration
-└── CLAUDE.md                   # This documentation file
+└── AGENTS.md                   # This documentation file
 ```
 
 ## 🔧 File Purposes
@@ -82,7 +82,7 @@ end
 
 ## 📚 Related Documentation
 
-- [/test/CLAUDE.md](/test/CLAUDE.md) - Complete test suite documentation
+- [/test/AGENTS.md](/test/AGENTS.md) - Complete test suite documentation
 - [/docs/03-compiler-development/testing-infrastructure.md](/docs/03-compiler-development/testing-infrastructure.md) - Testing infrastructure guide
 - [/test/README.md](/test/README.md) - Test suite user documentation
 

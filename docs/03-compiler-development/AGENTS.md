@@ -1,6 +1,6 @@
 # AI Compiler Development Instructions
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for complete project context and [/docs/CLAUDE.md](/docs/CLAUDE.md) for documentation navigation
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for complete project context and [/docs/AGENTS.md](/docs/AGENTS.md) for documentation navigation
 
 ## 🤖 Expert Compiler Developer Identity
 
@@ -187,6 +187,21 @@ function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
 - **Integration tests**: Validate real applications work
 - **Performance tests**: Ensure compilation speed
 
+## 🆕 Symbol IR Overlay & Hygiene (1.0)
+
+To eliminate variable name drift while preserving the AST pipeline:
+
+- Overlay: Collect Symbols/Scopes from ElixirAST (flag-gated `-D enable_symbol_ir`).
+- Hygiene: Compute final names (snake_case, reserved-word escaping, underscore for unused; conflict-free per scope).
+- Late Apply: Rename ElixirAST identifiers after pattern/binder and guard consolidation, before underscore cleanup.
+
+Testing:
+- Unit (fast): `scripts/test-runner.sh --unit` compiles `test/unit` cases, used for Symbol IR/hygiene algorithms.
+- Snapshot (e2e): run normal suites and reconcile only idiomatic improvements.
+- Todo-app: zero warnings; treat warnings-as-errors.
+
+See also: `docs/05-architecture/symbol_ir_spec.md` for spec and rollout plan.
+
 ## 🐛 Debugging Methodology
 
 ### XRay Debugging Infrastructure
@@ -212,6 +227,18 @@ haxe build.hxml -D source-map
 2. **Statement tracing**: Track how expressions compile to statements
 3. **Context tracking**: Monitor compilation state through complex transformations
 4. **Pattern recognition**: Identify when specific patterns trigger issues
+
+### Haxe Compilation Server Hygiene
+- Reference: [`haxe-compilation-server.md`](haxe-compilation-server.md) documents how the haxeshim wrapper talks to the compilation server, how to reset/disable it, and when bypassing the shim is useful.
+- The `haxeshim` wrapper (`~/.nvm/versions/node/.../bin/haxe`) **does launch a background
+  server by default** (you can confirm with `ps -ax | grep 'haxe --server-connect'`). This
+  keeps macro modules warm between CLI calls. When you edit compiler source and your change
+  truly disappears, the reset steps in the guide still apply.
+- For the Option.Some binder regression we just investigated, rebuilding via the shim,
+  with `NO_HAXE_SERVER=1`, and with the raw binary produced identical Elixir output. That
+  confirmed the bug lived in the transformation passes, not in cached bytecode. Keep that
+  debugging pattern in mind: verify behaviour both with and without the server before
+  assuming cache effects.
 
 ## 🚧 Known Architectural Patterns
 
@@ -342,6 +369,7 @@ function build(): String {
 - [Best Practices](best-practices.md) - Development patterns and standards
 - [/docs/05-architecture/](../05-architecture/) - Implementation details
 - [/docs/07-patterns/](../07-patterns/) - Common code patterns
+- [Extern Tracker & Output-Phase Placeholders](EXTERN_TRACKER_AND_PLACEHOLDERS.md) - Target-aware extern presence without authored sources
 
 ## 🎯 Current Focus Areas
 

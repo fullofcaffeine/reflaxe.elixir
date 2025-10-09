@@ -1,43 +1,144 @@
 class reflaxe.helpers.SyntaxHelper {
 
 	@:value({ tabCount : 1 })
-	public static function tab(s:String, tabCount:Int = 1) {
-		var tabStr = "\t";
-		if (tabCount > 1) {
-			{
-				var ` = 1;
-				var ` = tabCount;
-				while (` < `) {
-					var i = ` ++;
-					tabStr += "\t";
-				};
-			};
-		};
-		var lines = s.split("\n");
-		{
-			var ` = 0;
-			var ` = lines.length;
-			while (` < `) {
-				var i = ` ++;
-				if (lines[i].length > 0 && ! reflaxe.helpers.SyntaxHelper.isOnlySpaces(lines[i])) {
-					lines[i] = tabStr + lines[i];
-				};
-			};
-		};
-		return lines.join("\n");
-	}
+	public static function tab[Function:(s : String, ?tabCount : Int) -> String]
+		[Arg:String] [Local s(10836):String]
+		[Arg:Int]
+			[Local tabCount(10837):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var tabStr(10838):String] [Const:String] "\t"
+			[If:Void]
+				[Binop:Bool]
+					[Local tabCount(10837):Int:Int]
+					>
+					[Const:Int] 1
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(10840):Int] [Const:Int] 1
+						[Var `(10841):Int] [Local tabCount(10837):Int:Int]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(10840):Int:Int]
+								<
+								[Local `(10841):Int:Int]
+							[Block:String]
+								[Var i(10839):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(10840):Int:Int]
+								[Binop:String]
+									[Local tabStr(10838):String:String]
+									+=
+									[Const:String] "\t"
+			[Var lines(10842):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local s(10836):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "\n"
+			[Block:Void]
+				[Var `(10848):Int] [Const:Int] 0
+				[Var `(10849):Int]
+					[Field:Int]
+						[Local lines(10842):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(10848):Int:Int]
+						<
+						[Local `(10849):Int:Int]
+					[Block:Void]
+						[Var i(10843):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(10848):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Array:String]
+											[Local lines(10842):Array<String>:Array<String>]
+											[Local i(10843):Int:Int]
+										[FInstance:Int]
+											String
+											length:Int
+									>
+									[Const:Int] 0
+								&&
+								[Unop:Bool]
+									!
+									Prefix
+									[Call:Bool]
+										[Field:(s : String) -> Bool]
+											[TypeExpr reflaxe.helpers.SyntaxHelper:Class<reflaxe.helpers.SyntaxHelper>]
+											[FStatic:(s : String) -> Bool]
+												reflaxe.helpers.SyntaxHelper
+												isOnlySpaces:(s : String) -> Bool
+										[Array:String]
+											[Local lines(10842):Array<String>:Array<String>]
+											[Local i(10843):Int:Int]
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Array:String]
+										[Local lines(10842):Array<String>:Array<String>]
+										[Local i(10843):Int:Int]
+									=
+									[Binop:String]
+										[Local tabStr(10838):String:String]
+										+
+										[Array:String]
+											[Local lines(10842):Array<String>:Array<String>]
+											[Local i(10843):Int:Int]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local lines(10842):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
 
-	static function isOnlySpaces(s:String) {
-		{
-			var ` = 0;
-			var ` = s.length;
-			while (` < `) {
-				var i = ` ++;
-				if (! StringTools.isSpace(s, i)) {
-					return false;
-				};
-			};
-		};
-		return true;
-	}
+	static function isOnlySpaces[Function:(s : String) -> Bool]
+		[Arg:String] [Local s(10844):String]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(10846):Int] [Const:Int] 0
+				[Var `(10847):Int]
+					[Field:Int]
+						[Local s(10844):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(10846):Int:Int]
+						<
+						[Local `(10847):Int:Int]
+					[Block:Void]
+						[Var i(10845):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(10846):Int:Int]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(s : String, pos : Int) -> Bool]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, pos : Int) -> Bool]
+											StringTools
+											isSpace:(s : String, pos : Int) -> Bool
+									[Local s(10844):String:String]
+									[Local i(10845):Int:Int]
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic] [Const:Bool] true
 }

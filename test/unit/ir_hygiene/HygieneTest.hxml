@@ -1,0 +1,6 @@
+-cp ../../..
+-cp ../../../src
+-D enable_symbol_ir
+-D reflaxe_runtime
+-main test.unit.ir_hygiene.HygieneTest
+-neko out.n

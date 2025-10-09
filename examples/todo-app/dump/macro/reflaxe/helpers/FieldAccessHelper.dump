@@ -1,7 +1,11 @@
 class reflaxe.helpers.FieldAccessHelper {
 
-	public static function getVarData(fa:haxe.macro.FieldAccess) {
-		return @:ast(switch (fa) {
+	public static function getVarData[Function:(fa : haxe.macro.FieldAccess) -> Null<reflaxe.data.ClassVarData>]
+		[Arg:haxe.macro.FieldAccess] [Local fa(3651):haxe.macro.FieldAccess]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.data.ClassVarData>]
+					:ast(switch (fa) {
 	case FInstance(clsRef, params, cfRef):
 		{
 			cfRef.get().findVarData(clsRef.get(), false);
@@ -12,43 +16,89 @@ class reflaxe.helpers.FieldAccessHelper {
 		};	
 	case _:
 		null;	
-}) switch (enumIndex fa) {
-			case 0: {
-				var ` = fa[0];
-				var ` = fa[1];
-				var ` = fa[2];
-				{
-					var clsRef = `;
-					var params = `;
-					var cfRef = `;
-					{
-						{
-							reflaxe.helpers.ClassFieldHelper.findVarData(cfRef.get(), clsRef.get(), false);
-						};
-					};
-				};
-			};
-			case 1: {
-				var ` = fa[0];
-				var ` = fa[1];
-				{
-					var clsRef = `;
-					var cfRef = `;
-					{
-						{
-							reflaxe.helpers.ClassFieldHelper.findVarData(cfRef.get(), clsRef.get(), false);
-						};
-					};
-				};
-			};
-			default: {
-				null;
-			}
-		};
-	}
+})
+					[Switch:Null<reflaxe.data.ClassVarData>]
+						[EnumIndex:Int] [Local fa(3651):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+						[Case:Null<reflaxe.data.ClassVarData>]
+							[Const:Int] 0
+							[Block:Null<reflaxe.data.ClassVarData>]
+								[Var `(3729):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(3651):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										0
+								[Var `(3730):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local fa(3651):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										1
+								[Var `(3731):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3651):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										2
+								[Block:Null<reflaxe.data.ClassVarData>]
+									[Var clsRef(3732):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(3729):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Var params(3733):Array<haxe.macro.Type>] [Local `(3730):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Var cfRef(3734):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3731):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:Null<reflaxe.data.ClassVarData>]
+										[Block:Null<reflaxe.data.ClassVarData>]
+											[Call:Null<reflaxe.data.ClassVarData>]
+												[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>]
+													[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+													[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>]
+														reflaxe.helpers.ClassFieldHelper
+														findVarData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>
+												[Call:haxe.macro.ClassField]
+													[Field:() -> haxe.macro.ClassField]
+														[Local cfRef(3734):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+														[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+												[Call:haxe.macro.ClassType]
+													[Field:() -> haxe.macro.ClassType]
+														[Local clsRef(3732):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+												[Const:Bool] false
+						[Case:Null<reflaxe.data.ClassVarData>]
+							[Const:Int] 1
+							[Block:Null<reflaxe.data.ClassVarData>]
+								[Var `(3735):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(3651):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										0
+								[Var `(3736):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3651):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										1
+								[Block:Null<reflaxe.data.ClassVarData>]
+									[Var clsRef(3737):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(3735):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Var cfRef(3738):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3736):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:Null<reflaxe.data.ClassVarData>]
+										[Block:Null<reflaxe.data.ClassVarData>]
+											[Call:Null<reflaxe.data.ClassVarData>]
+												[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>]
+													[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+													[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>]
+														reflaxe.helpers.ClassFieldHelper
+														findVarData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>
+												[Call:haxe.macro.ClassField]
+													[Field:() -> haxe.macro.ClassField]
+														[Local cfRef(3738):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+														[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+												[Call:haxe.macro.ClassType]
+													[Field:() -> haxe.macro.ClassType]
+														[Local clsRef(3737):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+												[Const:Bool] false
+						[Default:Null<reflaxe.data.ClassVarData>] [Block:Null<reflaxe.data.ClassVarData>] [Const:Null<reflaxe.data.ClassVarData>] null
 
-	public static function getFuncData(fa:haxe.macro.FieldAccess) {
-		return @:ast(switch (fa) {
+	public static function getFuncData[Function:(fa : haxe.macro.FieldAccess) -> Null<reflaxe.data.ClassFuncData>]
+		[Arg:haxe.macro.FieldAccess] [Local fa(3739):haxe.macro.FieldAccess]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.data.ClassFuncData>]
+					:ast(switch (fa) {
 	case FInstance(clsRef, _, cfRef):
 		{
 			cfRef.get().findFuncData(clsRef.get(), false);
@@ -59,42 +109,88 @@ class reflaxe.helpers.FieldAccessHelper {
 		};	
 	case _:
 		null;	
-}) switch (enumIndex fa) {
-			case 0: {
-				var ` = fa[0];
-				var ` = fa[1];
-				var ` = fa[2];
-				{
-					var clsRef = `;
-					var cfRef = `;
-					{
-						{
-							reflaxe.helpers.ClassFieldHelper.findFuncData(cfRef.get(), clsRef.get(), false);
-						};
-					};
-				};
-			};
-			case 1: {
-				var ` = fa[0];
-				var ` = fa[1];
-				{
-					var clsRef = `;
-					var cfRef = `;
-					{
-						{
-							reflaxe.helpers.ClassFieldHelper.findFuncData(cfRef.get(), clsRef.get(), false);
-						};
-					};
-				};
-			};
-			default: {
-				null;
-			}
-		};
-	}
+})
+					[Switch:Null<reflaxe.data.ClassFuncData>]
+						[EnumIndex:Int] [Local fa(3739):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+						[Case:Null<reflaxe.data.ClassFuncData>]
+							[Const:Int] 0
+							[Block:Null<reflaxe.data.ClassFuncData>]
+								[Var `(3957):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(3739):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										0
+								[Var `(3958):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local fa(3739):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										1
+								[Var `(3959):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3739):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										2
+								[Block:Null<reflaxe.data.ClassFuncData>]
+									[Var clsRef(3960):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(3957):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Var cfRef(3961):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3959):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:Null<reflaxe.data.ClassFuncData>]
+										[Block:Null<reflaxe.data.ClassFuncData>]
+											[Call:Null<reflaxe.data.ClassFuncData>]
+												[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+													[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+													[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+														reflaxe.helpers.ClassFieldHelper
+														findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+												[Call:haxe.macro.ClassField]
+													[Field:() -> haxe.macro.ClassField]
+														[Local cfRef(3961):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+														[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+												[Call:haxe.macro.ClassType]
+													[Field:() -> haxe.macro.ClassType]
+														[Local clsRef(3960):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+												[Const:Bool] false
+						[Case:Null<reflaxe.data.ClassFuncData>]
+							[Const:Int] 1
+							[Block:Null<reflaxe.data.ClassFuncData>]
+								[Var `(3962):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(3739):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										0
+								[Var `(3963):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3739):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										1
+								[Block:Null<reflaxe.data.ClassFuncData>]
+									[Var clsRef(3964):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(3962):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Var cfRef(3965):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3963):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:Null<reflaxe.data.ClassFuncData>]
+										[Block:Null<reflaxe.data.ClassFuncData>]
+											[Call:Null<reflaxe.data.ClassFuncData>]
+												[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+													[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+													[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+														reflaxe.helpers.ClassFieldHelper
+														findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+												[Call:haxe.macro.ClassField]
+													[Field:() -> haxe.macro.ClassField]
+														[Local cfRef(3965):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+														[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+												[Call:haxe.macro.ClassType]
+													[Field:() -> haxe.macro.ClassType]
+														[Local clsRef(3964):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+												[Const:Bool] false
+						[Default:Null<reflaxe.data.ClassFuncData>] [Block:Null<reflaxe.data.ClassFuncData>] [Const:Null<reflaxe.data.ClassFuncData>] null
 
-	public static function getClassField(fa:haxe.macro.FieldAccess) {
-		return @:ast(switch (fa) {
+	public static function getClassField[Function:(fa : haxe.macro.FieldAccess) -> Null<haxe.macro.ClassField>]
+		[Arg:haxe.macro.FieldAccess] [Local fa(3966):haxe.macro.FieldAccess]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<haxe.macro.ClassField>]
+					:ast(switch (fa) {
 	case FInstance(_, _, cfRef):
 		cfRef.get();	
 	case FStatic(_, cfRef):
@@ -105,50 +201,88 @@ class reflaxe.helpers.FieldAccessHelper {
 		cfRef.get();	
 	case _:
 		null;	
-}) switch (enumIndex fa) {
-			case 0: {
-				var ` = fa[0];
-				var ` = fa[1];
-				var ` = fa[2];
-				{
-					var cfRef = `;
-					{
-						cfRef.get();
-					};
-				};
-			};
-			case 1: {
-				var ` = fa[0];
-				var ` = fa[1];
-				{
-					var cfRef = `;
-					{
-						cfRef.get();
-					};
-				};
-			};
-			case 2: {
-				var ` = fa[0];
-				{
-					var cfRef = `;
-					{
-						cfRef.get();
-					};
-				};
-			};
-			case 4: {
-				var ` = fa[0];
-				var ` = fa[1];
-				{
-					var cfRef = `;
-					{
-						cfRef.get();
-					};
-				};
-			};
-			default: {
-				null;
-			}
-		};
-	}
+})
+					[Switch:Null<haxe.macro.ClassField>]
+						[EnumIndex:Int] [Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 0
+							[Block:haxe.macro.ClassField]
+								[Var `(3979):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										0
+								[Var `(3980):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										1
+								[Var `(3981):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										2
+								[Block:haxe.macro.ClassField]
+									[Var cfRef(3982):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3981):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local cfRef(3982):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 1
+							[Block:haxe.macro.ClassField]
+								[Var `(3983):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										0
+								[Var `(3984):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										1
+								[Block:haxe.macro.ClassField]
+									[Var cfRef(3985):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3984):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local cfRef(3985):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 2
+							[Block:haxe.macro.ClassField]
+								[Var `(3986):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FAnon
+										0
+								[Block:haxe.macro.ClassField]
+									[Var cfRef(3987):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3986):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local cfRef(3987):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Case:haxe.macro.ClassField]
+							[Const:Int] 4
+							[Block:haxe.macro.ClassField]
+								[Var `(3988):Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+									[EnumParameter:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FClosure
+										0
+								[Var `(3989):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local fa(3966):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FClosure
+										1
+								[Block:haxe.macro.ClassField]
+									[Var cfRef(3990):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3989):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassField]
+											[Field:() -> haxe.macro.ClassField]
+												[Local cfRef(3990):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+												[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Default:Null<haxe.macro.ClassField>] [Block:Null<haxe.macro.ClassField>] [Const:Null<haxe.macro.ClassField>] null
 }

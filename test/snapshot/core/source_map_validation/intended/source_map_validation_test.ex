@@ -15,15 +15,14 @@ defmodule SourceMapValidationTest do
     Log.trace("Loop iteration: " <> Kernel.to_string(3), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
     Log.trace("Loop iteration: " <> Kernel.to_string(4), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
     array = [1, 2, 3, 4, 5]
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
-  if (acc_g < length(acc_array)) do
-    item = acc_array[acc_g]
-    acc_g = acc_g + 1
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array}, fn _, {array} ->
+  if (0 < length(array)) do
+    item = array[0]
+    0 + 1
     process_item(item)
-    {:cont, {acc_array, acc_g, acc_state}}
+    {:cont, {array}}
   else
-    {:halt, {acc_array, acc_g, acc_state}}
+    {:halt, {array}}
   end
 end)
     obj_name = "Test"

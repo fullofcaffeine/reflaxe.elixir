@@ -1,6 +1,6 @@
 # AST Development Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) and [/src/reflaxe/elixir/CLAUDE.md](/src/reflaxe/elixir/CLAUDE.md) for project-wide conventions
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) and [/src/reflaxe/elixir/AGENTS.md](/src/reflaxe/elixir/AGENTS.md) for project-wide conventions
 
 This file contains AST-specific development guidance for agents working on the Reflaxe.Elixir AST transformation pipeline.
 
@@ -110,6 +110,16 @@ The AST pipeline is the core of the Reflaxe.Elixir compiler, transforming Haxe's
 2. **Transformer Phase** (`ElixirASTTransformer.hx`) - Applies idiomatic transformations
 3. **Printer Phase** (`ElixirASTPrinter.hx`) - Generates final Elixir strings
 
+## Descriptive Naming & Non‑Expert Documentation (AST Scope)
+
+- Use intention‑revealing names for builders/transformers and locals (e.g., `guardVars`, `fieldBaseVars`, `bodyUsedLocals`, `binderName`, `clauseBinders`).
+- Avoid ambiguous/short identifiers in passes; keep indices (`i`) only in tiny obvious scopes.
+- Each new pass/builder must include hxdoc with:
+  - WHY (what problem), WHAT (contract), HOW (approach + where in the pipeline), WHEN (ordering/constraints and interactions with other passes).
+  - Minimal Haxe → Elixir examples that demonstrate the shape change.
+  - Invariants and limitations; include debug flags to inspect behavior (e.g., `-D debug_ast_transformer`, pass‑specific flags).
+- If introducing bridge binders/aliases (e.g., for enum patterns), document their purpose and lifetime; add transparent comments to generated Elixir when appropriate.
+
 ## 🛠️ ASTUtils: Robust AST Transformation Utilities (NEW - January 2025)
 
 ### Overview
@@ -171,6 +181,27 @@ if (ASTUtils.containsIteratorPattern(rhs)) {
 
 ### Historical Context
 Created in response to Map iterator transformation failures where pattern matching failed on unexpected AST structures (nested EBlock issues). User specifically requested "abstractions/patterns to prevent hard-to-debug mismatchers" - ASTUtils is the solution.
+
+## Binder Enforcement & Param Alignment (1.0 Readiness)
+
+- Binder 'level' enforcement:
+  - Only enforce binder name 'level' when the case target variable ends with `_level` (snake_case), or when the clause body explicitly references `level`.
+  - Do not force 'level' for non-`*_level` targets; rely on structural consistency passes instead.
+
+- Option/Result clause bodies (`{:some|:ok, binder}`):
+  - Prefer structural substitution of nested payload variables to the clause binder.
+  - When structural certainty is low and exactly one free simple identifier appears in nested payload positions, inject a clause‑local alias `missing = binder` at the start of the clause.
+
+- Atom-head tuple arms (`{:atom, binder}`):
+  - For single-binder arms whose bodies reference exactly one free simple identifier, inject a clause-local alias `missing = binder`.
+  - If the binder is not referenced and a unique body identifier exists, a structural binder rename to that identifier is permitted.
+
+- Function parameter patterns (EDef/EDefp):
+  - Add a rename‑by‑usage pass for function args mirroring case-arm rules: if a single-binder arg is unused and exactly one free simple identifier is referenced in the body, rename the binder to that identifier; otherwise inject an alias at function start.
+
+- Ordering and safety:
+  - Run structural substitutions before alias injection. Keep catch‑all alias injection terminal so earlier passes cannot undo it.
+  - All rules are structural and target‑agnostic; never encode app-specific names.
 
 ## ⚠️ CRITICAL: Context Preservation in Builders (January 2025)
 

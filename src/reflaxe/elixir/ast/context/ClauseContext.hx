@@ -49,6 +49,12 @@ class ClauseContext {
     // to map indices back to constructor names and parameters
     public var enumType: Null<haxe.macro.Type.EnumType> = null;
 
+    // When switching on a Result<T,E> abstract (wrapping DataResult), map outer
+    // patterns Success/Error to :ok/:error respectively. This flag is set by
+    // SwitchBuilder based on the switch target type and only affects the current
+    // clause scope (nested switches get their own ClauseContext).
+    public var mapResultAbstractToOkError: Bool = false;
+
     // TASK 4.5 FIX: Track which enum parameters were extracted by the pattern itself
     // This prevents TEnumParameter from trying to re-extract already-extracted values
     // Example: case {:some, action} extracts "action", so TEnumParameter shouldn't extract it again

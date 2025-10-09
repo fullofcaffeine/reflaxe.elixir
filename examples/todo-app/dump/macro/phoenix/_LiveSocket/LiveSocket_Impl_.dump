@@ -1,45 +1,123 @@
 private class phoenix._LiveSocket.LiveSocket_Impl_ {
 
 	@:noCompletion
-	public static inline function _new(socket:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) {
-		var this;
-		this = socket;
-		return cast this;
-	}
+	public static inline function _new[Function:(socket : Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) -> phoenix.LiveSocket<phoenix.LiveSocket.T>]
+		[Arg:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>] [Local socket(15139):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+		[Block:Dynamic]
+			[Var this(15140):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+			[Binop:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+				[Local this(15140):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+				=
+				[Local socket(15139):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+			[Return:Dynamic] [Cast:phoenix.LiveSocket<phoenix.LiveSocket.T>] [Local this(15140):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
 
 	@:op(A | B)
-	public static inline function pipe<T>(socket:phoenix.LiveSocket<pipe.T>, func:phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>) {
-		return func(socket);
-	}
+	public static inline function pipe<T>[Function:(socket : phoenix.LiveSocket<pipe.T>, func : (phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>)) -> phoenix.LiveSocket<pipe.T>]
+		[Arg:phoenix.LiveSocket<pipe.T>] [Local socket(15141):phoenix.LiveSocket<pipe.T>]
+		[Arg:phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>] [Local func(15142):phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:phoenix.LiveSocket<pipe.T>]
+					[Local func(15142):phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>:phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>]
+					[Local socket(15141):phoenix.LiveSocket<pipe.T>:phoenix.LiveSocket<pipe.T>]
 
-	public static macro function assign<T>(ethis:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, value:haxe.macro.Expr) {
-		return phoenix.macros.AssignMacro.processAssign(ethis, fieldExpr, value);
-	}
+	public static macro function assign<T>[Function:(ethis : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, value : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local ethis(15143):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local fieldExpr(15144):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local value(15145):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:haxe.macro.Expr]
+					[Field:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, value : haxe.macro.Expr) -> haxe.macro.Expr]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, value : haxe.macro.Expr) -> haxe.macro.Expr]
+							phoenix.macros.AssignMacro
+							processAssign:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, value : haxe.macro.Expr) -> haxe.macro.Expr
+					[Local ethis(15143):haxe.macro.Expr:haxe.macro.Expr]
+					[Local fieldExpr(15144):haxe.macro.Expr:haxe.macro.Expr]
+					[Local value(15145):haxe.macro.Expr:haxe.macro.Expr]
 
-	public static macro function merge<T>(ethis:haxe.macro.Expr, updates:haxe.macro.Expr) {
-		return phoenix.macros.AssignMacro.processMerge(ethis, updates);
-	}
+	public static macro function merge<T>[Function:(ethis : haxe.macro.Expr, updates : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local ethis(15329):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local updates(15330):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:haxe.macro.Expr]
+					[Field:(socketExpr : haxe.macro.Expr, updates : haxe.macro.Expr) -> haxe.macro.Expr]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr, updates : haxe.macro.Expr) -> haxe.macro.Expr]
+							phoenix.macros.AssignMacro
+							processMerge:(socketExpr : haxe.macro.Expr, updates : haxe.macro.Expr) -> haxe.macro.Expr
+					[Local ethis(15329):haxe.macro.Expr:haxe.macro.Expr]
+					[Local updates(15330):haxe.macro.Expr:haxe.macro.Expr]
 
-	public static macro function assignNew<T, V>(ethis:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, defaultFn:haxe.macro.Expr) {
-		return phoenix.macros.AssignMacro.processAssignNew(ethis, fieldExpr, defaultFn);
-	}
+	public static macro function assignNew<T, V>[Function:(ethis : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, defaultFn : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local ethis(15331):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local fieldExpr(15332):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local defaultFn(15333):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:haxe.macro.Expr]
+					[Field:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, defaultFn : haxe.macro.Expr) -> haxe.macro.Expr]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, defaultFn : haxe.macro.Expr) -> haxe.macro.Expr]
+							phoenix.macros.AssignMacro
+							processAssignNew:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, defaultFn : haxe.macro.Expr) -> haxe.macro.Expr
+					[Local ethis(15331):haxe.macro.Expr:haxe.macro.Expr]
+					[Local fieldExpr(15332):haxe.macro.Expr:haxe.macro.Expr]
+					[Local defaultFn(15333):haxe.macro.Expr:haxe.macro.Expr]
 
-	public static macro function update<T, V>(ethis:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, updater:haxe.macro.Expr) {
-		return phoenix.macros.AssignMacro.processUpdate(ethis, fieldExpr, updater);
-	}
+	public static macro function update<T, V>[Function:(ethis : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, updater : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local ethis(15334):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local fieldExpr(15335):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local updater(15336):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:haxe.macro.Expr]
+					[Field:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, updater : haxe.macro.Expr) -> haxe.macro.Expr]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, updater : haxe.macro.Expr) -> haxe.macro.Expr]
+							phoenix.macros.AssignMacro
+							processUpdate:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, updater : haxe.macro.Expr) -> haxe.macro.Expr
+					[Local ethis(15334):haxe.macro.Expr:haxe.macro.Expr]
+					[Local fieldExpr(15335):haxe.macro.Expr:haxe.macro.Expr]
+					[Local updater(15336):haxe.macro.Expr:haxe.macro.Expr]
 
 	@:has_untyped
-	public static inline function clearFlash(this:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) {
-		return __elixir__("Phoenix.LiveView.clear_flash({0})", this);
-	}
+	public static inline function clearFlash[Function:(this : Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) -> phoenix.LiveSocket<phoenix.LiveSocket.T>]
+		[Arg:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>] [Local this(15337):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:phoenix.LiveSocket<phoenix.LiveSocket.T>]
+					[Ident:(String, Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) -> Unknown<19>] __elixir__
+					[Const:String] "Phoenix.LiveView.clear_flash({0})"
+					[Local this(15337):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
 
 	@:has_untyped
-	public static inline function putFlash(this:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, type:phoenix.FlashType, message:String) {
-		return __elixir__("Phoenix.LiveView.put_flash({0}, {1}, {2})", this, type, message);
-	}
+	public static inline function putFlash[Function:(this : Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, type : phoenix.FlashType, message : String) -> phoenix.LiveSocket<phoenix.LiveSocket.T>]
+		[Arg:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>] [Local this(15338):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+		[Arg:phoenix.FlashType] [Local type(15339):phoenix.FlashType]
+		[Arg:String] [Local message(15340):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:phoenix.LiveSocket<phoenix.LiveSocket.T>]
+					[Ident:(String, Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, phoenix.FlashType, String) -> Unknown<20>] __elixir__
+					[Const:String] "Phoenix.LiveView.put_flash({0}, {1}, {2})"
+					[Local this(15338):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+					[Local type(15339):phoenix.FlashType:phoenix.FlashType]
+					[Local message(15340):String:String]
 
 	@:has_untyped
-	public static inline function pushEvent<P>(this:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, event:String, payload:pushEvent.P) {
-		return __elixir__("Phoenix.LiveView.push_event({0}, {1}, {2})", this, event, payload);
-	}
+	public static inline function pushEvent<P>[Function:(this : Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, event : String, payload : pushEvent.P) -> phoenix.LiveSocket<phoenix.LiveSocket.T>]
+		[Arg:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>] [Local this(15341):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+		[Arg:String] [Local event(15342):String]
+		[Arg:pushEvent.P] [Local payload(15343):pushEvent.P]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:phoenix.LiveSocket<phoenix.LiveSocket.T>]
+					[Ident:(String, Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, String, pushEvent.P) -> Unknown<21>] __elixir__
+					[Const:String] "Phoenix.LiveView.push_event({0}, {1}, {2})"
+					[Local this(15341):Phoenix.LiveView.Socket<phoenix.LiveSocket.T>:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>]
+					[Local event(15342):String:String]
+					[Local payload(15343):pushEvent.P:pushEvent.P]
 }

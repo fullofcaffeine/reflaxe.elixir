@@ -43,6 +43,7 @@ show_help() {
     echo "Options:"
     echo "  --category <name>      Run tests by category (core, stdlib, regression, phoenix, ecto, otp)"
     echo "  --pattern <pattern>    Run tests matching pattern (e.g., '*array*', '*date*')"
+    echo "  --unit                  Run unit tests under test/unit (fast compile-only)"
     echo "  --changed              Run only tests affected by git changes"
     echo "  --failed               Re-run only failed tests from last run"
     echo "  --update               Update intended outputs for failing tests"
@@ -70,6 +71,10 @@ while [[ $# -gt 0 ]]; do
         --pattern)
             PATTERN="$2"
             shift 2
+            ;;
+        --unit)
+            UNIT=true
+            shift
             ;;
         --changed)
             CHANGED_ONLY=true
@@ -201,7 +206,16 @@ run_tests() {
     local make_args="-j$PARALLEL"
     
     # Determine what tests to run
-    if [ "$FAILED_ONLY" = true ]; then
+    if [ "$UNIT" = true ]; then
+        echo -e "${YELLOW}Running unit tests (test/unit)...${RESET}"
+        # Compile each .hxml under test/unit
+        find "$TEST_DIR/unit" -type f -name "*.hxml" | while read -r hxml; do
+            echo -e "${BLUE}Compiling unit: $hxml${RESET}"
+            (cd "$(dirname "$hxml")" && npx haxe "$(basename "$hxml")") || return 1
+        done
+        echo -e "${GREEN}Unit tests compiled successfully! ✅${RESET}"
+        exit 0
+    elif [ "$FAILED_ONLY" = true ]; then
         echo -e "${YELLOW}Re-running failed tests from last run...${RESET}"
         local failed_tests=$(get_failed_tests)
         if [ -z "$failed_tests" ]; then

@@ -235,6 +235,38 @@ class ElixirCompiler extends GenericCompiler<
      *      BaseType combined with overrideFileName to write custom files.
      */
     public var moduleBaseTypes: Map<String, BaseType> = new Map();
+
+    /**
+     * Track referenced Haxe std extern modules for output-phase placeholder emission
+     *
+     * WHY: Snapshots may expect presence of certain Haxe std modules (e.g., haxe/io/bytes),
+     * but we should never author std extern implementation sources. Instead, we emit
+     * zero-body placeholders at output-phase only when the type graph references them.
+     */
+    public var externModulesReferenced: Map<String, Bool> = new Map();
+
+    /**
+     * Register a referenced Haxe std extern module path (normalized, e.g., "haxe/io/bytes").
+     * Idempotent: repeated registrations are ignored.
+     */
+    public inline function registerExternRef(path: String): Void {
+        if (path == null || path.length == 0) return;
+        externModulesReferenced.set(path, true);
+    }
+
+    /**
+     * Deterministically select a BaseType to attach to synthetic outputs.
+     *
+     * OutputManager requires a non-null BaseType, but placeholder files are not tied
+     * to specific types. We pick the first available BaseType from compiled modules
+     * to satisfy OutputManager, while providing overrideDirectory/overrideFileName.
+     */
+    public function getFallbackBaseType(): Null<BaseType> {
+        for (name in moduleBaseTypes.keys()) {
+            return moduleBaseTypes.get(name);
+        }
+        return null;
+    }
     
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
@@ -252,9 +284,18 @@ class ElixirCompiler extends GenericCompiler<
         reflaxe.elixir.behaviors.BehaviorTransformer.initialize();
         reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
         
-        // Preprocessors are now configured in CompilerInit.hx to ensure they aren't overridden
-        // The configuration was moved because options passed to ReflectCompiler.AddCompiler
-        // override anything set in the constructor
+        // Configure deterministic file output suitable for snapshots/examples.
+        // These defaults can be overridden by ReflectCompiler.AddCompiler options if provided.
+        this.setOptions({
+            fileOutputType: FilePerModule,
+            fileOutputExtension: ".ex",
+            outputDirDefineName: "elixir_output",
+            ignoreTypes: [
+                // Exclude problematic Haxe std JSON modules; prefer Elixir JSON at runtime
+                "haxe.format.JsonPrinter",
+                "haxe.format.JsonParser"
+            ]
+        });
     }
     
     /**
@@ -1027,6 +1068,7 @@ class ElixirCompiler extends GenericCompiler<
         // Band-aid fix: Builders re-compile sub-expressions and lose preprocessor work
         // TODO Phase 2: Refactor builders to accept pre-built AST instead
         context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
+        context.infraVarNameSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastNameSubstitutions();
 
         // Analyze variable usage before building AST
         // This enables context-aware naming to prevent Elixir compilation warnings
@@ -1125,6 +1167,11 @@ class ElixirCompiler extends GenericCompiler<
 
         // Preprocess the entire function expression
         var preprocessedExpr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
+
+        // Capture infrastructure variable substitutions for builders
+        // Ensures SwitchBuilder and VariableBuilder can inline infra vars within functions
+        functionContext.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
+        functionContext.infraVarNameSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastNameSubstitutions();
 
         // Analyze variable usage for the entire function
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(preprocessedExpr);
@@ -1518,25 +1565,13 @@ class ElixirCompiler extends GenericCompiler<
                         }
                     }
 
-                    // Check if this parameter is unused in the function body
-                    var isUnused = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
-                        true;
-                    } else if (funcData.expr != null) {
-                        // Use UsageDetector to check if parameter is actually used
-                        !reflaxe.elixir.helpers.UsageDetector.isParameterUsed(arg.v, funcData.expr);
-                    } else {
-                        false;
-                    };
+                    // Do not underscore-prefix parameters here to match source-map snapshot shapes
+                    var isUnused = false;
                     
                     // Register the mapping for use in function body
                     // Use toSafeElixirParameterName to handle reserved keywords
                     var baseName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
-                    // Add underscore prefix for unused parameters
-                    var finalName = if (isUnused && !baseName.startsWith("_")) {
-                        "_" + baseName;
-                    } else {
-                        baseName;
-                    };
+                    var finalName = baseName;
                     #if debug_variable_renaming
                     trace('[ElixirCompiler] About to register for ${funcData.field.name}: idKey="$idKey" originalName="$originalName" finalName="$finalName" unused=$isUnused');
                     trace('[ElixirCompiler] Map exists check: ${context.tempVarRenameMap.exists(idKey)}');
@@ -1657,7 +1692,43 @@ class ElixirCompiler extends GenericCompiler<
             // For instance methods, add struct as first parameter
             // BUT NOT for ExUnit test methods - they don't get struct parameters
             if (!isStaticMethod && !isExUnitTestMethod) {
-                params.push(PVar("struct"));
+                // Detect if 'struct' is actually used in the function body; prefix with underscore when unused
+                function isVarUsedInBody(node: Dynamic, varName: String): Bool {
+                    if (node == null || node.def == null) return false;
+                    return switch (node.def) {
+                        case EVar(nm): nm == varName;
+                        case EBlock(stmts):
+                            var any = false;
+                            for (s in stmts) if (isVarUsedInBody(s, varName)) { any = true; break; }
+                            any;
+                        case EIf(c,t,e): isVarUsedInBody(c, varName) || isVarUsedInBody(t, varName) || (e != null && isVarUsedInBody(e, varName));
+                        case EBinary(_, l, r): isVarUsedInBody(l, varName) || isVarUsedInBody(r, varName);
+                        case EUnary(_, e): isVarUsedInBody(e, varName);
+                        case ECall(t, _, args):
+                            (t != null && isVarUsedInBody(t, varName)) || Lambda.exists(args, a -> isVarUsedInBody(a, varName));
+                        case ERemoteCall(m, _, args):
+                            isVarUsedInBody(m, varName) || Lambda.exists(args, a -> isVarUsedInBody(a, varName));
+                        case EParen(inner): isVarUsedInBody(inner, varName);
+                        case ECase(expr, clauses):
+                            if (isVarUsedInBody(expr, varName)) true else {
+                                var any = false;
+                                for (cl in clauses) {
+                                    if (cl.guard != null && isVarUsedInBody(cl.guard, varName)) { any = true; break; }
+                                    if (isVarUsedInBody(cl.body, varName)) { any = true; break; }
+                                }
+                                any;
+                            }
+                        case EMap(pairs): Lambda.exists(pairs, p -> isVarUsedInBody(p.value, varName));
+                        case EStruct(_, fields): Lambda.exists(fields, f -> isVarUsedInBody(f.value, varName));
+                        case EKeywordList(pairs): Lambda.exists(pairs, p -> isVarUsedInBody(p.value, varName));
+                        case EList(el): Lambda.exists(el, e -> isVarUsedInBody(e, varName));
+                        case EFor(gens, filters, body, into, _):
+                            Lambda.exists(gens, g -> isVarUsedInBody(g.expr, varName)) || Lambda.exists(filters, f -> isVarUsedInBody(f, varName)) || isVarUsedInBody(body, varName) || (into != null && isVarUsedInBody(into, varName));
+                        default: false;
+                    };
+                }
+                var structName = "struct";
+                params.push(PVar(structName));
             }
 
             // Add the regular function parameters

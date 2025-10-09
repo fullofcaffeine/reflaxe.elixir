@@ -258,6 +258,23 @@ Most modern Haxe IDEs use HXML files for:
 
 --next
 -D elixir_output=lib
+
+## About `-D reflaxe_runtime`
+
+Reflaxe compilers and std modules often use `#if (macro || reflaxe_runtime)` to expose selected types during non‑macro test builds. This flag is a compilation aid, not a runtime switch.
+
+- Purpose
+  - Allow examples, snapshots, and unit tests to compile code that normally exists only in macro builds (helpers/IR), without invoking macro APIs.
+  - Enable test compilation of std modules that depend on target‑aware helpers (e.g., elixir injection wrappers) without running the compiler.
+
+- Policy
+  - Macro‑only APIs (e.g., `haxe.macro.Context.*`) must always be guarded with `#if macro` even inside files compiled with `#if (macro || reflaxe_runtime)`.
+  - Non‑macro branches must be side‑effect‑free (no compiler behavior) and may optionally emit debug logs behind opt‑in flags.
+  - Production builds should not depend on `reflaxe_runtime`; it is for test/dev flows only.
+
+- References
+  - See docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md for a deep dive on contexts and correct usage.
+  - Reference compilers (in haxe.elixir.reference) also gate many core files with `#if (macro || reflaxe_runtime)` and define `-D reflaxe_runtime` in their dev HXMLs.
 --macro reflaxe.elixir.CompilerInit.Start()
 ```
 

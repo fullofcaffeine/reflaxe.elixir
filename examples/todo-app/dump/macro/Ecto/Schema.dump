@@ -4,81 +4,241 @@ class Ecto.Schema {
 	static macro function schema
 
 	@:has_untyped
-	static macro function embedded_schema(fields:Array<phoenix.SchemaField>) {
-		return cast {expr : haxe.macro.ExprDef.EBlock([]), pos : $__mk_pos__("../../std/phoenix/Ecto.hx", 8445, 8447)};
-	}
+	static macro function embedded_schema[Function:(fields : Array<phoenix.SchemaField>) -> Dynamic]
+		[Arg:Array<phoenix.SchemaField>] [Local fields(15344):Array<phoenix.SchemaField>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Cast:haxe.macro.Expr]
+					[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+						expr: [Call:haxe.macro.ExprDef]
+							[Field:(exprs : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+								[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+								[FEnum:(exprs : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+									haxe.macro.ExprDef
+									EBlock
+							[ArrayDecl:Array<haxe.macro.Expr>]
+						pos: [Call:haxe.macro.Position]
+							[Ident:(String, Int, Int) -> Unknown<18>] $__mk_pos__
+							[Const:String] "../../std/phoenix/Ecto.hx"
+							[Const:Int] 8445
+							[Const:Int] 8447
 
-	static inline function field(name:String, type:phoenix.FieldType, options:Null<phoenix.FieldOptions> = null) {
-		return {name : name, type : type, options : if (options != null) {
-			options;
-		} else {}};
-	}
+	static inline function field[Function:(name : String, type : phoenix.FieldType, ?options : Null<phoenix.FieldOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15345):String]
+		[Arg:phoenix.FieldType] [Local type(15346):phoenix.FieldType]
+		[Arg:Null<phoenix.FieldOptions>]
+			[Local options(15347):Null<phoenix.FieldOptions>]
+			[Const:Null<phoenix.FieldOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+					name: [Local name(15345):String:String]
+					type: [Local type(15346):phoenix.FieldType:phoenix.FieldType]
+					options: [If:phoenix.FieldOptions]
+						[Binop:Bool]
+							[Local options(15347):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							!=
+							[Const:Null<phoenix.FieldOptions>] null
+						[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15347):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+						[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function belongs_to<T>(name:String, schema:Class<belongs_to.T>, options:Null<phoenix.AssociationOptions> = null) {
-		return {
-			var options = cast options;
-			{name : name, type : phoenix.FieldType.BelongsTo, options : if (options != null) {
-				options;
-			} else {}};
-		};
-	}
+	static inline function belongs_to<T>[Function:(name : String, schema : Class<belongs_to.T>, ?options : Null<phoenix.AssociationOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15348):String]
+		[Arg:Class<belongs_to.T>] [Local schema(15349):Class<belongs_to.T>]
+		[Arg:Null<phoenix.AssociationOptions>]
+			[Local options(15350):Null<phoenix.AssociationOptions>]
+			[Const:Null<phoenix.AssociationOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:phoenix.SchemaField]
+					[Var options(15355):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15350):Null<phoenix.AssociationOptions>:Null<phoenix.AssociationOptions>]
+					[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+						name: [Local name(15348):String:String]
+						type: [Field:phoenix.FieldType]
+							[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+							[FEnum:phoenix.FieldType]
+								phoenix.FieldType
+								BelongsTo
+						options: [If:phoenix.FieldOptions]
+							[Binop:Bool]
+								[Local options(15355):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								!=
+								[Const:Null<phoenix.FieldOptions>] null
+							[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15355):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function has_one<T>(name:String, schema:Class<has_one.T>, options:Null<phoenix.AssociationOptions> = null) {
-		return {
-			var options = cast options;
-			{name : name, type : phoenix.FieldType.HasOne, options : if (options != null) {
-				options;
-			} else {}};
-		};
-	}
+	static inline function has_one<T>[Function:(name : String, schema : Class<has_one.T>, ?options : Null<phoenix.AssociationOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15356):String]
+		[Arg:Class<has_one.T>] [Local schema(15357):Class<has_one.T>]
+		[Arg:Null<phoenix.AssociationOptions>]
+			[Local options(15358):Null<phoenix.AssociationOptions>]
+			[Const:Null<phoenix.AssociationOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:phoenix.SchemaField]
+					[Var options(15363):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15358):Null<phoenix.AssociationOptions>:Null<phoenix.AssociationOptions>]
+					[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+						name: [Local name(15356):String:String]
+						type: [Field:phoenix.FieldType]
+							[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+							[FEnum:phoenix.FieldType]
+								phoenix.FieldType
+								HasOne
+						options: [If:phoenix.FieldOptions]
+							[Binop:Bool]
+								[Local options(15363):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								!=
+								[Const:Null<phoenix.FieldOptions>] null
+							[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15363):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function has_many<T>(name:String, schema:Class<has_many.T>, options:Null<phoenix.AssociationOptions> = null) {
-		return {
-			var options = cast options;
-			{name : name, type : phoenix.FieldType.HasMany, options : if (options != null) {
-				options;
-			} else {}};
-		};
-	}
+	static inline function has_many<T>[Function:(name : String, schema : Class<has_many.T>, ?options : Null<phoenix.AssociationOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15364):String]
+		[Arg:Class<has_many.T>] [Local schema(15365):Class<has_many.T>]
+		[Arg:Null<phoenix.AssociationOptions>]
+			[Local options(15366):Null<phoenix.AssociationOptions>]
+			[Const:Null<phoenix.AssociationOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:phoenix.SchemaField]
+					[Var options(15371):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15366):Null<phoenix.AssociationOptions>:Null<phoenix.AssociationOptions>]
+					[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+						name: [Local name(15364):String:String]
+						type: [Field:phoenix.FieldType]
+							[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+							[FEnum:phoenix.FieldType]
+								phoenix.FieldType
+								HasMany
+						options: [If:phoenix.FieldOptions]
+							[Binop:Bool]
+								[Local options(15371):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								!=
+								[Const:Null<phoenix.FieldOptions>] null
+							[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15371):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function many_to_many<T>(name:String, schema:Class<many_to_many.T>, options:Null<phoenix.ManyToManyOptions> = null) {
-		return {
-			var options = cast options;
-			{name : name, type : phoenix.FieldType.ManyToMany, options : if (options != null) {
-				options;
-			} else {}};
-		};
-	}
+	static inline function many_to_many<T>[Function:(name : String, schema : Class<many_to_many.T>, ?options : Null<phoenix.ManyToManyOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15372):String]
+		[Arg:Class<many_to_many.T>] [Local schema(15373):Class<many_to_many.T>]
+		[Arg:Null<phoenix.ManyToManyOptions>]
+			[Local options(15374):Null<phoenix.ManyToManyOptions>]
+			[Const:Null<phoenix.ManyToManyOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:phoenix.SchemaField]
+					[Var options(15379):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15374):Null<phoenix.ManyToManyOptions>:Null<phoenix.ManyToManyOptions>]
+					[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+						name: [Local name(15372):String:String]
+						type: [Field:phoenix.FieldType]
+							[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+							[FEnum:phoenix.FieldType]
+								phoenix.FieldType
+								ManyToMany
+						options: [If:phoenix.FieldOptions]
+							[Binop:Bool]
+								[Local options(15379):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								!=
+								[Const:Null<phoenix.FieldOptions>] null
+							[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15379):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function embeds_one<T>(name:String, schema:Class<embeds_one.T>, options:Null<phoenix.EmbedOptions> = null) {
-		return {
-			var options = cast options;
-			{name : name, type : phoenix.FieldType.Custom("embed"), options : if (options != null) {
-				options;
-			} else {}};
-		};
-	}
+	static inline function embeds_one<T>[Function:(name : String, schema : Class<embeds_one.T>, ?options : Null<phoenix.EmbedOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15380):String]
+		[Arg:Class<embeds_one.T>] [Local schema(15381):Class<embeds_one.T>]
+		[Arg:Null<phoenix.EmbedOptions>]
+			[Local options(15382):Null<phoenix.EmbedOptions>]
+			[Const:Null<phoenix.EmbedOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:phoenix.SchemaField]
+					[Var options(15387):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15382):Null<phoenix.EmbedOptions>:Null<phoenix.EmbedOptions>]
+					[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+						name: [Local name(15380):String:String]
+						type: [Call:phoenix.FieldType]
+							[Field:(typeName : String) -> phoenix.FieldType]
+								[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+								[FEnum:(typeName : String) -> phoenix.FieldType]
+									phoenix.FieldType
+									Custom
+							[Const:String] "embed"
+						options: [If:phoenix.FieldOptions]
+							[Binop:Bool]
+								[Local options(15387):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								!=
+								[Const:Null<phoenix.FieldOptions>] null
+							[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15387):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function embeds_many<T>(name:String, schema:Class<embeds_many.T>, options:Null<phoenix.EmbedOptions> = null) {
-		return {
-			var options = cast options;
-			{name : name, type : phoenix.FieldType.Array(phoenix.FieldType.Custom("embed")), options : if (options != null) {
-				options;
-			} else {}};
-		};
-	}
+	static inline function embeds_many<T>[Function:(name : String, schema : Class<embeds_many.T>, ?options : Null<phoenix.EmbedOptions>) -> phoenix.SchemaField]
+		[Arg:String] [Local name(15388):String]
+		[Arg:Class<embeds_many.T>] [Local schema(15389):Class<embeds_many.T>]
+		[Arg:Null<phoenix.EmbedOptions>]
+			[Local options(15390):Null<phoenix.EmbedOptions>]
+			[Const:Null<phoenix.EmbedOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:phoenix.SchemaField]
+					[Var options(15395):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15390):Null<phoenix.EmbedOptions>:Null<phoenix.EmbedOptions>]
+					[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+						name: [Local name(15388):String:String]
+						type: [Call:phoenix.FieldType]
+							[Field:(itemType : phoenix.FieldType) -> phoenix.FieldType]
+								[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+								[FEnum:(itemType : phoenix.FieldType) -> phoenix.FieldType]
+									phoenix.FieldType
+									Array
+							[Call:phoenix.FieldType]
+								[Field:(typeName : String) -> phoenix.FieldType]
+									[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+									[FEnum:(typeName : String) -> phoenix.FieldType]
+										phoenix.FieldType
+										Custom
+								[Const:String] "embed"
+						options: [If:phoenix.FieldOptions]
+							[Binop:Bool]
+								[Local options(15395):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								!=
+								[Const:Null<phoenix.FieldOptions>] null
+							[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15395):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+							[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 
-	static inline function timestamps(options:Null<phoenix.TimestampsOptions> = null) {
-		return [{
-			var options = cast options;
-			{name : "inserted_at", type : phoenix.FieldType.Naive_datetime, options : if (options != null) {
-				options;
-			} else {}};
-		}, {
-			var options = cast options;
-			{name : "updated_at", type : phoenix.FieldType.Naive_datetime, options : if (options != null) {
-				options;
-			} else {}};
-		}];
-	}
+	static inline function timestamps[Function:(?options : Null<phoenix.TimestampsOptions>) -> Array<phoenix.SchemaField>]
+		[Arg:Null<phoenix.TimestampsOptions>]
+			[Local options(15396):Null<phoenix.TimestampsOptions>]
+			[Const:Null<phoenix.TimestampsOptions>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ArrayDecl:Array<phoenix.SchemaField>]
+					[Block:phoenix.SchemaField]
+						[Var options(15401):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15396):Null<phoenix.TimestampsOptions>:Null<phoenix.TimestampsOptions>]
+						[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+							name: [Const:String] "inserted_at"
+							type: [Field:phoenix.FieldType]
+								[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+								[FEnum:phoenix.FieldType]
+									phoenix.FieldType
+									Naive_datetime
+							options: [If:phoenix.FieldOptions]
+								[Binop:Bool]
+									[Local options(15401):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+									!=
+									[Const:Null<phoenix.FieldOptions>] null
+								[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15401):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
+					[Block:phoenix.SchemaField]
+						[Var options(15406):Null<phoenix.FieldOptions>] [Cast:Null<phoenix.FieldOptions>] [Local options(15396):Null<phoenix.TimestampsOptions>:Null<phoenix.TimestampsOptions>]
+						[ObjectDecl:{ type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }]
+							name: [Const:String] "updated_at"
+							type: [Field:phoenix.FieldType]
+								[TypeExpr phoenix.FieldType:Enum<phoenix.FieldType>]
+								[FEnum:phoenix.FieldType]
+									phoenix.FieldType
+									Naive_datetime
+							options: [If:phoenix.FieldOptions]
+								[Binop:Bool]
+									[Local options(15406):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+									!=
+									[Const:Null<phoenix.FieldOptions>] null
+								[Then:Null<phoenix.FieldOptions>] [Block:Null<phoenix.FieldOptions>] [Local options(15406):Null<phoenix.FieldOptions>:Null<phoenix.FieldOptions>]
+								[Else:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }] [ObjectDecl:{ ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }]
 }

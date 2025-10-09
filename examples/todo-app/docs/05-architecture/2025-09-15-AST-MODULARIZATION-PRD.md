@@ -249,7 +249,7 @@ graph TD
 3. **Documentation update**
    - Update architecture docs
    - Create module documentation
-   - Update CLAUDE.md files
+   - Update AGENTS.md files
 
 ## Success Metrics
 

@@ -46,7 +46,7 @@ end)
 
 This is a **known architectural issue** already documented in the codebase:
 
-From `/src/reflaxe/elixir/ast/CLAUDE.md`:
+From `/src/reflaxe/elixir/ast/AGENTS.md`:
 > **⚠️ KNOWN ISSUE: Switch Side-Effects in Loops (October 2025)**
 >
 > **Problem**: Switch statements with compound assignments inside loops have their case branches completely disappear.
@@ -117,7 +117,7 @@ Based on debug findings, fix one of:
 - `/Users/fullofcaffeine/workspace/code/haxe.elixir/examples/todo-app/lib/string_tools.ex` (generated, broken)
 
 ### Related Documentation:
-- `/Users/fullofcaffeine/workspace/code/haxe.elixir/src/reflaxe/elixir/ast/CLAUDE.md` - Known Issues section
+- `/Users/fullofcaffeine/workspace/code/haxe.elixir/src/reflaxe/elixir/ast/AGENTS.md` - Known Issues section
 - `/Users/fullofcaffeine/workspace/code/haxe.elixir/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md` - Similar bug patterns
 
 ---
@@ -147,7 +147,7 @@ do {
 2. **Debug**: Add traces to LoopBuilder and recompile
 3. **Fix**: Based on findings, patch the appropriate builder/transformer
 4. **Test**: Create regression test and validate with full suite
-5. **Document**: Update CLAUDE.md with fix details
+5. **Document**: Update AGENTS.md with fix details
 
 ---
 

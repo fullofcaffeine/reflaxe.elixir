@@ -199,7 +199,7 @@ output.add('  if Application.compile_env(:${appAtom}, :dev_routes) do\n');
    - **Auto-detection logic**: `detectCoreComponentsUsage()` function for automatic import resolution
 
 4. **Updated Todo-App Development Rules**
-   - Added critical rule to `examples/todo-app/CLAUDE.md` about compiler remaining generic
+   - Added critical rule to `examples/todo-app/AGENTS.md` about compiler remaining generic
    - Documented principle that todo-app guides compiler development but compiler has zero app-specific knowledge
    - Established validation rule: test compiler with different app names to ensure genericity
 
@@ -245,8 +245,8 @@ output.add('  if Application.compile_env(:${appAtom}, :dev_routes) do\n');
 ### Documentation Updates ✅
 
 - **examples/todo-app/ARCHITECTURE.md**: Updated Known Issues section to reflect resolved problems
-- **CLAUDE.md**: Added "Recently Resolved Issues" section documenting major fixes
-- **Developer Rules**: Enhanced examples/todo-app/CLAUDE.md with compiler development guidelines
+- **AGENTS.md**: Added "Recently Resolved Issues" section documenting major fixes
+- **Developer Rules**: Enhanced examples/todo-app/AGENTS.md with compiler development guidelines
 
 ### Session Impact Assessment 🎯
 
@@ -494,7 +494,7 @@ Continued from previous session focused on type safety improvements. User discov
 #### 4. **Documentation**
 - Created FILE_NAMING_ARCHITECTURE.md with comprehensive naming system documentation
 - Documented bug fixes and historical issues in detail
-- Updated CLAUDE.md to emphasize idiomatic Elixir/Phoenix conventions
+- Updated AGENTS.md to emphasize idiomatic Elixir/Phoenix conventions
 
 ### Technical Details
 **Files Modified**: ElixirCompiler.hx, BehaviorCompiler.hx, ProtocolCompiler.hx, RouterCompiler.hx, TypedefCompiler.hx
@@ -768,7 +768,7 @@ ExUnit.configure(max_cases: 1)  # Artificial sequential limitation
   - Removed outdated PascalCase workaround instructions
   - Reflects new proper file structure
 
-- **/CLAUDE.md**
+- **/AGENTS.md**
   - Added "Elixir File Naming Conventions" section marked as PRODUCTION READY
   - References complete documentation for implementation details
 
@@ -1172,7 +1172,7 @@ Critical fix session resolving a documented Known Issue where camelCase function
 - **src/reflaxe/elixir/helpers/HxxCompiler.hx** - Fixed regex pattern in convertFunctionNames() method
 - **examples/todo-app/lib/todo_app_web/live/user_live.ex** - Generated output now correct
 - **documentation/TASK_HISTORY.md** - This documentation
-- **CLAUDE.md** - Removed resolved Known Issue
+- **AGENTS.md** - Removed resolved Known Issue
 
 ### Key Achievements ✨
 1. **Resolved Critical Known Issue**: HXX function name conversion now works consistently across all template contexts
@@ -1196,7 +1196,7 @@ Critical fix session resolving a documented Known Issue where camelCase function
 **Primary Fix**: HXX template HTML attributes now properly convert camelCase function names to snake_case
 **Impact**: Eliminates compilation errors and manual workarounds for Phoenix template functions
 **Quality**: Generated code is fully idiomatic and professional
-**Documentation**: Resolved Known Issue removed from CLAUDE.md, comprehensive technical details preserved
+**Documentation**: Resolved Known Issue removed from AGENTS.md, comprehensive technical details preserved
 
 **Key Metrics**:
 - **Known Issues**: Reduced from 2 to 1 (50% reduction)
@@ -1295,7 +1295,7 @@ Created comprehensive typed abstractions to replace Dynamic usage:
 
 #### Documentation:
 - `documentation/guides/HAXE_OPERATOR_OVERLOADING.md` - Complete operator overloading guide
-- `CLAUDE.md` - Updated with new guide references and recent fixes
+- `AGENTS.md` - Updated with new guide references and recent fixes
 
 ### Key Achievements ✨
 
@@ -1379,9 +1379,9 @@ Continued from previous session where the "100% pure Haxe with no externs" visio
    - Updated all documentation to reflect this balanced approach
 
 2. **Documentation Updates**
-   - **CLAUDE.md**: Added "Haxe-First Philosophy" section emphasizing 100% type safety goal
+   - **AGENTS.md**: Added "Haxe-First Philosophy" section emphasizing 100% type safety goal
    - **PHOENIX_INTEGRATION.md**: Changed from "emergency-only externs" to "typed externs welcome"
-   - **todo-app/CLAUDE.md**: Refined vision to embrace typed externs for ecosystem integration
+   - **todo-app/AGENTS.md**: Refined vision to embrace typed externs for ecosystem integration
    - All docs now consistently state: type safety is the goal, achieved through best tool for each scenario
 
 3. **Key Philosophical Points Established**
@@ -1440,13 +1440,13 @@ Following up on previous HXX work, the focus shifted to comprehensive documentat
 3. **Code Injection Policy**
    - Created strict `CODE_INJECTION.md` documentation with enforcement guidelines
    - Established that `__elixir__()` is an emergency escape hatch, NOT a development tool
-   - Updated CLAUDE.md with prominent warning against code injection
+   - Updated AGENTS.md with prominent warning against code injection
    - Verified todo-app has ZERO uses of `__elixir__()` - demonstrates proper patterns only
    - Documented required format for any emergency use (with justification, date, approval, ticket)
 
 4. **Documentation Updates**
-   - Updated CLAUDE.md with references to new documentation files
-   - Fixed todo-app/CLAUDE.md to reflect that Router is now generated from Haxe
+   - Updated AGENTS.md with references to new documentation files
+   - Fixed todo-app/AGENTS.md to reflect that Router is now generated from Haxe
    - Added "Build System & Integration" section to main documentation references
 
 ### Technical Insights Gained
@@ -1478,8 +1478,8 @@ Following up on previous HXX work, the focus shifted to comprehensive documentat
 - `std/phoenix/Gettext.hx` - Extern definition for internationalization
 
 **Files Modified:**
-- `CLAUDE.md` - Added code injection policy and documentation references
-- `examples/todo-app/CLAUDE.md` - Updated to reflect Router is now in Haxe
+- `AGENTS.md` - Added code injection policy and documentation references
+- `examples/todo-app/AGENTS.md` - Updated to reflect Router is now in Haxe
 - `examples/todo-app/build-server.hxml` - Added TodoAppRouter to compilation
 
 ### Key Achievements ✨
@@ -2159,7 +2159,7 @@ Implemented a general solution for generating atom keys in OTP patterns (avoidin
 
 ### Files Modified
 - `src/reflaxe/elixir/ElixirCompiler.hx` - Major simplification of loop variable handling, atom key generation
-- `CLAUDE.md` - Added compiler development best practices #9 and #10
+- `AGENTS.md` - Added compiler development best practices #9 and #10
 - `documentation/LOOP_TRANSFORMATION_SIMPLIFIED.md` - Complete documentation of the simplification
 - All test intended outputs - Updated to reflect atom key generation and simplified loop handling
 
@@ -2204,7 +2204,7 @@ Fixed critical documentation generation issues causing 37/49 test failures and o
 
 #### 3. Compiler Documentation
 - Created `documentation/COMPILER_PATTERNS.md` with AST transformation lessons
-- Updated `CLAUDE.md` with new compiler best practices
+- Updated `AGENTS.md` with new compiler best practices
 - Created `documentation/EXUNIT_TESTING_GUIDE.md` for type-safe testing
 
 ### Key Achievements ✨

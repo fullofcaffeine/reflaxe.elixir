@@ -1,6 +1,6 @@
 # AI Development Instructions for todo-app
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
 
 ## 🔗 Shared AI Context (Import System)
 
@@ -422,7 +422,7 @@ todo-app/
 │   └── generated/         # ⚡ Auto-generated Elixir code
 ├── build.hxml             # Haxe build configuration  
 ├── mix.exs                # Elixir project configuration
-└── CLAUDE.md              # This file
+└── AGENTS.md              # This file
 ```
 
 ## ✅ Best Practices

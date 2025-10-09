@@ -1,6 +1,6 @@
 # Code Fixup Guide (Technical Debt Documentation)
 
-> **Parent Context**: See [CLAUDE.md](CLAUDE.md) for compiler development context
+> **Parent Context**: See [AGENTS.md](AGENTS.md) for compiler development context
 
 ⚠️ **IMPORTANT**: This guide documents **technical debt** - patterns that should be eliminated by fixing root causes in the compiler.
 

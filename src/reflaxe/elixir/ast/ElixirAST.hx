@@ -897,9 +897,21 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
         case ETuple(els): els;
         default: return node; // Not a tuple, no transformation
     };
-    
+
     if (elements.length == 0) return node;
-    
+
+    // Respect enums that should preserve tuple structure (Option, etc.)
+    if (node.metadata != null && node.metadata.idiomaticEnumType == "Option") {
+        return node;
+    }
+    // Structural guard: never transform Option-shaped tuples even if metadata is missing
+    // This prevents accidental unwrapping of {:some, v} into v or :none into nil.
+    switch (elements[0].def) {
+        case EAtom(name) if (name == "some" || name == "none"):
+            return node;
+        default:
+    }
+
     // First element should be the constructor tag (atom)
     var tag = switch(elements[0].def) {
         case EAtom(name): name; // name is now ElixirAtom

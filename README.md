@@ -85,6 +85,12 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 - **Desktop Applications** - Electron/Tauri cross-platform apps
 - **AI-Enhanced Tooling** - Intelligent development assistance  
 
+### Write Haxe the Elixir Way
+
+- Prefer functional patterns (pattern matching, pipelines, comprehensions) over imperative control flow; the compiler will lift imperative loops when safe, but idiomatic Haxe yields cleaner Elixir.
+- Use the Phoenix/Ecto APIs exactly; add type safety via Haxe types, abstracts, and macros rather than inventing new runtime functions.
+- See `docs/02-user-guide/haxe-for-phoenix.md` and `docs/07-patterns/quick-start-patterns.md` for copy‑pasteable idioms.
+
 ## Installation
 
 ### Prerequisites
@@ -231,6 +237,7 @@ your-project/
 - **[LLM Workflow Compatibility](documentation/llm/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
 - **[Troubleshooting](documentation/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Examples](examples/)** - Working code examples
+ - **[Release Checklist](docs/08-roadmap/release_checklist_v1.md)** - Gates and sign‑offs for v1.0
 
 ### Architecture
 - **[Architecture Overview](documentation/architecture/ARCHITECTURE.md)** - Compiler internals

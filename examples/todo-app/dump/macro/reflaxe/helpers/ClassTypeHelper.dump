@@ -1,58 +1,108 @@
 class reflaxe.helpers.ClassTypeHelper {
 
-	public static function isTypeParameter(cls:haxe.macro.ClassType) {
-		return @:ast(switch (cls.kind) {
+	public static function isTypeParameter[Function:(cls : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local cls(7844):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (cls.kind) {
 	case KTypeParameter(_):
 		true;	
 	case _:
 		false;	
-}) {
-			var ` = cls.kind;
-			if (enumIndex ` == 1) {
-				var ` = `[0];
-				{
-					true;
-				};
-			} else {
-				false;
-			};
-		};
-	}
+})
+					[Block:Bool]
+						[Var `(7847):haxe.macro.ClassKind]
+							[Field:haxe.macro.ClassKind]
+								[Local cls(7844):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.ClassKind] kind:haxe.macro.ClassKind
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(7847):haxe.macro.ClassKind:haxe.macro.ClassKind]
+								==
+								[Const:Int] 1
+							[Then:Bool] [Block:Bool]
+								[Var `(7848):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(7847):haxe.macro.ClassKind:haxe.macro.ClassKind]
+										KTypeParameter
+										0
+								[Block:Bool] [Const:Bool] true
+							[Else:Bool] [Block:Bool] [Const:Bool] false
 
-	public static function isExprClass(cls:haxe.macro.ClassType) {
-		return @:ast(switch (cls.kind) {
+	public static function isExprClass[Function:(cls : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local cls(7960):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (cls.kind) {
 	case KExpr(_):
 		true;	
 	case _:
 		false;	
-}) {
-			var ` = cls.kind;
-			if (enumIndex ` == 3) {
-				var ` = `[0];
-				{
-					true;
-				};
-			} else {
-				false;
-			};
-		};
-	}
+})
+					[Block:Bool]
+						[Var `(7963):haxe.macro.ClassKind]
+							[Field:haxe.macro.ClassKind]
+								[Local cls(7960):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.ClassKind] kind:haxe.macro.ClassKind
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(7963):haxe.macro.ClassKind:haxe.macro.ClassKind]
+								==
+								[Const:Int] 3
+							[Then:Bool] [Block:Bool]
+								[Var `(7964):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(7963):haxe.macro.ClassKind:haxe.macro.ClassKind]
+										KExpr
+										0
+								[Block:Bool] [Const:Bool] true
+							[Else:Bool] [Block:Bool] [Const:Bool] false
 
 	@:value({ overrideConstructorExpr : null })
-	public static function extractPreconstructorFieldAssignments(cls:haxe.macro.ClassType, overrideConstructorExpr:Null<haxe.macro.TypedExpr> = null) {
-		if (cls.constructor == null) {
-			return null;
-		};
-		var constructorExpr = if (overrideConstructorExpr != null) {
-			overrideConstructorExpr;
-		} else {
-			var constructor = cls.constructor.get();
-			constructor.expr();
-		};
-		if (constructorExpr == null) {
-			return null;
-		};
-		var exprList = @:ast(switch (constructorExpr.expr) {
+	public static function extractPreconstructorFieldAssignments[Function:(cls : haxe.macro.ClassType, ?overrideConstructorExpr : Null<haxe.macro.TypedExpr>) -> Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>]
+		[Arg:haxe.macro.ClassType] [Local cls(3557):haxe.macro.ClassType]
+		[Arg:Null<haxe.macro.TypedExpr>]
+			[Local overrideConstructorExpr(3558):Null<haxe.macro.TypedExpr>]
+			[Const:Null<haxe.macro.TypedExpr>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<haxe.macro.Ref<haxe.macro.ClassField>>]
+						[Local cls(3557):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<haxe.macro.Ref<haxe.macro.ClassField>>] constructor:Null<haxe.macro.Ref<haxe.macro.ClassField>>
+					==
+					[Const:Null<haxe.macro.Ref<haxe.macro.ClassField>>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>] null
+			[Var constructorExpr(3560):Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>]
+				[If:Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>]
+					[Binop:Bool]
+						[Local overrideConstructorExpr(3558):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						!=
+						[Const:Null<haxe.macro.TypedExpr>] null
+					[Then:Null<haxe.macro.TypedExpr>] [Block:Null<haxe.macro.TypedExpr>] [Local overrideConstructorExpr(3558):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					[Else:Null<haxe.macro.TypedExpr>] [Block:Null<haxe.macro.TypedExpr>]
+						[Var constructor(3559):haxe.macro.ClassField]
+							[Call:haxe.macro.ClassField]
+								[Field:() -> haxe.macro.ClassField]
+									[Field:Null<haxe.macro.Ref<haxe.macro.ClassField>>]
+										[Local cls(3557):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:Null<haxe.macro.Ref<haxe.macro.ClassField>>] constructor:Null<haxe.macro.Ref<haxe.macro.ClassField>>
+									[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+						[Call:Null<haxe.macro.TypedExpr>]
+							[Field:() -> Null<haxe.macro.TypedExpr>]
+								[Local constructor(3559):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+			[If:Void]
+				[Binop:Bool]
+					[Local constructorExpr(3560):Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>:Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>]
+					==
+					[Const:Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>] null
+			[Var exprList(3580):Null<Array<haxe.macro.TypedExpr>>]
+				[Meta:Null<Array<haxe.macro.TypedExpr>>]
+					:ast(switch (constructorExpr.expr) {
 	case TFunction(tfunc):
 		{
 			switch (tfunc.expr.expr) {
@@ -66,78 +116,127 @@ class reflaxe.helpers.ClassTypeHelper {
 		exprList;	
 	case _:
 		return null;	
-}) {
-			var ` = constructorExpr.expr;
-			switch (enumIndex `) {
-				case 12: {
-					var ` = `[0];
-					{
-						var tfunc = `;
-						{
-							{
-								@:ast(switch (tfunc.expr.expr) {
+})
+					[Block:Null<Array<haxe.macro.TypedExpr>>]
+						[Var `(3572):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local constructorExpr(3560):Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>:Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[Switch:Null<Array<haxe.macro.TypedExpr>>]
+							[EnumIndex:Int] [Local `(3572):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							[Case:Null<Array<haxe.macro.TypedExpr>>]
+								[Const:Int] 12
+								[Block:Null<Array<haxe.macro.TypedExpr>>]
+									[Var `(3573):haxe.macro.TFunc]
+										[EnumParameter:haxe.macro.TFunc]
+											[Local `(3572):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TFunction
+											0
+									[Block:Null<Array<haxe.macro.TypedExpr>>]
+										[Var tfunc(3574):haxe.macro.TFunc] [Local `(3573):haxe.macro.TFunc:haxe.macro.TFunc]
+										[Block:Null<Array<haxe.macro.TypedExpr>>]
+											[Block:Null<Array<haxe.macro.TypedExpr>>]
+												[Meta:Null<Array<haxe.macro.TypedExpr>>]
+													:ast(switch (tfunc.expr.expr) {
 	case TBlock(exprList):
 		exprList;	
 	case _:
 		return null;	
-}) {
-									var ` = tfunc.expr.expr;
-									if (enumIndex ` == 14) {
-										var ` = `[0];
-										{
-											var exprList = `;
-											{
-												exprList;
-											};
-										};
-									} else {
-										return null;
-									};
-								};
-							};
-						};
-					};
-				};
-				case 14: {
-					var ` = `[0];
-					{
-						var exprList = `;
-						{
-							exprList;
-						};
-					};
-				};
-				default: {
-					return null;
-				}
-			};
-		};
-		var exprList = cast cast {
-			if (exprList == null) {
-				throw "Trusted on null value.";
-			};
-			@:nullSafety(Off) exprList;
-		};
-		var remainingExprsIndex = 0;
-		var expressions = [];
-		var result = {
-			{};
-			new haxe.ds.ObjectMap();
-		};
-		{
-			var ` = 0;
-			var ` = cast cast {
-				if (exprList == null) {
-					throw "Trusted on null value.";
-				};
-				@:nullSafety(Off) exprList;
-			};
-			while (` < `.length) {
-				var expr = `[`];
-				++ `;
-				remainingExprsIndex ++;
-				var fieldExpr = null;
-				var defaultExpr = @:ast(switch (expr.expr) {
+})
+													[Block:Null<Array<haxe.macro.TypedExpr>>]
+														[Var `(3575):haxe.macro.TypedExprDef]
+															[Field:haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExpr]
+																	[Local tfunc(3574):haxe.macro.TFunc:haxe.macro.TFunc]
+																	[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+																[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+														[If:Null<Array<haxe.macro.TypedExpr>>]
+															[Binop:Bool]
+																[EnumIndex:Int] [Local `(3575):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																==
+																[Const:Int] 14
+															[Then:Array<haxe.macro.TypedExpr>] [Block:Array<haxe.macro.TypedExpr>]
+																[Var `(3576):Array<haxe.macro.TypedExpr>]
+																	[EnumParameter:Array<haxe.macro.TypedExpr>]
+																		[Local `(3575):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																		TBlock
+																		0
+																[Block:Array<haxe.macro.TypedExpr>]
+																	[Var exprList(3577):Array<haxe.macro.TypedExpr>] [Local `(3576):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																	[Block:Array<haxe.macro.TypedExpr>] [Local exprList(3577):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Else:Null<Array<haxe.macro.TypedExpr>>] [Block:Null<Array<haxe.macro.TypedExpr>>] [Return:Null<Array<haxe.macro.TypedExpr>>] [Const:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>] null
+							[Case:Array<haxe.macro.TypedExpr>]
+								[Const:Int] 14
+								[Block:Array<haxe.macro.TypedExpr>]
+									[Var `(3578):Array<haxe.macro.TypedExpr>]
+										[EnumParameter:Array<haxe.macro.TypedExpr>]
+											[Local `(3572):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TBlock
+											0
+									[Block:Array<haxe.macro.TypedExpr>]
+										[Var exprList(3579):Array<haxe.macro.TypedExpr>] [Local `(3578):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Block:Array<haxe.macro.TypedExpr>] [Local exprList(3579):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[Default:Null<Array<haxe.macro.TypedExpr>>] [Block:Null<Array<haxe.macro.TypedExpr>>] [Return:Null<Array<haxe.macro.TypedExpr>>] [Const:Null<{ modifiedConstructor : haxe.macro.TypedExpr, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }>] null
+			[Var exprList(3584):Array<haxe.macro.TypedExpr>]
+				[Cast:Array<haxe.macro.TypedExpr>]
+					[Cast:Array<haxe.macro.TypedExpr>]
+						[Block:Dynamic]
+							[If:Void]
+								[Binop:Bool]
+									[Local exprList(3580):Null<Array<haxe.macro.TypedExpr>>:Null<Array<haxe.macro.TypedExpr>>]
+									==
+									[Const:Null<Array<haxe.macro.TypedExpr>>] null
+								[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+							[Meta:Dynamic]
+								:nullSafety(Off)
+								[Local exprList(3580):Null<Array<haxe.macro.TypedExpr>>:Null<Array<haxe.macro.TypedExpr>>]
+			[Var remainingExprsIndex(3585):Int] [Const:Int] 0
+			[Var expressions(3586):Array<haxe.macro.TypedExpr>] [ArrayDecl:Array<haxe.macro.TypedExpr>]
+			[Var result(3587):Map<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+				[Block:haxe.ds.ObjectMap<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>]
+					[Block:Void]
+					[New:haxe.ds.ObjectMap<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>] haxe.ds.ObjectMap<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>
+			[Block:Void]
+				[Var `(3641):Int] [Const:Int] 0
+				[Var `(3642):Array<haxe.macro.TypedExpr>]
+					[Cast:Array<haxe.macro.TypedExpr>]
+						[Cast:Array<haxe.macro.TypedExpr>]
+							[Block:Dynamic]
+								[If:Void]
+									[Binop:Bool]
+										[Local exprList(3584):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										==
+										[Const:Null<Array<haxe.macro.TypedExpr>>] null
+									[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+								[Meta:Dynamic]
+									:nullSafety(Off)
+									[Local exprList(3584):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(3641):Int:Int]
+						<
+						[Field:Int]
+							[Local `(3642):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var expr(3591):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local `(3642):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(3641):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(3641):Int:Int]
+						[Unop:Int]
+							++
+							Postfix
+							[Local remainingExprsIndex(3585):Int:Int]
+						[Var fieldExpr(3592):Null<haxe.macro.TypedExpr>] [Const:Null<haxe.macro.TypedExpr>] null
+						[Var defaultExpr(3605):Null<haxe.macro.TypedExpr>]
+							[Meta:Null<haxe.macro.TypedExpr>]
+								:ast(switch (expr.expr) {
 	case TBinop(OpAssign, field, defaultExpr):
 		{
 			fieldExpr = field;
@@ -145,34 +244,66 @@ class reflaxe.helpers.ClassTypeHelper {
 		};	
 	case _:
 		null;	
-}) {
-					var ` = expr.expr;
-					if (enumIndex ` == 3) {
-						var ` = `[0];
-						var ` = `[1];
-						var ` = `[2];
-						if (enumIndex ` == 4) {
-							{
-								var field = `;
-								var defaultExpr = `;
-								{
-									{
-										fieldExpr = field;
-										defaultExpr;
-									};
-								};
-							};
-						} else {
-							null;
-						};
-					} else {
-						null;
-					};
-				};
-				if (defaultExpr == null || fieldExpr == null) {
-					break;
-				};
-				var classField = @:ast(switch (fieldExpr.expr) {
+})
+								[Block:Null<haxe.macro.TypedExpr>]
+									[Var `(3599):haxe.macro.TypedExprDef]
+										[Field:haxe.macro.TypedExprDef]
+											[Local expr(3591):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+									[If:Null<haxe.macro.TypedExpr>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(3599):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											==
+											[Const:Int] 3
+										[Then:Null<haxe.macro.TypedExpr>] [Block:Null<haxe.macro.TypedExpr>]
+											[Var `(3600):haxe.macro.Binop]
+												[EnumParameter:haxe.macro.Binop]
+													[Local `(3599):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TBinop
+													0
+											[Var `(3601):haxe.macro.TypedExpr]
+												[EnumParameter:haxe.macro.TypedExpr]
+													[Local `(3599):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TBinop
+													1
+											[Var `(3602):haxe.macro.TypedExpr]
+												[EnumParameter:haxe.macro.TypedExpr]
+													[Local `(3599):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TBinop
+													2
+											[If:Null<haxe.macro.TypedExpr>]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(3600):haxe.macro.Binop:haxe.macro.Binop]
+													==
+													[Const:Int] 4
+												[Then:haxe.macro.TypedExpr] [Block:haxe.macro.TypedExpr]
+													[Block:haxe.macro.TypedExpr]
+														[Var field(3603):haxe.macro.TypedExpr] [Local `(3601):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Var defaultExpr(3604):haxe.macro.TypedExpr] [Local `(3602):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Block:haxe.macro.TypedExpr]
+															[Block:haxe.macro.TypedExpr]
+																[Binop:Null<haxe.macro.TypedExpr>]
+																	[Local fieldExpr(3592):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																	=
+																	[Local field(3603):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[Local defaultExpr(3604):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Else:Null<Null<haxe.macro.TypedExpr>>] [Block:Null<Null<haxe.macro.TypedExpr>>] [Const:Null<Null<haxe.macro.TypedExpr>>] null
+										[Else:Null<Null<haxe.macro.TypedExpr>>] [Block:Null<Null<haxe.macro.TypedExpr>>] [Const:Null<Null<haxe.macro.TypedExpr>>] null
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local defaultExpr(3605):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									==
+									[Const:Null<haxe.macro.TypedExpr>] null
+								||
+								[Binop:Bool]
+									[Local fieldExpr(3592):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									==
+									[Const:Null<haxe.macro.TypedExpr>] null
+							[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+						[Var classField(3635):Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+							[Meta:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+								:ast(switch (fieldExpr.expr) {
 	case TField({ expr : TConst(TThis) }, FInstance(_.get() => fieldClass, _, cf)) if (Std.string(fieldClass) == Std.string(cls)):
 		{
 			var classField = cf.get();
@@ -184,64 +315,179 @@ class reflaxe.helpers.ClassTypeHelper {
 		};	
 	case _:
 		null;	
-}) {
-					var ` = fieldExpr.expr;
-					if (enumIndex ` == 4) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var ` = `.expr;
-							var ` = `.pos;
-							var ` = `.t;
-							if (enumIndex ` == 0) {
-								var ` = `[0];
-								if (enumIndex ` == 5) {
-									if (enumIndex ` == 0) {
-										var ` = `[0];
-										var ` = `[1];
-										var ` = `[2];
-										{
-											var _hx_tmp;
-											{
-												var fieldClass = (_hx_tmp = `.get());
-												var cf = `;
-												if (Std.string(fieldClass) == Std.string(cls)) {
-													{
-														var classField = cf.get();
-														if (reflaxe.helpers.ClassFieldHelper.hasDefaultValue(classField)) {
-															classField;
-														} else {
-															null;
-														};
-													};
-												} else {
-													null;
-												};
-											};
-										};
-									} else {
-										null;
-									};
-								} else {
-									null;
-								};
-							} else {
-								null;
-							};
-						};
-					} else {
-						null;
-					};
-				};
-				if (classField == null) {
-					break;
-				};
-				expressions.push(expr);
-				{
-					result.set(classField, defaultExpr);
-				};
-			};
-		};
-		return {assignments : result, expressions : expressions, modifiedConstructor : {expr : haxe.macro.TypedExprDef.TBlock(exprList.slice(remainingExprsIndex - 1, null)), pos : constructorExpr.pos, t : constructorExpr.t}};
-	}
+})
+								[Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+									[Var `(3621):haxe.macro.TypedExprDef]
+										[Field:haxe.macro.TypedExprDef]
+											[Local fieldExpr(3592):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+									[If:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(3621):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											==
+											[Const:Int] 4
+										[Then:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>] [Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+											[Var `(3622):haxe.macro.TypedExpr]
+												[EnumParameter:haxe.macro.TypedExpr]
+													[Local `(3621):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TField
+													0
+											[Var `(3623):haxe.macro.FieldAccess]
+												[EnumParameter:haxe.macro.FieldAccess]
+													[Local `(3621):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TField
+													1
+											[Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+												[Var `(3624):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local `(3622):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[Var `(3625):haxe.macro.Position]
+													[Field:haxe.macro.Position]
+														[Local `(3622):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+												[Var `(3626):haxe.macro.Type]
+													[Field:haxe.macro.Type]
+														[Local `(3622):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.Type] t:haxe.macro.Type
+												[If:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(3624):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 0
+													[Then:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>] [Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+														[Var `(3627):haxe.macro.TConstant]
+															[EnumParameter:haxe.macro.TConstant]
+																[Local `(3624):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TConst
+																0
+														[If:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+															[Binop:Bool]
+																[EnumIndex:Int] [Local `(3627):haxe.macro.TConstant:haxe.macro.TConstant]
+																==
+																[Const:Int] 5
+															[Then:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>] [Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+																[If:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(3623):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																		==
+																		[Const:Int] 0
+																	[Then:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>] [Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+																		[Var `(3628):haxe.macro.Ref<haxe.macro.ClassType>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																				[Local `(3623):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FInstance
+																				0
+																		[Var `(3629):Array<haxe.macro.Type>]
+																			[EnumParameter:Array<haxe.macro.Type>]
+																				[Local `(3623):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FInstance
+																				1
+																		[Var `(3630):haxe.macro.Ref<haxe.macro.ClassField>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[Local `(3623):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FInstance
+																				2
+																		[Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+																			[Var _hx_tmp(3631):haxe.macro.ClassType]
+																			[Block:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+																				[Var fieldClass(3632):haxe.macro.ClassType]
+																					[Parenthesis:haxe.macro.ClassType]
+																						[Binop:haxe.macro.ClassType]
+																							[Local _hx_tmp(3631):haxe.macro.ClassType:haxe.macro.ClassType]
+																							=
+																							[Call:haxe.macro.ClassType]
+																								[Field:() -> haxe.macro.ClassType]
+																									[Local `(3628):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																									[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+																				[Var cf(3633):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(3630):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[If:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+																					[Binop:Bool]
+																						[Call:String]
+																							[Field:(s : Dynamic) -> String]
+																								[TypeExpr Std:Class<Std>]
+																								[FStatic:(s : Dynamic) -> String]
+																									Std
+																									string:(s : Dynamic) -> String
+																							[Local fieldClass(3632):haxe.macro.ClassType:haxe.macro.ClassType]
+																						==
+																						[Call:String]
+																							[Field:(s : Dynamic) -> String]
+																								[TypeExpr Std:Class<Std>]
+																								[FStatic:(s : Dynamic) -> String]
+																									Std
+																									string:(s : Dynamic) -> String
+																							[Local cls(3557):haxe.macro.ClassType:haxe.macro.ClassType]
+																					[Then:Null<haxe.macro.ClassField>] [Block:Null<haxe.macro.ClassField>]
+																						[Block:Null<haxe.macro.ClassField>]
+																							[Var classField(3634):haxe.macro.ClassField]
+																								[Call:haxe.macro.ClassField]
+																									[Field:() -> haxe.macro.ClassField]
+																										[Local cf(3633):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																										[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																							[If:Null<haxe.macro.ClassField>]
+																								[Call:Bool]
+																									[Field:(field : haxe.macro.ClassField) -> Bool]
+																										[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+																										[FStatic:(field : haxe.macro.ClassField) -> Bool]
+																											reflaxe.helpers.ClassFieldHelper
+																											hasDefaultValue:(field : haxe.macro.ClassField) -> Bool
+																									[Local classField(3634):haxe.macro.ClassField:haxe.macro.ClassField]
+																								[Then:haxe.macro.ClassField] [Block:haxe.macro.ClassField] [Local classField(3634):haxe.macro.ClassField:haxe.macro.ClassField]
+																								[Else:Null<Null<haxe.macro.ClassField>>] [Block:Null<Null<haxe.macro.ClassField>>] [Const:Null<Null<haxe.macro.ClassField>>] null
+																					[Else:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Block:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Const:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] null
+																	[Else:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Block:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Const:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] null
+															[Else:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Block:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Const:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] null
+													[Else:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Block:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Const:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] null
+										[Else:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Block:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] [Const:Null<Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>>] null
+						[If:Void]
+							[Binop:Bool]
+								[Local classField(3635):Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+								==
+								[Const:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>] null
+							[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+						[Call:Int]
+							[Field:(x : haxe.macro.TypedExpr) -> Int]
+								[Local expressions(3586):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+									Array<haxe.macro.TypedExpr>
+									push:(x : Array.T) -> Int
+							[Local expr(3591):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Block:Void]
+							[Call:Void]
+								[Field:(key : { type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, value : haxe.macro.TypedExpr) -> Void]
+									[Local result(3587):Map<haxe.macro.ClassField, haxe.macro.TypedExpr>:haxe.ds.ObjectMap<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>]
+									[FInstance:(key : { type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, value : haxe.macro.TypedExpr) -> Void]
+										haxe.ds.ObjectMap<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }, haxe.macro.TypedExpr>
+										set:(key : haxe.ds.ObjectMap.K, value : haxe.ds.ObjectMap.V) -> Void
+								[Local classField(3635):Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>:Null<{ type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, overloads : haxe.macro.Ref<Array<haxe.macro.ClassField>>, name : String, meta : haxe.macro.MetaAccess, kind : haxe.macro.FieldKind, isPublic : Bool, isFinal : Bool, isExtern : Bool, isAbstract : Bool, expr : () -> Null<haxe.macro.TypedExpr>, doc : Null<String> }>]
+								[Local defaultExpr(3605):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+			[Return:Dynamic]
+				[ObjectDecl:{ modifiedConstructor : { t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }, expressions : Array<haxe.macro.TypedExpr>, assignments : Map<haxe.macro.ClassField, haxe.macro.TypedExpr> }]
+					assignments: [Local result(3587):Map<haxe.macro.ClassField, haxe.macro.TypedExpr>:Map<haxe.macro.ClassField, haxe.macro.TypedExpr>]
+					expressions: [Local expressions(3586):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+					modifiedConstructor: [ObjectDecl:{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }]
+						expr: [Call:haxe.macro.TypedExprDef]
+							[Field:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+								[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+								[FEnum:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+									haxe.macro.TypedExprDef
+									TBlock
+							[Call:Array<haxe.macro.TypedExpr>]
+								[Field:(pos : Int, ?end : Null<Int>) -> Array<haxe.macro.TypedExpr>]
+									[Local exprList(3584):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[FInstance:(pos : Int, ?end : Null<Int>) -> Array<haxe.macro.TypedExpr>]
+										Array<haxe.macro.TypedExpr>
+										slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+								[Binop:Int]
+									[Local remainingExprsIndex(3585):Int:Int]
+									-
+									[Const:Int] 1
+								[Const:Null<Int>] null
+						pos: [Field:haxe.macro.Position]
+							[Local constructorExpr(3560):Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>:Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>]
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+						t: [Field:haxe.macro.Type]
+							[Local constructorExpr(3560):Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>:Null<{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }>]
+							[FAnon:haxe.macro.Type] t:haxe.macro.Type
 }

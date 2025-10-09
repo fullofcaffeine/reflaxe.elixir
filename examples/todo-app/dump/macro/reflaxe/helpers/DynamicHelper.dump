@@ -1,20 +1,81 @@
 class reflaxe.helpers.DynamicHelper {
 
-	public static function isString(d:Dynamic) {
-		return Std.string(Type.typeof(d)) == "TClass(Class<String>)";
-	}
+	public static function isString[Function:(d : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local d(789):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:ValueType]
+							[Field:(v : Dynamic) -> ValueType]
+								[TypeExpr Type:Class<Type>]
+								[FStatic:(v : Dynamic) -> ValueType]
+									Type
+									typeof:(v : Dynamic) -> ValueType
+							[Local d(789):Dynamic:Dynamic]
+					==
+					[Const:String] "TClass(Class<String>)"
 
-	public static function with(d:Dynamic, props:Dynamic) {
-		var result = Reflect.copy(d);
-		{
-			var ` = 0;
-			var ` = Reflect.fields(props);
-			while (` < `.length) {
-				var prop = `[`];
-				++ `;
-				Reflect.setField(result, prop, Reflect.field(props, prop));
-			};
-		};
-		return result;
-	}
+	public static function with[Function:(d : Dynamic, props : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local d(790):Dynamic]
+		[Arg:Dynamic] [Local props(791):Dynamic]
+		[Block:Dynamic]
+			[Var result(792):Null<Unknown<167>>]
+				[Call:Null<Unknown<167>>]
+					[Field:(o : Null<Unknown<167>>) -> Null<Unknown<167>>]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(o : Null<Unknown<167>>) -> Null<Unknown<167>>]
+							Reflect
+							copy:(o : Null<copy.T>) -> Null<copy.T>
+					[Local d(790):Dynamic:Dynamic]
+			[Block:Void]
+				[Var `(794):Int] [Const:Int] 0
+				[Var `(795):Array<String>]
+					[Call:Array<String>]
+						[Field:(o : Dynamic) -> Array<String>]
+							[TypeExpr Reflect:Class<Reflect>]
+							[FStatic:(o : Dynamic) -> Array<String>]
+								Reflect
+								fields:(o : Dynamic) -> Array<String>
+						[Local props(791):Dynamic:Dynamic]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(794):Int:Int]
+						<
+						[Field:Int]
+							[Local `(795):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var prop(793):String]
+							[Array:String]
+								[Local `(795):Array<String>:Array<String>]
+								[Local `(794):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(794):Int:Int]
+						[Call:Void]
+							[Field:(o : Dynamic, field : String, value : Dynamic) -> Void]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(o : Dynamic, field : String, value : Dynamic) -> Void]
+									Reflect
+									setField:(o : Dynamic, field : String, value : Dynamic) -> Void
+							[Local result(792):Null<Unknown<167>>:Null<Unknown<167>>]
+							[Local prop(793):String:String]
+							[Call:Dynamic]
+								[Field:(o : Dynamic, field : String) -> Dynamic]
+									[TypeExpr Reflect:Class<Reflect>]
+									[FStatic:(o : Dynamic, field : String) -> Dynamic]
+										Reflect
+										field:(o : Dynamic, field : String) -> Dynamic
+								[Local props(791):Dynamic:Dynamic]
+								[Local prop(793):String:String]
+			[Return:Dynamic] [Local result(792):Null<Unknown<167>>:Null<Unknown<167>>]
 }

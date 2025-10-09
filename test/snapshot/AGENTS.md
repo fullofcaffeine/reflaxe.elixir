@@ -1,6 +1,6 @@
 # Snapshot Test Idiomatic Patterns Guide
 
-> **Parent Context**: See [/test/CLAUDE.md](/test/CLAUDE.md) for overall testing infrastructure
+> **Parent Context**: See [/test/AGENTS.md](/test/AGENTS.md) for overall testing infrastructure
 
 ## 📋 Phase 0A: Test-Driven Idiomatic Pattern Documentation
 

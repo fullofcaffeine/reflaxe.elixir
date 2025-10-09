@@ -1,6 +1,6 @@
 # Variable Substitution Patterns Guide
 
-> **Parent Context**: See [CLAUDE.md](CLAUDE.md) for compiler development context
+> **Parent Context**: See [AGENTS.md](AGENTS.md) for compiler development context
 
 This guide covers the comprehensive variable substitution system used in Reflaxe.Elixir for transforming variable names and references throughout AST structures.
 

@@ -294,12 +294,12 @@ class EnumHandler {
             case _:
         }
         
-        // Build tuple pattern
+        // Build tuple pattern; preserve {:tag} even for zero-arg constructors
         if (params.length > 0) {
             var tupleElements = [PLiteral(makeAST(EAtom(atomName)))].concat(params);
             return PTuple(tupleElements);
         } else {
-            return PLiteral(makeAST(EAtom(atomName)));
+            return PTuple([PLiteral(makeAST(EAtom(atomName)))]);
         }
     }
     
@@ -343,7 +343,7 @@ class EnumHandler {
         if (params.length > 0) {
             return PTuple([atomPattern].concat(params));
         } else {
-            return atomPattern;
+            return PTuple([atomPattern]);
         }
     }
     

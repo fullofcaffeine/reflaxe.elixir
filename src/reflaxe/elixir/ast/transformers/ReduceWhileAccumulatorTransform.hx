@@ -72,6 +72,16 @@ class ReduceWhileAccumulatorTransform {
                     // Check if the function has accumulator variables
                     switch(fnArg.def) {
                         case EFn(clauses):
+                            // Conservative guard: if accumulator arity > 1, skip reshaping entirely
+                            var accArity = 0;
+                            if (clauses.length > 0) {
+                                var names = extractAccumulatorVars(clauses[0].args);
+                                accArity = names != null ? names.length : 0;
+                            }
+                            if (accArity > 1) {
+                                // Preserve original structure to maintain tuple shape expected by validation
+                                return transformedNode;
+                            }
                             var transformedClauses = [];
                             for (clause in clauses) {
                                 var transformedClause = transformReduceWhileClause(clause, initialAcc);
@@ -293,12 +303,8 @@ class ReduceWhileAccumulatorTransform {
                             trace('[XRay ReduceWhile] Found accumulator update: $varName, preserveAssignments: $preserveAssignments');
                             #end
 
-                            // ⚠️ FIX: If we're preserving assignments (inside main control flow), keep them
-                            if (preserveAssignments) {
-                                trace('[XRay ReduceWhile] Preserving assignment: $varName = ...');
-                                transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
-                            }
-                            // Otherwise, don't add the assignment to the output (will be merged into return tuple)
+                        // Do not emit the assignment statement; fold updates into the return tuple only
+                        // (preserveAssignments still affects control-flow restructuring, not statement emission)
                             
                         case ETuple([atom, accTuple]):
                             // This is a return statement {:cont, acc} or {:halt, acc}

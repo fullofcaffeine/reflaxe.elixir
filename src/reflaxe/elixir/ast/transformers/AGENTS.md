@@ -1,6 +1,6 @@
 # AST Transformers Development Context
 
-> **Parent Context**: See [/src/reflaxe/elixir/ast/CLAUDE.md](/src/reflaxe/elixir/ast/CLAUDE.md) for AST-wide conventions
+> **Parent Context**: See [/src/reflaxe/elixir/ast/AGENTS.md](/src/reflaxe/elixir/ast/AGENTS.md) for AST-wide conventions
 
 This file contains transformer-specific development guidance to prevent common confusions and mistakes.
 
@@ -153,3 +153,20 @@ npx haxe compile.hxml -D debug_ast_transformer -D debug_loop_transforms
 ---
 
 **Remember**: Transformers run at macro-time, which is a normal Haxe runtime. Don't create artificial limitations based on confusion about compilation stages.
+
+## Descriptive Naming & Non‑Expert Documentation (Transformers)
+
+- Use descriptive names for passes and locals. Prefer `guardVars`, `fieldBaseVars`, `bodyUsedLocals`, `binderName`, `clauseBinders` over generic names.
+- Avoid one‑letter variables in transformation code; short indices are acceptable only in tiny, obvious scopes.
+- Every new pass must include hxdoc with WHY/WHAT/HOW/WHEN, sample Haxe→Elixir snippets showing the intended shape, invariants, and known limitations.
+- Document any introduction of bridge variables or aliases, their lifetime, and how downstream references are synchronized. Add transparent comments in generated code when appropriate.
+- Cross‑reference relevant debug flags (e.g., `-D debug_ast_transformer`, pass‑specific flags) for future maintainers.
+
+## 📚 Reference Strategy (Mandatory)
+
+- Always cross-check patterns and reference implementations in the local reference repo before introducing or changing transformer logic:
+  - Path: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+  - What to look for: existing Reflaxe compiler patterns (e.g., RemoveTemporaryVariablesImpl, reference handling for TLocal/TEnumParameter), variable reference consistency techniques, and idiomatic transformation sequences.
+- Do not guess transformation behavior. Verify against the reference code and adapt patterns faithfully to our AST pipeline.
+- When handling variable naming or binder/reference normalization, ensure body references are consistently updated to match pattern binders (no mismatched identifiers). If you remove alias bindings, update all downstream references.
+- Always follow `.claude/agents/haxe-reflaxe-compiler-expert.md` when blocked or making architectural decisions. Use it to drive research in the reference repo and synthesize a solution that fits our Builder → Transformer → Printer pipeline without band-aids.

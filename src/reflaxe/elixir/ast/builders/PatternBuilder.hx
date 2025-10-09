@@ -438,8 +438,8 @@ class PatternBuilder {
         }
         
         if (paramCount == 0) {
-            // No-argument constructor
-            return PLiteral(makeAST(EAtom(atomName)));
+            // No-argument constructor: preserve tuple tag form {:tag}
+            return PTuple([PLiteral(makeAST(EAtom(atomName)))]);
         } else {
             // Constructor with arguments - use extracted param names
             var patterns = [PLiteral(makeAST(EAtom(atomName)))];
@@ -833,7 +833,8 @@ class PatternBuilder {
         // Check if this is an idiomatic enum
         switch(expr.expr) {
             case TField(_, FEnum(enumRef, _)):
-                return enumRef.get().meta.has("elixirIdiomatic") || true; // All enums idiomatic now
+                // Only enums explicitly annotated with @:elixirIdiomatic are treated as idiomatic
+                return enumRef.get().meta.has("elixirIdiomatic");
             default:
                 return false;
         }

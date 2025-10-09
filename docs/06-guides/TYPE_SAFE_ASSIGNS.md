@@ -441,4 +441,4 @@ var userName = assigns.user.name;
 - [`documentation/guides/HAXE_OPERATOR_OVERLOADING.md`](HAXE_OPERATOR_OVERLOADING.md) - Operator overloading patterns used
 - [`documentation/paradigms/PARADIGM_BRIDGE.md`](/documentation/paradigms/PARADIGM_BRIDGE.md) - Understanding functional patterns
 
-**See also**: [`std/CLAUDE.md`](/std/CLAUDE.md) for standard library development patterns and architectural guidance.
+**See also**: [`std/AGENTS.md`](/std/AGENTS.md) for standard library development patterns and architectural guidance.

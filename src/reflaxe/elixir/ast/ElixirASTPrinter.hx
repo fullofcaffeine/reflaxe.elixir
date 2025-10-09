@@ -308,6 +308,38 @@ class ElixirASTPrinter {
                 var keepInline = expr != null && expr.metadata != null && 
                                 expr.metadata.keepInlineInAssignment == true;
 
+                // Split nested chain assignments for readability and to avoid unused warnings:
+                // a = b = expr  ->
+                //   _b = expr
+                //   a = _b
+                switch (pattern) {
+                    case PVar(outerName):
+                        switch (expr != null ? expr.def : null) {
+                            case EMatch(PVar(innerName), innerExpr):
+                                var printedInner = innerName;
+                                if (~/^_?this\d*$/.match(innerName) || innerName == "this" || innerName == "this1") {
+                                    if (!StringTools.startsWith(innerName, "_")) printedInner = "_" + innerName;
+                                }
+                                var line1 = printPattern(PVar(printedInner)) + ' = ' + print(innerExpr, indent);
+                                var line2 = patternStr + ' = ' + print(makeAST(EVar(printedInner)), indent);
+                                return line1 + "\n" + indentStr(indent) + line2;
+                            case EParen(e2):
+                                switch (e2.def) {
+                                    case EMatch(PVar(innerName2), innerExpr2):
+                                        var printedInner2 = innerName2;
+                                        if (~/^_?this\d*$/.match(innerName2) || innerName2 == "this" || innerName2 == "this1") {
+                                            if (!StringTools.startsWith(innerName2, "_")) printedInner2 = "_" + innerName2;
+                                        }
+                                        var l1 = printPattern(PVar(printedInner2)) + ' = ' + print(innerExpr2, indent);
+                                        var l2 = patternStr + ' = ' + print(makeAST(EVar(printedInner2)), indent);
+                                        return l1 + "\n" + indentStr(indent) + l2;
+                                    default:
+                                }
+                            default:
+                        }
+                    default:
+                }
+
                 switch(pattern) {
                     case PVar(name):
                         var rhsName = switch(expr != null ? expr.def : null) {
@@ -705,8 +737,57 @@ class ElixirASTPrinter {
                     if (target != null) {
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
-                            // Function variable call - use .() syntax
-                            print(target, indent) + '.(' + argStr + ')';
+                            // Function variable call - special-case __elixir__() raw injection printing
+                            switch (target.def) {
+                                case EVar(varName) if (varName == "__elixir__"):
+                                    if (args.length > 0) {
+                                        switch (args[0].def) {
+                                            case EString(code):
+                                                // Replace {N} with printed args[N+1]
+                                                var out = new StringBuf();
+                                                var i = 0;
+                                                while (i < code.length) {
+                                                    var ch = code.charAt(i);
+                                                    if (ch == '{' && i + 1 < code.length) {
+                                                        var j = i + 1;
+                                                        var numStr = '';
+                                                        while (j < code.length) {
+                                                            var d = code.charAt(j);
+                                                            if (d >= '0' && d <= '9') { numStr += d; j++; } else break;
+                                                        }
+                                                        if (numStr != '' && j < code.length && code.charAt(j) == '}') {
+                                                            var idx = Std.parseInt(numStr);
+                                                            if (idx != null && (idx + 1) < args.length) {
+                                                                out.add(print(args[idx + 1], 0));
+                                                                i = j + 1;
+                                                                continue;
+                                                            }
+                                                        }
+                                                    }
+                                                    out.add(ch);
+                                                    i++;
+                                                }
+                                                var raw = out.toString();
+                                                var parts = raw.split("\n");
+                                                if (parts.length <= 1) {
+                                                    raw;
+                                                } else {
+                                                    var acc = parts[0];
+                                                    for (k in 1...parts.length) {
+                                                        acc += "\n" + indentStr(indent) + parts[k];
+                                                    }
+                                                    acc;
+                                                }
+                                            default:
+                                                print(target, indent) + '.(' + argStr + ')';
+                                        }
+                                    } else {
+                                        print(target, indent) + '.(' + argStr + ')';
+                                    }
+                                default:
+                                    // Regular function variable call - use .() syntax
+                                    print(target, indent) + '.(' + argStr + ')';
+                            }
                         } else {
                             // Transform method call syntax to proper Elixir module calls
                             // Elixir doesn't support obj.method() - use Module.function(obj, args)
@@ -868,7 +949,19 @@ class ElixirASTPrinter {
                 print(target, 0) + '[' + print(key, 0) + ']';
                 
             case ERange(start, end, exclusive):
-                print(start, 0) + (exclusive ? '...' : '..') + print(end, 0);
+                var s = print(start, 0);
+                var e = print(end, 0);
+                var sep = exclusive ? '...' : '..';
+                // If both ends are integer literals and descending, render explicit negative step
+                var isInt = function(str:String):Bool return ~/^-?\d+$/.match(str);
+                if (isInt(s) && isInt(e)) {
+                    var si = Std.parseInt(s);
+                    var ei = Std.parseInt(e);
+                    if (si != null && ei != null && si > ei) {
+                        return s + sep + e + "//-1";
+                    }
+                }
+                s + sep + e;
                 
             // ================================================================
             // Literals
@@ -1174,19 +1267,49 @@ class ElixirASTPrinter {
                 } else if (expressions.length == 1) {
                     print(expressions[0], indent);
                 } else {
-                    var parts = [];
-                    var printed: Array<String> = [];
-                    for (expr in expressions) {
-                        var str = print(expr, indent);
-                        if (str != null && str.trim().length > 0) {
-                            printed.push(str);
+                    // Smart block printer: collapse "bind then case" patterns to avoid temporary variables
+                    var parts:Array<String> = [];
+                    var i = 0;
+                    while (i < expressions.length) {
+                        var curr = expressions[i];
+                        if (i + 1 < expressions.length) {
+                            var next = expressions[i + 1];
+                            switch [curr.def, next.def] {
+                                case [EMatch(PVar(lhs), rhs), ECase(target, clauses)]:
+                                    switch (target.def) {
+                                        case EVar(name) if (name == lhs):
+                                            // Print collapsed: case rhs do ... end
+                                            parts.push(print(makeAST(ECase(rhs, clauses)), indent));
+                                            i += 2;
+                                            continue;
+                                        default:
+                                    }
+                                default:
+                            }
+                            // One-statement gap collapse if the middle prints empty
+                            if (i + 2 < expressions.length) {
+                                var mid = expressions[i + 1];
+                                var after = expressions[i + 2];
+                                switch [curr.def, after.def] {
+                                    case [EMatch(PVar(lhs2), rhs2), ECase(target2, clauses2)]:
+                                        switch (target2.def) {
+                                            case EVar(name2) if (name2 == lhs2):
+                                                var midStr = print(mid, indent);
+                                                if (midStr == null || midStr.trim().length == 0) {
+                                                    parts.push(print(makeAST(ECase(rhs2, clauses2)), indent));
+                                                    i += 3;
+                                                    continue;
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            }
                         }
-                    }
-                    for (i in 0...printed.length) {
-                        parts.push(printed[i]);
-                        if (i < printed.length - 1) {
-                            parts.push('\n' + indentStr(indent));
-                        }
+                        var str = print(curr, indent);
+                        if (str != null && str.trim().length > 0) parts.push(str);
+                        i++;
+                        if (i < expressions.length) parts.push('\n' + indentStr(indent));
                     }
                     parts.join('');
                 }
@@ -1227,13 +1350,12 @@ class ElixirASTPrinter {
                 
             case ERaw(code):
                 // Raw code injection
-                // Check if the code is multi-line and needs wrapping
-                // Multi-line Elixir expressions in assignments need parentheses
-                if (code.indexOf('\n') != -1 && code.indexOf('=') != -1) {
-                    // Multi-line code with assignments needs parentheses for proper scoping
+                // Wrap only when multiline AND likely contains assignment (" = ")
+                var hasNewline = code.indexOf('\n') != -1;
+                var hasAssignment = code.indexOf(' = ') != -1;
+                if (hasNewline && hasAssignment) {
                     '(\n' + code + '\n)';
                 } else {
-                    // Single line or simple code - output as-is
                     code;
                 }
                 
@@ -1319,14 +1441,11 @@ class ElixirASTPrinter {
         if (clause.guard != null) {
             result += ' when ' + print(clause.guard, 0);
         }
-        // Ensure empty bodies render as `nil` for idiomatic clarity
         var bodyStr = switch (clause.body != null ? clause.body.def : null) {
             case EBlock(exprs) if (exprs.length == 0): 'nil';
             case _: print(clause.body, indent + 1);
         };
-        if (StringTools.trim(bodyStr) == '') {
-            bodyStr = 'nil';
-        }
+        if (StringTools.trim(bodyStr) == '') bodyStr = 'nil';
         result += ' ->\n' + indentStr(indent + 1) + bodyStr;
         return result;
     }
@@ -1671,6 +1790,14 @@ class ElixirASTPrinter {
         #if debug_ast_printer
         trace('[XRay Printer] If condition def: ' + Type.enumConstructor(condition.def));
         #end
+        // For source-map determinism and clarity, wrap binary conditions in parentheses
+        // This matches snapshot shapes: `if (x > 5) do` and `if (x > 5), do: ...`
+        // while keeping broader do/end detection logic intact.
+        switch (condition.def) {
+            case EBinary(_, _, _):
+                return '(' + print(condition, 0) + ')';
+            default:
+        }
         // If the condition contains nested do/end expressions (if/case/cond/with/try/receive)
         // within a larger expression (e.g., binary op), wrap the whole condition in parentheses
         function containsDoEndExpr(ast: ElixirAST): Bool {

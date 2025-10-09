@@ -30,6 +30,42 @@
  * NOTE: Cannot use __elixir__() here because StringTools is used by macros
  * which run at compile-time in Haxe, not in Elixir runtime.
  */
+#if (target.elixir || reflaxe.elixir)
+/**
+ * Elixir target: provide extern signatures only to avoid duplicate module emission.
+ * Implementation comes from std/_std/StringTools.hx for Elixir output.
+ */
+extern class StringTools {
+    public static var MIN_SURROGATE_CODE_POINT:Int;
+    public static var MAX_SURROGATE_CODE_POINT:Int;
+    public static var MIN_HIGH_SURROGATE_CODE_POINT:Int;
+    public static var MAX_HIGH_SURROGATE_CODE_POINT:Int;
+    public static var MIN_LOW_SURROGATE_CODE_POINT:Int;
+    public static var MAX_LOW_SURROGATE_CODE_POINT:Int;
+
+    public static function urlEncode(s:String):String;
+    public static function urlDecode(s:String):String;
+    public static function htmlEscape(s:String, ?quotes:Bool):String;
+    public static function htmlUnescape(s:String):String;
+    public static function startsWith(s:String, start:String):Bool;
+    public static function endsWith(s:String, end:String):Bool;
+    public static function isSpace(s:String, pos:Int):Bool;
+    public static function ltrim(s:String):String;
+    public static function rtrim(s:String):String;
+    public static function trim(s:String):String;
+    public static function lpad(s:String, c:String, l:Int):String;
+    public static function rpad(s:String, c:String, l:Int):String;
+    public static function replace(s:String, sub:String, by:String):String;
+    public static function hex(n:Int, ?digits:Int):String;
+    public static function contains(s:String, value:String):Bool;
+    public static function utf16CodePointAt(s:String, index:Int):Int;
+    public static function fastCodeAt(s:String, index:Int):Int;
+    public static function isEof(c:Int):Bool;
+    public static function quoteRegexpMeta(s:String):String;
+    public static function parseInt(str:String):Null<Int>;
+    public static function parseFloat(str:String):Null<Float>;
+}
+#else
 class StringTools {
     /**
      * UTF-16 surrogate code point constants
@@ -338,3 +374,4 @@ class StringTools {
         return Std.parseFloat(str);
     }
 }
+#end
