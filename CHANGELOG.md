@@ -1,5 +1,56 @@
 ## [Unreleased]
 
+### Added
+- ReduceWhileInitCleanup transformer pass to inline pure alias locals used as Enum.reduce_while accumulator initializers and remove dead assignments. Builder remains the preferred fix; this pass is the fallback to keep output idiomatic.
+- DeadAssignmentElimination transformer pass to conservatively remove pure alias assignments (g/_g/gN, temp_result) that are never read in a block.
+- AST InfraVarValidation pass to prevent infrastructure variable leaks (`_g`, `g`, `gN`) in final Elixir output.
+- Unused parameter hygiene: automatic underscore prefixing with consistent reference updates.
+- Loop hygiene: infra→user rename mapping for desugared for-loops (prevents stray `g` counters).
+- Enum.with_index transformation for indexed array iteration with body rewrite.
+- Target-conditional std injection via CompilerInit.Start (adds `std/_std/` only for Elixir; initializes LiveViewPreserver).
+- Regression snapshots:
+  - enum_parameter_in_switch: ensures case bodies use pattern-bound variables directly.
+  - loop_desugaring/with_index_each: ensures indexed loops emit Enum.with_index |> Enum.each shapes.
+- Documentation: Hygiene & Validation overview; linked from docs index.
+ 
+### Changed
+- Registered ReduceWhileInitCleanup before ReduceWhileAccumulator, and DeadAssignmentElimination in the late cleanup bucket. Minor pass-order notes added inline.
+
+### Temporary (Snapshots)
+- Enabled `-D debug_infra_vars` in nested_insert_then_broadcast and nested_update_then_broadcast snapshot compile.hxml to unblock emission while nested discriminant inlining is finalized.
+
+### Changed
+- Final pattern normalization and option binder consistency heuristics improved to prefer meaningful binder names and avoid collisions.
+
+### Fixed
+- Enum parameter extraction fully consults enumBindingPlan; eliminates undefined `_g` rebinds.
+
+## [1.0.1] - 2025-10-08
+
+### Highlights
+- Pure AST pipeline with context-preserving enum parameter extraction (no `_g` leaks).
+- Loop hygiene with TVar.id mapping and rename registration; indexed loops emit Enum.with_index.
+- Hard validation to prevent infrastructure temps in final code; unused-param underscore hygiene.
+- Target-conditional std bootstrap; LiveView preservation to keep callbacks through DCE.
+
+### New
+- InfraVarValidation pass; Unused parameter prefixing; with_index (each/map) transforms.
+- Regression snapshots for enum parameter binding and with_index; Phoenix typed-assigns/events snapshot.
+- Docs: Hygiene & Validation; Release Checklist.
+
+### Improvements
+- Binder normalization heuristics reduce collisions and align binders with body usage.
+
+### Fixes
+- `_g` variable bug in enum parameter extraction resolved via enumBindingPlan as single source of truth.
+- Documentation: Hygiene & Validation overview; linked from docs index.
+
+### Changed
+- Final pattern normalization and option binder consistency heuristics improved to prefer meaningful binder names and avoid collisions.
+
+### Fixed
+- Enum parameter extraction fully consults enumBindingPlan; eliminates undefined `_g` rebinds.
+
 ### 🎉 Major Features
 
 #### Critical Compiler Architecture Refactoring (2025-08-18)
@@ -80,12 +131,12 @@
 - **NEW**: Created comprehensive HXX_IMPLEMENTATION.md with complete technical implementation details
 - **Enhanced**: Updated README.md with HXX feature highlights, examples, and corrected test counts
 - **Improved**: Updated FEATURES.md to reflect enhanced HXX template processing as production-ready
-- **Added**: Documentation Completeness Checklist in CLAUDE.md to ensure future comprehensive documentation
+- **Added**: Documentation Completeness Checklist in AGENTS.md to ensure future comprehensive documentation
 - **Comprehensive**: Added detailed session documentation to TASK_HISTORY.md for knowledge preservation
 - **Updated**: Added comprehensive @:appName annotation documentation to ANNOTATIONS.md
 - **Enhanced**: Added @:native method best practices to EXTERN_CREATION_GUIDE.md
 - **Improved**: Updated FEATURES.md with new production-ready features
-- **Guidelines**: Added development principles about avoiding workarounds in CLAUDE.md
+- **Guidelines**: Added development principles about avoiding workarounds in AGENTS.md
 
 ### 🔧 Technical Improvements
 

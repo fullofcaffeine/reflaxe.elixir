@@ -2,20 +2,155 @@
 class phoenix.macros.AssignMacro {
 
 	@:has_untyped
-	public static function processAssign(socketExpr:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, value:haxe.macro.Expr) {
-		var fieldName = phoenix.macros.AssignMacro.extractFieldName(fieldExpr);
-		if (fieldName == null) {
-			haxe.macro.Context.error("Expected field access expression like _.fieldName", fieldExpr.pos, null);
-		};
-		var assignsType = phoenix.macros.AssignMacro.extractAssignsType(socketExpr);
-		phoenix.macros.AssignMacro.validateFieldExists(assignsType, fieldName, fieldExpr.pos);
-		var snakeCaseName = phoenix.macros.AssignMacro.camelToSnake(fieldName);
-		return cast {expr : haxe.macro.ExprDef.ECall({expr : haxe.macro.ExprDef.EField({expr : haxe.macro.ExprDef.EField({expr : haxe.macro.ExprDef.EConst(haxe.macro.Constant.CIdent("phoenix")), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 2051, 2058)}, "Component", haxe.macro.EFieldKind.Normal), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 2051, 2068)}, "assign", haxe.macro.EFieldKind.Normal), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 2051, 2075)}, [socketExpr, haxe.macro.Context.makeExpr(snakeCaseName, $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 2092, 2105)), value]), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 2051, 2115)};
-	}
+	public static function processAssign[Function:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, value : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local socketExpr(15146):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local fieldExpr(15147):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local value(15148):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Var fieldName(15192):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.Expr) -> Null<String>]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(expr : haxe.macro.Expr) -> Null<String>]
+							phoenix.macros.AssignMacro
+							extractFieldName:(expr : haxe.macro.Expr) -> Null<String>
+					[Local fieldExpr(15147):haxe.macro.Expr:haxe.macro.Expr]
+			[If:Void]
+				[Binop:Bool]
+					[Local fieldName(15192):Null<String>:Null<String>]
+					==
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Const:String] "Expected field access expression like _.fieldName"
+						[Field:haxe.macro.Position]
+							[Local fieldExpr(15147):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+						[Const:Null<Int>] null
+			[Var assignsType(15211):haxe.macro.Type]
+				[Call:haxe.macro.Type]
+					[Field:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+							phoenix.macros.AssignMacro
+							extractAssignsType:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type
+					[Local socketExpr(15146):haxe.macro.Expr:haxe.macro.Expr]
+			[Call:Void]
+				[Field:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+					[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+					[FStatic:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+						phoenix.macros.AssignMacro
+						validateFieldExists:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void
+				[Local assignsType(15211):haxe.macro.Type:haxe.macro.Type]
+				[Local fieldName(15192):Null<String>:Null<String>]
+				[Field:haxe.macro.Position]
+					[Local fieldExpr(15147):haxe.macro.Expr:haxe.macro.Expr]
+					[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+			[Var snakeCaseName(15288):String]
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(name : String) -> String]
+							phoenix.macros.AssignMacro
+							camelToSnake:(name : String) -> String
+					[Local fieldName(15192):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Cast:haxe.macro.Expr]
+					[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+						expr: [Call:haxe.macro.ExprDef]
+							[Field:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+								[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+								[FEnum:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+									haxe.macro.ExprDef
+									ECall
+							[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+								expr: [Call:haxe.macro.ExprDef]
+									[Field:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+										[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+										[FEnum:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+											haxe.macro.ExprDef
+											EField
+									[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+										expr: [Call:haxe.macro.ExprDef]
+											[Field:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+												[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+												[FEnum:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+													haxe.macro.ExprDef
+													EField
+											[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+												expr: [Call:haxe.macro.ExprDef]
+													[Field:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															EConst
+													[Call:haxe.macro.Constant]
+														[Field:(s : String) -> haxe.macro.Constant]
+															[TypeExpr haxe.macro.Constant:Enum<haxe.macro.Constant>]
+															[FEnum:(s : String) -> haxe.macro.Constant]
+																haxe.macro.Constant
+																CIdent
+														[Const:String] "phoenix"
+												pos: [Call:haxe.macro.Position]
+													[Ident:(String, Int, Int) -> Unknown<22>] $__mk_pos__
+													[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+													[Const:Int] 2051
+													[Const:Int] 2058
+											[Const:String] "Component"
+											[Field:haxe.macro.EFieldKind]
+												[TypeExpr haxe.macro.EFieldKind:Enum<haxe.macro.EFieldKind>]
+												[FEnum:haxe.macro.EFieldKind]
+													haxe.macro.EFieldKind
+													Normal
+										pos: [Call:haxe.macro.Position]
+											[Ident:(String, Int, Int) -> Unknown<23>] $__mk_pos__
+											[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+											[Const:Int] 2051
+											[Const:Int] 2068
+									[Const:String] "assign"
+									[Field:haxe.macro.EFieldKind]
+										[TypeExpr haxe.macro.EFieldKind:Enum<haxe.macro.EFieldKind>]
+										[FEnum:haxe.macro.EFieldKind]
+											haxe.macro.EFieldKind
+											Normal
+								pos: [Call:haxe.macro.Position]
+									[Ident:(String, Int, Int) -> Unknown<24>] $__mk_pos__
+									[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+									[Const:Int] 2051
+									[Const:Int] 2075
+							[ArrayDecl:Array<haxe.macro.Expr>]
+								[Local socketExpr(15146):haxe.macro.Expr:haxe.macro.Expr]
+								[Call:haxe.macro.Expr]
+									[Field:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+										[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+										[FStatic:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+											haxe.macro.Context
+											makeExpr:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr
+									[Local snakeCaseName(15288):String:String]
+									[Call:haxe.macro.Position]
+										[Ident:(String, Int, Int) -> Unknown<25>] $__mk_pos__
+										[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+										[Const:Int] 2092
+										[Const:Int] 2105
+								[Local value(15148):haxe.macro.Expr:haxe.macro.Expr]
+						pos: [Call:haxe.macro.Position]
+							[Ident:(String, Int, Int) -> Unknown<26>] $__mk_pos__
+							[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+							[Const:Int] 2051
+							[Const:Int] 2115
 
 	@:has_untyped
-	public static function processMerge(socketExpr:haxe.macro.Expr, updates:haxe.macro.Expr) {
-		@:ast(switch (updates.expr) {
+	public static function processMerge[Function:(socketExpr : haxe.macro.Expr, updates : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local socketExpr(15289):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local updates(15290):haxe.macro.Expr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (updates.expr) {
 	case EObjectDecl(fields):
 		var assignsType = extractAssignsType(socketExpr);
 		var transformedFields = [];
@@ -33,164 +168,666 @@ class phoenix.macros.AssignMacro {
 	case _:
 		Context.error("Expected object literal with fields to merge", updates.pos);
 		return null;	
-}) {
-			var ` = updates.expr;
-			if (enumIndex ` == 5) {
-				var ` = `[0];
-				{
-					var fields = `;
-					{
-						var assignsType = phoenix.macros.AssignMacro.extractAssignsType(socketExpr);
-						var transformedFields = [];
-						{
-							var ` = 0;
-							while (` < fields.length) {
-								var field = fields[`];
-								++ `;
-								phoenix.macros.AssignMacro.validateFieldExists(assignsType, field.field, field.expr.pos);
-								var snakeCaseName = phoenix.macros.AssignMacro.camelToSnake(field.field);
-								transformedFields.push({field : snakeCaseName, expr : field.expr});
-							};
-						};
-						var mapFields = [];
-						{
-							var ` = 0;
-							while (` < transformedFields.length) {
-								var field = transformedFields[`];
-								++ `;
-								mapFields.push({field : field.field, expr : field.expr});
-							};
-						};
-						var mapExpr = {expr : haxe.macro.ExprDef.EObjectDecl(mapFields), pos : updates.pos};
-						return cast {expr : haxe.macro.ExprDef.ECall({expr : haxe.macro.ExprDef.EField({expr : haxe.macro.ExprDef.EField({expr : haxe.macro.ExprDef.EConst(haxe.macro.Constant.CIdent("phoenix")), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 3377, 3384)}, "Component", haxe.macro.EFieldKind.Normal), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 3377, 3394)}, "assign", haxe.macro.EFieldKind.Normal), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 3377, 3401)}, [socketExpr, mapExpr]), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 3377, 3424)};
-					};
-				};
-			} else {
-				haxe.macro.Context.error("Expected object literal with fields to merge", updates.pos, null);
-				return null;
-			};
-		};
-	}
+})
+				[Block:Void]
+					[Var `(15303):haxe.macro.ExprDef]
+						[Field:haxe.macro.ExprDef]
+							[Local updates(15290):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(15303):haxe.macro.ExprDef:haxe.macro.ExprDef]
+							==
+							[Const:Int] 5
+						[Then:Dynamic] [Block:Dynamic]
+							[Var `(15304):Array<haxe.macro.ObjectField>]
+								[EnumParameter:Array<haxe.macro.ObjectField>]
+									[Local `(15303):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									EObjectDecl
+									0
+							[Block:Dynamic]
+								[Var fields(15305):Array<haxe.macro.ObjectField>] [Local `(15304):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+								[Block:Dynamic]
+									[Var assignsType(15306):haxe.macro.Type]
+										[Call:haxe.macro.Type]
+											[Field:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+												[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+												[FStatic:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+													phoenix.macros.AssignMacro
+													extractAssignsType:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type
+											[Local socketExpr(15289):haxe.macro.Expr:haxe.macro.Expr]
+									[Var transformedFields(15307):Array<{ field : String, expr : haxe.macro.Expr }>] [ArrayDecl:Array<{ field : String, expr : haxe.macro.Expr }>]
+									[Block:Void]
+										[Var `(15308):Int] [Const:Int] 0
+										[While:Void]
+											[Binop:Bool]
+												[Local `(15308):Int:Int]
+												<
+												[Field:Int]
+													[Local fields(15305):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+													[FInstance:Int]
+														Array<haxe.macro.ObjectField>
+														length:Int
+											[Block:Void]
+												[Var field(15309):haxe.macro.ObjectField]
+													[Array:haxe.macro.ObjectField]
+														[Local fields(15305):Array<haxe.macro.ObjectField>:Array<haxe.macro.ObjectField>]
+														[Local `(15308):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(15308):Int:Int]
+												[Call:Void]
+													[Field:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+														[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+														[FStatic:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+															phoenix.macros.AssignMacro
+															validateFieldExists:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void
+													[Local assignsType(15306):haxe.macro.Type:haxe.macro.Type]
+													[Field:String]
+														[Local field(15309):haxe.macro.ObjectField:haxe.macro.ObjectField]
+														[FAnon:String] field:String
+													[Field:haxe.macro.Position]
+														[Field:haxe.macro.Expr]
+															[Local field(15309):haxe.macro.ObjectField:haxe.macro.ObjectField]
+															[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+														[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+												[Var snakeCaseName(15310):String]
+													[Call:String]
+														[Field:(name : String) -> String]
+															[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+															[FStatic:(name : String) -> String]
+																phoenix.macros.AssignMacro
+																camelToSnake:(name : String) -> String
+														[Field:String]
+															[Local field(15309):haxe.macro.ObjectField:haxe.macro.ObjectField]
+															[FAnon:String] field:String
+												[Call:Int]
+													[Field:(x : { field : String, expr : haxe.macro.Expr }) -> Int]
+														[Local transformedFields(15307):Array<{ field : String, expr : haxe.macro.Expr }>:Array<{ field : String, expr : haxe.macro.Expr }>]
+														[FInstance:(x : { field : String, expr : haxe.macro.Expr }) -> Int]
+															Array<{ field : String, expr : haxe.macro.Expr }>
+															push:(x : Array.T) -> Int
+													[ObjectDecl:{ field : String, expr : haxe.macro.Expr }]
+														field: [Local snakeCaseName(15310):String:String]
+														expr: [Field:haxe.macro.Expr]
+															[Local field(15309):haxe.macro.ObjectField:haxe.macro.ObjectField]
+															[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+									[Var mapFields(15311):Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>] [ArrayDecl:Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>]
+									[Block:Void]
+										[Var `(15312):Int] [Const:Int] 0
+										[While:Void]
+											[Binop:Bool]
+												[Local `(15312):Int:Int]
+												<
+												[Field:Int]
+													[Local transformedFields(15307):Array<{ field : String, expr : haxe.macro.Expr }>:Array<{ field : String, expr : haxe.macro.Expr }>]
+													[FInstance:Int]
+														Array<{ field : String, expr : haxe.macro.Expr }>
+														length:Int
+											[Block:Void]
+												[Var field(15313):{ field : String, expr : haxe.macro.Expr }]
+													[Array:{ field : String, expr : haxe.macro.Expr }]
+														[Local transformedFields(15307):Array<{ field : String, expr : haxe.macro.Expr }>:Array<{ field : String, expr : haxe.macro.Expr }>]
+														[Local `(15312):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(15312):Int:Int]
+												[Call:Int]
+													[Field:(x : { ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }) -> Int]
+														[Local mapFields(15311):Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>:Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>]
+														[FInstance:(x : { ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }) -> Int]
+															Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>
+															push:(x : Array.T) -> Int
+													[ObjectDecl:{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }]
+														field: [Field:String]
+															[Local field(15313):{ field : String, expr : haxe.macro.Expr }:{ field : String, expr : haxe.macro.Expr }]
+															[FAnon:String] field:String
+														expr: [Field:haxe.macro.Expr]
+															[Local field(15313):{ field : String, expr : haxe.macro.Expr }:{ field : String, expr : haxe.macro.Expr }]
+															[FAnon:haxe.macro.Expr] expr:haxe.macro.Expr
+									[Var mapExpr(15314):{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+										[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+											expr: [Call:haxe.macro.ExprDef]
+												[Field:(fields : Array<haxe.macro.ObjectField>) -> haxe.macro.ExprDef]
+													[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+													[FEnum:(fields : Array<haxe.macro.ObjectField>) -> haxe.macro.ExprDef]
+														haxe.macro.ExprDef
+														EObjectDecl
+												[Local mapFields(15311):Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>:Array<{ ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }>]
+											pos: [Field:haxe.macro.Position]
+												[Local updates(15290):haxe.macro.Expr:haxe.macro.Expr]
+												[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[Return:Dynamic]
+										[Cast:haxe.macro.Expr]
+											[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+												expr: [Call:haxe.macro.ExprDef]
+													[Field:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+														[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+														[FEnum:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+															haxe.macro.ExprDef
+															ECall
+													[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+														expr: [Call:haxe.macro.ExprDef]
+															[Field:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+																[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+																[FEnum:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+																	haxe.macro.ExprDef
+																	EField
+															[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+																expr: [Call:haxe.macro.ExprDef]
+																	[Field:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+																		[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+																		[FEnum:(e : haxe.macro.Expr, field : String, ?kind : Null<haxe.macro.EFieldKind>) -> haxe.macro.ExprDef]
+																			haxe.macro.ExprDef
+																			EField
+																	[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+																		expr: [Call:haxe.macro.ExprDef]
+																			[Field:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+																				[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+																				[FEnum:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+																					haxe.macro.ExprDef
+																					EConst
+																			[Call:haxe.macro.Constant]
+																				[Field:(s : String) -> haxe.macro.Constant]
+																					[TypeExpr haxe.macro.Constant:Enum<haxe.macro.Constant>]
+																					[FEnum:(s : String) -> haxe.macro.Constant]
+																						haxe.macro.Constant
+																						CIdent
+																				[Const:String] "phoenix"
+																		pos: [Call:haxe.macro.Position]
+																			[Ident:(String, Int, Int) -> Unknown<27>] $__mk_pos__
+																			[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+																			[Const:Int] 3377
+																			[Const:Int] 3384
+																	[Const:String] "Component"
+																	[Field:haxe.macro.EFieldKind]
+																		[TypeExpr haxe.macro.EFieldKind:Enum<haxe.macro.EFieldKind>]
+																		[FEnum:haxe.macro.EFieldKind]
+																			haxe.macro.EFieldKind
+																			Normal
+																pos: [Call:haxe.macro.Position]
+																	[Ident:(String, Int, Int) -> Unknown<28>] $__mk_pos__
+																	[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+																	[Const:Int] 3377
+																	[Const:Int] 3394
+															[Const:String] "assign"
+															[Field:haxe.macro.EFieldKind]
+																[TypeExpr haxe.macro.EFieldKind:Enum<haxe.macro.EFieldKind>]
+																[FEnum:haxe.macro.EFieldKind]
+																	haxe.macro.EFieldKind
+																	Normal
+														pos: [Call:haxe.macro.Position]
+															[Ident:(String, Int, Int) -> Unknown<29>] $__mk_pos__
+															[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+															[Const:Int] 3377
+															[Const:Int] 3401
+													[ArrayDecl:Array<haxe.macro.Expr>]
+														[Local socketExpr(15289):haxe.macro.Expr:haxe.macro.Expr]
+														[Local mapExpr(15314):{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+												pos: [Call:haxe.macro.Position]
+													[Ident:(String, Int, Int) -> Unknown<30>] $__mk_pos__
+													[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+													[Const:Int] 3377
+													[Const:Int] 3424
+						[Else:Dynamic] [Block:Dynamic]
+							[Call:Dynamic]
+								[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+									[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+									[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+										haxe.macro.Context
+										error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+								[Const:String] "Expected object literal with fields to merge"
+								[Field:haxe.macro.Position]
+									[Local updates(15290):haxe.macro.Expr:haxe.macro.Expr]
+									[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+								[Const:Null<Int>] null
+							[Return:Dynamic] [Const:haxe.macro.Expr] null
 
 	@:has_untyped
-	public static function processAssignNew(socketExpr:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, defaultFn:haxe.macro.Expr) {
-		var fieldName = phoenix.macros.AssignMacro.extractFieldName(fieldExpr);
-		if (fieldName == null) {
-			haxe.macro.Context.error("Expected field access expression like _.fieldName", fieldExpr.pos, null);
-		};
-		var assignsType = phoenix.macros.AssignMacro.extractAssignsType(socketExpr);
-		phoenix.macros.AssignMacro.validateFieldExists(assignsType, fieldName, fieldExpr.pos);
-		var snakeCaseName = phoenix.macros.AssignMacro.camelToSnake(fieldName);
-		var codeStr = "Phoenix.Component.assign_new({0}, :" + snakeCaseName + ", {1})";
-		return cast {expr : haxe.macro.ExprDef.EUntyped({expr : haxe.macro.ExprDef.ECall({expr : haxe.macro.ExprDef.EConst(haxe.macro.Constant.CIdent("__elixir__")), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 4730, 4740)}, [haxe.macro.Context.makeExpr(codeStr, $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 4744, 4751)), socketExpr, defaultFn]), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 4730, 4778)}), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 4722, 4778)};
-	}
+	public static function processAssignNew[Function:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, defaultFn : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local socketExpr(15315):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local fieldExpr(15316):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local defaultFn(15317):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Var fieldName(15318):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.Expr) -> Null<String>]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(expr : haxe.macro.Expr) -> Null<String>]
+							phoenix.macros.AssignMacro
+							extractFieldName:(expr : haxe.macro.Expr) -> Null<String>
+					[Local fieldExpr(15316):haxe.macro.Expr:haxe.macro.Expr]
+			[If:Void]
+				[Binop:Bool]
+					[Local fieldName(15318):Null<String>:Null<String>]
+					==
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Const:String] "Expected field access expression like _.fieldName"
+						[Field:haxe.macro.Position]
+							[Local fieldExpr(15316):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+						[Const:Null<Int>] null
+			[Var assignsType(15319):haxe.macro.Type]
+				[Call:haxe.macro.Type]
+					[Field:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+							phoenix.macros.AssignMacro
+							extractAssignsType:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type
+					[Local socketExpr(15315):haxe.macro.Expr:haxe.macro.Expr]
+			[Call:Void]
+				[Field:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+					[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+					[FStatic:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+						phoenix.macros.AssignMacro
+						validateFieldExists:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void
+				[Local assignsType(15319):haxe.macro.Type:haxe.macro.Type]
+				[Local fieldName(15318):Null<String>:Null<String>]
+				[Field:haxe.macro.Position]
+					[Local fieldExpr(15316):haxe.macro.Expr:haxe.macro.Expr]
+					[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+			[Var snakeCaseName(15320):String]
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(name : String) -> String]
+							phoenix.macros.AssignMacro
+							camelToSnake:(name : String) -> String
+					[Local fieldName(15318):Null<String>:Null<String>]
+			[Var codeStr(15321):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "Phoenix.Component.assign_new({0}, :"
+						+
+						[Local snakeCaseName(15320):String:String]
+					+
+					[Const:String] ", {1})"
+			[Return:Dynamic]
+				[Cast:haxe.macro.Expr]
+					[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+						expr: [Call:haxe.macro.ExprDef]
+							[Field:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+								[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+								[FEnum:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+									haxe.macro.ExprDef
+									EUntyped
+							[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+								expr: [Call:haxe.macro.ExprDef]
+									[Field:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+										[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+										[FEnum:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+											haxe.macro.ExprDef
+											ECall
+									[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+										expr: [Call:haxe.macro.ExprDef]
+											[Field:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+												[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+												[FEnum:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+													haxe.macro.ExprDef
+													EConst
+											[Call:haxe.macro.Constant]
+												[Field:(s : String) -> haxe.macro.Constant]
+													[TypeExpr haxe.macro.Constant:Enum<haxe.macro.Constant>]
+													[FEnum:(s : String) -> haxe.macro.Constant]
+														haxe.macro.Constant
+														CIdent
+												[Const:String] "__elixir__"
+										pos: [Call:haxe.macro.Position]
+											[Ident:(String, Int, Int) -> Unknown<31>] $__mk_pos__
+											[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+											[Const:Int] 4730
+											[Const:Int] 4740
+									[ArrayDecl:Array<haxe.macro.Expr>]
+										[Call:haxe.macro.Expr]
+											[Field:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+												[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+												[FStatic:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+													haxe.macro.Context
+													makeExpr:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr
+											[Local codeStr(15321):String:String]
+											[Call:haxe.macro.Position]
+												[Ident:(String, Int, Int) -> Unknown<32>] $__mk_pos__
+												[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+												[Const:Int] 4744
+												[Const:Int] 4751
+										[Local socketExpr(15315):haxe.macro.Expr:haxe.macro.Expr]
+										[Local defaultFn(15317):haxe.macro.Expr:haxe.macro.Expr]
+								pos: [Call:haxe.macro.Position]
+									[Ident:(String, Int, Int) -> Unknown<33>] $__mk_pos__
+									[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+									[Const:Int] 4730
+									[Const:Int] 4778
+						pos: [Call:haxe.macro.Position]
+							[Ident:(String, Int, Int) -> Unknown<34>] $__mk_pos__
+							[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+							[Const:Int] 4722
+							[Const:Int] 4778
 
 	@:has_untyped
-	public static function processUpdate(socketExpr:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, updater:haxe.macro.Expr) {
-		var fieldName = phoenix.macros.AssignMacro.extractFieldName(fieldExpr);
-		if (fieldName == null) {
-			haxe.macro.Context.error("Expected field access expression like _.fieldName", fieldExpr.pos, null);
-		};
-		var assignsType = phoenix.macros.AssignMacro.extractAssignsType(socketExpr);
-		phoenix.macros.AssignMacro.validateFieldExists(assignsType, fieldName, fieldExpr.pos);
-		var snakeCaseName = phoenix.macros.AssignMacro.camelToSnake(fieldName);
-		var codeStr = "Phoenix.Component.update({0}, :" + snakeCaseName + ", {1})";
-		return cast {expr : haxe.macro.ExprDef.EUntyped({expr : haxe.macro.ExprDef.ECall({expr : haxe.macro.ExprDef.EConst(haxe.macro.Constant.CIdent("__elixir__")), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 5925, 5935)}, [haxe.macro.Context.makeExpr(codeStr, $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 5939, 5946)), socketExpr, updater]), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 5925, 5971)}), pos : $__mk_pos__("../../std/phoenix/macros/AssignMacro.hx", 5917, 5971)};
-	}
+	public static function processUpdate[Function:(socketExpr : haxe.macro.Expr, fieldExpr : haxe.macro.Expr, updater : haxe.macro.Expr) -> haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local socketExpr(15322):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local fieldExpr(15323):haxe.macro.Expr]
+		[Arg:haxe.macro.Expr] [Local updater(15324):haxe.macro.Expr]
+		[Block:Dynamic]
+			[Var fieldName(15325):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.Expr) -> Null<String>]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(expr : haxe.macro.Expr) -> Null<String>]
+							phoenix.macros.AssignMacro
+							extractFieldName:(expr : haxe.macro.Expr) -> Null<String>
+					[Local fieldExpr(15323):haxe.macro.Expr:haxe.macro.Expr]
+			[If:Void]
+				[Binop:Bool]
+					[Local fieldName(15325):Null<String>:Null<String>]
+					==
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Const:String] "Expected field access expression like _.fieldName"
+						[Field:haxe.macro.Position]
+							[Local fieldExpr(15323):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+						[Const:Null<Int>] null
+			[Var assignsType(15326):haxe.macro.Type]
+				[Call:haxe.macro.Type]
+					[Field:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+							phoenix.macros.AssignMacro
+							extractAssignsType:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type
+					[Local socketExpr(15322):haxe.macro.Expr:haxe.macro.Expr]
+			[Call:Void]
+				[Field:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+					[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+					[FStatic:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+						phoenix.macros.AssignMacro
+						validateFieldExists:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void
+				[Local assignsType(15326):haxe.macro.Type:haxe.macro.Type]
+				[Local fieldName(15325):Null<String>:Null<String>]
+				[Field:haxe.macro.Position]
+					[Local fieldExpr(15323):haxe.macro.Expr:haxe.macro.Expr]
+					[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+			[Var snakeCaseName(15327):String]
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(name : String) -> String]
+							phoenix.macros.AssignMacro
+							camelToSnake:(name : String) -> String
+					[Local fieldName(15325):Null<String>:Null<String>]
+			[Var codeStr(15328):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "Phoenix.Component.update({0}, :"
+						+
+						[Local snakeCaseName(15327):String:String]
+					+
+					[Const:String] ", {1})"
+			[Return:Dynamic]
+				[Cast:haxe.macro.Expr]
+					[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+						expr: [Call:haxe.macro.ExprDef]
+							[Field:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+								[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+								[FEnum:(e : haxe.macro.Expr) -> haxe.macro.ExprDef]
+									haxe.macro.ExprDef
+									EUntyped
+							[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+								expr: [Call:haxe.macro.ExprDef]
+									[Field:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+										[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+										[FEnum:(e : haxe.macro.Expr, params : Array<haxe.macro.Expr>) -> haxe.macro.ExprDef]
+											haxe.macro.ExprDef
+											ECall
+									[ObjectDecl:{ pos : haxe.macro.Position, expr : haxe.macro.ExprDef }]
+										expr: [Call:haxe.macro.ExprDef]
+											[Field:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+												[TypeExpr haxe.macro.ExprDef:Enum<haxe.macro.ExprDef>]
+												[FEnum:(c : haxe.macro.Constant) -> haxe.macro.ExprDef]
+													haxe.macro.ExprDef
+													EConst
+											[Call:haxe.macro.Constant]
+												[Field:(s : String) -> haxe.macro.Constant]
+													[TypeExpr haxe.macro.Constant:Enum<haxe.macro.Constant>]
+													[FEnum:(s : String) -> haxe.macro.Constant]
+														haxe.macro.Constant
+														CIdent
+												[Const:String] "__elixir__"
+										pos: [Call:haxe.macro.Position]
+											[Ident:(String, Int, Int) -> Unknown<35>] $__mk_pos__
+											[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+											[Const:Int] 5925
+											[Const:Int] 5935
+									[ArrayDecl:Array<haxe.macro.Expr>]
+										[Call:haxe.macro.Expr]
+											[Field:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+												[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+												[FStatic:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+													haxe.macro.Context
+													makeExpr:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr
+											[Local codeStr(15328):String:String]
+											[Call:haxe.macro.Position]
+												[Ident:(String, Int, Int) -> Unknown<36>] $__mk_pos__
+												[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+												[Const:Int] 5939
+												[Const:Int] 5946
+										[Local socketExpr(15322):haxe.macro.Expr:haxe.macro.Expr]
+										[Local updater(15324):haxe.macro.Expr:haxe.macro.Expr]
+								pos: [Call:haxe.macro.Position]
+									[Ident:(String, Int, Int) -> Unknown<37>] $__mk_pos__
+									[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+									[Const:Int] 5925
+									[Const:Int] 5971
+						pos: [Call:haxe.macro.Position]
+							[Ident:(String, Int, Int) -> Unknown<38>] $__mk_pos__
+							[Const:String] "../../std/phoenix/macros/AssignMacro.hx"
+							[Const:Int] 5917
+							[Const:Int] 5971
 
-	static function extractFieldName(expr:haxe.macro.Expr) {
-		@:ast(switch (expr.expr) {
+	static function extractFieldName[Function:(expr : haxe.macro.Expr) -> Null<String>]
+		[Arg:haxe.macro.Expr] [Local expr(15149):haxe.macro.Expr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
 	case EField({ expr : EConst(CIdent("_")) }, field):
 		return field;	
 	case EArray({ expr : EConst(CIdent("_")) }, { expr : EConst(CString(field, _)) }):
 		return field;	
 	case _:
 		return null;	
-}) {
-			var ` = expr.expr;
-			switch (enumIndex `) {
-				case 1: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var ` = `.expr;
-						var ` = `.pos;
-						if (enumIndex ` == 0) {
-							var ` = `[0];
-							if (enumIndex ` == 3) {
-								var ` = `[0];
-								if (` == "_") {
-									{
-										var ` = `.expr;
-										var ` = `.pos;
-										if (enumIndex ` == 0) {
-											var ` = `[0];
-											if (enumIndex ` == 2) {
-												var ` = `[0];
-												var ` = `[1];
-												{
-													var field = `;
-													{
-														return field;
-													};
-												};
-											} else {
-												return null;
-											};
-										} else {
-											return null;
-										};
-									};
-								} else {
-									return null;
-								};
-							} else {
-								return null;
-							};
-						} else {
-							return null;
-						};
-					};
-				};
-				case 3: {
-					var ` = `[0];
-					var ` = `[1];
-					var ` = `[2];
-					{
-						var ` = `.expr;
-						var ` = `.pos;
-						if (enumIndex ` == 0) {
-							var ` = `[0];
-							if (enumIndex ` == 3) {
-								var ` = `[0];
-								if (` == "_") {
-									{
-										var field = `;
-										{
-											return field;
-										};
-									};
-								} else {
-									return null;
-								};
-							} else {
-								return null;
-							};
-						} else {
-							return null;
-						};
-					};
-				};
-				default: {
-					return null;
-				}
-			};
-		};
-	}
+})
+				[Block:Void]
+					[Var `(15171):haxe.macro.ExprDef]
+						[Field:haxe.macro.ExprDef]
+							[Local expr(15149):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(15171):haxe.macro.ExprDef:haxe.macro.ExprDef]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(15172):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(15171):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EArray
+										0
+								[Var `(15173):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(15171):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EArray
+										1
+								[Block:Void]
+									[Var `(15174):haxe.macro.ExprDef]
+										[Field:haxe.macro.ExprDef]
+											[Local `(15172):haxe.macro.Expr:haxe.macro.Expr]
+											[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+									[Var `(15175):haxe.macro.Position]
+										[Field:haxe.macro.Position]
+											[Local `(15172):haxe.macro.Expr:haxe.macro.Expr]
+											[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(15174):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											==
+											[Const:Int] 0
+										[Then:Void] [Block:Void]
+											[Var `(15176):haxe.macro.Constant]
+												[EnumParameter:haxe.macro.Constant]
+													[Local `(15174):haxe.macro.ExprDef:haxe.macro.ExprDef]
+													EConst
+													0
+											[If:Void]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(15176):haxe.macro.Constant:haxe.macro.Constant]
+													==
+													[Const:Int] 3
+												[Then:Void] [Block:Void]
+													[Var `(15177):String]
+														[EnumParameter:String]
+															[Local `(15176):haxe.macro.Constant:haxe.macro.Constant]
+															CIdent
+															0
+													[If:Void]
+														[Binop:Bool]
+															[Local `(15177):String:String]
+															==
+															[Const:String] "_"
+														[Then:Void] [Block:Void]
+															[Block:Void]
+																[Var `(15178):haxe.macro.ExprDef]
+																	[Field:haxe.macro.ExprDef]
+																		[Local `(15173):haxe.macro.Expr:haxe.macro.Expr]
+																		[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																[Var `(15179):haxe.macro.Position]
+																	[Field:haxe.macro.Position]
+																		[Local `(15173):haxe.macro.Expr:haxe.macro.Expr]
+																		[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																[If:Void]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(15178):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																		==
+																		[Const:Int] 0
+																	[Then:Void] [Block:Void]
+																		[Var `(15180):haxe.macro.Constant]
+																			[EnumParameter:haxe.macro.Constant]
+																				[Local `(15178):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																				EConst
+																				0
+																		[If:Void]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(15180):haxe.macro.Constant:haxe.macro.Constant]
+																				==
+																				[Const:Int] 2
+																			[Then:Dynamic] [Block:Dynamic]
+																				[Var `(15181):String]
+																					[EnumParameter:String]
+																						[Local `(15180):haxe.macro.Constant:haxe.macro.Constant]
+																						CString
+																						0
+																				[Var `(15182):Null<haxe.macro.StringLiteralKind>]
+																					[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																						[Local `(15180):haxe.macro.Constant:haxe.macro.Constant]
+																						CString
+																						1
+																				[Block:Dynamic]
+																					[Var field(15183):String] [Local `(15181):String:String]
+																					[Block:Dynamic] [Return:Dynamic] [Local field(15183):String:String]
+																			[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+																	[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+														[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+												[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+										[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+						[Case:Void]
+							[Const:Int] 3
+							[Block:Void]
+								[Var `(15184):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(15171):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EField
+										0
+								[Var `(15185):String]
+									[EnumParameter:String]
+										[Local `(15171):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EField
+										1
+								[Var `(15186):Null<haxe.macro.EFieldKind>]
+									[EnumParameter:Null<haxe.macro.EFieldKind>]
+										[Local `(15171):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EField
+										2
+								[Block:Void]
+									[Var `(15187):haxe.macro.ExprDef]
+										[Field:haxe.macro.ExprDef]
+											[Local `(15184):haxe.macro.Expr:haxe.macro.Expr]
+											[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+									[Var `(15188):haxe.macro.Position]
+										[Field:haxe.macro.Position]
+											[Local `(15184):haxe.macro.Expr:haxe.macro.Expr]
+											[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(15187):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											==
+											[Const:Int] 0
+										[Then:Void] [Block:Void]
+											[Var `(15189):haxe.macro.Constant]
+												[EnumParameter:haxe.macro.Constant]
+													[Local `(15187):haxe.macro.ExprDef:haxe.macro.ExprDef]
+													EConst
+													0
+											[If:Void]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(15189):haxe.macro.Constant:haxe.macro.Constant]
+													==
+													[Const:Int] 3
+												[Then:Void] [Block:Void]
+													[Var `(15190):String]
+														[EnumParameter:String]
+															[Local `(15189):haxe.macro.Constant:haxe.macro.Constant]
+															CIdent
+															0
+													[If:Void]
+														[Binop:Bool]
+															[Local `(15190):String:String]
+															==
+															[Const:String] "_"
+														[Then:Dynamic] [Block:Dynamic]
+															[Block:Dynamic]
+																[Var field(15191):String] [Local `(15185):String:String]
+																[Block:Dynamic] [Return:Dynamic] [Local field(15191):String:String]
+														[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+												[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+										[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+						[Default:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
 
-	static function extractAssignsType(socketExpr:haxe.macro.Expr) {
-		var socketType = haxe.macro.Context.typeof(socketExpr);
-		@:ast(switch (socketType) {
+	static function extractAssignsType[Function:(socketExpr : haxe.macro.Expr) -> haxe.macro.Type]
+		[Arg:haxe.macro.Expr] [Local socketExpr(15193):haxe.macro.Expr]
+		[Block:Void]
+			[Var socketType(15194):haxe.macro.Type]
+				[Call:haxe.macro.Type]
+					[Field:(e : haxe.macro.Expr) -> haxe.macro.Type]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(e : haxe.macro.Expr) -> haxe.macro.Type]
+							haxe.macro.Context
+							typeof:(e : haxe.macro.Expr) -> haxe.macro.Type
+					[Local socketExpr(15193):haxe.macro.Expr:haxe.macro.Expr]
+			[Meta:Void]
+				:ast(switch (socketType) {
 	case TAbstract(ref, params) if (ref.get().name == "LiveSocket" && params.length > 0):
 		return params[0];	
 	case TInst(ref, params) if (ref.get().name == "Socket" && params.length > 0):
@@ -198,69 +835,250 @@ class phoenix.macros.AssignMacro {
 	case _:
 		Context.error("Unable to extract assigns type from socket", socketExpr.pos);
 		return null;	
-}) switch (enumIndex socketType) {
-			case 2: {
-				var ` = socketType[0];
-				var ` = socketType[1];
-				{
-					var ref = `;
-					var params = `;
-					if (ref.get().name == "Socket" && params.length > 0) {
-						return params[0];
-					} else {
-						haxe.macro.Context.error("Unable to extract assigns type from socket", socketExpr.pos, null);
-						return null;
-					};
-				};
-			};
-			case 8: {
-				var ` = socketType[0];
-				var ` = socketType[1];
-				{
-					var ref = `;
-					var params = `;
-					if (ref.get().name == "LiveSocket" && params.length > 0) {
-						return params[0];
-					} else {
-						haxe.macro.Context.error("Unable to extract assigns type from socket", socketExpr.pos, null);
-						return null;
-					};
-				};
-			};
-			default: {
-				haxe.macro.Context.error("Unable to extract assigns type from socket", socketExpr.pos, null);
-				return null;
-			}
-		};
-	}
+})
+				[Switch:Void]
+					[EnumIndex:Int] [Local socketType(15194):haxe.macro.Type:haxe.macro.Type]
+					[Case:Void]
+						[Const:Int] 2
+						[Block:Void]
+							[Var `(15203):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local socketType(15194):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(15204):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local socketType(15194):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Void]
+								[Var ref(15205):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(15203):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Var params(15206):Array<haxe.macro.Type>] [Local `(15204):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[If:Void]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Field:String]
+												[Call:haxe.macro.ClassType]
+													[Field:() -> haxe.macro.ClassType]
+														[Local ref(15205):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+														[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+												[FAnon:String] name:String
+											==
+											[Const:String] "Socket"
+										&&
+										[Binop:Bool]
+											[Field:Int]
+												[Local params(15206):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+												[FInstance:Int]
+													Array<haxe.macro.Type>
+													length:Int
+											>
+											[Const:Int] 0
+									[Then:Dynamic] [Block:Dynamic]
+										[Return:Dynamic]
+											[Array:haxe.macro.Type]
+												[Local params(15206):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+												[Const:Int] 0
+									[Else:Dynamic] [Block:Dynamic]
+										[Call:Dynamic]
+											[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+												[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+												[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+													haxe.macro.Context
+													error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+											[Const:String] "Unable to extract assigns type from socket"
+											[Field:haxe.macro.Position]
+												[Local socketExpr(15193):haxe.macro.Expr:haxe.macro.Expr]
+												[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+											[Const:Null<Int>] null
+										[Return:Dynamic] [Const:haxe.macro.Type] null
+					[Case:Void]
+						[Const:Int] 8
+						[Block:Void]
+							[Var `(15207):haxe.macro.Ref<haxe.macro.AbstractType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+									[Local socketType(15194):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									0
+							[Var `(15208):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local socketType(15194):haxe.macro.Type:haxe.macro.Type]
+									TAbstract
+									1
+							[Block:Void]
+								[Var ref(15209):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(15207):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+								[Var params(15210):Array<haxe.macro.Type>] [Local `(15208):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[If:Void]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Field:String]
+												[Call:haxe.macro.AbstractType]
+													[Field:() -> haxe.macro.AbstractType]
+														[Local ref(15209):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+														[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+												[FAnon:String] name:String
+											==
+											[Const:String] "LiveSocket"
+										&&
+										[Binop:Bool]
+											[Field:Int]
+												[Local params(15210):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+												[FInstance:Int]
+													Array<haxe.macro.Type>
+													length:Int
+											>
+											[Const:Int] 0
+									[Then:Dynamic] [Block:Dynamic]
+										[Return:Dynamic]
+											[Array:haxe.macro.Type]
+												[Local params(15210):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+												[Const:Int] 0
+									[Else:Dynamic] [Block:Dynamic]
+										[Call:Dynamic]
+											[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+												[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+												[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+													haxe.macro.Context
+													error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+											[Const:String] "Unable to extract assigns type from socket"
+											[Field:haxe.macro.Position]
+												[Local socketExpr(15193):haxe.macro.Expr:haxe.macro.Expr]
+												[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+											[Const:Null<Int>] null
+										[Return:Dynamic] [Const:haxe.macro.Type] null
+					[Default:Dynamic]
+						[Block:Dynamic]
+							[Call:Dynamic]
+								[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+									[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+									[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+										haxe.macro.Context
+										error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+								[Const:String] "Unable to extract assigns type from socket"
+								[Field:haxe.macro.Position]
+									[Local socketExpr(15193):haxe.macro.Expr:haxe.macro.Expr]
+									[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+								[Const:Null<Int>] null
+							[Return:Dynamic] [Const:haxe.macro.Type] null
 
-	static function validateFieldExists(assignsType:haxe.macro.Type, fieldName:String, pos:haxe.macro.Position) {
-		var fields = phoenix.macros.AssignMacro.getTypeFields(assignsType);
-		if (! fields.exists(fieldName)) {
-			var availableFields = {
-				var ` = [];
-				for (name in fields.keys()) {
-					`.push(name);
-				};
-				`;
-			};
-			availableFields.sort(function(a:String, b:String) return Reflect.compare(a, b));
-			var message = "Field \"" + fieldName + "\" does not exist in assigns type.\n";
-			if (availableFields.length > 0) {
-				message += "Available fields: " + availableFields.join(", ");
-			} else {
-				message += "The assigns type has no fields.";
-			};
-			haxe.macro.Context.error(message, pos, null);
-		};
-	}
+	static function validateFieldExists[Function:(assignsType : haxe.macro.Type, fieldName : String, pos : haxe.macro.Position) -> Void]
+		[Arg:haxe.macro.Type] [Local assignsType(15212):haxe.macro.Type]
+		[Arg:String] [Local fieldName(15213):String]
+		[Arg:haxe.macro.Position] [Local pos(15214):haxe.macro.Position]
+		[Block:Void]
+			[Var fields(15266):Map<String, Bool>]
+				[Call:Map<String, Bool>]
+					[Field:(type : haxe.macro.Type) -> Map<String, Bool>]
+						[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+						[FStatic:(type : haxe.macro.Type) -> Map<String, Bool>]
+							phoenix.macros.AssignMacro
+							getTypeFields:(type : haxe.macro.Type) -> Map<String, Bool>
+					[Local assignsType(15212):haxe.macro.Type:haxe.macro.Type]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Local fields(15266):Map<String, Bool>:haxe.ds.StringMap<Bool>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<Bool>
+								exists:(key : String) -> Bool
+						[Local fieldName(15213):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Var availableFields(15276):Array<String>]
+						[Block:Array<String>]
+							[Var `(15271):Array<String>] [ArrayDecl:Array<String>]
+							[For:Void]
+								[Local name(15275):String]
+								[Call:Iterator<String>]
+									[Field:() -> Iterator<String>]
+										[Local fields(15266):Map<String, Bool>:haxe.ds.StringMap<Bool>]
+										[FInstance:() -> Iterator<String>]
+											haxe.ds.StringMap<Bool>
+											keys:() -> Iterator<String>
+								[Block:Int]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local `(15271):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Local name(15275):String:String]
+							[Local `(15271):Array<String>:Array<String>]
+					[Call:Void]
+						[Field:(f : ((String, String) -> Int)) -> Void]
+							[Local availableFields(15276):Array<String>:Array<String>]
+							[FInstance:(f : ((String, String) -> Int)) -> Void]
+								Array<String>
+								sort:(f : ((Array.T, Array.T) -> Int)) -> Void
+						[Function:(a : String, b : String) -> Int]
+							[Arg:String] [Local a(15277):String]
+							[Arg:String] [Local b(15278):String]
+							[Return:Dynamic]
+								[Call:Int]
+									[Field:(a : String, b : String) -> Int]
+										[TypeExpr Reflect:Class<Reflect>]
+										[FStatic:(a : String, b : String) -> Int]
+											Reflect
+											compare:(a : compare.T, b : compare.T) -> Int
+									[Local a(15277):String:String]
+									[Local b(15278):String:String]
+					[Var message(15279):String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Field \""
+								+
+								[Local fieldName(15213):String:String]
+							+
+							[Const:String] "\" does not exist in assigns type.\n"
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local availableFields(15276):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							>
+							[Const:Int] 0
+						[Then:String] [Block:String]
+							[Binop:String]
+								[Local message(15279):String:String]
+								+=
+								[Binop:String]
+									[Const:String] "Available fields: "
+									+
+									[Call:String]
+										[Field:(sep : String) -> String]
+											[Local availableFields(15276):Array<String>:Array<String>]
+											[FInstance:(sep : String) -> String]
+												Array<String>
+												join:(sep : String) -> String
+										[Const:String] ", "
+						[Else:String] [Block:String]
+							[Binop:String]
+								[Local message(15279):String:String]
+								+=
+								[Const:String] "The assigns type has no fields."
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Local message(15279):String:String]
+						[Local pos(15214):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
 
-	static function getTypeFields(type:haxe.macro.Type) {
-		var fields = {
-			{};
-			new haxe.ds.StringMap();
-		};
-		@:ast(switch (type.follow()) {
+	static function getTypeFields[Function:(type : haxe.macro.Type) -> Map<String, Bool>]
+		[Arg:haxe.macro.Type] [Local type(15215):haxe.macro.Type]
+		[Block:Dynamic]
+			[Var fields(15216):haxe.ds.Map<String, Bool>]
+				[Block:haxe.ds.StringMap<Bool>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<Bool>] haxe.ds.StringMap<Bool>
+			[Meta:Void]
+				:ast(switch (type.follow()) {
 	case TAnonymous(ref):
 		for (field  in  ref.get().fields) {
 			fields.set(field.name, true);
@@ -273,90 +1091,271 @@ class phoenix.macros.AssignMacro {
 	case TType(ref, _):
 		return getTypeFields(ref.get().type);	
 	case _:
-}) {
-			var ` = {
-				var once = null;
-				haxe.macro.Context.follow(type, once);
-			};
-			switch (enumIndex `) {
-				case 2: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var ref = `;
-						{
-							var classType = ref.get();
-							{
-								var ` = 0;
-								var ` = classType.fields.get();
-								while (` < `.length) {
-									var field = `[`];
-									++ `;
-									{
-										var key = field.name;
-										fields.set(key, true);
-									};
-								};
-							};
-						};
-					};
-				};
-				case 3: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var ref = `;
-						{
-							return phoenix.macros.AssignMacro.getTypeFields(ref.get().type);
-						};
-					};
-				};
-				case 5: {
-					var ` = `[0];
-					{
-						var ref = `;
-						{
-							{
-								var ` = 0;
-								var ` = ref.get().fields;
-								while (` < `.length) {
-									var field = `[`];
-									++ `;
-									{
-										var key = field.name;
-										fields.set(key, true);
-									};
-								};
-							};
-						};
-					};
-				};
-				default: {}
-			};
-		};
-		return fields;
-	}
+})
+				[Block:Void]
+					[Var `(15247):haxe.macro.Type]
+						[Block:haxe.macro.Type]
+							[Var once(15248):Null<Bool>] [Const:Null<Bool>] null
+							[Call:haxe.macro.Type]
+								[Field:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+									[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+									[FStatic:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+										haxe.macro.Context
+										follow:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type
+								[Local type(15215):haxe.macro.Type:haxe.macro.Type]
+								[Local once(15248):Null<Bool>:Null<Bool>]
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(15247):haxe.macro.Type:haxe.macro.Type]
+						[Case:Void]
+							[Const:Int] 2
+							[Block:Void]
+								[Var `(15249):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local `(15247):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(15250):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(15247):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:Void]
+									[Var ref(15251):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(15249):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:Void]
+										[Var classType(15252):haxe.macro.ClassType]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local ref(15251):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[Block:Void]
+											[Var `(15253):Int] [Const:Int] 0
+											[Var `(15254):Array<haxe.macro.ClassField>]
+												[Call:Array<haxe.macro.ClassField>]
+													[Field:() -> Array<haxe.macro.ClassField>]
+														[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+															[Local classType(15252):haxe.macro.ClassType:haxe.macro.ClassType]
+															[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+														[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+											[While:Void]
+												[Binop:Bool]
+													[Local `(15253):Int:Int]
+													<
+													[Field:Int]
+														[Local `(15254):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+														[FInstance:Int]
+															Array<haxe.macro.ClassField>
+															length:Int
+												[Block:Void]
+													[Var field(15255):haxe.macro.ClassField]
+														[Array:haxe.macro.ClassField]
+															[Local `(15254):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+															[Local `(15253):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(15253):Int:Int]
+													[Block:Void]
+														[Var key(15256):String]
+															[Field:String]
+																[Local field(15255):haxe.macro.ClassField:haxe.macro.ClassField]
+																[FAnon:String] name:String
+														[Call:Void]
+															[Field:(key : String, value : Bool) -> Void]
+																[Local fields(15216):haxe.ds.Map<String, Bool>:haxe.ds.StringMap<Bool>]
+																[FInstance:(key : String, value : Bool) -> Void]
+																	haxe.ds.StringMap<Bool>
+																	set:(key : String, value : haxe.ds.StringMap.T) -> Void
+															[Local key(15256):String:String]
+															[Const:Bool] true
+						[Case:Dynamic]
+							[Const:Int] 3
+							[Block:Dynamic]
+								[Var `(15257):haxe.macro.Ref<haxe.macro.DefType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+										[Local `(15247):haxe.macro.Type:haxe.macro.Type]
+										TType
+										0
+								[Var `(15258):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(15247):haxe.macro.Type:haxe.macro.Type]
+										TType
+										1
+								[Block:Dynamic]
+									[Var ref(15259):haxe.macro.Ref<haxe.macro.DefType>] [Local `(15257):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+									[Block:Dynamic]
+										[Return:Dynamic]
+											[Call:Map<String, Bool>]
+												[Field:(type : haxe.macro.Type) -> Map<String, Bool>]
+													[TypeExpr phoenix.macros.AssignMacro:Class<phoenix.macros.AssignMacro>]
+													[FStatic:(type : haxe.macro.Type) -> Map<String, Bool>]
+														phoenix.macros.AssignMacro
+														getTypeFields:(type : haxe.macro.Type) -> Map<String, Bool>
+												[Field:haxe.macro.Type]
+													[Call:haxe.macro.DefType]
+														[Field:() -> haxe.macro.DefType]
+															[Local ref(15259):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+															[FAnon:() -> haxe.macro.DefType] get:() -> haxe.macro.DefType
+													[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[Case:Void]
+							[Const:Int] 5
+							[Block:Void]
+								[Var `(15260):haxe.macro.Ref<haxe.macro.AnonType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.AnonType>]
+										[Local `(15247):haxe.macro.Type:haxe.macro.Type]
+										TAnonymous
+										0
+								[Block:Void]
+									[Var ref(15261):haxe.macro.Ref<haxe.macro.AnonType>] [Local `(15260):haxe.macro.Ref<haxe.macro.AnonType>:haxe.macro.Ref<haxe.macro.AnonType>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(15262):Int] [Const:Int] 0
+											[Var `(15263):Array<haxe.macro.ClassField>]
+												[Field:Array<haxe.macro.ClassField>]
+													[Call:haxe.macro.AnonType]
+														[Field:() -> haxe.macro.AnonType]
+															[Local ref(15261):haxe.macro.Ref<haxe.macro.AnonType>:haxe.macro.Ref<haxe.macro.AnonType>]
+															[FAnon:() -> haxe.macro.AnonType] get:() -> haxe.macro.AnonType
+													[FAnon:Array<haxe.macro.ClassField>] fields:Array<haxe.macro.ClassField>
+											[While:Void]
+												[Binop:Bool]
+													[Local `(15262):Int:Int]
+													<
+													[Field:Int]
+														[Local `(15263):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+														[FInstance:Int]
+															Array<haxe.macro.ClassField>
+															length:Int
+												[Block:Void]
+													[Var field(15264):haxe.macro.ClassField]
+														[Array:haxe.macro.ClassField]
+															[Local `(15263):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+															[Local `(15262):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(15262):Int:Int]
+													[Block:Void]
+														[Var key(15265):String]
+															[Field:String]
+																[Local field(15264):haxe.macro.ClassField:haxe.macro.ClassField]
+																[FAnon:String] name:String
+														[Call:Void]
+															[Field:(key : String, value : Bool) -> Void]
+																[Local fields(15216):haxe.ds.Map<String, Bool>:haxe.ds.StringMap<Bool>]
+																[FInstance:(key : String, value : Bool) -> Void]
+																	haxe.ds.StringMap<Bool>
+																	set:(key : String, value : haxe.ds.StringMap.T) -> Void
+															[Local key(15265):String:String]
+															[Const:Bool] true
+						[Default:Void] [Block:Void]
+			[Return:Dynamic] [Local fields(15216):haxe.ds.Map<String, Bool>:haxe.ds.Map<String, Bool>]
 
-	static function camelToSnake(name:String) {
-		if (name.length == 0) {
-			return name;
-		};
-		var result = new StringBuf();
-		var prevWasUpper = false;
-		{
-			var ` = 0;
-			var ` = name.length;
-			while (` < `) {
-				var i = ` ++;
-				var char = name.charAt(i);
-				var isUpper = char == char.toUpperCase() && char != char.toLowerCase();
-				if (i > 0 && isUpper && ! prevWasUpper) {
-					result.add("_");
-				};
-				result.add(char.toLowerCase());
-				prevWasUpper = isUpper;
-			};
-		};
-		return result.toString();
-	}
+	static function camelToSnake[Function:(name : String) -> String]
+		[Arg:String] [Local name(15280):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local name(15280):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local name(15280):String:String]
+			[Var result(15281):StringBuf] [New:StringBuf] StringBuf
+			[Var prevWasUpper(15282):Bool] [Const:Bool] false
+			[Block:Void]
+				[Var `(15286):Int] [Const:Int] 0
+				[Var `(15287):Int]
+					[Field:Int]
+						[Local name(15280):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(15286):Int:Int]
+						<
+						[Local `(15287):Int:Int]
+					[Block:Bool]
+						[Var i(15283):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(15286):Int:Int]
+						[Var char(15284):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local name(15280):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(15283):Int:Int]
+						[Var isUpper(15285):Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local char(15284):String:String]
+									==
+									[Call:String]
+										[Field:() -> String]
+											[Local char(15284):String:String]
+											[FInstance:() -> String]
+												String
+												toUpperCase:() -> String
+								&&
+								[Binop:Bool]
+									[Local char(15284):String:String]
+									!=
+									[Call:String]
+										[Field:() -> String]
+											[Local char(15284):String:String]
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local i(15283):Int:Int]
+										>
+										[Const:Int] 0
+									&&
+									[Local isUpper(15285):Bool:Bool]
+								&&
+								[Unop:Bool]
+									!
+									Prefix
+									[Local prevWasUpper(15282):Bool:Bool]
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(15281):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "_"
+						[Call:Void]
+							[Field:(x : String) -> Void]
+								[Local result(15281):StringBuf:StringBuf]
+								[FInstance:(x : String) -> Void]
+									StringBuf
+									add:(x : add.T) -> Void
+							[Call:String]
+								[Field:() -> String]
+									[Local char(15284):String:String]
+									[FInstance:() -> String]
+										String
+										toLowerCase:() -> String
+						[Binop:Bool]
+							[Local prevWasUpper(15282):Bool:Bool]
+							=
+							[Local isUpper(15285):Bool:Bool]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(15281):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
 }

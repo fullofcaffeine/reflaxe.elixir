@@ -2,13 +2,28 @@
 class TodoAppWeb.Telemetry {
 
 	@:keep
-	public static function child_spec(opts:server.infrastructure.TelemetryOptions) {
-		return {id : "TodoAppWeb.Telemetry", start : {module : "TodoAppWeb.Telemetry", func : "start_link", args : [opts]}, type : "supervisor", restart : "permanent", shutdown : "infinity"};
-	}
+	public static function child_spec[Function:(opts : server.infrastructure.TelemetryOptions) -> server.infrastructure.ChildSpec]
+		[Arg:server.infrastructure.TelemetryOptions] [Local opts(18670):server.infrastructure.TelemetryOptions]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ type : String, start : { module : String, func : String, args : Array<server.infrastructure.TelemetryOptions> }, shutdown : String, restart : String, id : String }]
+					id: [Const:String] "TodoAppWeb.Telemetry"
+					start: [ObjectDecl:{ module : String, func : String, args : Array<server.infrastructure.TelemetryOptions> }]
+						module: [Const:String] "TodoAppWeb.Telemetry"
+						func: [Const:String] "start_link"
+						args: [ArrayDecl:Array<server.infrastructure.TelemetryOptions>] [Local opts(18670):server.infrastructure.TelemetryOptions:server.infrastructure.TelemetryOptions]
+					type: [Const:String] "supervisor"
+					restart: [Const:String] "permanent"
+					shutdown: [Const:String] "infinity"
 
 	@:has_untyped @:keep
-	public static function start_link(args:server.infrastructure.TelemetryOptions) {
-		var children = [];
-		return __elixir__("Supervisor.start_link({0}, [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])", children);
-	}
+	public static function start_link[Function:(args : server.infrastructure.TelemetryOptions) -> elixir.otp.ApplicationResult]
+		[Arg:server.infrastructure.TelemetryOptions] [Local args(18671):server.infrastructure.TelemetryOptions]
+		[Block:Dynamic]
+			[Var children(18672):Array<elixir.otp.ChildSpecFormat>] [ArrayDecl:Array<elixir.otp.ChildSpecFormat>]
+			[Return:Dynamic]
+				[Call:elixir.otp.ApplicationResult]
+					[Ident:(String, Array<elixir.otp.ChildSpecFormat>) -> Unknown<31>] __elixir__
+					[Const:String] "Supervisor.start_link({0}, [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])"
+					[Local children(18672):Array<elixir.otp.ChildSpecFormat>:Array<elixir.otp.ChildSpecFormat>]
 }

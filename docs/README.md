@@ -22,6 +22,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
 - [Todo App Specifics](02-user-guide/todo-app-specifics.md) - LiveView implementation patterns and project-specific guidance
 - [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
+ - [Hygiene & Validation](03-compiler-development/HYGIENE_AND_VALIDATION.md) - No-infra-vars guarantee, unused-param prefixing, context preservation
 - [Bootstrap Code Generation](02-user-guide/bootstrap-code-generation.md) - Auto-execution for scripts
 - [User Guide](02-user-guide/USER_GUIDE.md) - Comprehensive development guide
 
@@ -87,7 +88,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
 - [Code Style](10-contributing/code-style.md) - Coding standards
-- [Updating CLAUDE.md](10-contributing/updating-claude-md.md) - AI context and unified documentation strategy
+- [Updating AGENTS.md](10-contributing/updating-agents-md.md) - AI context and unified documentation strategy
 - [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation
 - [LLM Documentation Index](10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md) - Complete 232-file navigation index
 - [Commit Conventions](10-contributing/commit-conventions.md) - Git conventions
@@ -95,10 +96,10 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 
 ## 🤖 AI Assistant Integration
 
-This documentation is optimized for AI assistant development with **CLAUDE.md** files providing specialized context:
+This documentation is optimized for AI assistant development with **AGENTS.md** files providing specialized context:
 
-- **[CLAUDE.md](CLAUDE.md)** - Main AI instructions for documentation navigation
-- **[03-compiler-development/CLAUDE.md](03-compiler-development/CLAUDE.md)** - Compiler-specific AI context
+- **[AGENTS.md](AGENTS.md)** - Main AI instructions for documentation navigation
+- **[03-compiler-development/AGENTS.md](03-compiler-development/AGENTS.md)** - Compiler-specific AI context
 
 ## 🔗 Quick Links
 

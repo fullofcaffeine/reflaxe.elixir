@@ -2,10 +2,31 @@
 class reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions {
 
 	@:compilerGenerated @:inheritDoc
-	public function new(wrapMetadata:Null<Null<Array<String>>>) {
-		this.wrapMetadata = null;
-		if ((wrapMetadata != null)) this.wrapMetadata = wrapMetadata;
-	}
+	public function new[Function:(?wrapMetadata : Null<Null<Array<String>>>) -> Void]
+		[Arg:Null<Null<Array<String>>>] [Local wrapMetadata(638):Null<Null<Array<String>>>]
+		[Block:Void]
+			[Binop:Null<Array<String>>]
+				[Field:Null<Array<String>>]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions] this
+					[FInstance:Null<Array<String>>]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions
+						wrapMetadata:Null<Array<String>>
+				=
+				[Const:Null<Array<String>>] null
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local wrapMetadata(638):Null<Null<Array<String>>>:Null<Null<Array<String>>>]
+						!=
+						[Const:Null<Null<Array<String>>>] null
+				[Then:Null<Array<String>>] [Binop:Null<Array<String>>]
+					[Field:Null<Array<String>>]
+						[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions] this
+						[FInstance:Null<Array<String>>]
+							reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions
+							wrapMetadata:Null<Array<String>>
+					=
+					[Local wrapMetadata(638):Null<Null<Array<String>>>:Null<Null<Array<String>>>]
 
 	@:value(null)
 	public var wrapMetadata:Null<Array<String>>;

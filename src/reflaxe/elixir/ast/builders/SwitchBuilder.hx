@@ -14,6 +14,7 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.NameUtils;
+import reflaxe.elixir.preprocessor.TypedExprPreprocessor;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 
 using StringTools;
@@ -57,9 +58,24 @@ using StringTools;
  */
 @:nullSafety(Off)
 class SwitchBuilder {
+    #if debug_option_some_binder
+    #error "debug_option_some_binder define detected"
+    @:keep
+    static var __debugOptionSomeBinderActive:Bool = (function(){
+        Sys.println('[OptionSomeDiag] debug_option_some_binder flag active (SwitchBuilder)');
+        return true;
+    })();
+    #end
     // Debug logging helper: disabled unless -D debug_switch_builder
     static inline function dbg(msg:Dynamic):Void {
         #if debug_switch_builder
+        haxe.Log.trace(msg, null);
+        #end
+    }
+
+    // Focused diagnostics for Option.Some binder analysis
+    static inline function optionSomeLog(msg:Dynamic):Void {
+        #if debug_option_some_binder
         haxe.Log.trace(msg, null);
         #end
     }
@@ -85,6 +101,12 @@ class SwitchBuilder {
      * @return ElixirASTDef for the case expression
      */
     public static function build(e: TypedExpr, cases: Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+        #if debug_option_some_binder
+        var __optionSomeDiagPos = Std.string(e.pos);
+        if (__optionSomeDiagPos.indexOf("TodoPubSub") >= 0) {
+            optionSomeLog('[OptionSomeDiag] SwitchBuilder.build invoked for ' + Type.enumConstructor(e.expr) + ' at ' + __optionSomeDiagPos);
+        }
+        #end
 
         // DEBUG: Log ALL switch compilations
         dbg('[SwitchBuilder START] Compiling switch at ${e.pos}');
@@ -150,6 +172,23 @@ class SwitchBuilder {
         var targetAST = if (context.compiler != null) {
             // Apply infrastructure variable substitution before re-compilation
             var substitutedTarget = context.substituteIfNeeded(actualSwitchExpr);
+
+            // Fallback: if target is still a TLocal infra var (name-based), use name substitutions
+            switch (substitutedTarget.expr) {
+                case TLocal(tv) if (tv != null && (tv.name == "g" || StringTools.startsWith(tv.name, "g") || StringTools.startsWith(tv.name, "_g"))):
+                    var nameSubs = TypedExprPreprocessor.getLastNameSubstitutions();
+                    if (nameSubs != null) {
+                        var key = tv.name;
+                        if (!nameSubs.exists(key) && StringTools.startsWith(key, "_")) key = key.substr(1);
+                        if (nameSubs.exists(key)) {
+                            var replacement = nameSubs.get(key);
+                            if (replacement != null) {
+                                substitutedTarget = replacement;
+                            }
+                        }
+                    }
+                default:
+            }
             // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
             // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
             var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedTarget, context);
@@ -170,6 +209,37 @@ class SwitchBuilder {
                     makeAST(EVar(mapped));
                 default:
                     result;
+            };
+            // Strong inline: if target remains an infra EVar, attempt to inline its original expression
+            // using (1) AST mapping, (2) typed substitutions by sourceVarId, and (3) name-based typed substitutions.
+            fixed = switch (fixed.def) {
+                case EVar(vn) if (TypedExprPreprocessor.isInfrastructureVar(vn)):
+                    var inlined: Null<ElixirAST> = null;
+                    // 1) AST init values captured from BlockBuilder
+                    if (context.infrastructureVarInitValues != null) {
+                        var key = vn;
+                        if (!context.infrastructureVarInitValues.exists(key) && StringTools.startsWith(key, "_")) key = key.substr(1);
+                        if (context.infrastructureVarInitValues.exists(key)) inlined = context.infrastructureVarInitValues.get(key);
+                    }
+                    // 2) TypedExpr substitution by sourceVarId metadata
+                    if (inlined == null && fixed.metadata != null && Reflect.hasField(fixed.metadata, "sourceVarId")) {
+                        var sid: Dynamic = Reflect.field(fixed.metadata, "sourceVarId");
+                        if (Std.isOfType(sid, Int) && context.infraVarSubstitutions != null) {
+                            var texpr: TypedExpr = context.infraVarSubstitutions.get(cast sid);
+                            if (texpr != null) inlined = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(texpr, context);
+                        }
+                    }
+                    // 3) Name-based substitution fallback (preprocessor-provided)
+                    if (inlined == null && context.infraVarNameSubstitutions != null) {
+                        var n1 = vn; var n2 = StringTools.startsWith(vn, "_") ? vn.substr(1) : vn;
+                        var texpr2: TypedExpr = null;
+                        if (context.infraVarNameSubstitutions.exists(n1)) texpr2 = context.infraVarNameSubstitutions.get(n1);
+                        else if (context.infraVarNameSubstitutions.exists(n2)) texpr2 = context.infraVarNameSubstitutions.get(n2);
+                        if (texpr2 != null) inlined = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(texpr2, context);
+                    }
+                    (inlined != null) ? inlined : fixed;
+                default:
+                    fixed;
             };
             fixed;
         } else {
@@ -240,6 +310,9 @@ class SwitchBuilder {
             return null;
         }
         
+        // Finalize: optionally align Option.Some binders and inject safe aliasing for conventional *_level targets
+        // Generic structural rule: when switching on a *_level variable, prefer clause-local name `level`.
+        caseClauses = applyOptionLevelAlias(caseClauses, targetVarName);
         return ECase(targetAST, caseClauses);
     }
     
@@ -365,7 +438,115 @@ class SwitchBuilder {
             });
         }
 
+        clauses = ensureOptionSomeBinderAlignment(clauses, context);
+        clauses = normalizeZeroArityEnumPatterns(clauses);
         return clauses;
+    }
+
+    // Helper: when the switch target name hints a *_level value (e.g., alert_level),
+    // and a clause pattern is {:some|:ok, binder}, if the body references `level`,
+    // inject a clause-local alias `level = binder` as the first statement.
+    static function applyOptionLevelAlias(clauses:Array<ECaseClause>, targetVarName:String):Array<ECaseClause> {
+        inline function bodyUsesVar(ast:ElixirAST, v:String):Bool {
+            var found = false;
+            function walk(n:ElixirAST):Void {
+                if (n == null || found) return;
+                switch (n.def) {
+                    case EVar(name) if (name == v):
+                        found = true;
+                    case EBlock(exprs):
+                        for (e in exprs) walk(e);
+                    case EIf(c,t,e):
+                        walk(c); walk(t); if (e != null) walk(e);
+                    case ECase(e, cls):
+                        walk(e);
+                        for (c in cls) {
+                            if (c.guard != null) walk(c.guard);
+                            walk(c.body);
+                        }
+                    case ECond(conds):
+                        for (c in conds) { walk(c.condition); walk(c.body); }
+                    case ECall(t,_,args):
+                        if (t != null) walk(t);
+                        for (a in args) walk(a);
+                    case ERemoteCall(m,_,args):
+                        walk(m);
+                        for (a in args) walk(a);
+                    case EBinary(_,l,r):
+                        walk(l); walk(r);
+                    case EUnary(_,e):
+                        walk(e);
+                    case EMatch(_, e):
+                        walk(e);
+                    case EKeywordList(pairs):
+                        for (p in pairs) walk(p.value);
+                    case EMap(pairs):
+                        for (p in pairs) { walk(p.key); walk(p.value); }
+                    case ETuple(el):
+                        for (x in el) walk(x);
+                    case EList(el):
+                        for (x in el) walk(x);
+                    case EStruct(_, fields):
+                        for (f in fields) walk(f.value);
+                    case EStructUpdate(s, fields):
+                        walk(s); for (f in fields) walk(f.value);
+                    case EAccess(t,k):
+                        walk(t); walk(k);
+                    case ERange(s,e,_):
+                        walk(s); walk(e);
+                    case EPipe(l,r):
+                        walk(l); walk(r);
+                    case EParen(e):
+                        walk(e);
+                    case EDo(body):
+                        for (s in body) walk(s);
+                    default:
+                        // Leaf nodes
+                }
+            }
+            walk(ast);
+            return found;
+        }
+        inline function injectAlias(body:ElixirAST, binder:String):ElixirAST {
+            var aliasExpr = makeAST(EMatch(PVar("level"), makeAST(EVar(binder))));
+            return switch (body.def) {
+                case EBlock(stmts): makeAST(EBlock([aliasExpr].concat(stmts)));
+                default: makeAST(EBlock([aliasExpr, body]));
+            };
+        }
+        var res:Array<ECaseClause> = [];
+        var hintLevel = false;
+        var suffix:Null<String> = null;
+        if (targetVarName != null) {
+            var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(targetVarName);
+            if (snake != null) {
+                var re = ~/^.*_([a-z0-9]+)$/;
+                if (re.match(snake)) suffix = re.matched(1);
+                hintLevel = (suffix == "level");
+            }
+        }
+        for (cl in clauses) {
+            var out = cl;
+            if (suffix != null && bodyUsesVar(cl.body, suffix)) {
+                switch (cl.pattern) {
+                    case PTuple(elements) if (elements.length >= 2):
+                        switch (elements[0]) {
+                            case PLiteral({def: EAtom(a)}) if (a == "some" || a == "ok"):
+                                switch (elements[1]) {
+                                    case PVar(b):
+                                        // Prefer renaming binder to target suffix to avoid extra bindings
+                                        var renamedPat = replaceBinderName(cl.pattern, b, suffix);
+                                        out = { pattern: renamedPat, guard: cl.guard, body: cl.body };
+                                    default:
+                                }
+                            default:
+                        }
+                    default:
+                }
+            }
+            res.push(out);
+        }
+        return res;
     }
 
     /**
@@ -521,7 +702,7 @@ class SwitchBuilder {
                                 // When TEnumIndex optimization transforms case Ok(n) to case 0,
                                 // we recover the user's variable name from the guard condition
                                 // CRITICAL FIX: Use new version that analyzes case body for parameter usage
-                                return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
+                                return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context, targetVarName);
                             } else {
                                 trace('[SwitchBuilder]     WARNING: No constructor found for index $i');
                             }
@@ -551,7 +732,7 @@ class SwitchBuilder {
                         // Extract guard variable names (from TIf conditions) for usage awareness
                         var guardNames = extractGuardVariables(caseBody);
                         // Use usage-aware generator with guard+body analysis to avoid underscoring binders used in guards
-                        return generateIdiomaticEnumPatternWithBody(ef, guardNames, caseBody, context);
+                        return generateIdiomaticEnumPatternWithBody(ef, guardNames, caseBody, context, targetVarName);
                     } else {
                         // Fallback to legacy builder if extraction fails
                         return buildEnumPattern(e, args, guardVars, context);
@@ -582,11 +763,14 @@ class SwitchBuilder {
      *
      * CRITICAL: This solves the "empty case body" bug where unused parameters generate orphaned _g variables
      */
-    static function generateIdiomaticEnumPatternWithBody(ef: EnumField, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): EPattern {
+    static function generateIdiomaticEnumPatternWithBody(ef: EnumField, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext, targetVarName:String): EPattern {
         var atomName = NameUtils.toSnakeCase(ef.name);
 
         // Extract variable names used in the case body to align binder names with actual usage
         var bodyUsedHaxe: Array<String> = extractUsedVariablesFromCaseBody(caseBody);
+        #if debug_switch_builder
+        Sys.println('[SwitchBuilder] generateIdiomaticEnumPatternWithBody bodyUsed=' + (bodyUsedHaxe != null ? bodyUsedHaxe.join(',') : 'null'));
+        #end
         function isReserved(elixirName: String): Bool {
             return elixirName == null || elixirName.length == 0 ||
                 elixirName == "conn" || elixirName == "socket" || elixirName == "params" ||
@@ -627,6 +811,9 @@ class SwitchBuilder {
         } else {
             // Tuple pattern: {:some, value}
             var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
+            #if debug_switch_builder
+            Sys.println('[SwitchBuilder] atom=' + atomName + ' candidates=' + [for (c in bodyVarCandidates) c.haxe + '->' + c.elixir].join(','));
+            #end
 
             inline function baseName(s:String):String {
                 var re = ~/([0-9]+)$/;
@@ -641,11 +828,91 @@ class SwitchBuilder {
                 return false;
             }
 
+            // Exclude body vars that are used as field bases in the case body (e.g., payload.message)
+            // This prevents renaming {:some, binder} to an outer map variable like `msg`/`payload`.
+            function collectTypedFieldBases(te:TypedExpr):Map<String,Bool> {
+                var m = new Map<String,Bool>();
+                function walk(e:TypedExpr):Void {
+                    switch (e.expr) {
+                        case TField(obj, _):
+                            switch (obj.expr) {
+                                case TLocal(v): m.set(v.name, true);
+                                default:
+                            }
+                            walk(obj);
+                        case TCall(target, args):
+                            // Mark first arg of Map.get/Keyword.get as field base when it's a local
+                            switch (target.expr) {
+                                case TField(tobj, fa):
+                                    var isGet = false;
+                                    var isMapOrKeyword = false;
+                                    switch (fa) {
+                                        case FStatic(c1, cf1):
+                                            isGet = (cf1.get().name == "get");
+                                            var cname1 = c1.get().name;
+                                            isMapOrKeyword = (cname1 == "Map" || cname1 == "Keyword");
+                                        case FInstance(c2, _, cf2):
+                                            isGet = (cf2.get().name == "get");
+                                            var cname2 = c2.get().name;
+                                            isMapOrKeyword = (cname2 == "Map" || cname2 == "Keyword");
+                                        case FAnon(cf3):
+                                            isGet = (cf3.get().name == "get");
+                                        case FClosure(_, cf4):
+                                            isGet = (cf4.get().name == "get");
+                                        case _:
+                                    }
+                                    if (isGet && isMapOrKeyword && args.length > 0) {
+                                        switch (args[0].expr) { case TLocal(v): m.set(v.name, true); default: }
+                                    }
+                                default:
+                            }
+                            walk(target);
+                            for (a in args) walk(a);
+                        case TBinop(_, a, b):
+                            walk(a); walk(b);
+                        case TParenthesis(x) | TMeta(_, x) | TCast(x, _):
+                            walk(x);
+                        case TArray(a, b):
+                            walk(a); walk(b);
+                        case TObjectDecl(fs):
+                            for (f in fs) walk(f.expr);
+                        case TArrayDecl(el):
+                            for (x in el) walk(x);
+                        case TBlock(el):
+                            for (x in el) walk(x);
+                        case TIf(c, t, e):
+                            walk(c); walk(t); if (e != null) walk(e);
+                        case TSwitch(se, cs, de):
+                            walk(se);
+                            for (c in cs) { for (v in c.values) walk(v); walk(c.expr); }
+                            if (de != null) walk(de);
+                        case TWhile(c, b, _):
+                            walk(c); walk(b);
+                        case TFor(v, it, body):
+                            walk(it); walk(body);
+                        case TReturn(x): if (x != null) walk(x);
+                        default:
+                    }
+                }
+                walk(caseBody);
+                return m;
+            }
+            var fieldBasesHaxe = collectTypedFieldBases(caseBody);
+
             for (i in 0...parameterNames.length) {
                 // Choose source name priority: (single-arg && body candidate) > guard var > enum param
                 var chosenSource: String = null;
                 if (parameterNames.length == 1 && bodyVarCandidates.length > 0) {
-                    chosenSource = bodyVarCandidates[0].haxe;
+                    // Prefer a candidate that is NOT a field base and not obviously generic
+                    var picked:Null<String> = null;
+                    for (c in bodyVarCandidates) {
+                        if (fieldBasesHaxe.exists(c.haxe)) continue;
+                        if (c.elixir == "socket" || c.elixir == "conn") continue;
+                        if (targetVarName != null && c.elixir == targetVarName) continue;
+                        picked = c.haxe; break;
+                    }
+                    if (picked == null) picked = bodyVarCandidates[0].haxe; // fallback
+                    chosenSource = picked;
                 } else if (guardVars != null && i < guardVars.length) {
                     chosenSource = guardVars[i];
                 } else {
@@ -657,13 +924,30 @@ class SwitchBuilder {
 
                 // Convert to Elixir variable and optionally underscore if unused
                 var chosenElixir = VariableAnalyzer.toElixirVarName(chosenSource);
-                var paramName = isUsed ? chosenElixir : "_" + chosenElixir;
+                var baseName = isUsed ? chosenElixir : "_" + chosenElixir;
+                // Avoid collision with function parameters (e.g., fn arg: message) by suffixing with '2'
+                var paramName = baseName;
+                if ((targetVarName != null && chosenElixir == targetVarName)
+                    || (context != null && context.functionParameterNames != null && context.functionParameterNames.exists(chosenElixir))) {
+                    // keep underscore if present, append '2' to the core name
+                    var core = isUsed ? chosenElixir : chosenElixir;
+                    var suffixed = core + "2";
+                    paramName = isUsed ? suffixed : "_" + suffixed;
+                }
+
+                // Hard preference: if switching on *_level, force binder name 'level' ignoring candidates
+                if (parameterNames.length == 1 && targetVarName != null) {
+                    var snakeTarget = reflaxe.elixir.ast.NameUtils.toSnakeCase(targetVarName);
+                    if (snakeTarget != null && ~/.*_level$/.match(snakeTarget)) {
+                        paramName = "level";
+                    }
+                }
 
                 trace('[SwitchBuilder]     Parameter $i: Source=${chosenSource}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}');
 
                 patterns.push(PVar(paramName));
 
-                // Populate enumBindingPlan with proper usage information
+                // Populate enumBindingPlan with proper usage information (respecting collision-avoided name)
                 if (context.currentClauseContext != null) {
                     context.currentClauseContext.enumBindingPlan.set(i, {
                         finalName: paramName,
@@ -671,6 +955,8 @@ class SwitchBuilder {
                     });
                 }
             }
+
+            // No app-specific binder preferences; binder alignment remains generic downstream.
 
             var finalNames = [for (i in 0...parameterNames.length) {
                 var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
@@ -730,6 +1016,9 @@ class SwitchBuilder {
                 // Use guard variable if available, otherwise use enum parameter name
                 var sourceName = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var paramName = VariableAnalyzer.toElixirVarName(sourceName);
+                if (context != null && context.functionParameterNames != null && context.functionParameterNames.exists(paramName)) {
+                    paramName = paramName + "2";
+                }
                 trace('[SwitchBuilder]     Parameter $i: GuardVar=${guardVars != null && i < guardVars.length ? guardVars[i] : "none"}, EnumParam=${parameterNames[i]}, Using=${paramName}');
 
                 // CRITICAL FIX: Populate enumBindingPlan so TEnumParameter knows this was extracted
@@ -1326,7 +1615,12 @@ class SwitchBuilder {
             }
         }
 
-        // Build parameter patterns - first element is the atom
+        // Zero-arg enum constructors should pattern-match as bare atoms (e.g., :complete_all)
+        if (args == null || args.length == 0) {
+            return PLiteral(makeAST(EAtom(atomName)));
+        }
+
+        // Build parameter patterns - first element is the atom for tuple constructors
         var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
 
         // Use actual parameter names with priority: guardVars > TLocal > EnumField
@@ -1367,6 +1661,9 @@ class SwitchBuilder {
                     trace('[SwitchBuilder]   Using sourceName: ${sourceName}');
 
                     var varName = VariableAnalyzer.toElixirVarName(sourceName);
+                    if (context != null && context.functionParameterNames != null && context.functionParameterNames.exists(varName)) {
+                        varName = varName + "2";
+                    }
                     trace('[SwitchBuilder]   Final varName: ${varName}');
 
                     patterns.push(PVar(varName));
@@ -1555,6 +1852,381 @@ class SwitchBuilder {
 
         traverse(pattern);
         return vars;
+    }
+
+    static inline function isSimpleIdentifier(name:String):Bool {
+        return name != null && ~/^[a-z_][a-z0-9_]*$/.match(name);
+    }
+
+    static function ensureOptionSomeBinderAlignment(clauses:Array<ECaseClause>, context:CompilationContext):Array<ECaseClause> {
+        return [for (cl in clauses) alignOptionBinderInClause(cl, context)];
+    }
+
+    // Normalize patterns like {:tag} (single-element tuple) into :tag
+    static function normalizeZeroArityEnumPatterns(clauses:Array<ECaseClause>):Array<ECaseClause> {
+        function normalize(p:EPattern):EPattern {
+            return switch (p) {
+                case PTuple(elems) if (elems.length == 1):
+                    switch (elems[0]) {
+                        case PLiteral({def: EAtom(a)}): PLiteral(makeAST(EAtom(a)));
+                        default: p;
+                    }
+                default: p;
+            };
+        }
+        return [for (cl in clauses) { pattern: normalize(cl.pattern), guard: cl.guard, body: cl.body }];
+    }
+
+    static function alignOptionBinderInClause(clause:ECaseClause, context:CompilationContext):ECaseClause {
+        #if debug_option_some_binder
+        optionSomeLog('[OptionSomeDiag] alignOptionBinderInClause check → pattern=' + patternPreview(clause.pattern));
+        #end
+        switch (clause.pattern) {
+            case PTuple(elements) if (elements.length >= 2):
+                switch (elements[0]) {
+                    case PLiteral({def: EAtom(atom)}) if (atom == "some" || atom == "ok"):
+                        switch (elements[1]) {
+                            case PVar(binderName):
+                                #if debug_option_some_binder
+                                optionSomeLog('[OptionSomeDiag] Initial binder="' + binderName + '"');
+                                #end
+                                var patternBinders = collectPatternBinderNames(clause.pattern);
+                                var used = collectUsedVars(clause.body);
+                                var bound = collectBoundVars(clause.body);
+                                var fieldBases = collectFieldBaseVars(clause.body);
+
+                                // (debug removed)
+
+                                var missing:Array<String> = [];
+                                for (name in used.keys()) {
+                                    if (!patternBinders.exists(name) && !bound.exists(name) && !fieldBases.exists(name) && isSimpleIdentifier(name)) {
+                                        missing.push(name);
+                                    }
+                                }
+
+                                #if debug_option_some_binder
+                                optionSomeLog('[OptionSomeDiag] Used vars=' + mapKeys(used) + ' pattern=' + mapKeys(patternBinders) + ' bound=' + mapKeys(bound) + ' fieldBases=' + mapKeys(fieldBases) + ' missingCandidates=' + missing.join(', '));
+                                #end
+
+                                // Do not rename the Option.Some binder unless needed.
+                                // We'll start from existing pattern/body and apply strict rule before heuristics.
+                                var newPattern = clause.pattern;
+                                var newBody = clause.body;
+                                var activeBinder = binderName;
+
+                                // No app-specific binder names; rely on generic heuristics below.
+
+                                // If the current binder is not referenced in the body but there is
+                                // exactly one viable identifier referenced in the body that is not a
+                                // field base nor already bound, prefer renaming the binder to that
+                                // identifier to keep pattern/body aligned. This avoids undefined
+                                // variable references without colliding with outer variables.
+                                var binderUsed = used.exists(binderName);
+                                if (!binderUsed) {
+                                    var renameCandidates:Array<String> = [];
+                                    for (name in used.keys()) {
+                                        // Exclude module-like identifiers (start with uppercase) from candidates
+                                        var isModuleLike = (name != null && name.length > 0 && name.charAt(0) == name.charAt(0).toUpperCase() && name.charAt(0) != name.charAt(0).toLowerCase());
+                                        var isCandidate = !isModuleLike && isSimpleIdentifier(name)
+                                            && name != binderName
+                                            && !fieldBases.exists(name)
+                                            && !bound.exists(name)
+                                            && !patternBinders.exists(name);
+                                        // Avoid obvious outer/param names if we have context
+                                        if (isCandidate && context != null && context.functionParameterNames != null && context.functionParameterNames.exists(name)) {
+                                            isCandidate = false;
+                                        }
+                                        if (isCandidate) renameCandidates.push(name);
+                                    }
+                                    if (renameCandidates.length == 1) {
+                                        var chosen = renameCandidates[0];
+                                        newPattern = replaceBinderName(newPattern, binderName, chosen);
+                                        activeBinder = chosen;
+                                        #if debug_option_some_binder
+                                        optionSomeLog('[OptionSomeDiag] Binder unused in body; renaming "' + binderName + '" → "' + chosen + '" (single viable)');
+                                        #end
+                                    }
+                                }
+
+                                // If binder is used only as a field-base (e.g., msg/payload in Map.get)
+                                // and there is exactly one other viable identifier referenced in the body,
+                                // rename binder to that identifier to keep pattern/body aligned.
+                                if (binderUsed && fieldBases.exists(binderName)) {
+                                    var fbCandidates:Array<String> = [];
+                                    for (name in used.keys()) {
+                                        var isModuleLike = (name != null && name.length > 0 && name.charAt(0) == name.charAt(0).toUpperCase() && name.charAt(0) != name.charAt(0).toLowerCase());
+                                        if (name == binderName) continue;
+                                        var ok = !isModuleLike && isSimpleIdentifier(name)
+                                            && !fieldBases.exists(name)
+                                            && !bound.exists(name)
+                                            && !patternBinders.exists(name);
+                                        if (ok && context != null && context.functionParameterNames != null && context.functionParameterNames.exists(name)) ok = false;
+                                        if (ok) fbCandidates.push(name);
+                                    }
+                                    if (fbCandidates.length == 1) {
+                                        var chosen2 = fbCandidates[0];
+                                        newPattern = replaceBinderName(newPattern, binderName, chosen2);
+                                        activeBinder = chosen2;
+                                        #if debug_option_some_binder
+                                        optionSomeLog('[OptionSomeDiag] Binder used only as field-base; renaming ' + binderName + ' → ' + chosen2);
+                                        #end
+                                    }
+                                }
+
+                                // Compute remaining missing; if unresolved, inject alias
+                                var finalBinders = collectPatternBinderNames(newPattern);
+                                var aliasMissing:Array<String> = [];
+                                for (name in used.keys()) {
+                                    if (!finalBinders.exists(name) && !bound.exists(name) && !fieldBases.exists(name) && isSimpleIdentifier(name)) {
+                                        aliasMissing.push(name);
+                                    }
+                                }
+                                if (aliasMissing.length == 1) {
+                                    newBody = injectOptionBinderAlias(newBody, activeBinder, aliasMissing[0]);
+                                    #if debug_option_some_binder
+                                    optionSomeLog('[OptionSomeDiag] Injected alias: ' + aliasMissing[0] + ' = ' + activeBinder);
+                                    #end
+                                }
+
+                                #if debug_option_some_binder
+                                optionSomeLog('[OptionSomeDiag] Final binder="' + activeBinder + '" remainingMissing=' + aliasMissing.join(', '));
+                                #end
+
+                                return { pattern: newPattern, guard: clause.guard, body: newBody };
+                            default:
+                        }
+                    default:
+                }
+            default:
+        }
+        return clause;
+    }
+
+    static function patternPreview(pattern:EPattern):String {
+        return switch (pattern) {
+            case PTuple(elements):
+                var parts = [for (el in elements) patternPreview(el)];
+                '{' + parts.join(', ') + '}';
+            case PLiteral({def: EAtom(atom)}): ':' + atom;
+            case PVar(name): name;
+            case PWildcard: '_';
+            case PAlias(alias, inner): alias + ' as ' + patternPreview(inner);
+            default: Type.enumConstructor(pattern);
+        };
+    }
+
+    static function mapKeys(map:Map<String,Bool>):String {
+        var keys:Array<String> = [];
+        for (k in map.keys()) keys.push(k);
+        return '[' + keys.join(', ') + ']';
+    }
+
+    static function findViableCandidate(candidates:Array<String>, bound:Map<String,Bool>, binderName:String, context:CompilationContext):Null<String> {
+        for (name in candidates) {
+            if (name == binderName) continue;
+            if (bound.exists(name)) continue;
+            if (!isSimpleIdentifier(name)) continue;
+            // Avoid colliding with function parameters (e.g., outer msg/payload)
+            if (context != null && context.functionParameterNames != null && context.functionParameterNames.exists(name)) continue;
+            return name;
+        }
+        return null;
+    }
+
+    static function collectPatternBinderNames(pattern:EPattern):Map<String,Bool> {
+        var names = new Map<String,Bool>();
+        function visit(p:EPattern):Void {
+            switch (p) {
+                case PVar(n): names.set(n, true);
+                case PTuple(list): for (entry in list) visit(entry);
+                case PList(list): for (entry in list) visit(entry);
+                case PCons(head, tail): visit(head); visit(tail);
+                case PMap(pairs): for (kv in pairs) visit(kv.value);
+                case PStruct(_, fields): for (f in fields) visit(f.value);
+                case PAlias(varName, inner):
+                    names.set(varName, true);
+                    visit(inner);
+                case PPin(inner): visit(inner);
+                case PBinary(segments): for (seg in segments) visit(seg.pattern);
+                default:
+            }
+        }
+        visit(pattern);
+        return names;
+    }
+
+    static function collectUsedVars(body:ElixirAST):Map<String,Bool> {
+        var used = new Map<String,Bool>();
+        function traverse(node:ElixirAST):Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EVar(name):
+                    if (isSimpleIdentifier(name)) used.set(name, true);
+                case EBinary(_, left, right):
+                    traverse(left);
+                    traverse(right);
+                case ECall(target, _, args):
+                    if (target != null) traverse(target);
+                    for (a in args) traverse(a);
+                case ERemoteCall(target, _, args):
+                    traverse(target);
+                    for (a in args) traverse(a);
+                case EIf(cond, thenBranch, elseBranch):
+                    traverse(cond);
+                    traverse(thenBranch);
+                    if (elseBranch != null) traverse(elseBranch);
+                case EBlock(statements):
+                    for (s in statements) traverse(s);
+                case ECase(target, clauses):
+                    traverse(target);
+                    for (c in clauses) traverse(c.body);
+                case ECond(conds):
+                    for (c in conds) traverse(c.body);
+                case EParen(inner): traverse(inner);
+                case ETuple(items): for (item in items) traverse(item);
+                default:
+                    // continue recursion for nested nodes where needed
+            }
+        }
+        traverse(body);
+        return used;
+    }
+
+    /**
+     * Collect identifiers that become *bound* inside the clause body itself.
+     *
+     * "Bound" here means any variable introduced by a pattern match, let-binding,
+     * or assignment within the clause body (e.g. `alert_level = ...`, `case {:ok, level}`)
+     * whose scope starts in the body. These names should never be reused as
+     * Option.Some binders because doing so would shadow the freshly bound local.
+     */
+    static function collectBoundVars(body:ElixirAST):Map<String,Bool> {
+        var bound = new Map<String,Bool>();
+
+        function gather(p:EPattern):Void {
+            switch (p) {
+                case PVar(n): bound.set(n, true);
+                case PTuple(list): for (entry in list) gather(entry);
+                case PList(list): for (entry in list) gather(entry);
+                case PCons(head, tail): gather(head); gather(tail);
+                case PMap(pairs): for (kv in pairs) gather(kv.value);
+                case PStruct(_, fields): for (f in fields) gather(f.value);
+                case PAlias(varName, inner):
+                    bound.set(varName, true);
+                    gather(inner);
+                case PPin(inner): gather(inner);
+                case PBinary(segments): for (seg in segments) gather(seg.pattern);
+                default:
+            }
+        }
+
+        function traverse(node:ElixirAST):Void {
+            if (node == null) return;
+            switch (node.def) {
+                case EMatch(pattern, expr):
+                    gather(pattern);
+                    traverse(expr);
+                case EBlock(statements):
+                    for (s in statements) traverse(s);
+                case EIf(cond, thenBranch, elseBranch):
+                    traverse(cond);
+                    traverse(thenBranch);
+                    if (elseBranch != null) traverse(elseBranch);
+                case ECase(target, clauses):
+                    traverse(target);
+                    for (c in clauses) traverse(c.body);
+                case ECond(conds):
+                    for (c in conds) traverse(c.body);
+                case ECall(target, _, args):
+                    if (target != null) traverse(target);
+                    for (a in args) traverse(a);
+                case ERemoteCall(target, _, args):
+                    traverse(target);
+                    for (a in args) traverse(a);
+                default:
+                    // continue recursion as needed
+            }
+        }
+
+        traverse(body);
+        return bound;
+    }
+
+    static function collectFieldBaseVars(body:ElixirAST):Map<String,Bool> {
+        var bases = new Map<String,Bool>();
+        function traverse(node:ElixirAST):Void {
+            if (node == null) return;
+            switch (node.def) {
+                case ERemoteCall({def: EVar("Map")}, func, args) if (func == "get" && args.length > 0):
+                    switch (args[0].def) {
+                        case EVar(name): bases.set(name, true);
+                        default:
+                    }
+                    for (a in args) traverse(a);
+                case EField(target, _):
+                    traverse(target);
+                case ECall(target, _, args):
+                    if (target != null) traverse(target);
+                    for (a in args) traverse(a);
+                case ERemoteCall(target, _, args):
+                    traverse(target);
+                    for (a in args) traverse(a);
+                case EBinary(_, left, right):
+                    traverse(left);
+                    traverse(right);
+                case EBlock(statements):
+                    for (s in statements) traverse(s);
+                case EIf(cond, thenBranch, elseBranch):
+                    traverse(cond);
+                    traverse(thenBranch);
+                    if (elseBranch != null) traverse(elseBranch);
+                case ECase(target, clauses):
+                    traverse(target);
+                    for (c in clauses) traverse(c.body);
+                case ECond(conds):
+                    for (c in conds) traverse(c.body);
+                default:
+            }
+        }
+        traverse(body);
+        return bases;
+    }
+
+    static function replaceBinderName(pattern:EPattern, oldName:String, newName:String):EPattern {
+        function transform(p:EPattern):EPattern {
+            return switch (p) {
+                case PVar(n) if (n == oldName):
+                    PVar(newName);
+                case PAlias(varName, inner) if (varName == oldName):
+                    PAlias(newName, transform(inner));
+                case PTuple(list):
+                    PTuple([for (entry in list) transform(entry)]);
+                case PList(list):
+                    PList([for (entry in list) transform(entry)]);
+                case PCons(head, tail):
+                    PCons(transform(head), transform(tail));
+                case PMap(pairs):
+                    PMap([for (kv in pairs) {key: kv.key, value: transform(kv.value)}]);
+                case PStruct(module, fields):
+                    PStruct(module, [for (f in fields) {key: f.key, value: transform(f.value)}]);
+                case PBinary(segments):
+                    PBinary([for (seg in segments) {pattern: transform(seg.pattern), size: seg.size, type: seg.type, modifiers: seg.modifiers}]);
+                default:
+                    p;
+            };
+        }
+        return transform(pattern);
+    }
+
+    static function injectOptionBinderAlias(body:ElixirAST, binderName:String, missing:String):ElixirAST {
+        if (missing == null || missing.length == 0) return body;
+        var aliasExpr = makeAST(EMatch(PVar(missing), makeAST(EVar(binderName))));
+        return switch (body.def) {
+            case EBlock(statements):
+                makeAST(EBlock([aliasExpr].concat(statements)));
+            default:
+                makeAST(EBlock([aliasExpr, body]));
+        };
     }
 
     /**

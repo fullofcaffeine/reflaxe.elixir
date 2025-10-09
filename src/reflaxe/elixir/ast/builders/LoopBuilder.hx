@@ -74,6 +74,7 @@ typedef BuildContext = {
     function isFeatureEnabled(feature: String): Bool;
     function buildFromTypedExpr(expr: TypedExpr, ?context: Dynamic): ElixirAST;
     var whileLoopCounter: Int;
+    function registerTempVarRename(oldName: String, newName: String): Void;
 }
 
 /**
@@ -600,7 +601,9 @@ class LoopBuilder {
             #if debug_loop_detection
             trace("[LoopBuilder] Detected desugared for loop pattern");
             #end
-            return buildFromForPattern(forPattern, buildExpr, toSnakeCase);
+            // No BuildContext available at this level, so we cannot register a rename here.
+            // buildWhileComplete handles the registration via BuildContext when enabled.
+            return buildFromForPattern(forPattern, buildExpr, toSnakeCase, null);
         }
 
         // Create the full TWhile expression for analysis
@@ -652,7 +655,8 @@ class LoopBuilder {
         startExpr: TypedExpr,
         endExpr: TypedExpr,
         userCode: TypedExpr,
-        hasSideEffectsOnly: Bool
+        hasSideEffectsOnly: Bool,
+        counterVar: String
     }> {
         #if debug_loop_detection
         trace('[LoopBuilder] detectDesugarForLoopPattern called with cond: ${cond.expr}');
@@ -701,7 +705,8 @@ class LoopBuilder {
             startExpr: startExpr,
             endExpr: endExpr,
             userCode: bodyInfo.userCode,
-            hasSideEffectsOnly: bodyInfo.hasSideEffectsOnly
+            hasSideEffectsOnly: bodyInfo.hasSideEffectsOnly,
+            counterVar: bounds.counter
         };
     }
     
@@ -781,8 +786,9 @@ class LoopBuilder {
         startExpr: TypedExpr,
         endExpr: TypedExpr,
         userCode: TypedExpr,
-        hasSideEffectsOnly: Bool
-    }, buildExpr: TypedExpr -> ElixirAST, toSnakeCase: String -> String): ElixirAST {
+        hasSideEffectsOnly: Bool,
+        ?counterVar: String
+    }, buildExpr: TypedExpr -> ElixirAST, toSnakeCase: String -> String, ?ctx: BuildContext): ElixirAST {
         
         // Build range
         var range = makeAST(ERange(
@@ -792,6 +798,11 @@ class LoopBuilder {
         ));
         
         var varName = toSnakeCase(pattern.userVar);
+
+        // If we know the infrastructure counter variable, register a rename mapping
+        if (ctx != null && pattern.counterVar != null) {
+            ctx.registerTempVarRename(pattern.counterVar, varName);
+        }
         var body = buildExpr(pattern.userCode);
         
         // Generate Enum.each for side-effect-only loops
@@ -931,8 +942,9 @@ class LoopBuilder {
             startExpr: startExpr,
             endExpr: endExpr,
             userCode: analysis.userCode,
-            hasSideEffectsOnly: analysis.hasSideEffectsOnly
-        }, buildExpr, toSnakeCase);
+            hasSideEffectsOnly: analysis.hasSideEffectsOnly,
+            counterVar: counterVar
+        }, buildExpr, toSnakeCase, null);
     }
 
     /**
@@ -2318,7 +2330,8 @@ class LoopBuilder {
                 return buildFromForPattern(
                     forPattern,
                     expr -> context.buildFromTypedExpr(expr),
-                    s -> toElixirVarName(s)
+                    s -> toElixirVarName(s),
+                    context
                 ).def;
             }
         }
@@ -2326,13 +2339,35 @@ class LoopBuilder {
         // Check for array iteration patterns
         var arrayPattern = detectArrayIterationPattern(econd, e);
         if (arrayPattern != null) {
-            return generateIdiomaticEnumCall(
-                arrayPattern.arrayRef,
-                arrayPattern.operation,
-                e,
-                context,
-                toElixirVarName
-            );
+            // Prefer with_index when body uses index; choose op-specific generator
+            if (arrayPattern.bodyUsesIndex) {
+                switch (arrayPattern.operation) {
+                    case "map":
+                        return generateWithIndexEnumMap(
+                            arrayPattern.arrayRef,
+                            arrayPattern.indexVarName,
+                            e,
+                            context,
+                            toElixirVarName
+                        );
+                    case _:
+                        return generateWithIndexEnumEach(
+                            arrayPattern.arrayRef,
+                            arrayPattern.indexVarName,
+                            e,
+                            context,
+                            toElixirVarName
+                        );
+                }
+            } else {
+                return generateIdiomaticEnumCall(
+                    arrayPattern.arrayRef,
+                    arrayPattern.operation,
+                    e,
+                    context,
+                    toElixirVarName
+                );
+            }
         }
         
         // Check for Map iteration patterns
@@ -2354,7 +2389,9 @@ class LoopBuilder {
      */
     static function detectArrayIterationPattern(econd: TypedExpr, body: TypedExpr): Null<{
         arrayRef: TypedExpr,
-        operation: String
+        operation: String,
+        indexVarName: String,
+        bodyUsesIndex: Bool
     }> {
         // Check for _g1 < _g2.length pattern
         var actualCond = switch(econd.expr) {
@@ -2369,9 +2406,13 @@ class LoopBuilder {
                 // Found array iteration pattern
                 var pattern = ElixirASTPatterns.detectArrayOperationPattern(body);
                 if (pattern != null) {
+                    // Check if body uses the index var
+                    var usesIndex = bodyContainsLocal(body, indexVar.name);
                     return {
                         arrayRef: arr,
-                        operation: pattern
+                        operation: pattern,
+                        indexVarName: indexVar.name,
+                        bodyUsesIndex: usesIndex
                     };
                 }
                 
@@ -2379,6 +2420,31 @@ class LoopBuilder {
         }
         
         return null;
+    }
+
+    /** Check if body contains a TLocal with provided name */
+    static inline function bodyContainsLocal(body: TypedExpr, name:String): Bool {
+        var found = false;
+        function walk(e:TypedExpr):Void {
+            if (found || e == null) return;
+            switch (e.expr) {
+                case TLocal(v) if (v.name == name):
+                    found = true;
+                case TBlock(el): for (x in el) walk(x);
+                case TIf(c,t,el): walk(c); walk(t); if (el != null) walk(el);
+                case TWhile(c,b,_): walk(c); walk(b);
+                case TFor(v,it,b): walk(it); walk(b);
+                case TBinop(_, a, b): walk(a); walk(b);
+                case TUnop(_, _, a): walk(a);
+                case TParenthesis(x) | TMeta(_, x) | TCast(x, _): walk(x);
+                case TCall(t, args): walk(t); for (a in args) walk(a);
+                case TArray(a, b): walk(a); walk(b);
+                case TField(o,_): walk(o);
+                default:
+            }
+        }
+        walk(body);
+        return found;
     }
     
     /**
@@ -2864,6 +2930,96 @@ class LoopBuilder {
                     toElixirVarName
                 );
         }
+    }
+
+    /**
+     * Generate Enum.with_index(... ) |> Enum.each(fn {item, index} -> ... end)
+     * Rewrites body to replace array[index] with item and index var with "index".
+     */
+    static function generateWithIndexEnumEach(
+        arrayRef: TypedExpr,
+        indexVarName: String,
+        body: TypedExpr,
+        context: BuildContext,
+        toElixirVarName: String -> String
+    ): ElixirASTDef {
+        var arrayAst = context.buildFromTypedExpr(arrayRef);
+        var bodyAst = context.buildFromTypedExpr(body);
+        var indexElixir = toElixirVarName(indexVarName);
+
+        // Transform body: replace EAccess(array, index) -> item; EVar(indexElixir) -> index
+        function sameVar(a:ElixirAST, name:String):Bool {
+            return switch (a.def) { case EVar(n): n == name; default: false; }
+        }
+        function replace(node:ElixirAST): ElixirAST {
+            return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n){
+                return switch (n.def) {
+                    case EAccess(target, key) if (sameVar(target, switch (arrayAst.def) { case EVar(n): n; default: ""; }) && sameVar(key, indexElixir)):
+                        makeAST(EVar("item"));
+                    case EVar(n) if (n == indexElixir):
+                        makeAST(EVar("index"));
+                    default:
+                        n;
+                };
+            });
+        }
+        var newBody = replace(bodyAst);
+
+        // Build pipeline: Enum.with_index(array) |> Enum.each(fn {item, index} -> newBody end)
+        var withIndex = makeAST(ERemoteCall(makeAST(EVar("Enum")), "with_index", [arrayAst]));
+        var eachCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "each", [
+            withIndex,
+            makeAST(EFn([{
+                args: [PTuple([PVar("item"), PVar("index")])],
+                guard: null,
+                body: newBody
+            }]))
+        ]));
+        return eachCall.def;
+    }
+
+    /**
+     * Generate Enum.with_index(... ) |> Enum.map(fn {item, index} -> ... end)
+     * Rewrites body to replace array[index] with item and index var with "index".
+     */
+    static function generateWithIndexEnumMap(
+        arrayRef: TypedExpr,
+        indexVarName: String,
+        body: TypedExpr,
+        context: BuildContext,
+        toElixirVarName: String -> String
+    ): ElixirASTDef {
+        var arrayAst = context.buildFromTypedExpr(arrayRef);
+        var bodyAst = context.buildFromTypedExpr(body);
+        var indexElixir = toElixirVarName(indexVarName);
+
+        function sameVar(a:ElixirAST, name:String):Bool {
+            return switch (a.def) { case EVar(n): n == name; default: false; }
+        }
+        function replace(node:ElixirAST): ElixirAST {
+            return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n){
+                return switch (n.def) {
+                    case EAccess(target, key) if (sameVar(target, switch (arrayAst.def) { case EVar(n): n; default: ""; }) && sameVar(key, indexElixir)):
+                        makeAST(EVar("item"));
+                    case EVar(n) if (n == indexElixir):
+                        makeAST(EVar("index"));
+                    default:
+                        n;
+                };
+            });
+        }
+        var newBody = replace(bodyAst);
+
+        var withIndex = makeAST(ERemoteCall(makeAST(EVar("Enum")), "with_index", [arrayAst]));
+        var mapCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [
+            withIndex,
+            makeAST(EFn([{
+                args: [PTuple([PVar("item"), PVar("index")])],
+                guard: null,
+                body: newBody
+            }]))
+        ]));
+        return mapCall.def;
     }
     
     /**

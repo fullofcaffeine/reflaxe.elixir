@@ -649,6 +649,9 @@ class GuardConditionReconstructor {
 		}
 		
 		var result = makeAST(ECond(condBranches));
+		#if debug_cond_origin
+		trace('[CondOrigin] GuardConditionReconstructor built cond with ' + condBranches.length + ' branches');
+		#end
 		
 		#if debug_guard_flattening
 		trace('[GuardReconstructor] Built cond with ${condBranches.length} branches');

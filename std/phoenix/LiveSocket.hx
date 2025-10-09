@@ -301,7 +301,7 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * ### The Rule
 	 * **ALWAYS use `extern inline` for abstract type methods that use `untyped __elixir__()`**
 	 * 
-	 * This critical lesson discovered after extensive debugging - see CLAUDE.md for full details.
+	 * This critical lesson discovered after extensive debugging - see AGENTS.md for full details.
 	 * 
 	 * @return Updated LiveSocket
 	 */

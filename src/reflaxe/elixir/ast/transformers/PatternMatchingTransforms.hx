@@ -165,8 +165,16 @@ class PatternMatchingTransforms {
                 PAlias(varName, optimizePattern(innerPattern));
                 
             case PTuple(elements):
-                // Optimize each element
-                PTuple(elements.map(e -> optimizePattern(e)));
+                // Optimize each element and collapse {:tag} to :tag
+                var optimized = elements.map(e -> optimizePattern(e));
+                if (optimized.length == 1) {
+                    switch (optimized[0]) {
+                        case PLiteral({def: EAtom(a)}):
+                            return PLiteral(makeAST(EAtom(a)));
+                        default:
+                    }
+                }
+                PTuple(optimized);
                 
             case PList(elements):
                 // Optimize each element
@@ -334,11 +342,13 @@ class PatternMatchingTransforms {
             // Walk if/else chain
             var branches:Array<{condition:ElixirAST, body:ElixirAST}> = [];
             var current = node;
+            var sawIf = false;
             while (true) {
                 switch (current.def) {
                     case EIf(cond, thenB, elseB):
                         // Must have else branch to build a proper cond
                         if (elseB == null) return node; // Abort, leave original
+                        sawIf = true;
                         branches.push({ condition: fixVarRefs(cond), body: fixVarRefs(thenB) });
                         // Unwrap else branch if it's a single-stmt block or paren containing an if
                         var next = elseB;
@@ -358,7 +368,11 @@ class PatternMatchingTransforms {
                 }
                 break;
             }
-            return makeAST(ECond([for (b in branches) { condition: b.condition, body: b.body }]));
+            var condNode = makeAST(ECond([for (b in branches) { condition: b.condition, body: b.body }]));
+            #if debug_cond_origin
+            trace('[CondOrigin] ifChainToCond produced ECond with ' + branches.length + ' branches');
+            #end
+            return condNode;
         }
 
         // Helper: unwrap single-statement blocks to their inner expression
@@ -423,16 +437,40 @@ class PatternMatchingTransforms {
             return re.replace(s, "");
         }
 
+        // Helper to extract tuple tag atom name when present
+        function getTag(p:EPattern):Null<String> {
+            return switch (p) {
+                case PTuple(elems) if (elems.length >= 1):
+                    switch (elems[0]) {
+                        case PLiteral({def: EAtom(a)}): (a:String);
+                        default: null;
+                    }
+                default: null;
+            };
+        }
+
         return switch (ast.def) {
             case ECase(target, clauses):
                 var newClauses:Array<ECaseClause> = [];
 
-                var i = 0;
-                while (i < clauses.length) {
-                    var c = clauses[i];
-                    // Tag-specific consolidation removed; keep clause as-is.
-                    newClauses.push(c);
-                    i++;
+                for (c in clauses) {
+                    var tag = getTag(c.pattern);
+                    var pat = c.pattern;
+                    if (tag != null) pat = canonicalizePattern(pat, tag);
+                    var newGuard = c.guard != null ? fixVarRefs(c.guard) : null;
+                    var newBody0 = fixVarRefs(c.body);
+                    var newBody1 = ifChainToCond(newBody0);
+                    // Unwrap trivial cond with a single true branch
+                    var newBody = switch (newBody1.def) {
+                        case ECond(cls) if (cls.length == 1):
+                            switch (cls[0].condition.def) {
+                                case EBoolean(true): cls[0].body;
+                                case EAtom(a) if ((a:String) == "true"): cls[0].body;
+                                default: newBody1;
+                            }
+                        default: newBody1;
+                    };
+                    newClauses.push({ pattern: pat, guard: newGuard, body: newBody });
                 }
 
                 makeAST(ECase(canonicalizeCommonTupleBindersPass(target), newClauses));
@@ -551,7 +589,7 @@ class PatternMatchingTransforms {
 
                         var condClauses:Array<ECondClause> = [];
                         var sawUnguarded = false;
-                        // Build binder bases from the representative pattern for bounded normalization
+                        // Build binder bases as the UNION across the run for bounded normalization
                         var binderBases = new Map<String, Bool>();
                         function stripDigitsSuffixLocal(s:String):String {
                             var re = ~/([0-9]+)$/;
@@ -569,7 +607,10 @@ class PatternMatchingTransforms {
                                 default:
                             }
                         }
-                        collectBinderBases(clauses[start].pattern);
+                        // Previously we used only clauses[start].pattern which missed binders
+                        // from other guarded clauses (e.g., g/b when first clause referenced only r).
+                        // Use the union across the entire run to ensure all binder bases are recognized.
+                        for (rcClause in run) collectBinderBases(rcClause.pattern);
                         function fixVarRefsBounded(node: ElixirAST): ElixirAST {
                             if (node == null) return node;
                             return switch (node.def) {
@@ -608,13 +649,18 @@ class PatternMatchingTransforms {
                         }
 
                         var condAst = makeAST(ECond(condClauses));
+                        #if debug_cond_origin
+                        trace('[CondOrigin] guardClauseConsolidation run cond with ' + condClauses.length + ' branches');
+                        #end
                         // Merge binder names across the run (tag-agnostic):
                         // For each tuple arg slot, if any clause binds a non-underscore var, use its base name.
                         function tupleArity(p:EPattern):Int {
                             return switch (p) { case PTuple(el): el.length - 1; default: 0; };
                         }
                         var arity = tupleArity(run[0].pattern);
+                        // Build positional final names; ensure uniqueness and preserve original order
                         var finalNames:Array<Null<String>> = [for (_ in 0...arity) null];
+                        var usedNames = new Map<String, Bool>();
                         for (rc in run) {
                             switch (rc.pattern) {
                                 case PTuple(elems) if (elems.length - 1 == arity):
@@ -623,10 +669,16 @@ class PatternMatchingTransforms {
                                         switch (elems[idx + 1]) {
                                             case PVar(nm):
                                                 var base = stripDigitsSuffixLocal(nm);
-                                                if (base != "_" && (base.length == 1 || base.charAt(0) != '_')) finalNames[idx] = base;
+                                                if (base != "_" && (base.length == 1 || base.charAt(0) != '_') && !usedNames.exists(base)) {
+                                                    finalNames[idx] = base;
+                                                    usedNames.set(base, true);
+                                                }
                                             case PAlias(nm, _):
                                                 var base2 = stripDigitsSuffixLocal(nm);
-                                                if (base2 != "_" && (base2.length == 1 || base2.charAt(0) != '_')) finalNames[idx] = base2;
+                                                if (base2 != "_" && (base2.length == 1 || base2.charAt(0) != '_') && !usedNames.exists(base2)) {
+                                                    finalNames[idx] = base2;
+                                                    usedNames.set(base2, true);
+                                                }
                                             default:
                                         }
                                     }
@@ -641,7 +693,7 @@ class PatternMatchingTransforms {
                                 out.push(elems[0]);
                                 for (i in 0...arity) {
                                     if (finalNames[i] != null) out.push(PVar(finalNames[i]));
-                                    else out.push(elems[i + 1]);
+                                    else out.push(elems[i + 1]); // preserve original element when no stable name chosen
                                 }
                                 PTuple(out);
                             default: basePat;
@@ -651,7 +703,41 @@ class PatternMatchingTransforms {
                         for (i in 0...arity) fnames.push(finalNames[i]);
                         trace('[BinderNorm] Consolidation finalNames: [' + fnames.join(', ') + ']');
                         #end
-                        consolidated.push({ pattern: mergedPat, guard: null, body: condAst });
+                        // Rename cond body variable refs to the merged binder names per position
+                        var renameMap = new Map<String,String>();
+                        switch (mergedPat) {
+                            case PTuple(el) if (el.length - 1 == arity):
+                                for (i in 0...arity) {
+                                    var nm = finalNames[i];
+                                    if (nm != null) renameMap.set(stripDigitsSuffixLocal(nm), nm);
+                                }
+                            default:
+                        }
+                        function applyRenameMap(node: ElixirAST): ElixirAST {
+                            if (node == null) return node;
+                            return switch (node.def) {
+                                case EVar(n):
+                                    var base = stripDigitsSuffixLocal(n);
+                                    if (renameMap.exists(base)) makeAST(EVar(renameMap.get(base))) else node;
+                                case EBinary(op,l,r): makeAST(EBinary(op, applyRenameMap(l), applyRenameMap(r)));
+                                case EUnary(op,e): makeAST(EUnary(op, applyRenameMap(e)));
+                                case ECall(t,nm,args): makeAST(ECall(t != null ? applyRenameMap(t) : null, nm, [for (a in args) applyRenameMap(a)]));
+                                case ERemoteCall(m,nm,args): makeAST(ERemoteCall(applyRenameMap(m), nm, [for (a in args) applyRenameMap(a)]));
+                                case EIf(c,t,e): makeAST(EIf(applyRenameMap(c), applyRenameMap(t), e != null ? applyRenameMap(e) : null));
+                                case EBlock(sts): makeAST(EBlock([for (s in sts) applyRenameMap(s)]));
+                                case EParen(e): makeAST(EParen(applyRenameMap(e)));
+                            case ECond(cls):
+                                var mapped = [];
+                                for (clc in cls) mapped.push({ condition: applyRenameMap(clc.condition), body: applyRenameMap(clc.body) });
+                                #if debug_cond_origin
+                                trace('[CondOrigin] guardClauseConsolidation renamed cond with ' + mapped.length + ' branches');
+                                #end
+                                makeAST(ECond(mapped));
+                                default: node;
+                            };
+                        }
+                        var renamedCond = applyRenameMap(condAst);
+                        consolidated.push({ pattern: mergedPat, guard: null, body: renamedCond });
                     } else {
                         // No consolidation; copy run as-is
                         for (c in run) consolidated.push(c);
@@ -668,9 +754,11 @@ class PatternMatchingTransforms {
                 function ifChainToCondLocal(node: ElixirAST): ElixirAST {
                     var branches:Array<{condition:ElixirAST, body:ElixirAST}> = [];
                     var current = node;
+                    var sawIfLocal = false;
                     while (true) {
                         switch (current.def) {
                             case EIf(cond, thenB, elseB):
+                                sawIfLocal = true;
                                 if (elseB == null) return node; // not a full chain
                                 branches.push({ condition: cond, body: thenB });
                                 // unwrap else branch if it's block/paren containing an if
@@ -684,13 +772,15 @@ class PatternMatchingTransforms {
                                     }
                                 }
                                 current = next; continue;
-                            default:
-                                branches.push({ condition: makeAST(EBoolean(true)), body: current });
-                        }
-                        break;
-                    }
-                    return makeAST(ECond([for (b in branches) { condition: b.condition, body: b.body }]));
+                    default:
+                        // End of chain
+                        if (!sawIfLocal) return node; // Not an if-chain; return original
+                        branches.push({ condition: makeAST(EBoolean(true)), body: current });
                 }
+                break;
+            }
+            return makeAST(ECond([for (b in branches) { condition: b.condition, body: b.body }]));
+        }
 
                 var polished:Array<ECaseClause> = [];
                 // Helper: extract tag from tuple pattern first element if atom
@@ -785,8 +875,18 @@ class PatternMatchingTransforms {
                         default:
                             if (newBody == null) newBody = cl.body;
                     }
+                    // Unwrap trivial cond with a single true branch
+                    var bodyToNormalize = newBody;
+                    switch (bodyToNormalize.def) {
+                        case ECond(cls) if (cls.length == 1):
+                            switch (cls[0].condition.def) {
+                                case EBoolean(true): bodyToNormalize = cls[0].body;
+                                default:
+                            }
+                        default:
+                    }
                     // Apply bounded var ref normalization so pattern binders remain referenced
-                    var normalizedBody = fixVarRefsWithBases(newBody);
+                    var normalizedBody = fixVarRefsWithBases(bodyToNormalize);
                     polished.push({ pattern: cl.pattern, guard: cl.guard, body: normalizedBody });
                 }
 

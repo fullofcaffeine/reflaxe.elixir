@@ -63,7 +63,7 @@ The Reflaxe.Elixir compiler faces a critical architectural crisis with ElixirAST
 **Phase 1: Immediate Stabilization (NOW)**
 - ✅ PROHIBITION: Zero additions to ElixirASTBuilder.hx
 - ✅ All new features via transformation passes
-- ✅ Document in CLAUDE.md to prevent violations
+- ✅ Document in AGENTS.md to prevent violations
 - ✅ Fix critical todo-app functionality
 
 **Phase 2: Transformation Pass Architecture (CURRENT)**
@@ -136,7 +136,7 @@ Location: `src/reflaxe/elixir/ast/transformers/`
 
 2. **Document Patterns** ✅
    - Create this PRD
-   - Update CLAUDE.md enforcement rules
+   - Update AGENTS.md enforcement rules
    - Document transformation pass patterns
 
 3. **Audit Lost Functionality**
@@ -256,7 +256,7 @@ Location: `src/reflaxe/elixir/ast/transformers/`
    - Lower risk
 
 3. **Documentation Prevents Recurrence**
-   - CLAUDE.md enforcement works
+   - AGENTS.md enforcement works
    - PRDs provide clarity
    - Git history invaluable
 
@@ -272,7 +272,7 @@ Location: `src/reflaxe/elixir/ast/transformers/`
 ### Required Practices
 
 1. **New features via transformation passes**
-2. **Document in nearest CLAUDE.md**
+2. **Document in nearest AGENTS.md**
 3. **Test before/after extraction**
 4. **Benchmark performance impact**
 

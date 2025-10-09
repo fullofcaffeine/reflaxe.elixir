@@ -124,6 +124,25 @@ Located in `src/reflaxe/elixir/ast/ElixirASTTransformer.hx`:
 8. **otpChildSpecTransformPass** - Child spec transformations
 9. **underscoreVariableCleanupPass** - Cleans up unused variables
 
+### Pass Ordering Invariants
+
+To keep transformations deterministic and idiomatic, passes run in the following buckets. Do not reorder across buckets without updating this document and in-code comments:
+
+- Structural normalization: early cleanups and builder fallout (e.g., redundant `nil` removal)
+- Pattern & binder shaping: case/pattern normalization and safe alias injection
+- Usage/hygiene: usage analysis, underscore handling, private function marking
+- Idioms: Phoenix/Ecto/OTP-specific idiomatic transforms
+- Finalizers (absolute last):
+  1. `ForceOptionLevelBinderWhenBodyUsesLevel`
+  2. `AbsoluteLevelBinderEnforcement`
+  3. `OptionLevelAliasInjection`
+
+These finalizers guarantee consistent Option/Result binder naming (especially for `*_level` targets) after all other passes have completed.
+
+### Debugging Pass Effects
+
+Enable `-D debug_ast_transformer` to emit a deterministic per-pass AST hash (SHA-1 of printed AST) after each pass. This helps pinpoint the first pass that changes structure unexpectedly.
+
 ### How to Add New Functionality
 
 Instead of creating a helper file, add a transformation pass:
@@ -198,6 +217,16 @@ src/reflaxe/elixir/
 
 ### 1. Predictability
 - Same input ALWAYS produces same output
+
+## Symbol IR Overlay (Naming / Hygiene)
+
+The AST pipeline remains the canonical compilation path. To eliminate variable name drift and centralize naming decisions, the compiler introduces a lightweight Symbol IR overlay dedicated to hygiene:
+
+- Symbols/Scopes are collected from ElixirAST (flag-gated with `-D enable_symbol_ir`).
+- A Hygiene pass computes deterministic final names (snake_case, reserved-word escaping, underscore for unused, conflict resolution).
+- A late ApplyNames pass rewrites ElixirAST identifiers consistently, after pattern/binder transforms and before underscore cleanup.
+
+See also: `docs/05-architecture/symbol_ir_spec.md` for a complete specification and rollout plan. This overlay complements (does not replace) the AST pipeline and is introduced with TDD (unit tests under `test/unit`).
 - No conditional paths or bypasses
 - Clear execution order
 

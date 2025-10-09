@@ -1,11 +1,43 @@
 class reflaxe.output.DataAndFileInfo<T> {
 
-	public function new(data:reflaxe.output.DataAndFileInfo.T, baseType:haxe.macro.BaseType, overrideFileName:Null<String>, overrideDirectory:Null<String>) {
-		this.data = data;
-		this.baseType = baseType;
-		this.overrideFileName = overrideFileName;
-		this.overrideDirectory = overrideDirectory;
-	}
+	public function new[Function:(data : reflaxe.output.DataAndFileInfo.T, baseType : haxe.macro.BaseType, overrideFileName : Null<String>, overrideDirectory : Null<String>) -> Void]
+		[Arg:reflaxe.output.DataAndFileInfo.T] [Local data(8639):reflaxe.output.DataAndFileInfo.T]
+		[Arg:haxe.macro.BaseType] [Local baseType(8640):haxe.macro.BaseType]
+		[Arg:Null<String>] [Local overrideFileName(8641):Null<String>]
+		[Arg:Null<String>] [Local overrideDirectory(8642):Null<String>]
+		[Block:Null<String>]
+			[Binop:reflaxe.output.DataAndFileInfo.T]
+				[Field:reflaxe.output.DataAndFileInfo.T]
+					[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+					[FInstance:reflaxe.output.DataAndFileInfo.T]
+						reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+						data:reflaxe.output.DataAndFileInfo.T
+				=
+				[Local data(8639):reflaxe.output.DataAndFileInfo.T:reflaxe.output.DataAndFileInfo.T]
+			[Binop:haxe.macro.BaseType]
+				[Field:haxe.macro.BaseType]
+					[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+					[FInstance:haxe.macro.BaseType]
+						reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+						baseType:haxe.macro.BaseType
+				=
+				[Local baseType(8640):haxe.macro.BaseType:haxe.macro.BaseType]
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+					[FInstance:Null<String>]
+						reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+						overrideFileName:Null<String>
+				=
+				[Local overrideFileName(8641):Null<String>:Null<String>]
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+					[FInstance:Null<String>]
+						reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+						overrideDirectory:Null<String>
+				=
+				[Local overrideDirectory(8642):Null<String>:Null<String>]
 
 	public var data(default,null):reflaxe.output.DataAndFileInfo.T;
 
@@ -17,11 +49,49 @@ class reflaxe.output.DataAndFileInfo<T> {
 	@:maybeUsed
 	public var overrideDirectory(default,null):Null<String>;
 
-	public function with<T>(newData:with.T) {
-		return new reflaxe.output.DataAndFileInfo(newData, this.baseType, this.overrideFileName, this.overrideDirectory);
-	}
+	public function with<T>[Function:(newData : with.T) -> reflaxe.output.DataAndFileInfo<with.T>]
+		[Arg:with.T] [Local newData(8643):with.T]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:reflaxe.output.DataAndFileInfo<with.T>]
+					reflaxe.output.DataAndFileInfo<with.T>
+					[Local newData(8643):with.T:with.T]
+					[Field:haxe.macro.BaseType]
+						[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+						[FInstance:haxe.macro.BaseType]
+							reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+							baseType:haxe.macro.BaseType
+					[Field:Null<String>]
+						[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+						[FInstance:Null<String>]
+							reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+							overrideFileName:Null<String>
+					[Field:Null<String>]
+						[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+						[FInstance:Null<String>]
+							reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+							overrideDirectory:Null<String>
 
-	public function withOutput(output:reflaxe.output.StringOrBytes) {
-		return new reflaxe.output.DataAndFileInfo(output, this.baseType, this.overrideFileName, this.overrideDirectory);
-	}
+	public function withOutput[Function:(output : reflaxe.output.StringOrBytes) -> reflaxe.output.DataAndFileInfo<reflaxe.output.StringOrBytes>]
+		[Arg:reflaxe.output.StringOrBytes] [Local output(8644):reflaxe.output.StringOrBytes]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:reflaxe.output.DataAndFileInfo<reflaxe.output.StringOrBytes>]
+					reflaxe.output.DataAndFileInfo<reflaxe.output.StringOrBytes>
+					[Local output(8644):reflaxe.output.StringOrBytes:reflaxe.output.StringOrBytes]
+					[Field:haxe.macro.BaseType]
+						[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+						[FInstance:haxe.macro.BaseType]
+							reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+							baseType:haxe.macro.BaseType
+					[Field:Null<String>]
+						[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+						[FInstance:Null<String>]
+							reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+							overrideFileName:Null<String>
+					[Field:Null<String>]
+						[Const:reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>] this
+						[FInstance:Null<String>]
+							reflaxe.output.DataAndFileInfo<reflaxe.output.DataAndFileInfo.T>
+							overrideDirectory:Null<String>
 }

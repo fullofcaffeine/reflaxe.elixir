@@ -286,10 +286,10 @@ class TempVariableTransforms {
                 var newExprs = [];
                 var i = 0;
                 while (i < exprs.length) {
-                    // Look for temp alias pattern: g_temp = value followed by immediate use
+                    // Look for temp alias pattern: temp var (g, gN, _gN) assigned and immediately used
                     if (i < exprs.length - 1) {
                         switch(exprs[i].def) {
-                            case EMatch(PVar(varName), value) if (varName.indexOf("g_") == 0):
+                            case EMatch(PVar(varName), value) if (~/^_?g\d*$/.match(varName) || varName == "g" || varName == "_g"):
                                 // Check if next expression immediately uses this temp var
                                 var nextExpr = exprs[i + 1];
                                 if (isSingleUseOfVar(nextExpr, varName)) {
@@ -298,6 +298,18 @@ class TempVariableTransforms {
                                     newExprs.push(replaced);
                                     i += 2; // Skip both the assignment and the usage
                                     continue;
+                                }
+                                // Also allow a benign one-statement gap (e.g., instrumentation)
+                                if (i + 2 < exprs.length) {
+                                    var mid = exprs[i + 1];
+                                    var after = exprs[i + 2];
+                                    if (isSideEffectFree(mid) && isSingleUseOfVar(after, varName)) {
+                                        var replaced2 = replaceVarWithValue(after, varName, value);
+                                        newExprs.push(mid);
+                                        newExprs.push(replaced2);
+                                        i += 3;
+                                        continue;
+                                    }
                                 }
                             default:
                         }
@@ -328,6 +340,15 @@ class TempVariableTransforms {
                     case EVar(v) if (v == varName): true;
                     default: false;
                 }
+            default: false;
+        };
+    }
+
+    // Heuristic: consider simple literals, nil, or empty blocks as side-effect free
+    private static function isSideEffectFree(expr: ElixirAST): Bool {
+        return switch (expr.def) {
+            case ENil | EInteger(_) | EFloat(_) | EString(_) | EAtom(_): true;
+            case EBlock(stmts) if (stmts.length == 0): true;
             default: false;
         };
     }

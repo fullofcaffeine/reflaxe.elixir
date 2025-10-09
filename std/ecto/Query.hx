@@ -31,7 +31,7 @@ import haxe.functional.Result;
  * Without `extern inline`, the generated Elixir code would contain undefined variable
  * references instead of the actual Ecto.Query calls, resulting in compilation errors.
  * 
- * @see /CLAUDE.md - Section on "Abstract Types Require `extern inline` for `__elixir__` Injection"
+ * @see /AGENTS.md - Section on "Abstract Types Require `extern inline` for `__elixir__` Injection"
  */
 
 /**

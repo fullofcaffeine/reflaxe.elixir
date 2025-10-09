@@ -1,4 +1,4 @@
-@:realPath("phoenix.PubSub") @:directlyUsed @:used @:native("Phoenix.PubSub")
+@:realPath("phoenix.PubSub") @:native("Phoenix.PubSub")
 extern class Phoenix.PubSub {
 
 	static function subscribe(pubsub:Dynamic, topic:String):Dynamic;

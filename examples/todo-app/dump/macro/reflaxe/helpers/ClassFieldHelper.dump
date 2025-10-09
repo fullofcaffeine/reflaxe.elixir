@@ -1,141 +1,416 @@
 class reflaxe.helpers.ClassFieldHelper {
 
-	public static function isVarKind(field:haxe.macro.ClassField) {
-		return @:ast(switch (field.kind) {
+	public static function isVarKind[Function:(field : haxe.macro.ClassField) -> Bool]
+		[Arg:haxe.macro.ClassField] [Local field(7948):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (field.kind) {
 	case FVar(_, _):
 		true;	
 	case _:
 		false;	
-}) {
-			var ` = field.kind;
-			if (enumIndex ` == 0) {
-				var ` = `[0];
-				var ` = `[1];
-				{
-					true;
-				};
-			} else {
-				false;
-			};
-		};
-	}
+})
+					[Block:Bool]
+						[Var `(7952):haxe.macro.FieldKind]
+							[Field:haxe.macro.FieldKind]
+								[Local field(7948):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(7952):haxe.macro.FieldKind:haxe.macro.FieldKind]
+								==
+								[Const:Int] 0
+							[Then:Bool] [Block:Bool]
+								[Var `(7953):haxe.macro.VarAccess]
+									[EnumParameter:haxe.macro.VarAccess]
+										[Local `(7952):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FVar
+										0
+								[Var `(7954):haxe.macro.VarAccess]
+									[EnumParameter:haxe.macro.VarAccess]
+										[Local `(7952):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FVar
+										1
+								[Block:Bool] [Const:Bool] true
+							[Else:Bool] [Block:Bool] [Const:Bool] false
 
-	public static function isMethodKind(field:haxe.macro.ClassField) {
-		return @:ast(switch (field.kind) {
+	public static function isMethodKind[Function:(field : haxe.macro.ClassField) -> Bool]
+		[Arg:haxe.macro.ClassField] [Local field(7955):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (field.kind) {
 	case FMethod(_):
 		true;	
 	case _:
 		false;	
-}) {
-			var ` = field.kind;
-			if (enumIndex ` == 1) {
-				var ` = `[0];
-				{
-					true;
-				};
-			} else {
-				false;
-			};
-		};
-	}
+})
+					[Block:Bool]
+						[Var `(7958):haxe.macro.FieldKind]
+							[Field:haxe.macro.FieldKind]
+								[Local field(7955):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(7958):haxe.macro.FieldKind:haxe.macro.FieldKind]
+								==
+								[Const:Int] 1
+							[Then:Bool] [Block:Bool]
+								[Var `(7959):haxe.macro.MethodKind]
+									[EnumParameter:haxe.macro.MethodKind]
+										[Local `(7958):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FMethod
+										0
+								[Block:Bool] [Const:Bool] true
+							[Else:Bool] [Block:Bool] [Const:Bool] false
 
-	public static function equals(field:haxe.macro.ClassField, other:haxe.macro.ClassField) {
-		return Std.string(field) == Std.string(other);
-	}
+	public static function equals[Function:(field : haxe.macro.ClassField, other : haxe.macro.ClassField) -> Bool]
+		[Arg:haxe.macro.ClassField] [Local field(3755):haxe.macro.ClassField]
+		[Arg:haxe.macro.ClassField] [Local other(3756):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Local field(3755):haxe.macro.ClassField:haxe.macro.ClassField]
+					==
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Local other(3756):haxe.macro.ClassField:haxe.macro.ClassField]
 
 	@:value([])
-	static var findVarData_cache:Map<String, reflaxe.data.ClassVarData> = {
-		{};
-		new haxe.ds.StringMap();
-	};
+	static var findVarData_cache:Map<String, reflaxe.data.ClassVarData> = [Block:haxe.ds.StringMap<reflaxe.data.ClassVarData>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<reflaxe.data.ClassVarData>] haxe.ds.StringMap<reflaxe.data.ClassVarData>;
 
 	@:value([])
-	static var findFuncData_cache:Map<String, reflaxe.data.ClassFuncData> = {
-		{};
-		new haxe.ds.StringMap();
-	};
+	static var findFuncData_cache:Map<String, reflaxe.data.ClassFuncData> = [Block:haxe.ds.StringMap<reflaxe.data.ClassFuncData>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<reflaxe.data.ClassFuncData>] haxe.ds.StringMap<reflaxe.data.ClassFuncData>;
 
-	static function generateId(isVar:Bool, field:haxe.macro.ClassField, clsType:haxe.macro.ClassType) {
-		return if (isVar) {
-			"" + clsType.pack.join(".") + " " + clsType.name + " " + field.name;
-		} else {
-			var id = "" + clsType.pack.join(".") + " " + clsType.name + " " + field.name;
-			if (field.overloads.get().length != 0) {
-				id += @:ast(switch (field.type) {
+	static function generateId[Function:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String]
+		[Arg:Bool] [Local isVar(3658):Bool]
+		[Arg:haxe.macro.ClassField] [Local field(3659):haxe.macro.ClassField]
+		[Arg:haxe.macro.ClassType] [Local clsType(3660):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:String]
+					[Local isVar(3658):Bool:Bool]
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Call:String]
+												[Field:(sep : String) -> String]
+													[Field:Array<String>]
+														[Local clsType(3660):haxe.macro.ClassType:haxe.macro.ClassType]
+														[FAnon:Array<String>] pack:Array<String>
+													[FInstance:(sep : String) -> String]
+														Array<String>
+														join:(sep : String) -> String
+												[Const:String] "."
+										+
+										[Const:String] " "
+									+
+									[Field:String]
+										[Local clsType(3660):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:String] name:String
+								+
+								[Const:String] " "
+							+
+							[Field:String]
+								[Local field(3659):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:String] name:String
+					[Else:String] [Block:String]
+						[Var id(3661):String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Field:Array<String>]
+															[Local clsType(3660):haxe.macro.ClassType:haxe.macro.ClassType]
+															[FAnon:Array<String>] pack:Array<String>
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] "."
+											+
+											[Const:String] " "
+										+
+										[Field:String]
+											[Local clsType(3660):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:String] name:String
+									+
+									[Const:String] " "
+								+
+								[Field:String]
+									[Local field(3659):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:String] name:String
+						[If:Void]
+							[Binop:Bool]
+								[Field:Int]
+									[Call:Array<haxe.macro.ClassField>]
+										[Field:() -> Array<haxe.macro.ClassField>]
+											[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+												[Local field(3659):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] overloads:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+											[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+									[FInstance:Int]
+										Array<haxe.macro.ClassField>
+										length:Int
+								!=
+								[Const:Int] 0
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local id(3661):String:String]
+									+=
+									[Meta:String]
+										:ast(switch (field.type) {
 	case TFun(args, ret):
 		args.map(function(a) ->  @:implicitReturn return a.name + " " + Std.string(a.t)) + ":" + Std.string(ret);	
 	case _:
 		"";	
-}) {
-					var ` = field.type;
-					if (enumIndex ` == 4) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var args = `;
-							var ret = `;
-							{
-								Std.string({
-									var ` = [];
-									{
-										var ` = 0;
-										var ` = args;
-										while (` < `.length) {
-											var v = `[`];
-											++ `;
-											`.push(function(a:{ t : haxe.macro.Type, opt : Bool, name : String }) {
-												return a.name + " " + Std.string(a.t);
-											}(v));
-										};
-									};
-									`;
-								}) + ":" + Std.string(ret);
-							};
-						};
-					} else {
-						"";
-					};
-				};
-			};
-			id;
-		};
-	}
+})
+										[Block:String]
+											[Var `(3676):haxe.macro.Type]
+												[Field:haxe.macro.Type]
+													[Local field(3659):haxe.macro.ClassField:haxe.macro.ClassField]
+													[FAnon:haxe.macro.Type] type:haxe.macro.Type
+											[If:String]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(3676):haxe.macro.Type:haxe.macro.Type]
+													==
+													[Const:Int] 4
+												[Then:String] [Block:String]
+													[Var `(3677):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+														[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+															[Local `(3676):haxe.macro.Type:haxe.macro.Type]
+															TFun
+															0
+													[Var `(3678):haxe.macro.Type]
+														[EnumParameter:haxe.macro.Type]
+															[Local `(3676):haxe.macro.Type:haxe.macro.Type]
+															TFun
+															1
+													[Block:String]
+														[Var args(3679):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(3677):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+														[Var ret(3680):haxe.macro.Type] [Local `(3678):haxe.macro.Type:haxe.macro.Type]
+														[Block:String]
+															[Binop:String]
+																[Binop:String]
+																	[Call:String]
+																		[Field:(s : Dynamic) -> String]
+																			[TypeExpr Std:Class<Std>]
+																			[FStatic:(s : Dynamic) -> String]
+																				Std
+																				string:(s : Dynamic) -> String
+																		[Block:Array<String>]
+																			[Var `(3681):Array<String>] [ArrayDecl:Array<String>]
+																			[Block:Void]
+																				[Var `(3682):Int] [Const:Int] 0
+																				[Var `(3683):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local args(3679):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																				[While:Void]
+																					[Binop:Bool]
+																						[Local `(3682):Int:Int]
+																						<
+																						[Field:Int]
+																							[Local `(3683):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																							[FInstance:Int]
+																								Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																								length:Int
+																					[Block:Void]
+																						[Var v(3684):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																							[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																								[Local `(3683):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																								[Local `(3682):Int:Int]
+																						[Unop:Int]
+																							++
+																							Prefix
+																							[Local `(3682):Int:Int]
+																						[Call:Int]
+																							[Field:(x : String) -> Int]
+																								[Local `(3681):Array<String>:Array<String>]
+																								[FInstance:(x : String) -> Int]
+																									Array<String>
+																									push:(x : Array.T) -> Int
+																							[Call:String]
+																								[Function:(a : { t : haxe.macro.Type, opt : Bool, name : String }) -> String]
+																									[Arg:{ t : haxe.macro.Type, opt : Bool, name : String }] [Local a(3685):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[Block:Dynamic]
+																										[Return:Dynamic]
+																											[Binop:String]
+																												[Binop:String]
+																													[Field:String]
+																														[Local a(3685):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																														[FAnon:String] name:String
+																													+
+																													[Const:String] " "
+																												+
+																												[Call:String]
+																													[Field:(s : Dynamic) -> String]
+																														[TypeExpr Std:Class<Std>]
+																														[FStatic:(s : Dynamic) -> String]
+																															Std
+																															string:(s : Dynamic) -> String
+																													[Field:haxe.macro.Type]
+																														[Local a(3685):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																														[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																								[Local v(3684):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																			[Local `(3681):Array<String>:Array<String>]
+																	+
+																	[Const:String] ":"
+																+
+																[Call:String]
+																	[Field:(s : Dynamic) -> String]
+																		[TypeExpr Std:Class<Std>]
+																		[FStatic:(s : Dynamic) -> String]
+																			Std
+																			string:(s : Dynamic) -> String
+																	[Local ret(3680):haxe.macro.Type:haxe.macro.Type]
+												[Else:String] [Block:String] [Const:String] ""
+						[Local id(3661):String:String]
 
 	@:value({ isStatic : null })
-	public static function findVarData(field:haxe.macro.ClassField, clsType:haxe.macro.ClassType, isStatic:Null<Bool> = null) {
-		var id = reflaxe.helpers.ClassFieldHelper.generateId(true, field, clsType);
-		if ({
-			var this = reflaxe.helpers.ClassFieldHelper.findVarData_cache;
-			cast this.exists(id);
-		}) {
-			return {
-				var this = reflaxe.helpers.ClassFieldHelper.findVarData_cache;
-				cast this.get(id);
-			};
-		};
-		if (isStatic == null) {
-			isStatic = {
-				var _this = clsType.statics.get();
-				{
-					var ` = [];
-					{
-						var ` = 0;
-						var ` = _this;
-						while (` < `.length) {
-							var v = `[`];
-							++ `;
-							if (function(f:haxe.macro.ClassField) {
-								return f.name == field.name;
-							}(v)) {
-								`.push(v);
-							};
-						};
-					};
-					`;
-				};
-			}.length > 0;
-		};
-		return @:ast(switch (field.kind) {
+	public static function findVarData[Function:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassVarData>]
+		[Arg:haxe.macro.ClassField] [Local field(3655):haxe.macro.ClassField]
+		[Arg:haxe.macro.ClassType] [Local clsType(3656):haxe.macro.ClassType]
+		[Arg:Null<Bool>]
+			[Local isStatic(3657):Null<Bool>]
+			[Const:Null<Bool>] null
+		[Block:Dynamic]
+			[Var id(3686):String]
+				[Call:String]
+					[Field:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+						[FStatic:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String]
+							reflaxe.helpers.ClassFieldHelper
+							generateId:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String
+					[Const:Bool] true
+					[Local field(3655):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Local clsType(3656):haxe.macro.ClassType:haxe.macro.ClassType]
+			[If:Void]
+				[Block:Bool]
+					[Var this(3689):haxe.IMap<String, reflaxe.data.ClassVarData>]
+						[Field:Map<String, reflaxe.data.ClassVarData>]
+							[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+							[FStatic:Map<String, reflaxe.data.ClassVarData>]
+								reflaxe.helpers.ClassFieldHelper
+								findVarData_cache:Map<String, reflaxe.data.ClassVarData>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<reflaxe.data.ClassVarData>] [Local this(3689):haxe.IMap<String, reflaxe.data.ClassVarData>:haxe.IMap<String, reflaxe.data.ClassVarData>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<reflaxe.data.ClassVarData>
+								exists:(key : String) -> Bool
+						[Local id(3686):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<reflaxe.data.ClassVarData>]
+							[Var this(3693):haxe.IMap<String, reflaxe.data.ClassVarData>]
+								[Field:Map<String, reflaxe.data.ClassVarData>]
+									[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+									[FStatic:Map<String, reflaxe.data.ClassVarData>]
+										reflaxe.helpers.ClassFieldHelper
+										findVarData_cache:Map<String, reflaxe.data.ClassVarData>
+							[Call:Null<reflaxe.data.ClassVarData>]
+								[Field:(key : String) -> Null<reflaxe.data.ClassVarData>]
+									[Cast:haxe.ds.StringMap<reflaxe.data.ClassVarData>] [Local this(3693):haxe.IMap<String, reflaxe.data.ClassVarData>:haxe.IMap<String, reflaxe.data.ClassVarData>]
+									[FInstance:(key : String) -> Null<reflaxe.data.ClassVarData>]
+										haxe.ds.StringMap<reflaxe.data.ClassVarData>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local id(3686):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local isStatic(3657):Null<Bool>:Null<Bool>]
+					==
+					[Const:Null<Bool>] null
+				[Then:Null<Bool>] [Block:Null<Bool>]
+					[Binop:Null<Bool>]
+						[Local isStatic(3657):Null<Bool>:Null<Bool>]
+						=
+						[Binop:Bool]
+							[Field:Int]
+								[Block:Array<haxe.macro.ClassField>]
+									[Var _this(3697):Array<haxe.macro.ClassField>]
+										[Call:Array<haxe.macro.ClassField>]
+											[Field:() -> Array<haxe.macro.ClassField>]
+												[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+													[Local clsType(3656):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+												[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+									[Block:Array<haxe.macro.ClassField>]
+										[Var `(3699):Array<haxe.macro.ClassField>] [ArrayDecl:Array<haxe.macro.ClassField>]
+										[Block:Void]
+											[Var `(3700):Int] [Const:Int] 0
+											[Var `(3701):Array<haxe.macro.ClassField>] [Local _this(3697):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[While:Void]
+												[Binop:Bool]
+													[Local `(3700):Int:Int]
+													<
+													[Field:Int]
+														[Local `(3701):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+														[FInstance:Int]
+															Array<haxe.macro.ClassField>
+															length:Int
+												[Block:Void]
+													[Var v(3702):haxe.macro.ClassField]
+														[Array:haxe.macro.ClassField]
+															[Local `(3701):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+															[Local `(3700):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(3700):Int:Int]
+													[If:Void]
+														[Call:Bool]
+															[Function:(f : haxe.macro.ClassField) -> Bool]
+																[Arg:haxe.macro.ClassField] [Local f(3703):haxe.macro.ClassField]
+																[Block:Dynamic]
+																	[Return:Dynamic]
+																		[Binop:Bool]
+																			[Field:String]
+																				[Local f(3703):haxe.macro.ClassField:haxe.macro.ClassField]
+																				[FAnon:String] name:String
+																			==
+																			[Field:String]
+																				[Local field(3655):haxe.macro.ClassField:haxe.macro.ClassField]
+																				[FAnon:String] name:String
+															[Local v(3702):haxe.macro.ClassField:haxe.macro.ClassField]
+														[Then:Int] [Block:Int]
+															[Call:Int]
+																[Field:(x : haxe.macro.ClassField) -> Int]
+																	[Local `(3699):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+																	[FInstance:(x : haxe.macro.ClassField) -> Int]
+																		Array<haxe.macro.ClassField>
+																		push:(x : Array.T) -> Int
+																[Local v(3702):haxe.macro.ClassField:haxe.macro.ClassField]
+										[Local `(3699):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[FInstance:Int]
+									Array<haxe.macro.ClassField>
+									length:Int
+							>
+							[Const:Int] 0
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.data.ClassVarData>]
+					:ast(switch (field.kind) {
 	case FVar(read, write):
 		{
 			var result = new ClassVarData(clsType, field, isStatic, read, write);
@@ -146,85 +421,203 @@ class reflaxe.helpers.ClassFieldHelper {
 		{
 			throw "Not a variable.";
 		};	
-}) {
-			var ` = field.kind;
-			if (enumIndex ` == 0) {
-				var ` = `[0];
-				var ` = `[1];
-				{
-					var read = `;
-					var write = `;
-					{
-						{
-							var result = new reflaxe.data.ClassVarData(clsType, field, isStatic, read, write);
-							{
-								var this = reflaxe.helpers.ClassFieldHelper.findVarData_cache;
-								cast this.set(id, result);
-							};
-							result;
-						};
-					};
-				};
-			} else {
-				{
-					throw "Not a variable.";
-				};
-			};
-		};
-	}
+})
+					[Block:Null<reflaxe.data.ClassVarData>]
+						[Var `(3715):haxe.macro.FieldKind]
+							[Field:haxe.macro.FieldKind]
+								[Local field(3655):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+						[If:Null<reflaxe.data.ClassVarData>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(3715):haxe.macro.FieldKind:haxe.macro.FieldKind]
+								==
+								[Const:Int] 0
+							[Then:reflaxe.data.ClassVarData] [Block:reflaxe.data.ClassVarData]
+								[Var `(3716):haxe.macro.VarAccess]
+									[EnumParameter:haxe.macro.VarAccess]
+										[Local `(3715):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FVar
+										0
+								[Var `(3717):haxe.macro.VarAccess]
+									[EnumParameter:haxe.macro.VarAccess]
+										[Local `(3715):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FVar
+										1
+								[Block:reflaxe.data.ClassVarData]
+									[Var read(3718):haxe.macro.VarAccess] [Local `(3716):haxe.macro.VarAccess:haxe.macro.VarAccess]
+									[Var write(3719):haxe.macro.VarAccess] [Local `(3717):haxe.macro.VarAccess:haxe.macro.VarAccess]
+									[Block:reflaxe.data.ClassVarData]
+										[Block:reflaxe.data.ClassVarData]
+											[Var result(3720):reflaxe.data.ClassVarData]
+												[New:reflaxe.data.ClassVarData]
+													reflaxe.data.ClassVarData
+													[Local clsType(3656):haxe.macro.ClassType:haxe.macro.ClassType]
+													[Local field(3655):haxe.macro.ClassField:haxe.macro.ClassField]
+													[Local isStatic(3657):Null<Bool>:Null<Bool>]
+													[Local read(3718):haxe.macro.VarAccess:haxe.macro.VarAccess]
+													[Local write(3719):haxe.macro.VarAccess:haxe.macro.VarAccess]
+											[Block:Void]
+												[Var this(3721):haxe.IMap<String, reflaxe.data.ClassVarData>]
+													[Field:Map<String, reflaxe.data.ClassVarData>]
+														[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+														[FStatic:Map<String, reflaxe.data.ClassVarData>]
+															reflaxe.helpers.ClassFieldHelper
+															findVarData_cache:Map<String, reflaxe.data.ClassVarData>
+												[Call:Void]
+													[Field:(key : String, value : reflaxe.data.ClassVarData) -> Void]
+														[Cast:haxe.ds.StringMap<reflaxe.data.ClassVarData>] [Local this(3721):haxe.IMap<String, reflaxe.data.ClassVarData>:haxe.IMap<String, reflaxe.data.ClassVarData>]
+														[FInstance:(key : String, value : reflaxe.data.ClassVarData) -> Void]
+															haxe.ds.StringMap<reflaxe.data.ClassVarData>
+															set:(key : String, value : haxe.ds.StringMap.T) -> Void
+													[Local id(3686):String:String]
+													[Local result(3720):reflaxe.data.ClassVarData:reflaxe.data.ClassVarData]
+											[Local result(3720):reflaxe.data.ClassVarData:reflaxe.data.ClassVarData]
+							[Else:Null<reflaxe.data.ClassVarData>] [Block:Null<reflaxe.data.ClassVarData>] [Block:Null<reflaxe.data.ClassVarData>] [Throw:Null<reflaxe.data.ClassVarData>] [Const:String] "Not a variable."
 
 	@:value({ isStatic : null })
-	public static function findFuncData(field:haxe.macro.ClassField, clsType:haxe.macro.ClassType, isStatic:Null<Bool> = null) {
-		var id = reflaxe.helpers.ClassFieldHelper.generateId(false, field, clsType);
-		if ({
-			var this = reflaxe.helpers.ClassFieldHelper.findFuncData_cache;
-			cast this.exists(id);
-		}) {
-			return {
-				var this = reflaxe.helpers.ClassFieldHelper.findFuncData_cache;
-				cast this.get(id);
-			};
-		};
-		if (isStatic == null) {
-			isStatic = false;
-			{
-				var ` = 0;
-				var ` = clsType.statics.get();
-				while (` < `.length) {
-					var s = `[`];
-					++ `;
-					if (reflaxe.helpers.ClassFieldHelper.equals(s, field)) {
-						isStatic = true;
-						break;
-					};
-				};
-			};
-		};
-		var e = field.expr();
-		var tfunc = if (e != null) {
-			@:ast(switch (e.expr) {
+	public static function findFuncData[Function:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+		[Arg:haxe.macro.ClassField] [Local field(3742):haxe.macro.ClassField]
+		[Arg:haxe.macro.ClassType] [Local clsType(3743):haxe.macro.ClassType]
+		[Arg:Null<Bool>]
+			[Local isStatic(3744):Null<Bool>]
+			[Const:Null<Bool>] null
+		[Block:Dynamic]
+			[Var id(3745):String]
+				[Call:String]
+					[Field:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+						[FStatic:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String]
+							reflaxe.helpers.ClassFieldHelper
+							generateId:(isVar : Bool, field : haxe.macro.ClassField, clsType : haxe.macro.ClassType) -> String
+					[Const:Bool] false
+					[Local field(3742):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Local clsType(3743):haxe.macro.ClassType:haxe.macro.ClassType]
+			[If:Void]
+				[Block:Bool]
+					[Var this(3748):haxe.IMap<String, reflaxe.data.ClassFuncData>]
+						[Field:Map<String, reflaxe.data.ClassFuncData>]
+							[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+							[FStatic:Map<String, reflaxe.data.ClassFuncData>]
+								reflaxe.helpers.ClassFieldHelper
+								findFuncData_cache:Map<String, reflaxe.data.ClassFuncData>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<reflaxe.data.ClassFuncData>] [Local this(3748):haxe.IMap<String, reflaxe.data.ClassFuncData>:haxe.IMap<String, reflaxe.data.ClassFuncData>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<reflaxe.data.ClassFuncData>
+								exists:(key : String) -> Bool
+						[Local id(3745):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<reflaxe.data.ClassFuncData>]
+							[Var this(3752):haxe.IMap<String, reflaxe.data.ClassFuncData>]
+								[Field:Map<String, reflaxe.data.ClassFuncData>]
+									[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+									[FStatic:Map<String, reflaxe.data.ClassFuncData>]
+										reflaxe.helpers.ClassFieldHelper
+										findFuncData_cache:Map<String, reflaxe.data.ClassFuncData>
+							[Call:Null<reflaxe.data.ClassFuncData>]
+								[Field:(key : String) -> Null<reflaxe.data.ClassFuncData>]
+									[Cast:haxe.ds.StringMap<reflaxe.data.ClassFuncData>] [Local this(3752):haxe.IMap<String, reflaxe.data.ClassFuncData>:haxe.IMap<String, reflaxe.data.ClassFuncData>]
+									[FInstance:(key : String) -> Null<reflaxe.data.ClassFuncData>]
+										haxe.ds.StringMap<reflaxe.data.ClassFuncData>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local id(3745):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local isStatic(3744):Null<Bool>:Null<Bool>]
+					==
+					[Const:Null<Bool>] null
+				[Then:Void] [Block:Void]
+					[Binop:Null<Bool>]
+						[Local isStatic(3744):Null<Bool>:Null<Bool>]
+						=
+						[Const:Bool] false
+					[Block:Void]
+						[Var `(3757):Int] [Const:Int] 0
+						[Var `(3758):Array<haxe.macro.ClassField>]
+							[Call:Array<haxe.macro.ClassField>]
+								[Field:() -> Array<haxe.macro.ClassField>]
+									[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Local clsType(3743):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(3757):Int:Int]
+								<
+								[Field:Int]
+									[Local `(3758):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+									[FInstance:Int]
+										Array<haxe.macro.ClassField>
+										length:Int
+							[Block:Void]
+								[Var s(3754):haxe.macro.ClassField]
+									[Array:haxe.macro.ClassField]
+										[Local `(3758):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[Local `(3757):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(3757):Int:Int]
+								[If:Void]
+									[Call:Bool]
+										[Field:(field : haxe.macro.ClassField, other : haxe.macro.ClassField) -> Bool]
+											[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+											[FStatic:(field : haxe.macro.ClassField, other : haxe.macro.ClassField) -> Bool]
+												reflaxe.helpers.ClassFieldHelper
+												equals:(field : haxe.macro.ClassField, other : haxe.macro.ClassField) -> Bool
+										[Local s(3754):haxe.macro.ClassField:haxe.macro.ClassField]
+										[Local field(3742):haxe.macro.ClassField:haxe.macro.ClassField]
+									[Then:Dynamic] [Block:Dynamic]
+										[Binop:Null<Bool>]
+											[Local isStatic(3744):Null<Bool>:Null<Bool>]
+											=
+											[Const:Bool] true
+										[Break:Dynamic]
+			[Var e(3759):Null<haxe.macro.TypedExpr>]
+				[Call:Null<haxe.macro.TypedExpr>]
+					[Field:() -> Null<haxe.macro.TypedExpr>]
+						[Local field(3742):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+			[Var tfunc(3766):Null<haxe.macro.TFunc>]
+				[If:Null<haxe.macro.TFunc>]
+					[Binop:Bool]
+						[Local e(3759):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						!=
+						[Const:Null<haxe.macro.TypedExpr>] null
+					[Then:Null<haxe.macro.TFunc>] [Block:Null<haxe.macro.TFunc>]
+						[Meta:Null<haxe.macro.TFunc>]
+							:ast(switch (e.expr) {
 	case TFunction(tfunc):
 		tfunc;	
 	case _:
 		null;	
-}) {
-				var ` = e.expr;
-				if (enumIndex ` == 12) {
-					var ` = `[0];
-					{
-						var tfunc = `;
-						{
-							tfunc;
-						};
-					};
-				} else {
-					null;
-				};
-			};
-		} else {
-			null;
-		};
-		return @:ast(switch (field.type) {
+})
+							[Block:Null<haxe.macro.TFunc>]
+								[Var `(3763):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Local e(3759):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[If:Null<haxe.macro.TFunc>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(3763):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										==
+										[Const:Int] 12
+									[Then:haxe.macro.TFunc] [Block:haxe.macro.TFunc]
+										[Var `(3764):haxe.macro.TFunc]
+											[EnumParameter:haxe.macro.TFunc]
+												[Local `(3763):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TFunction
+												0
+										[Block:haxe.macro.TFunc]
+											[Var tfunc(3765):haxe.macro.TFunc] [Local `(3764):haxe.macro.TFunc:haxe.macro.TFunc]
+											[Block:haxe.macro.TFunc] [Local tfunc(3765):haxe.macro.TFunc:haxe.macro.TFunc]
+									[Else:Null<Null<haxe.macro.TFunc>>] [Block:Null<Null<haxe.macro.TFunc>>] [Const:Null<Null<haxe.macro.TFunc>>] null
+					[Else:Null<haxe.macro.TFunc>] [Block:Null<haxe.macro.TFunc>] [Const:Null<haxe.macro.TFunc>] null
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.data.ClassFuncData>]
+					:ast(switch (field.type) {
 	case TFun(args, ret):
 		{
 			var index = 0;
@@ -246,163 +639,452 @@ class reflaxe.helpers.ClassFieldHelper {
 		};	
 	case _:
 		null;	
-}) {
-			var ` = field.type;
-			if (enumIndex ` == 4) {
-				var ` = `[0];
-				var ` = `[1];
-				{
-					var args = `;
-					var ret = `;
-					{
-						{
-							var index = [0];
-							var dataArgs = if (tfunc != null) {
-								{
-									var _this = tfunc.args;
-									{
-										var ` = [];
-										{
-											var ` = 0;
-											var ` = _this;
-											while (` < `.length) {
-												var v = `[`];
-												++ `;
-												`.push(function(a:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }) {
-													return new reflaxe.data.ClassFuncArg(index[0] ++, a.v.t, a.value != null, a.v.name, a.v.meta, a.value, a.v);
-												}(v));
-											};
-										};
-										`;
-									};
-								};
-							} else {
-								{
-									var ` = [];
-									{
-										var ` = 0;
-										var ` = args;
-										while (` < `.length) {
-											var v = `[`];
-											++ `;
-											`.push(function(a:{ t : haxe.macro.Type, opt : Bool, name : String }) {
-												return new reflaxe.data.ClassFuncArg(index[0] ++, a.t, a.opt, a.name, null, null, null);
-											}(v));
-										};
-									};
-									`;
-								};
-							};
-							var kind = @:ast(switch (field.kind) {
+})
+					[Block:Null<reflaxe.data.ClassFuncData>]
+						[Var `(3924):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local field(3742):haxe.macro.ClassField:haxe.macro.ClassField]
+								[FAnon:haxe.macro.Type] type:haxe.macro.Type
+						[If:Null<reflaxe.data.ClassFuncData>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(3924):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 4
+							[Then:reflaxe.data.ClassFuncData] [Block:reflaxe.data.ClassFuncData]
+								[Var `(3925):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[Local `(3924):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										0
+								[Var `(3926):haxe.macro.Type]
+									[EnumParameter:haxe.macro.Type]
+										[Local `(3924):haxe.macro.Type:haxe.macro.Type]
+										TFun
+										1
+								[Block:reflaxe.data.ClassFuncData]
+									[Var args(3927):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(3925):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+									[Var ret(3928):haxe.macro.Type] [Local `(3926):haxe.macro.Type:haxe.macro.Type]
+									[Block:reflaxe.data.ClassFuncData]
+										[Block:reflaxe.data.ClassFuncData]
+											[Var index(3929):Array<Int>] [ArrayDecl:Array<Int>] [Const:Int] 0
+											[Var dataArgs(3930):Array<reflaxe.data.ClassFuncArg>]
+												[If:Array<reflaxe.data.ClassFuncArg>]
+													[Binop:Bool]
+														[Local tfunc(3766):Null<haxe.macro.TFunc>:Null<haxe.macro.TFunc>]
+														!=
+														[Const:Null<haxe.macro.TFunc>] null
+													[Then:Array<reflaxe.data.ClassFuncArg>] [Block:Array<reflaxe.data.ClassFuncArg>]
+														[Block:Array<reflaxe.data.ClassFuncArg>]
+															[Var _this(3931):Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																	[Local tfunc(3766):Null<haxe.macro.TFunc>:Null<haxe.macro.TFunc>]
+																	[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+															[Block:Array<reflaxe.data.ClassFuncArg>]
+																[Var `(3932):Array<reflaxe.data.ClassFuncArg>] [ArrayDecl:Array<reflaxe.data.ClassFuncArg>]
+																[Block:Void]
+																	[Var `(3933):Int] [Const:Int] 0
+																	[Var `(3934):Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] [Local _this(3931):Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(3933):Int:Int]
+																			<
+																			[Field:Int]
+																				[Local `(3934):Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																				[FInstance:Int]
+																					Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																					length:Int
+																		[Block:Void]
+																			[Var v(3935):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																				[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																					[Local `(3934):Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																					[Local `(3933):Int:Int]
+																			[Unop:Int]
+																				++
+																				Prefix
+																				[Local `(3933):Int:Int]
+																			[Call:Int]
+																				[Field:(x : reflaxe.data.ClassFuncArg) -> Int]
+																					[Local `(3932):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																					[FInstance:(x : reflaxe.data.ClassFuncArg) -> Int]
+																						Array<reflaxe.data.ClassFuncArg>
+																						push:(x : Array.T) -> Int
+																				[Call:reflaxe.data.ClassFuncArg]
+																					[Function:(a : { value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }) -> reflaxe.data.ClassFuncArg]
+																						[Arg:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }] [Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																						[Block:Dynamic]
+																							[Return:Dynamic]
+																								[New:reflaxe.data.ClassFuncArg]
+																									reflaxe.data.ClassFuncArg
+																									[Unop:Int]
+																										++
+																										Postfix
+																										[Array:Int]
+																											[Local index(3929):Array<Int>:Array<Int>]
+																											[Const:Int] 0
+																									[Field:haxe.macro.Type]
+																										[Field:haxe.macro.TVar]
+																											[Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																											[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+																										[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																									[Binop:Bool]
+																										[Field:Null<haxe.macro.TypedExpr>]
+																											[Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																											[FAnon:Null<haxe.macro.TypedExpr>] value:Null<haxe.macro.TypedExpr>
+																										!=
+																										[Const:Null<haxe.macro.TypedExpr>] null
+																									[Field:String]
+																										[Field:haxe.macro.TVar]
+																											[Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																											[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+																										[FAnon:String] name:String
+																									[Field:Null<haxe.macro.MetaAccess>]
+																										[Field:haxe.macro.TVar]
+																											[Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																											[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+																										[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+																									[Field:Null<haxe.macro.TypedExpr>]
+																										[Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																										[FAnon:Null<haxe.macro.TypedExpr>] value:Null<haxe.macro.TypedExpr>
+																									[Field:haxe.macro.TVar]
+																										[Local a(3936):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																										[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+																					[Local v(3935):{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																[Local `(3932):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+													[Else:Array<reflaxe.data.ClassFuncArg>] [Block:Array<reflaxe.data.ClassFuncArg>]
+														[Block:Array<reflaxe.data.ClassFuncArg>]
+															[Var `(3937):Array<reflaxe.data.ClassFuncArg>] [ArrayDecl:Array<reflaxe.data.ClassFuncArg>]
+															[Block:Void]
+																[Var `(3938):Int] [Const:Int] 0
+																[Var `(3939):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local args(3927):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																[While:Void]
+																	[Binop:Bool]
+																		[Local `(3938):Int:Int]
+																		<
+																		[Field:Int]
+																			[Local `(3939):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																			[FInstance:Int]
+																				Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																				length:Int
+																	[Block:Void]
+																		[Var v(3940):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																			[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																				[Local `(3939):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																				[Local `(3938):Int:Int]
+																		[Unop:Int]
+																			++
+																			Prefix
+																			[Local `(3938):Int:Int]
+																		[Call:Int]
+																			[Field:(x : reflaxe.data.ClassFuncArg) -> Int]
+																				[Local `(3937):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																				[FInstance:(x : reflaxe.data.ClassFuncArg) -> Int]
+																					Array<reflaxe.data.ClassFuncArg>
+																					push:(x : Array.T) -> Int
+																			[Call:reflaxe.data.ClassFuncArg]
+																				[Function:(a : { t : haxe.macro.Type, opt : Bool, name : String }) -> reflaxe.data.ClassFuncArg]
+																					[Arg:{ t : haxe.macro.Type, opt : Bool, name : String }] [Local a(3941):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																					[Block:Dynamic]
+																						[Return:Dynamic]
+																							[New:reflaxe.data.ClassFuncArg]
+																								reflaxe.data.ClassFuncArg
+																								[Unop:Int]
+																									++
+																									Postfix
+																									[Array:Int]
+																										[Local index(3929):Array<Int>:Array<Int>]
+																										[Const:Int] 0
+																								[Field:haxe.macro.Type]
+																									[Local a(3941):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																								[Field:Bool]
+																									[Local a(3941):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[FAnon:Bool] opt:Bool
+																								[Field:String]
+																									[Local a(3941):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[FAnon:String] name:String
+																								[Const:Null<haxe.macro.MetaAccess>] null
+																								[Const:Null<haxe.macro.TypedExpr>] null
+																								[Const:Null<haxe.macro.TVar>] null
+																				[Local v(3940):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+															[Local `(3937):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+											[Var kind(3942):haxe.macro.MethodKind]
+												[Meta:haxe.macro.MethodKind]
+													:ast(switch (field.kind) {
 	case FMethod(kind):
 		kind;	
 	case _:
 		throw "Not a method.";	
-}) {
-								var ` = field.kind;
-								if (enumIndex ` == 1) {
-									var ` = `[0];
-									{
-										var kind = `;
-										{
-											kind;
-										};
-									};
-								} else {
-									throw "Not a method.";
-								};
-							};
-							var result = new reflaxe.data.ClassFuncData(id, clsType, field, isStatic, kind, ret, dataArgs, tfunc, if (tfunc != null) {
-								tfunc.expr;
-							} else {
-								null;
-							}, null, null);
-							{
-								var ` = 0;
-								while (` < dataArgs.length) {
-									var a = dataArgs[`];
-									++ `;
-									a.setFuncData(result);
-								};
-							};
-							{
-								var this = reflaxe.helpers.ClassFieldHelper.findFuncData_cache;
-								cast this.set(id, result);
-							};
-							result;
-						};
-					};
-				};
-			} else {
-				null;
-			};
-		};
-	}
+})
+													[Block:haxe.macro.MethodKind]
+														[Var `(3943):haxe.macro.FieldKind]
+															[Field:haxe.macro.FieldKind]
+																[Local field(3742):haxe.macro.ClassField:haxe.macro.ClassField]
+																[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+														[If:haxe.macro.MethodKind]
+															[Binop:Bool]
+																[EnumIndex:Int] [Local `(3943):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																==
+																[Const:Int] 1
+															[Then:haxe.macro.MethodKind] [Block:haxe.macro.MethodKind]
+																[Var `(3944):haxe.macro.MethodKind]
+																	[EnumParameter:haxe.macro.MethodKind]
+																		[Local `(3943):haxe.macro.FieldKind:haxe.macro.FieldKind]
+																		FMethod
+																		0
+																[Block:haxe.macro.MethodKind]
+																	[Var kind(3945):haxe.macro.MethodKind] [Local `(3944):haxe.macro.MethodKind:haxe.macro.MethodKind]
+																	[Block:haxe.macro.MethodKind] [Local kind(3945):haxe.macro.MethodKind:haxe.macro.MethodKind]
+															[Else:haxe.macro.MethodKind] [Block:haxe.macro.MethodKind] [Throw:haxe.macro.MethodKind] [Const:String] "Not a method."
+											[Var result(3946):reflaxe.data.ClassFuncData]
+												[New:reflaxe.data.ClassFuncData]
+													reflaxe.data.ClassFuncData
+													[Local id(3745):String:String]
+													[Local clsType(3743):haxe.macro.ClassType:haxe.macro.ClassType]
+													[Local field(3742):haxe.macro.ClassField:haxe.macro.ClassField]
+													[Local isStatic(3744):Null<Bool>:Null<Bool>]
+													[Local kind(3942):haxe.macro.MethodKind:haxe.macro.MethodKind]
+													[Local ret(3928):haxe.macro.Type:haxe.macro.Type]
+													[Local dataArgs(3930):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+													[Local tfunc(3766):Null<haxe.macro.TFunc>:Null<haxe.macro.TFunc>]
+													[If:Null<haxe.macro.TypedExpr>]
+														[Binop:Bool]
+															[Local tfunc(3766):Null<haxe.macro.TFunc>:Null<haxe.macro.TFunc>]
+															!=
+															[Const:Null<haxe.macro.TFunc>] null
+														[Then:haxe.macro.TypedExpr] [Block:haxe.macro.TypedExpr]
+															[Field:haxe.macro.TypedExpr]
+																[Local tfunc(3766):Null<haxe.macro.TFunc>:Null<haxe.macro.TFunc>]
+																[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+														[Else:Null<haxe.macro.TypedExpr>] [Block:Null<haxe.macro.TypedExpr>] [Const:Null<haxe.macro.TypedExpr>] null
+													[Const:Null<Bool>] null
+													[Const:Null<haxe.macro.ClassField>] null
+											[Block:Void]
+												[Var `(3947):Int] [Const:Int] 0
+												[While:Void]
+													[Binop:Bool]
+														[Local `(3947):Int:Int]
+														<
+														[Field:Int]
+															[Local dataArgs(3930):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+															[FInstance:Int]
+																Array<reflaxe.data.ClassFuncArg>
+																length:Int
+													[Block:Void]
+														[Var a(3948):reflaxe.data.ClassFuncArg]
+															[Array:reflaxe.data.ClassFuncArg]
+																[Local dataArgs(3930):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																[Local `(3947):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(3947):Int:Int]
+														[Call:Void]
+															[Field:(funcData : reflaxe.data.ClassFuncData) -> Void]
+																[Local a(3948):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																[FInstance:(funcData : reflaxe.data.ClassFuncData) -> Void]
+																	reflaxe.data.ClassFuncArg
+																	setFuncData:(funcData : reflaxe.data.ClassFuncData) -> Void
+															[Local result(3946):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[Block:Void]
+												[Var this(3949):haxe.IMap<String, reflaxe.data.ClassFuncData>]
+													[Field:Map<String, reflaxe.data.ClassFuncData>]
+														[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+														[FStatic:Map<String, reflaxe.data.ClassFuncData>]
+															reflaxe.helpers.ClassFieldHelper
+															findFuncData_cache:Map<String, reflaxe.data.ClassFuncData>
+												[Call:Void]
+													[Field:(key : String, value : reflaxe.data.ClassFuncData) -> Void]
+														[Cast:haxe.ds.StringMap<reflaxe.data.ClassFuncData>] [Local this(3949):haxe.IMap<String, reflaxe.data.ClassFuncData>:haxe.IMap<String, reflaxe.data.ClassFuncData>]
+														[FInstance:(key : String, value : reflaxe.data.ClassFuncData) -> Void]
+															haxe.ds.StringMap<reflaxe.data.ClassFuncData>
+															set:(key : String, value : haxe.ds.StringMap.T) -> Void
+													[Local id(3745):String:String]
+													[Local result(3946):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[Local result(3946):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[Else:Null<reflaxe.data.ClassFuncData>] [Block:Null<reflaxe.data.ClassFuncData>] [Const:Null<reflaxe.data.ClassFuncData>] null
 
-	public static function findFuncDataFromType(field:haxe.macro.ClassField, type:haxe.macro.Type) {
-		return @:ast(switch (type) {
+	public static function findFuncDataFromType[Function:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>]
+		[Arg:haxe.macro.ClassField] [Local field(7589):haxe.macro.ClassField]
+		[Arg:haxe.macro.Type] [Local type(7590):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.data.ClassFuncData>]
+					:ast(switch (type) {
 	case TInst(clsRef, _):
 		findFuncData(field, clsRef.get());	
 	case _:
 		null;	
-}) if (enumIndex type == 2) {
-			var ` = type[0];
-			var ` = type[1];
-			{
-				var clsRef = `;
-				{
-					reflaxe.helpers.ClassFieldHelper.findFuncData(field, clsRef.get(), null);
-				};
-			};
-		} else {
-			null;
-		};
-	}
+})
+					[If:Null<reflaxe.data.ClassFuncData>]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local type(7590):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:Null<reflaxe.data.ClassFuncData>] [Block:Null<reflaxe.data.ClassFuncData>]
+							[Var `(7594):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local type(7590):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(7595):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local type(7590):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:Null<reflaxe.data.ClassFuncData>]
+								[Var clsRef(7596):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(7594):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:Null<reflaxe.data.ClassFuncData>]
+									[Call:Null<reflaxe.data.ClassFuncData>]
+										[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+											[TypeExpr reflaxe.helpers.ClassFieldHelper:Class<reflaxe.helpers.ClassFieldHelper>]
+											[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+												reflaxe.helpers.ClassFieldHelper
+												findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+										[Local field(7589):haxe.macro.ClassField:haxe.macro.ClassField]
+										[Call:haxe.macro.ClassType]
+											[Field:() -> haxe.macro.ClassType]
+												[Local clsRef(7596):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+												[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[Const:Null<Bool>] null
+						[Else:Null<reflaxe.data.ClassFuncData>] [Block:Null<reflaxe.data.ClassFuncData>] [Const:Null<reflaxe.data.ClassFuncData>] null
 
-	public static function getAllVariableNames(data:reflaxe.data.ClassFuncData, compiler:reflaxe.BaseCompiler) {
-		var fields = data.classType.fields.get();
-		var fieldNames = [];
-		{
-			var ` = 0;
-			while (` < fields.length) {
-				var f = fields[`];
-				++ `;
-				@:ast(switch (f.kind) {
+	public static function getAllVariableNames[Function:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Array<String>]
+		[Arg:reflaxe.data.ClassFuncData] [Local data(7398):reflaxe.data.ClassFuncData]
+		[Arg:reflaxe.BaseCompiler] [Local compiler(7399):reflaxe.BaseCompiler]
+		[Block:Dynamic]
+			[Var fields(7400):Array<haxe.macro.ClassField>]
+				[Call:Array<haxe.macro.ClassField>]
+					[Field:() -> Array<haxe.macro.ClassField>]
+						[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+							[Field:haxe.macro.ClassType]
+								[Local data(7398):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+								[FInstance:haxe.macro.ClassType]
+									reflaxe.data.ClassFuncData
+									classType:haxe.macro.ClassType
+							[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+						[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+			[Var fieldNames(7401):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(7416):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(7416):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(7400):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var f(7402):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local fields(7400):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(7416):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(7416):Int:Int]
+						[Meta:Void]
+							:ast(switch (f.kind) {
 	case FVar(_, _):
 		fieldNames.push(compiler.compileVarName(f.name, null, f));	
 	case _:
 		{ };	
-}) {
-					var ` = f.kind;
-					if (enumIndex ` == 0) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							fieldNames.push(compiler.compileVarName(f.name, null, f));
-						};
-					} else {
-						{};
-					};
-				};
-			};
-		};
-		return fieldNames;
-	}
+})
+							[Block:Void]
+								[Var `(7413):haxe.macro.FieldKind]
+									[Field:haxe.macro.FieldKind]
+										[Local f(7402):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+								[If:Void]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(7413):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										==
+										[Const:Int] 0
+									[Then:Int] [Block:Int]
+										[Var `(7414):haxe.macro.VarAccess]
+											[EnumParameter:haxe.macro.VarAccess]
+												[Local `(7413):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FVar
+												0
+										[Var `(7415):haxe.macro.VarAccess]
+											[EnumParameter:haxe.macro.VarAccess]
+												[Local `(7413):haxe.macro.FieldKind:haxe.macro.FieldKind]
+												FVar
+												1
+										[Block:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local fieldNames(7401):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Call:String]
+													[Field:(name : String, ?expr : Null<haxe.macro.TypedExpr>, ?field : Null<haxe.macro.ClassField>) -> String]
+														[Local compiler(7399):reflaxe.BaseCompiler:reflaxe.BaseCompiler]
+														[FInstance:(name : String, ?expr : Null<haxe.macro.TypedExpr>, ?field : Null<haxe.macro.ClassField>) -> String]
+															reflaxe.BaseCompiler
+															compileVarName:(name : String, ?expr : Null<haxe.macro.TypedExpr>, ?field : Null<haxe.macro.ClassField>) -> String
+													[Field:String]
+														[Local f(7402):haxe.macro.ClassField:haxe.macro.ClassField]
+														[FAnon:String] name:String
+													[Const:Null<haxe.macro.TypedExpr>] null
+													[Local f(7402):haxe.macro.ClassField:haxe.macro.ClassField]
+									[Else:Void] [Block:Void] [Block:Void]
+			[Return:Dynamic] [Local fieldNames(7401):Array<String>:Array<String>]
 
-	public static function hasDefaultValue(field:haxe.macro.ClassField) {
-		return reflaxe.helpers.NameMetaHelper.hasMeta(field, ":value");
-	}
+	public static function hasDefaultValue[Function:(field : haxe.macro.ClassField) -> Bool]
+		[Arg:haxe.macro.ClassField] [Local field(3555):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+						[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+						[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+							reflaxe.helpers.NameMetaHelper
+							hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+					[Local field(3555):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Const:String] ":value"
 
-	public static function getHaxeName(field:haxe.macro.ClassField) {
-		return if (reflaxe.helpers.NameMetaHelper.hasMeta(field, ":realPath")) {
-			var tmp = {
-				reflaxe.helpers.NullableMetaAccessHelper.extractStringFromFirstMeta(field.meta, ":realPath", null);
-			};
-			if (tmp != null) tmp else {
-				field.name;
-			};
-		} else {
-			field.name;
-		};
-	}
+	public static function getHaxeName[Function:(field : haxe.macro.ClassField) -> String]
+		[Arg:haxe.macro.ClassField] [Local field(3545):haxe.macro.ClassField]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:String]
+					[Call:Bool]
+						[Field:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+							[TypeExpr reflaxe.helpers.NameMetaHelper:{ Statics reflaxe.helpers.NameMetaHelper }]
+							[FStatic:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool]
+								reflaxe.helpers.NameMetaHelper
+								hasMeta:(v : reflaxe.helpers.NameAndMeta, metaName : String) -> Bool
+						[Local field(3545):haxe.macro.ClassField:haxe.macro.ClassField]
+						[Const:String] ":realPath"
+					[Then:String] [Block:String]
+						[Var tmp(3546):Null<String>]
+							[Block:Null<String>]
+								[Call:Null<String>]
+									[Field:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>]
+										[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+										[FStatic:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>]
+											reflaxe.helpers.NullableMetaAccessHelper
+											extractStringFromFirstMeta:(metaAccess : Null<haxe.macro.MetaAccess>, metaName : String, ?index : Int) -> Null<String>
+									[Field:haxe.macro.MetaAccess]
+										[Local field(3545):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+									[Const:String] ":realPath"
+									[Const:Null<Int>] null
+						[If:String]
+							[Binop:Bool]
+								[Local tmp(3546):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:Null<String>] [Local tmp(3546):Null<String>:Null<String>]
+							[Else:String] [Block:String]
+								[Field:String]
+									[Local field(3545):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:String] name:String
+					[Else:String] [Block:String]
+						[Field:String]
+							[Local field(3545):haxe.macro.ClassField:haxe.macro.ClassField]
+							[FAnon:String] name:String
 }

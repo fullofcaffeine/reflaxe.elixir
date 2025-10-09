@@ -13,8 +13,9 @@
 # Paths relative to the project root using SCOPE_DIR
 -cp ${SCOPE_DIR}/src/
 
-# Include staged .cross.hx files (must come before std/ for proper override)
--cp ${SCOPE_DIR}/std/_std/
+# Elixir-specific staged .cross.hx files are added conditionally by
+# CompilerInit.Start() only when target.name == "elixir".
+# This prevents __elixir__ code from leaking into macro or other targets.
 
 # Include the Elixir standard library definitions
 -cp ${SCOPE_DIR}/std/
@@ -24,6 +25,4 @@
 
 # Define the library version
 -D reflaxe.elixir=0.1.0
-
-# Initialize the Elixir compiler
---macro reflaxe.elixir.CompilerInit.Start()
+# Note: CompilerInit.Start() must be invoked explicitly by consumers

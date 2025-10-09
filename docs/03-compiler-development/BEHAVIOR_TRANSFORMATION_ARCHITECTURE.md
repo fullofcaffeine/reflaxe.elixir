@@ -225,5 +225,5 @@ The todo-app example uses TodoPresence with real Phoenix.Presence to validate th
 ## Related Documentation
 
 - [AST Pipeline Architecture](../05-architecture/AST_PIPELINE_MIGRATION.md)
-- [Compiler Development Guide](CLAUDE.md)
+- [Compiler Development Guide](AGENTS.md)
 - [Phoenix Integration Patterns](../06-guides/phoenix-integration.md)

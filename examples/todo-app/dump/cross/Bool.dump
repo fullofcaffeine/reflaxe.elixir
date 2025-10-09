@@ -1,2 +1,2 @@
-@:valueUsed @:used @:coreType @:notNull @:runtimeValue
+@:used @:coreType @:notNull @:runtimeValue
 abstract Bool {}

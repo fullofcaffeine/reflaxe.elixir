@@ -133,7 +133,7 @@ The TEnumParameter handling has multiple fallback paths:
 > - `ClauseContext.localToName` - Pattern variable registrations
 > - `tempVarRenameMap` - Infrastructure variable mappings
 
-**From CLAUDE.md findings (January 2025)**:
+**From AGENTS.md findings (January 2025)**:
 ```haxe
 // ❌ WRONG: Creates new context
 var result = context.compiler.compileExpressionImpl(expr, false);
@@ -155,7 +155,7 @@ var result = ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
 ### 3.3 Multiple Detection Paths (Architecture Smell)
 
-From `/CLAUDE.md`:
+From `/AGENTS.md`:
 > **CRITICAL: Predictable Pipeline Architecture - No Logic Bypassing Logic**
 >
 > ❌ **Multiple detection paths** for the same pattern (builder detecting AND transformer detecting)

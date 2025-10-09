@@ -1,11 +1,43 @@
 class reflaxe.data.EnumOptionArg {
 
-	public function new(optionData:reflaxe.data.EnumOptionData, type:haxe.macro.Type, opt:Bool, name:String) {
-		this.optionData = optionData;
-		this.type = type;
-		this.opt = opt;
-		this.name = name;
-	}
+	public function new[Function:(optionData : reflaxe.data.EnumOptionData, type : haxe.macro.Type, opt : Bool, name : String) -> Void]
+		[Arg:reflaxe.data.EnumOptionData] [Local optionData(10706):reflaxe.data.EnumOptionData]
+		[Arg:haxe.macro.Type] [Local type(10707):haxe.macro.Type]
+		[Arg:Bool] [Local opt(10708):Bool]
+		[Arg:String] [Local name(10709):String]
+		[Block:String]
+			[Binop:reflaxe.data.EnumOptionData]
+				[Field:reflaxe.data.EnumOptionData]
+					[Const:reflaxe.data.EnumOptionArg] this
+					[FInstance:reflaxe.data.EnumOptionData]
+						reflaxe.data.EnumOptionArg
+						optionData:reflaxe.data.EnumOptionData
+				=
+				[Local optionData(10706):reflaxe.data.EnumOptionData:reflaxe.data.EnumOptionData]
+			[Binop:haxe.macro.Type]
+				[Field:haxe.macro.Type]
+					[Const:reflaxe.data.EnumOptionArg] this
+					[FInstance:haxe.macro.Type]
+						reflaxe.data.EnumOptionArg
+						type:haxe.macro.Type
+				=
+				[Local type(10707):haxe.macro.Type:haxe.macro.Type]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.data.EnumOptionArg] this
+					[FInstance:Bool]
+						reflaxe.data.EnumOptionArg
+						opt:Bool
+				=
+				[Local opt(10708):Bool:Bool]
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.data.EnumOptionArg] this
+					[FInstance:String]
+						reflaxe.data.EnumOptionArg
+						name:String
+				=
+				[Local name(10709):String:String]
 
 	public var optionData(default,null):reflaxe.data.EnumOptionData;
 

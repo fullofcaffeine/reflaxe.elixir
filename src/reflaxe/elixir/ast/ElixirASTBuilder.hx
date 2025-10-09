@@ -1027,6 +1027,13 @@ class ElixirASTBuilder {
                                 // The pattern will have 'g' and this TVar extracts to 'g'
                                 currentContext.currentClauseContext.pushPatternBindings([{varId: v.id, binderName: tempVarName}]);
 
+                                #if debug_option_some_binder
+                                var __optionSomeDiagPos = Std.string(v.pos);
+                                if (__optionSomeDiagPos.indexOf('TodoPubSub') >= 0) {
+                                    haxe.Log.trace('[OptionSomeDiag] TEnumParameter binding registered: TVar ' + v.id + ' → ' + tempVarName + ' at ' + __optionSomeDiagPos, null);
+                                }
+                                #end
+
                                 #if debug_clause_context
                                 #if debug_ast_builder
                                 trace('[ClauseContext Integration] Registered pattern binding for TEnumParameter:');
@@ -1087,6 +1094,13 @@ class ElixirASTBuilder {
                                     #if debug_ast_builder
                                     trace('  - TVar ID ${v.id} now maps to user var "$userVarName" (was temp "${tempVar.name}")');
                                     #end
+                                    #end
+
+                                    #if debug_option_some_binder
+                                    var __optionSomeDiagAssignPos = Std.string(v.pos);
+                                    if (__optionSomeDiagAssignPos.indexOf('TodoPubSub') >= 0) {
+                                        haxe.Log.trace('[OptionSomeDiag] Pattern binding reassign: TVar ' + v.id + ' → ' + userVarName + ' (from ' + tempVar.name + ') at ' + __optionSomeDiagAssignPos, null);
+                                    }
                                     #end
                                 }
 
@@ -2360,6 +2374,7 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                Sys.println('[ElixirASTBuilder] delegating TSwitch over ' + Type.enumConstructor(e.expr) + ' with ' + cases.length + ' case(s)');
                 // Ensure compiler is set before delegation
                 if (currentContext.compiler == null && compiler != null) {
                     currentContext.compiler = compiler;
@@ -2623,6 +2638,8 @@ class ElixirASTBuilder {
                     args.push(PVar(finalName));
                     
                     currentContext.functionParameterIds.set(idKey, true); // Mark as function parameter
+                    // Also record by name for outer-scope collision avoidance during pattern alignment
+                    currentContext.functionParameterNames.set(finalName, true);
                     #if debug_ast_pipeline
                     #if debug_ast_builder
                     trace('[AST Builder] Registering parameter in rename map: id=$idKey');
@@ -2660,6 +2677,10 @@ class ElixirASTBuilder {
                 currentContext.tempVarRenameMap = oldTempVarRenameMap;
                 for (arg in f.args) {
                     currentContext.functionParameterIds.remove(Std.string(arg.v.id));
+                    // Remove by both original and final names
+                    var originalName = arg.v.name;
+                    var finalName = paramRenaming.exists(originalName) ? paramRenaming.get(originalName) : VariableAnalyzer.toElixirVarName(originalName);
+                    currentContext.functionParameterNames.remove(finalName);
                 }
                 
                 // Apply any remaining parameter renaming if needed
@@ -2784,7 +2805,10 @@ class ElixirASTBuilder {
                 var buildContext: reflaxe.elixir.ast.builders.LoopBuilder.BuildContext = {
                     isFeatureEnabled: function(f) return currentContext.isFeatureEnabled(f),
                     buildFromTypedExpr: function(e, ?ctx) return buildFromTypedExpr(e, currentContext),
-                    whileLoopCounter: currentContext.whileLoopCounter
+                    whileLoopCounter: currentContext.whileLoopCounter,
+                    registerTempVarRename: function(oldName:String, newName:String) {
+                        currentContext.registerTempVarRename(oldName, newName);
+                    }
                 };
                 return LoopBuilder.buildFor(v, e1, e2, expr, buildContext, name -> VariableAnalyzer.toElixirVarName(name));
                 
@@ -2794,7 +2818,10 @@ class ElixirASTBuilder {
                 var buildContext: reflaxe.elixir.ast.builders.LoopBuilder.BuildContext = {
                     isFeatureEnabled: function(f) return currentContext.isFeatureEnabled(f),
                     buildFromTypedExpr: function(e, ?ctx) return buildFromTypedExpr(e, currentContext),
-                    whileLoopCounter: currentContext.whileLoopCounter
+                    whileLoopCounter: currentContext.whileLoopCounter,
+                    registerTempVarRename: function(oldName:String, newName:String) {
+                        currentContext.registerTempVarRename(oldName, newName);
+                    }
                 };
                 return LoopBuilder.buildWhileComplete(econd, e, normalWhile, expr, buildContext, name -> VariableAnalyzer.toElixirVarName(name)); 
                 

@@ -1,123 +1,382 @@
 class reflaxe.elixir.macros.MigrationBuilder {
 
 	@:has_untyped
-	public static macro function build() {
-		var fields = haxe.macro.Context.getBuildFields();
-		var localClass = haxe.macro.Context.getLocalClass().get();
-		if (! localClass.meta.has(":migration")) {
-			return fields;
-		};
-		var migrationMeta = localClass.meta.extract(":migration")[0];
-		var migrationName = reflaxe.elixir.macros.MigrationBuilder.extractMigrationName(localClass, migrationMeta);
-		{
-			var ` = 0;
-			while (` < fields.length) {
-				var field = fields[`];
-				++ `;
-				@:ast(switch (field.name) {
+	public static macro function build[Function:() -> Array<haxe.macro.Field>]
+		[Block:Dynamic]
+			[Var fields(13822):Array<haxe.macro.Field>]
+				[Call:Array<haxe.macro.Field>]
+					[Field:() -> Array<haxe.macro.Field>]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:() -> Array<haxe.macro.Field>]
+							haxe.macro.Context
+							getBuildFields:() -> Array<haxe.macro.Field>
+			[Var localClass(13823):haxe.macro.ClassType]
+				[Call:haxe.macro.ClassType]
+					[Field:() -> haxe.macro.ClassType]
+						[Call:Null<haxe.macro.Ref<haxe.macro.ClassType>>]
+							[Field:() -> Null<haxe.macro.Ref<haxe.macro.ClassType>>]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:() -> Null<haxe.macro.Ref<haxe.macro.ClassType>>]
+									haxe.macro.Context
+									getLocalClass:() -> Null<haxe.macro.Ref<haxe.macro.ClassType>>
+						[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(name : String) -> Bool]
+							[Field:haxe.macro.MetaAccess]
+								[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+						[Const:String] ":migration"
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local fields(13822):Array<haxe.macro.Field>:Array<haxe.macro.Field>]
+			[Var migrationMeta(13824):haxe.macro.MetadataEntry]
+				[Array:haxe.macro.MetadataEntry]
+					[Call:Array<haxe.macro.MetadataEntry>]
+						[Field:(name : String) -> Array<haxe.macro.MetadataEntry>]
+							[Field:haxe.macro.MetaAccess]
+								[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Array<haxe.macro.MetadataEntry>] extract:(name : String) -> Array<haxe.macro.MetadataEntry>
+						[Const:String] ":migration"
+					[Const:Int] 0
+			[Var migrationName(13838):String]
+				[Call:String]
+					[Field:(cls : haxe.macro.ClassType, meta : haxe.macro.MetadataEntry) -> String]
+						[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+						[FStatic:(cls : haxe.macro.ClassType, meta : haxe.macro.MetadataEntry) -> String]
+							reflaxe.elixir.macros.MigrationBuilder
+							extractMigrationName:(cls : haxe.macro.ClassType, meta : haxe.macro.MetadataEntry) -> String
+					[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Local migrationMeta(13824):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+			[Block:Void]
+				[Var `(14022):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14022):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(13822):Array<haxe.macro.Field>:Array<haxe.macro.Field>]
+							[FInstance:Int]
+								Array<haxe.macro.Field>
+								length:Int
+					[Block:Void]
+						[Var field(13839):haxe.macro.Field]
+							[Array:haxe.macro.Field]
+								[Local fields(13822):Array<haxe.macro.Field>:Array<haxe.macro.Field>]
+								[Local `(14022):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14022):Int:Int]
+						[Meta:Void]
+							:ast(switch (field.name) {
 	case "up":
 		processUpMethod(field, migrationName);	
 	case "down":
 		processDownMethod(field, migrationName);	
-}) {
-					var ` = field.name;
-					switch (`) {
-						case "down": {
-							{
-								reflaxe.elixir.macros.MigrationBuilder.processDownMethod(field, migrationName);
-							};
-						};
-						case "up": {
-							{
-								reflaxe.elixir.macros.MigrationBuilder.processUpMethod(field, migrationName);
-							};
-						};
-					};
-				};
-			};
-		};
-		localClass.meta.add(":migrationName", [cast haxe.macro.Context.makeExpr(migrationName, $__mk_pos__("../../src/reflaxe/elixir/macros/MigrationBuilder.hx", 2200, 2213))], localClass.pos);
-		if (! localClass.meta.has(":migrationTimestamp")) {
-			var timestamp = reflaxe.elixir.macros.MigrationBuilder.generateTimestamp();
-			localClass.meta.add(":migrationTimestamp", [cast haxe.macro.Context.makeExpr(timestamp, $__mk_pos__("../../src/reflaxe/elixir/macros/MigrationBuilder.hx", 2456, 2465))], localClass.pos);
-		};
-		return fields;
-	}
+})
+							[Block:Void]
+								[Var `(14021):String]
+									[Field:String]
+										[Local field(13839):haxe.macro.Field:haxe.macro.Field]
+										[FAnon:String] name:String
+								[Switch:Void]
+									[Local `(14021):String:String]
+									[Case:Void]
+										[Const:String] "down"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(field : haxe.macro.Field, migrationName : String) -> Void]
+														[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+														[FStatic:(field : haxe.macro.Field, migrationName : String) -> Void]
+															reflaxe.elixir.macros.MigrationBuilder
+															processDownMethod:(field : haxe.macro.Field, migrationName : String) -> Void
+													[Local field(13839):haxe.macro.Field:haxe.macro.Field]
+													[Local migrationName(13838):String:String]
+									[Case:Void]
+										[Const:String] "up"
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(field : haxe.macro.Field, migrationName : String) -> Void]
+														[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+														[FStatic:(field : haxe.macro.Field, migrationName : String) -> Void]
+															reflaxe.elixir.macros.MigrationBuilder
+															processUpMethod:(field : haxe.macro.Field, migrationName : String) -> Void
+													[Local field(13839):haxe.macro.Field:haxe.macro.Field]
+													[Local migrationName(13838):String:String]
+			[Call:Void]
+				[Field:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+					[Field:haxe.macro.MetaAccess]
+						[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+					[FAnon:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void] add:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void
+				[Const:String] ":migrationName"
+				[ArrayDecl:Array<haxe.macro.Expr>]
+					[Cast:haxe.macro.Expr]
+						[Call:haxe.macro.Expr]
+							[Field:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+									haxe.macro.Context
+									makeExpr:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr
+							[Local migrationName(13838):String:String]
+							[Call:haxe.macro.Position]
+								[Ident:(String, Int, Int) -> Unknown<163>] $__mk_pos__
+								[Const:String] "../../src/reflaxe/elixir/macros/MigrationBuilder.hx"
+								[Const:Int] 2200
+								[Const:Int] 2213
+				[Field:haxe.macro.Position]
+					[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(name : String) -> Bool]
+							[Field:haxe.macro.MetaAccess]
+								[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+						[Const:String] ":migrationTimestamp"
+				[Then:Void] [Block:Void]
+					[Var timestamp(14030):String]
+						[Call:String]
+							[Field:() -> String]
+								[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+								[FStatic:() -> String]
+									reflaxe.elixir.macros.MigrationBuilder
+									generateTimestamp:() -> String
+					[Call:Void]
+						[Field:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+							[Field:haxe.macro.MetaAccess]
+								[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void] add:(name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void
+						[Const:String] ":migrationTimestamp"
+						[ArrayDecl:Array<haxe.macro.Expr>]
+							[Cast:haxe.macro.Expr]
+								[Call:haxe.macro.Expr]
+									[Field:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+										[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+										[FStatic:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr]
+											haxe.macro.Context
+											makeExpr:(v : Dynamic, pos : haxe.macro.Position) -> haxe.macro.Expr
+									[Local timestamp(14030):String:String]
+									[Call:haxe.macro.Position]
+										[Ident:(String, Int, Int) -> Unknown<164>] $__mk_pos__
+										[Const:String] "../../src/reflaxe/elixir/macros/MigrationBuilder.hx"
+										[Const:Int] 2456
+										[Const:Int] 2465
+						[Field:haxe.macro.Position]
+							[Local localClass(13823):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+			[Return:Dynamic] [Local fields(13822):Array<haxe.macro.Field>:Array<haxe.macro.Field>]
 
-	static function extractMigrationName(cls:haxe.macro.ClassType, meta:haxe.macro.MetadataEntry) {
-		if (meta != null && meta.params != null && meta.params.length > 0) {
-			@:ast(switch (meta.params[0].expr) {
+	static function extractMigrationName[Function:(cls : haxe.macro.ClassType, meta : haxe.macro.MetadataEntry) -> String]
+		[Arg:haxe.macro.ClassType] [Local cls(13825):haxe.macro.ClassType]
+		[Arg:haxe.macro.MetadataEntry] [Local meta(13826):haxe.macro.MetadataEntry]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local meta(13826):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+							!=
+							[Const:haxe.macro.MetadataEntry] null
+						&&
+						[Binop:Bool]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local meta(13826):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							!=
+							[Const:Null<Array<haxe.macro.Expr>>] null
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Null<Array<haxe.macro.Expr>>]
+								[Local meta(13826):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+								[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+						>
+						[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (meta.params[0].expr) {
 	case EConst(CString(name)):
 		return name;	
 	default:
-}) {
-				var ` = meta.params[0].expr;
-				if (enumIndex ` == 0) {
-					var ` = `[0];
-					if (enumIndex ` == 2) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var name = `;
-							{
-								return name;
-							};
-						};
-					} else {};
-				} else {};
-			};
-		};
-		return reflaxe.elixir.macros.MigrationBuilder.toSnakeCase(cls.name);
-	}
+})
+						[Block:Void]
+							[Var `(13832):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local meta(13826):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(13832):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Var `(13833):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(13832):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(13833):haxe.macro.Constant:haxe.macro.Constant]
+											==
+											[Const:Int] 2
+										[Then:Dynamic] [Block:Dynamic]
+											[Var `(13834):String]
+												[EnumParameter:String]
+													[Local `(13833):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(13835):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(13833):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:Dynamic]
+												[Var name(13836):String] [Local `(13834):String:String]
+												[Block:Dynamic] [Return:Dynamic] [Local name(13836):String:String]
+										[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+						[FStatic:(name : String) -> String]
+							reflaxe.elixir.macros.MigrationBuilder
+							toSnakeCase:(name : String) -> String
+					[Field:String]
+						[Local cls(13825):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:String] name:String
 
-	static function processUpMethod(field:haxe.macro.Field, migrationName:String) {
-		@:ast(switch (field.kind) {
+	static function processUpMethod[Function:(field : haxe.macro.Field, migrationName : String) -> Void]
+		[Arg:haxe.macro.Field] [Local field(13840):haxe.macro.Field]
+		[Arg:String] [Local migrationName(13841):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (field.kind) {
 	case FFun(func):
 		if (func.expr != null) {
 			analyzeExpression(func.expr, true, migrationName);
 		};	
 	default:
-}) {
-			var ` = field.kind;
-			if (enumIndex ` == 1) {
-				var ` = `[0];
-				{
-					var func = `;
-					{
-						if (func.expr != null) {
-							reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(func.expr, true, migrationName);
-						};
-					};
-				};
-			} else {};
-		};
-	}
+})
+				[Block:Void]
+					[Var `(14009):haxe.macro.FieldType]
+						[Field:haxe.macro.FieldType]
+							[Local field(13840):haxe.macro.Field:haxe.macro.Field]
+							[FAnon:haxe.macro.FieldType] kind:haxe.macro.FieldType
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(14009):haxe.macro.FieldType:haxe.macro.FieldType]
+							==
+							[Const:Int] 1
+						[Then:Void] [Block:Void]
+							[Var `(14010):haxe.macro.Function]
+								[EnumParameter:haxe.macro.Function]
+									[Local `(14009):haxe.macro.FieldType:haxe.macro.FieldType]
+									FFun
+									0
+							[Block:Void]
+								[Var func(14011):haxe.macro.Function] [Local `(14010):haxe.macro.Function:haxe.macro.Function]
+								[Block:Void]
+									[If:Void]
+										[Binop:Bool]
+											[Field:Null<haxe.macro.Expr>]
+												[Local func(14011):haxe.macro.Function:haxe.macro.Function]
+												[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+											!=
+											[Const:Null<haxe.macro.Expr>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+													[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+													[FStatic:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+														reflaxe.elixir.macros.MigrationBuilder
+														analyzeExpression:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void
+												[Field:Null<haxe.macro.Expr>]
+													[Local func(14011):haxe.macro.Function:haxe.macro.Function]
+													[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+												[Const:Bool] true
+												[Local migrationName(13841):String:String]
+						[Else:Void] [Block:Void]
 
-	static function processDownMethod(field:haxe.macro.Field, migrationName:String) {
-		@:ast(switch (field.kind) {
+	static function processDownMethod[Function:(field : haxe.macro.Field, migrationName : String) -> Void]
+		[Arg:haxe.macro.Field] [Local field(14012):haxe.macro.Field]
+		[Arg:String] [Local migrationName(14013):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (field.kind) {
 	case FFun(func):
 		if (func.expr != null) {
 			analyzeExpression(func.expr, false, migrationName);
 		};	
 	default:
-}) {
-			var ` = field.kind;
-			if (enumIndex ` == 1) {
-				var ` = `[0];
-				{
-					var func = `;
-					{
-						if (func.expr != null) {
-							reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(func.expr, false, migrationName);
-						};
-					};
-				};
-			} else {};
-		};
-	}
+})
+				[Block:Void]
+					[Var `(14017):haxe.macro.FieldType]
+						[Field:haxe.macro.FieldType]
+							[Local field(14012):haxe.macro.Field:haxe.macro.Field]
+							[FAnon:haxe.macro.FieldType] kind:haxe.macro.FieldType
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(14017):haxe.macro.FieldType:haxe.macro.FieldType]
+							==
+							[Const:Int] 1
+						[Then:Void] [Block:Void]
+							[Var `(14018):haxe.macro.Function]
+								[EnumParameter:haxe.macro.Function]
+									[Local `(14017):haxe.macro.FieldType:haxe.macro.FieldType]
+									FFun
+									0
+							[Block:Void]
+								[Var func(14019):haxe.macro.Function] [Local `(14018):haxe.macro.Function:haxe.macro.Function]
+								[Block:Void]
+									[If:Void]
+										[Binop:Bool]
+											[Field:Null<haxe.macro.Expr>]
+												[Local func(14019):haxe.macro.Function:haxe.macro.Function]
+												[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+											!=
+											[Const:Null<haxe.macro.Expr>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+													[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+													[FStatic:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+														reflaxe.elixir.macros.MigrationBuilder
+														analyzeExpression:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void
+												[Field:Null<haxe.macro.Expr>]
+													[Local func(14019):haxe.macro.Function:haxe.macro.Function]
+													[FAnon:Null<haxe.macro.Expr>] expr:Null<haxe.macro.Expr>
+												[Const:Bool] false
+												[Local migrationName(14013):String:String]
+						[Else:Void] [Block:Void]
 
-	static function analyzeExpression(expr:haxe.macro.Expr, isUp:Bool, migrationName:String) {
-		@:ast(switch (expr.expr) {
+	static function analyzeExpression[Function:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+		[Arg:haxe.macro.Expr] [Local expr(13843):haxe.macro.Expr]
+		[Arg:Bool] [Local isUp(13844):Bool]
+		[Arg:String] [Local migrationName(13845):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
 	case ECall({ expr : EField(_, "createTable") }, args):
 		handleCreateTable(args, migrationName);	
 	case ECall({ expr : EField(_, "dropTable") }, args):
@@ -132,188 +391,537 @@ class reflaxe.elixir.macros.MigrationBuilder {
 		};	
 	default:
 		ExprTools.iter(expr, function(e) ->  @:implicitReturn return analyzeExpression(e, isUp, migrationName));	
-}) {
-			var ` = expr.expr;
-			switch (enumIndex `) {
-				case 7: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var ` = `.expr;
-						var ` = `.pos;
-						if (enumIndex ` == 3) {
-							var ` = `[0];
-							var ` = `[1];
-							var ` = `[2];
-							switch (`) {
-								case "alterTable": {
-									{
-										var args = `;
-										{
-											reflaxe.elixir.macros.MigrationBuilder.handleAlterTable(args, migrationName);
-										};
-									};
-								};
-								case "createIndex": {
-									{
-										var args = `;
-										{
-											reflaxe.elixir.macros.MigrationBuilder.handleCreateIndex(args, migrationName);
-										};
-									};
-								};
-								case "createTable": {
-									{
-										var args = `;
-										{
-											reflaxe.elixir.macros.MigrationBuilder.handleCreateTable(args, migrationName);
-										};
-									};
-								};
-								case "dropTable": {
-									{
-										var args = `;
-										{
-											reflaxe.elixir.macros.MigrationBuilder.handleDropTable(args, migrationName);
-										};
-									};
-								};
-								default: {
-									haxe.macro.ExprTools.iter(expr, function(e:haxe.macro.Expr) reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName));
-								}
-							};
-						} else {
-							haxe.macro.ExprTools.iter(expr, function(e:haxe.macro.Expr) reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName));
-						};
-					};
-				};
-				case 12: {
-					var ` = `[0];
-					{
-						var exprs = `;
-						{
-							{
-								var ` = 0;
-								while (` < exprs.length) {
-									var e = exprs[`];
-									++ `;
-									reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName);
-								};
-							};
-						};
-					};
-				};
-				default: {
-					haxe.macro.ExprTools.iter(expr, function(e:haxe.macro.Expr) reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName));
-				}
-			};
-		};
-	}
+})
+				[Block:Void]
+					[Var `(13988):haxe.macro.ExprDef]
+						[Field:haxe.macro.ExprDef]
+							[Local expr(13843):haxe.macro.Expr:haxe.macro.Expr]
+							[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(13988):haxe.macro.ExprDef:haxe.macro.ExprDef]
+						[Case:Void]
+							[Const:Int] 7
+							[Block:Void]
+								[Var `(13989):haxe.macro.Expr]
+									[EnumParameter:haxe.macro.Expr]
+										[Local `(13988):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECall
+										0
+								[Var `(13990):Array<haxe.macro.Expr>]
+									[EnumParameter:Array<haxe.macro.Expr>]
+										[Local `(13988):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										ECall
+										1
+								[Block:Void]
+									[Var `(13991):haxe.macro.ExprDef]
+										[Field:haxe.macro.ExprDef]
+											[Local `(13989):haxe.macro.Expr:haxe.macro.Expr]
+											[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+									[Var `(13992):haxe.macro.Position]
+										[Field:haxe.macro.Position]
+											[Local `(13989):haxe.macro.Expr:haxe.macro.Expr]
+											[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(13991):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											==
+											[Const:Int] 3
+										[Then:Void] [Block:Void]
+											[Var `(13993):haxe.macro.Expr]
+												[EnumParameter:haxe.macro.Expr]
+													[Local `(13991):haxe.macro.ExprDef:haxe.macro.ExprDef]
+													EField
+													0
+											[Var `(13994):String]
+												[EnumParameter:String]
+													[Local `(13991):haxe.macro.ExprDef:haxe.macro.ExprDef]
+													EField
+													1
+											[Var `(13995):Null<haxe.macro.EFieldKind>]
+												[EnumParameter:Null<haxe.macro.EFieldKind>]
+													[Local `(13991):haxe.macro.ExprDef:haxe.macro.ExprDef]
+													EField
+													2
+											[Switch:Void]
+												[Local `(13994):String:String]
+												[Case:Void]
+													[Const:String] "alterTable"
+													[Block:Void]
+														[Block:Void]
+															[Var args(13996):Array<haxe.macro.Expr>] [Local `(13990):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+															[Block:Void]
+																[Call:Void]
+																	[Field:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																		[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+																		[FStatic:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																			reflaxe.elixir.macros.MigrationBuilder
+																			handleAlterTable:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void
+																	[Local args(13996):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																	[Local migrationName(13845):String:String]
+												[Case:Void]
+													[Const:String] "createIndex"
+													[Block:Void]
+														[Block:Void]
+															[Var args(13997):Array<haxe.macro.Expr>] [Local `(13990):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+															[Block:Void]
+																[Call:Void]
+																	[Field:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																		[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+																		[FStatic:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																			reflaxe.elixir.macros.MigrationBuilder
+																			handleCreateIndex:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void
+																	[Local args(13997):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																	[Local migrationName(13845):String:String]
+												[Case:Void]
+													[Const:String] "createTable"
+													[Block:Void]
+														[Block:Void]
+															[Var args(13998):Array<haxe.macro.Expr>] [Local `(13990):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+															[Block:Void]
+																[Call:Void]
+																	[Field:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																		[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+																		[FStatic:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																			reflaxe.elixir.macros.MigrationBuilder
+																			handleCreateTable:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void
+																	[Local args(13998):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																	[Local migrationName(13845):String:String]
+												[Case:Void]
+													[Const:String] "dropTable"
+													[Block:Void]
+														[Block:Void]
+															[Var args(13999):Array<haxe.macro.Expr>] [Local `(13990):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+															[Block:Void]
+																[Call:Void]
+																	[Field:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																		[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+																		[FStatic:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+																			reflaxe.elixir.macros.MigrationBuilder
+																			handleDropTable:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void
+																	[Local args(13999):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																	[Local migrationName(13845):String:String]
+												[Default:Void]
+													[Block:Void]
+														[Call:Void]
+															[Field:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+																[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+																[FStatic:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+																	haxe.macro.ExprTools
+																	iter:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void
+															[Local expr(13843):haxe.macro.Expr:haxe.macro.Expr]
+															[Function:(e : haxe.macro.Expr) -> Void]
+																[Arg:haxe.macro.Expr] [Local e(14000):haxe.macro.Expr]
+																[Call:Void]
+																	[Field:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+																		[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+																		[FStatic:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+																			reflaxe.elixir.macros.MigrationBuilder
+																			analyzeExpression:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void
+																	[Local e(14000):haxe.macro.Expr:haxe.macro.Expr]
+																	[Local isUp(13844):Bool:Bool]
+																	[Local migrationName(13845):String:String]
+										[Else:Void] [Block:Void]
+											[Call:Void]
+												[Field:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+													[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+													[FStatic:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+														haxe.macro.ExprTools
+														iter:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void
+												[Local expr(13843):haxe.macro.Expr:haxe.macro.Expr]
+												[Function:(e : haxe.macro.Expr) -> Void]
+													[Arg:haxe.macro.Expr] [Local e(14001):haxe.macro.Expr]
+													[Call:Void]
+														[Field:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+															[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+															[FStatic:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+																reflaxe.elixir.macros.MigrationBuilder
+																analyzeExpression:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void
+														[Local e(14001):haxe.macro.Expr:haxe.macro.Expr]
+														[Local isUp(13844):Bool:Bool]
+														[Local migrationName(13845):String:String]
+						[Case:Void]
+							[Const:Int] 12
+							[Block:Void]
+								[Var `(14002):Array<haxe.macro.Expr>]
+									[EnumParameter:Array<haxe.macro.Expr>]
+										[Local `(13988):haxe.macro.ExprDef:haxe.macro.ExprDef]
+										EBlock
+										0
+								[Block:Void]
+									[Var exprs(14003):Array<haxe.macro.Expr>] [Local `(14002):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(14004):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(14004):Int:Int]
+													<
+													[Field:Int]
+														[Local exprs(14003):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+														[FInstance:Int]
+															Array<haxe.macro.Expr>
+															length:Int
+												[Block:Void]
+													[Var e(14005):haxe.macro.Expr]
+														[Array:haxe.macro.Expr]
+															[Local exprs(14003):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+															[Local `(14004):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(14004):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+															[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+															[FStatic:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+																reflaxe.elixir.macros.MigrationBuilder
+																analyzeExpression:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void
+														[Local e(14005):haxe.macro.Expr:haxe.macro.Expr]
+														[Local isUp(13844):Bool:Bool]
+														[Local migrationName(13845):String:String]
+						[Default:Void]
+							[Block:Void]
+								[Call:Void]
+									[Field:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+										[TypeExpr haxe.macro.ExprTools:Class<haxe.macro.ExprTools>]
+										[FStatic:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void]
+											haxe.macro.ExprTools
+											iter:(e : haxe.macro.Expr, f : (haxe.macro.Expr -> Void)) -> Void
+									[Local expr(13843):haxe.macro.Expr:haxe.macro.Expr]
+									[Function:(e : haxe.macro.Expr) -> Void]
+										[Arg:haxe.macro.Expr] [Local e(14006):haxe.macro.Expr]
+										[Call:Void]
+											[Field:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+												[TypeExpr reflaxe.elixir.macros.MigrationBuilder:Class<reflaxe.elixir.macros.MigrationBuilder>]
+												[FStatic:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void]
+													reflaxe.elixir.macros.MigrationBuilder
+													analyzeExpression:(expr : haxe.macro.Expr, isUp : Bool, migrationName : String) -> Void
+											[Local e(14006):haxe.macro.Expr:haxe.macro.Expr]
+											[Local isUp(13844):Bool:Bool]
+											[Local migrationName(13845):String:String]
 
-	static function handleCreateTable(args:Array<haxe.macro.Expr>, migrationName:String) {
-		if (args.length > 0) {
-			@:ast(switch (args[0].expr) {
+	static function handleCreateTable[Function:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+		[Arg:Array<haxe.macro.Expr>] [Local args(13847):Array<haxe.macro.Expr>]
+		[Arg:String] [Local migrationName(13848):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(13847):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+						[FInstance:Int]
+							Array<haxe.macro.Expr>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (args[0].expr) {
 	case EConst(CString(tableName)):
 		MigrationRegistry.registerTable(tableName, args[0].pos);
 		trace("[Migration] Table \"$tableName\" registered in $migrationName");	
 	default:
-}) {
-				var ` = args[0].expr;
-				if (enumIndex ` == 0) {
-					var ` = `[0];
-					if (enumIndex ` == 2) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var tableName = `;
-							{
-								reflaxe.elixir.macros.MigrationRegistry.registerTable(tableName, args[0].pos);
-								haxe.Log.trace("[Migration] Table \"" + tableName + "\" registered in " + migrationName, {fileName : "../../src/reflaxe/elixir/macros/MigrationBuilder.hx", lineNumber : 154, className : "reflaxe.elixir.macros.MigrationBuilder", methodName : "handleCreateTable"});
-							};
-						};
-					} else {};
-				} else {};
-			};
-		};
-	}
+})
+						[Block:Void]
+							[Var `(13875):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Local args(13847):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(13875):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Var `(13876):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(13875):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(13876):haxe.macro.Constant:haxe.macro.Constant]
+											==
+											[Const:Int] 2
+										[Then:Void] [Block:Void]
+											[Var `(13877):String]
+												[EnumParameter:String]
+													[Local `(13876):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(13878):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(13876):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:Void]
+												[Var tableName(13879):String] [Local `(13877):String:String]
+												[Block:Void]
+													[Call:Void]
+														[Field:(name : String, pos : haxe.macro.Position) -> Void]
+															[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+															[FStatic:(name : String, pos : haxe.macro.Position) -> Void]
+																reflaxe.elixir.macros.MigrationRegistry
+																registerTable:(name : String, pos : haxe.macro.Position) -> Void
+														[Local tableName(13879):String:String]
+														[Field:haxe.macro.Position]
+															[Array:haxe.macro.Expr]
+																[Local args(13847):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																[Const:Int] 0
+															[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "[Migration] Table \""
+																	+
+																	[Local tableName(13879):String:String]
+																+
+																[Const:String] "\" registered in "
+															+
+															[Local migrationName(13848):String:String]
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../src/reflaxe/elixir/macros/MigrationBuilder.hx"
+															lineNumber: [Const:Int] 154
+															className: [Const:String] "reflaxe.elixir.macros.MigrationBuilder"
+															methodName: [Const:String] "handleCreateTable"
+										[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
 
-	static function handleDropTable(args:Array<haxe.macro.Expr>, migrationName:String) {
-		if (args.length > 0) {
-			@:ast(switch (args[0].expr) {
+	static function handleDropTable[Function:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+		[Arg:Array<haxe.macro.Expr>] [Local args(13881):Array<haxe.macro.Expr>]
+		[Arg:String] [Local migrationName(13882):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(13881):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+						[FInstance:Int]
+							Array<haxe.macro.Expr>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (args[0].expr) {
 	case EConst(CString(tableName)):
 		MigrationRegistry.unregisterTable(tableName);
 		trace("[Migration] Table \"$tableName\" marked for deletion in $migrationName");	
 	default:
-}) {
-				var ` = args[0].expr;
-				if (enumIndex ` == 0) {
-					var ` = `[0];
-					if (enumIndex ` == 2) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var tableName = `;
-							{
-								reflaxe.elixir.macros.MigrationRegistry.unregisterTable(tableName);
-								haxe.Log.trace("[Migration] Table \"" + tableName + "\" marked for deletion in " + migrationName, {fileName : "../../src/reflaxe/elixir/macros/MigrationBuilder.hx", lineNumber : 168, className : "reflaxe.elixir.macros.MigrationBuilder", methodName : "handleDropTable"});
-							};
-						};
-					} else {};
-				} else {};
-			};
-		};
-	}
+})
+						[Block:Void]
+							[Var `(13893):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Local args(13881):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(13893):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Var `(13894):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(13893):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(13894):haxe.macro.Constant:haxe.macro.Constant]
+											==
+											[Const:Int] 2
+										[Then:Void] [Block:Void]
+											[Var `(13895):String]
+												[EnumParameter:String]
+													[Local `(13894):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(13896):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(13894):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:Void]
+												[Var tableName(13897):String] [Local `(13895):String:String]
+												[Block:Void]
+													[Call:Void]
+														[Field:(name : String) -> Void]
+															[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+															[FStatic:(name : String) -> Void]
+																reflaxe.elixir.macros.MigrationRegistry
+																unregisterTable:(name : String) -> Void
+														[Local tableName(13897):String:String]
+													[Call:Void]
+														[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+															[TypeExpr haxe.Log:Class<haxe.Log>]
+															[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+																haxe.Log
+																trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "[Migration] Table \""
+																	+
+																	[Local tableName(13897):String:String]
+																+
+																[Const:String] "\" marked for deletion in "
+															+
+															[Local migrationName(13882):String:String]
+														[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+															fileName: [Const:String] "../../src/reflaxe/elixir/macros/MigrationBuilder.hx"
+															lineNumber: [Const:Int] 168
+															className: [Const:String] "reflaxe.elixir.macros.MigrationBuilder"
+															methodName: [Const:String] "handleDropTable"
+										[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
 
-	static function handleAlterTable(args:Array<haxe.macro.Expr>, migrationName:String) {
-		if (args.length > 0) {
-			@:ast(switch (args[0].expr) {
+	static function handleAlterTable[Function:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+		[Arg:Array<haxe.macro.Expr>] [Local args(13899):Array<haxe.macro.Expr>]
+		[Arg:String] [Local migrationName(13900):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(13899):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+						[FInstance:Int]
+							Array<haxe.macro.Expr>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (args[0].expr) {
 	case EConst(CString(tableName)):
 		MigrationRegistry.validateTableExists(tableName, args[0].pos);	
 	default:
-}) {
-				var ` = args[0].expr;
-				if (enumIndex ` == 0) {
-					var ` = `[0];
-					if (enumIndex ` == 2) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var tableName = `;
-							{
-								reflaxe.elixir.macros.MigrationRegistry.validateTableExists(tableName, args[0].pos);
-							};
-						};
-					} else {};
-				} else {};
-			};
-		};
-	}
+})
+						[Block:Void]
+							[Var `(13912):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Local args(13899):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(13912):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Var `(13913):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(13912):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(13913):haxe.macro.Constant:haxe.macro.Constant]
+											==
+											[Const:Int] 2
+										[Then:Void] [Block:Void]
+											[Var `(13914):String]
+												[EnumParameter:String]
+													[Local `(13913):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(13915):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(13913):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:Void]
+												[Var tableName(13916):String] [Local `(13914):String:String]
+												[Block:Void]
+													[Call:Void]
+														[Field:(name : String, pos : haxe.macro.Position) -> Void]
+															[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+															[FStatic:(name : String, pos : haxe.macro.Position) -> Void]
+																reflaxe.elixir.macros.MigrationRegistry
+																validateTableExists:(name : String, pos : haxe.macro.Position) -> Void
+														[Local tableName(13916):String:String]
+														[Field:haxe.macro.Position]
+															[Array:haxe.macro.Expr]
+																[Local args(13899):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																[Const:Int] 0
+															[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+										[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
 
-	static function handleCreateIndex(args:Array<haxe.macro.Expr>, migrationName:String) {
-		if (args.length >= 2) {
-			var tableName = null;
-			var columns = [];
-			@:ast(switch (args[0].expr) {
+	static function handleCreateIndex[Function:(args : Array<haxe.macro.Expr>, migrationName : String) -> Void]
+		[Arg:Array<haxe.macro.Expr>] [Local args(13918):Array<haxe.macro.Expr>]
+		[Arg:String] [Local migrationName(13919):String]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(13918):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+						[FInstance:Int]
+							Array<haxe.macro.Expr>
+							length:Int
+					>=
+					[Const:Int] 2
+				[Then:Void] [Block:Void]
+					[Var tableName(13920):String] [Const:String] null
+					[Var columns(13921):Array<String>] [ArrayDecl:Array<String>]
+					[Meta:Void]
+						:ast(switch (args[0].expr) {
 	case EConst(CString(name)):
 		tableName = name;	
 	default:
-}) {
-				var ` = args[0].expr;
-				if (enumIndex ` == 0) {
-					var ` = `[0];
-					if (enumIndex ` == 2) {
-						var ` = `[0];
-						var ` = `[1];
-						{
-							var name = `;
-							{
-								tableName = name;
-							};
-						};
-					} else {};
-				} else {};
-			};
-			@:ast(switch (args[1].expr) {
+})
+						[Block:Void]
+							[Var `(13927):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Local args(13918):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 0
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(13927):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 0
+								[Then:Void] [Block:Void]
+									[Var `(13928):haxe.macro.Constant]
+										[EnumParameter:haxe.macro.Constant]
+											[Local `(13927):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EConst
+											0
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(13928):haxe.macro.Constant:haxe.macro.Constant]
+											==
+											[Const:Int] 2
+										[Then:String] [Block:String]
+											[Var `(13929):String]
+												[EnumParameter:String]
+													[Local `(13928):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													0
+											[Var `(13930):Null<haxe.macro.StringLiteralKind>]
+												[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+													[Local `(13928):haxe.macro.Constant:haxe.macro.Constant]
+													CString
+													1
+											[Block:String]
+												[Var name(13931):String] [Local `(13929):String:String]
+												[Block:String]
+													[Binop:String]
+														[Local tableName(13920):String:String]
+														=
+														[Local name(13931):String:String]
+										[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (args[1].expr) {
 	case EArrayDecl(values):
 		for (v  in  values) {
 			switch (v.expr) {
@@ -323,63 +931,304 @@ class reflaxe.elixir.macros.MigrationBuilder {
 			};
 		};	
 	default:
-}) {
-				var ` = args[1].expr;
-				if (enumIndex ` == 6) {
-					var ` = `[0];
-					{
-						var values = `;
-						{
-							{
-								var ` = 0;
-								while (` < values.length) {
-									var v = values[`];
-									++ `;
-									@:ast(switch (v.expr) {
+})
+						[Block:Void]
+							[Var `(13947):haxe.macro.ExprDef]
+								[Field:haxe.macro.ExprDef]
+									[Array:haxe.macro.Expr]
+										[Local args(13918):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 1
+									[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(13947):haxe.macro.ExprDef:haxe.macro.ExprDef]
+									==
+									[Const:Int] 6
+								[Then:Void] [Block:Void]
+									[Var `(13948):Array<haxe.macro.Expr>]
+										[EnumParameter:Array<haxe.macro.Expr>]
+											[Local `(13947):haxe.macro.ExprDef:haxe.macro.ExprDef]
+											EArrayDecl
+											0
+									[Block:Void]
+										[Var values(13949):Array<haxe.macro.Expr>] [Local `(13948):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Block:Void]
+											[Block:Void]
+												[Var `(13950):Int] [Const:Int] 0
+												[While:Void]
+													[Binop:Bool]
+														[Local `(13950):Int:Int]
+														<
+														[Field:Int]
+															[Local values(13949):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+															[FInstance:Int]
+																Array<haxe.macro.Expr>
+																length:Int
+													[Block:Void]
+														[Var v(13951):haxe.macro.Expr]
+															[Array:haxe.macro.Expr]
+																[Local values(13949):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+																[Local `(13950):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(13950):Int:Int]
+														[Meta:Void]
+															:ast(switch (v.expr) {
 	case EConst(CString(col)):
 		columns.push(col);	
 	default:
-}) {
-										var ` = v.expr;
-										if (enumIndex ` == 0) {
-											var ` = `[0];
-											if (enumIndex ` == 2) {
-												var ` = `[0];
-												var ` = `[1];
-												{
-													var col = `;
-													{
-														columns.push(col);
-													};
-												};
-											} else {};
-										} else {};
-									};
-								};
-							};
-						};
-					};
-				} else {};
-			};
-			if (tableName != null && columns.length > 0) {
-				reflaxe.elixir.macros.MigrationRegistry.validateTableExists(tableName, args[0].pos);
-				reflaxe.elixir.macros.MigrationRegistry.validateColumnsExist(tableName, columns, args[1].pos);
-			};
-		};
-	}
+})
+															[Block:Void]
+																[Var `(13952):haxe.macro.ExprDef]
+																	[Field:haxe.macro.ExprDef]
+																		[Local v(13951):haxe.macro.Expr:haxe.macro.Expr]
+																		[FAnon:haxe.macro.ExprDef] expr:haxe.macro.ExprDef
+																[If:Void]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(13952):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																		==
+																		[Const:Int] 0
+																	[Then:Void] [Block:Void]
+																		[Var `(13953):haxe.macro.Constant]
+																			[EnumParameter:haxe.macro.Constant]
+																				[Local `(13952):haxe.macro.ExprDef:haxe.macro.ExprDef]
+																				EConst
+																				0
+																		[If:Void]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(13953):haxe.macro.Constant:haxe.macro.Constant]
+																				==
+																				[Const:Int] 2
+																			[Then:Int] [Block:Int]
+																				[Var `(13954):String]
+																					[EnumParameter:String]
+																						[Local `(13953):haxe.macro.Constant:haxe.macro.Constant]
+																						CString
+																						0
+																				[Var `(13955):Null<haxe.macro.StringLiteralKind>]
+																					[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+																						[Local `(13953):haxe.macro.Constant:haxe.macro.Constant]
+																						CString
+																						1
+																				[Block:Int]
+																					[Var col(13956):String] [Local `(13954):String:String]
+																					[Block:Int]
+																						[Call:Int]
+																							[Field:(x : String) -> Int]
+																								[Local columns(13921):Array<String>:Array<String>]
+																								[FInstance:(x : String) -> Int]
+																									Array<String>
+																									push:(x : Array.T) -> Int
+																							[Local col(13956):String:String]
+																			[Else:Void] [Block:Void]
+																	[Else:Void] [Block:Void]
+								[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local tableName(13920):String:String]
+								!=
+								[Const:String] null
+							&&
+							[Binop:Bool]
+								[Field:Int]
+									[Local columns(13921):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+								>
+								[Const:Int] 0
+						[Then:Void] [Block:Void]
+							[Call:Void]
+								[Field:(name : String, pos : haxe.macro.Position) -> Void]
+									[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+									[FStatic:(name : String, pos : haxe.macro.Position) -> Void]
+										reflaxe.elixir.macros.MigrationRegistry
+										validateTableExists:(name : String, pos : haxe.macro.Position) -> Void
+								[Local tableName(13920):String:String]
+								[Field:haxe.macro.Position]
+									[Array:haxe.macro.Expr]
+										[Local args(13918):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 0
+									[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+							[Call:Void]
+								[Field:(table : String, columns : Array<String>, pos : haxe.macro.Position) -> Void]
+									[TypeExpr reflaxe.elixir.macros.MigrationRegistry:Class<reflaxe.elixir.macros.MigrationRegistry>]
+									[FStatic:(table : String, columns : Array<String>, pos : haxe.macro.Position) -> Void]
+										reflaxe.elixir.macros.MigrationRegistry
+										validateColumnsExist:(table : String, columns : Array<String>, pos : haxe.macro.Position) -> Void
+								[Local tableName(13920):String:String]
+								[Local columns(13921):Array<String>:Array<String>]
+								[Field:haxe.macro.Position]
+									[Array:haxe.macro.Expr]
+										[Local args(13918):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+										[Const:Int] 1
+									[FAnon:haxe.macro.Position] pos:haxe.macro.Position
 
-	static function generateTimestamp() {
-		var now = Date.now();
-		var year = now.getFullYear();
-		var month = StringTools.lpad(Std.string(now.getMonth() + 1), "0", 2);
-		var day = StringTools.lpad(Std.string(now.getDate()), "0", 2);
-		var hour = StringTools.lpad(Std.string(now.getHours()), "0", 2);
-		var min = StringTools.lpad(Std.string(now.getMinutes()), "0", 2);
-		var sec = StringTools.lpad(Std.string(now.getSeconds()), "0", 2);
-		return "" + year + month + day + hour + min + sec;
-	}
+	static function generateTimestamp[Function:() -> String]
+		[Block:Dynamic]
+			[Var now(14023):Date]
+				[Call:Date]
+					[Field:() -> Date]
+						[TypeExpr Date:Class<Date>]
+						[FStatic:() -> Date]
+							Date
+							now:() -> Date
+			[Var year(14024):Int]
+				[Call:Int]
+					[Field:() -> Int]
+						[Local now(14023):Date:Date]
+						[FInstance:() -> Int]
+							Date
+							getFullYear:() -> Int
+			[Var month(14025):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Binop:Int]
+							[Call:Int]
+								[Field:() -> Int]
+									[Local now(14023):Date:Date]
+									[FInstance:() -> Int]
+										Date
+										getMonth:() -> Int
+							+
+							[Const:Int] 1
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var day(14026):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local now(14023):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getDate:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var hour(14027):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local now(14023):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getHours:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var min(14028):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local now(14023):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getMinutes:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Var sec(14029):String]
+				[Call:String]
+					[Field:(s : String, c : String, l : Int) -> String]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, c : String, l : Int) -> String]
+							StringTools
+							lpad:(s : String, c : String, l : Int) -> String
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Call:Int]
+							[Field:() -> Int]
+								[Local now(14023):Date:Date]
+								[FInstance:() -> Int]
+									Date
+									getSeconds:() -> Int
+					[Const:String] "0"
+					[Const:Int] 2
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local year(14024):Int:Int]
+									+
+									[Local month(14025):String:String]
+								+
+								[Local day(14026):String:String]
+							+
+							[Local hour(14027):String:String]
+						+
+						[Local min(14028):String:String]
+					+
+					[Local sec(14029):String:String]
 
-	static function toSnakeCase(name:String) {
-		return new EReg("([a-z])([A-Z])", "g").replace(name, "$1_$2").toLowerCase();
-	}
+	static function toSnakeCase[Function:(name : String) -> String]
+		[Arg:String] [Local name(13837):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Call:String]
+							[Field:(s : String, by : String) -> String]
+								[New:EReg]
+									EReg
+									[Const:String] "([a-z])([A-Z])"
+									[Const:String] "g"
+								[FInstance:(s : String, by : String) -> String]
+									EReg
+									replace:(s : String, by : String) -> String
+							[Local name(13837):String:String]
+							[Const:String] "$1_$2"
+						[FInstance:() -> String]
+							String
+							toLowerCase:() -> String
 }

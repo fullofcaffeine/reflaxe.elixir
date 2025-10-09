@@ -101,6 +101,7 @@ class TypedExprPreprocessor {
      * HOW: Updated by preprocess(), read by getLastSubstitutions()
      */
     static var lastSubstitutions: Map<Int, TypedExpr> = new Map();
+    static var lastNameSubstitutions: Map<String, TypedExpr> = new Map();
 
     /**
      * Get the substitution map from the last preprocessing run
@@ -113,6 +114,14 @@ class TypedExprPreprocessor {
      */
     public static function getLastSubstitutions(): Map<Int, TypedExpr> {
         return lastSubstitutions;
+    }
+
+    /**
+     * Get name-based substitution map from last preprocessing
+     * Useful when only variable names (e.g., "_g3"/"g3") are available in later phases
+     */
+    public static function getLastNameSubstitutions(): Map<String, TypedExpr> {
+        return lastNameSubstitutions;
     }
 
     /**
@@ -151,9 +160,17 @@ class TypedExprPreprocessor {
 
         if (!containsInfrastructurePattern(expr)) {
             #if debug_preprocessor
-            trace('[TypedExprPreprocessor] No pattern found, returning early');
+            trace('[TypedExprPreprocessor] No pattern found; performing light scan to preserve substitutions');
             #end
-            return expr; // No transformation needed
+            // Even when no immediate pattern is detected, build/update substitution maps
+            // so downstream builders/transformers can resolve infra references that originate
+            // outside of local adjacency (e.g., nested discriminants).
+            var substitutions = lastSubstitutions != null ? lastSubstitutions : new Map<Int, TypedExpr>();
+            // Run a shallow scan to populate substitutions map with any TVar infra declarations encountered
+            scanForInfrastructureVars(expr, substitutions);
+            lastSubstitutions = substitutions;
+            // Keep name substitutions as-is; nothing to transform
+            return expr;
         }
 
         #if debug_preprocessor
@@ -163,12 +180,14 @@ class TypedExprPreprocessor {
         // CRITICAL FIX: Use existing substitutions map instead of creating new one
         // This allows accumulation across multiple preprocess() calls
         var substitutions = lastSubstitutions != null ? lastSubstitutions : new Map<Int, TypedExpr>();
+        if (lastNameSubstitutions == null) lastNameSubstitutions = new Map();
 
         // Process the expression
         var result = processExpr(expr, substitutions);
 
         // Store/update substitutions for later retrieval by compiler
         lastSubstitutions = substitutions;
+        // Name substitutions persist as well (already updated during processing)
 
         #if debug_preprocessor
         trace('[TypedExprPreprocessor] Preprocessing complete');
@@ -252,6 +271,10 @@ class TypedExprPreprocessor {
                 containsInfrastructurePattern(cond) || containsInfrastructurePattern(e);
             case TFor(v, iter, e):
                 containsInfrastructurePattern(iter) || containsInfrastructurePattern(e);
+            case TLocal(v):
+                // Also treat direct TLocal references to infra vars as a pattern trigger,
+                // so we can attempt discriminant recovery even when no TVar is adjacent.
+                isInfrastructureVar(v.name);
             default:
                 #if debug_preprocessor
                 var exprType = switch(expr.expr) {
@@ -390,6 +413,11 @@ class TypedExprPreprocessor {
                 // Infrastructure variable assignment - track for substitution by ID
                 // Using ID instead of name prevents shadowing bugs in nested scopes
                 substitutions.set(v.id, init);
+                // Track name-based mapping for later name-only resolution
+                lastNameSubstitutions.set(v.name, init);
+                if (StringTools.startsWith(v.name, "_") && v.name.length > 1) {
+                    lastNameSubstitutions.set(v.name.substr(1), init);
+                }
 
                 #if debug_infrastructure_vars
                 trace('[processExpr] Registered substitution for ID ${v.id} (name: ${v.name})');
@@ -424,6 +452,27 @@ class TypedExprPreprocessor {
     static function processBlock(exprs: Array<TypedExpr>, pos: haxe.macro.Expr.Position, t: Type, substitutions: Map<Int, TypedExpr>): TypedExpr {
         var processed = [];
         var i = 0;
+
+        // Pre-scan entire block to register ALL infrastructure substitutions up-front
+        // This ensures earlier references (e.g., TSwitch(TLocal(_g3))) can be substituted
+        // even if the declaration/assignment appears later in the block.
+        for (e in exprs) {
+            switch (e.expr) {
+                case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+                    substitutions.set(v.id, init);
+                    lastNameSubstitutions.set(v.name, init);
+                    if (StringTools.startsWith(v.name, "_") && v.name.length > 1) {
+                        lastNameSubstitutions.set(v.name.substr(1), init);
+                    }
+                case TBinop(OpAssign, {expr: TLocal(v)}, init) if (isInfrastructureVar(v.name)):
+                    substitutions.set(v.id, init);
+                    lastNameSubstitutions.set(v.name, init);
+                    if (StringTools.startsWith(v.name, "_") && v.name.length > 1) {
+                        lastNameSubstitutions.set(v.name.substr(1), init);
+                    }
+                default:
+            }
+        }
 
         #if debug_infrastructure_vars
         trace('[processBlock] ===== BLOCK ANALYSIS =====');
@@ -510,6 +559,51 @@ class TypedExprPreprocessor {
 
             // Check if this is an infrastructure variable declaration
             switch(current.expr) {
+                // Targeted discriminant resolver for orphaned infra case targets
+                // WHAT: If we encounter TSwitch(TLocal(_gN)) and no substitution is available,
+                //       attempt to resolve the discriminant by inlining the nearest prior producer
+                //       expression of the same enum type (Result/Option-like), then remove the
+                //       producer statement to avoid duplicate side-effects.
+                // WHY: Haxe desugaring sometimes materializes nested switch discriminants into
+                //      temporaries (g/_g/gN) when calls are separated by validation logic.
+                //      Our recursive substitution cannot help if the binding is not present or
+                //      was optimized away. This resolver recovers the original intent.
+                // HOW: Within the current block, when seeing TSwitch on an infra TLocal without
+                //      a known substitution, search the already-processed statements (lexically
+                //      prior) for a single TCall whose result type matches the switch scrutinee's
+                //      enum type. If exactly one candidate is found and the enum is Option/Result-
+                //      like (structural guard), inline it and drop the original statement.
+                case TSwitch(discriminant, cases, edef):
+                    // First, apply any known substitutions into the discriminant
+                    var substitutedDiscriminant = applySubstitutionsRecursively(discriminant, substitutions);
+                    switch (substitutedDiscriminant.expr) {
+                        case TLocal(tv) if (isInfrastructureVar(tv.name)):
+                            // If we still have an infra local and no ID substitution exists, resolve via producer scan
+                            var hasIdSub = substitutions.exists(tv.id);
+                            var nameKey = tv.name;
+                            var hasNameSub = lastNameSubstitutions != null && (lastNameSubstitutions.exists(nameKey) || (StringTools.startsWith(nameKey, "_") && lastNameSubstitutions.exists(nameKey.substr(1))));
+                            if (!hasIdSub && !hasNameSub) {
+                                var resolved = resolveDiscriminantProducer(processed, substitutedDiscriminant.t);
+                                if (resolved != null) {
+                                    // Record name-based mapping for downstream passes (printer/transformer fallbacks)
+                                    lastNameSubstitutions.set(tv.name, resolved);
+                                    if (StringTools.startsWith(tv.name, "_") && tv.name.length > 1) lastNameSubstitutions.set(tv.name.substr(1), resolved);
+                                    // Build a new switch with resolved discriminant
+                                    var newSwitch: TypedExpr = { expr: TSwitch(resolved, cases, edef), pos: current.pos, t: current.t };
+                                    processed.push(newSwitch);
+                                    i++;
+                                    continue;
+                                }
+                            }
+                            // Fall-through: could not resolve; proceed with regular recursive handling below
+                        default:
+                    }
+                    // Generic path: apply recursive substitution and push
+                    var transformedSwitch = { expr: TSwitch(applySubstitutionsRecursively(discriminant, substitutions), cases.map(function(c) return { values: [ for (v in c.values) applySubstitutionsRecursively(v, substitutions) ], expr: applySubstitutionsRecursively(c.expr, substitutions) }), edef != null ? applySubstitutionsRecursively(edef, substitutions) : null), pos: current.pos, t: current.t };
+                    processed.push(transformedSwitch);
+                    i++;
+                    continue;
+
                 case TVar(v, init):
                     #if debug_preprocessor
                     trace('[processBlock] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=${isInfrastructureVar(v.name)}');
@@ -524,6 +618,10 @@ class TypedExprPreprocessor {
 
                         // Register the substitution (ID-based)
                         substitutions.set(v.id, init);
+                        lastNameSubstitutions.set(v.name, init);
+                        if (StringTools.startsWith(v.name, "_") && v.name.length > 1) {
+                            lastNameSubstitutions.set(v.name.substr(1), init);
+                        }
 
                         #if debug_preprocessor
                         trace('[processBlock] ✓ REGISTERED: "${v.name}" (ID ${v.id}) => ${Type.enumConstructor(init.expr)}');
@@ -551,6 +649,23 @@ class TypedExprPreprocessor {
                     }
 
                 default:
+                    // Detect and eliminate infrastructure variable assignment via OpAssign
+                    switch(current.expr) {
+                        case TBinop(OpAssign, {expr: TLocal(v)}, init) if (isInfrastructureVar(v.name)):
+                            #if debug_infrastructure_vars
+                            trace('[processBlock] ✓ INFRA ASSIGN DETECTED: ${v.name} = <expr> (ID: ${v.id})');
+                            #end
+                            // Register substitution by ID and name
+                            substitutions.set(v.id, init);
+                            lastNameSubstitutions.set(v.name, init);
+                            if (StringTools.startsWith(v.name, "_") && v.name.length > 1) {
+                                lastNameSubstitutions.set(v.name.substr(1), init);
+                            }
+                            // Skip emitting this assignment
+                            i++;
+                            continue;
+                        default:
+                    }
                     // For all other expressions, apply recursive substitution
                     #if debug_preprocessor
                     trace('[processBlock] Applying recursive substitution to expression $i');
@@ -568,6 +683,105 @@ class TypedExprPreprocessor {
             pos: pos,
             t: t
         };
+    }
+
+    /**
+     * Resolve discriminant for TSwitch(TLocal(_gN)) by scanning already-processed
+     * statements in the current block for a unique prior producer of the same enum type.
+     *
+     * WHAT: Returns the TypedExpr to inline as discriminant and removes the producer
+     *       statement from the processed list to prevent double execution.
+     * WHY: Bridges gaps where infra substitutions are unavailable but the structure
+     *      clearly indicates a Result/Option-like pattern within a branch.
+     * HOW: Walks 'processed' backwards to find a single TCall (or TMeta-wrapped TCall)
+     *      whose result type is a matching enum, guarded by isResultLikeEnum().
+     */
+    static function resolveDiscriminantProducer(processed:Array<TypedExpr>, targetType: Type): Null<TypedExpr> {
+        // Only attempt for enum types (Option/Result-like)
+        var targetEnum: Null<EnumType> = switch (targetType) {
+            case TEnum(t, _): t.get();
+            default: null;
+        };
+        if (targetEnum == null || !isResultLikeEnum(targetEnum)) return null;
+
+        // Find a single prior call of the same enum type
+        var idx = processed.length - 1;
+        var candidateIndex: Int = -1;
+        var candidateExpr: Null<TypedExpr> = null;
+
+        while (idx >= 0) {
+            var node = processed[idx];
+            // Unwrap TMeta if present
+            var base = node;
+            switch (base.expr) {
+                case TMeta(_, inner): base = inner;
+                default:
+            }
+            var matches = false;
+            switch (base.expr) {
+                case TCall(_, _):
+                    // Ensure the call result type matches the target enum type strictly (same enum module/name)
+                    var enumOfCall: Null<EnumType> = switch (base.t) {
+                        case TEnum(t, _): t.get();
+                        default: null;
+                    };
+                    if (enumOfCall != null && sameEnum(enumOfCall, targetEnum)) {
+                        matches = true;
+                    }
+                default:
+            }
+            if (matches) {
+                if (candidateExpr != null) {
+                    // Multiple candidates → ambiguous, abort
+                    return null;
+                }
+                candidateExpr = node;
+                candidateIndex = idx;
+            }
+            idx--;
+        }
+
+        if (candidateExpr != null && candidateIndex >= 0) {
+            // Remove the producer statement to avoid duplicate side effects
+            processed.splice(candidateIndex, 1);
+            return candidateExpr;
+        }
+        return null;
+    }
+
+    /** Check if two EnumType definitions are identical by module/name identity */
+    static function sameEnum(a: EnumType, b: EnumType): Bool {
+        return a != null && b != null && a.name == b.name && a.module == b.module && comparePack(a.pack, b.pack);
+    }
+
+    static function comparePack(a:Array<String>, b:Array<String>):Bool {
+        if (a == null || b == null) return a == b;
+        if (a.length != b.length) return false;
+        for (i in 0...a.length) if (a[i] != b[i]) return false;
+        return true;
+    }
+
+    /** Structural guard: treat well-known Option and Result-like enums as eligible */
+    static function isResultLikeEnum(et: EnumType): Bool {
+        if (et == null) return false;
+        var name = et.name;
+        var pack = et.pack;
+        // haxe.ds.Option
+        if (name == "Option" && pack != null && pack.length >= 2 && pack[0] == "haxe" && pack[1] == "ds") return true;
+        // Common Result naming
+        if (name.toLowerCase().indexOf("result") >= 0) return true;
+        // Constructor-based detection: Ok/Error or Some/None present
+        var hasOk = false, hasError = false, hasSome = false, hasNone = false;
+        for (ctorName in et.constructs.keys()) {
+            switch (ctorName) {
+                case "Ok": hasOk = true;
+                case "Error": hasError = true;
+                case "Some": hasSome = true;
+                case "None": hasNone = true;
+                default:
+            }
+        }
+        return (hasOk && hasError) || (hasSome && hasNone);
     }
     
     /**

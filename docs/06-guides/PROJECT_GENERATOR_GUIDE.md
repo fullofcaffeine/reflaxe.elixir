@@ -122,7 +122,7 @@ npx lix run reflaxe.elixir create my-app --type basic
 - Service modules (UserService)
 - Basic configuration
 - Test setup
-- CLAUDE.md with AI development instructions
+- AGENTS.md with AI development instructions
 
 **Use when:** Building libraries, CLI tools, or simple services.
 
@@ -141,7 +141,7 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 - Ecto setup
 - Asset pipeline
 - Test helpers
-- CLAUDE.md with Phoenix-specific AI development instructions
+- AGENTS.md with Phoenix-specific AI development instructions
 
 **Use when:** Building web applications, APIs, or microservices.
 
@@ -160,7 +160,7 @@ npx lix run reflaxe.elixir create my-liveview-app --type liveview
 - WebSocket configuration
 - Interactive examples
 - Optional authentication
-- CLAUDE.md with LiveView-specific AI development instructions
+- AGENTS.md with LiveView-specific AI development instructions
 
 **Use when:** Building interactive web applications with real-time features.
 
@@ -179,7 +179,7 @@ npx lix run reflaxe.elixir create --type add-to-existing
 - package.json with scripts
 - Mix compiler integration
 - Example module
-- CLAUDE.md with AI development instructions
+- AGENTS.md with AI development instructions
 
 **Use when:** Gradually migrating existing Elixir code to Haxe.
 
@@ -377,7 +377,7 @@ my-app/
 ├── mix.exs                # Elixir project file
 ├── package.json           # Node dependencies
 ├── README.md              # Project documentation
-├── CLAUDE.md              # AI development instructions
+├── AGENTS.md              # AI development instructions
 └── .gitignore            # Git ignore rules
 ```
 
@@ -454,7 +454,7 @@ end
 }
 ```
 
-#### CLAUDE.md
+#### AGENTS.md
 ```markdown
 # AI Development Instructions for my-app
 
@@ -754,7 +754,7 @@ mix phx.server
 1. Check Haxe syntax is valid
 2. Ensure annotations are correct
 3. Verify type mappings
-4. Check CLAUDE.md for known issues
+4. Check AGENTS.md for known issues
 
 ### Getting Help
 

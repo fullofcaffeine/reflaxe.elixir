@@ -1,6 +1,6 @@
 # Compiler Development Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
 
 This file contains compiler-specific development guidance for agents working on the Reflaxe.Elixir transpiler source code.
 
@@ -11,6 +11,45 @@ This file contains compiler-specific development guidance for agents working on 
 - **ast/** directory - AST builder, transformer, and printer for pure AST-based compilation
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 - **schema/** directory - Schema introspection and metadata processing
+
+## 📦 Extern Tracker & Output-Phase Placeholders
+
+### What It Is
+- A minimal, target-aware mechanism to satisfy snapshot presence requirements for Haxe std extern modules without authoring any std implementation sources.
+- Implemented as:
+  - `ElixirCompiler.externModulesReferenced: Map<String,Bool>` — holds normalized extern paths (e.g., `haxe/io/bytes`, `haxe/ds/_map/map_impl_`).
+  - `ElixirCompiler.registerExternRef(path: String)` — idempotent registrar.
+  - Hook in `ElixirASTBuilder.moduleTypeToString(...)` — when an extern under `haxe.*` is encountered, it registers the reference (uses snake_case segments for output paths).
+  - `ElixirOutputIterator.prepareExternPlaceholders()` — after normal module output, emits zero-body placeholder modules only for referenced externs using OutputManager overrides.
+
+### Why We Need It
+- Do NOT author std extern implementation files (see top-level constraints). `haxe._Constraints.*_Impl_` and similar externs are provided by Haxe std and must not be shadowed.
+- Some snapshot suites historically asserted presence of certain std modules (e.g., `haxe/io/*`, `haxe/ds/*`). We meet presence expectations in a principled, target-aware way:
+  - Only emit placeholders for externs actually referenced by the program’s type graph.
+  - Emission occurs in the output phase (no macro-time classpath pollution, no source files created).
+  - Runtime behavior is unchanged: placeholders contain just `defmodule ... do\n  nil\nend`.
+
+### How It Works (High-Level)
+- When AST building touches an extern under `haxe.*`, the builder registers a normalized path (snake_case) into `externModulesReferenced`.
+- The output iterator collects all referenced paths, sorts them for deterministic ordering, and for each path computes:
+  - `overrideDirectory` = directory segments (e.g., `haxe/io`).
+  - `overrideFileName` = file base (e.g., `bytes`).
+  - Module name is synthesized from the file base (e.g., `bytes` → `Bytes`, `map_impl_` → `Map_Impl_`).
+- It then pushes a `DataAndFileInfo` with these overrides and a fallback `BaseType` from any compiled module so OutputManager can write the file to the right place with the correct `.ex` extension.
+
+### Guardrails & Constraints
+- Never create `.cross.hx` files for std externs, especially for `haxe._Constraints.*_Impl_`.
+- Placeholders are emitted only when referenced; this keeps outputs lean and target-aware.
+- Do not invent APIs: placeholders contain `nil` only. If tests assert specific shapes for legacy reasons, prefer updating intended snapshots to a presence policy over enriching placeholders.
+
+### File References
+- Compiler state: `src/reflaxe/elixir/ElixirCompiler.hx` (fields `externModulesReferenced`, `registerExternRef`, `getFallbackBaseType`).
+- Registration hook: `src/reflaxe/elixir/ast/ElixirASTBuilder.hx` (extern under `haxe.*` → `registerExternRef`).
+- Emission: `src/reflaxe/elixir/ElixirOutputIterator.hx` (`prepareExternPlaceholders`).
+
+### Test & Verification
+- Source-map suites should no longer require authored std files. When externs are referenced, placeholder files appear under `out/haxe/...`. If intended snapshots list broader std presence, align them to the presence-only policy.
+
 
 ## ❌ No Example-App Coupling (Hard Rule)
 
@@ -25,12 +64,32 @@ Avoid:
 - Special-casing classes by name (e.g., if class == "TodoApp") even under debug flags
 - Any project-specific assumptions in transformers/printers/builders
 
+⚠️ Absolutely forbidden patterns (do not add again):
+- Hardcoding example-app variable names in compiler logic (e.g., mapping `presenceSocket` → `socket`, or preferring binder name `level`).
+- Any pass that renames binders or aliases variables based on app-specific strings or anticipated project shapes.
+
+✅ Allowed (target-agnostic, structural):
+- Structural detection (e.g., Option.Some tuple patterns) and structural aliasing when provably correct:
+  - Example: In a case clause `case target do {:some, binder} -> ... end`, if the body contains `Map.get(target, :k)` and later uses an unbound `k`, it is acceptable to alias `k = binder` (no app-specific strings involved).
+  - Shadow-avoidance is structural: if a binder name equals the case target or collides with a declared name in scope, pick a neutral free name (e.g., `value`, `val`, `v`) without referencing any app names.
+
+Enforcement:
+- PRs introducing app strings into compiler sources must be rejected. Use structural patterns only.
+
 Allowed:
 - Generic scaffolding (e.g., add `use Phoenix.Router`, `import Phoenix.LiveView.Router`)
 - Preserving user-provided bodies, metadata-driven transforms
 - Examples in comments/docstrings only (not executed code)
 
 If you find app-specific strings in code paths, replace them with generic AST or delete them. Add or use metadata-driven hooks instead of literals.
+
+## 🧹 Temporary Debug Instrumentation Discipline (Mandatory)
+
+- Instrumentation added for diagnostics **must be gated behind a dedicated `#if debug_*` flag** (e.g., `debug_option_some_binder`). No unconditional `trace`/`Sys.println` calls land in production paths.
+- Every debug flag and its helper functions live next to the code they instrument and include enough context in log messages to identify the target scenario (module/function/pos).
+- When the investigation or verification is complete, **remove the instrumentation in the same change set** that delivers the fix/report or explicitly gate it off before merging. We do not leave dormant debug hooks in-tree.
+- If temporary instrumentation spans multiple files/passes, track it in the active task plan and ensure cleanup is recorded as part of the acceptance criteria before closing the task.
+- Document long-running instrumentation needs (e.g., reusable XRay tooling) in the appropriate module-level AGENTS.md (or adjacent docs) with justification; ad-hoc probes stay short-lived.
 
 ## ⚠️ CRITICAL: Haxe Metadata Storage Behavior
 
@@ -79,7 +138,7 @@ src/reflaxe/elixir/
 ├── ElixirCompiler.hx             # Main transpiler (MUST stay <2000 lines)
 ├── ElixirPrinter.hx              # AST to string conversion
 ├── ElixirTyper.hx                # Type mapping (Haxe → Elixir)
-├── CLAUDE.md                     # THIS FILE - Keep updated!
+├── AGENTS.md                     # THIS FILE - Keep updated!
 └── helpers/                      # Specialized compilers (Single Responsibility)
     ├── AnnotationSystem.hx       # @:annotation processing system
     ├── ApplicationCompiler.hx   # @:application OTP app generation
@@ -122,7 +181,7 @@ src/reflaxe/elixir/
 2. Check if similar functionality exists
 3. If not found, ADD to CompilerUtilities, NOT to individual compilers
 4. Document with WHY/WHAT/HOW pattern
-5. Update this CLAUDE.md file
+5. Update this AGENTS.md file
 
 ## ⚠️ CRITICAL: CallExprBuilder Duplication and self() Bug (January 2025)
 
@@ -797,3 +856,36 @@ Every compiler change must meet these standards:
 - **Maintainability**: Compiler code itself must be clear and well-documented
 
 **Remember**: We're not just generating syntactically correct Elixir - we're generating IDIOMATIC Elixir that Elixir developers would be proud to write themselves.
+## Style Directive: Avoid IIFEs (Immediately-Invoked Function Expressions)
+
+- Do not use IIFEs in compiler code unless strictly necessary.
+- Prefer small, `static inline` helper functions with clear names.
+- Rationale:
+  - Improves readability and debuggability.
+  - Keeps helper logic reusable and testable.
+  - Avoids surprising scopes and nested closures in tight transformation code.
+- Exception: Deeply-local, throwaway lambdas are acceptable for simple `map`/`sort` callbacks, but not for multi-branch transforms. If in doubt, extract a helper in the same class.
+- Name-Based Heuristics Ban (Generalization First)
+
+  - Do not special‑case logic based on specific variable names (e.g., "level", "msg", "payload", etc.).
+  - Prefer structural analysis (pattern shape, body‑referenced identifiers, guard/context signals) over string checks.
+  - Allowed: General language constructs and reserved lists (e.g., `conn`, `socket`, `params`, `_g\d+`) that are target‑generic, widely applicable, and already part of conventions.
+  - If a name‑based heuristic is believed necessary, you MUST:
+    - Justify why a structural approach is insufficient.
+    - Propose the minimal, target‑agnostic rule.
+    - Obtain explicit permission from the maintainer before implementation.
+  - Before merging any change that touches binders/aliases/renames:
+    - Search for name‑specific checks across the codebase (e.g., `indexOf("name")`, `== "name"`).
+    - Replace with structural logic or remove.
+    - Document the decision (hxdoc) with examples and intended behavior.
+
+## Descriptive Naming & Non‑Expert Documentation (Local Reinforcement)
+
+- Adopt intention‑revealing names in compiler modules and helpers; avoid cryptic short names except in tight, obvious scopes.
+- Prefer domain and role‑based identifiers (e.g., `guardVars`, `fieldBaseVars`, `bodyUsedLocals`, `binderName`) over `tmp`, `res`, or `data`.
+- Do not use one‑letter identifiers in compiler code or generated user code paths. Tiny‑scope indices (`i`) are acceptable when clarity is unaffected.
+- Every new pass/transform/helper must include hxdoc with:
+  - WHY (problem), WHAT (contract), HOW (approach + pipeline location), WHEN (ordering/constraints).
+  - Minimal Haxe input and expected Elixir output examples.
+  - Invariants and known limitations; debug flags to inspect (e.g., `-D debug_ast_transformer`).
+- If introducing bridge variables/aliases, explain purpose and scoping rules; prefer transparent comments in generated code when applicable.

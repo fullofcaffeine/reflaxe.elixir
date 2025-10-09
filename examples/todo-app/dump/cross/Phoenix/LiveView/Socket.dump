@@ -1,4 +1,4 @@
-@:realPath("phoenix.Socket") @:used @:native("Phoenix.LiveView.Socket")
+@:realPath("phoenix.Socket") @:native("Phoenix.LiveView.Socket")
 extern class Phoenix.LiveView.Socket<T> {
 
 	var assigns:phoenix.Socket.T;

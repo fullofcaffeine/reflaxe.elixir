@@ -186,41 +186,41 @@ class TodoPubSub {
      * Parse Dynamic message to typed enum (implementation)
      * Note: Must be public to be passed as function reference in Elixir
      */
-    public static function parseMessageImpl(msg: Dynamic): Option<TodoPubSubMessage> {
-        if (!SafePubSub.isValidMessage(msg)) {
-            trace(SafePubSub.createMalformedMessageError(msg));
+    public static function parseMessageImpl(payload: Dynamic): Option<TodoPubSubMessage> {
+        if (!SafePubSub.isValidMessage(payload)) {
+            trace(SafePubSub.createMalformedMessageError(payload));
             return None;
         }
         
-        return switch (msg.type) {
+        return switch (payload.type) {
             case "todo_created":
-                if (msg.todo != null) Some(TodoCreated(msg.todo)) else None;
+                if (payload.todo != null) Some(TodoCreated(payload.todo)) else None;
             case "todo_updated":
-                if (msg.todo != null) Some(TodoUpdated(msg.todo)) else None;
+                if (payload.todo != null) Some(TodoUpdated(payload.todo)) else None;
             case "todo_deleted":
-                if (msg.todo_id != null) Some(TodoDeleted(msg.todo_id)) else None;
+                if (payload.todo_id != null) Some(TodoDeleted(payload.todo_id)) else None;
             case "bulk_update":
-                if (msg.action != null) {
-                    var bulkAction = parseBulkAction(msg.action);
+                if (payload.action != null) {
+                    var bulkAction = parseBulkAction(payload.action);
                     switch (bulkAction) {
                         case Some(action): Some(BulkUpdate(action));
                         case None: None;
                     }
                 } else None;
             case "user_online":
-                if (msg.user_id != null) Some(UserOnline(msg.user_id)) else None;
+                if (payload.user_id != null) Some(UserOnline(payload.user_id)) else None;
             case "user_offline":
-                if (msg.user_id != null) Some(UserOffline(msg.user_id)) else None;
+                if (payload.user_id != null) Some(UserOffline(payload.user_id)) else None;
             case "system_alert":
-                if (msg.message != null && msg.level != null) {
-                    var alertLevel = parseAlertLevel(msg.level);
+                if (payload.message != null && payload.level != null) {
+                    var alertLevel = parseAlertLevel(payload.level);
                     switch (alertLevel) {
-                        case Some(level): Some(SystemAlert(msg.message, level));
+                        case Some(level): Some(SystemAlert(payload.message, level));
                         case None: None;
                     }
                 } else None;
             case _:
-                trace(SafePubSub.createUnknownMessageError(msg.type));
+                trace(SafePubSub.createUnknownMessageError(payload.type));
                 None;
         };
     }

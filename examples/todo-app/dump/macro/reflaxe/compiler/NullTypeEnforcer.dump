@@ -1,44 +1,145 @@
 class reflaxe.compiler.NullTypeEnforcer {
 
 	@:value([])
-	static var returnTypeStack:Array<Null<haxe.macro.Type>> = [];
+	static var returnTypeStack:Array<Null<haxe.macro.Type>> = [ArrayDecl:Array<Null<haxe.macro.Type>>];
 
-	public static function checkAssignment(expr:Null<haxe.macro.TypedExpr>, type:Null<haxe.macro.Type>) {
-		if (expr == null || type == null) {
-			return;
-		};
-		if (reflaxe.helpers.TypedExprHelper.isNullExpr(expr) && ! reflaxe.helpers.TypeHelper.isNull(type)) {
-			haxe.macro.Context.error("Cannot assign `null` to non-nullable type.", expr.pos, null);
-		};
-	}
+	public static function checkAssignment[Function:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+		[Arg:Null<haxe.macro.TypedExpr>] [Local expr(5312):Null<haxe.macro.TypedExpr>]
+		[Arg:Null<haxe.macro.Type>] [Local type(5313):Null<haxe.macro.Type>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local expr(5312):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						==
+						[Const:Null<haxe.macro.TypedExpr>] null
+					||
+					[Binop:Bool]
+						[Local type(5313):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+						==
+						[Const:Null<haxe.macro.Type>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(e : haxe.macro.TypedExpr) -> Bool]
+							[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+							[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+								reflaxe.helpers.TypedExprHelper
+								isNullExpr:(e : haxe.macro.TypedExpr) -> Bool
+						[Local expr(5312):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(t : haxe.macro.Type) -> Bool]
+								[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+								[FStatic:(t : haxe.macro.Type) -> Bool]
+									reflaxe.helpers.TypeHelper
+									isNull:(t : haxe.macro.Type) -> Bool
+							[Local type(5313):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Const:String] "Cannot assign `null` to non-nullable type."
+						[Field:haxe.macro.Position]
+							[Local expr(5312):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+							[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+						[Const:Null<Int>] null
 
-	public static function checkClass(cls:haxe.macro.ClassType) {
-		{
-			var ` = 0;
-			var ` = cls.fields.get();
-			while (` < `.length) {
-				var f = `[`];
-				++ `;
-				reflaxe.compiler.NullTypeEnforcer.checkClassField(f);
-			};
-		};
-		{
-			var ` = 0;
-			var ` = cls.statics.get();
-			while (` < `.length) {
-				var f = `[`];
-				++ `;
-				reflaxe.compiler.NullTypeEnforcer.checkClassField(f);
-			};
-		};
-	}
+	public static function checkClass[Function:(cls : haxe.macro.ClassType) -> Void]
+		[Arg:haxe.macro.ClassType] [Local cls(5323):haxe.macro.ClassType]
+		[Block:Void]
+			[Block:Void]
+				[Var `(5411):Int] [Const:Int] 0
+				[Var `(5412):Array<haxe.macro.ClassField>]
+					[Call:Array<haxe.macro.ClassField>]
+						[Field:() -> Array<haxe.macro.ClassField>]
+							[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+								[Local cls(5323):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+							[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(5411):Int:Int]
+						<
+						[Field:Int]
+							[Local `(5412):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var f(5324):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local `(5412):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(5411):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(5411):Int:Int]
+						[Call:Void]
+							[Field:(f : haxe.macro.ClassField) -> Void]
+								[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+								[FStatic:(f : haxe.macro.ClassField) -> Void]
+									reflaxe.compiler.NullTypeEnforcer
+									checkClassField:(f : haxe.macro.ClassField) -> Void
+							[Local f(5324):haxe.macro.ClassField:haxe.macro.ClassField]
+			[Block:Void]
+				[Var `(5414):Int] [Const:Int] 0
+				[Var `(5415):Array<haxe.macro.ClassField>]
+					[Call:Array<haxe.macro.ClassField>]
+						[Field:() -> Array<haxe.macro.ClassField>]
+							[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+								[Local cls(5323):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+							[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(5414):Int:Int]
+						<
+						[Field:Int]
+							[Local `(5415):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var f(5413):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local `(5415):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(5414):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(5414):Int:Int]
+						[Call:Void]
+							[Field:(f : haxe.macro.ClassField) -> Void]
+								[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+								[FStatic:(f : haxe.macro.ClassField) -> Void]
+									reflaxe.compiler.NullTypeEnforcer
+									checkClassField:(f : haxe.macro.ClassField) -> Void
+							[Local f(5413):haxe.macro.ClassField:haxe.macro.ClassField]
 
-	public static function checkClassField(f:haxe.macro.ClassField) {
-		var e = f.expr();
-		if (e == null) {
-			return;
-		};
-		@:ast(switch (f.kind) {
+	public static function checkClassField[Function:(f : haxe.macro.ClassField) -> Void]
+		[Arg:haxe.macro.ClassField] [Local f(5325):haxe.macro.ClassField]
+		[Block:Void]
+			[Var e(5326):Null<haxe.macro.TypedExpr>]
+				[Call:Null<haxe.macro.TypedExpr>]
+					[Field:() -> Null<haxe.macro.TypedExpr>]
+						[Local f(5325):haxe.macro.ClassField:haxe.macro.ClassField]
+						[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+			[If:Void]
+				[Binop:Bool]
+					[Local e(5326):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					==
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Meta:Void]
+				:ast(switch (f.kind) {
 	case FVar(_, _):
 		{
 			checkAssignment(e, f.type);
@@ -55,63 +156,159 @@ class reflaxe.compiler.NullTypeEnforcer {
 			checkMaybeExpression(e);
 			returnTypeStack.pop();
 		};	
-}) {
-			var ` = f.kind;
-			switch (@:exhaustive enumIndex `) {
-				case 0: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						{
-							reflaxe.compiler.NullTypeEnforcer.checkAssignment(e, f.type);
-							reflaxe.compiler.NullTypeEnforcer.checkMaybeExpression(e);
-						};
-					};
-				};
-				case 1: {
-					var ` = `[0];
-					{
-						{
-							reflaxe.compiler.NullTypeEnforcer.returnTypeStack.push(@:ast(switch (f.type) {
+})
+				[Block:Void]
+					[Var `(5402):haxe.macro.FieldKind]
+						[Field:haxe.macro.FieldKind]
+							[Local f(5325):haxe.macro.ClassField:haxe.macro.ClassField]
+							[FAnon:haxe.macro.FieldKind] kind:haxe.macro.FieldKind
+					[Switch:Void]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local `(5402):haxe.macro.FieldKind:haxe.macro.FieldKind]
+						[Case:Void]
+							[Const:Int] 0
+							[Block:Void]
+								[Var `(5403):haxe.macro.VarAccess]
+									[EnumParameter:haxe.macro.VarAccess]
+										[Local `(5402):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FVar
+										0
+								[Var `(5404):haxe.macro.VarAccess]
+									[EnumParameter:haxe.macro.VarAccess]
+										[Local `(5402):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FVar
+										1
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+												[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+												[FStatic:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+													reflaxe.compiler.NullTypeEnforcer
+													checkAssignment:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void
+											[Local e(5326):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											[Field:haxe.macro.Type]
+												[Local f(5325):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:haxe.macro.Type] type:haxe.macro.Type
+										[Call:Void]
+											[Field:(expr : Null<haxe.macro.TypedExpr>) -> Void]
+												[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+												[FStatic:(expr : Null<haxe.macro.TypedExpr>) -> Void]
+													reflaxe.compiler.NullTypeEnforcer
+													checkMaybeExpression:(expr : Null<haxe.macro.TypedExpr>) -> Void
+											[Local e(5326):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						[Case:Null<Null<haxe.macro.Type>>]
+							[Const:Int] 1
+							[Block:Null<Null<haxe.macro.Type>>]
+								[Var `(5405):haxe.macro.MethodKind]
+									[EnumParameter:haxe.macro.MethodKind]
+										[Local `(5402):haxe.macro.FieldKind:haxe.macro.FieldKind]
+										FMethod
+										0
+								[Block:Null<Null<haxe.macro.Type>>]
+									[Block:Null<Null<haxe.macro.Type>>]
+										[Call:Int]
+											[Field:(x : Null<haxe.macro.Type>) -> Int]
+												[Field:Array<Null<haxe.macro.Type>>]
+													[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+													[FStatic:Array<Null<haxe.macro.Type>>]
+														reflaxe.compiler.NullTypeEnforcer
+														returnTypeStack:Array<Null<haxe.macro.Type>>
+												[FInstance:(x : Null<haxe.macro.Type>) -> Int]
+													Array<Null<haxe.macro.Type>>
+													push:(x : Array.T) -> Int
+											[Meta:Null<haxe.macro.Type>]
+												:ast(switch (f.type) {
 	case TFun(args, ret):
 		ret;	
 	case _:
 		null;	
-}) {
-								var ` = f.type;
-								if (enumIndex ` == 4) {
-									var ` = `[0];
-									var ` = `[1];
-									{
-										var args = `;
-										var ret = `;
-										{
-											ret;
-										};
-									};
-								} else {
-									null;
-								};
-							});
-							reflaxe.compiler.NullTypeEnforcer.checkMaybeExpression(e);
-							reflaxe.compiler.NullTypeEnforcer.returnTypeStack.pop();
-						};
-					};
-				};
-			};
-		};
-	}
+})
+												[Block:Null<haxe.macro.Type>]
+													[Var `(5406):haxe.macro.Type]
+														[Field:haxe.macro.Type]
+															[Local f(5325):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:haxe.macro.Type] type:haxe.macro.Type
+													[If:Null<haxe.macro.Type>]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(5406):haxe.macro.Type:haxe.macro.Type]
+															==
+															[Const:Int] 4
+														[Then:haxe.macro.Type] [Block:haxe.macro.Type]
+															[Var `(5407):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																	[Local `(5406):haxe.macro.Type:haxe.macro.Type]
+																	TFun
+																	0
+															[Var `(5408):haxe.macro.Type]
+																[EnumParameter:haxe.macro.Type]
+																	[Local `(5406):haxe.macro.Type:haxe.macro.Type]
+																	TFun
+																	1
+															[Block:haxe.macro.Type]
+																[Var args(5409):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(5407):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																[Var ret(5410):haxe.macro.Type] [Local `(5408):haxe.macro.Type:haxe.macro.Type]
+																[Block:haxe.macro.Type] [Local ret(5410):haxe.macro.Type:haxe.macro.Type]
+														[Else:Null<haxe.macro.Type>] [Block:Null<haxe.macro.Type>] [Const:Null<haxe.macro.Type>] null
+										[Call:Void]
+											[Field:(expr : Null<haxe.macro.TypedExpr>) -> Void]
+												[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+												[FStatic:(expr : Null<haxe.macro.TypedExpr>) -> Void]
+													reflaxe.compiler.NullTypeEnforcer
+													checkMaybeExpression:(expr : Null<haxe.macro.TypedExpr>) -> Void
+											[Local e(5326):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[Call:Null<Null<haxe.macro.Type>>]
+											[Field:() -> Null<Null<haxe.macro.Type>>]
+												[Field:Array<Null<haxe.macro.Type>>]
+													[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+													[FStatic:Array<Null<haxe.macro.Type>>]
+														reflaxe.compiler.NullTypeEnforcer
+														returnTypeStack:Array<Null<haxe.macro.Type>>
+												[FInstance:() -> Null<Null<haxe.macro.Type>>]
+													Array<Null<haxe.macro.Type>>
+													pop:() -> Null<Array.T>
 
-	public static function checkMaybeExpression(expr:Null<haxe.macro.TypedExpr>) {
-		if (expr == null) {
-			return;
-		};
-		reflaxe.compiler.NullTypeEnforcer.checkExpression(expr);
-	}
+	public static function checkMaybeExpression[Function:(expr : Null<haxe.macro.TypedExpr>) -> Void]
+		[Arg:Null<haxe.macro.TypedExpr>] [Local expr(5327):Null<haxe.macro.TypedExpr>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(5327):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					==
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Call:Void]
+				[Field:(expr : haxe.macro.TypedExpr) -> Void]
+					[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+					[FStatic:(expr : haxe.macro.TypedExpr) -> Void]
+						reflaxe.compiler.NullTypeEnforcer
+						checkExpression:(expr : haxe.macro.TypedExpr) -> Void
+				[Local expr(5327):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
 
-	public static function checkExpression(expr:haxe.macro.TypedExpr) {
-		expr.expr = haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TBool(true));
-		@:ast(switch (expr.expr) {
+	public static function checkExpression[Function:(expr : haxe.macro.TypedExpr) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(5328):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Binop:haxe.macro.TypedExprDef]
+				[Field:haxe.macro.TypedExprDef]
+					[Local expr(5328):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+				=
+				[Call:haxe.macro.TypedExprDef]
+					[Field:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+						[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+						[FEnum:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+							haxe.macro.TypedExprDef
+							TConst
+					[Call:haxe.macro.TConstant]
+						[Field:(b : Bool) -> haxe.macro.TConstant]
+							[TypeExpr haxe.macro.TConstant:Enum<haxe.macro.TConstant>]
+							[FEnum:(b : Bool) -> haxe.macro.TConstant]
+								haxe.macro.TConstant
+								TBool
+						[Const:Bool] true
+			[Meta:Void]
+				:ast(switch (expr.expr) {
 	case TBinop(OpAssign, e1, e2):
 		{
 			checkAssignment(e2, e1.t);
@@ -142,36 +339,74 @@ class reflaxe.compiler.NullTypeEnforcer {
 		};	
 	case _:
 		{ };	
-}) {
-			var ` = expr.expr;
-			switch (enumIndex `) {
-				case 3: {
-					var ` = `[0];
-					var ` = `[1];
-					var ` = `[2];
-					if (enumIndex ` == 4) {
-						{
-							var e1 = `;
-							var e2 = `;
-							{
-								{
-									reflaxe.compiler.NullTypeEnforcer.checkAssignment(e2, e1.t);
-								};
-							};
-						};
-					} else {
-						{};
-					};
-				};
-				case 9: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var e = `;
-						var el = `;
-						{
-							{
-								@:ast(switch (e.t) {
+})
+				[Block:Void]
+					[Var `(5363):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(5328):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 3
+							[Block:Void]
+								[Var `(5364):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										0
+								[Var `(5365):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										1
+								[Var `(5366):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										2
+								[If:Void]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(5364):haxe.macro.Binop:haxe.macro.Binop]
+										==
+										[Const:Int] 4
+									[Then:Void] [Block:Void]
+										[Block:Void]
+											[Var e1(5367):haxe.macro.TypedExpr] [Local `(5365):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Var e2(5368):haxe.macro.TypedExpr] [Local `(5366):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Block:Void]
+												[Block:Void]
+													[Call:Void]
+														[Field:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+															[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+															[FStatic:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+																reflaxe.compiler.NullTypeEnforcer
+																checkAssignment:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void
+														[Local e2(5368):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Field:haxe.macro.Type]
+															[Local e1(5367):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.Type] t:haxe.macro.Type
+									[Else:Void] [Block:Void] [Block:Void]
+						[Case:Void]
+							[Const:Int] 9
+							[Block:Void]
+								[Var `(5369):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										0
+								[Var `(5370):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										1
+								[Block:Void]
+									[Var e(5371):haxe.macro.TypedExpr] [Local `(5369):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var el(5372):Array<haxe.macro.TypedExpr>] [Local `(5370):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Meta:Void]
+												:ast(switch (e.t) {
 	case TFun(args, ret):
 		{
 			for (i  in  0 ... el.length) {
@@ -181,82 +416,223 @@ class reflaxe.compiler.NullTypeEnforcer {
 		};	
 	case _:
 		{ };	
-}) {
-									var ` = e.t;
-									if (enumIndex ` == 4) {
-										var ` = `[0];
-										var ` = `[1];
-										{
-											var args = `;
-											var ret = `;
-											{
-												{
-													{
-														var ` = 0;
-														var ` = el.length;
-														while (` < `) {
-															var i = ` ++;
-															var argType = if (i < args.length) {
-																args[i];
-															} else {
-																args[args.length - 1];
-															};
-															if (! argType.opt) {
-																reflaxe.compiler.NullTypeEnforcer.checkAssignment(el[i], argType.t);
-															};
-														};
-													};
-												};
-											};
-										};
-									} else {
-										{};
-									};
-								};
-							};
-						};
-					};
-				};
-				case 13: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var tvar = `;
-						var maybeExpr = `;
-						{
-							{
-								reflaxe.compiler.NullTypeEnforcer.checkAssignment(maybeExpr, tvar.t);
-							};
-						};
-					};
-				};
-				case 20: {
-					var ` = `[0];
-					{
-						var maybeExpr = `;
-						{
-							{
-								if (maybeExpr != null && reflaxe.compiler.NullTypeEnforcer.returnTypeStack.length > 0) {
-									reflaxe.compiler.NullTypeEnforcer.checkAssignment(maybeExpr, reflaxe.compiler.NullTypeEnforcer.returnTypeStack[reflaxe.compiler.NullTypeEnforcer.returnTypeStack.length - 1]);
-								};
-							};
-						};
-					};
-				};
-				default: {
-					{};
-				}
-			};
-		};
-		haxe.macro.TypedExprTools.iter(expr, reflaxe.compiler.NullTypeEnforcer.checkExpression);
-	}
+})
+												[Block:Void]
+													[Var `(5373):haxe.macro.Type]
+														[Field:haxe.macro.Type]
+															[Local e(5371):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.Type] t:haxe.macro.Type
+													[If:Void]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(5373):haxe.macro.Type:haxe.macro.Type]
+															==
+															[Const:Int] 4
+														[Then:Void] [Block:Void]
+															[Var `(5374):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																	[Local `(5373):haxe.macro.Type:haxe.macro.Type]
+																	TFun
+																	0
+															[Var `(5375):haxe.macro.Type]
+																[EnumParameter:haxe.macro.Type]
+																	[Local `(5373):haxe.macro.Type:haxe.macro.Type]
+																	TFun
+																	1
+															[Block:Void]
+																[Var args(5376):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>] [Local `(5374):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																[Var ret(5377):haxe.macro.Type] [Local `(5375):haxe.macro.Type:haxe.macro.Type]
+																[Block:Void]
+																	[Block:Void]
+																		[Block:Void]
+																			[Var `(5378):Int] [Const:Int] 0
+																			[Var `(5379):Int]
+																				[Field:Int]
+																					[Local el(5372):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																					[FInstance:Int]
+																						Array<haxe.macro.TypedExpr>
+																						length:Int
+																			[While:Void]
+																				[Binop:Bool]
+																					[Local `(5378):Int:Int]
+																					<
+																					[Local `(5379):Int:Int]
+																				[Block:Void]
+																					[Var i(5380):Int]
+																						[Unop:Int]
+																							++
+																							Postfix
+																							[Local `(5378):Int:Int]
+																					[Var argType(5381):{ t : haxe.macro.Type, opt : Bool, name : String }]
+																						[If:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																							[Binop:Bool]
+																								[Local i(5380):Int:Int]
+																								<
+																								[Field:Int]
+																									[Local args(5376):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																									[FInstance:Int]
+																										Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																										length:Int
+																							[Then:{ t : haxe.macro.Type, opt : Bool, name : String }] [Block:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																								[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[Local args(5376):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																									[Local i(5380):Int:Int]
+																							[Else:{ t : haxe.macro.Type, opt : Bool, name : String }] [Block:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																								[Array:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[Local args(5376):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																									[Binop:Int]
+																										[Field:Int]
+																											[Local args(5376):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+																											[FInstance:Int]
+																												Array<{ t : haxe.macro.Type, opt : Bool, name : String }>
+																												length:Int
+																										-
+																										[Const:Int] 1
+																					[If:Void]
+																						[Unop:Bool]
+																							!
+																							Prefix
+																							[Field:Bool]
+																								[Local argType(5381):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																								[FAnon:Bool] opt:Bool
+																						[Then:Void] [Block:Void]
+																							[Call:Void]
+																								[Field:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+																									[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+																									[FStatic:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+																										reflaxe.compiler.NullTypeEnforcer
+																										checkAssignment:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void
+																								[Array:haxe.macro.TypedExpr]
+																									[Local el(5372):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																									[Local i(5380):Int:Int]
+																								[Field:haxe.macro.Type]
+																									[Local argType(5381):{ t : haxe.macro.Type, opt : Bool, name : String }:{ t : haxe.macro.Type, opt : Bool, name : String }]
+																									[FAnon:haxe.macro.Type] t:haxe.macro.Type
+														[Else:Void] [Block:Void] [Block:Void]
+						[Case:Void]
+							[Const:Int] 13
+							[Block:Void]
+								[Var `(5382):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										0
+								[Var `(5383):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										1
+								[Block:Void]
+									[Var tvar(5384):haxe.macro.TVar] [Local `(5382):haxe.macro.TVar:haxe.macro.TVar]
+									[Var maybeExpr(5385):Null<haxe.macro.TypedExpr>] [Local `(5383):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Call:Void]
+												[Field:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+													[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+													[FStatic:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+														reflaxe.compiler.NullTypeEnforcer
+														checkAssignment:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void
+												[Local maybeExpr(5385):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												[Field:haxe.macro.Type]
+													[Local tvar(5384):haxe.macro.TVar:haxe.macro.TVar]
+													[FAnon:haxe.macro.Type] t:haxe.macro.Type
+						[Case:Void]
+							[Const:Int] 20
+							[Block:Void]
+								[Var `(5386):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(5363):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TReturn
+										0
+								[Block:Void]
+									[Var maybeExpr(5387):Null<haxe.macro.TypedExpr>] [Local `(5386):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Local maybeExpr(5387):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+														!=
+														[Const:Null<haxe.macro.TypedExpr>] null
+													&&
+													[Binop:Bool]
+														[Field:Int]
+															[Field:Array<Null<haxe.macro.Type>>]
+																[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+																[FStatic:Array<Null<haxe.macro.Type>>]
+																	reflaxe.compiler.NullTypeEnforcer
+																	returnTypeStack:Array<Null<haxe.macro.Type>>
+															[FInstance:Int]
+																Array<Null<haxe.macro.Type>>
+																length:Int
+														>
+														[Const:Int] 0
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+															[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+															[FStatic:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void]
+																reflaxe.compiler.NullTypeEnforcer
+																checkAssignment:(expr : Null<haxe.macro.TypedExpr>, type : Null<haxe.macro.Type>) -> Void
+														[Local maybeExpr(5387):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+														[Array:Null<haxe.macro.Type>]
+															[Field:Array<Null<haxe.macro.Type>>]
+																[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+																[FStatic:Array<Null<haxe.macro.Type>>]
+																	reflaxe.compiler.NullTypeEnforcer
+																	returnTypeStack:Array<Null<haxe.macro.Type>>
+															[Binop:Int]
+																[Field:Int]
+																	[Field:Array<Null<haxe.macro.Type>>]
+																		[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+																		[FStatic:Array<Null<haxe.macro.Type>>]
+																			reflaxe.compiler.NullTypeEnforcer
+																			returnTypeStack:Array<Null<haxe.macro.Type>>
+																	[FInstance:Int]
+																		Array<Null<haxe.macro.Type>>
+																		length:Int
+																-
+																[Const:Int] 1
+						[Default:Void] [Block:Void] [Block:Void]
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local expr(5328):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Field:(expr : haxe.macro.TypedExpr) -> Void]
+					[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+					[FStatic:(expr : haxe.macro.TypedExpr) -> Void]
+						reflaxe.compiler.NullTypeEnforcer
+						checkExpression:(expr : haxe.macro.TypedExpr) -> Void
 
-	static inline function nullComparable(type:haxe.macro.Type) {
-		return reflaxe.helpers.TypeHelper.isNull(type) || reflaxe.helpers.TypeHelper.isDynamic(type);
-	}
+	static inline function nullComparable[Function:(type : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local type(5416):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+							[FStatic:(t : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isNull:(t : haxe.macro.Type) -> Bool
+						[Local type(5416):haxe.macro.Type:haxe.macro.Type]
+					||
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+							[FStatic:(t : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isDynamic:(t : haxe.macro.Type) -> Bool
+						[Local type(5416):haxe.macro.Type:haxe.macro.Type]
 
-	public static function modifyExpression(expr:haxe.macro.TypedExpr) {
-		@:ast(switch (expr.expr) {
+	public static function modifyExpression[Function:(expr : haxe.macro.TypedExpr) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(5420):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
 	case TBinop(b, e1, e2) if (b == OpEq || b == OpNotEq):
 		{
 			if (e1.isNullExpr() && e2.isNullExpr()) {
@@ -273,48 +649,235 @@ class reflaxe.compiler.NullTypeEnforcer {
 		};	
 	case _:
 		{ };	
-}) {
-			var ` = expr.expr;
-			if (enumIndex ` == 3) {
-				var ` = `[0];
-				var ` = `[1];
-				var ` = `[2];
-				{
-					var b = `;
-					var e1 = `;
-					var e2 = `;
-					if (b == haxe.macro.Binop.OpEq || b == haxe.macro.Binop.OpNotEq) {
-						{
-							if (reflaxe.helpers.TypedExprHelper.isNullExpr(e1) && reflaxe.helpers.TypedExprHelper.isNullExpr(e2)) {
-								expr.expr = haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TBool(b == haxe.macro.Binop.OpEq));
-							} else {
-								if (reflaxe.helpers.TypedExprHelper.isNullExpr(e1)) {
-									if (! {
-										var type = e2.t;
-										reflaxe.helpers.TypeHelper.isNull(type) || reflaxe.helpers.TypeHelper.isDynamic(type);
-									}) {
-										expr.expr = haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TBool(b == haxe.macro.Binop.OpNotEq));
-									};
-								} else {
-									if (reflaxe.helpers.TypedExprHelper.isNullExpr(e2)) {
-										if (! {
-											var type = e1.t;
-											reflaxe.helpers.TypeHelper.isNull(type) || reflaxe.helpers.TypeHelper.isDynamic(type);
-										}) {
-											expr.expr = haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TBool(b == haxe.macro.Binop.OpNotEq));
-										};
-									};
-								};
-							};
-						};
-					} else {
-						{};
-					};
-				};
-			} else {
-				{};
-			};
-		};
-		haxe.macro.TypedExprTools.iter(expr, reflaxe.compiler.NullTypeEnforcer.modifyExpression);
-	}
+})
+				[Block:Void]
+					[Var `(5434):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(5420):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(5434):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 3
+						[Then:Void] [Block:Void]
+							[Var `(5435):haxe.macro.Binop]
+								[EnumParameter:haxe.macro.Binop]
+									[Local `(5434):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									0
+							[Var `(5436):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(5434):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									1
+							[Var `(5437):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(5434):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									2
+							[Block:Void]
+								[Var b(5438):haxe.macro.Binop] [Local `(5435):haxe.macro.Binop:haxe.macro.Binop]
+								[Var e1(5439):haxe.macro.TypedExpr] [Local `(5436):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Var e2(5440):haxe.macro.TypedExpr] [Local `(5437):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[If:Void]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Local b(5438):haxe.macro.Binop:haxe.macro.Binop]
+											==
+											[Field:haxe.macro.Binop]
+												[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+												[FEnum:haxe.macro.Binop]
+													haxe.macro.Binop
+													OpEq
+										||
+										[Binop:Bool]
+											[Local b(5438):haxe.macro.Binop:haxe.macro.Binop]
+											==
+											[Field:haxe.macro.Binop]
+												[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+												[FEnum:haxe.macro.Binop]
+													haxe.macro.Binop
+													OpNotEq
+									[Then:Void] [Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Call:Bool]
+														[Field:(e : haxe.macro.TypedExpr) -> Bool]
+															[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+															[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+																reflaxe.helpers.TypedExprHelper
+																isNullExpr:(e : haxe.macro.TypedExpr) -> Bool
+														[Local e1(5439):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													&&
+													[Call:Bool]
+														[Field:(e : haxe.macro.TypedExpr) -> Bool]
+															[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+															[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+																reflaxe.helpers.TypedExprHelper
+																isNullExpr:(e : haxe.macro.TypedExpr) -> Bool
+														[Local e2(5440):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Then:haxe.macro.TypedExprDef] [Block:haxe.macro.TypedExprDef]
+													[Binop:haxe.macro.TypedExprDef]
+														[Field:haxe.macro.TypedExprDef]
+															[Local expr(5420):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+														=
+														[Call:haxe.macro.TypedExprDef]
+															[Field:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+																[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																[FEnum:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+																	haxe.macro.TypedExprDef
+																	TConst
+															[Call:haxe.macro.TConstant]
+																[Field:(b : Bool) -> haxe.macro.TConstant]
+																	[TypeExpr haxe.macro.TConstant:Enum<haxe.macro.TConstant>]
+																	[FEnum:(b : Bool) -> haxe.macro.TConstant]
+																		haxe.macro.TConstant
+																		TBool
+																[Binop:Bool]
+																	[Local b(5438):haxe.macro.Binop:haxe.macro.Binop]
+																	==
+																	[Field:haxe.macro.Binop]
+																		[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+																		[FEnum:haxe.macro.Binop]
+																			haxe.macro.Binop
+																			OpEq
+												[Else:Void] [Block:Void]
+													[If:Void]
+														[Call:Bool]
+															[Field:(e : haxe.macro.TypedExpr) -> Bool]
+																[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+																	reflaxe.helpers.TypedExprHelper
+																	isNullExpr:(e : haxe.macro.TypedExpr) -> Bool
+															[Local e1(5439):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Then:Void] [Block:Void]
+															[If:Void]
+																[Unop:Bool]
+																	!
+																	Prefix
+																	[Block:Bool]
+																		[Var type(5441):haxe.macro.Type]
+																			[Field:haxe.macro.Type]
+																				[Local e2(5440):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																				[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																		[Binop:Bool]
+																			[Call:Bool]
+																				[Field:(t : haxe.macro.Type) -> Bool]
+																					[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+																					[FStatic:(t : haxe.macro.Type) -> Bool]
+																						reflaxe.helpers.TypeHelper
+																						isNull:(t : haxe.macro.Type) -> Bool
+																				[Local type(5441):haxe.macro.Type:haxe.macro.Type]
+																			||
+																			[Call:Bool]
+																				[Field:(t : haxe.macro.Type) -> Bool]
+																					[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+																					[FStatic:(t : haxe.macro.Type) -> Bool]
+																						reflaxe.helpers.TypeHelper
+																						isDynamic:(t : haxe.macro.Type) -> Bool
+																				[Local type(5441):haxe.macro.Type:haxe.macro.Type]
+																[Then:haxe.macro.TypedExprDef] [Block:haxe.macro.TypedExprDef]
+																	[Binop:haxe.macro.TypedExprDef]
+																		[Field:haxe.macro.TypedExprDef]
+																			[Local expr(5420):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																			[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																		=
+																		[Call:haxe.macro.TypedExprDef]
+																			[Field:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+																				[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																				[FEnum:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+																					haxe.macro.TypedExprDef
+																					TConst
+																			[Call:haxe.macro.TConstant]
+																				[Field:(b : Bool) -> haxe.macro.TConstant]
+																					[TypeExpr haxe.macro.TConstant:Enum<haxe.macro.TConstant>]
+																					[FEnum:(b : Bool) -> haxe.macro.TConstant]
+																						haxe.macro.TConstant
+																						TBool
+																				[Binop:Bool]
+																					[Local b(5438):haxe.macro.Binop:haxe.macro.Binop]
+																					==
+																					[Field:haxe.macro.Binop]
+																						[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+																						[FEnum:haxe.macro.Binop]
+																							haxe.macro.Binop
+																							OpNotEq
+														[Else:Void] [Block:Void]
+															[If:Void]
+																[Call:Bool]
+																	[Field:(e : haxe.macro.TypedExpr) -> Bool]
+																		[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																		[FStatic:(e : haxe.macro.TypedExpr) -> Bool]
+																			reflaxe.helpers.TypedExprHelper
+																			isNullExpr:(e : haxe.macro.TypedExpr) -> Bool
+																	[Local e2(5440):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[Then:Void] [Block:Void]
+																	[If:Void]
+																		[Unop:Bool]
+																			!
+																			Prefix
+																			[Block:Bool]
+																				[Var type(5442):haxe.macro.Type]
+																					[Field:haxe.macro.Type]
+																						[Local e1(5439):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																						[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																				[Binop:Bool]
+																					[Call:Bool]
+																						[Field:(t : haxe.macro.Type) -> Bool]
+																							[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+																							[FStatic:(t : haxe.macro.Type) -> Bool]
+																								reflaxe.helpers.TypeHelper
+																								isNull:(t : haxe.macro.Type) -> Bool
+																						[Local type(5442):haxe.macro.Type:haxe.macro.Type]
+																					||
+																					[Call:Bool]
+																						[Field:(t : haxe.macro.Type) -> Bool]
+																							[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+																							[FStatic:(t : haxe.macro.Type) -> Bool]
+																								reflaxe.helpers.TypeHelper
+																								isDynamic:(t : haxe.macro.Type) -> Bool
+																						[Local type(5442):haxe.macro.Type:haxe.macro.Type]
+																		[Then:haxe.macro.TypedExprDef] [Block:haxe.macro.TypedExprDef]
+																			[Binop:haxe.macro.TypedExprDef]
+																				[Field:haxe.macro.TypedExprDef]
+																					[Local expr(5420):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																					[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																				=
+																				[Call:haxe.macro.TypedExprDef]
+																					[Field:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+																						[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																						[FEnum:(c : haxe.macro.TConstant) -> haxe.macro.TypedExprDef]
+																							haxe.macro.TypedExprDef
+																							TConst
+																					[Call:haxe.macro.TConstant]
+																						[Field:(b : Bool) -> haxe.macro.TConstant]
+																							[TypeExpr haxe.macro.TConstant:Enum<haxe.macro.TConstant>]
+																							[FEnum:(b : Bool) -> haxe.macro.TConstant]
+																								haxe.macro.TConstant
+																								TBool
+																						[Binop:Bool]
+																							[Local b(5438):haxe.macro.Binop:haxe.macro.Binop]
+																							==
+																							[Field:haxe.macro.Binop]
+																								[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+																								[FEnum:haxe.macro.Binop]
+																									haxe.macro.Binop
+																									OpNotEq
+									[Else:Void] [Block:Void] [Block:Void]
+						[Else:Void] [Block:Void] [Block:Void]
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local expr(5420):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Field:(expr : haxe.macro.TypedExpr) -> Void]
+					[TypeExpr reflaxe.compiler.NullTypeEnforcer:Class<reflaxe.compiler.NullTypeEnforcer>]
+					[FStatic:(expr : haxe.macro.TypedExpr) -> Void]
+						reflaxe.compiler.NullTypeEnforcer
+						modifyExpression:(expr : haxe.macro.TypedExpr) -> Void
 }

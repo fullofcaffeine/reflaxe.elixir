@@ -107,7 +107,6 @@ case String.split(sub, "o") do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {text, all_numbers}, fn _, {text, all_numbers} ->
   if all_numbers.match(text) do
     numbers.push(all_numbers.matched(0))
-    text = all_numbers.matchedRight()
     {:cont, {text, all_numbers}}
   else
     {:halt, {text, all_numbers}}

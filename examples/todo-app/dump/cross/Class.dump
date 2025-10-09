@@ -1,2 +1,2 @@
-@:used @:coreType @:runtimeValue
+@:coreType @:runtimeValue
 abstract Class<T> {}

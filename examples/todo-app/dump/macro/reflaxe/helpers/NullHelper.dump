@@ -1,26 +1,45 @@
 class reflaxe.helpers.NullHelper {
 
-	public static inline function or<T>(maybe:Null<or.T>, defaultVal:or.T) {
-		return if (maybe != null) {
-			maybe;
-		} else {
-			defaultVal;
-		};
-	}
+	public static inline function or<T>[Function:(maybe : Null<or.T>, defaultVal : or.T) -> or.T]
+		[Arg:Null<or.T>] [Local maybe(2919):Null<or.T>]
+		[Arg:or.T] [Local defaultVal(2920):or.T]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:or.T]
+					[Binop:Bool]
+						[Local maybe(2919):Null<or.T>:Null<or.T>]
+						!=
+						[Const:Null<or.T>] null
+					[Then:Null<or.T>] [Block:Null<or.T>] [Local maybe(2919):Null<or.T>:Null<or.T>]
+					[Else:or.T] [Block:or.T] [Local defaultVal(2920):or.T:or.T]
 
-	public static inline function trustMe<T>(maybe:Null<trustMe.T>) {
-		return cast {
-			if (maybe == null) {
-				throw "Trusted on null value.";
-			};
-			@:nullSafety(Off) maybe;
-		};
-	}
+	public static inline function trustMe<T>[Function:(maybe : Null<trustMe.T>) -> trustMe.T]
+		[Arg:Null<trustMe.T>] [Local maybe(2921):Null<trustMe.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Cast:trustMe.T]
+					[Block:Dynamic]
+						[If:Void]
+							[Binop:Bool]
+								[Local maybe(2921):Null<trustMe.T>:Null<trustMe.T>]
+								==
+								[Const:Null<trustMe.T>] null
+							[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+						[Meta:Dynamic]
+							:nullSafety(Off)
+							[Local maybe(2921):Null<trustMe.T>:Null<trustMe.T>]
 
-	public static inline function orError<T>(maybe:Null<orError.T>, errorString:String) {
-		if (maybe == null) {
-			throw errorString;
-		};
-		@:nullSafety(Off) return maybe;
-	}
+	public static inline function orError<T>[Function:(maybe : Null<orError.T>, errorString : String) -> orError.T]
+		[Arg:Null<orError.T>] [Local maybe(2922):Null<orError.T>]
+		[Arg:String] [Local errorString(2923):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local maybe(2922):Null<orError.T>:Null<orError.T>]
+					==
+					[Const:Null<orError.T>] null
+				[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Local errorString(2923):String:String]
+			[Meta:Dynamic]
+				:nullSafety(Off)
+				[Return:Dynamic] [Local maybe(2922):Null<orError.T>:Null<orError.T>]
 }

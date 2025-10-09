@@ -1,116 +1,271 @@
-@:directlyUsed @:used @:coreApi
+@:used @:coreApi
 class Array<T> {
 
 	@:has_untyped
-	public function new() {
-		__elixir__("[]");
-	}
+	public function new[Function:() -> Void]
+		[Block:Unknown<1>]
+			[Call:Unknown<1>]
+				[Ident:String -> Unknown<0>] __elixir__
+				[Const:String] "[]"
 
 	@:realPath("length") @:native("length")
 	public var length(default,null):Int;
 
 	@:has_untyped
-	public function map<S>(f:Array.T -> map.S) {
-		return __elixir__("Enum.map({0}, {1})", this, f);
-	}
+	public function map<S>[Function:(f : (Array.T -> map.S)) -> Array<map.S>]
+		[Arg:Array.T -> map.S] [Local f(14419):Array.T -> map.S]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<map.S>]
+					[Ident:(String, Array<Array.T>, (Array.T -> map.S)) -> Unknown<2>] __elixir__
+					[Const:String] "Enum.map({0}, {1})"
+					[Const:Array<Array.T>] this
+					[Local f(14419):Array.T -> map.S:Array.T -> map.S]
 
 	@:has_untyped
-	public function filter(f:Array.T -> Bool) {
-		return __elixir__("Enum.filter({0}, {1})", this, f);
-	}
+	public function filter[Function:(f : (Array.T -> Bool)) -> Array<Array.T>]
+		[Arg:Array.T -> Bool] [Local f(14420):Array.T -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<Array.T>]
+					[Ident:(String, Array<Array.T>, (Array.T -> Bool)) -> Unknown<3>] __elixir__
+					[Const:String] "Enum.filter({0}, {1})"
+					[Const:Array<Array.T>] this
+					[Local f(14420):Array.T -> Bool:Array.T -> Bool]
 
 	@:has_untyped
-	public function concat(a:Array<Array.T>) {
-		return __elixir__("{0} ++ {1}", this, a);
-	}
+	public function concat[Function:(a : Array<Array.T>) -> Array<Array.T>]
+		[Arg:Array<Array.T>] [Local a(14421):Array<Array.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<Array.T>]
+					[Ident:(String, Array<Array.T>, Array<Array.T>) -> Unknown<4>] __elixir__
+					[Const:String] "{0} ++ {1}"
+					[Const:Array<Array.T>] this
+					[Local a(14421):Array<Array.T>:Array<Array.T>]
 
 	@:has_untyped
-	public function copy() {
-		return __elixir__("{0}", this);
-	}
+	public function copy[Function:() -> Array<Array.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<Array.T>]
+					[Ident:(String, Array<Array.T>) -> Unknown<5>] __elixir__
+					[Const:String] "{0}"
+					[Const:Array<Array.T>] this
 
 	@:has_untyped
-	public function contains(x:Array.T) {
-		return __elixir__("Enum.member?({0}, {1})", this, x);
-	}
+	public function contains[Function:(x : Array.T) -> Bool]
+		[Arg:Array.T] [Local x(14422):Array.T]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Ident:(String, Array<Array.T>, Array.T) -> Unknown<6>] __elixir__
+					[Const:String] "Enum.member?({0}, {1})"
+					[Const:Array<Array.T>] this
+					[Local x(14422):Array.T:Array.T]
 
 	@:has_untyped
-	public function join(sep:String) {
-		return __elixir__("Enum.join({0}, {1})", this, sep);
-	}
+	public function join[Function:(sep : String) -> String]
+		[Arg:String] [Local sep(14423):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Ident:(String, Array<Array.T>, String) -> Unknown<7>] __elixir__
+					[Const:String] "Enum.join({0}, {1})"
+					[Const:Array<Array.T>] this
+					[Local sep(14423):String:String]
 
 	@:has_untyped
-	public function shift() {
-		return __elixir__("List.first({0})", this);
-	}
+	public function shift[Function:() -> Null<Array.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Null<Array.T>]
+					[Ident:(String, Array<Array.T>) -> Unknown<8>] __elixir__
+					[Const:String] "List.first({0})"
+					[Const:Array<Array.T>] this
 
 	@:has_untyped
-	public function pop() {
-		return __elixir__("List.last({0})", this);
-	}
+	public function pop[Function:() -> Null<Array.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Null<Array.T>]
+					[Ident:(String, Array<Array.T>) -> Unknown<9>] __elixir__
+					[Const:String] "List.last({0})"
+					[Const:Array<Array.T>] this
 
 	@:has_untyped
-	public function push(x:Array.T) {
-		__elixir__("{0} ++ [{1}]", this, x);
-		return this.length;
-	}
+	public function push[Function:(x : Array.T) -> Int]
+		[Arg:Array.T] [Local x(14342):Array.T]
+		[Block:Dynamic]
+			[Call:Unknown<11>]
+				[Ident:(String, Array<Array.T>, Array.T) -> Unknown<10>] __elixir__
+				[Const:String] "{0} ++ [{1}]"
+				[Const:Array<Array.T>] this
+				[Local x(14342):Array.T:Array.T]
+			[Return:Dynamic]
+				[Field:Int]
+					[Const:Array<Array.T>] this
+					[FInstance:Int]
+						Array<Array.T>
+						length:Int
 
 	@:has_untyped
-	public function toString() {
-		return __elixir__("inspect({0})", this);
-	}
+	public function toString[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Ident:(String, Array<Array.T>) -> Unknown<12>] __elixir__
+					[Const:String] "inspect({0})"
+					[Const:Array<Array.T>] this
 
 	@:has_untyped
-	public function reverse() {
-		__elixir__("Enum.reverse({0})", this);
-	}
+	public function reverse[Function:() -> Void]
+		[Block:Unknown<14>]
+			[Call:Unknown<14>]
+				[Ident:(String, Array<Array.T>) -> Unknown<13>] __elixir__
+				[Const:String] "Enum.reverse({0})"
+				[Const:Array<Array.T>] this
 
 	@:has_untyped
-	public function sort(f:(Array.T, Array.T) -> Int) {
-		__elixir__("Enum.sort({0}, {1})", this, f);
-	}
+	public function sort[Function:(f : ((Array.T, Array.T) -> Int)) -> Void]
+		[Arg:(Array.T, Array.T) -> Int] [Local f(14424):(Array.T, Array.T) -> Int]
+		[Block:Unknown<16>]
+			[Call:Unknown<16>]
+				[Ident:(String, Array<Array.T>, ((Array.T, Array.T) -> Int)) -> Unknown<15>] __elixir__
+				[Const:String] "Enum.sort({0}, {1})"
+				[Const:Array<Array.T>] this
+				[Local f(14424):(Array.T, Array.T) -> Int:(Array.T, Array.T) -> Int]
 
 	@:has_untyped
-	public function lastIndexOf(x:Array.T, fromIndex:Null<Int> = null) {
-		if ((fromIndex == null)) return __elixir__("\n                case Enum.reverse({0}) |> Enum.find_index(fn item -> item == {1} end) do\n                    nil -> -1\n                    idx -> length({0}) - idx - 1\n                end\n            ", this, x) else return __elixir__("\n                {0}\n                |> Enum.slice(0, {2} + 1)\n                |> Enum.reverse()\n                |> Enum.find_index(fn item -> item == {1} end)\n                |> case do\n                    nil -> -1\n                    idx -> {2} - idx\n                end\n            ", this, x, fromIndex);
-	}
+	public function lastIndexOf[Function:(x : Array.T, ?fromIndex : Null<Int>) -> Int]
+		[Arg:Array.T] [Local x(14427):Array.T]
+		[Arg:Null<Int>]
+			[Local fromIndex(14428):Null<Int>]
+			[Const:Null<Int>] null
+		[Block:Void]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local fromIndex(14428):Null<Int>:Null<Int>]
+						==
+						[Const:Null<Int>] null
+				[Then:Dynamic] [Return:Dynamic]
+					[Call:Int]
+						[Ident:(String, Array<Array.T>, Array.T) -> Unknown<18>] __elixir__
+						[Const:String] "\n                case Enum.reverse({0}) |> Enum.find_index(fn item -> item == {1} end) do\n                    nil -> -1\n                    idx -> length({0}) - idx - 1\n                end\n            "
+						[Const:Array<Array.T>] this
+						[Local x(14427):Array.T:Array.T]
+				[Else:Dynamic] [Return:Dynamic]
+					[Call:Int]
+						[Ident:(String, Array<Array.T>, Array.T, Null<Int>) -> Unknown<17>] __elixir__
+						[Const:String] "\n                {0}\n                |> Enum.slice(0, {2} + 1)\n                |> Enum.reverse()\n                |> Enum.find_index(fn item -> item == {1} end)\n                |> case do\n                    nil -> -1\n                    idx -> {2} - idx\n                end\n            "
+						[Const:Array<Array.T>] this
+						[Local x(14427):Array.T:Array.T]
+						[Local fromIndex(14428):Null<Int>:Null<Int>]
 
 	@:has_untyped
-	public function unshift(x:Array.T) {
-		__elixir__("[{1} | {0}]", this, x);
-	}
+	public function unshift[Function:(x : Array.T) -> Void]
+		[Arg:Array.T] [Local x(14429):Array.T]
+		[Block:Unknown<20>]
+			[Call:Unknown<20>]
+				[Ident:(String, Array<Array.T>, Array.T) -> Unknown<19>] __elixir__
+				[Const:String] "[{1} | {0}]"
+				[Const:Array<Array.T>] this
+				[Local x(14429):Array.T:Array.T]
 
 	@:has_untyped
-	public function slice(pos:Int, end:Null<Int> = null) {
-		if ((end == null)) return __elixir__("Enum.slice({0}, {1}..-1//1)", this, pos) else return __elixir__("Enum.slice({0}, {1}..{2}//1)", this, pos, end - 1);
-	}
+	public function slice[Function:(pos : Int, ?end : Null<Int>) -> Array<Array.T>]
+		[Arg:Int] [Local pos(14430):Int]
+		[Arg:Null<Int>]
+			[Local end(14431):Null<Int>]
+			[Const:Null<Int>] null
+		[Block:Void]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local end(14431):Null<Int>:Null<Int>]
+						==
+						[Const:Null<Int>] null
+				[Then:Dynamic] [Return:Dynamic]
+					[Call:Array<Array.T>]
+						[Ident:(String, Array<Array.T>, Int) -> Unknown<22>] __elixir__
+						[Const:String] "Enum.slice({0}, {1}..-1//1)"
+						[Const:Array<Array.T>] this
+						[Local pos(14430):Int:Int]
+				[Else:Dynamic] [Return:Dynamic]
+					[Call:Array<Array.T>]
+						[Ident:(String, Array<Array.T>, Int, Int) -> Unknown<21>] __elixir__
+						[Const:String] "Enum.slice({0}, {1}..{2}//1)"
+						[Const:Array<Array.T>] this
+						[Local pos(14430):Int:Int]
+						[Binop:Int]
+							[Local end(14431):Null<Int>:Null<Int>]
+							-
+							[Const:Int] 1
 
 	@:has_untyped
-	public function splice(pos:Int, len:Int) {
-		return __elixir__("\n            {removed, remaining} = {0} |> Enum.split({1})\n            {splice, kept} = remaining |> Enum.split({2})\n            {0} = removed ++ kept\n            splice\n        ", this, pos, len);
-	}
+	public function splice[Function:(pos : Int, len : Int) -> Array<Array.T>]
+		[Arg:Int] [Local pos(14432):Int]
+		[Arg:Int] [Local len(14433):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<Array.T>]
+					[Ident:(String, Array<Array.T>, Int, Int) -> Unknown<23>] __elixir__
+					[Const:String] "\n            {removed, remaining} = {0} |> Enum.split({1})\n            {splice, kept} = remaining |> Enum.split({2})\n            {0} = removed ++ kept\n            splice\n        "
+					[Const:Array<Array.T>] this
+					[Local pos(14432):Int:Int]
+					[Local len(14433):Int:Int]
 
 	@:has_untyped
-	public function insert(pos:Int, x:Array.T) {
-		__elixir__("List.insert_at({0}, {1}, {2})", this, pos, x);
-	}
+	public function insert[Function:(pos : Int, x : Array.T) -> Void]
+		[Arg:Int] [Local pos(14434):Int]
+		[Arg:Array.T] [Local x(14435):Array.T]
+		[Block:Unknown<25>]
+			[Call:Unknown<25>]
+				[Ident:(String, Array<Array.T>, Int, Array.T) -> Unknown<24>] __elixir__
+				[Const:String] "List.insert_at({0}, {1}, {2})"
+				[Const:Array<Array.T>] this
+				[Local pos(14434):Int:Int]
+				[Local x(14435):Array.T:Array.T]
 
 	@:has_untyped
-	public function remove(x:Array.T) {
-		var result = __elixir__("List.delete({0}, {1})", this, x);
-		return __elixir__("{0} != {1}", result, this);
-	}
+	public function remove[Function:(x : Array.T) -> Bool]
+		[Arg:Array.T] [Local x(14436):Array.T]
+		[Block:Dynamic]
+			[Var result(14437):Unknown<27>]
+				[Call:Unknown<27>]
+					[Ident:(String, Array<Array.T>, Array.T) -> Unknown<26>] __elixir__
+					[Const:String] "List.delete({0}, {1})"
+					[Const:Array<Array.T>] this
+					[Local x(14436):Array.T:Array.T]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Ident:(String, Unknown<27>, Array<Array.T>) -> Unknown<28>] __elixir__
+					[Const:String] "{0} != {1}"
+					[Local result(14437):Unknown<27>:Unknown<27>]
+					[Const:Array<Array.T>] this
 
-	public inline function iterator() {
-		return new haxe.iterators.ArrayIterator(this);
-	}
+	public inline function iterator[Function:() -> haxe.iterators.ArrayIterator<Array.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:haxe.iterators.ArrayIterator<Array.T>]
+					haxe.iterators.ArrayIterator<Array.T>
+					[Const:Array<Array.T>] this
 
-	public inline function keyValueIterator() {
-		return new haxe.iterators.ArrayKeyValueIterator(this);
-	}
+	public inline function keyValueIterator[Function:() -> haxe.iterators.ArrayKeyValueIterator<Array.T>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:haxe.iterators.ArrayKeyValueIterator<Array.T>]
+					haxe.iterators.ArrayKeyValueIterator<Array.T>
+					[Const:Array<Array.T>] this
 
 	@:has_untyped
-	public function resize(len:Int) {
-		__elixir__("Enum.take({0}, {1})", this, len);
-	}
+	public function resize[Function:(len : Int) -> Void]
+		[Arg:Int] [Local len(14438):Int]
+		[Block:Unknown<30>]
+			[Call:Unknown<30>]
+				[Ident:(String, Array<Array.T>, Int) -> Unknown<29>] __elixir__
+				[Const:String] "Enum.take({0}, {1})"
+				[Const:Array<Array.T>] this
+				[Local len(14438):Int:Int]
 }

@@ -30,9 +30,9 @@ PRDs in this directory should follow this structure:
 ## Relationship to Documentation
 
 - **PRDs** define **what** we need to build and **why**
-- **CLAUDE.md** contains agent instructions and current project truth
+- **AGENTS.md** contains agent instructions and current project truth
 - **documentation/** contains implementation guides and technical details
 
 ## Agent Instructions
 
-For AI agents: All agent instructions are now in [CLAUDE.md](../../CLAUDE.md). Use ACTIVE_PRD.md for current priorities and requirements.
+For AI agents: All agent instructions are now in [AGENTS.md](../../AGENTS.md). Use ACTIVE_PRD.md for current priorities and requirements.

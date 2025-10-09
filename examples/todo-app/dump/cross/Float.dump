@@ -1,2 +1,2 @@
-@:valueUsed @:used @:coreType @:notNull @:runtimeValue
+@:coreType @:notNull @:runtimeValue
 abstract Float {}

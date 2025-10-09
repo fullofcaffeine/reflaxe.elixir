@@ -1,6 +1,6 @@
 # Test Suite Context for AI Assistants
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions and [/docs/03-compiler-development/CLAUDE.md](/docs/03-compiler-development/CLAUDE.md) for compiler development context
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions and [/docs/03-compiler-development/AGENTS.md](/docs/03-compiler-development/AGENTS.md) for compiler development context
 
 ## ⚠️ CRITICAL DIRECTIVE FOR AI AGENTS
 
@@ -158,6 +158,16 @@ end' > intended/Main.ex
   - Incorrect variable naming
   - Wrong code structure generation
   - Missing or extra code blocks
+
+## 🚫 Unit Tests: No `__elixir__()` Injections
+
+Unit tests in `test/unit` are compile-only and must not depend on target-specific injection. Using `__elixir__()` in unit tests is prohibited.
+
+- DON’T: `__elixir__().DateTime.to_iso8601(...)` (invalid chaining) or any direct `__elixir__()` usage
+- DO: Use small local stubs to model the pattern under test for compile-only validation
+- For validating generated Elixir, write a snapshot in `test/snapshot/` and assert the intended Elixir output rather than injecting Elixir via Haxe
+
+This prevents accidental misuse of injections and keeps unit tests target-agnostic and stable.
   - Incorrect Elixir idioms
 
 ### JavaScript/Full-Stack Tests 
@@ -641,7 +651,7 @@ Documents the pipeline coordination issue where switch cases with compound assig
 
 **See Documentation**:
 - [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) - Complete bug analysis
-- [`src/reflaxe/elixir/ast/CLAUDE.md`](/src/reflaxe/elixir/ast/CLAUDE.md) - AST-specific patterns
+- [`src/reflaxe/elixir/ast/AGENTS.md`](/src/reflaxe/elixir/ast/AGENTS.md) - AST-specific patterns
 
 ## 📈 Test Maintenance
 

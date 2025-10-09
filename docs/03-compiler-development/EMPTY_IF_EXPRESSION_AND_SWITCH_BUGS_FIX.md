@@ -563,7 +563,7 @@ trace('[XRay SwitchBuilder] Building case ${i+1}/${cases.length}');
 **Current State**: Fix implemented but pattern not documented for future developers
 
 **Required Documentation**:
-1. **Add to CLAUDE.md** - Empty expression handling pattern
+1. **Add to AGENTS.md** - Empty expression handling pattern
 2. **Update AST documentation** - EBlock([]) semantics in functional target
 3. **Add XRay examples** - Debug tracing patterns for similar issues
 
@@ -650,7 +650,7 @@ trace('[XRay SwitchBuilder] Building case ${i+1}/${cases.length}');
 1. **Ship Bug #1 fix** - Production-ready, zero regressions
 2. **Create Bug #2 architectural task** - Separate effort for pipeline coordination
 3. **Update test suite** - Dedicated test maintenance task
-4. **Document patterns** - Add to CLAUDE.md for future developers
+4. **Document patterns** - Add to AGENTS.md for future developers
 
 ---
 

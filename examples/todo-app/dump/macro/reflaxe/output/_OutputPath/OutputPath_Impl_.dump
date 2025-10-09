@@ -1,23 +1,60 @@
 private class reflaxe.output._OutputPath.OutputPath_Impl_ {
 
 	@:noCompletion
-	public static function _new(arr:Array<String>) {
-		var this;
-		this = arr;
-		return cast this;
-	}
+	public static function _new[Function:(arr : Array<String>) -> reflaxe.output.OutputPath]
+		[Arg:Array<String>] [Local arr(9056):Array<String>]
+		[Block:Dynamic]
+			[Var this(9057):Array<String>]
+			[Binop:Array<String>]
+				[Local this(9057):Array<String>:Array<String>]
+				=
+				[Local arr(9056):Array<String>:Array<String>]
+			[Return:Dynamic] [Cast:reflaxe.output.OutputPath] [Local this(9057):Array<String>:Array<String>]
 
 	@:from
-	public static function fromArr(arr:Array<String>) {
-		return reflaxe.output._OutputPath.OutputPath_Impl_._new(arr);
-	}
+	public static function fromArr[Function:(arr : Array<String>) -> reflaxe.output.OutputPath]
+		[Arg:Array<String>] [Local arr(9058):Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.output.OutputPath]
+					[Field:(arr : Array<String>) -> reflaxe.output.OutputPath]
+						[TypeExpr reflaxe.output._OutputPath.OutputPath_Impl_:{ Statics reflaxe.output._OutputPath.OutputPath_Impl_ }]
+						[FStatic:(arr : Array<String>) -> reflaxe.output.OutputPath]
+							reflaxe.output._OutputPath.OutputPath_Impl_
+							_new:(arr : Array<String>) -> reflaxe.output.OutputPath
+					[Local arr(9058):Array<String>:Array<String>]
 
 	@:from
-	public static function fromStr(str:String) {
-		return reflaxe.output._OutputPath.OutputPath_Impl_._new(new EReg("(/|\\\\)+", "").split(str));
-	}
+	public static function fromStr[Function:(str : String) -> reflaxe.output.OutputPath]
+		[Arg:String] [Local str(9059):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.output.OutputPath]
+					[Field:(arr : Array<String>) -> reflaxe.output.OutputPath]
+						[TypeExpr reflaxe.output._OutputPath.OutputPath_Impl_:{ Statics reflaxe.output._OutputPath.OutputPath_Impl_ }]
+						[FStatic:(arr : Array<String>) -> reflaxe.output.OutputPath]
+							reflaxe.output._OutputPath.OutputPath_Impl_
+							_new:(arr : Array<String>) -> reflaxe.output.OutputPath
+					[Call:Array<String>]
+						[Field:(s : String) -> Array<String>]
+							[New:EReg]
+								EReg
+								[Const:String] "(/|\\\\)+"
+								[Const:String] ""
+							[FInstance:(s : String) -> Array<String>]
+								EReg
+								split:(s : String) -> Array<String>
+						[Local str(9059):String:String]
 
-	public static function toString(this:Array<String>) {
-		return this.join("/");
-	}
+	public static function toString[Function:(this : Array<String>) -> String]
+		[Arg:Array<String>] [Local this(9060):Array<String>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local this(9060):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "/"
 }

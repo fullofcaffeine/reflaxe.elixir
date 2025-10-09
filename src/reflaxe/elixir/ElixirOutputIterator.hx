@@ -87,6 +87,9 @@ class ElixirOutputIterator {
 
         // Prepare external bootstrap files if strategy requires it
         prepareExternalBootstraps();
+
+        // Emit target-aware extern placeholders after collecting compiled modules
+        prepareExternPlaceholders();
     }
     
     /**
@@ -286,6 +289,80 @@ class ElixirOutputIterator {
         }
 
         // No generic main file to avoid name collision with module file.
+    }
+
+    /**
+     * Emit zero-body placeholder modules for referenced Haxe std externs.
+     *
+     * WHY: Satisfy snapshot presence for std externs without authoring sources.
+     * WHAT: For each tracked extern path (e.g., haxe/io/bytes), emit a minimal
+     *       defmodule with a nil body under the correct output directory.
+     * SAFETY: Skip any path already produced by normal compilation to avoid
+     *         duplicate module definitions.
+     */
+    function prepareExternPlaceholders(): Void {
+        if (compiler.externModulesReferenced == null) return;
+        // Collect and sort paths for deterministic output ordering
+        var externPaths: Array<String> = [];
+        for (p in compiler.externModulesReferenced.keys()) externPaths.push(p);
+        if (externPaths.length == 0) return;
+        externPaths.sort((a, b) -> Reflect.compare(a, b));
+
+        // Build a quick lookup set of existing output paths to avoid duplicates
+        var existingPaths = new Map<String, Bool>();
+        for (name in compiler.moduleOutputPaths.keys()) {
+            var p = compiler.moduleOutputPaths.get(name);
+            if (p != null) existingPaths.set(p, true);
+        }
+
+        // Helper: convert snake_name to Elixir module name
+        inline function toModuleName(base: String): String {
+            var isImplLike = base.indexOf("_impl_") >= 0 || (base.length > 0 && (base.charAt(0) == "_" || base.charAt(base.length - 1) == "_"));
+            if (isImplLike) {
+                var res = "";
+                var cap = true;
+                for (i in 0...base.length) {
+                    var ch = base.charAt(i);
+                    if (ch == "_") {
+                        res += "_";
+                        cap = true;
+                    } else {
+                        res += (cap ? ch.toUpperCase() : ch);
+                        cap = false;
+                    }
+                }
+                return res;
+            } else {
+                // PascalCase without underscores
+                var parts = base.split("_");
+                var out = "";
+                for (p in parts) if (p.length > 0) out += p.charAt(0).toUpperCase() + p.substr(1);
+                return out;
+            }
+        }
+
+        var fallback = compiler.getFallbackBaseType();
+        for (path in externPaths) {
+            // Derive directory and file base
+            var segments = path.split("/");
+            if (segments.length == 0) continue;
+            var fileBase = segments[segments.length - 1];
+            var dir = segments.length > 1 ? segments.slice(0, segments.length - 1).join("/") : "";
+
+            // Skip if a module already generated this exact relative path
+            var candidate = (dir != null && dir.length > 0 ? dir + "/" : "") + fileBase + ".ex";
+            if (existingPaths.exists(candidate)) continue;
+
+            // Build minimal module content
+            var modName = toModuleName(fileBase);
+            var content = 'defmodule ' + modName + ' do\n  nil\nend\n';
+
+            // SAFETY: Require a non-null BaseType to satisfy OutputManager
+            if (fallback != null) {
+                var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), fallback, fileBase, dir);
+                extraOutputs.push(data);
+            }
+        }
     }
 
     /**

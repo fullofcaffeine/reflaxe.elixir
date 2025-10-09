@@ -106,8 +106,8 @@ class BinaryOpBuilder {
                     var leftStr = if (leftIsString) {
                         leftAST;
                     } else {
-                        // Left is not string but right is - convert left to string
-                        makeAST(ElixirASTDef.ECall(leftAST, "to_string", []));
+                        // Convert left using Kernel.to_string(value)
+                        makeAST(ElixirASTDef.ERemoteCall(makeAST(ElixirASTDef.EVar("Kernel")), "to_string", [leftAST]));
                     };
                     
                     // Handle right operand conversion if needed
@@ -132,8 +132,8 @@ class BinaryOpBuilder {
                         };
                         
                         if (needsToString) {
-                            // Convert non-string to string for concatenation
-                            makeAST(ElixirASTDef.ECall(rightAST, "to_string", []));
+                            // Convert non-string to string for concatenation using Kernel.to_string
+                            makeAST(ElixirASTDef.ERemoteCall(makeAST(ElixirASTDef.EVar("Kernel")), "to_string", [rightAST]));
                         } else {
                             // Use the expression as-is, Elixir will handle conversion in interpolation context
                             rightAST;

@@ -9,12 +9,33 @@ class sys.FileSystem {
 
 	public static function fullPath
 
-	public static function absolutePath(relPath:String) {
-		if (haxe.io.Path.isAbsolute(relPath)) {
-			return relPath;
-		};
-		return haxe.io.Path.join([Sys.getCwd(), relPath]);
-	}
+	public static function absolutePath[Function:(relPath : String) -> String]
+		[Arg:String] [Local relPath(8877):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(path : String) -> Bool]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(path : String) -> Bool]
+							haxe.io.Path
+							isAbsolute:(path : String) -> Bool
+					[Local relPath(8877):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local relPath(8877):String:String]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[ArrayDecl:Array<String>]
+						[Call:String]
+							[Field:() -> String]
+								[TypeExpr Sys:Class<Sys>]
+								[FStatic:() -> String]
+									Sys
+									getCwd:() -> String
+						[Local relPath(8877):String:String]
 
 	public static function isDirectory
 

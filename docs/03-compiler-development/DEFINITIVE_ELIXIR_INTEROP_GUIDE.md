@@ -441,4 +441,4 @@ When in doubt, refer to this guide's decision framework and pattern catalog.
 
 - [`ELIXIR_INJECTION_COMPLETE_GUIDE.md`](ELIXIR_INJECTION_COMPLETE_GUIDE.md) - Deep dive on `__elixir__` specifically
 - [`/std/phoenix/LiveSocket.hx`](/std/phoenix/LiveSocket.hx) - Real-world abstract type example
-- [`/CLAUDE.md`](/CLAUDE.md) - Project-wide principles and lessons learned
+- [`/AGENTS.md`](/AGENTS.md) - Project-wide principles and lessons learned

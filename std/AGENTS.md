@@ -1,6 +1,6 @@
 # Standard Library Development Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
 
 ## 🔗 Shared AI Context (Import System)
 
@@ -112,6 +112,22 @@ class Date {
 - **No Compromise**: Full type safety with maximum flexibility
 
 **See**: [`/documentation/COMPILER_BEST_PRACTICES.md`](/documentation/COMPILER_BEST_PRACTICES.md#dual-api-philosophy-for-standard-library) - Complete implementation guidelines
+
+## ⚠️ CRITICAL: Correct `__elixir__()` Usage (No Chaining, Use Templates)
+
+When native interop is unavoidable, `untyped __elixir__()` must be used precisely. The only valid form is string-template injection with placeholders and arguments.
+
+- DO use template + args:
+  - `untyped __elixir__('DateTime.utc_now()')`
+  - `untyped __elixir__('DateTime.to_iso8601({0})', dt)`
+- DO prefer externs (`@:native`) over injections whenever possible:
+  - `elixir.DateTime.utcNow().to_iso8601()` via `std/elixir/DateTime.hx`
+- DON’T chain off `__elixir__()` results or treat it as an object:
+  - `__elixir__().DateTime.to_iso8601(...)` ❌ invalid
+  - `__elixir__()('^tmp')` or caret lookups ❌ invalid
+- DON’T use `__elixir__()` in regular source or tests; restrict to `.cross.hx` extern inline implementations or tightly-scoped interop helpers.
+
+If you find yourself needing `__elixir__()` outside extern inline, stop and refactor to externs or AST transforms. This rule prevents non-idiomatic output and brittle code paths.
 
 ### Core Design Patterns
 

@@ -1,10 +1,22 @@
 class reflaxe.preprocessors.ExpressionPreprocessorHelper {
 
-	public static function process(self:reflaxe.preprocessors.ExpressionPreprocessor, data:reflaxe.data.ClassFuncData, compiler:reflaxe.BaseCompiler) {
-		if (data.expr == null) {
-			return;
-		};
-		@:ast(switch (self) {
+	public static function process[Function:(self : reflaxe.preprocessors.ExpressionPreprocessor, data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Void]
+		[Arg:reflaxe.preprocessors.ExpressionPreprocessor] [Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor]
+		[Arg:reflaxe.data.ClassFuncData] [Local data(7353):reflaxe.data.ClassFuncData]
+		[Arg:reflaxe.BaseCompiler] [Local compiler(7354):reflaxe.BaseCompiler]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<haxe.macro.TypedExpr>]
+						[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+						[FInstance:Null<haxe.macro.TypedExpr>]
+							reflaxe.data.ClassFuncData
+							expr:Null<haxe.macro.TypedExpr>
+					==
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Meta:Void]
+				:ast(switch (self) {
 	case SanitizeEverythingIsExpression(options):
 		{
 			var eiec = new EverythingIsExprSanitizer(data.expr, options);
@@ -64,155 +76,566 @@ class reflaxe.preprocessors.ExpressionPreprocessorHelper {
 		{
 			preprocessor.process(data, compiler);
 		};	
-}) switch (@:exhaustive enumIndex self) {
-			case 0: {
-				var ` = self[0];
-				{
-					var options = `;
-					{
-						{
-							var eiec = new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer(data.expr, options, null, null, null);
-							data.setExpr(eiec.convertedExpr());
-							if (eiec.variableUsageCount != null) {
-								data.setVariableUsageCount(eiec.variableUsageCount);
-							};
-						};
-					};
-				};
-			};
-			case 1: {
-				var ` = self[0];
-				{
-					var mode = `;
-					{
-						{
-							var tvr = new reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl(mode, data.expr, data.getOrFindVariableUsageCount());
-							data.setExpr(tvr.fixTemporaries());
-						};
-					};
-				};
-			};
-			case 2: {
-				var ` = self[0];
-				{
-					var ` = `.preventRepeatArguments;
-					var ` = `.extraReservedNames;
-					{
-						var preventRepeatArguments = `;
-						var extraReservedNames = `;
-						{
-							{
-								var reservedNames = reflaxe.helpers.ArrayHelper.concatIfNotNull(reflaxe.helpers.ClassFieldHelper.getAllVariableNames(data, compiler), extraReservedNames);
-								var rvf = new reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl(data.expr, null, {
-									var _this = data.args;
-									{
-										var ` = [];
-										{
-											var ` = 0;
-											var ` = _this;
-											while (` < `.length) {
-												var v = `[`];
-												++ `;
-												`.push(function(a:reflaxe.data.ClassFuncArg) {
-													return a.originalName;
-												}(v));
-											};
-										};
-										`;
-									};
-								}.concat(reservedNames));
-								if (preventRepeatArguments) {
-									{
-										var ` = 0;
-										var ` = data.args;
-										while (` < `.length) {
-											var arg = `[`];
-											++ `;
-											if (arg.ensureNameDoesntMatch(reservedNames) && arg.tvar != null) {
-												rvf.registerVarReplacement(arg.getName(), arg.tvar);
-											};
-										};
-									};
-								};
-								data.setExpr(rvf.fixRepeatVariables());
-							};
-						};
-					};
-				};
-			};
-			case 3: {
-				var ` = self[0];
-				{
-					var options = `;
-					{
-						{
-							var cfv = new reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl(data.expr, options.wrapMetadata);
-							data.setExpr(cfv.fixCaptures());
-						};
-					};
-				};
-			};
-			case 4: {
-				{
-					{
-						data.setExpr(reflaxe.preprocessors.implementations.RemoveSingleExpressionBlocksImpl.process(data.expr));
-					};
-				};
-			};
-			case 5: {
-				{
-					{
-						data.setExprList(reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
-					};
-				};
-			};
-			case 6: {
-				{
-					{
-						data.setExprList(reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
-					};
-				};
-			};
-			case 7: {
-				{
-					{
-						data.setExprList(reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
-					};
-				};
-			};
-			case 8: {
-				{
-					{
-						data.setExprList(reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
-					};
-				};
-			};
-			case 9: {
-				{
-					{
-						data.setExprList(reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl.mark(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
-					};
-				};
-			};
-			case 10: {
-				var ` = self[0];
-				{
-					var preprocessor = `;
-					{
-						{
-							preprocessor.process(data, compiler);
-						};
-					};
-				};
-			};
-		};
-	}
+})
+				[Switch:Void]
+					[Meta:Int]
+						:exhaustive
+						[EnumIndex:Int] [Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor:reflaxe.preprocessors.ExpressionPreprocessor]
+					[Case:Void]
+						[Const:Int] 0
+						[Block:Void]
+							[Var `(7450):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+								[EnumParameter:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+									[Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor:reflaxe.preprocessors.ExpressionPreprocessor]
+									SanitizeEverythingIsExpression
+									0
+							[Block:Void]
+								[Var options(7451):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] [Local `(7450):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+								[Block:Void]
+									[Block:Void]
+										[Var eiec(7452):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer]
+											[New:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer]
+												reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+												[Local options(7451):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+												[Const:Null<reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer>] null
+												[Const:Null<haxe.macro.TypedExpr>] null
+												[Const:Null<reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator>] null
+										[Call:Void]
+											[Field:(e : haxe.macro.TypedExpr) -> Void]
+												[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+												[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+													reflaxe.data.ClassFuncData
+													setExpr:(e : haxe.macro.TypedExpr) -> Void
+											[Call:haxe.macro.TypedExpr]
+												[Field:() -> haxe.macro.TypedExpr]
+													[Local eiec(7452):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer]
+													[FInstance:() -> haxe.macro.TypedExpr]
+														reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer
+														convertedExpr:() -> haxe.macro.TypedExpr
+										[If:Void]
+											[Binop:Bool]
+												[Field:Null<Map<Int, Int>>]
+													[Local eiec(7452):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer]
+													[FInstance:Null<Map<Int, Int>>]
+														reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer
+														variableUsageCount:Null<Map<Int, Int>>
+												!=
+												[Const:Null<Map<Int, Int>>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(usageMap : Map<Int, Int>) -> Void]
+														[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+														[FInstance:(usageMap : Map<Int, Int>) -> Void]
+															reflaxe.data.ClassFuncData
+															setVariableUsageCount:(usageMap : Map<Int, Int>) -> Void
+													[Field:Null<Map<Int, Int>>]
+														[Local eiec(7452):reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer]
+														[FInstance:Null<Map<Int, Int>>]
+															reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer
+															variableUsageCount:Null<Map<Int, Int>>
+					[Case:Void]
+						[Const:Int] 1
+						[Block:Void]
+							[Var `(7453):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode]
+								[EnumParameter:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode]
+									[Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor:reflaxe.preprocessors.ExpressionPreprocessor]
+									RemoveTemporaryVariables
+									0
+							[Block:Void]
+								[Var mode(7454):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode] [Local `(7453):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode]
+								[Block:Void]
+									[Block:Void]
+										[Var tvr(7455):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl]
+											[New:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl]
+												reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl
+												[Local mode(7454):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode]
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+												[Call:Map<Int, Int>]
+													[Field:() -> Map<Int, Int>]
+														[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+														[FInstance:() -> Map<Int, Int>]
+															reflaxe.data.ClassFuncData
+															getOrFindVariableUsageCount:() -> Map<Int, Int>
+										[Call:Void]
+											[Field:(e : haxe.macro.TypedExpr) -> Void]
+												[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+												[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+													reflaxe.data.ClassFuncData
+													setExpr:(e : haxe.macro.TypedExpr) -> Void
+											[Call:haxe.macro.TypedExpr]
+												[Field:() -> haxe.macro.TypedExpr]
+													[Local tvr(7455):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl]
+													[FInstance:() -> haxe.macro.TypedExpr]
+														reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl
+														fixTemporaries:() -> haxe.macro.TypedExpr
+					[Case:Void]
+						[Const:Int] 2
+						[Block:Void]
+							[Var `(7456):reflaxe.preprocessors.PreventRepeatVariablesOptions]
+								[EnumParameter:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+									[Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor:reflaxe.preprocessors.ExpressionPreprocessor]
+									PreventRepeatVariables
+									0
+							[Block:Void]
+								[Var `(7457):Bool]
+									[Field:Bool]
+										[Local `(7456):reflaxe.preprocessors.PreventRepeatVariablesOptions:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+										[FInstance:Bool]
+											reflaxe.preprocessors.PreventRepeatVariablesOptions
+											preventRepeatArguments:Bool
+								[Var `(7458):Null<Array<String>>]
+									[Field:Null<Array<String>>]
+										[Local `(7456):reflaxe.preprocessors.PreventRepeatVariablesOptions:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+										[FInstance:Null<Array<String>>]
+											reflaxe.preprocessors.PreventRepeatVariablesOptions
+											extraReservedNames:Null<Array<String>>
+								[Block:Void]
+									[Var preventRepeatArguments(7459):Bool] [Local `(7457):Bool:Bool]
+									[Var extraReservedNames(7460):Null<Array<String>>] [Local `(7458):Null<Array<String>>:Null<Array<String>>]
+									[Block:Void]
+										[Block:Void]
+											[Var reservedNames(7461):Array<String>]
+												[Call:Array<String>]
+													[Field:(self : Array<String>, other : Null<Array<String>>) -> Array<String>]
+														[TypeExpr reflaxe.helpers.ArrayHelper:{ Statics reflaxe.helpers.ArrayHelper }]
+														[FStatic:(self : Array<String>, other : Null<Array<String>>) -> Array<String>]
+															reflaxe.helpers.ArrayHelper
+															concatIfNotNull:(self : Array<concatIfNotNull.T>, other : Null<Array<concatIfNotNull.T>>) -> Array<concatIfNotNull.T>
+													[Call:Array<String>]
+														[Field:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Array<String>]
+															[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+															[FStatic:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Array<String>]
+																reflaxe.helpers.ClassFieldHelper
+																getAllVariableNames:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Array<String>
+														[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+														[Local compiler(7354):reflaxe.BaseCompiler:reflaxe.BaseCompiler]
+													[Local extraReservedNames(7460):Null<Array<String>>:Null<Array<String>>]
+											[Var rvf(7462):reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+												[New:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+													reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+													[Field:Null<haxe.macro.TypedExpr>]
+														[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+														[FInstance:Null<haxe.macro.TypedExpr>]
+															reflaxe.data.ClassFuncData
+															expr:Null<haxe.macro.TypedExpr>
+													[Const:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>] null
+													[Call:Array<String>]
+														[Field:(a : Array<String>) -> Array<String>]
+															[Block:Array<String>]
+																[Var _this(7463):Array<reflaxe.data.ClassFuncArg>]
+																	[Field:Array<reflaxe.data.ClassFuncArg>]
+																		[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+																		[FInstance:Array<reflaxe.data.ClassFuncArg>]
+																			reflaxe.data.ClassFuncData
+																			args:Array<reflaxe.data.ClassFuncArg>
+																[Block:Array<String>]
+																	[Var `(7464):Array<String>] [ArrayDecl:Array<String>]
+																	[Block:Void]
+																		[Var `(7465):Int] [Const:Int] 0
+																		[Var `(7466):Array<reflaxe.data.ClassFuncArg>] [Local _this(7463):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																		[While:Void]
+																			[Binop:Bool]
+																				[Local `(7465):Int:Int]
+																				<
+																				[Field:Int]
+																					[Local `(7466):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																					[FInstance:Int]
+																						Array<reflaxe.data.ClassFuncArg>
+																						length:Int
+																			[Block:Void]
+																				[Var v(7467):reflaxe.data.ClassFuncArg]
+																					[Array:reflaxe.data.ClassFuncArg]
+																						[Local `(7466):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																						[Local `(7465):Int:Int]
+																				[Unop:Int]
+																					++
+																					Prefix
+																					[Local `(7465):Int:Int]
+																				[Call:Int]
+																					[Field:(x : String) -> Int]
+																						[Local `(7464):Array<String>:Array<String>]
+																						[FInstance:(x : String) -> Int]
+																							Array<String>
+																							push:(x : Array.T) -> Int
+																					[Call:String]
+																						[Function:(a : reflaxe.data.ClassFuncArg) -> String]
+																							[Arg:reflaxe.data.ClassFuncArg] [Local a(7468):reflaxe.data.ClassFuncArg]
+																							[Block:Dynamic]
+																								[Return:Dynamic]
+																									[Field:String]
+																										[Local a(7468):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																										[FInstance:String]
+																											reflaxe.data.ClassFuncArg
+																											originalName:String
+																						[Local v(7467):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																	[Local `(7464):Array<String>:Array<String>]
+															[FInstance:(a : Array<String>) -> Array<String>]
+																Array<String>
+																concat:(a : Array<Array.T>) -> Array<Array.T>
+														[Local reservedNames(7461):Array<String>:Array<String>]
+											[If:Void]
+												[Local preventRepeatArguments(7459):Bool:Bool]
+												[Then:Void] [Block:Void]
+													[Block:Void]
+														[Var `(7469):Int] [Const:Int] 0
+														[Var `(7470):Array<reflaxe.data.ClassFuncArg>]
+															[Field:Array<reflaxe.data.ClassFuncArg>]
+																[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+																[FInstance:Array<reflaxe.data.ClassFuncArg>]
+																	reflaxe.data.ClassFuncData
+																	args:Array<reflaxe.data.ClassFuncArg>
+														[While:Void]
+															[Binop:Bool]
+																[Local `(7469):Int:Int]
+																<
+																[Field:Int]
+																	[Local `(7470):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																	[FInstance:Int]
+																		Array<reflaxe.data.ClassFuncArg>
+																		length:Int
+															[Block:Void]
+																[Var arg(7471):reflaxe.data.ClassFuncArg]
+																	[Array:reflaxe.data.ClassFuncArg]
+																		[Local `(7470):Array<reflaxe.data.ClassFuncArg>:Array<reflaxe.data.ClassFuncArg>]
+																		[Local `(7469):Int:Int]
+																[Unop:Int]
+																	++
+																	Prefix
+																	[Local `(7469):Int:Int]
+																[If:Void]
+																	[Binop:Bool]
+																		[Call:Bool]
+																			[Field:(names : Array<String>) -> Bool]
+																				[Local arg(7471):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																				[FInstance:(names : Array<String>) -> Bool]
+																					reflaxe.data.ClassFuncArg
+																					ensureNameDoesntMatch:(names : Array<String>) -> Bool
+																			[Local reservedNames(7461):Array<String>:Array<String>]
+																		&&
+																		[Binop:Bool]
+																			[Field:Null<haxe.macro.TVar>]
+																				[Local arg(7471):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																				[FInstance:Null<haxe.macro.TVar>]
+																					reflaxe.data.ClassFuncArg
+																					tvar:Null<haxe.macro.TVar>
+																			!=
+																			[Const:Null<haxe.macro.TVar>] null
+																	[Then:Void] [Block:Void]
+																		[Call:Void]
+																			[Field:(newName : String, previousTVar : haxe.macro.TVar) -> Void]
+																				[Local rvf(7462):reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+																				[FInstance:(newName : String, previousTVar : haxe.macro.TVar) -> Void]
+																					reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																					registerVarReplacement:(newName : String, previousTVar : haxe.macro.TVar) -> Void
+																			[Call:String]
+																				[Field:() -> String]
+																					[Local arg(7471):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																					[FInstance:() -> String]
+																						reflaxe.data.ClassFuncArg
+																						getName:() -> String
+																			[Field:Null<haxe.macro.TVar>]
+																				[Local arg(7471):reflaxe.data.ClassFuncArg:reflaxe.data.ClassFuncArg]
+																				[FInstance:Null<haxe.macro.TVar>]
+																					reflaxe.data.ClassFuncArg
+																					tvar:Null<haxe.macro.TVar>
+											[Call:Void]
+												[Field:(e : haxe.macro.TypedExpr) -> Void]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+														reflaxe.data.ClassFuncData
+														setExpr:(e : haxe.macro.TypedExpr) -> Void
+												[Call:haxe.macro.TypedExpr]
+													[Field:() -> haxe.macro.TypedExpr]
+														[Local rvf(7462):reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+														[FInstance:() -> haxe.macro.TypedExpr]
+															reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+															fixRepeatVariables:() -> haxe.macro.TypedExpr
+					[Case:Void]
+						[Const:Int] 3
+						[Block:Void]
+							[Var `(7472):reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions]
+								[EnumParameter:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions]
+									[Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor:reflaxe.preprocessors.ExpressionPreprocessor]
+									WrapLambdaCaptureVariablesInArray
+									0
+							[Block:Void]
+								[Var options(7473):reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions] [Local `(7472):reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions]
+								[Block:Void]
+									[Block:Void]
+										[Var cfv(7474):reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl]
+											[New:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl]
+												reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+												[Field:Null<Array<String>>]
+													[Local options(7473):reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions]
+													[FInstance:Null<Array<String>>]
+														reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayOptions
+														wrapMetadata:Null<Array<String>>
+										[Call:Void]
+											[Field:(e : haxe.macro.TypedExpr) -> Void]
+												[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+												[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+													reflaxe.data.ClassFuncData
+													setExpr:(e : haxe.macro.TypedExpr) -> Void
+											[Call:haxe.macro.TypedExpr]
+												[Field:() -> haxe.macro.TypedExpr]
+													[Local cfv(7474):reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl]
+													[FInstance:() -> haxe.macro.TypedExpr]
+														reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+														fixCaptures:() -> haxe.macro.TypedExpr
+					[Case:Void]
+						[Const:Int] 4
+						[Block:Void]
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(e : haxe.macro.TypedExpr) -> Void]
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+												reflaxe.data.ClassFuncData
+												setExpr:(e : haxe.macro.TypedExpr) -> Void
+										[Call:haxe.macro.TypedExpr]
+											[Field:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+												[TypeExpr reflaxe.preprocessors.implementations.RemoveSingleExpressionBlocksImpl:Class<reflaxe.preprocessors.implementations.RemoveSingleExpressionBlocksImpl>]
+												[FStatic:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+													reflaxe.preprocessors.implementations.RemoveSingleExpressionBlocksImpl
+													process:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+											[Field:Null<haxe.macro.TypedExpr>]
+												[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+												[FInstance:Null<haxe.macro.TypedExpr>]
+													reflaxe.data.ClassFuncData
+													expr:Null<haxe.macro.TypedExpr>
+					[Case:Void]
+						[Const:Int] 5
+						[Block:Void]
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+												reflaxe.data.ClassFuncData
+												setExprList:(expressions : Array<haxe.macro.TypedExpr>) -> Void
+										[Call:Array<haxe.macro.TypedExpr>]
+											[Field:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+												[TypeExpr reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl:Class<reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl>]
+												[FStatic:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+													reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl
+													process:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>
+											[Call:Array<haxe.macro.TypedExpr>]
+												[Field:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+													[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+													[FStatic:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+														reflaxe.helpers.TypedExprHelper
+														unwrapBlock:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+					[Case:Void]
+						[Const:Int] 6
+						[Block:Void]
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+												reflaxe.data.ClassFuncData
+												setExprList:(expressions : Array<haxe.macro.TypedExpr>) -> Void
+										[Call:Array<haxe.macro.TypedExpr>]
+											[Field:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+												[TypeExpr reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl:Class<reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl>]
+												[FStatic:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+													reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl
+													process:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>
+											[Call:Array<haxe.macro.TypedExpr>]
+												[Field:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+													[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+													[FStatic:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+														reflaxe.helpers.TypedExprHelper
+														unwrapBlock:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+					[Case:Void]
+						[Const:Int] 7
+						[Block:Void]
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+												reflaxe.data.ClassFuncData
+												setExprList:(expressions : Array<haxe.macro.TypedExpr>) -> Void
+										[Call:Array<haxe.macro.TypedExpr>]
+											[Field:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+												[TypeExpr reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl:Class<reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl>]
+												[FStatic:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+													reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+													process:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>
+											[Call:Array<haxe.macro.TypedExpr>]
+												[Field:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+													[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+													[FStatic:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+														reflaxe.helpers.TypedExprHelper
+														unwrapBlock:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+					[Case:Void]
+						[Const:Int] 8
+						[Block:Void]
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+												reflaxe.data.ClassFuncData
+												setExprList:(expressions : Array<haxe.macro.TypedExpr>) -> Void
+										[Call:Array<haxe.macro.TypedExpr>]
+											[Field:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+												[TypeExpr reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl:Class<reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl>]
+												[FStatic:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+													reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl
+													process:(el : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>
+											[Call:Array<haxe.macro.TypedExpr>]
+												[Field:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+													[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+													[FStatic:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+														reflaxe.helpers.TypedExprHelper
+														unwrapBlock:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+					[Case:Void]
+						[Const:Int] 9
+						[Block:Void]
+							[Block:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:(expressions : Array<haxe.macro.TypedExpr>) -> Void]
+												reflaxe.data.ClassFuncData
+												setExprList:(expressions : Array<haxe.macro.TypedExpr>) -> Void
+										[Call:Array<haxe.macro.TypedExpr>]
+											[Field:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+												[TypeExpr reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl:Class<reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl>]
+												[FStatic:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+													reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+													mark:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>
+											[Call:Array<haxe.macro.TypedExpr>]
+												[Field:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+													[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+													[FStatic:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>]
+														reflaxe.helpers.TypedExprHelper
+														unwrapBlock:(expr : haxe.macro.TypedExpr) -> Array<haxe.macro.TypedExpr>
+												[Field:Null<haxe.macro.TypedExpr>]
+													[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+													[FInstance:Null<haxe.macro.TypedExpr>]
+														reflaxe.data.ClassFuncData
+														expr:Null<haxe.macro.TypedExpr>
+					[Case:Void]
+						[Const:Int] 10
+						[Block:Void]
+							[Var `(7475):reflaxe.preprocessors.BasePreprocessor]
+								[EnumParameter:reflaxe.preprocessors.BasePreprocessor]
+									[Local self(7352):reflaxe.preprocessors.ExpressionPreprocessor:reflaxe.preprocessors.ExpressionPreprocessor]
+									Custom
+									0
+							[Block:Void]
+								[Var preprocessor(7476):reflaxe.preprocessors.BasePreprocessor] [Local `(7475):reflaxe.preprocessors.BasePreprocessor:reflaxe.preprocessors.BasePreprocessor]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Void]
+												[Local preprocessor(7476):reflaxe.preprocessors.BasePreprocessor:reflaxe.preprocessors.BasePreprocessor]
+												[FInstance:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Void]
+													reflaxe.preprocessors.BasePreprocessor
+													process:(data : reflaxe.data.ClassFuncData, compiler : reflaxe.BaseCompiler) -> Void
+											[Local data(7353):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[Local compiler(7354):reflaxe.BaseCompiler:reflaxe.BaseCompiler]
 
-	public static function defaults() {
-		return [reflaxe.preprocessors.ExpressionPreprocessor.SanitizeEverythingIsExpression({
-			new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions(null, null, null, null, null);
-		}), reflaxe.preprocessors.ExpressionPreprocessor.PreventRepeatVariables({
-			new reflaxe.preprocessors.PreventRepeatVariablesOptions(null, null);
-		}), reflaxe.preprocessors.ExpressionPreprocessor.RemoveSingleExpressionBlocks, reflaxe.preprocessors.ExpressionPreprocessor.RemoveConstantBoolIfs, reflaxe.preprocessors.ExpressionPreprocessor.RemoveUnnecessaryBlocks, reflaxe.preprocessors.ExpressionPreprocessor.RemoveReassignedVariableDeclarations, reflaxe.preprocessors.ExpressionPreprocessor.RemoveLocalVariableAliases, reflaxe.preprocessors.ExpressionPreprocessor.MarkUnusedVariables];
-	}
+	public static function defaults[Function:() -> Array<reflaxe.preprocessors.ExpressionPreprocessor>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ArrayDecl:Array<reflaxe.preprocessors.ExpressionPreprocessor>]
+					[Call:reflaxe.preprocessors.ExpressionPreprocessor]
+						[Field:(options : reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+							[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+							[FEnum:(options : reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+								reflaxe.preprocessors.ExpressionPreprocessor
+								SanitizeEverythingIsExpression
+						[Block:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+							[New:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+								reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+								[Const:Null<Bool>] null
+								[Const:Null<Bool>] null
+								[Const:Null<Bool>] null
+								[Const:Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>] null
+								[Const:Null<Array<String>>] null
+					[Call:reflaxe.preprocessors.ExpressionPreprocessor]
+						[Field:(options : reflaxe.preprocessors.PreventRepeatVariablesOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+							[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+							[FEnum:(options : reflaxe.preprocessors.PreventRepeatVariablesOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+								reflaxe.preprocessors.ExpressionPreprocessor
+								PreventRepeatVariables
+						[Block:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+							[New:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+								reflaxe.preprocessors.PreventRepeatVariablesOptions
+								[Const:Null<Bool>] null
+								[Const:Null<Null<Array<String>>>] null
+					[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+						[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+						[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+							reflaxe.preprocessors.ExpressionPreprocessor
+							RemoveSingleExpressionBlocks
+					[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+						[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+						[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+							reflaxe.preprocessors.ExpressionPreprocessor
+							RemoveConstantBoolIfs
+					[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+						[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+						[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+							reflaxe.preprocessors.ExpressionPreprocessor
+							RemoveUnnecessaryBlocks
+					[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+						[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+						[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+							reflaxe.preprocessors.ExpressionPreprocessor
+							RemoveReassignedVariableDeclarations
+					[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+						[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+						[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+							reflaxe.preprocessors.ExpressionPreprocessor
+							RemoveLocalVariableAliases
+					[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+						[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+						[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+							reflaxe.preprocessors.ExpressionPreprocessor
+							MarkUnusedVariables
 }

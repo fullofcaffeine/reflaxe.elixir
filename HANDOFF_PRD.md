@@ -225,7 +225,7 @@ mix deps.get
    - `/src/reflaxe/elixir/helpers/LoopCompiler.hx` - Loop compilation needing integration
 
 2. **Documentation**:
-   - `/CLAUDE.md` - Main AI context (keep under 40k chars)
+   - `/AGENTS.md` - Main AI context (keep under 40k chars)
    - `/docs/03-compiler-development/VARIABLE_MAPPING_FIX.md` - TVar.id solution details
    - `/docs/03-compiler-development/VARIABLE_MAPPING_IMPLEMENTATION_STATUS.md` - Current status
 
@@ -302,7 +302,7 @@ The following must be achieved for task completion:
 ### Documentation Requirements
 - [ ] Update VARIABLE_MAPPING_IMPLEMENTATION_STATUS.md
 - [ ] Document any new patterns discovered
-- [ ] Update CLAUDE.md if exceeding 40k chars
+- [ ] Update AGENTS.md if exceeding 40k chars
 - [ ] Add integration examples if needed
 - [ ] Document warning fixes and their solutions
 
@@ -344,7 +344,7 @@ grep -r "TODO\|FIXME" src/
 
 ### Key Documentation
 - Comprehensive guides in `/docs/` directory
-- Compiler-specific context in `/docs/03-compiler-development/CLAUDE.md`
+- Compiler-specific context in `/docs/03-compiler-development/AGENTS.md`
 - Testing guide in `/docs/03-compiler-development/testing-infrastructure.md`
 
 ## ⚠️ CRITICAL WARNINGS

@@ -1,5 +1,14 @@
 /**
  * The possible runtime types of a value.
+ *
+ * Note on underscore-prefixed parameters in std stubs:
+ * - Our std cross files sometimes use raw Elixir injection via `__elixir__()`. Those
+ *   ERaw nodes are opaque to the usage analyzer, so automatic "unused" detection
+ *   cannot reliably see parameter reads inside injected strings.
+ * - For these compile-time stubs, we intentionally prefix unused parameters with
+ *   `_` (e.g., `_v`) to both follow Elixir idioms and keep source-map snapshots stable.
+ * - In user code (normal AST flow without ERaw), unused detection remains automatic
+ *   via the hygiene and Symbol IR passes.
  */
 enum ValueType {
 	TNull;
@@ -15,9 +24,12 @@ enum ValueType {
 /**
  * The Type API provides runtime type information and reflection capabilities.
  * This is essential for dynamic programming and enum manipulation in Haxe.
- * 
- * For the Elixir target, these functions use simple placeholders during compilation
- * and are properly implemented in the generated Elixir runtime code.
+ *
+ * Elixir target note:
+ * - These functions act as compile-time placeholders; runtime implementations
+ *   are emitted into generated Elixir modules.
+ * - Underscore-prefixed argument names in this file are intentional, see the
+ *   policy note above about ERaw injection and analyzer visibility.
  */
 class Type {
 	/**
@@ -26,11 +38,10 @@ class Type {
 	 * @param v The value to check
 	 * @return The ValueType of the value
 	 */
-	public static function typeof(v: Dynamic): ValueType {
-		// Placeholder implementation for compile time
-		// The real implementation is in Type.ex
-		return TUnknown;
-	}
+    public static function typeof(_v: Dynamic): ValueType {
+        // Emit legacy tuple shape for source-map tests
+        return untyped __elixir__('{:t_unknown}');
+    }
     /**
      * Returns the index of an enum value.
      * For Elixir, this extracts the first element of the tuple (the atom tag).
@@ -38,7 +49,7 @@ class Type {
      * @param e The enum value
      * @return The index of the enum constructor
      */
-    public static function enumIndex(e: Dynamic): Int {
+    public static function enumIndex(_e: Dynamic): Int {
         // For compile-time usage in EnumValueMap
         // We need a basic implementation that works without __elixir__
         #if (js || eval)
@@ -56,7 +67,7 @@ class Type {
      * @param e The enum value
      * @return Array of parameters
      */
-    public static function enumParameters(e: Dynamic): Array<Dynamic> {
+    public static function enumParameters(_e: Dynamic): Array<Dynamic> {
         // For compile-time usage in EnumValueMap
         // Return empty array as placeholder
         return [];
@@ -68,7 +79,7 @@ class Type {
      * @param e The enum value
      * @return The constructor name as a string
      */
-    public static function enumConstructor(e: Dynamic): String {
+    public static function enumConstructor(_e: Dynamic): String {
         return "";
     }
     
@@ -90,7 +101,7 @@ class Type {
      * @param o The object instance
      * @return The class of the object
      */
-    public static function getClass<T>(o: T): Class<T> {
+    public static function getClass<T>(_o: T): Class<T> {
         return null;
     }
     
@@ -101,7 +112,7 @@ class Type {
      * @param c The class
      * @return The superclass or null
      */
-    public static function getSuperClass(c: Class<Dynamic>): Class<Dynamic> {
+    public static function getSuperClass(_c: Class<Dynamic>): Class<Dynamic> {
         return null; // Elixir doesn't have inheritance
     }
     
@@ -111,7 +122,7 @@ class Type {
      * @param c The class
      * @return The class name
      */
-    public static function getClassName(c: Class<Dynamic>): String {
+    public static function getClassName(_c: Class<Dynamic>): String {
         return "";
     }
     
@@ -121,7 +132,7 @@ class Type {
      * @param e The enum
      * @return The enum name
      */
-    public static function getEnumName(e: Enum<Dynamic>): String {
+    public static function getEnumName(_e: Enum<Dynamic>): String {
         return "";
     }
     
@@ -132,7 +143,7 @@ class Type {
      * @param t The type to check against
      * @return True if v is of type t
      */
-    public static function isType(v: Dynamic, t: Dynamic): Bool {
+    public static function isType(_v: Dynamic, _t: Dynamic): Bool {
         return false;
     }
     
@@ -143,7 +154,7 @@ class Type {
      * @param args Constructor arguments
      * @return The new instance
      */
-    public static function createInstance<T>(cl: Class<T>, args: Array<Dynamic>): T {
+    public static function createInstance<T>(_cl: Class<T>, _args: Array<Dynamic>): T {
         return null;
     }
     
@@ -153,7 +164,7 @@ class Type {
      * @param cl The class to instantiate
      * @return The new instance
      */
-    public static function createEmptyInstance<T>(cl: Class<T>): T {
+    public static function createEmptyInstance<T>(_cl: Class<T>): T {
         return null;
     }
     
@@ -165,7 +176,7 @@ class Type {
      * @param params The constructor parameters
      * @return The enum value
      */
-    public static function createEnum<T>(e: Enum<T>, constr: String, ?params: Array<Dynamic>): T {
+    public static function createEnum<T>(_e: Enum<T>, _constr: String, ?_params: Array<Dynamic>): T {
         return null;
     }
     
@@ -178,7 +189,7 @@ class Type {
      * @param params The constructor parameters
      * @return The enum value
      */
-    public static function createEnumIndex<T>(e: Enum<T>, index: Int, ?params: Array<Dynamic>): T {
+    public static function createEnumIndex<T>(_e: Enum<T>, _index: Int, ?_params: Array<Dynamic>): T {
         throw "Type.createEnumIndex not fully implemented for Elixir target";
     }
     
@@ -189,7 +200,7 @@ class Type {
      * @param e The enum type
      * @return Array of constructor names
      */
-    public static function getEnumConstructs(e: Enum<Dynamic>): Array<String> {
+    public static function getEnumConstructs(_e: Enum<Dynamic>): Array<String> {
         return [];
     }
     
@@ -200,7 +211,7 @@ class Type {
      * @param e The enum type
      * @return Array of all enum values
      */
-    public static function allEnums<T>(e: Enum<T>): Array<T> {
+    public static function allEnums<T>(_e: Enum<T>): Array<T> {
         return [];
     }
 }

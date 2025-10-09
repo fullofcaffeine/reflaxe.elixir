@@ -1,101 +1,294 @@
 class reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator {
 
-	public function new() {
-		this.variableNameCounts = new haxe.ds.StringMap();
-	}
+	public function new[Function:() -> Void]
+		[Block:Map<String, Int>]
+			[Binop:Map<String, Int>]
+				[Field:Map<String, Int>]
+					[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+					[FInstance:Map<String, Int>]
+						reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+						variableNameCounts:Map<String, Int>
+				=
+				[New:haxe.ds.StringMap<Int>] haxe.ds.StringMap<Int>
 
 	@:value([])
 	var variableNameCounts:Map<String, Int>;
 
-	public function reserveNames(names:Array<String>) {
-		{
-			var ` = 0;
-			while (` < names.length) {
-				var n = names[`];
-				++ `;
-				var count = if ({
-					var this = this.variableNameCounts;
-					cast this.exists(n);
-				}) {
-					{
-						var maybe = {
-							var this = this.variableNameCounts;
-							cast this.get(n);
-						};
-						if (maybe != null) {
-							maybe;
-						} else {
-							0;
-						};
-					};
-				} else {
-					0;
-				};
-				{
-					var this = this.variableNameCounts;
-					cast this.set(n, count + 1);
-				};
-			};
-		};
-	}
+	public function reserveNames[Function:(names : Array<String>) -> Void]
+		[Arg:Array<String>] [Local names(5488):Array<String>]
+		[Block:Void]
+			[Block:Void]
+				[Var `(5508):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(5508):Int:Int]
+						<
+						[Field:Int]
+							[Local names(5488):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var n(5489):String]
+							[Array:String]
+								[Local names(5488):Array<String>:Array<String>]
+								[Local `(5508):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(5508):Int:Int]
+						[Var count(5502):Int]
+							[If:Int]
+								[Block:Bool]
+									[Var this(5492):haxe.IMap<String, Int>]
+										[Field:Map<String, Int>]
+											[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+											[FInstance:Map<String, Int>]
+												reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+												variableNameCounts:Map<String, Int>
+									[Call:Bool]
+										[Field:(key : String) -> Bool]
+											[Cast:haxe.ds.StringMap<Int>] [Local this(5492):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+											[FInstance:(key : String) -> Bool]
+												haxe.ds.StringMap<Int>
+												exists:(key : String) -> Bool
+										[Local n(5489):String:String]
+								[Then:Int] [Block:Int]
+									[Block:Int]
+										[Var maybe(5500):Null<Int>]
+											[Block:Null<Int>]
+												[Var this(5496):haxe.IMap<String, Int>]
+													[Field:Map<String, Int>]
+														[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+														[FInstance:Map<String, Int>]
+															reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+															variableNameCounts:Map<String, Int>
+												[Call:Null<Int>]
+													[Field:(key : String) -> Null<Int>]
+														[Cast:haxe.ds.StringMap<Int>] [Local this(5496):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+														[FInstance:(key : String) -> Null<Int>]
+															haxe.ds.StringMap<Int>
+															get:(key : String) -> Null<haxe.ds.StringMap.T>
+													[Local n(5489):String:String]
+										[If:Int]
+											[Binop:Bool]
+												[Local maybe(5500):Null<Int>:Null<Int>]
+												!=
+												[Const:Null<Int>] null
+											[Then:Null<Int>] [Block:Null<Int>] [Local maybe(5500):Null<Int>:Null<Int>]
+											[Else:Int] [Block:Int] [Const:Int] 0
+								[Else:Int] [Block:Int] [Const:Int] 0
+						[Block:Void]
+							[Var this(5505):haxe.IMap<String, Int>]
+								[Field:Map<String, Int>]
+									[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+									[FInstance:Map<String, Int>]
+										reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+										variableNameCounts:Map<String, Int>
+							[Call:Void]
+								[Field:(key : String, value : Int) -> Void]
+									[Cast:haxe.ds.StringMap<Int>] [Local this(5505):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+									[FInstance:(key : String, value : Int) -> Void]
+										haxe.ds.StringMap<Int>
+										set:(key : String, value : haxe.ds.StringMap.T) -> Void
+								[Local n(5489):String:String]
+								[Binop:Int]
+									[Local count(5502):Int:Int]
+									+
+									[Const:Int] 1
 
 	@:value({ baseNameOverride : null })
-	public function generateName(t:Null<haxe.macro.Type>, baseNameOverride:Null<String> = null) {
-		var baseName = if (baseNameOverride != null) {
-			baseNameOverride;
-		} else {
-			this.replaceDisallowedCharacters(this.generateBaseName(t));
-		};
-		var count = if ({
-			var this = this.variableNameCounts;
-			cast this.exists(baseName);
-		}) {
-			{
-				var maybe = {
-					var this = this.variableNameCounts;
-					cast this.get(baseName);
-				};
-				if (maybe != null) {
-					maybe;
-				} else {
-					0;
-				};
-			};
-		} else {
-			0;
-		};
-		var result = this.makeName(baseName, count);
-		{
-			var this = this.variableNameCounts;
-			cast this.set(baseName, count + 1);
-		};
-		return result;
-	}
+	public function generateName[Function:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+		[Arg:Null<haxe.macro.Type>] [Local t(5509):Null<haxe.macro.Type>]
+		[Arg:Null<String>]
+			[Local baseNameOverride(5510):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[Var baseName(5566):Null<String>]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Local baseNameOverride(5510):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+					[Then:Null<String>] [Block:Null<String>] [Local baseNameOverride(5510):Null<String>:Null<String>]
+					[Else:String] [Block:String]
+						[Call:String]
+							[Field:(s : String) -> String]
+								[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+								[FInstance:(s : String) -> String]
+									reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+									replaceDisallowedCharacters:(s : String) -> String
+							[Call:String]
+								[Field:(t : Null<haxe.macro.Type>) -> String]
+									[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+									[FInstance:(t : Null<haxe.macro.Type>) -> String]
+										reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+										generateBaseName:(t : Null<haxe.macro.Type>) -> String
+								[Local t(5509):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+			[Var count(5579):Int]
+				[If:Int]
+					[Block:Bool]
+						[Var this(5569):haxe.IMap<String, Int>]
+							[Field:Map<String, Int>]
+								[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+								[FInstance:Map<String, Int>]
+									reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+									variableNameCounts:Map<String, Int>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<Int>] [Local this(5569):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<Int>
+									exists:(key : String) -> Bool
+							[Local baseName(5566):Null<String>:Null<String>]
+					[Then:Int] [Block:Int]
+						[Block:Int]
+							[Var maybe(5577):Null<Int>]
+								[Block:Null<Int>]
+									[Var this(5573):haxe.IMap<String, Int>]
+										[Field:Map<String, Int>]
+											[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+											[FInstance:Map<String, Int>]
+												reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+												variableNameCounts:Map<String, Int>
+									[Call:Null<Int>]
+										[Field:(key : String) -> Null<Int>]
+											[Cast:haxe.ds.StringMap<Int>] [Local this(5573):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+											[FInstance:(key : String) -> Null<Int>]
+												haxe.ds.StringMap<Int>
+												get:(key : String) -> Null<haxe.ds.StringMap.T>
+										[Local baseName(5566):Null<String>:Null<String>]
+							[If:Int]
+								[Binop:Bool]
+									[Local maybe(5577):Null<Int>:Null<Int>]
+									!=
+									[Const:Null<Int>] null
+								[Then:Null<Int>] [Block:Null<Int>] [Local maybe(5577):Null<Int>:Null<Int>]
+								[Else:Int] [Block:Int] [Const:Int] 0
+					[Else:Int] [Block:Int] [Const:Int] 0
+			[Var result(5584):String]
+				[Call:String]
+					[Field:(baseName : String, count : Int) -> String]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+						[FInstance:(baseName : String, count : Int) -> String]
+							reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+							makeName:(baseName : String, count : Int) -> String
+					[Local baseName(5566):Null<String>:Null<String>]
+					[Local count(5579):Int:Int]
+			[Block:Void]
+				[Var this(5587):haxe.IMap<String, Int>]
+					[Field:Map<String, Int>]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+						[FInstance:Map<String, Int>]
+							reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+							variableNameCounts:Map<String, Int>
+				[Call:Void]
+					[Field:(key : String, value : Int) -> Void]
+						[Cast:haxe.ds.StringMap<Int>] [Local this(5587):haxe.IMap<String, Int>:haxe.IMap<String, Int>]
+						[FInstance:(key : String, value : Int) -> Void]
+							haxe.ds.StringMap<Int>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local baseName(5566):Null<String>:Null<String>]
+					[Binop:Int]
+						[Local count(5579):Int:Int]
+						+
+						[Const:Int] 1
+			[Return:Dynamic] [Local result(5584):String:String]
 
-	function replaceDisallowedCharacters(s:String) {
-		return new EReg("[^0-9a-zA-Z_]+", "g").split(s).join("");
-	}
+	function replaceDisallowedCharacters[Function:(s : String) -> String]
+		[Arg:String] [Local s(5511):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Call:Array<String>]
+							[Field:(s : String) -> Array<String>]
+								[New:EReg]
+									EReg
+									[Const:String] "[^0-9a-zA-Z_]+"
+									[Const:String] "g"
+								[FInstance:(s : String) -> Array<String>]
+									EReg
+									split:(s : String) -> Array<String>
+							[Local s(5511):String:String]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
 
-	public function unknownBaseTypeName() {
-		return "var";
-	}
+	public function unknownBaseTypeName[Function:() -> String] [Block:Dynamic] [Return:Dynamic] [Const:String] "var"
 
-	public function makeName(baseName:String, count:Int) {
-		var base = this.capatalize(baseName);
-		var suffix = (if (count > 0) {
-			Std.string(count);
-		} else {
-			"";
-		});
-		return "temp" + base + suffix;
-	}
+	public function makeName[Function:(baseName : String, count : Int) -> String]
+		[Arg:String] [Local baseName(5580):String]
+		[Arg:Int] [Local count(5581):Int]
+		[Block:Dynamic]
+			[Var base(5582):String]
+				[Call:String]
+					[Field:(s : String) -> String]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+						[FInstance:(s : String) -> String]
+							reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+							capatalize:(s : String) -> String
+					[Local baseName(5580):String:String]
+			[Var suffix(5583):String]
+				[Parenthesis:String]
+					[If:String]
+						[Binop:Bool]
+							[Local count(5581):Int:Int]
+							>
+							[Const:Int] 0
+						[Then:String] [Block:String]
+							[Call:String]
+								[Field:(s : Dynamic) -> String]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(s : Dynamic) -> String]
+										Std
+										string:(s : Dynamic) -> String
+								[Local count(5581):Int:Int]
+						[Else:String] [Block:String] [Const:String] ""
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "temp"
+						+
+						[Local base(5582):String:String]
+					+
+					[Local suffix(5583):String:String]
 
-	function capatalize(s:String) {
-		return s.substring(0, 1).toUpperCase() + s.substring(1, null);
-	}
+	function capatalize[Function:(s : String) -> String]
+		[Arg:String] [Local s(5522):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Call:String]
+						[Field:() -> String]
+							[Call:String]
+								[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									[Local s(5522):String:String]
+									[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+										String
+										substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+								[Const:Int] 0
+								[Const:Int] 1
+							[FInstance:() -> String]
+								String
+								toUpperCase:() -> String
+					+
+					[Call:String]
+						[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+							[Local s(5522):String:String]
+							[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								String
+								substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+						[Const:Int] 1
+						[Const:Null<Int>] null
 
-	function generateBaseName(t:Null<haxe.macro.Type>) {
-		return @:ast(switch (t) {
+	function generateBaseName[Function:(t : Null<haxe.macro.Type>) -> String]
+		[Arg:Null<haxe.macro.Type>] [Local t(5512):Null<haxe.macro.Type>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (t) {
 	case null:
 		unknownBaseTypeName();	
 	case TMono(typeRef):
@@ -158,113 +351,226 @@ class reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenera
 					s;				
 			};
 		};	
-}) if (t == null) {
-			this.unknownBaseTypeName();
-		} else switch (@:exhaustive enumIndex t) {
-			case 0: {
-				var ` = t[0];
-				{
-					var typeRef = `;
-					{
-						{
-							var t = typeRef.get();
-							if (t != null) {
-								this.generateName(t, null);
-							} else {
-								this.unknownBaseTypeName();
-							};
-						};
-					};
-				};
-			};
-			case 1: {
-				var ` = t[0];
-				var ` = t[1];
-				{
-					var enumTypeRef = `;
-					{
-						{
-							enumTypeRef.get().name;
-						};
-					};
-				};
-			};
-			case 2: {
-				var ` = t[0];
-				var ` = t[1];
-				{
-					var classTypeRef = `;
-					{
-						{
-							classTypeRef.get().name;
-						};
-					};
-				};
-			};
-			case 3: {
-				var ` = t[0];
-				var ` = t[1];
-				{
-					var defTypeRef = `;
-					{
-						{
-							defTypeRef.get().name;
-						};
-					};
-				};
-			};
-			case 4: {
-				var ` = t[0];
-				var ` = t[1];
-				{
-					{
-						"function";
-					};
-				};
-			};
-			case 5: {
-				var ` = t[0];
-				{
-					{
-						"struct";
-					};
-				};
-			};
-			case 6: {
-				var ` = t[0];
-				{
-					var maybeType = `;
-					{
-						{
-							if (maybeType != null) {
-								this.generateName(maybeType, null);
-							} else {
-								this.unknownBaseTypeName();
-							};
-						};
-					};
-				};
-			};
-			case 7: {
-				var ` = t[0];
-				{
-					var lazyFunc = `;
-					{
-						{
-							this.generateName(lazyFunc(), null);
-						};
-					};
-				};
-			};
-			case 8: {
-				var ` = t[0];
-				var ` = t[1];
-				{
-					var abstractTypeRef = `;
-					var params = `;
-					{
-						{
-							@:ast(switch (abstractTypeRef.get().name) {
+})
+					[If:String]
+						[Binop:Bool]
+							[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+							==
+							[Const:Null<haxe.macro.Type>] null
+						[Then:String] [Block:String]
+							[Call:String]
+								[Field:() -> String]
+									[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+									[FInstance:() -> String]
+										reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+										unknownBaseTypeName:() -> String
+						[Else:String] [Switch:String]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+							[Case:String]
+								[Const:Int] 0
+								[Block:String]
+									[Var `(5541):haxe.macro.Ref<Null<haxe.macro.Type>>]
+										[EnumParameter:haxe.macro.Ref<Null<haxe.macro.Type>>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TMono
+											0
+									[Block:String]
+										[Var typeRef(5542):haxe.macro.Ref<Null<haxe.macro.Type>>] [Local `(5541):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+										[Block:String]
+											[Block:String]
+												[Var t(5543):Null<haxe.macro.Type>]
+													[Call:Null<haxe.macro.Type>]
+														[Field:() -> Null<haxe.macro.Type>]
+															[Local typeRef(5542):haxe.macro.Ref<Null<haxe.macro.Type>>:haxe.macro.Ref<Null<haxe.macro.Type>>]
+															[FAnon:() -> Null<haxe.macro.Type>] get:() -> Null<haxe.macro.Type>
+												[If:String]
+													[Binop:Bool]
+														[Local t(5543):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+														!=
+														[Const:Null<haxe.macro.Type>] null
+													[Then:String] [Block:String]
+														[Call:String]
+															[Field:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+																[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+																[FInstance:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+																	reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+																	generateName:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String
+															[Local t(5543):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+															[Const:Null<String>] null
+													[Else:String] [Block:String]
+														[Call:String]
+															[Field:() -> String]
+																[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+																[FInstance:() -> String]
+																	reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+																	unknownBaseTypeName:() -> String
+							[Case:String]
+								[Const:Int] 1
+								[Block:String]
+									[Var `(5544):haxe.macro.Ref<haxe.macro.EnumType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TEnum
+											0
+									[Var `(5545):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TEnum
+											1
+									[Block:String]
+										[Var enumTypeRef(5546):haxe.macro.Ref<haxe.macro.EnumType>] [Local `(5544):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Block:String]
+											[Block:String]
+												[Field:String]
+													[Call:haxe.macro.EnumType]
+														[Field:() -> haxe.macro.EnumType]
+															[Local enumTypeRef(5546):haxe.macro.Ref<haxe.macro.EnumType>:haxe.macro.Ref<haxe.macro.EnumType>]
+															[FAnon:() -> haxe.macro.EnumType] get:() -> haxe.macro.EnumType
+													[FAnon:String] name:String
+							[Case:String]
+								[Const:Int] 2
+								[Block:String]
+									[Var `(5547):haxe.macro.Ref<haxe.macro.ClassType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TInst
+											0
+									[Var `(5548):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TInst
+											1
+									[Block:String]
+										[Var classTypeRef(5549):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(5547):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Block:String]
+											[Block:String]
+												[Field:String]
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local classTypeRef(5549):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													[FAnon:String] name:String
+							[Case:String]
+								[Const:Int] 3
+								[Block:String]
+									[Var `(5550):haxe.macro.Ref<haxe.macro.DefType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TType
+											0
+									[Var `(5551):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TType
+											1
+									[Block:String]
+										[Var defTypeRef(5552):haxe.macro.Ref<haxe.macro.DefType>] [Local `(5550):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+										[Block:String]
+											[Block:String]
+												[Field:String]
+													[Call:haxe.macro.DefType]
+														[Field:() -> haxe.macro.DefType]
+															[Local defTypeRef(5552):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+															[FAnon:() -> haxe.macro.DefType] get:() -> haxe.macro.DefType
+													[FAnon:String] name:String
+							[Case:String]
+								[Const:Int] 4
+								[Block:String]
+									[Var `(5553):Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+										[EnumParameter:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TFun
+											0
+									[Var `(5554):haxe.macro.Type]
+										[EnumParameter:haxe.macro.Type]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TFun
+											1
+									[Block:String] [Block:String] [Const:String] "function"
+							[Case:String]
+								[Const:Int] 5
+								[Block:String]
+									[Var `(5555):haxe.macro.Ref<haxe.macro.AnonType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.AnonType>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TAnonymous
+											0
+									[Block:String] [Block:String] [Const:String] "struct"
+							[Case:String]
+								[Const:Int] 6
+								[Block:String]
+									[Var `(5556):Null<haxe.macro.Type>]
+										[EnumParameter:Null<haxe.macro.Type>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TDynamic
+											0
+									[Block:String]
+										[Var maybeType(5557):Null<haxe.macro.Type>] [Local `(5556):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+										[Block:String]
+											[Block:String]
+												[If:String]
+													[Binop:Bool]
+														[Local maybeType(5557):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+														!=
+														[Const:Null<haxe.macro.Type>] null
+													[Then:String] [Block:String]
+														[Call:String]
+															[Field:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+																[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+																[FInstance:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+																	reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+																	generateName:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String
+															[Local maybeType(5557):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+															[Const:Null<String>] null
+													[Else:String] [Block:String]
+														[Call:String]
+															[Field:() -> String]
+																[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+																[FInstance:() -> String]
+																	reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+																	unknownBaseTypeName:() -> String
+							[Case:String]
+								[Const:Int] 7
+								[Block:String]
+									[Var `(5558):() -> haxe.macro.Type]
+										[EnumParameter:() -> haxe.macro.Type]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TLazy
+											0
+									[Block:String]
+										[Var lazyFunc(5559):() -> haxe.macro.Type] [Local `(5558):() -> haxe.macro.Type:() -> haxe.macro.Type]
+										[Block:String]
+											[Block:String]
+												[Call:String]
+													[Field:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+														[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+														[FInstance:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String]
+															reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+															generateName:(t : Null<haxe.macro.Type>, ?baseNameOverride : Null<String>) -> String
+													[Call:haxe.macro.Type] [Local lazyFunc(5559):() -> haxe.macro.Type:() -> haxe.macro.Type]
+													[Const:Null<String>] null
+							[Case:String]
+								[Const:Int] 8
+								[Block:String]
+									[Var `(5560):haxe.macro.Ref<haxe.macro.AbstractType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TAbstract
+											0
+									[Var `(5561):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local t(5512):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+											TAbstract
+											1
+									[Block:String]
+										[Var abstractTypeRef(5562):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(5560):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Var params(5563):Array<haxe.macro.Type>] [Local `(5561):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+										[Block:String]
+											[Block:String]
+												[Meta:String]
+													:ast(switch (abstractTypeRef.get().name) {
 	case "Int" | "Float":
 		"number";	
 	case "String":
@@ -279,42 +585,60 @@ class reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenera
 		};	
 	case s:
 		s;	
-}) {
-								var ` = abstractTypeRef.get().name;
-								switch (`) {
-									case "Float", "Int": {
-										{
-											"number";
-										};
-									};
-									case "Null": {
-										{
-											{
-												if (params.length > 0) {
-													"Maybe" + this.capatalize(this.generateBaseName(params[0]));
-												} else {
-													"Nullable";
-												};
-											};
-										};
-									};
-									case "String": {
-										{
-											"string";
-										};
-									};
-									default: {
-										var s = `;
-										{
-											s;
-										};
-									}
-								};
-							};
-						};
-					};
-				};
-			};
-		};
-	}
+})
+													[Block:String]
+														[Var `(5564):String]
+															[Field:String]
+																[Call:haxe.macro.AbstractType]
+																	[Field:() -> haxe.macro.AbstractType]
+																		[Local abstractTypeRef(5562):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																		[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+																[FAnon:String] name:String
+														[Switch:String]
+															[Local `(5564):String:String]
+															[Case:String]
+																[Const:String] "Float"
+																[Const:String] "Int"
+																[Block:String] [Block:String] [Const:String] "number"
+															[Case:String]
+																[Const:String] "Null"
+																[Block:String]
+																	[Block:String]
+																		[Block:String]
+																			[If:String]
+																				[Binop:Bool]
+																					[Field:Int]
+																						[Local params(5563):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+																						[FInstance:Int]
+																							Array<haxe.macro.Type>
+																							length:Int
+																					>
+																					[Const:Int] 0
+																				[Then:String] [Block:String]
+																					[Binop:String]
+																						[Const:String] "Maybe"
+																						+
+																						[Call:String]
+																							[Field:(s : String) -> String]
+																								[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+																								[FInstance:(s : String) -> String]
+																									reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+																									capatalize:(s : String) -> String
+																							[Call:String]
+																								[Field:(t : Null<haxe.macro.Type>) -> String]
+																									[Const:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator] this
+																									[FInstance:(t : Null<haxe.macro.Type>) -> String]
+																										reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator
+																										generateBaseName:(t : Null<haxe.macro.Type>) -> String
+																								[Array:haxe.macro.Type]
+																									[Local params(5563):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+																									[Const:Int] 0
+																				[Else:String] [Block:String] [Const:String] "Nullable"
+															[Case:String]
+																[Const:String] "String"
+																[Block:String] [Block:String] [Const:String] "string"
+															[Default:String]
+																[Block:String]
+																	[Var s(5565):String] [Local `(5564):String:String]
+																	[Block:String] [Local s(5565):String:String]
 }

@@ -1,6 +1,6 @@
 # State Management Guide
 
-> **Parent Context**: See [CLAUDE.md](CLAUDE.md) for compiler development context
+> **Parent Context**: See [AGENTS.md](AGENTS.md) for compiler development context
 
 This guide covers the comprehensive state threading system used in Reflaxe.Elixir to transform mutable state operations into immutable, functional Elixir code.
 

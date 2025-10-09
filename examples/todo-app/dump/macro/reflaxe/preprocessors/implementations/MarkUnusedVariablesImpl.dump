@@ -1,11 +1,40 @@
 class reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl {
 
-	public function new(list:Array<haxe.macro.TypedExpr>) {
-		this.tvarPos = new haxe.ds.IntMap();
-		this.tvarMap = new haxe.ds.IntMap();
-		this.foundUnused = false;
-		this.exprList = list;
-	}
+	public function new[Function:(list : Array<haxe.macro.TypedExpr>) -> Void]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local list(6376):Array<haxe.macro.TypedExpr>]
+		[Block:Void]
+			[Binop:Map<Int, haxe.macro.Position>]
+				[Field:Map<Int, haxe.macro.Position>]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Map<Int, haxe.macro.Position>]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						tvarPos:Map<Int, haxe.macro.Position>
+				=
+				[New:haxe.ds.IntMap<haxe.macro.Position>] haxe.ds.IntMap<haxe.macro.Position>
+			[Binop:Map<Int, Null<haxe.macro.TVar>>]
+				[Field:Map<Int, Null<haxe.macro.TVar>>]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						tvarMap:Map<Int, Null<haxe.macro.TVar>>
+				=
+				[New:haxe.ds.IntMap<Null<haxe.macro.TVar>>] haxe.ds.IntMap<Null<haxe.macro.TVar>>
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						foundUnused:Bool
+				=
+				[Const:Bool] false
+			[Binop:Array<haxe.macro.TypedExpr>]
+				[Field:Array<haxe.macro.TypedExpr>]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Array<haxe.macro.TypedExpr>]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						exprList:Array<haxe.macro.TypedExpr>
+				=
+				[Local list(6376):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
 
 	var exprList:Array<haxe.macro.TypedExpr>;
 
@@ -18,60 +47,181 @@ class reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl {
 	@:value([])
 	var tvarPos:Map<Int, haxe.macro.Position>;
 
-	public function markUnusedLocalVariables() {
-		this.foundUnused = false;
-		this.tvarMap = {
-			{};
-			new haxe.ds.IntMap();
-		};
-		this.tvarPos = {
-			{};
-			new haxe.ds.IntMap();
-		};
-		{
-			var ` = 0;
-			var ` = this.exprList;
-			while (` < `.length) {
-				var e = `[`];
-				++ `;
-				this.iter(e);
-			};
-		};
-		{
-			var ` = {
-				var this = this.tvarMap;
-				cast new haxe.iterators.MapKeyValueIterator(cast this);
-			};
-			while (`.hasNext()) {
-				var ` = `.next();
-				var id = `.key;
-				var tvar = `.value;
-				{
-					if (tvar != null) {
-						if (! reflaxe.helpers.NullableMetaAccessHelper.maybeHas(tvar.meta, "-reflaxe.unused")) {
-							reflaxe.helpers.NullableMetaAccessHelper.maybeAdd(tvar.meta, "-reflaxe.unused", [], {
-								var maybe = {
-									var this = this.tvarPos;
-									cast this.get(id);
-								};
-								cast {
-									if (maybe == null) {
-										throw "Trusted on null value.";
-									};
-									@:nullSafety(Off) maybe;
-								};
-							});
-							this.foundUnused = true;
-						};
-					};
-				};
-			};
-		};
-		return this.exprList;
-	}
+	public function markUnusedLocalVariables[Function:() -> Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						foundUnused:Bool
+				=
+				[Const:Bool] false
+			[Binop:Map<Int, Null<haxe.macro.TVar>>]
+				[Field:Map<Int, Null<haxe.macro.TVar>>]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						tvarMap:Map<Int, Null<haxe.macro.TVar>>
+				=
+				[Block:haxe.ds.IntMap<Null<haxe.macro.TVar>>]
+					[Block:Void]
+					[New:haxe.ds.IntMap<Null<haxe.macro.TVar>>] haxe.ds.IntMap<Null<haxe.macro.TVar>>
+			[Binop:Map<Int, haxe.macro.Position>]
+				[Field:Map<Int, haxe.macro.Position>]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Map<Int, haxe.macro.Position>]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						tvarPos:Map<Int, haxe.macro.Position>
+				=
+				[Block:haxe.ds.IntMap<haxe.macro.Position>]
+					[Block:Void]
+					[New:haxe.ds.IntMap<haxe.macro.Position>] haxe.ds.IntMap<haxe.macro.Position>
+			[Block:Void]
+				[Var `(6429):Int] [Const:Int] 0
+				[Var `(6430):Array<haxe.macro.TypedExpr>]
+					[Field:Array<haxe.macro.TypedExpr>]
+						[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+						[FInstance:Array<haxe.macro.TypedExpr>]
+							reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+							exprList:Array<haxe.macro.TypedExpr>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(6429):Int:Int]
+						<
+						[Field:Int]
+							[Local `(6430):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var e(6378):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local `(6430):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(6429):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(6429):Int:Int]
+						[Call:Void]
+							[Field:(te : haxe.macro.TypedExpr) -> Void]
+								[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+								[FInstance:(te : haxe.macro.TypedExpr) -> Void]
+									reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+									iter:(te : haxe.macro.TypedExpr) -> Void
+							[Local e(6378):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Block:Void]
+				[Var `(6434):KeyValueIterator<Int, Null<haxe.macro.TVar>>]
+					[Block:KeyValueIterator<Int, Null<haxe.macro.TVar>>]
+						[Var this(6433):haxe.IMap<Int, Null<haxe.macro.TVar>>]
+							[Field:Map<Int, Null<haxe.macro.TVar>>]
+								[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+								[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+									reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+									tvarMap:Map<Int, Null<haxe.macro.TVar>>
+						[Cast:KeyValueIterator<Int, Null<haxe.macro.TVar>>]
+							[New:haxe.iterators.MapKeyValueIterator<Int, Null<haxe.macro.TVar>>]
+								haxe.iterators.MapKeyValueIterator<Int, Null<haxe.macro.TVar>>
+								[Cast:haxe.ds.IntMap<Null<haxe.macro.TVar>>] [Local this(6433):haxe.IMap<Int, Null<haxe.macro.TVar>>:haxe.IMap<Int, Null<haxe.macro.TVar>>]
+				[While:Void]
+					[Call:Bool]
+						[Field:() -> Bool]
+							[Local `(6434):KeyValueIterator<Int, Null<haxe.macro.TVar>>:KeyValueIterator<Int, Null<haxe.macro.TVar>>]
+							[FAnon:() -> Bool] hasNext:() -> Bool
+					[Block:Void]
+						[Var `(6435):{ value : Null<haxe.macro.TVar>, key : Int }]
+							[Call:{ value : Null<haxe.macro.TVar>, key : Int }]
+								[Field:() -> { value : Null<haxe.macro.TVar>, key : Int }]
+									[Local `(6434):KeyValueIterator<Int, Null<haxe.macro.TVar>>:KeyValueIterator<Int, Null<haxe.macro.TVar>>]
+									[FAnon:() -> { value : Null<haxe.macro.TVar>, key : Int }] next:() -> { value : Null<haxe.macro.TVar>, key : Int }
+						[Var id(6436):Int]
+							[Field:Int]
+								[Local `(6435):{ value : Null<haxe.macro.TVar>, key : Int }:{ value : Null<haxe.macro.TVar>, key : Int }]
+								[FAnon:Int] key:Int
+						[Var tvar(6437):Null<haxe.macro.TVar>]
+							[Field:Null<haxe.macro.TVar>]
+								[Local `(6435):{ value : Null<haxe.macro.TVar>, key : Int }:{ value : Null<haxe.macro.TVar>, key : Int }]
+								[FAnon:Null<haxe.macro.TVar>] value:Null<haxe.macro.TVar>
+						[Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Local tvar(6437):Null<haxe.macro.TVar>:Null<haxe.macro.TVar>]
+									!=
+									[Const:Null<haxe.macro.TVar>] null
+								[Then:Void] [Block:Void]
+									[If:Void]
+										[Unop:Bool]
+											!
+											Prefix
+											[Call:Bool]
+												[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool]
+													[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+													[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool]
+														reflaxe.helpers.NullableMetaAccessHelper
+														maybeHas:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool
+												[Field:Null<haxe.macro.MetaAccess>]
+													[Local tvar(6437):Null<haxe.macro.TVar>:Null<haxe.macro.TVar>]
+													[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+												[Const:String] "-reflaxe.unused"
+										[Then:Bool] [Block:Bool]
+											[Call:Void]
+												[Field:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+													[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+													[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+														reflaxe.helpers.NullableMetaAccessHelper
+														maybeAdd:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void
+												[Field:Null<haxe.macro.MetaAccess>]
+													[Local tvar(6437):Null<haxe.macro.TVar>:Null<haxe.macro.TVar>]
+													[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+												[Const:String] "-reflaxe.unused"
+												[ArrayDecl:Array<haxe.macro.Expr>]
+												[Block:haxe.macro.Position]
+													[Var maybe(6444):Null<haxe.macro.Position>]
+														[Block:Null<haxe.macro.Position>]
+															[Var this(6440):haxe.IMap<Int, haxe.macro.Position>]
+																[Field:Map<Int, haxe.macro.Position>]
+																	[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+																	[FInstance:Map<Int, haxe.macro.Position>]
+																		reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+																		tvarPos:Map<Int, haxe.macro.Position>
+															[Call:Null<haxe.macro.Position>]
+																[Field:(key : Int) -> Null<haxe.macro.Position>]
+																	[Cast:haxe.ds.IntMap<haxe.macro.Position>] [Local this(6440):haxe.IMap<Int, haxe.macro.Position>:haxe.IMap<Int, haxe.macro.Position>]
+																	[FInstance:(key : Int) -> Null<haxe.macro.Position>]
+																		haxe.ds.IntMap<haxe.macro.Position>
+																		get:(key : Int) -> Null<haxe.ds.IntMap.T>
+																[Local id(6436):Int:Int]
+													[Cast:haxe.macro.Position]
+														[Block:Dynamic]
+															[If:Void]
+																[Binop:Bool]
+																	[Local maybe(6444):Null<haxe.macro.Position>:Null<haxe.macro.Position>]
+																	==
+																	[Const:Null<haxe.macro.Position>] null
+																[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+															[Meta:Dynamic]
+																:nullSafety(Off)
+																[Local maybe(6444):Null<haxe.macro.Position>:Null<haxe.macro.Position>]
+											[Binop:Bool]
+												[Field:Bool]
+													[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+													[FInstance:Bool]
+														reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+														foundUnused:Bool
+												=
+												[Const:Bool] true
+			[Return:Dynamic]
+				[Field:Array<haxe.macro.TypedExpr>]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FInstance:Array<haxe.macro.TypedExpr>]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						exprList:Array<haxe.macro.TypedExpr>
 
-	function iter(te:haxe.macro.TypedExpr) {
-		@:ast(switch (te.expr) {
+	function iter[Function:(te : haxe.macro.TypedExpr) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local te(6379):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (te.expr) {
 	case TVar(tvar, maybeExpr):
 		{
 			if (tvarMap.exists(tvar.id)) {
@@ -93,79 +243,220 @@ class reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl {
 			};
 		};	
 	case _:
-}) {
-			var ` = te.expr;
-			switch (enumIndex `) {
-				case 1: {
-					var ` = `[0];
-					{
-						var tvar = `;
-						{
-							{
-								if ({
-									var this = this.tvarMap;
-									var key = tvar.id;
-									cast this.exists(key);
-								}) {
-									{
-										var this = this.tvarMap;
-										var key = tvar.id;
-										var value = null;
-										cast this.set(key, value);
-									};
-								};
-							};
-						};
-					};
-				};
-				case 13: {
-					var ` = `[0];
-					var ` = `[1];
-					{
-						var tvar = `;
-						var maybeExpr = `;
-						{
-							{
-								if ({
-									var this = this.tvarMap;
-									var key = tvar.id;
-									cast this.exists(key);
-								}) {
-									throw "Logic error";
-								};
-								if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(tvar.meta, "-reflaxe.unused")) {
-									if (maybeExpr != null && ! reflaxe.helpers.TypedExprHelper.isMutator(maybeExpr)) {
-										return;
-									};
-								} else {
-									{
-										var this = this.tvarMap;
-										var key = tvar.id;
-										cast this.set(key, tvar);
-									};
-									{
-										var this = this.tvarPos;
-										var key = tvar.id;
-										var value = te.pos;
-										cast this.set(key, value);
-									};
-								};
-							};
-						};
-					};
-				};
-				default: {}
-			};
-		};
-		haxe.macro.TypedExprTools.iter(te, this.iter);
-	}
+})
+				[Block:Void]
+					[Var `(6410):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local te(6379):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(6410):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(6411):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(6410):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TLocal
+										0
+								[Block:Void]
+									[Var tvar(6412):haxe.macro.TVar] [Local `(6411):haxe.macro.TVar:haxe.macro.TVar]
+									[Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Block:Bool]
+													[Var this(6413):haxe.IMap<Int, Null<haxe.macro.TVar>>]
+														[Field:Map<Int, Null<haxe.macro.TVar>>]
+															[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+															[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+																reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+																tvarMap:Map<Int, Null<haxe.macro.TVar>>
+													[Var key(6414):Int]
+														[Field:Int]
+															[Local tvar(6412):haxe.macro.TVar:haxe.macro.TVar]
+															[FAnon:Int] id:Int
+													[Call:Bool]
+														[Field:(key : Int) -> Bool]
+															[Cast:haxe.ds.IntMap<Null<haxe.macro.TVar>>] [Local this(6413):haxe.IMap<Int, Null<haxe.macro.TVar>>:haxe.IMap<Int, Null<haxe.macro.TVar>>]
+															[FInstance:(key : Int) -> Bool]
+																haxe.ds.IntMap<Null<haxe.macro.TVar>>
+																exists:(key : Int) -> Bool
+														[Local key(6414):Int:Int]
+												[Then:Void] [Block:Void]
+													[Block:Void]
+														[Var this(6415):haxe.IMap<Int, Null<haxe.macro.TVar>>]
+															[Field:Map<Int, Null<haxe.macro.TVar>>]
+																[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+																[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+																	reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+																	tvarMap:Map<Int, Null<haxe.macro.TVar>>
+														[Var key(6416):Int]
+															[Field:Int]
+																[Local tvar(6412):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:Int] id:Int
+														[Var value(6417):Null<haxe.macro.TVar>] [Const:Null<haxe.macro.TVar>] null
+														[Call:Void]
+															[Field:(key : Int, value : Null<haxe.macro.TVar>) -> Void]
+																[Cast:haxe.ds.IntMap<Null<haxe.macro.TVar>>] [Local this(6415):haxe.IMap<Int, Null<haxe.macro.TVar>>:haxe.IMap<Int, Null<haxe.macro.TVar>>]
+																[FInstance:(key : Int, value : Null<haxe.macro.TVar>) -> Void]
+																	haxe.ds.IntMap<Null<haxe.macro.TVar>>
+																	set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+															[Local key(6416):Int:Int]
+															[Local value(6417):Null<haxe.macro.TVar>:Null<haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 13
+							[Block:Void]
+								[Var `(6418):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(6410):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										0
+								[Var `(6419):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(6410):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										1
+								[Block:Void]
+									[Var tvar(6420):haxe.macro.TVar] [Local `(6418):haxe.macro.TVar:haxe.macro.TVar]
+									[Var maybeExpr(6421):Null<haxe.macro.TypedExpr>] [Local `(6419):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Block:Bool]
+													[Var this(6422):haxe.IMap<Int, Null<haxe.macro.TVar>>]
+														[Field:Map<Int, Null<haxe.macro.TVar>>]
+															[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+															[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+																reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+																tvarMap:Map<Int, Null<haxe.macro.TVar>>
+													[Var key(6423):Int]
+														[Field:Int]
+															[Local tvar(6420):haxe.macro.TVar:haxe.macro.TVar]
+															[FAnon:Int] id:Int
+													[Call:Bool]
+														[Field:(key : Int) -> Bool]
+															[Cast:haxe.ds.IntMap<Null<haxe.macro.TVar>>] [Local this(6422):haxe.IMap<Int, Null<haxe.macro.TVar>>:haxe.IMap<Int, Null<haxe.macro.TVar>>]
+															[FInstance:(key : Int) -> Bool]
+																haxe.ds.IntMap<Null<haxe.macro.TVar>>
+																exists:(key : Int) -> Bool
+														[Local key(6423):Int:Int]
+												[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Logic error"
+											[If:Void]
+												[Call:Bool]
+													[Field:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool]
+														[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+														[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool]
+															reflaxe.helpers.NullableMetaAccessHelper
+															maybeHas:(m : Null<haxe.macro.MetaAccess>, name : String) -> Bool
+													[Field:Null<haxe.macro.MetaAccess>]
+														[Local tvar(6420):haxe.macro.TVar:haxe.macro.TVar]
+														[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+													[Const:String] "-reflaxe.unused"
+												[Then:Void] [Block:Void]
+													[If:Void]
+														[Binop:Bool]
+															[Binop:Bool]
+																[Local maybeExpr(6421):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																!=
+																[Const:Null<haxe.macro.TypedExpr>] null
+															&&
+															[Unop:Bool]
+																!
+																Prefix
+																[Call:Bool]
+																	[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+																		[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																		[FStatic:(expr : haxe.macro.TypedExpr) -> Bool]
+																			reflaxe.helpers.TypedExprHelper
+																			isMutator:(expr : haxe.macro.TypedExpr) -> Bool
+																	[Local maybeExpr(6421):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+														[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+												[Else:Void] [Block:Void]
+													[Block:Void]
+														[Var this(6424):haxe.IMap<Int, Null<haxe.macro.TVar>>]
+															[Field:Map<Int, Null<haxe.macro.TVar>>]
+																[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+																[FInstance:Map<Int, Null<haxe.macro.TVar>>]
+																	reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+																	tvarMap:Map<Int, Null<haxe.macro.TVar>>
+														[Var key(6425):Int]
+															[Field:Int]
+																[Local tvar(6420):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:Int] id:Int
+														[Call:Void]
+															[Field:(key : Int, value : Null<haxe.macro.TVar>) -> Void]
+																[Cast:haxe.ds.IntMap<Null<haxe.macro.TVar>>] [Local this(6424):haxe.IMap<Int, Null<haxe.macro.TVar>>:haxe.IMap<Int, Null<haxe.macro.TVar>>]
+																[FInstance:(key : Int, value : Null<haxe.macro.TVar>) -> Void]
+																	haxe.ds.IntMap<Null<haxe.macro.TVar>>
+																	set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+															[Local key(6425):Int:Int]
+															[Local tvar(6420):haxe.macro.TVar:haxe.macro.TVar]
+													[Block:Void]
+														[Var this(6426):haxe.IMap<Int, haxe.macro.Position>]
+															[Field:Map<Int, haxe.macro.Position>]
+																[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+																[FInstance:Map<Int, haxe.macro.Position>]
+																	reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+																	tvarPos:Map<Int, haxe.macro.Position>
+														[Var key(6427):Int]
+															[Field:Int]
+																[Local tvar(6420):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:Int] id:Int
+														[Var value(6428):haxe.macro.Position]
+															[Field:haxe.macro.Position]
+																[Local te(6379):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+														[Call:Void]
+															[Field:(key : Int, value : haxe.macro.Position) -> Void]
+																[Cast:haxe.ds.IntMap<haxe.macro.Position>] [Local this(6426):haxe.IMap<Int, haxe.macro.Position>:haxe.IMap<Int, haxe.macro.Position>]
+																[FInstance:(key : Int, value : haxe.macro.Position) -> Void]
+																	haxe.ds.IntMap<haxe.macro.Position>
+																	set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+															[Local key(6427):Int:Int]
+															[Local value(6428):haxe.macro.Position:haxe.macro.Position]
+						[Default:Void] [Block:Void]
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local te(6379):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Field:(te : haxe.macro.TypedExpr) -> Void]
+					[Const:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl] this
+					[FClosure:(te : haxe.macro.TypedExpr) -> Void]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						iter:(te : haxe.macro.TypedExpr) -> Void
 
-	public static function mark(list:Array<haxe.macro.TypedExpr>) {
-		var muv = new reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl(list);
-		var result = muv.markUnusedLocalVariables();
-		while (muv.foundUnused) {
-			result = muv.markUnusedLocalVariables();
-		};
-		return result;
-	}
+	public static function mark[Function:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local list(6375):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var muv(6377):reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl]
+				[New:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl]
+					reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+					[Local list(6375):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+			[Var result(6445):Array<haxe.macro.TypedExpr>]
+				[Call:Array<haxe.macro.TypedExpr>]
+					[Field:() -> Array<haxe.macro.TypedExpr>]
+						[Local muv(6377):reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl]
+						[FInstance:() -> Array<haxe.macro.TypedExpr>]
+							reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+							markUnusedLocalVariables:() -> Array<haxe.macro.TypedExpr>
+			[While:Void]
+				[Field:Bool]
+					[Local muv(6377):reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl]
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+						foundUnused:Bool
+				[Block:Array<haxe.macro.TypedExpr>]
+					[Binop:Array<haxe.macro.TypedExpr>]
+						[Local result(6445):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						=
+						[Call:Array<haxe.macro.TypedExpr>]
+							[Field:() -> Array<haxe.macro.TypedExpr>]
+								[Local muv(6377):reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl:reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl]
+								[FInstance:() -> Array<haxe.macro.TypedExpr>]
+									reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl
+									markUnusedLocalVariables:() -> Array<haxe.macro.TypedExpr>
+			[Return:Dynamic] [Local result(6445):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
 }

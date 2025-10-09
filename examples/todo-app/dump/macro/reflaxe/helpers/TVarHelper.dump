@@ -1,11 +1,31 @@
 class reflaxe.helpers.TVarHelper {
 
 	@:value({ newName : null })
-	public static function copy(tvar:haxe.macro.TVar, newName:Null<String> = null) {
-		var result = Reflect.copy(tvar);
-		if (newName != null) {
-			result.name = newName;
-		};
-		return result;
-	}
+	public static function copy[Function:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar]
+		[Arg:haxe.macro.TVar] [Local tvar(6446):haxe.macro.TVar]
+		[Arg:Null<String>]
+			[Local newName(6447):Null<String>]
+			[Const:Null<String>] null
+		[Block:Dynamic]
+			[Var result(6448):Dynamic]
+				[Call:Null<haxe.macro.TVar>]
+					[Field:(o : Null<haxe.macro.TVar>) -> Null<haxe.macro.TVar>]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(o : Null<haxe.macro.TVar>) -> Null<haxe.macro.TVar>]
+							Reflect
+							copy:(o : Null<copy.T>) -> Null<copy.T>
+					[Local tvar(6446):haxe.macro.TVar:haxe.macro.TVar]
+			[If:Void]
+				[Binop:Bool]
+					[Local newName(6447):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Binop:Dynamic]
+						[Field:Dynamic]
+							[Local result(6448):Dynamic:Dynamic]
+							[FDynamic:Dynamic] name
+						=
+						[Local newName(6447):Null<String>:Null<String>]
+			[Return:Dynamic] [Local result(6448):Dynamic:Dynamic]
 }

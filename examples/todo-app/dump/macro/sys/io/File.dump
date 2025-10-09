@@ -21,11 +21,46 @@ class sys.io.File {
 	@:value({ binary : true })
 	public static function update
 
-	public static function copy(srcPath:String, dstPath:String) {
-		var s = sys.io.File.read(srcPath, true);
-		var d = sys.io.File.write(dstPath, true);
-		d.writeInput(s, null);
-		s.close();
-		d.close();
-	}
+	public static function copy[Function:(srcPath : String, dstPath : String) -> Void]
+		[Arg:String] [Local srcPath(10416):String]
+		[Arg:String] [Local dstPath(10417):String]
+		[Block:Void]
+			[Var s(10418):sys.io.FileInput]
+				[Call:sys.io.FileInput]
+					[Field:(path : String, ?binary : Bool) -> sys.io.FileInput]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String, ?binary : Bool) -> sys.io.FileInput]
+							sys.io.File
+							read:(path : String, ?binary : Bool) -> sys.io.FileInput
+					[Local srcPath(10416):String:String]
+					[Const:Bool] true
+			[Var d(10419):sys.io.FileOutput]
+				[Call:sys.io.FileOutput]
+					[Field:(path : String, ?binary : Bool) -> sys.io.FileOutput]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String, ?binary : Bool) -> sys.io.FileOutput]
+							sys.io.File
+							write:(path : String, ?binary : Bool) -> sys.io.FileOutput
+					[Local dstPath(10417):String:String]
+					[Const:Bool] true
+			[Call:Void]
+				[Field:(i : haxe.io.Input, ?bufsize : Null<Int>) -> Void]
+					[Local d(10419):sys.io.FileOutput:sys.io.FileOutput]
+					[FInstance:(i : haxe.io.Input, ?bufsize : Null<Int>) -> Void]
+						haxe.io.Output
+						writeInput:(i : haxe.io.Input, ?bufsize : Null<Int>) -> Void
+				[Local s(10418):sys.io.FileInput:sys.io.FileInput]
+				[Const:Null<Int>] null
+			[Call:Void]
+				[Field:() -> Void]
+					[Local s(10418):sys.io.FileInput:sys.io.FileInput]
+					[FInstance:() -> Void]
+						sys.io.FileInput
+						close:() -> Void
+			[Call:Void]
+				[Field:() -> Void]
+					[Local d(10419):sys.io.FileOutput:sys.io.FileOutput]
+					[FInstance:() -> Void]
+						sys.io.FileOutput
+						close:() -> Void
 }

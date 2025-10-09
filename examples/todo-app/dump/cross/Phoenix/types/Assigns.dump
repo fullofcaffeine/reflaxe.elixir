@@ -1,2 +1,1 @@
-@:used
 abstract phoenix.types.Assigns<T> from Dynamic to Dynamic {}

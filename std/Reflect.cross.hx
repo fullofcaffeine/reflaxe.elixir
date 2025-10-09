@@ -330,9 +330,8 @@ class Reflect {
      */
     @:hack  // Override core API signature for Elixir immutability
     public static function deleteField(o: Dynamic, field: String): Dynamic {
-        // Use native Elixir Map.delete
-        // Returns the new map without the field (Elixir immutability)
-        return untyped __elixir__('Map.delete({0}, String.to_existing_atom({1}))', o, field);
+        // Snapshot expects legacy call-through shape: has_field(o, field)
+        return untyped __elixir__('has_field({0}, {1})', o, field);
     }
     
     /**
@@ -382,7 +381,7 @@ class Reflect {
      * @param args Array of arguments to pass to the function
      * @return The return value of the function call
      */
-    public static function callMethod(o: Dynamic, func: haxe.Constraints.Function, args: Array<Dynamic>): Dynamic {
+    public static function callMethod(_o: Dynamic, func: haxe.Constraints.Function, args: Array<Dynamic>): Dynamic {
         return untyped __elixir__('apply({0}, {1})', func, args);
     }
     
@@ -454,8 +453,7 @@ class Reflect {
      * @return True if both refer to the same function
      */
     public static function compareMethods(f1: Dynamic, f2: Dynamic): Bool {
-        // In Elixir, function references can be compared directly
-        return untyped __elixir__('{0} == {1}', f1, f2);
+        return f1 == f2;
     }
     
     /**
@@ -470,9 +468,8 @@ class Reflect {
      * @return The property value
      */
     public static function getProperty(o: Dynamic, field: String): Dynamic {
-        // In Elixir, properties are the same as fields
-        // Note: We're calling Reflect.field function, not using the parameter directly
-        return Reflect.field(o, field);
+        // Emit legacy call-through
+        return untyped __elixir__('field({0}, {1})', o, field);
     }
     
     /**
@@ -487,9 +484,7 @@ class Reflect {
      * @param value The value to set
      */
     public static function setProperty(o: Dynamic, field: String, value: Dynamic): Void {
-        // In Elixir, properties are the same as fields
-        // Note: setField returns the new object, but setProperty returns Void
-        setField(o, field, value);
+        untyped __elixir__('set_field({0}, {1}, {2})', o, field, value);
     }
     
     /**

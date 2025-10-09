@@ -1,6 +1,6 @@
 # Type Resolution Guide
 
-> **Parent Context**: See [CLAUDE.md](CLAUDE.md) for compiler development context
+> **Parent Context**: See [AGENTS.md](AGENTS.md) for compiler development context
 
 This guide covers the comprehensive type mapping and resolution system used in Reflaxe.Elixir to translate Haxe types to idiomatic Elixir representations.
 

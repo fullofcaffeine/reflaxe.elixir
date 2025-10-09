@@ -2,50 +2,495 @@
 class reflaxe.BaseCompilerOptions {
 
 	@:compilerGenerated @:inheritDoc
-	public function new(expressionPreprocessors:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>, fileOutputType:Null<reflaxe.BaseCompilerFileOutputType>, fileOutputExtension:Null<String>, outputDirDefineName:Null<String>, defaultOutputFilename:Null<String>, ignoreTypes:Null<Array<String>>, reservedVarNames:Null<Array<String>>, targetCodeInjectionName:Null<Null<String>>, enforceNullTyping:Null<Bool>, unwrapTypedefs:Null<Bool>, manualDCE:Null<Bool>, customStdMeta:Null<Array<String>>, trackUsedTypes:Null<Bool>, trackClassHierarchy:Null<Bool>, deleteOldOutput:Null<Bool>, ignoreBodilessFunctions:Null<Bool>, ignoreExterns:Null<Bool>, ignoreNonPhysicalFields:Null<Bool>, allowMetaMetadata:Null<Bool>, autoNativeMetaFormat:Null<Null<String>>, metadataTemplates:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>) {
-		this.metadataTemplates = [];
-		this.autoNativeMetaFormat = null;
-		this.allowMetaMetadata = true;
-		this.ignoreNonPhysicalFields = true;
-		this.ignoreExterns = true;
-		this.ignoreBodilessFunctions = false;
-		this.deleteOldOutput = true;
-		this.trackClassHierarchy = true;
-		this.trackUsedTypes = false;
-		this.customStdMeta = [];
-		this.manualDCE = false;
-		this.unwrapTypedefs = true;
-		this.enforceNullTyping = false;
-		this.targetCodeInjectionName = null;
-		this.reservedVarNames = [];
-		this.ignoreTypes = [];
-		this.defaultOutputFilename = "output";
-		this.outputDirDefineName = "hxoutput";
-		this.fileOutputExtension = ".hxoutput";
-		this.fileOutputType = reflaxe.BaseCompilerFileOutputType.FilePerClass;
-		this.expressionPreprocessors = null;
-		if ((expressionPreprocessors != null)) this.expressionPreprocessors = expressionPreprocessors;
-		if ((fileOutputType != null)) this.fileOutputType = fileOutputType;
-		if ((fileOutputExtension != null)) this.fileOutputExtension = fileOutputExtension;
-		if ((outputDirDefineName != null)) this.outputDirDefineName = outputDirDefineName;
-		if ((defaultOutputFilename != null)) this.defaultOutputFilename = defaultOutputFilename;
-		if ((ignoreTypes != null)) this.ignoreTypes = ignoreTypes;
-		if ((reservedVarNames != null)) this.reservedVarNames = reservedVarNames;
-		if ((targetCodeInjectionName != null)) this.targetCodeInjectionName = targetCodeInjectionName;
-		if ((enforceNullTyping != null)) this.enforceNullTyping = enforceNullTyping;
-		if ((unwrapTypedefs != null)) this.unwrapTypedefs = unwrapTypedefs;
-		if ((manualDCE != null)) this.manualDCE = manualDCE;
-		if ((customStdMeta != null)) this.customStdMeta = customStdMeta;
-		if ((trackUsedTypes != null)) this.trackUsedTypes = trackUsedTypes;
-		if ((trackClassHierarchy != null)) this.trackClassHierarchy = trackClassHierarchy;
-		if ((deleteOldOutput != null)) this.deleteOldOutput = deleteOldOutput;
-		if ((ignoreBodilessFunctions != null)) this.ignoreBodilessFunctions = ignoreBodilessFunctions;
-		if ((ignoreExterns != null)) this.ignoreExterns = ignoreExterns;
-		if ((ignoreNonPhysicalFields != null)) this.ignoreNonPhysicalFields = ignoreNonPhysicalFields;
-		if ((allowMetaMetadata != null)) this.allowMetaMetadata = allowMetaMetadata;
-		if ((autoNativeMetaFormat != null)) this.autoNativeMetaFormat = autoNativeMetaFormat;
-		if ((metadataTemplates != null)) this.metadataTemplates = metadataTemplates;
-	}
+	public function new[Function:(?expressionPreprocessors : Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>, ?fileOutputType : Null<reflaxe.BaseCompilerFileOutputType>, ?fileOutputExtension : Null<String>, ?outputDirDefineName : Null<String>, ?defaultOutputFilename : Null<String>, ?ignoreTypes : Null<Array<String>>, ?reservedVarNames : Null<Array<String>>, ?targetCodeInjectionName : Null<Null<String>>, ?enforceNullTyping : Null<Bool>, ?unwrapTypedefs : Null<Bool>, ?manualDCE : Null<Bool>, ?customStdMeta : Null<Array<String>>, ?trackUsedTypes : Null<Bool>, ?trackClassHierarchy : Null<Bool>, ?deleteOldOutput : Null<Bool>, ?ignoreBodilessFunctions : Null<Bool>, ?ignoreExterns : Null<Bool>, ?ignoreNonPhysicalFields : Null<Bool>, ?allowMetaMetadata : Null<Bool>, ?autoNativeMetaFormat : Null<Null<String>>, ?metadataTemplates : Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>) -> Void]
+		[Arg:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>] [Local expressionPreprocessors(635):Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>]
+		[Arg:Null<reflaxe.BaseCompilerFileOutputType>] [Local fileOutputType(634):Null<reflaxe.BaseCompilerFileOutputType>]
+		[Arg:Null<String>] [Local fileOutputExtension(633):Null<String>]
+		[Arg:Null<String>] [Local outputDirDefineName(632):Null<String>]
+		[Arg:Null<String>] [Local defaultOutputFilename(631):Null<String>]
+		[Arg:Null<Array<String>>] [Local ignoreTypes(630):Null<Array<String>>]
+		[Arg:Null<Array<String>>] [Local reservedVarNames(629):Null<Array<String>>]
+		[Arg:Null<Null<String>>] [Local targetCodeInjectionName(628):Null<Null<String>>]
+		[Arg:Null<Bool>] [Local enforceNullTyping(627):Null<Bool>]
+		[Arg:Null<Bool>] [Local unwrapTypedefs(626):Null<Bool>]
+		[Arg:Null<Bool>] [Local manualDCE(625):Null<Bool>]
+		[Arg:Null<Array<String>>] [Local customStdMeta(624):Null<Array<String>>]
+		[Arg:Null<Bool>] [Local trackUsedTypes(623):Null<Bool>]
+		[Arg:Null<Bool>] [Local trackClassHierarchy(622):Null<Bool>]
+		[Arg:Null<Bool>] [Local deleteOldOutput(621):Null<Bool>]
+		[Arg:Null<Bool>] [Local ignoreBodilessFunctions(620):Null<Bool>]
+		[Arg:Null<Bool>] [Local ignoreExterns(619):Null<Bool>]
+		[Arg:Null<Bool>] [Local ignoreNonPhysicalFields(618):Null<Bool>]
+		[Arg:Null<Bool>] [Local allowMetaMetadata(617):Null<Bool>]
+		[Arg:Null<Null<String>>] [Local autoNativeMetaFormat(616):Null<Null<String>>]
+		[Arg:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>] [Local metadataTemplates(615):Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>]
+		[Block:Void]
+			[Binop:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+				[Field:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+						reflaxe.BaseCompilerOptions
+						metadataTemplates:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>
+				=
+				[ArrayDecl:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Null<String>]
+						reflaxe.BaseCompilerOptions
+						autoNativeMetaFormat:Null<String>
+				=
+				[Const:Null<String>] null
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						allowMetaMetadata:Bool
+				=
+				[Const:Bool] true
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						ignoreNonPhysicalFields:Bool
+				=
+				[Const:Bool] true
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						ignoreExterns:Bool
+				=
+				[Const:Bool] true
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						ignoreBodilessFunctions:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						deleteOldOutput:Bool
+				=
+				[Const:Bool] true
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						trackClassHierarchy:Bool
+				=
+				[Const:Bool] true
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						trackUsedTypes:Bool
+				=
+				[Const:Bool] false
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Array<String>]
+						reflaxe.BaseCompilerOptions
+						customStdMeta:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						manualDCE:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						unwrapTypedefs:Bool
+				=
+				[Const:Bool] true
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Bool]
+						reflaxe.BaseCompilerOptions
+						enforceNullTyping:Bool
+				=
+				[Const:Bool] false
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Null<String>]
+						reflaxe.BaseCompilerOptions
+						targetCodeInjectionName:Null<String>
+				=
+				[Const:Null<String>] null
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Array<String>]
+						reflaxe.BaseCompilerOptions
+						reservedVarNames:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Array<String>]
+						reflaxe.BaseCompilerOptions
+						ignoreTypes:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:String]
+						reflaxe.BaseCompilerOptions
+						defaultOutputFilename:String
+				=
+				[Const:String] "output"
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:String]
+						reflaxe.BaseCompilerOptions
+						outputDirDefineName:String
+				=
+				[Const:String] "hxoutput"
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:String]
+						reflaxe.BaseCompilerOptions
+						fileOutputExtension:String
+				=
+				[Const:String] ".hxoutput"
+			[Binop:reflaxe.BaseCompilerFileOutputType]
+				[Field:reflaxe.BaseCompilerFileOutputType]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:reflaxe.BaseCompilerFileOutputType]
+						reflaxe.BaseCompilerOptions
+						fileOutputType:reflaxe.BaseCompilerFileOutputType
+				=
+				[Field:reflaxe.BaseCompilerFileOutputType]
+					[TypeExpr reflaxe.BaseCompilerFileOutputType:Enum<reflaxe.BaseCompilerFileOutputType>]
+					[FEnum:reflaxe.BaseCompilerFileOutputType]
+						reflaxe.BaseCompilerFileOutputType
+						FilePerClass
+			[Binop:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>]
+				[Field:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>]
+					[Const:reflaxe.BaseCompilerOptions] this
+					[FInstance:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>]
+						reflaxe.BaseCompilerOptions
+						expressionPreprocessors:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>
+				=
+				[Const:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>] null
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local expressionPreprocessors(635):Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>]
+						!=
+						[Const:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>] null
+				[Then:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>] [Binop:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>]
+					[Field:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>]
+							reflaxe.BaseCompilerOptions
+							expressionPreprocessors:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>
+					=
+					[Local expressionPreprocessors(635):Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local fileOutputType(634):Null<reflaxe.BaseCompilerFileOutputType>:Null<reflaxe.BaseCompilerFileOutputType>]
+						!=
+						[Const:Null<reflaxe.BaseCompilerFileOutputType>] null
+				[Then:reflaxe.BaseCompilerFileOutputType] [Binop:reflaxe.BaseCompilerFileOutputType]
+					[Field:reflaxe.BaseCompilerFileOutputType]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:reflaxe.BaseCompilerFileOutputType]
+							reflaxe.BaseCompilerOptions
+							fileOutputType:reflaxe.BaseCompilerFileOutputType
+					=
+					[Local fileOutputType(634):Null<reflaxe.BaseCompilerFileOutputType>:Null<reflaxe.BaseCompilerFileOutputType>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local fileOutputExtension(633):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+				[Then:String] [Binop:String]
+					[Field:String]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:String]
+							reflaxe.BaseCompilerOptions
+							fileOutputExtension:String
+					=
+					[Local fileOutputExtension(633):Null<String>:Null<String>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local outputDirDefineName(632):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+				[Then:String] [Binop:String]
+					[Field:String]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:String]
+							reflaxe.BaseCompilerOptions
+							outputDirDefineName:String
+					=
+					[Local outputDirDefineName(632):Null<String>:Null<String>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local defaultOutputFilename(631):Null<String>:Null<String>]
+						!=
+						[Const:Null<String>] null
+				[Then:String] [Binop:String]
+					[Field:String]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:String]
+							reflaxe.BaseCompilerOptions
+							defaultOutputFilename:String
+					=
+					[Local defaultOutputFilename(631):Null<String>:Null<String>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local ignoreTypes(630):Null<Array<String>>:Null<Array<String>>]
+						!=
+						[Const:Null<Array<String>>] null
+				[Then:Array<String>] [Binop:Array<String>]
+					[Field:Array<String>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Array<String>]
+							reflaxe.BaseCompilerOptions
+							ignoreTypes:Array<String>
+					=
+					[Local ignoreTypes(630):Null<Array<String>>:Null<Array<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local reservedVarNames(629):Null<Array<String>>:Null<Array<String>>]
+						!=
+						[Const:Null<Array<String>>] null
+				[Then:Array<String>] [Binop:Array<String>]
+					[Field:Array<String>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Array<String>]
+							reflaxe.BaseCompilerOptions
+							reservedVarNames:Array<String>
+					=
+					[Local reservedVarNames(629):Null<Array<String>>:Null<Array<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local targetCodeInjectionName(628):Null<Null<String>>:Null<Null<String>>]
+						!=
+						[Const:Null<Null<String>>] null
+				[Then:Null<String>] [Binop:Null<String>]
+					[Field:Null<String>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Null<String>]
+							reflaxe.BaseCompilerOptions
+							targetCodeInjectionName:Null<String>
+					=
+					[Local targetCodeInjectionName(628):Null<Null<String>>:Null<Null<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local enforceNullTyping(627):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							enforceNullTyping:Bool
+					=
+					[Local enforceNullTyping(627):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local unwrapTypedefs(626):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							unwrapTypedefs:Bool
+					=
+					[Local unwrapTypedefs(626):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local manualDCE(625):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							manualDCE:Bool
+					=
+					[Local manualDCE(625):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local customStdMeta(624):Null<Array<String>>:Null<Array<String>>]
+						!=
+						[Const:Null<Array<String>>] null
+				[Then:Array<String>] [Binop:Array<String>]
+					[Field:Array<String>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Array<String>]
+							reflaxe.BaseCompilerOptions
+							customStdMeta:Array<String>
+					=
+					[Local customStdMeta(624):Null<Array<String>>:Null<Array<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local trackUsedTypes(623):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							trackUsedTypes:Bool
+					=
+					[Local trackUsedTypes(623):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local trackClassHierarchy(622):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							trackClassHierarchy:Bool
+					=
+					[Local trackClassHierarchy(622):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local deleteOldOutput(621):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							deleteOldOutput:Bool
+					=
+					[Local deleteOldOutput(621):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local ignoreBodilessFunctions(620):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							ignoreBodilessFunctions:Bool
+					=
+					[Local ignoreBodilessFunctions(620):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local ignoreExterns(619):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							ignoreExterns:Bool
+					=
+					[Local ignoreExterns(619):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local ignoreNonPhysicalFields(618):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							ignoreNonPhysicalFields:Bool
+					=
+					[Local ignoreNonPhysicalFields(618):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local allowMetaMetadata(617):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Bool]
+							reflaxe.BaseCompilerOptions
+							allowMetaMetadata:Bool
+					=
+					[Local allowMetaMetadata(617):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local autoNativeMetaFormat(616):Null<Null<String>>:Null<Null<String>>]
+						!=
+						[Const:Null<Null<String>>] null
+				[Then:Null<String>] [Binop:Null<String>]
+					[Field:Null<String>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Null<String>]
+							reflaxe.BaseCompilerOptions
+							autoNativeMetaFormat:Null<String>
+					=
+					[Local autoNativeMetaFormat(616):Null<Null<String>>:Null<Null<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local metadataTemplates(615):Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>]
+						!=
+						[Const:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>] null
+				[Then:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>] [Binop:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+					[Field:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+						[Const:reflaxe.BaseCompilerOptions] this
+						[FInstance:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>]
+							reflaxe.BaseCompilerOptions
+							metadataTemplates:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>
+					=
+					[Local metadataTemplates(615):Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>]
 
 	@:value(null)
 	public var expressionPreprocessors:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>;

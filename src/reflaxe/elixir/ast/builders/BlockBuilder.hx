@@ -712,19 +712,25 @@ class BlockBuilder {
         for (expr in el) {
             switch(expr.expr) {
                 case TVar(v, init) if (init != null):
-                    // Check if this is an infrastructure variable
                     if (isInfrastructureVar(v.name)) {
-                        // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
-                        // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
                         var initAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
                         context.infrastructureVarInitValues.set(v.name, initAST);
-                        
                         #if debug_infrastructure_vars
-                        trace('[BlockBuilder] Tracked infrastructure var ${v.name}');
+                        trace('[BlockBuilder] Tracked infra TVar ${v.name}');
                         #end
                     }
+                case TBinop(OpAssign, left, right):
+                    // Track assignments to infra locals: g, _g, g1, _g1, ...
+                    switch (left.expr) {
+                        case TLocal(v) if (isInfrastructureVar(v.name)):
+                            var rhsAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(right, context);
+                            context.infrastructureVarInitValues.set(v.name, rhsAST);
+                            #if debug_infrastructure_vars
+                            trace('[BlockBuilder] Tracked infra assign ${v.name}');
+                            #end
+                        default:
+                    }
                 default:
-                    // Not a variable declaration
             }
         }
     }

@@ -18,6 +18,7 @@
 - **EXCEPTION**: Temporary debug code used to understand a problem is acceptable ONLY if immediately followed by the proper fix
 
 **Examples of Band-Aid Fixes to AVOID**:
+
 - Returning `nil` or placeholder values to break infinite recursion
 - Adding arbitrary limits to "prevent" infinite loops
 - Skipping problematic nodes instead of fixing why they're problematic
@@ -25,18 +26,43 @@
 - String replacements to "fix" incorrect output
 
 ### Core Mission
+
 Enable developers to **write business logic once in Haxe and deploy it anywhere** while generating **idiomatic target code that looks hand-written**, not machine-generated.
 
 ### Key Principles
+
 - **Idiomatic Code Generation**: Generated Elixir must pass human review as "natural"
-- **Type Safety Without Vendor Lock-in**: Compile-time safety with deployment flexibility  
+- **Type Safety Without Vendor Lock-in**: Compile-time safety with deployment flexibility
 - **LLM Productivity Multiplier**: Provide deterministic vocabulary that reduces AI hallucinations
 - **Framework Integration Excellence**: Deep Phoenix/Ecto/OTP integration, not just language compatibility
 - **Framework-Agnostic Architecture**: Support any Elixir application pattern (Phoenix, Nerves, pure OTP) without compiler assumptions
 - **⚠️ API Faithfulness**: Follow Elixir and Phoenix APIs exactly - never invent functions that don't exist. Provide Haxe conveniences via proper overloads, not fake APIs
 - **Hand-Written Quality**: Generated code should look like it was written by an Elixir expert, not a machine
 - **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
+- **Descriptive Naming (Compiler & Output)**: Prefer meaningful, descriptive variable names in both compiler source and generated Elixir. Avoid single-letter or cryptic identifiers (e.g., `g`, `_g3`) except where they are intentional, temporary IR markers that will be eliminated by the pipeline. When a temporary identifier is required in the compiler, name by role (e.g., `caseDiscriminant`, `accTuple`, `tempAlias`) and document it.
 - **🔥 Pragmatic Stdlib Implementation**: Use `__elixir__()` for efficient native stdlib - [see Standard Library Philosophy](#standard-library-philosophy--pragmatic-native-implementation)
+
+### 📝 Commenting Standards (MANDATORY)
+
+Comments must be useful to readers who are not familiar with the compiler architecture. Avoid terse, “synthetic” notes. For every non-trivial file, function, or transform pass, document:
+
+- WHAT: A clear summary of what the code does, and the shape of inputs/outputs (types, AST forms, side effects).
+- WHY: The rationale for its existence (design constraints, idiomatic target goals, Haxe/Reflaxe limitations it addresses). Link to relevant docs/snaps.
+- HOW: The high‑level approach and algorithm. Mention ordering within the pipeline when relevant and any invariants the code relies on.
+- CONTEXT: Where it sits in the Builder → Transformer → Printer flow and how it interacts with other passes (dependencies and expectations).
+- EDGE CASES: Known tricky scenarios, guardrails, and what the code deliberately does NOT handle.
+- EXAMPLES: One or two minimal examples (pseudo‑code or short AST shapes) to make intent unambiguous.
+
+Style guidelines:
+- Prefer full sentences and explicit audience: write for an engineer new to this compiler.
+- Use sectioned headers in long comments (WHAT/WHY/HOW) for quick scanning.
+- Reference snapshot names (e.g., `regression/option_level_binder`) instead of pasting large code.
+- Never encode app‑specific names or assumptions in algorithms or comments; generalize rules and state the structural conditions explicitly (see Anti‑Coupling Directive).
+- When using conditional compilation (e.g., `#if (macro || reflaxe_runtime)`), explain which context uses which branch and why.
+
+Enforcement:
+- PRs introducing new passes or modifying existing ones that lack proper WHAT/WHY/HOW commentary will be rejected.
+- When touching a file that is sparsely documented, add or improve comments opportunistically following this standard.
 
 ## 📚 Complete Documentation Index
 
@@ -45,27 +71,35 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 ### 🚀 Quick Navigation by Task Type
 
 #### **New to Reflaxe.Elixir?**
+
 → **[docs/01-getting-started/](docs/01-getting-started/)** - Installation, quickstart, project setup
+
 - [Installation Guide](docs/01-getting-started/installation.md) - Complete setup with troubleshooting
 - [Development Workflow](docs/01-getting-started/development-workflow.md) - Day-to-day practices
 
 #### **Building Applications?**
+
 → **[docs/02-user-guide/](docs/02-user-guide/)** - Complete application development guide
 → **[docs/07-patterns/](docs/07-patterns/)** - Copy-paste ready code patterns
+
 - [Quick Start Patterns](docs/07-patterns/quick-start-patterns.md) - Essential copy-paste patterns
 
 #### **Working on the Compiler?**
+
 → **[docs/03-compiler-development/](docs/03-compiler-development/)** - Specialized compiler development context
-- [Compiler Development CLAUDE.md](docs/03-compiler-development/CLAUDE.md) - **AI context for compiler work**
+
+- [Compiler Development AGENTS.md](docs/03-compiler-development/AGENTS.md) - **AI context for compiler work**
 - [Architecture Overview](docs/03-compiler-development/architecture.md) - How the compiler works
 - [Testing Infrastructure](docs/03-compiler-development/testing-infrastructure.md) - Snapshot testing system
 
 #### **Need Technical Reference?**
+
 → **[docs/04-api-reference/](docs/04-api-reference/)** - Technical references and API docs
 → **[docs/05-architecture/](docs/05-architecture/)** - System design documentation
 → **[`__elixir__()` Usage](#standard-library-philosophy--pragmatic-native-implementation)** - Native Elixir code injection for stdlib
 
 #### **Troubleshooting Problems?**
+
 → **[docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)** - Comprehensive problem solving
 
 ## 🔗 Shared AI Context (Import System)
@@ -75,16 +109,71 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 @docs/claude-includes/code-style.md
 @docs/claude-includes/framework-integration.md
 
+## 🧪 Snapshot Testing Policy (Mandatory)
+
+- For every important scenario we support, add a snapshot test under `test/snapshot/{category}/{name}` with:
+  - `compile.hxml` wired to output into `out/`
+  - Minimal Haxe sources reproducing the scenario and all important sub‑scenarios
+  - Intended idiomatic Elixir output in `intended/` (reviewed to match hand‑written style)
+- Use snapshot tests as a first‑class verification tool in addition to the todo‑app E2E:
+  - Snapshot: guards semantics and idiomatic shapes at the unit/integration level
+  - Todo‑app E2E: validates real‑world composition and warns runtime issues
+- When fixing a regression/adding a feature, require a snapshot:
+  - Name test after the behavior (e.g., `regression/option_some_guard_binder`)
+  - Include sub‑scenarios that stress binder naming, guard extraction, arity, and ordering
+  - Keep intended outputs idiomatic; do not accept mechanically correct but non‑idiomatic shapes
+- Accept only idiomatic‑only diffs: when test output changes and no semantic drift occurs, reconcile intended snapshots; otherwise fix the compiler.
+- Never use `-D analyzer-optimize` in snapshot builds; it destroys idiomatic patterns. Prefer `--dce=full`.
+
+## 🔒 Strict Typing Discipline (No Dynamic by Default)
+
+- Do not use `Dynamic` unless it is strictly justified. Prefer precise types everywhere (compiler, std, tests, examples).
+- If `Dynamic` is unavoidable, you must add an hxdoc comment immediately above the declaration explaining:
+  - Why a precise type cannot be used (e.g., Haxe typing limitation, cross-target extern boundary).
+  - The intended data shape and safe operations performed on it.
+  - The plan (or conditions) to replace it with a concrete type in the future.
+- Prohibited shortcuts: using `Dynamic` to bypass typing effort, silence errors, or as a generic map. Model the type explicitly (typedefs/enums/structures) instead.
+- PRs introducing `Dynamic` without justification will be rejected.
+
+## 📌 External Reference Directive (Mandatory)
+
+- Always read `.claude/agents/haxe-reflaxe-compiler-expert.md` before making architectural changes.
+- When designing or modifying core compiler architecture, patterns, or stdlib behaviors, consult the reference repositories under:
+  - `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/` (Haxe patterns and core APIs)
+  - `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/elixir/` (Elixir idioms and OTP/Phoenix conventions)
+  - `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/` (Reflaxe architecture and target compiler precedents)
+  - `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/genes/` (JS/ES6 codegen patterns for cross-target consistency)
+  - Others (reflaxe.CPP, reflaxe.CSHARP, etc all in the same dir)
+
+Purpose: Leverage proven patterns and API faithfulness from upstream ecosystems (Haxe, Elixir, Reflaxe) to avoid inventing APIs, ensure idiomatic output, and maintain compatibility. Changes that touch builders, transformers, printers, std overrides, or pipeline ordering must cross-check these references for precedence and naming conventions.
+
+## 📄 Additional Reading
+
+- docs/03-compiler-development/UNUSED_VARIABLES_POLICY.md — Why std stubs use underscore‑prefixed parameters with ERaw injection, while user code remains fully automatic via analyzers.
+
+## ❌ Do NOT Author Extern Impl Files (Constraints)
+
+- Do not create `.cross.hx` (or any Haxe files) for `haxe._Constraints.*_Impl_` classes
+  (e.g., `haxe._Constraints.Function_Impl_`, `FlatEnum_Impl_`, `NotVoid_Impl_`, `Constructible_Impl_`).
+- These are extern implementation classes for Haxe abstracts defined in `std/haxe/Constraints.hx`.
+- Emitting source files for them in our std is incorrect and breaks the extern contract.
+- If snapshots expect file artifacts for these externs, handle it in a principled way:
+  - Either implement a target‑aware extern emission policy during module output (only when present in the type graph), or
+  - Normalize/update the snapshots to not require emitting externs as modules.
+- Always consult the reference: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference` (see External Reference Directive) before adding files that shadow Haxe std externs.
+
 ## 🏗️ Compilation Pipeline Architecture (AST-BASED DEFAULT)
 
 **⚠️ CRITICAL REMINDER: AST PIPELINE IS DEFAULT - DO NOT LOOK AT OLD STRING CODE**
 
 **The AST-based pipeline (src/reflaxe/elixir/ast/) is the DEFAULT compilation path.**
+
 - When debugging issues, ALWAYS check ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 - The compiler uses a pure AST pipeline - all compilation goes through AST generation
 - ALL compilation methods return ElixirAST nodes that are transformed and printed
 
 ### 1. Primary AST-Based Pipeline (DEFAULT ✅)
+
 - Three-phase: TypedExpr → ElixirAST → Transformations → String
 - Strongly-typed intermediate representation
 - Enables powerful optimizations and idiomatic code generation
@@ -92,6 +181,7 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
 **⚠️ ARCHITECTURAL UPDATE: Complete Migration to AST Pipeline (August 2025)**
+
 - **The compiler now extends GenericCompiler<ElixirAST>** - Pure AST-based architecture
 - **The AST pipeline is the ONLY compilation path** - Everything goes through it
 - **All functionality is AST-based** - No string concatenation for code generation
@@ -100,14 +190,15 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - Example: Schema compilation → schemaTransformPass in ElixirASTTransformer
 
 **WHY AST-BASED IS CRITICAL**: The AST architecture enables sophisticated transformations impossible with strings:
+
 - **Inheritance → Delegation**: Transform `super.method()` to Elixir module delegation (no inheritance in Elixir!)
 - **Self → Struct Parameter**: Convert `this/self` references to proper struct parameters
 - **Pattern Optimization**: Detect and optimize complex patterns (loops → comprehensions)
 - **Context-Aware Transforms**: Use metadata for intelligent decisions (parent class info, etc.)
 - **Multi-Pass Optimization**: Sequential transformation passes that build on each other
 
-
 ### Debug Flags for AST Pipeline
+
 ```bash
 # Debug AST pipeline transformations
 npx haxe build.hxml -D debug_ast_pipeline -D debug_ast_transformer
@@ -121,14 +212,17 @@ npx haxe build.hxml -D debug_otp_child_spec -D debug_pattern_matching
 **FUNDAMENTAL RULE: NEVER use `-D analyzer-optimize` when compiling Haxe to Elixir.**
 
 ### Why This is Critical
+
 The `-D analyzer-optimize` flag triggers Haxe's aggressive optimizations designed for imperative targets like C++ and JavaScript. These optimizations **destroy idiomatic Elixir patterns** and produce verbose, non-functional code.
 
 ### What Goes Wrong with `-D analyzer-optimize`
+
 1. **Loop Unrolling**: Converts `for (i in 0...3)` into three sequential statements instead of `Enum.each`
 2. **Constant Folding**: Evaluates expressions like `n * 2` at compile-time, losing the original calculation
 3. **Pattern Destruction**: Breaks functional patterns that are core to Elixir's philosophy
 
 ### Example of the Damage
+
 ```haxe
 // Haxe source
 for (i in 0...3) {
@@ -141,12 +235,13 @@ Log.trace("Item: 1", ...)
 Log.trace("Item: 2", ...)
 
 // WITHOUT -D analyzer-optimize (CORRECT - idiomatic Elixir)
-Enum.each(0..2, fn i -> 
+Enum.each(0..2, fn i ->
   Log.trace("Item: #{i}", ...)
 end)
 ```
 
 ### Recommended Compiler Configuration
+
 ```hxml
 # ✅ GOOD optimizations
 -dce full                    # Dead code elimination (removes unused code)
@@ -158,6 +253,7 @@ end)
 ```
 
 ### Philosophy
+
 **For Elixir, optimize for humans, not machines.** The BEAM VM handles performance optimization at runtime. Our job is to generate **readable, maintainable, idiomatic Elixir code** that looks hand-written by an expert.
 
 **See**: [`docs/01-getting-started/compiler-flags-guide.md`](docs/01-getting-started/compiler-flags-guide.md) - Complete compiler flags documentation
@@ -167,12 +263,15 @@ end)
 **FUNDAMENTAL ARCHITECTURAL ISSUE**: The current `.cross.hx` staging mechanism is flawed - it makes Elixir-specific code available in ALL compilation contexts (macro, interp, etc.) when it should ONLY be available when compiling to Elixir target.
 
 ### The Problem
+
 When .cross.hx files containing `__elixir__()` calls are staged to the classpath:
-- They become available during macro evaluation (fails with "Unknown identifier: __elixir__")
+
+- They become available during macro evaluation (fails with "Unknown identifier: **elixir**")
 - They're available when compiling to other targets (JavaScript, etc.)
 - They override standard Haxe implementations in ALL contexts
 
 ### The Correct Architecture (How Mature Reflaxe Compilers Work)
+
 **Target-conditional classpath injection** - Standard library overrides should ONLY be added to the classpath when actually compiling to the target platform:
 
 ```haxe
@@ -188,24 +287,29 @@ public static function Start() {
 ```
 
 ### Why This Matters
-1. **Macro context uses regular Haxe stdlib** - No __elixir__() failures
+
+1. **Macro context uses regular Haxe stdlib** - No **elixir**() failures
 2. **Other targets unaffected** - JavaScript compilation doesn't see Elixir-specific code
 3. **Clean separation** - Target-specific code only available when needed
 4. **Matches hxcpp pattern** - This is how mature Reflaxe compilers handle it
 
 ### Current Workaround (Temporary)
+
 The staging mechanism works but requires all contexts to handle Elixir-specific code:
+
 - `std/_std/` contains staged .cross.hx files
 - `haxe_libraries/reflaxe.elixir.hxml` includes them unconditionally
-- This causes "Unknown identifier: __elixir__" in macro context
+- This causes "Unknown identifier: **elixir**" in macro context
 
 ### Proper Implementation (TODO)
+
 1. Move classpath injection to bootstrap macro
 2. Check compilation target before adding paths
 3. Macro context uses original Haxe stdlib
 4. Only Elixir target compilation sees .cross.hx overrides
 
 **Reference Implementations**:
+
 - hxcpp: Conditionally adds C++ stdlib based on target
 - reflaxe.cs: Adds C# paths only during C# compilation
 
@@ -214,6 +318,7 @@ The staging mechanism works but requires all contexts to handle Elixir-specific 
 **FUNDAMENTAL PRINCIPLE: Generate idiomatic Phoenix/Elixir code, augmented with Haxe's type safety.**
 
 ### Core Philosophy: "Idiomatic Haxe for Elixir"
+
 - **Phoenix patterns first**: Use standard Phoenix patterns and conventions as the foundation
 - **Type safety on top**: Add Haxe's compile-time guarantees without changing the runtime patterns
 - **Don't reinvent**: If Phoenix has an established pattern, use it - don't create a "Haxe way"
@@ -225,6 +330,7 @@ The staging mechanism works but requires all contexts to handle Elixir-specific 
 ### Examples of Idiomatic Phoenix with Haxe Benefits
 
 #### ✅ GOOD: Phoenix Presence with Type Safety
+
 ```haxe
 // Haxe: Type-safe metadata, but standard Phoenix Presence pattern
 typedef PresenceMeta = {
@@ -242,12 +348,14 @@ typedef PresenceMeta = {
 ```
 
 #### ❌ BAD: Over-Engineering with Nested Structures
+
 ```haxe
 // Don't create complex nested structures that Phoenix doesn't use natively
 var editingUsers: Map<Int, Map<String, PresenceEntry>>;  // Too complex!
 ```
 
 #### ✅ GOOD: LiveView Socket Assigns
+
 ```haxe
 // Type-safe assigns that compile to standard Phoenix patterns
 typedef TodoLiveAssigns = {
@@ -257,6 +365,7 @@ typedef TodoLiveAssigns = {
 ```
 
 #### ✅ GOOD: PubSub with Type Safety
+
 ```haxe
 // Type-safe topics and messages, but standard Phoenix.PubSub underneath
 enum PubSubTopic {
@@ -268,6 +377,7 @@ enum PubSubTopic {
 ### When to Augment vs When to Follow
 
 **Follow Phoenix Exactly**:
+
 - Router DSL structure
 - LiveView lifecycle (mount/handle_event/handle_info)
 - Presence tracking patterns
@@ -276,6 +386,7 @@ enum PubSubTopic {
 - Controller/action patterns
 
 **Augment with Type Safety**:
+
 - Event parameters (typed instead of maps)
 - Socket assigns structure (compile-time validation)
 - Message types (enums instead of atoms)
@@ -283,7 +394,9 @@ enum PubSubTopic {
 - API contracts (typed structs)
 
 ### The Litmus Test
+
 Ask yourself: "Would an experienced Phoenix developer recognize this pattern?"
+
 - If YES → You're doing it right
 - If NO → You might be over-engineering
 
@@ -308,6 +421,7 @@ The addition of genes transforms Reflaxe.Elixir from a backend-only compiler int
 **Location**: `vendor/genes/` - Vendored and modified for async/await support
 
 **Key Modifications**:
+
 - **Async Function Detection**: Recognizes `__async_marker__` pattern and generates native `async` keyword
 - **Await Expression Handling**: Transforms `js.Syntax.code("await {0}", promise)` to clean `await` expressions
 - **Metadata Support**: Full support for `@:async` and `@:await` inline metadata
@@ -315,6 +429,7 @@ The addition of genes transforms Reflaxe.Elixir from a backend-only compiler int
 ### Using genes for Client-Side JavaScript
 
 #### Configuration (build-client.hxml)
+
 ```hxml
 # JavaScript target with modern ES6 via genes
 -lib reflaxe
@@ -333,6 +448,7 @@ client.TodoApp
 #### Clean Async/Await Support
 
 **Haxe Source** (using AsyncMacro):
+
 ```haxe
 @:build(genes.AsyncMacro.build())
 class ClientApp {
@@ -343,7 +459,7 @@ class ClientApp {
             var data = @:await response.json();
             return data;
         };
-        
+
         // Multiple awaits in sequence
         var processData = @:async function() {
             var user = @:await fetchUser(1);
@@ -356,28 +472,30 @@ class ClientApp {
 ```
 
 **Generated JavaScript** (clean ES6):
+
 ```javascript
 class ClientApp {
-    static main() {
-        let fetchUser = async function(id) {
-            let response = await fetch(`/api/users/${id}`);
-            let data = await response.json();
-            return data;
-        };
-        
-        let processData = async function() {
-            let user = await fetchUser(1);
-            let posts = await fetchPosts(user.id);
-            let comments = await fetchComments(posts);
-            return {user: user, posts: posts, comments: comments};
-        };
-    }
+  static main() {
+    let fetchUser = async function (id) {
+      let response = await fetch(`/api/users/${id}`);
+      let data = await response.json();
+      return data;
+    };
+
+    let processData = async function () {
+      let user = await fetchUser(1);
+      let posts = await fetchPosts(user.id);
+      let comments = await fetchComments(posts);
+      return { user: user, posts: posts, comments: comments };
+    };
+  }
 }
 ```
 
 ### Powerful Abstraction Possibilities
 
 #### 1. Shared Business Logic
+
 ```haxe
 // shared/Validation.hx - Compiles to BOTH Elixir and JavaScript
 class Validation {
@@ -385,7 +503,7 @@ class Validation {
         var pattern = ~/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return pattern.match(email);
     }
-    
+
     public static function validateAge(age: Int): Bool {
         return age >= 18 && age <= 120;
     }
@@ -400,7 +518,7 @@ class Validation {
     }
 }
 
-// Used in JavaScript (client-side validation)  
+// Used in JavaScript (client-side validation)
 class SignupForm {
     function validateForm() {
         if (!Validation.validateEmail(emailInput.value)) {
@@ -412,6 +530,7 @@ class SignupForm {
 ```
 
 #### 2. Type-Safe API Contracts
+
 ```haxe
 // shared/ApiTypes.hx - Single source of truth
 typedef UserRequest = {
@@ -448,6 +567,7 @@ class UserClient {
 ```
 
 #### 3. Universal Components (Future Vision)
+
 ```haxe
 // Universal component that compiles to both LiveView and React
 @:universal
@@ -455,7 +575,7 @@ class TodoItem {
     var id: Int;
     var text: String;
     var completed: Bool;
-    
+
     // Compiles to LiveView component (Elixir)
     @:target("elixir")
     function render() {
@@ -466,9 +586,9 @@ class TodoItem {
             </div>
         ');
     }
-    
+
     // Compiles to React-like component (JavaScript)
-    @:target("javascript")  
+    @:target("javascript")
     function render() {
         return JSX.jsx('
             <div className={completed ? "completed" : ""}>
@@ -488,7 +608,7 @@ class TodoItem {
 class InfiniteScrollHook {
     public var el: Element;
     public var pushEvent: (String, Dynamic) -> Promise<Dynamic>;
-    
+
     public function mounted() {
         var observer = new IntersectionObserver(@:async (entries) -> {
             if (entries[0].isIntersecting) {
@@ -510,43 +630,46 @@ The generated JavaScript integrates seamlessly with Phoenix's esbuild pipeline:
 
 ```javascript
 // assets/js/app.js - Generated by genes
-import {TodoApp} from "./TodoApp.js"
-import {InfiniteScrollHook} from "./hooks/InfiniteScrollHook.js"
+import { TodoApp } from "./TodoApp.js";
+import { InfiniteScrollHook } from "./hooks/InfiniteScrollHook.js";
 
 // Phoenix LiveView integration
 let Hooks = {
-    InfiniteScroll: InfiniteScrollHook
-}
+  InfiniteScroll: InfiniteScrollHook,
+};
 
-let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks})
-liveSocket.connect()
+let liveSocket = new LiveSocket("/live", Socket, { hooks: Hooks });
+liveSocket.connect();
 
 // Initialize Haxe app
-TodoApp.main()
+TodoApp.main();
 ```
 
 ### Development Workflow
 
 1. **Backend Development** (Elixir generation):
+
    ```bash
    npx haxe build-server.hxml  # Compiles to Elixir
    mix compile                  # Validates Elixir code
    ```
 
 2. **Frontend Development** (JavaScript generation):
+
    ```bash
    npx haxe build-client.hxml   # Compiles to JavaScript via genes
    npm run deploy               # Bundles with esbuild
    ```
 
 3. **Full-Stack Watch Mode**:
+
    ```bash
    # Terminal 1: Watch backend
    mix compile.haxe --watch
-   
-   # Terminal 2: Watch frontend  
+
+   # Terminal 2: Watch frontend
    npx haxe build-client.hxml --watch
-   
+
    # Terminal 3: Run Phoenix
    mix phx.server
    ```
@@ -562,11 +685,13 @@ TodoApp.main()
 ### Technical Implementation Details
 
 **The AsyncMacro Pattern**: Instead of complex AST manipulation, genes uses a marker variable approach:
+
 1. AsyncMacro injects `var __async_marker__ = true;` into async functions
 2. genes' ExprEmitter detects this marker and generates `async` keyword
 3. Clean ES6 output without wrapper functions or runtime overhead
 
-**Why Not Default Haxe→JS?**: 
+**Why Not Default Haxe→JS?**:
+
 - Default Haxe JavaScript can generate older ES5 patterns
 - genes specifically targets modern ES6+ with modules, async/await, arrow functions
 - Better integration with modern bundlers (esbuild, webpack, vite)
@@ -575,6 +700,7 @@ TodoApp.main()
 ### Summary
 
 The genes integration transforms Reflaxe.Elixir into a **complete full-stack development platform**. Developers can now:
+
 - Write entire Phoenix applications in pure Haxe
 - Share types and business logic between frontend and backend
 - Get compile-time type safety across the entire stack
@@ -589,6 +715,7 @@ This is not just about convenience - it's about **eliminating entire categories 
 You have permission to modify vendored dependencies (Reflaxe, genes) when necessary, but follow these guidelines:
 
 ### When to Modify Vendor Source
+
 - ✅ **Bug fixes** that block functionality with no workaround
 - ✅ **Critical features** for Elixir idioms that can't be achieved via extension
 - ✅ **Integration problems** where vendor architecture doesn't fit Elixir's needs
@@ -596,12 +723,15 @@ You have permission to modify vendored dependencies (Reflaxe, genes) when necess
 - ❌ **Avoid** when you can work around with metadata flags
 
 ### Documentation Requirements
+
 **MANDATORY** for every vendor modification:
+
 1. **File header comment** explaining the modification with WHY/WHAT/DATE
 2. **Inline comments** marking modification boundaries
 3. **Changelog entry** in `vendor/CHANGELOG.md`
 
 ### The Decision Flow
+
 ```
 Issue with vendor code → Can I fix in compiler? → YES → Fix in compiler
                       ↓ NO
@@ -610,11 +740,12 @@ Issue with vendor code → Can I fix in compiler? → YES → Fix in compiler
                       Is this fundamental? → YES → Modify vendor (document WHY)
 ```
 
-**See**: [`vendor/CLAUDE.md`](vendor/CLAUDE.md) - Complete vendor modification policy and guidelines
+**See**: [`vendor/AGENTS.md`](vendor/AGENTS.md) - Complete vendor modification policy and guidelines
 
 ## 🚀 Essential Commands
 
 ### Development Workflow
+
 ```bash
 # Build and test (with CORRECT flags - no analyzer-optimize!)
 npm test                          # Full test suite (mandatory before commit)
@@ -631,6 +762,7 @@ curl http://localhost:4000        # Test application response
 ```
 
 ### Quick Testing
+
 ```bash
 # Category-based testing (NEW - much faster iteration!)
 npm run test:core                          # Run core language tests only
@@ -656,6 +788,7 @@ scripts/test-runner.sh --changed --update  # Update tests affected by changes
 ```
 
 ### Advanced Debugging
+
 ```bash
 # Enable macro stack traces for complex compiler issues
 npx haxe build-server.hxml -D eval-stack -D debug_enum_introspection_compiler
@@ -670,28 +803,33 @@ npx haxe build-server.hxml -D eval-stack -D debug_pattern_matching -D debug_expr
 npx haxe build-server.hxml -D eval-debugger
 ```
 
-## CLAUDE.md Maintenance Rule ⚠️
+## AGENTS.md Maintenance Rule ⚠️
+
 This file must stay under 40k characters for optimal performance.
-- Keep only essential agent instructions  
+
+- Keep only essential agent instructions
 - Use imports from `docs/claude-includes/` for shared content
 - Move detailed content to appropriate [docs/](docs/) sections
 - Reference docs instead of duplicating content
-- Review size after major updates: `wc -c CLAUDE.md`
+- Review size after major updates: `wc -c AGENTS.md`
 
-### ❌ NEVER Add Detailed Technical Content to Root CLAUDE.md
+### ❌ NEVER Add Detailed Technical Content to Root AGENTS.md
+
 When documenting new features, fixes, or insights:
-1. **Use the nearest CLAUDE.md** - Save insights and directives to the nearest CLAUDE.md dir-wise (e.g., `src/reflaxe/elixir/ast/CLAUDE.md` for AST issues)
-2. **Create or update appropriate docs** in `docs/` directory for general documentation
-3. **Add only a brief reference** in root CLAUDE.md with link to full documentation  
-4. **Check character count** before and after: `wc -c CLAUDE.md`
-5. **If over 40k**, identify and move non-essential content to subdirectory CLAUDE.md files
 
-### 📍 CLAUDE.md Hierarchy
-- **Root CLAUDE.md** (`/CLAUDE.md`) - Project-wide conventions, navigation, critical rules only
-- **Module CLAUDE.md** (`src/reflaxe/elixir/CLAUDE.md`) - Compiler-specific development guidance
-- **Component CLAUDE.md** (`src/reflaxe/elixir/ast/CLAUDE.md`) - AST-specific patterns and limitations
-- **Test CLAUDE.md** (`test/CLAUDE.md`) - Testing infrastructure and patterns
-- **Example CLAUDE.md** (`examples/todo-app/CLAUDE.md`) - Application-specific patterns
+1. **Use the nearest AGENTS.md** - Save insights and directives to the nearest AGENTS.md dir-wise (e.g., `src/reflaxe/elixir/ast/AGENTS.md` for AST issues)
+2. **Create or update appropriate docs** in `docs/` directory for general documentation
+3. **Add only a brief reference** in root AGENTS.md with link to full documentation
+4. **Check character count** before and after: `wc -c AGENTS.md`
+5. **If over 40k**, identify and move non-essential content to subdirectory AGENTS.md files
+
+### 📍 AGENTS.md Hierarchy
+
+- **Root AGENTS.md** (`/AGENTS.md`) - Project-wide conventions, navigation, critical rules only
+- **Module AGENTS.md** (`src/reflaxe/elixir/AGENTS.md`) - Compiler-specific development guidance
+- **Component AGENTS.md** (`src/reflaxe/elixir/ast/AGENTS.md`) - AST-specific patterns and limitations
+- **Test AGENTS.md** (`test/AGENTS.md`) - Testing infrastructure and patterns
+- **Example AGENTS.md** (`examples/todo-app/AGENTS.md`) - Application-specific patterns
 
 ## 📁 Project Directory Structure Map
 
@@ -707,7 +845,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 │       └── ast/                      # AST builder, transformer, and printer
 ├── std/                              # 📚 STANDARD LIBRARY (compile-time classpath)
 │   ├── elixir/                       # Elixir stdlib externs (IO, File, etc.)
-│   ├── phoenix/                      # Phoenix framework externs  
+│   ├── phoenix/                      # Phoenix framework externs
 │   └── ecto/                         # Ecto ORM externs
 ├── lib/                              # 🏃 ELIXIR RUNTIME (Mix integration)
 │   ├── haxe_compiler.ex              # Mix task for compilation
@@ -716,7 +854,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 ├── docs/                             # 📚 ALL DOCUMENTATION
 │   ├── 01-getting-started/           # Setup and quickstart
 │   ├── 02-user-guide/                # Application development
-│   ├── 03-compiler-development/      # Compiler contributor docs (with CLAUDE.md)
+│   ├── 03-compiler-development/      # Compiler contributor docs (with AGENTS.md)
 │   ├── 04-api-reference/             # Technical references
 │   ├── 05-architecture/              # System design
 │   ├── 06-guides/                    # How-to guides and troubleshooting
@@ -734,15 +872,18 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 ### Why This Structure (Reflaxe Convention)
 
 1. **`src/`** - Contains the compiler itself (macro-time code that runs during Haxe compilation)
+
    - This is where ElixirCompiler.hx lives - the actual transpiler
    - Only exists at macro-time, not in generated output
 
 2. **`std/`** - Standard library included in classpath (`-cp std` in extraParams.hxml)
+
    - Provides Haxe externs for Elixir/Phoenix/Ecto functionality
    - Available to all user code during compilation
    - Similar to how Reflaxe.CPP has `std/` for C++ standard library
 
 3. **`lib/`** - Elixir runtime support (specific to our Mix integration)
+
    - Contains .ex files for Mix tasks and compilation support
    - These are actual Elixir files needed to integrate with Mix build system
    - Not part of Haxe compilation, but needed for Elixir project to work
@@ -753,6 +894,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
    - Separate from compiler source to avoid confusion
 
 **Key Locations for Common Tasks**:
+
 - **Compiler bugs**: `src/reflaxe/elixir/` (macro-time transpiler code)
 - **Standard library**: `std/` (externs and framework integration)
 - **Mix integration**: `lib/*.ex` (Elixir runtime support)
@@ -761,18 +903,20 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 - **Snapshot tests**: `test/snapshot/`
 
 ## IMPORTANT: Agent Execution Instructions
+
 1. **ALWAYS verify docs/ first** - All documentation is in the organized docs/ structure
 2. **USE THE DIRECTORY MAP** - Navigate correctly using the structure above
 3. **Check recent commits** - Run `git log --oneline -20` to understand recent work patterns
-4. **Use specialized CLAUDE.md** - Check [docs/03-compiler-development/CLAUDE.md](docs/03-compiler-development/CLAUDE.md) for compiler work
+4. **Use specialized AGENTS.md** - Check [docs/03-compiler-development/AGENTS.md](docs/03-compiler-development/AGENTS.md) for compiler work
 5. **FOLLOW DOCUMENTATION GUIDE** - See [docs/](docs/) for comprehensive guides
 6. **Check Haxe documentation** when needed:
-   - https://api.haxe.org/ - Latest API reference
-   - https://haxe.org/manual/ - Language documentation
+   - <https://api.haxe.org/> - Latest API reference
+   - <https://haxe.org/manual/> - Language documentation
 
 ## Critical Architecture Knowledge for Development
 
 **MUST READ BEFORE WRITING CODE**:
+
 - **[docs/03-compiler-development/](docs/03-compiler-development/)** - Complete compiler development guide
 - **[docs/03-compiler-development/macro-time-vs-runtime.md](docs/03-compiler-development/macro-time-vs-runtime.md)** - THE MOST CRITICAL CONCEPT
 - **[docs/05-architecture/](docs/05-architecture/)** - Complete architectural details
@@ -784,6 +928,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 **FUNDAMENTAL RULE: NEVER EDIT GENERATED .ex FILES DIRECTLY. ALL FIXES MUST BE IN THE COMPILER SOURCE.**
 
 **What counts as a generated file violation:**
+
 - ❌ **Editing any .ex file** in `lib/` directories of examples
 - ❌ **Manual fixes** to generated Elixir code to "make it work"
 - ❌ **Patching output** instead of fixing the generator
@@ -791,6 +936,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 - ❌ **Any modification** to files created by the transpiler
 
 **The correct approach:**
+
 - ✅ **Fix the compiler source** in `src/reflaxe/elixir/`
 - ✅ **Modify Haxe source** in `src_haxe/` if it's user code
 - ✅ **Update AST builder/transformer** to generate correct code
@@ -798,6 +944,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 - ✅ **Test via regeneration** - delete and regenerate files to verify
 
 **Why this matters:**
+
 - Generated files are **overwritten on every compilation**
 - Manual edits are **immediately lost**
 - It **violates the entire purpose** of the transpiler
@@ -807,25 +954,30 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 
 **FUNDAMENTAL RULE: NEVER manually delete .ex files with rm, find, or any other command. ALWAYS use the designated npm script.**
 
-### The ONLY Way to Clean Generated Files:
+### The ONLY Way to Clean Generated Files
+
 ```bash
 npm run clean:generated  # ✅ CORRECT - Uses _GeneratedFiles.json manifest to precisely remove only compiler-generated files
 ```
 
-### NEVER Do This:
+### NEVER Do This
+
 ```bash
 rm -rf lib/*.ex                           # ❌ WRONG - Deletes critical runtime files
 find . -name "*.ex" -delete               # ❌ WRONG - Deletes everything
 cd examples/todo-app && rm lib/*.ex       # ❌ WRONG - No discrimination
 ```
 
-### How It Works:
+### How It Works
+
 The `clean:generated` script uses the `_GeneratedFiles.json` manifest created by the compiler:
+
 1. **Reads the manifest** - Each compilation creates `_GeneratedFiles.json` listing all generated files
 2. **Deletes only listed files** - Only removes files explicitly marked as compiler-generated
 3. **Preserves everything else** - All hand-written files are automatically safe
 
-### What Gets Preserved (Automatically):
+### What Gets Preserved (Automatically)
+
 - `lib/haxe_compiler.ex` - Haxe compilation support (not generated)
 - `lib/haxe_server.ex` - Compilation server (not generated)
 - `lib/haxe_watcher.ex` - File watcher (not generated)
@@ -834,13 +986,15 @@ The `clean:generated` script uses the `_GeneratedFiles.json` manifest created by
 - `priv/**/*.exs` - Migrations and seeds (not generated)
 - Any file NOT in `_GeneratedFiles.json`
 
-### What Gets Deleted:
+### What Gets Deleted
+
 - Only files listed in `_GeneratedFiles.json` manifests
 - Test output files in `test/snapshot/*/out/`
 - Nothing else - the script is surgically precise
 
-### Why This Critical Rule Exists:
-- **Accidental deletion of lib/*.ex breaks Mix integration** - The :haxe compiler disappears
+### Why This Critical Rule Exists
+
+- **Accidental deletion of lib/\*.ex breaks Mix integration** - The :haxe compiler disappears
 - **These files were deleted multiple times** - Git history shows repeated restoration
 - **Manual rm commands don't discriminate** - They delete hand-written runtime support
 - **The clean:generated script uses a whitelist** - It knows exactly what to preserve
@@ -850,26 +1004,29 @@ The `clean:generated` script uses the `_GeneratedFiles.json` manifest created by
 **FUNDAMENTAL RULE: NEVER USE POST-PROCESSING OR BAND-AID FIXES. ALWAYS FIX THE ROOT CAUSE.**
 
 **What counts as a band-aid fix:**
+
 - ❌ **Post-processing filters** to clean up bad output after generation
-- ❌ **String manipulation** to fix generated code issues  
+- ❌ **String manipulation** to fix generated code issues
 - ❌ **Workarounds** that patch symptoms instead of fixing the cause
 - ❌ **"Quick fixes"** that add complexity without solving the underlying issue
 - ❌ **Conditional patches** for specific edge cases without understanding why they occur
 
 **The correct approach:**
+
 - ✅ **Understand WHY the issue happens** - Find the exact compilation step causing problems
 - ✅ **Fix at the source** - Modify the compiler logic that generates the problematic code
 - ✅ **Test the root fix** - Ensure the underlying problem is completely resolved
 - ✅ **Comprehensive solution** - Fix should work for all similar cases, not just the specific instance
 
 **Example of wrong vs right approach:**
+
 ```haxe
 // ❌ WRONG: Band-aid fix
 var result = patternMatchingCompiler.compile(...);
 result = cleanupOrphanedVariables(result); // Post-processing patch
 return result;
 
-// ✅ RIGHT: Root cause fix  
+// ✅ RIGHT: Root cause fix
 // Modify the pattern matching compiler itself to not generate orphaned variables
 // by detecting empty case bodies and avoiding parameter extraction
 ```
@@ -881,14 +1038,16 @@ return result;
 **FUNDAMENTAL RULE: THE COMPILER MUST HAVE A PREDICTABLE, LINEAR PIPELINE WITH SINGLE RESPONSIBILITY PER PHASE.**
 
 **What counts as unpredictable architecture:**
+
 - ❌ **Multiple detection paths** for the same pattern (builder detecting AND transformer detecting)
 - ❌ **Transformations in builder phase** - Builder should ONLY build AST nodes
-- ❌ **Building in transformer phase** - Transformer should ONLY transform existing nodes  
+- ❌ **Building in transformer phase** - Transformer should ONLY transform existing nodes
 - ❌ **Bypass routes** where some code paths skip transformation entirely
 - ❌ **Conditional transformation** based on where/when code is compiled
 - ❌ **Logic bypassing logic** - Adding more detection layers to fix missed transformations
 
 **The correct pipeline architecture:**
+
 - ✅ **Linear phases**: TypedExpr → Builder → Transformer → Printer (no shortcuts)
 - ✅ **Single responsibility**: Each phase does ONE thing well
 - ✅ **Metadata-driven**: Builder marks nodes with metadata, transformer reads metadata
@@ -896,6 +1055,7 @@ return result;
 - ✅ **Predictable behavior**: Same input ALWAYS produces same output regardless of context
 
 **Example of wrong vs right architecture:**
+
 ```haxe
 // ❌ WRONG: Multiple detection and transformation in wrong phase
 // In ElixirASTBuilder.hx:
@@ -926,6 +1086,7 @@ if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
 ```
 
 **Why predictable pipeline matters:**
+
 - **Debugging**: Can trace exactly where transformations happen
 - **Maintenance**: Clear separation of concerns makes changes safer
 - **Performance**: No redundant detection or missed optimizations
@@ -935,12 +1096,14 @@ if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
 **Pipeline Phase Responsibilities:**
 
 1. **Builder Phase (ElixirASTBuilder)**:
+
    - ONLY builds AST nodes from TypedExpr
    - ONLY sets metadata flags for semantic meaning
    - NEVER transforms or modifies structure
    - NEVER makes decisions about final output format
 
 2. **Transformer Phase (ElixirASTTransformer)**:
+
    - ONLY transforms existing AST nodes
    - ONLY reads metadata to make decisions
    - NEVER creates new detection logic
@@ -959,12 +1122,14 @@ if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
 **FUNDAMENTAL RULE: NEVER INVENT AD-HOC DETECTION SYSTEMS. USE REFLAXE'S ESTABLISHED PATTERNS.**
 
 **What counts as ad-hoc architectural deviation:**
+
 - ❌ **Custom detection systems** when Reflaxe provides standard solutions
 - ❌ **Hardcoded pattern matching** instead of using metadata systems
 - ❌ **Timing-dependent fixes** that rely on compilation order assumptions
 - ❌ **Context-specific workarounds** that don't scale to other use cases
 
 **The Reflaxe way:**
+
 - ✅ **Use Reflaxe's preprocessor system** - MarkUnusedVariablesImpl for unused variable detection
 - ✅ **Check established metadata** - Look for `-reflaxe.unused` instead of inventing detection
 - ✅ **Follow GenericCompiler patterns** - Extend established base class methods
@@ -972,12 +1137,14 @@ if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
 
 **LESSON LEARNED: Orphaned Variable Detection**
 When we encountered orphaned `g_array` variables:
+
 - ❌ **WRONG**: Invented custom `isParameterTrulyOrphaned()` detection
 - ❌ **WRONG**: Made assumptions based on compilation timing
 - ✅ **RIGHT**: Use Reflaxe's `MarkUnusedVariablesImpl` + `-reflaxe.unused` metadata
 - ✅ **RIGHT**: Check existing VariableCompiler patterns that already handle this metadata
 
 **Example of architectural alignment:**
+
 ```haxe
 // ❌ WRONG: Ad-hoc detection
 private function isParameterTrulyOrphaned(ef: EnumField, index: Int): Bool {
@@ -997,6 +1164,7 @@ if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 **FUNDAMENTAL RULE: IMPLEMENT ONLY REQUIRED ABSTRACT METHODS. LET REFLAXE ORCHESTRATE THE FLOW.**
 
 **What counts as inheritance overuse:**
+
 - ❌ **Overriding compileExpression** when you only need compileExpressionImpl
 - ❌ **Intercepting parent methods** that manage the compilation pipeline
 - ❌ **Breaking injection mechanisms** by overriding orchestration methods
@@ -1004,6 +1172,7 @@ if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 - ❌ **Fighting the framework** instead of working with it
 
 **The composition approach:**
+
 - ✅ **Implement compileExpressionImpl** - The abstract method Reflaxe requires
 - ✅ **Trust parent orchestration** - GenericCompiler handles injection, hooks, etc.
 - ✅ **Let Reflaxe manage flow** - Don't intercept unless adding specific value
@@ -1011,6 +1180,7 @@ if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 - ✅ **Respect the pipeline** - Each phase has clear responsibilities
 
 **Example of wrong vs right approach:**
+
 ```haxe
 // ❌ WRONG: Overriding orchestration method
 public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
@@ -1026,6 +1196,7 @@ public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<Str
 ```
 
 **Why this matters:**
+
 - **Framework integration**: Reflaxe features (like injection) work correctly
 - **Maintainability**: Less coupling with parent implementation details
 - **Clarity**: Clear separation between orchestration and implementation
@@ -1038,6 +1209,7 @@ public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<Str
 **FUNDAMENTAL RULE: NEVER HARDCODE SPECIFIC ENUM NAMES OR TYPES IN COMPILER LOGIC. ALWAYS USE GENERAL PATTERNS.**
 
 **What counts as enum-specific hardcoding:**
+
 - ❌ **Hardcoded enum names** like `if (ef.name == "TypeSafeChildSpec")` in compiler logic
 - ❌ **Constructor-specific switches** like `switch(ef.name) { case "Repo": ...; case "Telemetry": ...; }`
 - ❌ **Parameter index hardcoding** for specific enum constructors
@@ -1046,12 +1218,14 @@ public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<Str
 - ❌ **Maintenance nightmares** that require updating compiler code when enums change
 
 **The correct approach:**
+
 - ✅ **Detect patterns, not names** - Analyze AST structure and usage patterns
 - ✅ **Context-aware detection** - Use compilation context to determine parameter usage
 - ✅ **General algorithms** - Write code that works for ANY enum with similar patterns
 - ✅ **AST analysis** - Look at actual usage in the AST, not hardcoded type assumptions
 
 **Example of wrong vs right approach:**
+
 ```haxe
 // ❌ WRONG: Hardcoded enum-specific logic
 var orphaned = switch(ef.name) {
@@ -1067,6 +1241,7 @@ var orphaned = isParameterUnusedInCurrentContext(e, ef, index);
 ```
 
 **Why this matters:**
+
 - **Maintenance**: Adding new enums shouldn't require compiler changes
 - **Generalization**: The compiler should work for user-defined enums, not just stdlib
 - **Architectural integrity**: Type-specific logic belongs in type definitions, not the compiler
@@ -1079,7 +1254,9 @@ var orphaned = isParameterUnusedInCurrentContext(e, ef, index);
 **FUNDAMENTAL RULE: Abstract type methods that use `untyped __elixir__()` MUST be declared as `extern inline`.**
 
 ### The Problem (Discovered After Extensive Debugging)
+
 When using `untyped __elixir__()` in abstract type methods without `extern inline`:
+
 ```haxe
 // ❌ FAILS with "Unknown identifier: __elixir__"
 abstract LiveSocket<T>(...) {
@@ -1090,6 +1267,7 @@ abstract LiveSocket<T>(...) {
 ```
 
 ### The Solution
+
 ```haxe
 // ✅ WORKS: extern inline allows __elixir__ to work
 abstract LiveSocket<T>(...) {
@@ -1100,18 +1278,22 @@ abstract LiveSocket<T>(...) {
 ```
 
 ### Why This Happens (Critical Understanding)
+
 1. **Abstract methods are typed early**: When an abstract is imported, its methods are typed
 2. **`__elixir__` doesn't exist yet**: Reflaxe injects `__elixir__` AFTER Haxe's typing phase
 3. **Timing mismatch**: The identifier is checked before it exists
 4. **`extern inline` delays typing**: The function body is only typed at call sites, after Reflaxe init
 
 ### Why Regular Classes Don't Have This Problem
+
 - Regular class methods aren't forced to be typed immediately
 - They can contain `untyped __elixir__()` without `extern inline`
 - Exception: Classes with `@:coreApi` get special treatment (like Array.hx)
 
 ### The Universal Rule
+
 **For ANY abstract type using `untyped __elixir__()`:**
+
 - ✅ ALWAYS use `extern inline` on methods with `__elixir__`
   - **WHY**: The combination delays typing until the method is actually called, after Reflaxe has injected `__elixir__`
 - ✅ This ensures the code is typed AFTER Reflaxe initialization
@@ -1122,7 +1304,8 @@ abstract LiveSocket<T>(...) {
   - **WHY**: `inline` alone still types the function body during abstract processing. `extern` is what prevents early typing
 
 ### Lesson Learned
-We spent significant time debugging "Unknown identifier: __elixir__" errors in LiveSocket.hx.
+
+We spent significant time debugging "Unknown identifier: **elixir**" errors in LiveSocket.hx.
 The root cause was abstract methods being typed before Reflaxe could inject the `__elixir__` identifier.
 This is now documented to prevent future time waste on the same issue.
 
@@ -1132,7 +1315,8 @@ This is now documented to prevent future time waste on the same issue.
 
 **FUNDAMENTAL RULE: Every piece of compiler logic MUST include comprehensive documentation and XRay debug traces.**
 
-### The Five Mandatory Elements:
+### The Five Mandatory Elements
+
 1. **Class-Level HaxeDoc with WHY/WHAT/HOW** - Comprehensive class purpose and architecture documentation
 2. **Function-Level WHY/WHAT/HOW Documentation** - Explain reasoning, purpose, and implementation
 3. **XRay Debug Traces** - Provide runtime visibility with `#if debug_feature` blocks
@@ -1146,38 +1330,38 @@ This is now documented to prevent future time waste on the same issue.
 ```haxe
 /**
  * CLASS_NAME: Brief class purpose
- * 
+ *
  * WHY: Explain the problem this class solves and architectural decisions
  * - What problem in compiler design this addresses
  * - Why this separation/extraction was needed
  * - What happens if this class doesn't exist
  * - How it fits into overall compiler architecture
- * 
+ *
  * WHAT: High-level class responsibilities and capabilities
  * - Primary operations and transformations
  * - Key patterns handled or generated
  * - Integration points with other compiler components
  * - Public API surface and usage patterns
- * 
+ *
  * HOW: Implementation approach and internal architecture
  * - Key algorithms and data structures used
  * - Major internal methods and their responsibilities
  * - Collaboration patterns with other classes
  * - Extension points and future considerations
- * 
+ *
  * ARCHITECTURE BENEFITS:
  * - Single Responsibility: Clear separation of concerns
  * - Open/Closed Principle: Extension without modification
  * - Testability: Independent testing capabilities
  * - Maintainability: Clear boundaries and interfaces
  * - Performance: Optimized for specific use cases
- * 
+ *
  * EDGE CASES:
  * - Known limitations and workarounds
  * - Special handling requirements
  * - Integration complexity points
  * - Future improvement areas
- * 
+ *
  * @see documentation/RELATED_ARCHITECTURE.md - Related patterns and designs
  */
 @:nullSafety(Off)
@@ -1188,13 +1372,14 @@ class CompilerClass {
 
 **Example**: See `VariableCompiler.hx` for a complete implementation of this pattern.
 
-### Example Template:
+### Example Template
+
 ```haxe
 /**
  * FEATURE NAME: Brief description
- * 
+ *
  * WHY: Problem being solved and rationale
- * WHAT: High-level operation description  
+ * WHAT: High-level operation description
  * HOW: Step-by-step implementation details
  * EDGE CASES: Special scenarios and limitations
  */
@@ -1203,9 +1388,9 @@ function compilerFunction() {
     trace("[XRay Feature] OPERATION START");
     trace('[XRay Feature] Input: ${input.substring(0, 100)}...');
     #end
-    
+
     // Implementation with visibility
-    
+
     #if debug_feature
     trace("[XRay Feature] ✓ PATTERN DETECTED");
     trace("[XRay Feature] OPERATION END");
@@ -1221,19 +1406,20 @@ function compilerFunction() {
 
 ### File Size Guidelines (Based on Reflaxe Reference Implementations)
 
-| File Type | Target Size | Maximum Size | Current State |
-|-----------|-------------|--------------|---------------|
-| **Utility Classes** | 100-300 lines | 500 lines | ✅ Most helpers good |
-| **Helper Compilers** | 300-800 lines | 1,200 lines | ✅ Most helpers good |
-| **Main Compiler** | 800-1,500 lines | 2,000 lines | ❌ **ElixirCompiler.hx: 10,661 lines!** |
-| **Complex Compilers** | 1,000-2,000 lines | 2,500 lines | Expression compilation |
+| File Type             | Target Size       | Maximum Size | Current State                           |
+| --------------------- | ----------------- | ------------ | --------------------------------------- |
+| **Utility Classes**   | 100-300 lines     | 500 lines    | ✅ Most helpers good                    |
+| **Helper Compilers**  | 300-800 lines     | 1,200 lines  | ✅ Most helpers good                    |
+| **Main Compiler**     | 800-1,500 lines   | 2,000 lines  | ❌ **ElixirCompiler.hx: 10,661 lines!** |
+| **Complex Compilers** | 1,000-2,000 lines | 2,500 lines  | Expression compilation                  |
 
 ### ⚠️ MANDATORY REFACTORING TRIGGERS
 
 A file MUST be refactored when:
+
 - [ ] Size exceeds maximum guidelines (ElixirCompiler.hx is 5x too large!)
 - [ ] Multiple responsibilities are mixed (loops + expressions + patterns + utilities)
-- [ ] Changes frequently break unrelated functionality  
+- [ ] Changes frequently break unrelated functionality
 - [ ] Debugging requires scrolling through thousands of lines
 - [ ] New developers struggle to understand the file
 
@@ -1244,36 +1430,41 @@ A file MUST be refactored when:
 **PROBLEMATIC PATTERNS**: String concatenation (`+` operator) and StringBuf operations in `#if (macro || reflaxe_runtime)` blocks cause Haxe compiler to hang
 
 **SAFE ALTERNATIVES**:
+
 - ✅ **String interpolation** (PREFERRED): Works without issues
 - ✅ **Array join pattern**: Also safe
 - ✅ **Single string literals**: No concatenation needed
 
 **CHECK BEFORE COMMITTING**:
+
 - If your macro code will run in CI/test contexts with output redirection
 - Search for `+` concatenation with strings in `#if macro` blocks
-- Search for `new StringBuf()` in `#if macro` blocks  
+- Search for `new StringBuf()` in `#if macro` blocks
 - Replace with string interpolation or array join
 
 **Symptoms**:
-- Compilation hangs indefinitely with redirected output  
+
+- Compilation hangs indefinitely with redirected output
 - Works fine without output redirection
 - Even 5 string concatenations trigger the hang
 - Affects Make-based test runner and CI pipelines
 
 **Problematic Patterns** (in contexts with output redirection):
+
 ```haxe
 // ❌ CAUSES HANG when output is redirected
 return 'line1\n' +
        'line2\n' +
        'line3\n';
 
-// ❌ StringBuf ALSO CAUSES HANG  
+// ❌ StringBuf ALSO CAUSES HANG
 var sb = new StringBuf();
 sb.add("line1\n");
 sb.add("line2\n");
 ```
 
 **Safe Solutions**:
+
 ```haxe
 // ✅ BEST: String interpolation (clean and safe)
 return '
@@ -1298,16 +1489,19 @@ return lines.join('\n');
 Each file should have **one clear reason to change**:
 
 ✅ **GOOD Examples**:
+
 - `LoopCompiler.hx` - Only handles loop compilation and optimization
-- `PatternDetector.hx` - Only detects AST patterns  
+- `PatternDetector.hx` - Only detects AST patterns
 - `CompilerUtilities.hx` - Only provides shared utility functions
 
 ❌ **BAD Examples**:
+
 - `ElixirCompiler.hx` (current) - Handles loops, expressions, patterns, utilities, types, etc.
 
 ### Refactoring Standards
 
 **Every extraction must include**:
+
 - Complete HaxeDoc for all functions
 - **⚠️ MANDATORY WHY/WHAT/HOW documentation** - Every new class, entity, or code must comprehensively justify its existence with WHY (problem being solved), WHAT (responsibilities and capabilities), HOW (implementation approach)
 - XRay debug traces for compilation functions
@@ -1321,6 +1515,7 @@ Each file should have **one clear reason to change**:
 **CRITICAL RULE**: The compiler generates plain Elixir by default. Framework conventions are applied via annotations, not hardcoded assumptions.
 
 ### Design Philosophy
+
 ```haxe
 // ✅ CORRECT: Framework conventions via annotations
 @:native("AppNameWeb.TodoLive")  // Explicit Phoenix convention
@@ -1338,9 +1533,11 @@ if (isPhoenixProject()) {
 **CRITICAL KNOWLEDGE**: A robust Haxe→Elixir compiler must deeply understand Elixir's language semantics, reserved words, scoping rules, and idioms.
 
 ### Complete List of Elixir Reserved Keywords
+
 The compiler MUST avoid using these as variable/function names:
 
 **Core Reserved Words**:
+
 - `true`, `false`, `nil` - Boolean/null atoms
 - `and`, `or`, `not`, `in`, `when` - Operators
 - `fn` - Anonymous function definition
@@ -1350,11 +1547,13 @@ The compiler MUST avoid using these as variable/function names:
 ### Variable Scoping & Rebinding Rules
 
 **Immutability vs Rebinding**:
+
 - **Data is immutable**: Lists, maps, structs never change
 - **Variables can rebind**: Variables can point to new data
 - **NOT mutation**: `x = x + 1` creates new binding, doesn't mutate
 
 **Scoping Principles**:
+
 ```elixir
 # Outer scope
 x = 1
@@ -1369,6 +1568,7 @@ end)
 ```
 
 **Pin Operator (^)**:
+
 ```elixir
 x = 1
 ^x = 2  # MatchError - tries to match 2 against existing value 1
@@ -1378,6 +1578,7 @@ x = 2   # Rebinding - x now points to 2
 ### Variable Shadowing Hazards
 
 **The compiler must handle**:
+
 1. **Nested scopes**: Inner variables shadow outer ones
 2. **Case/cond clauses**: Each clause has its own scope
 3. **Comprehensions**: Variables in generators are local
@@ -1386,6 +1587,7 @@ x = 2   # Rebinding - x now points to 2
 ### Module Naming Conflicts
 
 **Built-in Elixir modules the compiler MUST NOT override**:
+
 - `List`, `Map`, `Enum`, `String`, `Integer`, `Float`
 - `Process`, `GenServer`, `Supervisor`, `Agent`
 - `File`, `IO`, `Path`, `System`
@@ -1394,6 +1596,7 @@ x = 2   # Rebinding - x now points to 2
 ### Elixir Idioms the Compiler Should Generate
 
 **Pattern Matching over Conditionals**:
+
 ```elixir
 # ✅ Idiomatic
 case result do
@@ -1410,6 +1613,7 @@ end
 ```
 
 **Pipeline over Nested Calls**:
+
 ```elixir
 # ✅ Idiomatic
 data
@@ -1424,12 +1628,14 @@ save(validate(transform(data)))
 ### Phoenix-Specific Conventions
 
 **Module Organization**:
+
 - `AppName` - Business logic
 - `AppNameWeb` - Web layer
 - `AppNameWeb.Router` - Always named Router
 - `AppNameWeb.Endpoint` - Always named Endpoint
 
 **File Placement**:
+
 - `lib/app_name/` - Core domain
 - `lib/app_name_web/` - Web interface
 - `lib/app_name_web/live/` - LiveView modules
@@ -1438,6 +1644,7 @@ save(validate(transform(data)))
 ### Phoenix LiveView Patterns (2024 Best Practices)
 
 **Lifecycle Callbacks Order**:
+
 1. `mount/3` - Initial setup (called twice: disconnected then connected)
 2. `handle_params/3` - URL/param changes (prefer over mount for assigns)
 3. `handle_event/3` - User interactions
@@ -1445,12 +1652,14 @@ save(validate(transform(data)))
 5. `render/1` - Generate HTML (or use template)
 
 **Socket & Assigns Rules**:
+
 - **Immutable assigns**: Each render gets fresh copy
 - **Assign in callbacks only**: Business logic returns values, callbacks assign
 - **Never pass socket to business logic**: Separation of concerns
 - **Use assign_async/3**: For non-blocking data loading
 
 **Anti-Patterns to Avoid**:
+
 ```elixir
 # ❌ BAD: Business logic taking socket
 def calculate_total(socket, items) do
@@ -1468,6 +1677,7 @@ socket = assign(socket, :total, calculate_total(items))
 ```
 
 **Stream vs Regular Assigns**:
+
 - **Regular assigns**: Entire collection in memory
 - **Streams**: Efficient for large collections, freed after render
 - **Temporary assigns**: Auto-reset after render
@@ -1477,6 +1687,7 @@ socket = assign(socket, :total, calculate_total(items))
 **CRITICAL UNDERSTANDING**: Working on examples (todo-app, etc.) is simultaneously **compiler development**. Examples are **living compiler tests** that reveal bugs and drive improvements.
 
 ### Development Rules
+
 - ✅ **Example fails to compile**: This is compiler feedback, not user error
 - ✅ **Generated .ex files invalid**: Fix the transpiler, don't patch files
 - ❌ **Never manually edit generated files**: They get overwritten on recompilation
@@ -1485,7 +1696,9 @@ socket = assign(socket, :total, calculate_total(items))
 - ❌ **No unnecessary abstraction layers**: Don't add indirection without value (e.g., routers that don't route)
 
 ### Architectural Component Naming Rule
+
 **CRITICAL**: Name components by what they actually DO, not what you wish they did:
+
 - A "Router" must make routing decisions between multiple destinations
 - A "Compiler" must compile/transform code
 - A "Manager" must manage state or lifecycle
@@ -1495,17 +1708,21 @@ socket = assign(socket, :total, calculate_total(items))
 ## 📍 Agent Navigation Guide
 
 ### When Writing or Fixing Tests
+
 → **[docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md)** - Critical testing rules and snapshot testing
 
-### When Implementing New Features  
+### When Implementing New Features
+
 → **[docs/07-patterns/](docs/07-patterns/)** - Code patterns and examples
 → **[docs/03-compiler-development/best-practices.md](docs/03-compiler-development/best-practices.md)** - Development practices
 
 ### When Working on Examples (todo-app, etc.)
+
 → **Remember**: Examples are **compiler testing grounds** - failures reveal compiler bugs
 → **[docs/01-getting-started/development-workflow.md](docs/01-getting-started/development-workflow.md)** - Complete workflow guide
 
 ### When Dealing with Framework Integration Issues
+
 → **[docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)** - Comprehensive troubleshooting
 → **Framework Integration**: Generated code MUST follow target framework conventions exactly
 
@@ -1514,6 +1731,7 @@ socket = assign(socket, :total, calculate_total(items))
 **Write EVERYTHING in Haxe unless technically impossible. Type safety everywhere, not just business logic.**
 
 ### Developer Choice and Flexibility
+
 - **Pure Haxe preferred**: Write implementations in Haxe for maximum control
 - **Typed externs welcome**: Leverage the rich Elixir ecosystem with full type safety
 - **Dual-API standard library**: Use cross-platform OR platform-specific methods as needed
@@ -1527,6 +1745,7 @@ socket = assign(socket, :total, calculate_total(items))
 **FUNDAMENTAL PRINCIPLE**: Create faithful 1:1 Elixir/Phoenix externs first, then build Haxe stdlib abstractions on top. This gives users maximum flexibility - they can choose the Elixir-idiomatic API or the cross-platform Haxe API based on their needs.
 
 ### Architecture Layers
+
 ```
 ┌─────────────────────────────────────┐
 │   Haxe Standard Library (Layer 3)   │  ← Cross-platform abstractions
@@ -1553,7 +1772,7 @@ socket = assign(socket, :total, calculate_total(items))
 import elixir.Enum;
 var doubled = Enum.map(numbers, x -> x * 2);
 
-// Using Layer 3 (Haxe Standard Library):  
+// Using Layer 3 (Haxe Standard Library):
 var doubled = numbers.map(x -> x * 2);
 
 // BOTH generate the SAME idiomatic Elixir:
@@ -1563,6 +1782,7 @@ doubled = Enum.map(numbers, fn x -> x * 2 end)
 ### Implementation Rules
 
 **Layer 2 (Elixir Externs) - `std/elixir/`**:
+
 - ✅ **1:1 mapping** to Elixir modules and functions
 - ✅ **@:native annotations** for exact Elixir names
 - ✅ **camelCase methods** with proper type signatures
@@ -1570,15 +1790,17 @@ doubled = Enum.map(numbers, fn x -> x * 2 end)
 - ❌ **NO helper methods** - keep externs faithful
 
 **Layer 3 (Haxe Stdlib) - `std/`**:
-- ✅ **Built on Layer 2** - use elixir.Enum, not __elixir__()
+
+- ✅ **Built on Layer 2** - use elixir.Enum, not **elixir**()
 - ✅ **Cross-platform contract** - same API across targets
 - ✅ **Immutability warnings** for mutable operations
-- ✅ **May use __elixir__()** for critical optimizations only
+- ✅ **May use **elixir**()** for critical optimizations only
 - ❌ **NO iterator objects** - transform to Enum operations
 
 ### Mutable Operations Must Warn
 
 When Haxe patterns assume mutability:
+
 ```haxe
 array.push(item);  // Mutable operation
 
@@ -1591,6 +1813,7 @@ array = array ++ [item]
 ```
 
 ### Benefits of This Architecture
+
 - **User Choice**: Developers can choose Elixir-idiomatic APIs OR Haxe cross-platform APIs
 - **Better Code Generation**: Direct extern usage generates more idiomatic Elixir
 - **Maintainability**: Clear separation between Elixir bindings and Haxe abstractions
@@ -1606,12 +1829,14 @@ array = array ++ [item]
 **FUNDAMENTAL RULE: If it exists in Elixir's standard library, use an extern, NOT a wrapper class.**
 
 **The Principle**:
+
 - **Elixir stdlib modules** → Create externs in `std/elixir/` (e.g., `elixir.List`, `elixir.Map`, `elixir.File`)
 - **NO wrapper classes** → Don't create `std/List.hx` when `elixir.List` extern suffices
 - **Arrays ARE lists** → `Array<T>` already compiles to Elixir lists, no need for List class
 - **Direct usage** → Users can import and use Elixir modules directly with type safety
 
 **Examples**:
+
 ```haxe
 // ✅ CORRECT: Use Array (compiles to Elixir list) + extern functions
 import elixir.List;
@@ -1626,11 +1851,13 @@ class List<T> {  // Don't do this if elixir.List extern exists!
 ```
 
 **When Wrappers ARE Needed**:
+
 1. **Cross-platform abstractions** - Code that must work on multiple targets (StringBuf, etc.)
 2. **Missing in Elixir** - Functionality that doesn't exist natively (specialized data structures)
 3. **Complex transformations** - When Haxe semantics differ significantly from Elixir
 
 **Benefits of Extern-First Approach**:
+
 - **Smaller codebase** - No redundant wrapper code
 - **Idiomatic output** - Direct module calls, not wrapper indirection
 - **Better performance** - No extra abstraction layers
@@ -1641,12 +1868,14 @@ class List<T> {  // Don't do this if elixir.List extern exists!
 **⚠️ CRITICAL PRINCIPLE: `__elixir__()` is for framework and standard library implementation ONLY.**
 
 **Client/Application Code Rules**:
+
 - ❌ **NEVER use `__elixir__()`** in application code - it's a sign of missing abstractions
 - ❌ **Exception: Emergency hotfixes only** - Must be justified, documented with TODO, and scheduled for proper fix
 - ✅ **Always use framework abstractions** - If you need `__elixir__()`, we need better framework APIs
 - ✅ **Report missing abstractions** - File an issue when framework APIs are insufficient
 
 **Framework/Stdlib Rules**:
+
 - ✅ **Use `__elixir__()` strategically** for efficient native implementations
 - ✅ **Wrap in type-safe APIs** - Never expose `__elixir__()` to users
 - ✅ **Provide complete abstractions** - Users should never need escape hatches
@@ -1668,13 +1897,15 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 // Variables are passed as parameters and substituted at placeholder positions
 ```
 
-**WHY THIS MATTERS**: 
+**WHY THIS MATTERS**:
+
 - `$variable` triggers Haxe's compile-time string interpolation
 - The result is no longer a constant string literal
 - Reflaxe's TargetCodeInjection requires the first parameter to be a constant
 - `{N}` placeholders preserve the constant string while allowing substitution
 
 **RULES FOR `__elixir__()` USAGE**:
+
 1. First parameter MUST be a constant string literal (no concatenation)
 2. Use `{0}`, `{1}`, `{2}`... for variable substitution
 3. Variables are passed as additional parameters
@@ -1690,6 +1921,7 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 ### Comprehensive Testing Strategy for Stdlib
 
 **FUNDAMENTAL PRINCIPLE**: Every standard library module MUST include:
+
 1. **Usage examples** showing Haxe API usage
 2. **Expected Elixir output** demonstrating idiomatic generation
 3. **Snapshot tests** validating compilation output
@@ -1699,33 +1931,33 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 
 Every stdlib module should follow this documentation pattern:
 
-```haxe
+````haxe
 /**
  * Module description and purpose
- * 
+ *
  * ## Usage Example (Haxe)
  * ```haxe
  * var example = new MyClass();
  * example.doSomething();
  * ```
- * 
+ *
  * ## Generated Idiomatic Elixir
  * ```elixir
  * # Shows exact Elixir code that will be generated
  * example = MyModule.new()
  * MyModule.do_something(example)
  * ```
- * 
+ *
  * ## Layered Architecture
  * - Layer 2 (Elixir Extern): Direct 1:1 mapping to Elixir APIs
  * - Layer 3 (Haxe Stdlib): Cross-platform abstractions using Layer 2
- * 
+ *
  * ## Performance Characteristics
  * - Time complexity for operations
  * - Memory usage patterns
  * - BEAM-specific optimizations
  */
-```
+````
 
 ### Test Infrastructure Organization
 
@@ -1733,7 +1965,7 @@ Every stdlib module should follow this documentation pattern:
 test/tests/
 ├── StdlibStringBuf/        # StringBuf tests
 │   └── Main.hx             # Test cases with expected output
-├── StdlibLambda/           # Lambda functional tests  
+├── StdlibLambda/           # Lambda functional tests
 │   └── Main.hx             # Validates Enum extern usage
 ├── StdlibEnum/             # Elixir Enum extern tests
 │   └── Main.hx             # 1:1 mapping validation
@@ -1744,6 +1976,7 @@ test/tests/
 ### Example: StringBuf Idiomatic Generation
 
 **Haxe Input:**
+
 ```haxe
 var buf = new StringBuf();
 buf.add("Hello");
@@ -1752,6 +1985,7 @@ var result = buf.toString();
 ```
 
 **Expected Elixir Output:**
+
 ```elixir
 iolist = []
 iolist = iolist ++ ["Hello"]
@@ -1762,37 +1996,40 @@ result = IO.iodata_to_binary(iolist)
 ### Example: Lambda with Enum Extern
 
 **Haxe Input:**
+
 ```haxe
 var doubled = Lambda.map([1, 2, 3], x -> x * 2);
 var sum = Lambda.fold(doubled, (x, acc) -> x + acc, 0);
 ```
 
 **Expected Elixir Output:**
+
 ```elixir
 doubled = Enum.map([1, 2, 3], fn x -> x * 2 end)
 sum = Enum.reduce(doubled, 0, fn x, acc -> x + acc end)
 ```
 
 1. **Type-Safe Interface**: Haxe provides the typed API surface
-2. **Native Implementation**: Use `__elixir__()` or `@:native` for efficient Elixir implementation  
+2. **Native Implementation**: Use `__elixir__()` or `@:native` for efficient Elixir implementation
 3. **Best of Both Worlds**: Cross-platform API with idiomatic target code
 
 #### Example: StringBuf Implementation (CORRECTED)
+
 ```haxe
 // Type-safe Haxe interface with CORRECT placeholder syntax
 class StringBuf {
     var iolist: Dynamic;
-    
+
     public function new() {
         // Use native Elixir IO lists for efficiency
         iolist = untyped __elixir__('[]');
     }
-    
+
     public function add(x: String): Void {
         // Native Elixir list concatenation with {N} placeholders
         iolist = untyped __elixir__('{0} ++ [{1}]', iolist, x);
     }
-    
+
     public function toString(): String {
         // Native Elixir binary conversion with {N} placeholder
         return untyped __elixir__('IO.iodata_to_binary({0})', iolist);
@@ -1812,6 +2049,7 @@ class StringBuf {
 **RULE**: When Haxe's built-in standard library classes generate problematic code for Elixir, provide our own implementation in `std/`.
 
 **Examples**:
+
 - **Array**: We provide `std/Array.hx` optimized for Elixir lists
 - **Bytes**: We provide `std/haxe/io/Bytes.hx` to avoid nested assignment patterns
 - **StringBuf**: Custom implementation using Elixir IO lists
@@ -1823,6 +2061,7 @@ class StringBuf {
 **See**: [`docs/05-architecture/`](docs/05-architecture/) - Complete implementation guidelines
 
 ## Quality Standards
+
 - Zero compilation warnings, Reflaxe snapshot testing approach
 - **Date Rule**: Always run `date` command before writing timestamps
 - **CRITICAL: Idiomatic Elixir Code Generation** - Generate high-quality, functional Elixir code
@@ -1838,6 +2077,7 @@ class StringBuf {
 **FUNDAMENTAL DIRECTIVE: When fixing compiler issues, start with the INTENDED idiomatic Elixir output first.**
 
 **The Right Workflow:**
+
 1. **Identify the issue** in generated code (e.g., `{:custom, _code} -> (g)` is wrong)
 2. **Write the idiomatic Elixir** you expect (`{:custom, code} -> code`)
 3. **Create a test** with both Haxe input and intended Elixir output
@@ -1845,6 +2085,7 @@ class StringBuf {
 5. **Validate** - Test passes when generated matches intended
 
 **Why This Matters:**
+
 - **Prevents regressions** - Clear expectations mean breaking changes get caught
 - **Speeds up development** - No guessing about correct output
 - **Ensures idiomatic code** - Forces thinking about Elixir best practices
@@ -1855,19 +2096,61 @@ class StringBuf {
 **FUNDAMENTAL RULE: NEVER create test files in the project root. ALL tests MUST go in the proper test directories.**
 
 **Where test files MUST go:**
+
 - ✅ **Snapshot tests**: `test/snapshot/{category}/{test_name}/` (e.g., `test/snapshot/regression/MapIteration/`)
 - ✅ **Categories**: core, phoenix, ecto, otp, stdlib, exunit, loops, regression
 - ❌ **NEVER in project root**: Do not create `TestSomething.hx` files in `/Users/fullofcaffeine/workspace/code/haxe.elixir/`
 - ❌ **NEVER in test/tests/**: This directory should not exist (use `test/snapshot/` instead)
 
 **If you need to debug compiler issues:**
+
 - Use existing tests in `test/snapshot/`
 - Or create a proper test in the correct category
 - Clean up any temporary files immediately after debugging
 
+## Documentation Directive: Explain for Non‑Experts
+
+- All newly added or significantly modified code must include clear, elaborative comments so a contributor unfamiliar with the compiler internals can understand intent and behavior quickly.
+- Required for each new/changed module/class/function that affects compilation behavior:
+  - hxdoc header with: WHY (problem), WHAT (solution/contract), HOW (high‑level approach and pipeline location), and WHEN (ordering/constraints in the AST pipeline).
+  - Examples of input Haxe and the expected generated Elixir shape (before/after if relevant). Keep examples short and representative.
+  - Explicit invariants/preconditions/postconditions and known limitations, plus expected failure modes.
+  - Cross‑references to relevant docs (e.g., docs/03-compiler-development/*, AST pipeline docs) and useful debug flags (e.g., `-D debug_ast_transformer`).
+  - If introducing compiler‑generated bridge variables or aliases, explain their purpose and scoping rules; ensure transparency comments in generated code where applicable.
+- Vendor modifications must also follow the Vendor Modification Policy: header block with WHY/WHAT/DATE and inline markers for the modified regions.
+- Prefer high‑level explanatory comments over line‑by‑line narration; avoid redundant commentary. Comments should enable safe refactors and reviews by non‑experts and LLMs alike.
+
+## Descriptive Naming & Self‑Documenting Code
+
+- Favor intention‑revealing, descriptive names across the codebase; code should be understandable without reading implementation details.
+- Variables, functions, and helpers must communicate purpose, not mechanics:
+  - Prefer `switchPatternBinder` over `tmp`, `res`, or `data`.
+  - Prefer domain terms (e.g., `alertLevel`, `bulkAction`) over ambiguous names.
+- Avoid cryptic abbreviations; if an abbreviation is widely accepted (e.g., `ctx` for context), document it at first use in the module.
+- Do not use one‑letter variable names in compiler code or generated user code paths. Exceptions:
+  - Conventional short indices in tiny scopes (e.g., `i` in a small comprehension) when clarity is not reduced.
+  - Compiler infrastructure variables that follow established patterns (e.g., `_g\d+`) are permitted only where mandated by infrastructure; prefer removing such temps in user code paths.
+- Name intermediate results by role, not operation: `guardVars`, `fieldBaseVars`, `bodyUsedLocals` instead of `arr1`, `list2`.
+- Keep scope tight, but choose explicit names where ambiguity could harm readability.
+- When adding passes/transforms, mirror target artifacts in names (e.g., `EnumPatternBinderAlignPass`) and include a short hxdoc explaining intent.
+
+## Pure Functions Over Mutation (Default Policy)
+
+- Prefer pure helpers that return new values instead of mutating inputs or external state.
+- Avoid in‑place mutation of accumulators (maps, arrays) in compiler/AST code unless strictly justified.
+- If mutation is necessary, you MUST document it at the declaration site with hxdoc including:
+  - WHY mutation is required (e.g., demonstrated performance hotspot, target API constraint).
+  - WHAT is being mutated (variable names/types) and the exact scope of side effects.
+  - INVARIANTS before/after and how correctness is preserved.
+  - ALTERNATIVES considered and why they were rejected.
+- Keep mutation localized and explicit — no hidden side effects via closures or IIFEs; do not rely on incidental outer scope capture.
+- Favor function signatures of the form `out = transform(in)`; only use `(inout)` patterns when the target API forces it and the documentation explicitly calls it out.
+- Generated user code MUST NOT introduce runtime mutation beyond what the Elixir/OTP APIs require; std stubs using ERaw must remain explicit and documented.
+
 ### After ANY Compiler Change
 
 #### Quick Iteration Testing (NEW - Recommended)
+
 ```bash
 # Test only affected areas during development
 npm run test:changed         # Run tests affected by git changes
@@ -1877,8 +2160,10 @@ npm run test:stdlib          # Test stdlib if working on standard library
 ```
 
 #### Full Validation (Before Commit)
+
 1. **Run Full Test Suite**: `npm test` - ALL tests must pass
 2. **Test Todo-App Integration**:
+
    ```bash
    cd examples/todo-app
    npx haxe build-server.hxml
@@ -1896,18 +2181,21 @@ npm run test:stdlib          # Test stdlib if working on standard library
 
 ### Naming Convention Standards
 
-#### Haxe Code (Input) - Always camelCase:
+#### Haxe Code (Input) - Always camelCase
+
 - **Variables**: `userId`, `currentUser`, `editingTodo`
 - **Functions**: `loadTodos()`, `updateTodoInList()`, `getUserFromSession()`
 - **Fields**: `showForm`, `searchQuery`, `selectedTags`
 - **Type fields**: In typedefs and classes, use camelCase for all fields
 
-#### Generated Elixir (Output) - Compiler converts to snake_case:
+#### Generated Elixir (Output) - Compiler converts to snake_case
+
 - `userId` → `user_id`
 - `loadTodos()` → `load_todos()`
 - `showForm` → `show_form`
 
-#### External Library APIs (Externs) - Use actual API names:
+#### External Library APIs (Externs) - Use actual API names
+
 - **Phoenix/Ecto APIs**: Keep original names like `put_flash`, `assign`, `validate_required`
 - **Why**: These are external Elixir libraries with fixed APIs, not code we generate
 - **Rationale**: Adding camelCase wrappers would complicate the compiler and confuse developers
@@ -1930,15 +2218,15 @@ typedef TodoLiveAssigns = {
 // Our function uses camelCase
 function updateUserStatus(userId: Int, newStatus: String) {
     var user = Repo.get(User, userId);
-    
+
     // Our Changeset abstract uses camelCase methods
     var changeset = new Changeset(user, {status: newStatus});
     changeset = changeset.validateRequired(["status"]);  // Our abstract: camelCase
-    
+
     // Phoenix extern API: snake_case
     socket = LiveView.put_flash(socket, "info", "Status updated");
     socket = LiveView.assign(socket, {currentUser: user});  // Our field: camelCase
-    
+
     return socket;
 }
 
@@ -1958,10 +2246,12 @@ typedef TodoLiveAssigns = {
 ### Special Cases
 
 1. **Template Variables**: In HXX templates, use camelCase:
+
    - `<%= @currentUser.name %>` NOT `<%= @current_user.name %>`
    - The compiler will handle conversion for Phoenix templates
 
 2. **Database Fields**: When interfacing with Ecto schemas, the compiler handles mapping:
+
    - Haxe: `user.firstName`
    - Database column: `first_name`
 
@@ -1979,6 +2269,7 @@ typedef TodoLiveAssigns = {
 **FUNDAMENTAL RULE: Haxe code uses camelCase, Generated Elixir uses snake_case. The compiler handles the conversion.**
 
 ### When to Use camelCase (In Haxe Source Files)
+
 - ✅ **ALL variable names**: `var updatedSocket`, NOT `var updated_socket`
 - ✅ **ALL function names**: `function loadAndAssignTodos()`, NOT `function load_and_assign_todos()`
 - ✅ **ALL method names**: `socket.merge()`, NOT `socket.merge_data()`
@@ -1987,11 +2278,13 @@ typedef TodoLiveAssigns = {
 - ✅ **Case pattern variables**: `case Ok(updatedTodo):`, NOT `case Ok(updated_todo):`
 
 ### When snake_case Appears (And How to Handle It)
+
 - **Phoenix event names in templates**: Keep as strings: `phx-click="delete_todo"` (these are Phoenix conventions)
 - **Database field names**: Use `@:native` annotation: `@:native("user_id") var userId: Int`
 - **Generated Elixir output**: The compiler automatically converts camelCase to snake_case
 
 ### Examples of CORRECT Naming
+
 ```haxe
 // ✅ CORRECT Haxe code
 class TodoLive {
@@ -2013,6 +2306,7 @@ end
 ```
 
 ### Examples of INCORRECT Naming
+
 ```haxe
 // ❌ WRONG: Using snake_case in Haxe
 var updated_socket = socket.merge(assigns);  // WRONG!
@@ -2022,6 +2316,7 @@ case Ok(updated_todo):                      // WRONG!
 ```
 
 ### Key Principle
+
 **Write Haxe idiomatically (camelCase) and let the compiler handle the Elixir conversion (snake_case).**
 
 ## ⚠️ CRITICAL: Extern Classes and snake_case Field Names
@@ -2029,22 +2324,25 @@ case Ok(updated_todo):                      // WRONG!
 **FUNDAMENTAL RULE: Extern classes mapping to Elixir modules should use camelCase in Haxe with @:native annotations for snake_case Elixir names.**
 
 ### The Problem with snake_case in Externs
+
 The Haxe eval target (used during macro expansion) has issues resolving snake_case field names on extern classes. This causes compilation errors like:
+
 ```
 Field index for clear_flash not found on prototype Phoenix.LiveView
 ```
 
 ### The Solution: camelCase + @:native
+
 ```haxe
 // ✅ CORRECT: camelCase in Haxe, snake_case in Elixir via @:native
 @:native("Phoenix.LiveView")
 extern class LiveView {
     @:native("clear_flash")
     static function clearFlash<T>(socket: Socket<T>): Socket<T>;
-    
+
     @:native("put_flash")
     static function putFlash<T>(socket: Socket<T>, type: FlashType, message: String): Socket<T>;
-    
+
     @:native("assign_new")
     static function assignNew<T>(socket: Socket<T>, key: String, value: Dynamic): Socket<T>;
 }
@@ -2057,10 +2355,11 @@ extern class LiveView {
 ```
 
 ### Complete Extern Pattern
+
 ```haxe
 /**
  * Type-safe Phoenix LiveView extern
- * 
+ *
  * Uses camelCase method names for Haxe compatibility
  * Maps to snake_case via @:native for Elixir
  */
@@ -2069,29 +2368,30 @@ extern class LiveView {
     // Core socket operations
     @:native("assign")
     static function assign<T>(socket: Socket<T>, key: String, value: Dynamic): Socket<T>;
-    
+
     @:native("assign_new")
     static function assignNew<T>(socket: Socket<T>, key: String, fn: () -> Dynamic): Socket<T>;
-    
+
     @:native("clear_flash")
     static function clearFlash<T>(socket: Socket<T>): Socket<T>;
-    
+
     @:native("put_flash")
     static function putFlash<T>(socket: Socket<T>, type: FlashType, message: String): Socket<T>;
-    
+
     // Event handling
     @:native("push_event")
     static function pushEvent<T>(socket: Socket<T>, event: String, payload: Dynamic): Socket<T>;
-    
+
     @:native("push_patch")
     static function pushPatch<T>(socket: Socket<T>, to: String, ?opts: Dynamic): Socket<T>;
-    
+
     @:native("push_redirect")
     static function pushRedirect<T>(socket: Socket<T>, to: String, ?opts: Dynamic): Socket<T>;
 }
 ```
 
 ### Usage in Application Code
+
 ```haxe
 // Application code uses camelCase naturally
 var socket = LiveView.clearFlash(socket);  // ✅ camelCase in Haxe
@@ -2103,6 +2403,7 @@ Phoenix.LiveView.put_flash(socket, :info, "Success!")  // Generated snake_case
 ```
 
 ### Benefits of This Pattern
+
 - **Haxe Compatibility**: Works with Haxe's eval target during macro expansion
 - **Natural Haxe Code**: Developers write idiomatic camelCase
 - **Correct Elixir Output**: Generated code uses proper snake_case
@@ -2112,15 +2413,18 @@ Phoenix.LiveView.put_flash(socket, :info, "Success!")  // Generated snake_case
 ## Development Principles
 
 ### ⚠️ CRITICAL: Apply DRY Principles to Avoid Whack-a-Mole Fixes
+
 **FUNDAMENTAL RULE: When fixing pattern detection or similar logic, create reusable helper functions instead of repeating the same fix in multiple places.**
 
 **Why DRY Matters in Compiler Development:**
+
 - **Consistency**: One helper function ensures all places behave identically
 - **Maintainability**: Fix once, works everywhere - no whack-a-mole debugging
 - **Correctness**: No risk of missing a spot or having inconsistent implementations
 - **Evolution**: When requirements change (like ENil → EAtom("nil")), update one place
 
 **Examples of Good DRY Patterns:**
+
 ```haxe
 // ✅ GOOD: Helper function for common pattern
 inline function isNilValue(ast: ElixirAST): Bool {
@@ -2142,6 +2446,7 @@ switch(value.def) {
 ```
 
 **When to Create Helper Functions:**
+
 - Pattern detection used in 2+ places
 - Complex conditions that could change
 - AST node type checking
@@ -2149,23 +2454,27 @@ switch(value.def) {
 - Any logic that represents a concept (like "is this nil?")
 
 ### ⚠️ CRITICAL: Consult Codex Before New Features
+
 **FUNDAMENTAL RULE: Before implementing any new feature, consult with Codex and reflect on its architectural guidance.**
 
 **Why Codex Consultation Matters:**
+
 - **Architecture expertise**: Codex has deep knowledge about software architecture patterns
 - **Avoid pitfalls**: Learn from established patterns and avoid common mistakes
 - **Better design**: Get architectural guidance before writing code
 - **Reflective development**: Think through the approach with expert guidance
 
 **How to Consult Codex:**
+
 1. **Describe the feature** you're about to implement
 2. **Ask for architectural guidance** about the best approach
 3. **Reflect on the answer** and consider alternatives
 4. **Implement with confidence** using the architectural insights
 
 **Example Consultation:**
+
 ```
-"I'm about to implement Schema emission enhancements for Ecto. 
+"I'm about to implement Schema emission enhancements for Ecto.
 What architectural patterns should I consider for:
 - Preserving changeset functions through compilation
 - Handling field type mappings
@@ -2173,6 +2482,7 @@ What architectural patterns should I consider for:
 ```
 
 ### ⚠️ CRITICAL: Abstract Away Dynamic at System Boundaries
+
 **FUNDAMENTAL RULE: When interfacing with dynamic Elixir systems, ALWAYS provide a fully typed Haxe API. Users should NEVER interact with Dynamic directly.**
 
 **The Problem**: Some Elixir systems (like Ecto changesets) use heterogeneous data structures that would require Dynamic in Haxe.
@@ -2180,15 +2490,17 @@ What architectural patterns should I consider for:
 **The Solution**: Use one of these patterns to provide type safety:
 
 1. **Macro-Generated Casting** (BEST):
+
    ```haxe
    // User writes:
    typedef TodoParams = { ?title: String, ?completed: Bool }
    var changeset = Todo.changeset(todo, params);  // Fully typed!
-   
+
    // Macro generates the casting code at compile time
    ```
 
 2. **Builder Pattern with Hidden Dynamic**:
+
    ```haxe
    // Internal: May use Map<String, Dynamic>
    // External: Fully typed fluent API
@@ -2198,6 +2510,7 @@ What architectural patterns should I consider for:
    ```
 
 3. **Abstract Types Over Dynamic**:
+
    ```haxe
    // Wrap Dynamic in an abstract with typed methods
    abstract ChangesetData(Dynamic) {
@@ -2207,12 +2520,14 @@ What architectural patterns should I consider for:
    ```
 
 **Why This Matters**:
+
 - Type safety is the entire point of using Haxe
 - Dynamic defeats IntelliSense and compile-time checking
 - Users shouldn't need to know about Elixir's internal representations
 - The compiler/stdlib should handle the complexity, not the user
 
 **Examples in Practice**:
+
 - ✅ **Ecto.Changeset**: Typed params in, typed changeset out
 - ✅ **Delete operations**: Use `Changeset<T, {}>` for no-params cases, not Dynamic
 - ✅ **Phoenix.Socket.assigns**: Typed assigns structure, not Dynamic
@@ -2221,32 +2536,38 @@ What architectural patterns should I consider for:
 - ❌ **NEVER**: Use Dynamic when a proper type exists (even `{}` for empty)
 
 ### ⚠️ CRITICAL: Detect Patterns by Structure, Not by Name
+
 **FUNDAMENTAL RULE: Never detect patterns by checking for specific hardcoded names. Detect by structural patterns or usage context.**
 
 **What counts as name-based detection (WRONG):**
+
 - ❌ **Hardcoded component lists** like `["PubSub", "Endpoint", "Telemetry", "Repo"]`
 - ❌ **String matching** like `if (name == "SupervisorStrategy")`
 - ❌ **Suffix checking** like `name.endsWith("Server")`
 - ❌ **Type name lists** that need updating when new types are added
 
 **The correct approach:**
+
 - ✅ **Structural detection**: Check the AST structure (e.g., "tuple with atom and config")
 - ✅ **Usage context**: Where/how the value is used determines its treatment
-- ✅ **Metadata/annotations**: Use explicit markers like `@:childSpec` 
+- ✅ **Metadata/annotations**: Use explicit markers like `@:childSpec`
 - ✅ **Type system**: Let the type itself define how it compiles
 
 **Why this matters**: Hardcoded name lists create maintenance burden and break when users define their own types with similar patterns.
 
 ### ⚠️ CRITICAL: Apply Systematic Naming Conventions, Not Ad-Hoc Fixes
+
 **FUNDAMENTAL RULE: When converting between Haxe and Elixir naming conventions, apply consistent transformations systematically.**
 
 **General Principles:**
+
 - **Haxe identifiers → Elixir atoms**: Always apply snake_case transformation
 - **CamelCase → snake_case**: Apply consistently for all atom generation
 - **No special cases**: Don't check for specific enum names or types
 - **Idiomatic output**: Generated Elixir should follow Elixir conventions naturally
 
 **Example of the right approach:**
+
 ```haxe
 // ✅ CORRECT: General transformation rule
 static function toElixirAtomName(name: String): String {
@@ -2263,20 +2584,24 @@ if (enumTypeName == "SupervisorStrategy") {
 **Why this matters**: Consistent naming transformations ensure all generated code looks idiomatic, not just specific cases we've thought of.
 
 ### ⚠️ CRITICAL: Trust Your Own Compiler's Decisions
+
 **FUNDAMENTAL RULE: When one compiler phase makes a decision, other phases must trust it completely.**
 
 When FunctionCompiler determines a parameter name mapping, VariableCompiler must use it exactly as-is:
+
 - **No filtering** based on underscore presence
 - **No second-guessing** whether a name "looks right"
 - **No validation** of the mapping - trust it completely
 - **Clear authority boundaries** - each phase owns its decisions
 
-**Example**: If FunctionCompiler maps "index" → "_index" (unused parameter), VariableCompiler must use "_index". If it maps "appName" → "app_name" (used parameter), use "app_name".
+**Example**: If FunctionCompiler maps "index" → "\_index" (unused parameter), VariableCompiler must use "\_index". If it maps "appName" → "app_name" (used parameter), use "app_name".
 
 ### ⚠️ CRITICAL: Test-Driven Development Workflow
+
 **FUNDAMENTAL RULE: Create focused regression tests FIRST, fix the compiler to pass them, THEN validate with todo-app.**
 
 Testing workflow for compiler bug fixes:
+
 1. **Create minimal regression test** that reproduces the exact bug
 2. **Write the intended idiomatic output** - What SHOULD be generated
 3. **Fix the compiler** until test passes with correct output
@@ -2285,6 +2610,7 @@ Testing workflow for compiler bug fixes:
 6. **Update any broken tests** if they had wrong intended outputs
 
 **Why this workflow works**:
+
 - **Focused debugging** - Small test = faster iteration
 - **Clear success criteria** - Test passes when bug is fixed
 - **Prevents regressions** - Bug stays fixed forever
@@ -2292,23 +2618,28 @@ Testing workflow for compiler bug fixes:
 - **Todo-app validation** - Ensures fix works in real applications
 
 **For new features** (vs bug fixes):
+
 1. Start with todo-app to explore the feature
 2. Once working, extract minimal tests
 3. This ensures practical, real-world driven development
 
 ### ⚠️ CRITICAL: Validate Test Intended Outputs
+
 **FUNDAMENTAL RULE: Before accepting test failures, verify the intended output itself is correct.**
 
 When tests fail after compiler fixes:
+
 1. **Check consistency** - If a variable is declared as `i`, it should be referenced as `i`, not `_i`
 2. **Update intended outputs** when they contain bugs from previous compiler behavior
 3. **Intended outputs are not sacred** - they can be wrong and perpetuate bugs
 4. **This ensures tests validate correct behavior**, not historical bugs
 
 ### ⚠️ CRITICAL: Create Focused Regression Tests for Every Bug Fix
+
 **FUNDAMENTAL RULE: Every bug fix MUST have a dedicated regression test to prevent reoccurrence.**
 
 When fixing a bug:
+
 1. **Create a focused test** in `test/tests/` that reproduces the exact bug scenario
 2. **Name it descriptively** (e.g., `underscore_prefix_consistency`, `orphaned_enum_parameters`)
 3. **Document the bug** in the test file's header comment with:
@@ -2322,20 +2653,25 @@ When fixing a bug:
 **Example**: The `underscore_prefix_consistency` test ensures variables with underscore prefixes maintain consistency throughout generated code - preventing the duplicate instance bug where VariableCompiler's state wasn't shared.
 
 **Benefits**:
+
 - **Prevents regressions** - Bugs stay fixed forever
 - **Documents issues** - Future developers understand what went wrong
 - **Fast validation** - Run specific test to verify fix still works
 - **Confidence in refactoring** - Know immediately if changes break fixes
 
 ### ⚠️ CRITICAL: Always Check Recent Work Before Starting
+
 **FUNDAMENTAL RULE: Check git history and recent commits to understand what's been done and avoid repeating work.**
-- Run `git log --oneline -20` to see recent commits  
+
+- Run `git log --oneline -20` to see recent commits
 - Review related files for recent changes
 - Never start debugging without understanding what's already been tried
 - Avoid repeating fixes that were already attempted
 
 ### ⚠️ CRITICAL: Never Confirm Something Works Without Actual Tests
+
 **FUNDAMENTAL RULE: Don't confirm something is working before being 100% sure by verifying with actual tests.**
+
 - Always run `npm test` after changes
 - Test todo-app compilation: `cd examples/todo-app && npx haxe build-server.hxml && mix compile`
 - Verify the application runs: `mix phx.server`
@@ -2343,7 +2679,9 @@ When fixing a bug:
 - Never say "it's fixed" without running the complete test suite
 
 ### ⚠️ CRITICAL: Avoid Regressions and Circular Work
+
 **FUNDAMENTAL RULE: Avoid regressions and walking in circles by checking previous work.**
+
 - Check git history before attempting a fix: `git log --oneline -30 --grep="issue_keywords"`
 - Review git blame for recently changed code: `git blame path/to/file`
 - Look for TODO/FIXME comments in related files
@@ -2351,7 +2689,9 @@ When fixing a bug:
 - Document WHY previous approaches failed to prevent repeating mistakes
 
 ### ⚠️ CRITICAL: No Ad-Hoc Fixes - Solve Root Architectural Problems
+
 **FUNDAMENTAL RULE: Never apply band-aid fixes - always solve the root architectural problem.**
+
 - **NO string replacements** like `if (x == "wrong") x = "right"` - find WHY it's wrong
 - **NO special case handling** without understanding the general pattern
 - **NO symptom patching** - trace back to where the problem originates
@@ -2366,9 +2706,11 @@ When fixing a bug:
 - **ZERO TOLERANCE FOR QUICK FIXES**: The user has explicitly stated they don't want quick fixes in this compiler. Always implement the proper architectural solution, even if it takes more time.
 
 ### ⚠️ CRITICAL: Consult Codex for Architecture & Complex Issues
+
 **FUNDAMENTAL RULE: When facing architectural decisions or complex problems, consult with Codex AI for expert guidance.**
 
 **When to consult Codex**:
+
 - **Architecture decisions** - Before implementing new patterns or major refactorings
 - **Complex debugging** - When stuck on intricate issues for >30 minutes
 - **Performance optimization** - Get guidance on efficient approaches
@@ -2376,6 +2718,7 @@ When fixing a bug:
 - **Cross-cutting concerns** - Issues affecting multiple subsystems
 
 **How to consult effectively**:
+
 1. **Describe the problem clearly** - Include context and constraints
 2. **Ask specific questions** - "What's the best pattern for X given Y constraints?"
 3. **Request architectural review** - "Is this approach architecturally sound?"
@@ -2383,6 +2726,7 @@ When fixing a bug:
 5. **Document the response** - Save timestamped reviews for future reference
 
 **Example consultation**:
+
 ```
 "I need to implement feature flag routing for AST builders.
 Current architecture: monolithic 10k line builder.
@@ -2392,15 +2736,18 @@ What architectural patterns should I consider?"
 ```
 
 **Benefits**:
+
 - **Avoid architectural debt** - Get it right the first time
 - **Learn from patterns** - Understand why, not just how
 - **Prevent dead ends** - Identify issues before implementation
 - **Accelerate development** - Skip trial-and-error cycles
 
 ### ⚠️ CRITICAL: Re-Planning Process When Tasks Reveal New Insights
+
 **FUNDAMENTAL RULE: When task execution reveals the plan was wrong, go through the complete re-planning process.**
 
 **The Re-Planning Process (with Shrimp Task Management)**:
+
 1. **Fetch the whole plan** - Use `list_tasks` to see all current tasks
 2. **Explain the issue to Codex** - Describe what was discovered and why the plan needs revision
 3. **Use process_thought** - Think through the new insights and their implications
@@ -2409,12 +2756,14 @@ What architectural patterns should I consider?"
 6. **Start executing again** - Begin from the new first task
 
 **When to trigger re-planning**:
+
 - Task verification fails with score < 80 due to architectural issues
 - Discovery that multiple systems need coordination (not just one fix)
 - Finding existing infrastructure that should be leveraged
 - Realizing the approach creates more problems than it solves
 
 **Example re-planning scenario**:
+
 ```
 Initial plan: Fix pattern variable extraction in one place
 Discovery: Pattern uses "value" but body references "v"
@@ -2423,20 +2772,25 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 ```
 
 **Benefits of re-planning**:
+
 - Avoids circular fixes and whack-a-mole debugging
 - Ensures architectural coherence
 - Prevents accumulating technical debt
 - Leads to proper solutions instead of band-aids
 
 ### ⚠️ CRITICAL: Debug-First Development - No Assumptions
+
 **FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**
+
 - Add comprehensive debug traces to understand actual behavior
 - Use XRay debug patterns to visualize AST transformations
 - Never guess what the compiler is doing - instrument and observe
 - When debugging issues, add traces FIRST, then analyze
 
 ### ⚠️ CRITICAL: No Hardcoded Class/Method Knowledge in Compiler
+
 **FUNDAMENTAL RULE: The compiler should NOT have hardcoded knowledge about specific classes or methods.**
+
 - **NO hardcoded class names** like checking for "Map", "List", "String" to determine behavior
 - **NO method-specific logic** like special handling for "put", "delete", "merge"
 - **Use metadata/annotations instead** - Let the library define its behavior via @:immutable, @:reassignsVar, etc.
@@ -2447,6 +2801,7 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - **Benefits**: Extensible system where user types can opt into compiler behaviors
 
 ### ⚠️ CRITICAL: No Untyped Usage in Compiler Code
+
 **FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` in compiler code unless there's a very good justified reason.**
 
 - All field access must be properly typed
@@ -2456,16 +2811,21 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - **See**: [`docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md`](docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md) - Complete type safety standards
 
 ### ⚠️ CRITICAL: No Direct Elixir Files - Everything Through Haxe
+
 **FUNDAMENTAL RULE: NEVER write .ex files directly. Everything must be generated from Haxe.**
 
 ### ⚠️ CRITICAL: Check Haxe Standard Library First
+
 **FUNDAMENTAL RULE: Always check if Haxe stdlib already offers something before implementing it ourselves.**
 
 ### ⚠️ CRITICAL: Type Safety and String Avoidance
+
 **FUNDAMENTAL RULE: Avoid strings in compiler code unless absolutely necessary.**
 
 ### ⚠️ CRITICAL: No Dead Code - Remove Unused Functions
+
 **FUNDAMENTAL RULE: NEVER keep dead code "just in case" - only keep code that's actually used.**
+
 - **NO keeping unused methods** for "compatibility" or "future use"
 - **NO commented-out code blocks** - use git history if you need to recover old code
 - **NO delegation methods** that just return null or empty values
@@ -2475,7 +2835,9 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - **Example of right approach**: Delete the method entirely when WhileLoopCompiler is removed
 
 ### ⚠️ CRITICAL: Clean Up Failed Attempts Immediately
+
 **FUNDAMENTAL RULE: When debugging attempts fail, clean up the code immediately before trying a different approach.**
+
 - **NO accumulating debug code** that didn't solve the problem
 - **NO leaving metadata fields** that aren't actually used
 - **NO keeping helper functions** created for failed approaches
@@ -2485,7 +2847,9 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - **Example of right approach**: Remove failed code immediately, understand the real problem, then implement a focused fix
 
 ### ⚠️ CRITICAL: No Untyped Usage
+
 **FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` unless there's a very good justified reason.**
+
 - All field access must be properly typed
 - If fields are public, access them directly instead of using `untyped`
 - Document any exceptional cases where `untyped` is absolutely necessary
@@ -2498,11 +2862,13 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 **FUNDAMENTAL RULE: NO SOURCE FILE MAY EXCEED 2000 LINES. IDEAL: 200-500 LINES.**
 
 #### The Single Responsibility Principle (ENFORCED)
+
 - **One file = One responsibility** - If you can't describe a file's purpose in one sentence, split it
 - **Extract early, extract often** - Don't wait until a file is 10k+ lines to refactor
 - **Helper pattern** - Use `helpers/` directory for specialized compilers (PatternMatchingCompiler, SchemaCompiler, etc.)
 
 #### File Size Limits (MANDATORY)
+
 ```
 ✅ IDEAL:       200-500 lines   (focused, maintainable)
 ⚠️  ACCEPTABLE:  500-1000 lines  (consider splitting)
@@ -2511,13 +2877,16 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 ```
 
 #### Extraction Guidelines
+
 When a file approaches 1000 lines, IMMEDIATELY:
+
 1. **Identify logical sections** - Look for groups of related functions
 2. **Extract helper modules** - Create specialized compilers in `helpers/`
 3. **Use delegation pattern** - Main compiler delegates to helpers
 4. **Document with WHY/WHAT/HOW** - Every extracted module needs comprehensive docs
 
 #### Example Structure (AFTER AST MIGRATION)
+
 ```
 src/reflaxe/elixir/
 ├── ast/
@@ -2528,6 +2897,7 @@ src/reflaxe/elixir/
 ```
 
 #### Red Flags That Demand Immediate Refactoring
+
 - 🚨 **191 switch statements in one file** - Extract pattern matching
 - 🚨 **100+ repeated code patterns** - Create utility functions
 - 🚨 **Multiple responsibilities** - Split into focused modules
@@ -2535,6 +2905,7 @@ src/reflaxe/elixir/
 - 🚨 **Long functions (>100 lines)** - Break into smaller functions
 
 ### Testing During Refactoring (MANDATORY)
+
 ```bash
 # After EVERY extraction:
 npm test                    # Must pass ALL tests
@@ -2545,16 +2916,18 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 
 **NEVER** complete a refactoring session without full test validation.
 
-## Known Issues  
+## Known Issues
+
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
 - **Postgrex.TypeManager Race Condition**: When using `mix phx.server`, may encounter "unknown registry: Postgrex.TypeManager" errors due to a race condition in Phoenix server startup. Workaround: Use `iex -S mix` to start in interactive mode, or ensure database is configured correctly. The application works correctly in interactive mode and with `mix run`.
 
 ## Recently Resolved Issues ✅
-- **Empty If-Expression and Switch Side-Effects (October 2025)**: PARTIAL FIX - Bug #1 (empty if-expression invalid syntax) FIXED by correcting `isSimpleExpression()` logic in ElixirASTPrinter.hx. Empty blocks now properly generate block syntax with explicit `nil`. Bug #2 (switch cases disappearing inside loops) ROOT CAUSE IDENTIFIED as pipeline coordination issue between LoopBuilder and SwitchBuilder - not yet fixed but comprehensive investigation complete. Created regression tests for both patterns. (see [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) and [`src/reflaxe/elixir/ast/CLAUDE.md`](src/reflaxe/elixir/ast/CLAUDE.md))
-- **Dead Code Elimination for Abstract Operators (September 2025)**: SOLUTION - Fixed unused function warnings in Date_Impl_ and other abstract types by enabling DCE (`-dce full`). Abstract types with `@:op` metadata generate ALL operator helper functions, but DCE removes unused ones before transpilation. Reduces Date_Impl_ from 140 lines to 2 lines when operators aren't used. This is the standard solution - no compiler changes needed. (see [`docs/03-compiler-development/DCE_AND_ABSTRACT_OPERATORS.md`](docs/03-compiler-development/DCE_AND_ABSTRACT_OPERATORS.md))
+
+- **Empty If-Expression and Switch Side-Effects (October 2025)**: PARTIAL FIX - Bug #1 (empty if-expression invalid syntax) FIXED by correcting `isSimpleExpression()` logic in ElixirASTPrinter.hx. Empty blocks now properly generate block syntax with explicit `nil`. Bug #2 (switch cases disappearing inside loops) ROOT CAUSE IDENTIFIED as pipeline coordination issue between LoopBuilder and SwitchBuilder - not yet fixed but comprehensive investigation complete. Created regression tests for both patterns. (see [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) and [`src/reflaxe/elixir/ast/AGENTS.md`](src/reflaxe/elixir/ast/AGENTS.md))
+- **Dead Code Elimination for Abstract Operators (September 2025)**: SOLUTION - Fixed unused function warnings in Date*Impl* and other abstract types by enabling DCE (`-dce full`). Abstract types with `@:op` metadata generate ALL operator helper functions, but DCE removes unused ones before transpilation. Reduces Date*Impl* from 140 lines to 2 lines when operators aren't used. This is the standard solution - no compiler changes needed. (see [`docs/03-compiler-development/DCE_AND_ABSTRACT_OPERATORS.md`](docs/03-compiler-development/DCE_AND_ABSTRACT_OPERATORS.md))
 - **Unused Parameter Detection (September 2025)**: IMPLEMENTATION - Added UsageDetector helper class to analyze parameter usage in function bodies. Function parameters now correctly receive underscore prefixes when unused, eliminating Elixir compiler warnings. Uses tempVarRenameMap for consistent naming between signatures and bodies.
-- **Phoenix.Presence Circular Fix Pattern (January 2025)**: MAJOR FIX - Resolved recurring Phoenix.Tracker.track/5 FunctionClauseError that kept resurfacing in git history. Root cause: Phoenix.Tracker expects PID as first argument, not socket. Solution: Enhanced PresenceMacro to generate proper self() injection in all presence methods (trackSimple, updateSimple, untrackSimple, listSimple). Added @:presenceTopic annotation support for type-safe topic configuration. Eliminated all __elixir__ usage from TodoPresence by providing comprehensive macro-generated methods. Git history showed this issue was "fixed" multiple times but kept breaking - now properly resolved at macro level with test coverage.
-- **Idiomatic Enum Pattern Matching (September 2025)**: MAJOR IMPROVEMENT - Compiler now generates idiomatic Elixir pattern matching with atoms `{:created, content}` instead of integer index checking `elem(msg, 0)`. This makes generated code much more readable and Elixir-like. Fixed TEnumParameter extraction for ignored parameters to prevent runtime errors. (see [`src/reflaxe/elixir/ast/CLAUDE.md`](src/reflaxe/elixir/ast/CLAUDE.md#tenum-parameter-extraction-bug-fix-september-2025))
+- **Phoenix.Presence Circular Fix Pattern (January 2025)**: MAJOR FIX - Resolved recurring Phoenix.Tracker.track/5 FunctionClauseError that kept resurfacing in git history. Root cause: Phoenix.Tracker expects PID as first argument, not socket. Solution: Enhanced PresenceMacro to generate proper self() injection in all presence methods (trackSimple, updateSimple, untrackSimple, listSimple). Added @:presenceTopic annotation support for type-safe topic configuration. Eliminated all **elixir** usage from TodoPresence by providing comprehensive macro-generated methods. Git history showed this issue was "fixed" multiple times but kept breaking - now properly resolved at macro level with test coverage.
+- **Idiomatic Enum Pattern Matching (September 2025)**: MAJOR IMPROVEMENT - Compiler now generates idiomatic Elixir pattern matching with atoms `{:created, content}` instead of integer index checking `elem(msg, 0)`. This makes generated code much more readable and Elixir-like. Fixed TEnumParameter extraction for ignored parameters to prevent runtime errors. (see [`src/reflaxe/elixir/ast/AGENTS.md`](src/reflaxe/elixir/ast/AGENTS.md#tenum-parameter-extraction-bug-fix-september-2025))
 - **Major Loop Compilation Refactoring (August 2025)**: Reduced loop compilation from 10,668 lines across 10+ files to a single 334-line UnifiedLoopCompiler using TDD approach. Eliminated complex Y-combinator patterns in favor of simple recursive functions. Fixed g_array variable mismatch bugs. (see commit c85745e)
 - **Array Desugaring & Y Combinator Patterns**: Discovered how Haxe desugars array.filter/map into TBlock/TWhile patterns and implemented detection framework (see [`docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md`](docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md))
 - **Untyped Usage Violations**: Eliminated all unnecessary `untyped` usage in compiler code (VariableCompiler, OperatorCompiler, ControlFlowCompiler) for better type safety and IDE support
@@ -2565,7 +2938,9 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Function Parameter Underscore Prefixing (August 2025)**: Fixed incorrect underscore prefixing of used function parameters in TypeSafeChildSpecBuilder and similar contexts. Implemented targeted priority check in VariableCompiler to ensure used parameters retain their correct names (see [`docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md`](docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md))
 
 ## Commit Standards
+
 **Follow [Conventional Commits](https://www.conventionalcommits.org/)**: `<type>(<scope>): <subject>`
+
 - **NO AI attribution**: Never add "Generated with Claude Code" or "Co-Authored-By: Claude"
 
 ## Development Loop ⚡ **CRITICAL WORKFLOW**
@@ -2583,11 +2958,13 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 **Rule**: If ANY step in this loop fails, the development change is incomplete.
 
 ## Implementation Status
+
 **See**: [`docs/08-roadmap/`](docs/08-roadmap/) - Complete feature status and production readiness
 
 **v1.0 Status**: ALL COMPLETE ✅ - Core features, Phoenix Router DSL, LiveView, Ecto, OTP patterns, Mix integration, Testing
 
 ## Test Status Summary
+
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
 
 ## QA Sentinel Verification (Mandatory Before Confirming Completion)
@@ -2595,9 +2972,11 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 Use the QA Sentinel protocol to verify any claimed task completion (compiler fixes/features, changes impacting codegen). Reference: `.claude/agents/qa-sentinel.md`.
 
 - Scope
+
   - Apply when an agent states a task is “done”. Treat every claim as unverified until proven.
 
 - Protocol
+
   - Understand task: confirm success criteria/edge cases from the original brief.
   - Run tests: `npm test` plus relevant categories; ensure new/updated tests exist and pass.
   - Generated code quality: inspect `.ex` output for idioms; ensure no warnings; no band-aids.
@@ -2606,34 +2985,38 @@ Use the QA Sentinel protocol to verify any claimed task completion (compiler fix
 
 - Reporting
   - If complete: confirm specifics that work; note minor improvements; suggest prevention.
-  - If incomplete: provide failure analysis, remediation plan, CLAUDE.md directives to add, and process improvements.
+  - If incomplete: provide failure analysis, remediation plan, AGENTS.md directives to add, and process improvements.
 
 Zero tolerance for “good enough”: accept only empirically verified, architecturally correct outcomes.
 
 ## Development Resources & Reference Strategy
+
 - **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - **CRITICAL**: Contains working Reflaxe compiler patterns, Haxe API usage examples, and Phoenix integration patterns. ALWAYS check here first for:
   - Haxe macro API usage patterns
-  - Reflaxe compiler implementation examples  
+  - Reflaxe compiler implementation examples
   - Working AST processing patterns
   - Test infrastructure patterns
   - **Elixir Language Source**: `/elixir/` - Official Elixir language implementation
   - **Phoenix Framework Source**: `/phoenix/` and `/phoenix_live_view/` - Framework patterns
-- **Haxe API Documentation**: https://api.haxe.org/ - For type system and language features  
-- **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: Always consult for advanced features
+- **Haxe API Documentation**: <https://api.haxe.org/> - For type system and language features
+- **Haxe Manual**: <https://haxe.org/manual/> - **CRITICAL**: Always consult for advanced features
 - **Web Resources**: Use WebSearch and WebFetch for current documentation
 - **Principle**: Always reference existing working code rather than guessing
 
 ## Documentation References
+
 **Complete Documentation Index**: [`docs/README.md`](docs/README.md) - Comprehensive guide to all project documentation
 
 **Quick Access**:
+
 - **Installation**: [docs/01-getting-started/installation.md](docs/01-getting-started/installation.md)
 - **Development Workflow**: [docs/01-getting-started/development-workflow.md](docs/01-getting-started/development-workflow.md)
 - **Quick Patterns**: [docs/07-patterns/quick-start-patterns.md](docs/07-patterns/quick-start-patterns.md)
 - **Troubleshooting**: [docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)
-- **Compiler Development**: [docs/03-compiler-development/CLAUDE.md](docs/03-compiler-development/CLAUDE.md)
+- **Compiler Development**: [docs/03-compiler-development/AGENTS.md](docs/03-compiler-development/AGENTS.md)
 
 **⚡ Critical Standard Library Implementation Guides**:
+
 - **Stdlib Implementation Guide**: [`docs/03-compiler-development/STDLIB_IMPLEMENTATION_GUIDE.md`](docs/03-compiler-development/STDLIB_IMPLEMENTATION_GUIDE.md) - Definitive guide for implementing stdlib with idiomatic output
 - **Extern Deep Dive**: [`docs/03-compiler-development/EXTERN_DEEP_DIVE.md`](docs/03-compiler-development/EXTERN_DEEP_DIVE.md) - Complete understanding of externs vs code generation
 - **Native & Metadata Guide**: [`docs/03-compiler-development/NATIVE_AND_METADATA_COMPLETE_GUIDE.md`](docs/03-compiler-development/NATIVE_AND_METADATA_COMPLETE_GUIDE.md) - All metadata combinations and effects
@@ -2641,3 +3024,14 @@ Zero tolerance for “good enough”: accept only empirically verified, architec
 ---
 
 **Remember**: All detailed information is in the organized [docs/](docs/) structure. This file provides navigation and critical rules only.
+
+## Symbol IR Overlay & Hygiene (Road to 1.0)
+
+- Overlay: Collect Symbols/Scopes from ElixirAST behind `-D enable_symbol_ir`. Off → no behavior change.
+- Hygiene: Compute final names (snake_case, reserved-word escaping, underscore for unused; conflict-free per scope).
+- Late Apply: Rename ElixirAST identifiers after pattern/binder and guard transforms, before underscore cleanup.
+- Testing:
+  - Unit (fast): `scripts/test-runner.sh --unit` compiles tests in `test/unit` (used for Symbol IR/Hygiene).
+  - Snapshots (e2e): regular suites; reconcile idiomatic-only diffs.
+  - Todo-app: build with warnings-as-errors and run smoke checks.
+- Docs: See `docs/05-architecture/symbol_ir_spec.md` and updated testing guide for `--unit`.

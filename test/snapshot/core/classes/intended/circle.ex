@@ -1,8 +1,6 @@
 defmodule Circle do
-  @radius nil
-  @velocity nil
   def draw(struct) do
-    "" <> nil.draw() <> " with radius " <> Kernel.to_string(struct.radius)
+    "#{Shape.draw(struct)} with radius #{struct.radius}"
   end
   def update(struct, dt) do
     struct.move(struct.velocity.x * dt, struct.velocity.y * dt)

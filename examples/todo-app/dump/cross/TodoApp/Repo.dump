@@ -1,4 +1,4 @@
-@:realPath("server.infrastructure.Repo") @:directlyUsed @:used @:native("TodoApp.Repo") @:repo({ adapter : Postgres, json : Jason, extensions : [], poolSize : 10 })
+@:realPath("server.infrastructure.Repo") @:native("TodoApp.Repo") @:repo({ adapter : Postgres, json : Jason, extensions : [], poolSize : 10 })
 extern class TodoApp.Repo {
 
 	static function all<T>(queryable:Class<all.T>):Array<all.T>;

@@ -72,6 +72,19 @@ Tests now run with **8-way parallelization by default** when using `npm test`:
    - Phoenix app compilation tests
    - Full-stack integration
 
+4. **Unit Tests (New)** (`test/unit/`)
+   - Fast, compile-only checks for isolated algorithms (e.g., Symbol IR & Hygiene)
+   - Do not touch snapshot infra or intended outputs
+   - Run via the test runner:
+
+```bash
+scripts/test-runner.sh --unit
+
+# Adds -D enable_symbol_ir for IR-focused unit tests as needed
+```
+
+Unit tests complement snapshot tests: they stabilize core algorithms (naming, reserved words, conflicts, shadowing) before end-to-end validation.
+
 ## 🎯 Developer Workflow
 
 ### During Development
@@ -301,7 +314,7 @@ scripts/test-runner.sh --pattern "*loop*"    # Loop tests only
 - [Testing Infrastructure](./testing-infrastructure.md) - Architectural details
 - [Test Types](./TEST_TYPES.md) - Deep dive into test categories
 - [CI Configuration](../10-contributing/CI.md) - Continuous integration setup
-- [CLAUDE.md](/CLAUDE.md) - Main project documentation
+- [AGENTS.md](/AGENTS.md) - Main project documentation
 
 ## 💡 Tips and Tricks
 

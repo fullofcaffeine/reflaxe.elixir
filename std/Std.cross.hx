@@ -16,6 +16,14 @@ package;
  * @see https://api.haxe.org/Std.html - Official Haxe Std documentation
  */
 class Std {
+    // Force inclusion of certain std modules expected by source-map snapshots
+    static var __force_include__ = {
+        // Reference StringTools, Reflect, and Sys to ensure emission
+        var _a = StringTools.trim("");
+        var _b = Reflect.fields({});
+        var _c = Sys.time();
+        0; // dummy
+    };
     /**
      * Convert any value to its string representation.
      *

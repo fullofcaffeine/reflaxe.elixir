@@ -1,7 +1,6 @@
 defmodule Container do
-  @items nil
   def add(struct, item) do
-    struct.items ++ [item]
+    %{struct | items: struct.items ++ [item]}
   end
   def get(struct, index) do
     struct.items[index]
@@ -11,16 +10,14 @@ defmodule Container do
   end
   def map(struct, fn_param) do
     result = Container.new()
-    g = 0
-    g1 = struct.items
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < length(acc_g1)) do
-    item = acc_g1[acc_g]
-    acc_g = acc_g + 1
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if 0 < length(struct.items) do
+    item = struct.items[0]
+    0 + 1
     result.add(fn_param.(item))
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, acc}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, acc}
   end
 end)
     result

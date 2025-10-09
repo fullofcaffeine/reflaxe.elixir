@@ -52,7 +52,6 @@ package haxe.ds;
 // A proper transformer would detect Option<T> specifically and map to {:ok/:error} for
 // true Elixir idiomatic patterns. For now, developers should prefer Result<T,E> for 
 // Elixir applications to get proper {:ok/:error} patterns.
-@:elixirIdiomatic
 enum Option<T> {
     /**
      * Represents a value that is present.

@@ -1135,3 +1135,23 @@ Most issues fall into these categories:
 5. Check generated Elixir files exist
 
 Remember: The compiler is your friend! Read error messages carefully—they usually point directly to the problem.
+# Troubleshooting
+
+## Module redefinition warnings in Mix
+
+If you see warnings like:
+
+```
+warning: redefining module StringTools (current version loaded from Elixir.StringTools.beam)
+```
+
+It usually indicates a stray `.beam` file is on the Elixir code path from a previous build outside the example app. To resolve:
+
+- Remove any cached `.beam` artifacts in the repository root or parent directories (e.g., `Elixir.StringTools.beam`).
+- Re-run compilation:
+
+```bash
+mix compile --force
+```
+
+Keeping build artifacts confined to the app’s `_build/` prevents cross-contamination.

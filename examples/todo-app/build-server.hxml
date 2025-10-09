@@ -62,6 +62,7 @@ server.schemas.Todo
 server.migrations.CreateTodos
 server.live.UserLive
 server.presence.TodoPresence
+server.pubsub.TodoPubSub
 controllers.UserController
 server.layouts.Layouts
 server.infrastructure.Repo

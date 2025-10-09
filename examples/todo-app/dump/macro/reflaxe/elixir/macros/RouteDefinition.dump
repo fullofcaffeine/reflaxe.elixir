@@ -1,7 +1,7 @@
 @:structInit
 class reflaxe.elixir.macros.RouteDefinition {
 
-	public function new() {}
+	public function new[Function:() -> Void] [Block:Void]
 
 	public var name:String;
 

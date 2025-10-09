@@ -388,10 +388,10 @@ context.setNodeMetadata(nodeId, {
 
 ## 📚 Related Documentation
 
-- [`/src/reflaxe/elixir/ast/CLAUDE.md`](../../src/reflaxe/elixir/ast/CLAUDE.md) - AST-specific development context
-- [`/src/reflaxe/elixir/CLAUDE.md`](../../src/reflaxe/elixir/CLAUDE.md) - Compiler development guidelines
+- [`/src/reflaxe/elixir/ast/AGENTS.md`](../../src/reflaxe/elixir/ast/AGENTS.md) - AST-specific development context
+- [`/src/reflaxe/elixir/AGENTS.md`](../../src/reflaxe/elixir/AGENTS.md) - Compiler development guidelines
 - [`/docs/05-architecture/AST_PIPELINE_MIGRATION.md`](../05-architecture/AST_PIPELINE_MIGRATION.md) - AST pipeline architecture
-- [`/test/CLAUDE.md`](../../test/CLAUDE.md) - Test infrastructure documentation
+- [`/test/AGENTS.md`](../../test/AGENTS.md) - Test infrastructure documentation
 
 ## 🎯 Success Metrics
 
