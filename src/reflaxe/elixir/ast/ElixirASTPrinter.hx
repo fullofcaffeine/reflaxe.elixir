@@ -72,7 +72,9 @@ class ElixirASTPrinter {
         }
 
         #if debug_ast_printer
+        #if debug_printer
         trace('[XRay AST Printer] Printing node: ${ast.def}');
+        #end
         #end
 
         // Handle EDefmodule and EModule specially to access metadata
@@ -166,7 +168,9 @@ class ElixirASTPrinter {
         };
 
         #if debug_ast_printer
+        #if debug_printer
         trace('[XRay AST Printer] Generated: ${result.substring(0, 100)}...');
+        #end
         #end
 
         return result;
@@ -395,10 +399,12 @@ class ElixirASTPrinter {
                                (elseBranch == null || isSimpleExpression(elseBranch));
                 
                 #if debug_inline_if
+                #if debug_printer
                 trace('[XRay InlineIf] Checking if statement');
                 trace('[XRay InlineIf] Then branch def: ${thenBranch.def}');
                 trace('[XRay InlineIf] isSimpleExpression(thenBranch): ${isSimpleExpression(thenBranch)}');
                 trace('[XRay InlineIf] isInline decision: $isInline');
+                #end
                 #end
                 
                 // Hoist inline block statements from condition for readability/validity
@@ -552,12 +558,16 @@ class ElixirASTPrinter {
                             // Multi-statement block in list context must be wrapped
                             // in immediately-invoked anonymous function for valid Elixir
                             #if debug_ast_printer
+                            #if debug_printer
                             trace('[Printer] Wrapping block with ${exprs.length} expressions in list');
+                            #end
                             #end
                             '(fn -> ' + print(e, 0) + ' end).()';
                         case EBlock(exprs):
                             #if debug_ast_printer
+                            #if debug_printer
                             trace('[Printer] Single expression block in list, not wrapping');
+                            #end
                             #end
                             print(e, 0);
                         default:
@@ -926,7 +936,9 @@ class ElixirASTPrinter {
                 #if debug_ast_printer
                 switch(expr.def) {
                     case EBlock(stmts):
+                        #if debug_printer
                         trace('[XRay Printer] WARNING: EBlock inside EUnary! ${stmts.length} statements');
+                        #end
                     default:
                 }
                 #end
@@ -1037,13 +1049,17 @@ class ElixirASTPrinter {
             case EVar(name):
                 #if debug_ast_pipeline
                 if (name.indexOf("priority") >= 0) {
+                    #if debug_printer
                     trace('[AST Printer] Printing EVar: ${name}');
+                    #end
                 }
                 #end
 
                 #if debug_infrastructure_vars
                 if (name == "g" || name == "_g" || ~/^_?g\d+$/.match(name)) {
+                    #if debug_printer
                     trace('[AST Printer EVar] Printing infrastructure variable: $name');
+                    #end
                 }
                 #end
 
@@ -1103,17 +1119,27 @@ class ElixirASTPrinter {
             case EFn(clauses):
                 #if debug_loop_builder
                 if (clauses.length > 0) {
+                    #if debug_printer
                     trace('[XRay Printer] Printing EFn with ${clauses.length} clauses');
+                    #end
                     var clause = clauses[0];
-                    trace('[XRay Printer]   Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                            #if debug_printer
+                            trace('[XRay Printer]   Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                            #end
                     switch(clause.body.def) {
                         case EIf(cond, thenBranch, elseBranch):
+                            #if debug_printer
                             trace('[XRay Printer]   Body is EIf - condition type: ${Type.enumConstructor(cond.def)}');
                             trace('[XRay Printer]   Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                            #end
                         case EBlock(exprs):
+                            #if debug_printer
                             trace('[XRay Printer]   Body is EBlock with ${exprs.length} expressions');
+                            #end
                         default:
+                            #if debug_printer
                             trace('[XRay Printer]   Body is: ${Type.enumConstructor(clause.body.def)}');
+                            #end
                     }
                 }
                 #end
@@ -1128,7 +1154,9 @@ class ElixirASTPrinter {
                     var bodyStr = print(clause.body, indent + 1);
 
                     #if debug_loop_builder
+                    #if debug_printer
                     trace('[XRay Printer]   Printed body string (first 200 chars): ${bodyStr.substring(0, bodyStr.length > 200 ? 200 : bodyStr.length)}');
+                    #end
                     #end
                     var isMultiLine = switch(clause.body.def) {
                         case EIf(_, _, _): true;
@@ -1403,13 +1431,24 @@ class ElixirASTPrinter {
             case PVar(name): name;
             case PLiteral(value): print(value, 0);
             case PTuple(elements):
+                #if debug_printer
                 trace('[ASTPrinter] Printing PTuple with ${elements.length} elements');
+                #end
                 for (i in 0...elements.length) {
                     var elem = elements[i];
                     switch(elem) {
-                        case PVar(name): trace('[ASTPrinter]   Element $i: PVar("$name")');
-                        case PLiteral(ast): trace('[ASTPrinter]   Element $i: PLiteral');
-                        default: trace('[ASTPrinter]   Element $i: ${Type.enumConstructor(elem)}');
+                        case PVar(name):
+                            #if debug_printer
+                            trace('[ASTPrinter]   Element $i: PVar("$name")');
+                            #end
+                        case PLiteral(ast):
+                            #if debug_printer
+                            trace('[ASTPrinter]   Element $i: PLiteral');
+                            #end
+                        default:
+                            #if debug_printer
+                            trace('[ASTPrinter]   Element $i: ${Type.enumConstructor(elem)}');
+                            #end
                     }
                 }
                 '{' + printPatterns(elements) + '}';
@@ -1788,7 +1827,9 @@ class ElixirASTPrinter {
         if (condition == null) return "";
         
         #if debug_ast_printer
+        #if debug_printer
         trace('[XRay Printer] If condition def: ' + Type.enumConstructor(condition.def));
+        #end
         #end
         // For source-map determinism and clarity, wrap binary conditions in parentheses
         // This matches snapshot shapes: `if (x > 5) do` and `if (x > 5), do: ...`
@@ -1832,7 +1873,9 @@ class ElixirASTPrinter {
         switch(condition.def) {
             case EParen(inner):
                 #if debug_ast_printer
+                #if debug_printer
                 trace('[XRay Printer] If condition inner def: ' + Type.enumConstructor(inner.def));
+                #end
                 #end
                 // If the inner expression is simple, don't add parentheses
                 if (isSimpleVariable(inner)) {
@@ -1844,7 +1887,9 @@ class ElixirASTPrinter {
                 var printed = print(condition, 0);
                 var needsWrap = containsDoEndExpr(condition);
                 #if debug_ast_printer
+                #if debug_printer
                 if (needsWrap) trace('[XRay Printer] Wrapping if condition due to nested do/end');
+                #end
                 #end
                 return needsWrap ? '(' + printed + ')' : printed;
         }
