@@ -2296,6 +2296,28 @@ Testing workflow for compiler bug fixes:
 2. Once working, extract minimal tests
 3. This ensures practical, real-world driven development
 
+### 🔁 Post‑Task Commit & Bisect Policy (MANDATORY)
+
+After each task is completed and locally verified:
+
+- Commit immediately with a descriptive message (WHAT and WHY). Keep the tree clean; no stray generated files.
+- If a bug/regression appears and the root cause isn’t obvious, do not guess. Use git bisect with a deterministic reproduction script:
+
+```bash
+# Validate script
+TIMEOUT_SEC=90 scripts/bisect-hang-test.sh
+
+# Automated bisect
+git bisect start
+git bisect bad HEAD
+git bisect good <known_good_commit>
+TIMEOUT_SEC=90 git bisect run scripts/bisect-hang-test.sh
+git bisect reset
+```
+
+- Fix at the culprit change site; avoid band‑aids elsewhere. Add/update a snapshot or small guard script to prevent recurrence.
+- Re‑verify: run the snapshot suite and todo‑app integration before merging.
+
 ### ⚠️ CRITICAL: Validate Test Intended Outputs
 **FUNDAMENTAL RULE: Before accepting test failures, verify the intended output itself is correct.**
 
