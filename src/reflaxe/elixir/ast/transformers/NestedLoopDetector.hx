@@ -43,7 +43,9 @@ class NestedLoopDetector {
                 if (patterns != null) {
                     var dimensions = analyzeDimensions(patterns);
                     if (dimensions != null && dimensions.length >= 2) {
+                        #if debug_loop_transforms
                         trace('[NestedLoopDetector] ✅ Detected ${dimensions.length}D nested loop: ${dimensions}');
+                        #end
                         
                         // Analyze all statements to infer expressions
                         var expressionInfo = analyzeExpressionPatterns(subset, patterns, dimensions);
@@ -113,7 +115,9 @@ class NestedLoopDetector {
                 };
                 
                 if (moduleName == "Log" && func == "trace" && args.length > 0) {
+                    #if debug_loop_transforms
                     trace('[NestedLoopDetector] Found Log.trace call with ${args.length} args');
+                    #end
                     // First argument should be the string with interpolation
                     return extractIndicesFromArg(args[0]);
                 }
@@ -134,7 +138,9 @@ class NestedLoopDetector {
     static function extractIndicesFromArg(arg: ElixirAST): Null<Array<Int>> {
         switch(arg.def) {
             case ERaw(s):
+                #if debug_loop_transforms
                 trace('[NestedLoopDetector] Checking ERaw string: "$s"');
+                #end
                 
                 // Find all #{N} patterns and extract the numbers
                 // Also handle #{i}, #{j} patterns which might be variables
@@ -167,23 +173,31 @@ class NestedLoopDetector {
                     }
                     
                     if (indices.length > 0) {
+                        #if debug_loop_transforms
                         trace('[NestedLoopDetector] Found bracket notation indices: $indices');
+                        #end
                     }
                 }
                 
                 if (indices.length > 0) {
+                    #if debug_loop_transforms
                     trace('[NestedLoopDetector] Found indices: $indices');
+                    #end
                 }
                 
                 return indices.length > 0 ? indices : null;
                 
             case EString(s):
                 // Sometimes the string is already an EString
+                #if debug_loop_transforms
                 trace('[NestedLoopDetector] Checking EString: "$s"');
+                #end
                 return extractIndicesFromArg(makeAST(ERaw(s)));
                 
             default:
+                #if debug_loop_transforms
                 trace('[NestedLoopDetector] Unknown arg type: ${arg.def}');
+                #end
                 return null;
         }
     }
@@ -218,13 +232,17 @@ class NestedLoopDetector {
         }
         
         if (patterns.length != expectedCount) {
+            #if debug_loop_transforms
             trace('[NestedLoopDetector] Pattern incomplete: expected $expectedCount, got ${patterns.length}');
+            #end
             return null;
         }
         
         // Verify the pattern follows nested loop order (inner index changes fastest)
         if (!verifyNestedOrder(patterns, dimensions)) {
+            #if debug_loop_transforms
             trace('[NestedLoopDetector] Patterns not in nested loop order');
+            #end
             return null;
         }
         
@@ -443,19 +461,27 @@ class NestedLoopDetector {
             // Replace indices with variable names or reconstructed expressions
             var transformedArg = switch(firstArg.def) {
                 case ERaw(s):
+                    #if debug_loop_transforms
                     trace('[NestedLoopDetector] Original string: "$s"');
+                    #end
+                    #if debug_loop_transforms
                     trace('[NestedLoopDetector] Variable names: $varNames');
+                    #end
                     
                     var result = s;
                     
                     // Check if we have metadata with original expressions
                     var hasOriginalExpression = false;
                     if (firstArg.metadata != null) {
+                        #if debug_loop_transforms
                         trace('[NestedLoopDetector] Found metadata: ${firstArg.metadata}');
+                        #end
                         
                         // Check for original loop expression in metadata
                         if (firstArg.metadata.originalLoopExpression != null) {
+                            #if debug_loop_transforms
                             trace('[NestedLoopDetector] Using preserved expression: ${firstArg.metadata.originalLoopExpression}');
+                            #end
                             result = firstArg.metadata.originalLoopExpression;
                             hasOriginalExpression = true;
                             
@@ -471,23 +497,33 @@ class NestedLoopDetector {
                     // If we didn't find originalLoopExpression, try reconstruction
                     if (!hasOriginalExpression) {
                         // Fallback to reconstructing from patterns
+                        #if debug_loop_transforms
                         trace('[NestedLoopDetector] No original expression in metadata, attempting reconstruction from patterns');
+                        #end
                         
                         // First try to detect and reconstruct expressions
+                        #if debug_loop_transforms
                         trace('[NestedLoopDetector] Attempting reconstruction with string: "$s" and varNames: $varNames');
+                        #end
                         var reconstructed = reconstructExpressions(s, varNames);
+                        #if debug_loop_transforms
                         trace('[NestedLoopDetector] Reconstruction result: "$reconstructed"');
+                        #end
                         
                         if (reconstructed != s) {
                             result = reconstructed;
                         } else {
+                            #if debug_loop_transforms
                             trace('[NestedLoopDetector] Reconstruction unchanged, trying fallback replacement');
+                            #end
                             // Final fallback: simple replacement
                             for (i in 0...varNames.length) {
                                 // Handle both parentheses notation: (#{0}, #{1})
                                 var pattern = '#{' + i + '}';
                                 var replacement = '#{' + varNames[i] + '}';
+                                #if debug_loop_transforms
                                 trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"');
+                                #end
                                 result = StringTools.replace(result, pattern, replacement);
                                 
                                 // Also handle bracket notation: [#{0}][#{1}]
@@ -498,7 +534,9 @@ class NestedLoopDetector {
                         }
                     }
                     
+                    #if debug_loop_transforms
                     trace('[NestedLoopDetector] Final string: "$result"');
+                    #end
                     makeAST(ERaw(result));
                     
                 default:

@@ -17,6 +17,9 @@
 # Required for Reflaxe targets
 -D reflaxe_runtime
 
+# Silence compiler debug traces during normal builds to avoid I/O overhead
+-D no-traces
+
 # Elixir is not a UTF-16 platform
 -D no-utf16
 

@@ -84,6 +84,12 @@ typedef ComprehensionInfo = {
  * TODO: Investigate Reflaxe initialization timing vs Haxe optimizer timing
  */
 class LoopTransforms {
+    // Debug logger for LoopTransforms; gated behind -D debug_loop_transforms
+    static inline function dlt(msg:String):Void {
+        #if debug_loop_transforms
+        trace(msg);
+        #end
+    }
     
     /**
      * Helper function to manually transform children of an AST node
@@ -269,9 +275,14 @@ class LoopTransforms {
      * - Log.trace("Iteration 2", ...)
      */
     public static function unrolledLoopTransformPass(ast: ElixirAST): ElixirAST {
-        // Use Sys.println to ensure output is visible
+        // Verbose debug output is gated to avoid slowing production builds.
+        // Enable with -D debug_loop_transforms when investigating unrolled loops.
+        #if debug_loop_transforms
         #if sys
         Sys.println('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============');
+        #else
+        trace('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============');
+        #end
         #end
         
         function detectAndTransformUnrolledLoops(node: ElixirAST): ElixirAST {
@@ -301,23 +312,31 @@ class LoopTransforms {
             switch (node.def) {
                 // Check modules
                 case EModule(name, attributes, body):
+                    #if debug_loop_transforms
                     trace('[XRay LoopTransforms] Found EModule: $name with ${body.length} body items');
+                    #end
                     var transformedBody = body.map(b -> detectAndTransformUnrolledLoops(b));
                     return makeAST(EModule(name, attributes, transformedBody));
                     
                 case EDefmodule(name, doBlock):
+                    #if debug_loop_transforms
                     trace('[XRay LoopTransforms] Found EDefmodule: $name');
+                    #end
                     var transformedBlock = detectAndTransformUnrolledLoops(doBlock);
                     return makeAST(EDefmodule(name, transformedBlock));
                     
                 // Check function definitions for unrolled loops in their body
                 case EDef(name, args, guards, body):
+                    #if debug_loop_transforms
                     trace('[XRay LoopTransforms] Found EDef (public function): $name');
+                    #end
                     var transformedBody = detectAndTransformUnrolledLoops(body);
                     return makeAST(EDef(name, args, guards, transformedBody));
                     
                 case EDefp(name, args, guards, body):
+                    #if debug_loop_transforms
                     trace('[XRay LoopTransforms] Found EDefp (private function): $name');
+                    #end
                     var transformedBody = detectAndTransformUnrolledLoops(body);
                     return makeAST(EDefp(name, args, guards, transformedBody));
                     
@@ -533,6 +552,7 @@ class LoopTransforms {
                     return makeAST(EMatch(pattern, transformedRhs));
 
                 case EBlock(stmts):
+                    #if debug_loop_transforms
                     #if sys
                     if (stmts.length > 2) {
                         Sys.println('[XRay LoopTransforms] Found EBlock with ' + stmts.length + ' statements');
@@ -542,6 +562,11 @@ class LoopTransforms {
                             Sys.println('[XRay LoopTransforms]   Statement ' + i + ' type: ' + stmts[i].def);
                         }
                     }
+                    #else
+                    if (stmts.length > 2) {
+                        trace('[XRay LoopTransforms] Found EBlock with ' + stmts.length + ' statements');
+                    }
+                    #end
                     #end
 
                     // First check for nested unrolled loops (alternating pattern)
@@ -2141,7 +2166,9 @@ class LoopTransforms {
     static function detectUnrolledLoop(stmts: Array<ElixirAST>): Null<ElixirAST> {
         if (stmts.length < 2) return null;
         
+        #if debug_loop_transforms
         trace('[XRay LoopTransforms] detectUnrolledLoop: Analyzing ' + stmts.length + ' statements for unrolled patterns');
+        #end
         
         // Try to find groups of similar consecutive statements
         var i = 0;
@@ -2153,7 +2180,9 @@ class LoopTransforms {
             var wrappedComprehension = detectComprehensionInReduceWhile(stmts[i]);
 
             if (wrappedComprehension != null) {
+                #if debug_loop_transforms
                 trace('[XRay LoopTransforms] ✅ Found wrapped comprehension at position $i');
+                #end
                 transformedStmts.push(wrappedComprehension);
                 i++;
                 continue;
@@ -2164,7 +2193,9 @@ class LoopTransforms {
             var comprehensionResult = detectComprehensionPattern(stmts, i);
 
             if (comprehensionResult != null) {
+                #if debug_loop_transforms
                 trace('[XRay LoopTransforms] ✅ Found comprehension pattern at position $i consuming ${comprehensionResult.count} statements');
+                #end
                 transformedStmts.push(comprehensionResult.transformed);
                 i += comprehensionResult.count;
                 continue;
@@ -2174,7 +2205,9 @@ class LoopTransforms {
             var loopGroup = detectLoopGroup(stmts, i);
 
             if (loopGroup != null) {
+                #if debug_loop_transforms
                 trace('[XRay LoopTransforms] ✅ Found loop group at position $i with ${loopGroup.count} iterations');
+                #end
                 transformedStmts.push(loopGroup.transformed);
                 i += loopGroup.count;
             } else {
@@ -2186,11 +2219,15 @@ class LoopTransforms {
         
         // If we transformed anything, return a new block
         if (transformedStmts.length != stmts.length) {
+            #if debug_loop_transforms
             trace('[XRay LoopTransforms] Transformed block: ${stmts.length} statements → ${transformedStmts.length} statements');
+            #end
             return makeAST(EBlock(transformedStmts));
         }
         
+        #if debug_loop_transforms
         trace('[XRay LoopTransforms] No unrolled loops detected in block');
+        #end
         return null;
     }
     
@@ -2201,18 +2238,24 @@ class LoopTransforms {
     static function detectLoopGroup(stmts: Array<ElixirAST>, startIdx: Int): Null<{transformed: ElixirAST, count: Int}> {
         if (startIdx >= stmts.length) return null;
         
+        #if debug_loop_transforms
         trace('[XRay LoopTransforms] detectLoopGroup: Called with startIdx=$startIdx, total stmts=${stmts.length}');
+        #end
         
         var firstCall = extractFunctionCall(stmts[startIdx]);
         if (firstCall == null) {
+            #if debug_loop_transforms
             trace('[XRay LoopTransforms]   No function call at index $startIdx');
+            #end
             return null;
         }
         
+        #if debug_loop_transforms
         trace('[XRay LoopTransforms] detectLoopGroup: Checking from index $startIdx, first call: ${firstCall.module}.${firstCall.func}');
         if (firstCall.args.length > 0) {
             trace('[XRay LoopTransforms]   First arg type: ' + firstCall.args[0].def);
         }
+        #end
         
         // Count how many consecutive statements match the pattern
         var count = 0;
@@ -2223,25 +2266,25 @@ class LoopTransforms {
             
             // Stop if not a function call or different function
             if (call == null) {
-                trace('[XRay LoopTransforms]   Statement $i is not a function call, stopping');
+                dlt('[XRay LoopTransforms]   Statement ' + i + ' is not a function call, stopping');
                 break;
             }
             
             if (call.module != firstCall.module || call.func != firstCall.func) {
-                trace('[XRay LoopTransforms]   Statement $i has different function (${call.module}.${call.func}), stopping');
+                dlt('[XRay LoopTransforms]   Statement ' + i + ' has different function (' + call.module + '.' + call.func + '), stopping');
                 break;
             }
             
             // Check if it has the expected index
             if (call.args.length > 0) {
-                trace('[XRay LoopTransforms]   Checking for index $expectedIndex in arg: ' + call.args[0].def);
+                dlt('[XRay LoopTransforms]   Checking for index ' + expectedIndex + ' in arg: ' + call.args[0].def);
                 var hasExpectedIndex = checkForIndex(call.args[0], expectedIndex);
                 if (!hasExpectedIndex) {
-                    trace('[XRay LoopTransforms]   No index $expectedIndex found, stopping');
+                    dlt('[XRay LoopTransforms]   No index ' + expectedIndex + ' found, stopping');
                     // Index pattern broken, stop here
                     break;
                 }
-                trace('[XRay LoopTransforms]   ✓ Statement ${i} matches with index $expectedIndex');
+                dlt('[XRay LoopTransforms]   ✓ Statement ' + i + ' matches with index ' + expectedIndex);
             }
             
             count++;
@@ -2250,11 +2293,11 @@ class LoopTransforms {
         
         // Need at least 2 consecutive statements to be considered a loop
         if (count < 2) {
-            trace('[XRay LoopTransforms] detectLoopGroup: Only $count matching statements, not enough for a loop');
+            dlt('[XRay LoopTransforms] detectLoopGroup: Only ' + count + ' matching statements, not enough for a loop');
             return null;
         }
         
-        trace('[XRay LoopTransforms] ✅ DETECTED LOOP GROUP: ${firstCall.module}.${firstCall.func} with $count iterations');
+        dlt('[XRay LoopTransforms] ✅ DETECTED LOOP GROUP: ' + firstCall.module + '.' + firstCall.func + ' with ' + count + ' iterations');
         
         // Transform this group to Enum.each
         var transformed = transformToEnumEach(firstCall, count);
@@ -2262,7 +2305,7 @@ class LoopTransforms {
         // Check if transformation was successful
         if (transformed == null) {
             // Transformation was skipped due to safety check
-            trace('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements');
+            dlt('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements');
             return null;
         }
         
@@ -2277,42 +2320,42 @@ class LoopTransforms {
      * HOW: Uses exact string matching first, then handles interpolation and binary concatenation
      */
     static function checkForIndex(ast: ElixirAST, expectedIndex: Int): Bool {
-        trace('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def);
+        dlt('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def);
         
         switch (ast.def) {
             case EString(s):
                 // First try exact string match
                 var exactPattern = 'Iteration ' + expectedIndex;
                 if (s == exactPattern) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT match found: "' + s + '"');
+                    dlt('[XRay LoopTransforms]   ✓ EXACT match found: "' + s + '"');
                     return true;
                 }
                 
                 // Check for interpolation pattern (exact match)
                 var interpolationPattern = 'Iteration #{' + expectedIndex + '}';
                 if (s == interpolationPattern) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT interpolation match: "' + s + '"');
+                    dlt('[XRay LoopTransforms]   ✓ EXACT interpolation match: "' + s + '"');
                     return true;
                 }
                 
                 // Check for just the index placeholder
                 var placeholderPattern = '#{' + expectedIndex + '}';
                 if (s == placeholderPattern) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT placeholder match: "' + s + '"');
+                    dlt('[XRay LoopTransforms]   ✓ EXACT placeholder match: "' + s + '"');
                     return true;
                 }
                 
                 // Check if string is just the index number
                 var indexStr = Std.string(expectedIndex);
                 if (s == indexStr) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT index string match: "' + s + '"');
+                    dlt('[XRay LoopTransforms]   ✓ EXACT index string match: "' + s + '"');
                     return true;
                 }
                 
                 // Check for "Index: " pattern specifically (for Log.trace cases)
                 var indexPattern = 'Index: ' + expectedIndex;
                 if (s == indexPattern || s.indexOf(indexPattern) != -1) {
-                    trace('[XRay LoopTransforms]   ✓ Found "Index: ' + expectedIndex + '" pattern in: "' + s + '"');
+                    dlt('[XRay LoopTransforms]   ✓ Found "Index: ' + expectedIndex + '" pattern in: "' + s + '"');
                     return true;
                 }
                 
@@ -2321,11 +2364,11 @@ class LoopTransforms {
                 if (s.indexOf(exactPattern) != -1 || 
                     s.indexOf(interpolationPattern) != -1 ||
                     s.indexOf(placeholderPattern) != -1) {
-                    trace('[XRay LoopTransforms]   ✓ Found index via contains fallback in: "' + s + '"');
+                    dlt('[XRay LoopTransforms]   ✓ Found index via contains fallback in: "' + s + '"');
                     return true;
                 }
                 
-                trace('[XRay LoopTransforms]   ✗ No match in string: "' + s + '"');
+                dlt('[XRay LoopTransforms]   ✗ No match in string: "' + s + '"');
                 return false;
                 
             case EBinary(StringConcat, left, right):
@@ -2334,17 +2377,17 @@ class LoopTransforms {
                 var leftHas = checkForIndex(left, expectedIndex);
                 var rightHas = checkForIndex(right, expectedIndex);
                 if (leftHas || rightHas) {
-                    trace('[XRay LoopTransforms]   ✓ Found index in binary concat');
+                    dlt('[XRay LoopTransforms]   ✓ Found index in binary concat');
                 }
                 return leftHas || rightHas;
                 
             case EInteger(n):
                 // Direct integer comparison - exact match only
                 if (n == expectedIndex) {
-                    trace('[XRay LoopTransforms]   ✓ Found exact index as integer: ' + n);
+                    dlt('[XRay LoopTransforms]   ✓ Found exact index as integer: ' + n);
                     return true;
                 }
-                trace('[XRay LoopTransforms]   ✗ Integer ' + n + ' does not match expected ' + expectedIndex);
+                dlt('[XRay LoopTransforms]   ✗ Integer ' + n + ' does not match expected ' + expectedIndex);
                 return false;
                 
             case EVar(name):
@@ -2352,10 +2395,10 @@ class LoopTransforms {
                 // This might happen if the index is in a variable
                 var indexStr = Std.string(expectedIndex);
                 if (name == indexStr || name == 'i' + indexStr) {
-                    trace('[XRay LoopTransforms]   ✓ Found index in variable name: ' + name);
+                    dlt('[XRay LoopTransforms]   ✓ Found index in variable name: ' + name);
                     return true;
                 }
-                trace('[XRay LoopTransforms]   ✗ Variable ' + name + ' does not match index');
+                dlt('[XRay LoopTransforms]   ✗ Variable ' + name + ' does not match index');
                 return false;
                 
             case ERaw(rawString):
@@ -2376,7 +2419,7 @@ class LoopTransforms {
                 
                 for (pattern in patterns) {
                     if (rawString.indexOf(pattern) != -1) {
-                        trace('[XRay LoopTransforms]   ✓ Found index in ERaw string: "' + rawString + '" (matched: "' + pattern + '")');
+                        dlt('[XRay LoopTransforms]   ✓ Found index in ERaw string: "' + rawString + '" (matched: "' + pattern + '")');
                         return true;
                     }
                 }
@@ -2384,16 +2427,16 @@ class LoopTransforms {
                 // Also check if the index appears anywhere in the string
                 var interpolationPattern = '#{' + indexStr + '}';
                 if (rawString.indexOf(interpolationPattern) != -1) {
-                    trace('[XRay LoopTransforms]   ✓ Found index interpolation in ERaw: "' + rawString + '"');
+                    dlt('[XRay LoopTransforms]   ✓ Found index interpolation in ERaw: "' + rawString + '"');
                     return true;
                 }
                 
-                trace('[XRay LoopTransforms]   ✗ No index ' + expectedIndex + ' found in ERaw: "' + rawString + '"');
+                dlt('[XRay LoopTransforms]   ✗ No index ' + expectedIndex + ' found in ERaw: "' + rawString + '"');
                 return false;
                 
             default:
                 // For other AST types, log for debugging but return false
-                trace('[XRay LoopTransforms]   ⚠ Unhandled AST type in checkForIndex: ' + Type.enumConstructor(ast.def));
+                dlt('[XRay LoopTransforms]   ⚠ Unhandled AST type in checkForIndex: ' + Type.enumConstructor(ast.def));
                 return false;
         }
     }

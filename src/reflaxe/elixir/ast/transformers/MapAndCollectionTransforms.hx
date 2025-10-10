@@ -287,14 +287,16 @@ class MapAndCollectionTransforms {
                                                     hasPattern = true;
                                                 }
                                                 check(obj);
-                                            case ECall(func, _, argz):
-                                                // Check func and args
-                                                switch(func.def) {
-                                                    case EField(obj, field):
-                                                        if (field == "key_value_iterator" || field == "has_next" || field == "next") hasPattern = true;
-                                                        check(obj);
-                                                    default:
-                                                        check(func);
+                                            case ECall(target, _, argz):
+                                                // Check call target and args
+                                                if (target != null) {
+                                                    switch(target.def) {
+                                                        case EField(obj, field):
+                                                            if (field == "key_value_iterator" || field == "has_next" || field == "next") hasPattern = true;
+                                                            check(obj);
+                                                        default:
+                                                            check(target);
+                                                    }
                                                 }
                                                 if (argz != null) for (a in argz) check(a);
                                             default:
@@ -331,13 +333,32 @@ class MapAndCollectionTransforms {
                                                     default:
                                                 }
                                             default:
-                                                ElixirASTTransformer.iterateAST(n, identifyMapVar);
+                                                // Manually descend into common child nodes
+                                                switch(n.def) {
+                                                    case EField(obj, _): identifyMapVar(obj);
+                                                    case ECall(func, _, args):
+                                                        identifyMapVar(func);
+                                                        if (args != null) for (a in args) identifyMapVar(a);
+                                                    case EFn(clauses): for (c in clauses) if (c.body != null) identifyMapVar(c.body);
+                                                    case EBlock(exprs): for (e in exprs) identifyMapVar(e);
+                                                    case EIf(c,t,e): identifyMapVar(c); identifyMapVar(t); if (e != null) identifyMapVar(e);
+                                                    case ETuple(els): for (el in els) identifyMapVar(el);
+                                                    case ERemoteCall(m, _, argz): identifyMapVar(m); if (argz != null) for (a in argz) identifyMapVar(a);
+                                                    default:
+                                                }
                                         }
                                     }
                                     identifyMapVar(loopFunc);
                                     #if debug_map_iterator
                                     trace('[MapIteratorTransform] Map variable identified: ' + mapVar);
                                     #end
+
+                                    // If we cannot structurally prove the map variable, do not transform.
+                                    // Returning the original node avoids constructing EVar(null) which
+                                    // would later crash underscore cleanup passes.
+                                    if (mapVar == null || mapVar.length == 0) {
+                                        return node;
+                                    }
 
                                     function flattenThenBranch(expr: ElixirAST): Array<ElixirAST> {
                                         return switch(expr.def) {
@@ -375,7 +396,7 @@ class MapAndCollectionTransforms {
                                     // Build: Enum.each(mapVar, fn {keyVarName, valueVarName} -> <bodyExprs> end)
                                     var destruct = makeAST(ETuple([makeAST(EVar(keyVarName)), makeAST(EVar(valueVarName))]));
                                     var fnClause = {
-                                        args: [PVarTuple([PVar(keyVarName), PVar(valueVarName)])],
+                                        args: [PTuple([PVar(keyVarName), PVar(valueVarName)])],
                                         guard: null,
                                         body: bodyExprs != null ? (bodyExprs.length == 1 ? bodyExprs[0] : makeAST(EBlock(bodyExprs))) : makeAST(ENil)
                                     };

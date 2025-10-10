@@ -91,7 +91,6 @@
   "phoenix/_live_socket/live_socket_impl_.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
-  "haxe/log.ex",
   "haxe/json.ex",
   "haxe/iterators/dynamic_access_key_value_iterator.ex",
   "haxe/iterators/dynamic_access_iterator.ex",
@@ -159,7 +158,7 @@
   "_date/date_impl_.ex",
   "_any/any_impl_.ex"
 ],
-  "id": 1047,
+  "id": 1050,
   "wasCached": false,
   "version": 1
 }
