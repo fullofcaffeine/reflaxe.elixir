@@ -495,11 +495,8 @@ class PatternBuilder {
                     case EBoolean(b): "bool:" + b;
                     case EAtom(a): "atom:" + a;
                     case ENil: "nil";
-                    case EFloat(_): "float";
-                    case EString(_): "string";
                     case _: "literal";
                 }
-            case PLiteral({def: EAtom(a)}): "atom:" + a;
             case PTuple(elements):
                 "tuple:" + elements.length;
             case PList(_): "list";
