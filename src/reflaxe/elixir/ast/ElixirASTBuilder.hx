@@ -2374,7 +2374,9 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                #if debug_ast_builder
                 Sys.println('[ElixirASTBuilder] delegating TSwitch over ' + Type.enumConstructor(e.expr) + ' with ' + cases.length + ' case(s)');
+                #end
                 // Ensure compiler is set before delegation
                 if (currentContext.compiler == null && compiler != null) {
                     currentContext.compiler = compiler;
