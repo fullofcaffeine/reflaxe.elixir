@@ -3256,6 +3256,8 @@ class ElixirASTTransformer {
      * NOTE: We use a custom traversal instead of transformNode to avoid recursive transformation
      */
     static function stringInterpolationPass(ast: ElixirAST): ElixirAST {
+        // Forwarder: use module implementation to keep transformer thin
+        return reflaxe.elixir.ast.transformers.StringTransforms.stringInterpolationPass(ast);
         function transform(node: ElixirAST): ElixirAST {
             // Handle null nodes
             if (node == null) return null;
@@ -4692,6 +4694,8 @@ class ElixirASTTransformer {
      * Map.put(params, "key", value) → params = Map.put(params, "key", value)
      */
     static function statementContextTransformPass(ast: ElixirAST): ElixirAST {
+        // Forwarder: use module implementation to keep transformer thin
+        return reflaxe.elixir.ast.transformers.StructAndMapTransforms.statementContextTransformPass(ast);
         // Transform with context tracking
         function transformWithContext(node: ElixirAST, isStatementContext: Bool): ElixirAST {
             // Check for null node or def before processing
