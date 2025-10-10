@@ -2233,7 +2233,9 @@ class ElixirASTTransformer {
                                 '{${elemStrs.join(", ")}}';
                             default: 'other pattern';
                         };
+                        #if debug_enum_extraction
                         trace('[RemoveRedundantEnumExtraction] Clause $i pattern: $patternDebug');
+                        #end
 
                         // Propagate the binding plan flag to the clause body
                         if (currentCaseHasBindingPlan && body != null) {

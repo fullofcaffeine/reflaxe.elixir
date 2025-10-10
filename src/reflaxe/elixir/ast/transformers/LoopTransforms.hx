@@ -572,23 +572,23 @@ class LoopTransforms {
                     // First check for nested unrolled loops (alternating pattern)
                     var nestedUnrolledLoop = detectNestedUnrolledLoop(stmts);
                     if (nestedUnrolledLoop != null) {
-                        trace('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP - transforming to nested Enum.each');
+                        dlt('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP - transforming to nested Enum.each');
                         return nestedUnrolledLoop;
                     }
 
                     // Then check for regular nested loops
                     var nestedLoop = NestedLoopDetector.detectNestedLoop(stmts);
                     if (nestedLoop != null) {
-                        trace('[XRay LoopTransforms] ✅ DETECTED NESTED LOOP - transforming ${nestedLoop.count} statements');
+                        dlt('[XRay LoopTransforms] ✅ DETECTED NESTED LOOP - transforming ' + nestedLoop.count + ' statements');
                         // Process remaining statements after the nested loop
                         var remainingStmts = stmts.slice(nestedLoop.count);
                         if (remainingStmts.length > 0) {
-                            trace('[XRay LoopTransforms] Processing ${remainingStmts.length} remaining statements after nested loop');
+                            dlt('[XRay LoopTransforms] Processing ' + remainingStmts.length + ' remaining statements after nested loop');
 
                             // Check if remaining statements form an unrolled loop
                             var remainingUnrolled = detectUnrolledLoop(remainingStmts);
                             if (remainingUnrolled != null) {
-                                trace('[XRay LoopTransforms] ✅ Remaining statements form an unrolled loop!');
+                                dlt('[XRay LoopTransforms] ✅ Remaining statements form an unrolled loop!');
                                 return makeAST(EBlock([nestedLoop.transformed, remainingUnrolled]));
                             }
 
@@ -602,10 +602,8 @@ class LoopTransforms {
                     // Check if this might be an unrolled loop
                     var unrolledLoop = detectUnrolledLoop(stmts);
                     if (unrolledLoop != null) {
-                        trace('[XRay LoopTransforms] ✅ DETECTED UNROLLED LOOP - transforming ${stmts.length} statements');
+                        dlt('[XRay LoopTransforms] ✅ DETECTED UNROLLED LOOP - transforming ' + stmts.length + ' statements');
                         return unrolledLoop;
-                    } else {
-                        trace('[XRay LoopTransforms] ❌ Not an unrolled loop pattern');
                     }
 
                     // Otherwise, recursively transform statements
