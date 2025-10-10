@@ -53,11 +53,10 @@ abstract EctoQuery<T>(Dynamic) {
     extern inline public function where<V>(fieldName: String, value: V): EctoQuery<T> {
         // Use field/2 with a binding and convert string to existing atom
         // Avoids atom leaks and matches Ecto expectations
-        var newQuery = untyped __elixir__(
+        return new EctoQuery<T>(untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.where({0}, [q], field(q, ^String.to_existing_atom(Macro.underscore({1}))) == ^{2}))',
             this, fieldName, value
-        );
-        return new EctoQuery<T>(newQuery);
+        ));
     }
     
     /**
@@ -66,11 +65,10 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with preload added
      */
     extern inline public function preload(associations: Dynamic): EctoQuery<T> {
-        var newQuery = untyped __elixir__(
+        return new EctoQuery<T>(untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.preload({0}, ^{1}))',
             this, associations
-        );
-        return new EctoQuery<T>(newQuery);
+        ));
     }
     
     /**
@@ -81,12 +79,11 @@ abstract EctoQuery<T>(Dynamic) {
      */
     extern inline public function orderBy(field: String, direction: String = "asc"): EctoQuery<T> {
         // Use field/2 with a binding and convert string to existing atom
-        var newQuery = if (direction == "desc") {
-            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [desc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field);
-        } else {
-            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [asc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field);
-        }
-        return new EctoQuery<T>(newQuery);
+        return new EctoQuery<T>(
+            direction == "desc"
+                ? untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [desc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field)
+                : untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [asc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field)
+        );
     }
 
     // Note: Use NameUtils.toSnakeCase instead of duplicating logic
@@ -99,8 +96,7 @@ abstract EctoQuery<T>(Dynamic) {
     extern inline public function limit(count: Int): EctoQuery<T> {
         // Using import inside the expression to access the macro
         // Using require to make the macro available without importing all functions
-        var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.limit({0}, ^{1}))', this, count);
-        return new EctoQuery<T>(newQuery);
+        return new EctoQuery<T>(untyped __elixir__('(require Ecto.Query; Ecto.Query.limit({0}, ^{1}))', this, count));
     }
     
     /**
@@ -111,8 +107,7 @@ abstract EctoQuery<T>(Dynamic) {
     extern inline public function offset(count: Int): EctoQuery<T> {
         // Using import inside the expression to access the macro
         // Using require to make the macro available without importing all functions
-        var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.offset({0}, ^{1}))', this, count);
-        return new EctoQuery<T>(newQuery);
+        return new EctoQuery<T>(untyped __elixir__('(require Ecto.Query; Ecto.Query.offset({0}, ^{1}))', this, count));
     }
     
     /**
