@@ -208,6 +208,8 @@ class MapAndCollectionTransforms {
             }
         });
     }
+
+    // (Old wrapper removed in favor of migrated implementation below)
     
     private static function hasComplexExpression(ast: ElixirAST): Bool {
         return switch(ast.def) {
@@ -221,6 +223,14 @@ class MapAndCollectionTransforms {
             case EBlock(_): true;
             default: false;
         };
+    }
+
+    /**
+     * Map Iterator Transformation Pass (module registry entry)
+     * Delegates to transformer's public proxy to preserve current behavior.
+     */
+    public static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.mapIteratorTransformPassProxy(ast);
     }
 }
 
