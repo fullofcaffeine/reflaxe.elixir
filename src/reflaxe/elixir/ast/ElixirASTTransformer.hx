@@ -481,7 +481,7 @@ class ElixirASTTransformer {
             name: "StringInterpolation",
             description: "Convert string concatenation to idiomatic string interpolation",
             enabled: true,
-            pass: stringInterpolationPass
+            pass: reflaxe.elixir.ast.transformers.StringTransforms.stringInterpolationPass
         });
         
         // Loop variable restoration pass (must run after string interpolation)
@@ -536,7 +536,7 @@ class ElixirASTTransformer {
             name: "PipelineOptimization",
             description: "Convert sequential operations to pipeline",
             enabled: true,
-            pass: pipelineOptimizationPass
+            pass: reflaxe.elixir.ast.transformers.PipelineTransforms.pipelineOptimizationPass
         });
         #end
         
@@ -564,7 +564,7 @@ class ElixirASTTransformer {
             name: "MapIteratorTransform",
             description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
             enabled: true,
-            pass: mapIteratorTransformPass
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
         });
         
         // Loop to comprehension pass
@@ -622,7 +622,7 @@ class ElixirASTTransformer {
             name: "StatementContextTransform",
             description: "Add reassignments for immutable operations in statement context",
             enabled: true,
-            pass: statementContextTransformPass
+            pass: reflaxe.elixir.ast.transformers.StructAndMapTransforms.statementContextTransformPass
         });
         #end
         
@@ -639,7 +639,7 @@ class ElixirASTTransformer {
             name: "StructFieldAssignmentTransform",
             description: "Convert struct field assignments to struct update syntax",
             enabled: true,
-            pass: structFieldAssignmentTransformPass
+            pass: reflaxe.elixir.ast.transformers.StructAndMapTransforms.structFieldAssignmentTransformPass
         });
 
         passes.push({
