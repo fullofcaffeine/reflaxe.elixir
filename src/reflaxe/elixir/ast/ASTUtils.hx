@@ -53,6 +53,27 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
 class ASTUtils {
     
     /**
+     * Walk the AST tree and invoke a visitor on every descendant node.
+     *
+     * WHY: Some passes need read-only traversal (collecting facts) without
+     * depending on private helpers on transformer modules.
+     *
+     * WHAT: Performs a full traversal using transformNode but returns the
+     * original tree unchanged. The visitor is called on every node.
+     *
+     * HOW: Delegates to ElixirASTTransformer.transformNode to guarantee
+     * exhaustive traversal. The transformer callback returns the node
+     * unmodified and invokes the visitor for side effects.
+     */
+    public static function walk(ast: ElixirAST, visitor: ElixirAST -> Void): Void {
+        if (ast == null || ast.def == null) return;
+        ElixirASTTransformer.transformNode(ast, function(n) {
+            visitor(n);
+            return n;
+        });
+    }
+    
+    /**
      * Recursively flatten nested EBlock structures into a single array of expressions
      * 
      * WHY: AST often contains arbitrary nesting of blocks that breaks pattern matching
