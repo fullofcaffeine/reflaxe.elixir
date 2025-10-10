@@ -795,6 +795,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerResultBinderNormalizationPass
         });
 
+        // Ensure Phoenix.Controller.json bodies have aliases (user/changeset/data) from result binders
+        passes.push({
+            name: "ControllerPhoenixJsonAliasInjection",
+            description: "Inject aliases (user/changeset/data) for Phoenix.Controller.json bodies from {:ok,_}/{:error,_}",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerPhoenixJsonAliasInjectionPass
+        });
+
         // Normalize mixed-case variable references to existing snake_case bindings
         passes.push({
             name: "VarNameNormalization",
