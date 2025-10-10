@@ -1205,7 +1205,11 @@ class ElixirASTPrinter {
         if (clause.guard != null) {
             result += ' when ' + print(clause.guard, 0);
         }
-        result += ' ->\n' + indentStr(indent + 1) + print(clause.body, indent + 1);
+        var bodyStr = print(clause.body, indent + 1);
+        if (StringTools.trim(bodyStr) == '') {
+            bodyStr = 'nil';
+        }
+        result += ' ->\n' + indentStr(indent + 1) + bodyStr;
         return result;
     }
     
