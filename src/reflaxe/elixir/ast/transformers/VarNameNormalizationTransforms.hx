@@ -85,6 +85,24 @@ class VarNameNormalizationTransforms {
     }
 
     static function normalizeVarsInBody(body: ElixirAST, defined: Map<String, Bool>): ElixirAST {
+        // Helper: fuzzy match undefined names to defined ones by token overlap
+        function findTokenMatch(name: String): Null<String> {
+            if (name == null || name.length == 0) return null;
+            var tokens = name.split("_");
+            // Prefer matches sharing at least one token and especially the token "priority"
+            var best: Null<String> = null;
+            var bestScore = 0;
+            for (k in defined.keys()) {
+                var ktokens = k.split("_");
+                var score = 0;
+                for (t in tokens) {
+                    for (kt in ktokens) if (t == kt) score++;
+                }
+                if (tokens.indexOf("priority") != -1 && ktokens.indexOf("priority") != -1) score += 2;
+                if (score > bestScore) { bestScore = score; best = k; }
+            }
+            if (bestScore > 0) return best; else return null;
+        }
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch(n.def) {
                 case EVar(name):
@@ -92,6 +110,13 @@ class VarNameNormalizationTransforms {
                     if (snake != name && defined.exists(snake)) {
                         makeASTWithMeta(EVar(snake), n.metadata, n.pos);
                     } else {
+                        // If not defined, try fuzzy token match to an existing defined binding
+                        if (!defined.exists(name)) {
+                            var candidate = findTokenMatch(name);
+                            if (candidate != null) {
+                                return makeASTWithMeta(EVar(candidate), n.metadata, n.pos);
+                            }
+                        }
                         n;
                     }
                 default:

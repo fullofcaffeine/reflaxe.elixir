@@ -454,6 +454,9 @@ class BinderTransforms {
                                                     var renamed = renameBinder(clause.pattern, desired);
                                                     var used = collectUsedLowerVars(clause.body);
                                                     var assigns: Array<ElixirAST> = [];
+                                                    // Alias any canonical names used in the body to the binder value
+                                                    if (used.indexOf("user") != -1 && desired != "user") assigns.push(makeAST(EMatch(PVar("user"), makeAST(EVar(desired)))));
+                                                    if (used.indexOf("changeset") != -1 && desired != "changeset") assigns.push(makeAST(EMatch(PVar("changeset"), makeAST(EVar(desired)))));
                                                     if (used.indexOf("data") != -1) assigns.push(makeAST(EMatch(PVar("data"), makeAST(EVar(desired)))));
                                                     var nb2 = if (assigns.length > 0) switch(clause.body.def) {
                                                         case EBlock(exprs): makeAST(EBlock(assigns.concat(exprs)));
@@ -482,6 +485,8 @@ class BinderTransforms {
                                                     var renamed = renameBinder(clause.pattern, desired);
                                                     var used = collectUsedLowerVars(clause.body);
                                                     var assigns: Array<ElixirAST> = [];
+                                                    if (used.indexOf("user") != -1 && desired != "user") assigns.push(makeAST(EMatch(PVar("user"), makeAST(EVar(desired)))));
+                                                    if (used.indexOf("changeset") != -1 && desired != "changeset") assigns.push(makeAST(EMatch(PVar("changeset"), makeAST(EVar(desired)))));
                                                     if (used.indexOf("data") != -1) assigns.push(makeAST(EMatch(PVar("data"), makeAST(EVar(desired)))));
                                                     var nb2 = if (assigns.length > 0) switch(clause.body.def) {
                                                         case EBlock(exprs): makeAST(EBlock(assigns.concat(exprs)));
@@ -564,6 +569,101 @@ class BinderTransforms {
                         }
                     });
                     makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    // Ensure Phoenix.Controller.json bodies have required aliases (user/changeset/data) from {:ok,_}/{:error,_}
+    public static function controllerPhoenixJsonAliasInjectionPass(ast: ElixirAST): ElixirAST {
+        inline function isControllerModuleName(n: String): Bool {
+            return n != null && StringTools.endsWith(n, "Controller");
+        }
+        inline function tagOf(p: EPattern): Null<String> {
+            return switch(p) {
+                case PTuple(elements) if (elements.length >= 1):
+                    switch(elements[0]) { case PLiteral({def: EAtom(a)}): a; default: null; }
+                default: null;
+            }
+        }
+        inline function binderOf(p: EPattern): Null<String> {
+            return switch(p) {
+                case PTuple(elements) if (elements.length == 2):
+                    switch(elements[1]) { case PVar(n): n; default: null; }
+                default: null;
+            }
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EModule(name, attrs, body) if (isControllerModuleName(name)):
+                    var newBody:Array<ElixirAST> = [];
+                    for (b in body) {
+                        var tb = ElixirASTTransformer.transformNode(b, function(n: ElixirAST): ElixirAST {
+                            return switch(n.def) {
+                                case ECase(target, clauses):
+                                    var newClauses = [];
+                                    for (clause in clauses) {
+                                        var tag = tagOf(clause.pattern);
+                                        var binder = binderOf(clause.pattern);
+                                        if ((tag == "ok" || tag == "error") && binder != null) {
+                                            var assigns: Array<ElixirAST> = [];
+                                            if (tag == "ok") {
+                                                assigns.push(makeAST(EMatch(PVar("user"), makeAST(EVar(binder)))));
+                                                assigns.push(makeAST(EMatch(PVar("data"), makeAST(EVar(binder)))));
+                                            } else {
+                                                assigns.push(makeAST(EMatch(PVar("changeset"), makeAST(EVar(binder)))));
+                                                assigns.push(makeAST(EMatch(PVar("data"), makeAST(EVar(binder)))));
+                                            }
+                                            var nb = switch(clause.body.def) {
+                                                case EBlock(exprs): makeAST(EBlock(assigns.concat(exprs)));
+                                                default: makeAST(EBlock(assigns.concat([clause.body])));
+                                            };
+                                            newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: nb });
+                                            continue;
+                                        }
+                                        newClauses.push(clause);
+                                    }
+                                    makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        });
+                        newBody.push(tb);
+                    }
+                    makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
+                case EDefmodule(name, doBlock) if (isControllerModuleName(name)):
+                    var transformedDo = ElixirASTTransformer.transformNode(doBlock, function(n: ElixirAST): ElixirAST {
+                        return switch(n.def) {
+                            case ECase(target, clauses):
+                                var newClauses = [];
+                                for (clause in clauses) {
+                                    var tag = tagOf(clause.pattern);
+                                    var binder = binderOf(clause.pattern);
+                                    if ((tag == "ok" || tag == "error") && binder != null) {
+                                        var assigns: Array<ElixirAST> = [];
+                                        if (tag == "ok") {
+                                            assigns.push(makeAST(EMatch(PVar("user"), makeAST(EVar(binder)))));
+                                            assigns.push(makeAST(EMatch(PVar("data"), makeAST(EVar(binder)))));
+                                        } else {
+                                            assigns.push(makeAST(EMatch(PVar("changeset"), makeAST(EVar(binder)))));
+                                            assigns.push(makeAST(EMatch(PVar("data"), makeAST(EVar(binder)))));
+                                        }
+                                        var nb = switch(clause.body.def) {
+                                            case EBlock(exprs): makeAST(EBlock(assigns.concat(exprs)));
+                                            default: makeAST(EBlock(assigns.concat([clause.body])));
+                                        };
+                                        newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: nb });
+                                        continue;
+                                    }
+                                    newClauses.push(clause);
+                                }
+                                makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                            default:
+                                n;
+                        }
+                    });
+                    makeASTWithMeta(EDefmodule(name, transformedDo), node.metadata, node.pos);
                 default:
                     node;
             }
@@ -952,7 +1052,7 @@ class BinderTransforms {
         return (
             v == "user" || v == "changeset" || v == "data" || v == "reason" || v == "todo" ||
             v == "params" || v == "id" || v == "filter" || v == "sort_by" || v == "query" || v == "tag" ||
-            v == "user_id" || v == "action" || v == "priority"
+            v == "user_id" || v == "action" || v == "priority" || v == "updated_todo"
         );
     }
 
