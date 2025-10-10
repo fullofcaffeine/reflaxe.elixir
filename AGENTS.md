@@ -42,6 +42,22 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Descriptive Naming (Compiler & Output)**: Prefer meaningful, descriptive variable names in both compiler source and generated Elixir. Avoid single-letter or cryptic identifiers (e.g., `g`, `_g3`) except where they are intentional, temporary IR markers that will be eliminated by the pipeline. When a temporary identifier is required in the compiler, name by role (e.g., `caseDiscriminant`, `accTuple`, `tempAlias`) and document it.
 - **🔥 Pragmatic Stdlib Implementation**: Use `__elixir__()` for efficient native stdlib - [see Standard Library Philosophy](#standard-library-philosophy--pragmatic-native-implementation)
 
+### 🚫 Anti‑Coupling Rules (STRICT)
+
+To prevent app coupling and keep the compiler general and idiomatic, the following rules are mandatory:
+
+- No app‑specific whitelists/blacklists in compiler logic. Examples: lists of params keys like `name`, `tag`, `priority`, etc. are prohibited. Use structural detection instead (e.g., scan for `Map.get(params, :key)` in the local AST) or pass explicit metadata from the builder.
+- No hard‑coded domain names in passes (e.g., `todo`, `user`, `post`, `message`, `reason`). Binder shaping must derive names from structural conditions: pattern binders, body usage, declared locals, or explicit metadata.
+- Keep `ElixirASTTransformer.hx` thin. It is a registry and coordination hub only. All new/modified passes must live in dedicated modules under `src/reflaxe/elixir/ast/transformers/` with full WHAT/WHY/HOW docs. The transformer file may define tiny glue helpers, but never substantial pass bodies.
+- Prefer “prove it” strategies: rename or alias only when there is exactly one structurally justified candidate. If not provable, do not guess.
+- Any new heuristic must document its structural preconditions and the negative cases it deliberately avoids. If you can’t express it structurally, it likely doesn’t belong in the compiler.
+
+Enforcement:
+
+- PRs adding app‑specific constants, whitelists, or domain names to passes will be rejected.
+- PRs growing `ElixirASTTransformer.hx` with pass bodies will be rejected—move logic into dedicated transformer modules.
+- QA‑sentinel must be run after each pass addition/refactor to verify no app‑coupled behavior was introduced.
+
 ### 📝 Commenting Standards (MANDATORY)
 
 Comments must be useful to readers who are not familiar with the compiler architecture. Avoid terse, “synthetic” notes. For every non-trivial file, function, or transform pass, document:

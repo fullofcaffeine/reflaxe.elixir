@@ -1968,6 +1968,22 @@ class ElixirCompiler extends GenericCompiler<
             #end
         }
 
+        // Enable LiveView transformation pass for @:liveview modules
+        if (classType.meta.has(":liveview")) {
+            metadata.isLiveView = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isLiveView=true metadata for ${classType.name}');
+            #end
+        }
+
+        // Enable Phoenix Web transformation pass for @:phoenixWeb modules
+        if (classType.meta.has(":phoenixWeb") || classType.meta.has(":phoenixWebModule")) {
+            metadata.isPhoenixWeb = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isPhoenixWeb=true metadata for ${classType.name}');
+            #end
+        }
+
         // Enable Presence transformation pass for @:presence modules
         if (classType.meta.has(":presence")) {
             metadata.isPresence = true;

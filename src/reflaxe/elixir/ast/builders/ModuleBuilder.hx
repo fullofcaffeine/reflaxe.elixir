@@ -139,7 +139,7 @@ class ModuleBuilder {
         var result: ElixirAST = null;
 
         // Prefer EDefmodule form for special annotated modules that downstream transforms expect
-        if (moduleMetadata != null && (moduleMetadata.isRouter == true || moduleMetadata.isPresence == true)) {
+        if (moduleMetadata != null && (moduleMetadata.isRouter == true || moduleMetadata.isPresence == true || moduleMetadata.isPhoenixWeb == true)) {
             // Wrap provided fields in a block as the module body
             var body = makeAST(EBlock(fields));
             result = {
