@@ -531,8 +531,10 @@ class ElixirCompiler extends GenericCompiler<
      */
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         #if debug_compilation_flow
+        #if debug_compiler
         trace('[ElixirCompiler.compileClassImpl] START compiling class: ${classType.name}');
         trace('[ElixirCompiler.compileClassImpl] varFields: ${varFields.length}, funcFields: ${funcFields.length}');
+        #end
         #end
 
         if (classType == null) return null;
@@ -545,7 +547,9 @@ class ElixirCompiler extends GenericCompiler<
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
             #if debug_compilation_flow
+            #if debug_compiler
             trace('[ElixirCompiler.compileClassImpl] Skipping standard library class: ${classType.name}');
+            #end
             #end
             return null;
         }
@@ -600,16 +604,22 @@ class ElixirCompiler extends GenericCompiler<
         // Activate behavior transformer based on class metadata
         // This replaces the old isInPresenceModule flag with a more generic system
         #if debug_behavior_transformer
+        #if debug_compiler
         trace('[ElixirCompiler] Compiling class: ${classType.name}');
+        #end
         #end
         
         if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
             var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
             #if debug_behavior_transformer
             if (behaviorName != null) {
+                #if debug_compiler
                 trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for class ${classType.name}');
+                #end
             } else {
+                #if debug_compiler
                 trace('[BehaviorTransformer] No behavior found for class ${classType.name}');
+                #end
             }
             #end
         }
@@ -632,7 +642,9 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         #if debug_compilation_flow
+        #if debug_compiler
         trace('[ElixirCompiler.compileClassImpl] END compiling class: ${classType.name}');
+        #end
         #end
 
         // Return AST directly - transformation and printing handled by ElixirOutputIterator
@@ -1025,9 +1037,13 @@ class ElixirCompiler extends GenericCompiler<
 
         // Debug flag to print enabled features
         #if debug_feature_flags
+        #if debug_compiler
         trace("Feature flags initialized:");
+        #end
         for (key in context.astContext.featureFlags.keys()) {
+            #if debug_compiler
             trace('  $key: ${context.astContext.featureFlags.get(key)}');
+            #end
         }
         #end
     }
@@ -1085,7 +1101,9 @@ class ElixirCompiler extends GenericCompiler<
         // Pass context as second parameter to ensure isolated state
         var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
+        #if debug_compiler
         trace('[AST Pipeline] After Builder - AST type: ${ast != null ? Type.enumConstructor(ast.def) : "null"}');
+        #end
 
         // Apply transformations to all expressions, not just function bodies
         // Pass context to transformer as well
@@ -1094,9 +1112,11 @@ class ElixirCompiler extends GenericCompiler<
             var transformedAst = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast, context);
             var transformedAstId = Std.string(transformedAst);
 
+            #if debug_compiler
             trace('[AST Pipeline] After Transformer - Same object: ${originalAstId == transformedAstId}');
             trace('[AST Pipeline]   Original AST ID: $originalAstId');
             trace('[AST Pipeline]   Transformed AST ID: $transformedAstId');
+            #end
 
             ast = transformedAst;
 
