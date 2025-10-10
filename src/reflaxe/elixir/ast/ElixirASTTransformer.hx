@@ -564,7 +564,7 @@ class ElixirASTTransformer {
             name: "MapIteratorTransform",
             description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
+            pass: mapIteratorTransformPass
         });
         
         // Loop to comprehension pass
