@@ -124,10 +124,14 @@ class ElixirASTTransformer {
      * @return Transformed AST
      */
     public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
+        // Debug output is gated to avoid flooding stdout during normal builds.
+        // Enable with -D debug_ast_transformer when investigating the pipeline.
+        #if debug_ast_transformer
         #if sys
         Sys.println('[XRay AST Transformer] Starting transformation pipeline');
         #else
         trace('[XRay AST Transformer] Starting transformation pipeline');
+        #end
         #end
         #if debug_ast_transformer
         trace('[XRay AST Transformer] AST type: ${Type.enumConstructor(ast.def)}');
@@ -151,10 +155,12 @@ class ElixirASTTransformer {
         var result = ast;
 
         for (passConfig in passes) {
+            #if debug_ast_transformer
             #if sys
             Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #else
             trace('[XRay AST Transformer] Applying pass: ${passConfig.name}');
+            #end
             #end
 
             // CONTEXTUAL PASS SELECTION LOGIC

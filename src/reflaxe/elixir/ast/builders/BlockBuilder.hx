@@ -466,16 +466,24 @@ class BlockBuilder {
     static function isListBuildingPattern(el: Array<TypedExpr>): Bool {
         if (el.length < 3) return false;
 
+        #if debug_block_builder
         trace('[DEBUG BlockBuilder] isListBuildingPattern called with ${el.length} statements');
+        #end
+        #if debug_block_builder
         trace('[DEBUG BlockBuilder] First statement type: ${el[0].expr.getName()}');
+        #end
 
         // Check if first statement is TVar with TBlock initialization (unrolled comprehension)
         var hasVarWithBlock = switch(el[0].expr) {
             case TVar(v, init) if (init != null):
+                #if debug_block_builder
                 trace('[DEBUG BlockBuilder] TVar found: ${v.name}, init type: ${init.expr.getName()}');
+                #end
                 switch(init.expr) {
                     case TBlock(stmts):
+                        #if debug_block_builder
                         trace('[DEBUG BlockBuilder] TVar has TBlock init with ${stmts.length} statements!');
+                        #end
                         true;
                     default: false;
                 }
@@ -511,10 +519,14 @@ class BlockBuilder {
             default: false;
         };
 
+        #if debug_block_builder
         trace('[DEBUG BlockBuilder] hasChainedAssignment: $hasChainedAssignment (length: ${el.length})');
+        #end
 
         if (hasChainedAssignment) {
+            #if debug_block_builder
             trace('[DEBUG BlockBuilder] Found chained assignment in first statement!');
+            #end
 
             // Check last statement is empty array
             var lastIdx = el.length - 1;
