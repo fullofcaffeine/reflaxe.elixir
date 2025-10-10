@@ -3741,9 +3741,8 @@ class ElixirASTTransformer {
      * Map Iterator Transformation Pass
      * Transforms Map iterator patterns from g.next() to idiomatic Elixir
      */
-        static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
+    static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
         return reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass(ast);
-    }
     }
 
     // Helper to print AST structure for debugging
