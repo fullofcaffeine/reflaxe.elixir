@@ -286,7 +286,7 @@ class BinderTransforms {
                                         case EBinary(_, l, r): scan(l); scan(r);
                                         case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body);} 
                                         case ECall(t, _, as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
-                                        case ERemoteCall(m2, _, as2): scan(m2); if (as2 != null) for (a in as2) scan(a);
+                                        // Redundant remote call match removed to avoid unused pattern warning
                                         default:
                                     }}; scan(cl.body); return found;
                             })();
