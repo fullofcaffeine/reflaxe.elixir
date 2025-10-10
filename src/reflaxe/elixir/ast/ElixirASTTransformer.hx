@@ -521,14 +521,13 @@ class ElixirASTTransformer {
         // NOTE: Disabled because we now use String.cross.hx to generate idiomatic code directly
         // The .cross.hx pattern is better as it generates correct code from the start
         // rather than transforming it after the fact
-        /*
+        
         passes.push({
             name: "StringMethodTransform",
             description: "Convert string method calls to String module calls",
             enabled: true,
             pass: stringMethodTransformPass
         });
-        */
         
         // Pipeline optimization pass
         #if !disable_pipeline_optimization
@@ -579,14 +578,8 @@ class ElixirASTTransformer {
         
         // Unrolled comprehension optimization pass (MUST run before effect lifting)
         // TODO: Fix implementation - functions need to be moved before this reference
-        /*
-        passes.push({
-            name: "UnrolledComprehensionOptimization",
-            description: "Optimize unrolled array comprehensions with bare concatenations",
-            enabled: true,
-            pass: unrolledComprehensionOptimizationPass
-        });
-        */
+        
+        // (Removed) UnrolledComprehensionOptimization pass – no implementation available
         
         // Effect lifting for list literals pass
         passes.push({
@@ -3258,6 +3251,7 @@ class ElixirASTTransformer {
     static function stringInterpolationPass(ast: ElixirAST): ElixirAST {
         // Forwarder: use module implementation to keep transformer thin
         return reflaxe.elixir.ast.transformers.StringTransforms.stringInterpolationPass(ast);
+        /*
         function transform(node: ElixirAST): ElixirAST {
             // Handle null nodes
             if (node == null) return null;
@@ -3499,7 +3493,7 @@ class ElixirASTTransformer {
             }
         }
         
-        return transform(ast);
+        */
     }
     
     /**
@@ -4702,6 +4696,7 @@ class ElixirASTTransformer {
         // Forwarder: use module implementation to keep transformer thin
         return reflaxe.elixir.ast.transformers.StructAndMapTransforms.statementContextTransformPass(ast);
         // Transform with context tracking
+        /*
         function transformWithContext(node: ElixirAST, isStatementContext: Bool): ElixirAST {
             // Check for null node or def before processing
             if (node == null || node.def == null) {
@@ -4914,7 +4909,8 @@ class ElixirASTTransformer {
         }
         
         // Start transformation with top-level as statement context
-        return transformWithContext(ast, true);
+        */
+        // legacy body removed; thin forwarder defined at function start
     }
     
     /**
