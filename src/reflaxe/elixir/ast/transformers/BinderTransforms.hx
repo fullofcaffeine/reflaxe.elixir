@@ -577,7 +577,8 @@ class BinderTransforms {
                 }
             });
 
-            function transform(n: ElixirAST): ElixirAST {
+            // Non-recursive rewriter: rely on transformNode for traversal
+            function rewrite(n: ElixirAST): ElixirAST {
                 if (n == null || n.def == null) return n;
                 return switch (n.def) {
                     case EMatch(pattern, expr):
@@ -594,13 +595,13 @@ class BinderTransforms {
                             default:
                                 pattern;
                         };
-                        makeASTWithMeta(EMatch(newPattern, transform(expr)), n.metadata, n.pos);
+                        makeASTWithMeta(EMatch(newPattern, expr), n.metadata, n.pos);
                     default:
-                        ElixirASTTransformer.transformNode(n, transform);
+                        n;
                 }
             }
 
-            return transform(body);
+            return ElixirASTTransformer.transformNode(body, rewrite);
         }
 
         return ElixirASTTransformer.transformNode(ast, function(n) {
