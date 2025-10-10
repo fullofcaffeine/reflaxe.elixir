@@ -62,6 +62,9 @@ class ElixirASTPrinter {
      * WHAT: Recursively converts AST tree to formatted Elixir code
      * HOW: Delegates to specific handlers based on node type
      */
+    // Track current module name to enable context-aware printing (e.g., Repo qualification)
+    static var currentModuleName: Null<String> = null;
+
     public static function print(ast: ElixirAST, indent: Int = 0): String {
         // Handle null nodes
         if (ast == null) {
@@ -82,19 +85,31 @@ class ElixirASTPrinter {
 
                 var moduleContent = '';
 
-                // Add @compile directive for unused functions if any exist
-                if (ast.metadata != null && ast.metadata.unusedPrivateFunctionsWithArity != null &&
-                    ast.metadata.unusedPrivateFunctionsWithArity.length > 0) {
-                    var unusedFuncList = [];
-                    for (func in ast.metadata.unusedPrivateFunctionsWithArity) {
-                        unusedFuncList.push('{:_${func.name}, ${func.arity}}');
-                    }
-                    if (unusedFuncList.length > 0) {
-                        moduleContent += indentStr(indent + 1) + '@compile [{:nowarn_unused_function, [' + unusedFuncList.join(', ') + ']}]\n\n';
-                    }
+                // Add @compile directive to silence unused private functions (late sweep)
+                // Compute defp names/arity directly from doBlock
+                var nowarnList: Array<String> = [];
+                switch (doBlock.def) {
+                    case EBlock(stmts):
+                        for (s in stmts) switch (s.def) {
+                            case EDefp(fnName, fnArgs, _, _):
+                                var arity = fnArgs.length;
+                                nowarnList.push(fnName + ':' + arity);
+                            default:
+                        }
+                    default:
+                }
+                if (nowarnList.length > 0) {
+                    moduleContent += indentStr(indent + 1) + '@compile {:nowarn_unused_function, [' + nowarnList.join(', ') + ']}\n\n';
                 }
 
+                // Preserve and set current module context
+                var prevModule = currentModuleName;
+                currentModuleName = name;
+
                 moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
+
+                // Restore context
+                currentModuleName = prevModule;
 
                 var moduleResult = 'defmodule ${name} do\n' +
                     moduleContent + '\n' +
@@ -676,7 +691,15 @@ class ElixirASTPrinter {
                                         '(' + print(target, indent) + ') |> Kernel.' + funcName;
                                     default:
                                         // Regular expressions can be method call targets directly
-                                        print(target, indent) + '.' + funcName;
+                                        // Qualify bare Repo.* to <App>.Repo.* within <App>Web modules
+                                        var modStr = switch(target.def) {
+                                            case EVar(name) if (name == "Repo"):
+                                                var idx = (currentModuleName != null) ? currentModuleName.indexOf("Web") : -1;
+                                                if (idx > 0) currentModuleName.substring(0, idx) + ".Repo" else name;
+                                            default:
+                                                print(target, indent);
+                                        };
+                                        modStr + '.' + funcName;
                                 };
                                 targetStr + '(' + argStr + ')';
                             }
@@ -696,7 +719,8 @@ class ElixirASTPrinter {
                 
             case ERemoteCall(module, funcName, args):
                 var argStr = [for (a in args) printFunctionArg(a)].join(', ');
-                print(module, 0) + '.' + funcName + '(' + argStr + ')';
+                var moduleStr = printQualifiedModule(module);
+                moduleStr + '.' + funcName + '(' + argStr + ')';
                 
             case EPipe(left, right):
                 print(left, 0) + ' |> ' + print(right, 0);
@@ -774,7 +798,17 @@ class ElixirASTPrinter {
                 unaryOpToString(op) + print(expr, 0);
                 
             case EField(target, field):
-                print(target, 0) + '.' + field;
+                // If target is an atom, combine into a single atom with proper quoting
+                switch (target.def) {
+                    case EAtom(atomBase):
+                        // Render as a single atom: :"atomBase.Field"
+                        var combined = atomBase + '.' + field;
+                        // Reuse EAtom printing rules by constructing a synthetic EAtom
+                        var tmp = makeAST(EAtom(combined));
+                        print(tmp, 0);
+                    default:
+                        print(target, 0) + '.' + field;
+                }
                 
             case EAccess(target, key):
                 print(target, 0) + '[' + print(key, 0) + ']';
@@ -1599,7 +1633,32 @@ class ElixirASTPrinter {
                 return print(arg, 0);
         }
     }
-    
+
+    /**
+     * Print a module reference with context-aware qualification rules
+     * - Qualify bare Repo.* to <App>.Repo inside <App>Web.* modules
+     */
+    static function printQualifiedModule(module: ElixirAST): String {
+        // Compute app prefix from current module name (e.g., TodoAppWeb.* -> TodoApp)
+        inline function currentAppPrefix(): Null<String> {
+            if (currentModuleName == null) return null;
+            var idx = currentModuleName.indexOf("Web");
+            return idx > 0 ? currentModuleName.substring(0, idx) : null;
+        }
+
+        switch (module.def) {
+            case EVar(name) if (name == "Repo"):
+                var prefix = currentAppPrefix();
+                if (prefix != null) {
+                    return prefix + ".Repo";
+                } else {
+                    return name;
+                }
+            default:
+                return print(module, 0);
+        }
+    }
+
     /**
      * Check if a string represents a module name
      * Module names start with uppercase and can contain dots

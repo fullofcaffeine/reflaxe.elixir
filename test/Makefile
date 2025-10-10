@@ -57,10 +57,12 @@ summary: $(TEST_TARGETS)
 	if [ $$failed -gt 0 ]; then \
 		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
 		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
 	else \
 		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
-	fi; \
-	rm -f test-results*.tmp
+		rm -f test-results*.tmp; \
+	fi
 
 # Pattern rule for running individual tests
 # Converts double underscores back to slashes for nested directories
@@ -364,37 +366,135 @@ test-with-runtime:
 .PHONY: test-core
 test-core:
 	@echo "Running core language tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/core -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "Core Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 .PHONY: test-stdlib
 test-stdlib:
 	@echo "Running standard library tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/stdlib -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "Stdlib Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 .PHONY: test-regression
 test-regression:
 	@echo "Running regression tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/regression -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "Regression Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 .PHONY: test-phoenix
 test-phoenix:
 	@echo "Running Phoenix framework tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/phoenix -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "Phoenix Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 .PHONY: test-ecto
 test-ecto:
 	@echo "Running Ecto ORM tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/ecto -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "Ecto Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 .PHONY: test-otp
 test-otp:
 	@echo "Running OTP pattern tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/otp -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "OTP Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 .PHONY: test-bootstrap
 test-bootstrap:
 	@echo "Running bootstrap tests..."
+	@rm -f test-results*.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/bootstrap* -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "Bootstrap Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
 
 # Pattern-based test selection
 .PHONY: test-pattern

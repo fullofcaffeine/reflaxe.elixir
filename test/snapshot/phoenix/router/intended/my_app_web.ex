@@ -1,4 +1,3 @@
 defmodule MyAppWeb do
-  @layout_view nil
-  @api_auth_plug nil
+  alias MyApp.Repo, as: Repo
 end

@@ -1,15 +1,15 @@
 defmodule ExternalCaller do
-  def call_from_outside(socket) do
+  def call_from_outside(_socket) do
     meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => "External User", :status => "online"}
-    TestApp.Presence.track(socket, "external_user", meta)
-    TestApp.Presence.update(socket, "external_user", meta)
-    TestApp.Presence.untrack(socket, "external_user")
-    _all_presences = TestApp.Presence.list(socket)
-    user_presence = TestApp.Presence.get_by_key(socket, "external_user")
-    if (user_presence != nil && length(user_presence.metas) > 0) do
+    Phoenix.Presence.track("presence:test", "external_user", meta)
+    Phoenix.Presence.update("presence:test", "external_user", meta)
+    Phoenix.Presence.untrack("presence:test", "external_user")
+    all_presences = Phoenix.Presence.list("presence:test")
+    user_presence = Phoenix.Presence.get_by_key("presence:test", "external_user")
+    if user_presence != nil and length(user_presence.metas) > 0 do
       typed_meta = user_presence.metas[0]
-      Log.trace("User status: " <> typed_meta.status, %{:file_name => "Main.hx", :line_number => 100, :class_name => "ExternalCaller", :method_name => "callFromOutside"})
-      Log.trace("User name: " <> typed_meta.user_name, %{:file_name => "Main.hx", :line_number => 101, :class_name => "ExternalCaller", :method_name => "callFromOutside"})
+      Log.trace("User status: #{typed_meta.status}", %{:file_name => "Main.hx", :line_number => 105, :class_name => "ExternalCaller", :method_name => "callFromOutside"})
+      Log.trace("User name: #{typed_meta.userName}", %{:file_name => "Main.hx", :line_number => 106, :class_name => "ExternalCaller", :method_name => "callFromOutside"})
     end
   end
 end

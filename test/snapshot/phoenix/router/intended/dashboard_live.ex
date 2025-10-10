@@ -1,3 +1,3 @@
 defmodule DashboardLive do
-  nil
+  use Phoenix.Component
 end

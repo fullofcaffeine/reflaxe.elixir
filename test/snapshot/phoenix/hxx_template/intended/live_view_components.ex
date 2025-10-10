@@ -1,4 +1,5 @@
 defmodule LiveViewComponents do
+  use Phoenix.Component
   def render_counter(count) do
     "<div class='counter'><h3>Count: #{count}</h3><button phx-click='increment'>+</button><button phx-click='decrement'>-</button><button phx-click='reset'>Reset</button></div>"
   end

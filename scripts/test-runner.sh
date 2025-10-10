@@ -201,6 +201,7 @@ run_tests() {
     local make_args="-j$PARALLEL"
     
     # Determine what tests to run
+    local aggregate_mode=false
     if [ "$FAILED_ONLY" = true ]; then
         echo -e "${YELLOW}Re-running failed tests from last run...${RESET}"
         local failed_tests=$(get_failed_tests)
@@ -224,12 +225,14 @@ run_tests() {
     elif [ -n "$CATEGORY" ]; then
         echo -e "${YELLOW}Running $CATEGORY tests...${RESET}"
         make_target="test-$CATEGORY"
+        aggregate_mode=true
     elif [ -n "$PATTERN" ]; then
         echo -e "${YELLOW}Running tests matching pattern: $PATTERN${RESET}"
         make_target="test-pattern PATTERN=$PATTERN"
     else
         echo -e "${YELLOW}Running all tests...${RESET}"
         make_target="all"
+        aggregate_mode=true
     fi
     
     # Add verbose flag if requested
@@ -243,6 +246,8 @@ run_tests() {
     # Run the tests
     cd "$TEST_DIR"
     echo -e "${BLUE}Executing: make -f Makefile $make_args $make_target${RESET}"
+    # Ensure fresh results file for accurate summary
+    rm -f test-results*.tmp 2>/dev/null || true
     
     if [ "$UPDATE" = true ]; then
         # If updating, run tests and then update failed ones
@@ -261,15 +266,30 @@ run_tests() {
             echo -e "${GREEN}No failed tests to update${RESET}"
         fi
     else
-        # Normal test run
-        if make -f Makefile $make_args $make_target; then
-            echo -e "${GREEN}All tests passed! ✅${RESET}"
-            exit 0
+        if [ "$aggregate_mode" = true ]; then
+            # Aggregated targets (all/categories) return proper exit codes
+            if make -f Makefile $make_args $make_target; then
+                echo -e "${GREEN}All tests passed! ✅${RESET}"
+                exit 0
+            else
+                echo -e "${RED}Some tests failed ❌${RESET}"
+                echo -e "${YELLOW}Run with --failed to re-run only failed tests${RESET}"
+                echo -e "${YELLOW}Run with --update to update intended outputs${RESET}"
+                exit 1
+            fi
         else
-            echo -e "${RED}Some tests failed ❌${RESET}"
-            echo -e "${YELLOW}Run with --failed to re-run only failed tests${RESET}"
-            echo -e "${YELLOW}Run with --update to update intended outputs${RESET}"
-            exit 1
+            # Non-aggregated targets (pattern/changed/failed): decide based on result files
+            make -f Makefile $make_args $make_target || true
+            if grep -q "❌" test-results*.tmp 2>/dev/null; then
+                echo -e "${RED}Some tests failed ❌${RESET}"
+                grep "❌" test-results*.tmp | sed 's/^/  /' || true
+                echo -e "${YELLOW}Run with --failed to re-run only failed tests${RESET}"
+                echo -e "${YELLOW}Run with --update to update intended outputs${RESET}"
+                exit 1
+            else
+                echo -e "${GREEN}All tests passed! ✅${RESET}"
+                exit 0
+            fi
         fi
     fi
 }

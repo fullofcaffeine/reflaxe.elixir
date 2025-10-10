@@ -206,7 +206,8 @@ extern class LiveView {
      * @param assigns Partial assigns object (only fields being updated)
      */
     extern inline static function assignMultiple<TAssigns>(socket: Socket<TAssigns>, assigns: Dynamic): Socket<TAssigns> {
-        return untyped __elixir__('assign({0}, {1})', socket, assigns);
+        // Emit fully-qualified call to prevent reliance on local imports
+        return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, assigns);
     }
     
     /**
