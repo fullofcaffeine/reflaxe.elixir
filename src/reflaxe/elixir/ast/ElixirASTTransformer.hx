@@ -843,6 +843,84 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewReduceWhileErrorBinderNormalizationPass
         });
 
+        // Rewrite bare assign(socket, map) calls in LiveView modules to Component.assign(socket, map)
+        passes.push({
+            name: "LiveViewAssignCallRewrite",
+            description: "Rewrite assign(socket,map) to Component.assign(socket,map) in LiveView modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewAssignCallRewritePass
+        });
+
+        // Rewrite listVar.push(value) to listVar = Enum.concat(listVar, [value])
+        passes.push({
+            name: "ListPushRewrite",
+            description: "Rewrite list.push(v) to list = Enum.concat(list, [v])",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.listPushRewritePass
+        });
+
+        // Qualify Repo.* to <App>.Repo.* based on module name (TodoAppWeb.* -> TodoApp.Repo)
+        passes.push({
+            name: "RepoQualification",
+            description: "Qualify bare Repo module calls to <App>.Repo",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoQualificationPass
+        });
+
+        // Replace x == nil checks with Kernel.is_nil(x)
+        passes.push({
+            name: "EqNilToIsNil",
+            description: "Replace (x == nil) with Kernel.is_nil(x)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
+
+        // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
+        passes.push({
+            name: "PhoenixComponentUseInjection",
+            description: "Add `use Phoenix.Component` to modules that call assign/2",
+            enabled: true,
+            pass: function(ast: ElixirAST): ElixirAST {
+                return transformNode(ast, function(n: ElixirAST): ElixirAST {
+                    return switch(n.def) {
+                        case EModule(name, attrs, body):
+                            // Detect free assign/2 calls with socket-like first argument
+                            var hasAssign = false;
+                            function scan(x: ElixirAST): Void {
+                                if (hasAssign || x == null || x.def == null) return;
+                                switch(x.def) {
+                                    case ECall(_, func, args) if (func == "assign" && args != null && args.length == 2):
+                                        switch(args[0].def) { case EVar(v) if (v.indexOf("socket") != -1): hasAssign = true; default: }
+                                    case ERemoteCall(_, func, args) if (func == "assign" && args != null && args.length == 2):
+                                        switch(args[0].def) { case EVar(v) if (v.indexOf("socket") != -1): hasAssign = true; default: }
+                                    case EBlock(es): for (e in es) scan(e);
+                                    case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                                    case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body);} 
+                                    case EBinary(_, l, r): scan(l); scan(r);
+                                    case EFn(cs): for (cl in cs) scan(cl.body);
+                                    case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                                    case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
+                                    default:
+                                }
+                            }
+                            for (b in body) scan(b);
+                            if (hasAssign) {
+                                // Avoid duplicate use statements
+                                var hasUse = false;
+                                for (b in body) switch(b.def) { case EUse(module, _ ) if (module == "Phoenix.Component"): hasUse = true; default: }
+                                if (!hasUse) {
+                                    var newBody = [ makeAST(EUse("Phoenix.Component", [])) ];
+                                    for (b in body) newBody.push(b);
+                                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                                } else n;
+                            } else n;
+                        default:
+                            n;
+                    }
+                });
+            }
+        });
+
         // Late string search predicate normalization to sanitize any residual inline expansion
         // in Enum.filter predicates or anonymous functions (produces pure boolean expressions)
         passes.push({
@@ -964,6 +1042,60 @@ class ElixirASTTransformer {
             description: "Convert bare concatenations in blocks to assignments",
             enabled: true,
             pass: fixBareConcatenationsPass
+        });
+
+        // Final safeguard: rewrite any remaining free assign(socket, map) to Component.assign(socket, map)
+        passes.push({
+            name: "FinalAssignRewrite",
+            description: "Rewrite remaining assign/2 calls to Component.assign/2",
+            enabled: true,
+            pass: function(ast: ElixirAST): ElixirAST {
+                return transformNode(ast, function(n: ElixirAST): ElixirAST {
+                    return switch(n.def) {
+                        case ECall(_, func, args) if (func == "assign" && args != null && args.length == 2):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", args), n.metadata, n.pos);
+                        case ERemoteCall(mod, func, args) if (func == "assign" && args != null && args.length >= 2):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", args), n.metadata, n.pos);
+                        default:
+                            n;
+                    }
+                });
+            }
+        });
+
+        // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
+        passes.push({
+            name: "EnsurePhoenixComponentUseInLive",
+            description: "Inject `use Phoenix.Component` into modules ending with Live",
+            enabled: true,
+            pass: function(ast: ElixirAST): ElixirAST {
+                return transformNode(ast, function(n: ElixirAST): ElixirAST {
+                    return switch(n.def) {
+                        case EModule(name, attrs, body) if (name != null && (name.indexOf("Live") != -1)):
+                            var hasUse = false;
+                            for (b in body) switch(b.def) { case EUse(module, _) if (module == "Phoenix.Component"): hasUse = true; default: }
+                            if (!hasUse) {
+                                var newBody = [ makeAST(EUse("Phoenix.Component", [])) ];
+                                for (b in body) newBody.push(b);
+                                makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                            } else n;
+                        case EDefmodule(name, doBlock) if (name != null && (name.indexOf("Live") != -1)):
+                            // Inject at top of doBlock if missing
+                            var hasUse = false;
+                            switch(doBlock.def) {
+                                case EBlock(stmts):
+                                    for (s in stmts) switch(s.def) { case EUse(module, _) if (module == "Phoenix.Component"): hasUse = true; default: }
+                                    if (!hasUse) {
+                                        var newDo = makeAST(EBlock([ makeAST(EUse("Phoenix.Component", [])) ].concat(stmts)));
+                                        makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+                                    } else n;
+                                default: if (!hasUse) makeASTWithMeta(EDefmodule(name, makeAST(EBlock([ makeAST(EUse("Phoenix.Component", [])), doBlock ]))), n.metadata, n.pos) else n;
+                            }
+                        default:
+                            n;
+                    }
+                });
+            }
         });
         
         // Pattern variable origin analysis pass

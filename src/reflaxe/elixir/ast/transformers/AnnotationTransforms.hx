@@ -284,7 +284,17 @@ class AnnotationTransforms {
                     ast.metadata,
                     ast.pos
                 );
-                
+            case EModule(name, attrs, body) if (ast.metadata?.isLiveView == true):
+                // Inject `use <App>Web, :live_view` into regular module body
+                var webIndex = name.indexOf("Web");
+                var appNamePart = if (webIndex > 0) name.substring(0, webIndex) else name;
+                var useStmt = makeAST(EUse(appNamePart + "Web", [
+                    makeAST(EAtom(ElixirAtom.raw("live_view")))
+                ]));
+                var newBody: Array<ElixirAST> = [];
+                newBody.push(useStmt);
+                for (stmt in body) newBody.push(stmt);
+                return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
             default:
                 // Not a LiveView module, just pass through
                 return ast;
