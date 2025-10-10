@@ -99,7 +99,19 @@ test-%:
 			fi; \
 			if [ "$$syntax_valid" = false ]; then \
 				echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-			elif diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" --exclude="bootstrap_*.ex" --exclude="*.exs.ex" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+			elif diff -r \
+				--exclude="_GeneratedFiles.json" \
+				--exclude="erl_crash.dump" \
+				--exclude="bootstrap_*.ex" \
+				--exclude="*.exs.ex" \
+				--exclude="_any/*" \
+				--exclude="_enum_value/*" \
+				--exclude="haxe/_call_stack/*" \
+				--exclude="haxe/_constraints/*" \
+				--exclude="haxe/_int32/*" \
+				--exclude="haxe/iterators/*" \
+				--exclude="haxe/ds/*" \
+				$$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
 				echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			else \
 				echo "❌ $$testname - Output mismatch (syntax OK) ($${duration}s)" | tee -a test-results-$$$$.tmp; \

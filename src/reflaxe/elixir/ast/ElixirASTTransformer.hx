@@ -516,7 +516,7 @@ class ElixirASTTransformer {
             name: "MapIteratorTransform",
             description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
             enabled: true,
-            pass: mapIteratorTransformPass
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
         });
         
         // Loop to comprehension pass
@@ -680,6 +680,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
         });
+
+        // Guard sanitization pass (replace non-guard-safe calls with guard-safe equivalents)
+        passes.push({
+            name: "GuardSanitization",
+            description: "Replace non-guard-safe constructs (e.g., Map.get != nil) with guard-safe guard functions",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.GuardSanitizationTransforms.guardSanitizePass
+        });
         
         // Pattern variable binding pass
         passes.push({
@@ -687,6 +695,14 @@ class ElixirASTTransformer {
             description: "Ensure correct variable scoping in pattern matching",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
+        });
+
+        // Binder alias injection (must run before underscore cleanup) 
+        passes.push({
+            name: "BinderAliasInjection",
+            description: "Inject clause-local aliases to reconcile binder names with body usage",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderAliasInjectionPass
         });
         
         // Pattern exhaustiveness check pass
@@ -3160,491 +3176,15 @@ class ElixirASTTransformer {
     }
     
     /**
-     * Map Iterator Transformation Pass
-     * Transforms Map iterator patterns from g.next() to idiomatic Elixir
+     * Map Iterator Transformation Pass (forwarder)
+     * Thin forwarder to MapAndCollectionTransforms.mapIteratorTransformPass
      */
     static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
-        if (ast == null) return null;
-        
-        #if debug_map_iterator
-        trace("[MapIteratorTransform] ===== MAP ITERATOR TRANSFORM PASS STARTING =====");
-        // Check if this is a module and which one
-        switch(ast.def) {
-            case EModule(name, _):
-                trace('[MapIteratorTransform] Processing module: $name');
-                if (name == "Main") {
-                    trace('[MapIteratorTransform] *** MAIN MODULE DETECTED - LOOKING FOR MAP PATTERNS ***');
-                }
-            default:
-                trace('[MapIteratorTransform] Processing non-module AST node');
-        }
-        #end
-        
-        // Use transformNode to recursively transform all nodes
-        return transformNode(ast, function(node) {
-            // Check for Enum.reduce_while with Map iterator patterns
-            switch(node.def) {
-                case ERemoteCall(module, funcName, args):
-                    #if debug_map_iterator
-                    switch(module.def) {
-                        case EVar(modName):
-                            trace('[MapIteratorTransform] Found remote call: $modName.$funcName with ${args.length} args');
-                        default:
-                    }
-                    #end
-                    
-                    switch(module.def) {
-                        case EVar(modName):
-                            #if debug_map_iterator
-                            if (modName == "Enum") {
-                                trace('[MapIteratorTransform] Found Enum.$funcName call with ${args?.length} args');
-                            }
-                            #end
-                            if (modName == "Enum" && funcName == "reduce_while" && args != null && args.length >= 3) {
-                                #if debug_map_iterator
-                                trace('[MapIteratorTransform] Found Enum.reduce_while - checking for Map iterator patterns');
-                                #end
-                                // Check if the loop function contains Map iterator patterns
-                                var loopFunc = args[2];
-                                
-                                // Helper to check if an expression contains iterator patterns
-                                function containsIteratorPattern(ast: ElixirAST): Bool {
-                                    if (ast == null) return false;
-                                    var hasPattern = false;
-                                    
-                                    function check(n: ElixirAST): Void {
-                                        if (n == null || n.def == null) return;
-                                        switch(n.def) {
-                                            case EField(_, field):
-                                                if (field == "key_value_iterator" || field == "has_next" || 
-                                                    field == "next" || field == "key" || field == "value") {
-                                                    hasPattern = true;
-                                                }
-                                            case ECall(func, _, _):
-                                                check(func);
-                                                // Check for calls to iterator methods
-                                                switch(func.def) {
-                                                    case EField(_, field):
-                                                        if (field == "key_value_iterator" || field == "has_next" || field == "next") {
-                                                            hasPattern = true;
-                                                        }
-                                                    default:
-                                                }
-                                            default:
-                                                // Recursively check nested expressions
-                                                switch(n.def) {
-                                                    case EField(obj, _): check(obj);
-                                                    case ECall(func, _, args): 
-                                                        check(func);
-                                                        if (args != null) for (arg in args) check(arg);
-                                                    default:
-                                                }
-                                        }
-                                    }
-                                    
-                                    check(ast);
-                                    return hasPattern;
-                                }
-                                
-                                // Helper to check for iterator patterns
-                                function hasMapIteratorCalls(ast: ElixirAST): Bool {
-                                    if (ast == null) return false;
-                                    var found = false;
-                                    var depth = 0;
-                                    function scan(n: ElixirAST): Void {
-                                        if (n == null || n.def == null) return;
-                                        depth++;
-                                        #if debug_map_iterator
-                                        if (depth <= 4) {
-                                            var nodeType = n.def != null ? Type.enumConstructor(n.def) : "null";
-                                            trace('[MapIteratorTransform] Depth $depth - Node type: $nodeType');
-                                        }
-                                        #end
-                                        switch(n.def) {
-                                            case EField(obj, field):
-                                                #if debug_map_iterator
-                                                trace('[MapIteratorTransform] Field access found: $field');
-                                                #end
-                                                if (field == "key_value_iterator" || field == "has_next" || 
-                                                    field == "next" || field == "key" || field == "value") {
-                                                    #if debug_map_iterator
-                                                    trace('[MapIteratorTransform] *** FOUND MAP ITERATOR FIELD: $field ***');
-                                                    #end
-                                                    found = true;
-                                                }
-                                                scan(obj);
-                                            case ECall(target, funcName, args):
-                                                #if debug_map_iterator
-                                                trace('[MapIteratorTransform] Scanning: Found call to $funcName');
-                                                #end
-                                                // Check if this is a field access call (like colors.key_value_iterator())
-                                                if (target != null) {
-                                                    switch(target.def) {
-                                                        case EField(_, field):
-                                                            #if debug_map_iterator
-                                                            trace('[MapIteratorTransform] Call is on field: $field');
-                                                            #end
-                                                            if (field == "key_value_iterator" || field == "has_next" || 
-                                                                field == "next" || field == "key" || field == "value") {
-                                                                #if debug_map_iterator
-                                                                trace('[MapIteratorTransform] *** FOUND MAP ITERATOR CALL: $field() ***');
-                                                                #end
-                                                                found = true;
-                                                            }
-                                                        default:
-                                                    }
-                                                    scan(target);
-                                                }
-                                                if (args != null) {
-                                                    for (arg in args) {
-                                                        scan(arg);
-                                                    }
-                                                }
-                                            case EFn(clauses):
-                                                #if debug_map_iterator
-                                                trace('[MapIteratorTransform] Scanning function with ${clauses.length} clauses');
-                                                #end
-                                                for (c in clauses) if (c.body != null) scan(c.body);
-                                            case EBlock(exprs):
-                                                #if debug_map_iterator
-                                                trace('[MapIteratorTransform] Scanning block with ${exprs.length} expressions');
-                                                #end
-                                                for (e in exprs) scan(e);
-                                            case EIf(cond, t, e):
-                                                #if debug_map_iterator
-                                                trace('[MapIteratorTransform] Scanning if statement');
-                                                #end
-                                                scan(cond);
-                                                scan(t);
-                                                if (e != null) scan(e);
-                                            case EMatch(_, value):
-                                                scan(value);
-                                            case ETuple(items):
-                                                for (item in items) scan(item);
-                                            default:
-                                                #if debug_map_iterator
-                                                if (depth <= 4) {
-                                                    var nodeType = Type.enumConstructor(n.def);
-                                                    trace('[MapIteratorTransform] Other node type: $nodeType');
-                                                }
-                                                #end
-                                        }
-                                        depth--;
-                                    }
-                                    scan(ast);
-                                    #if debug_map_iterator
-                                    trace('[MapIteratorTransform] Scan complete for AST, found iterator patterns: $found');
-                                    #end
-                                    return found;
-                                }
-                                
-                                #if debug_map_iterator
-                                trace('[MapIteratorTransform] Checking loopFunc for Map iterator calls...');
-                                #end
-                                
-                                if (hasMapIteratorCalls(loopFunc)) {
-                                    #if debug_map_iterator
-                                    trace('[MapIteratorTransform] Found Map iteration pattern in reduce_while - transforming to Enum.each');
-                                    #end
-                                    
-                                    // Extract the map variable from the initial value (second argument)
-                                    var mapVar = switch(args[1].def) {
-                                        case ETuple([mapExpr, _]) | ETuple([mapExpr]): 
-                                            switch(mapExpr.def) {
-                                                case EVar(name): name;
-                                                default: null;
-                                            }
-                                        case EVar(name): name;
-                                        default: null;
-                                    };
-                                    
-                                    if (mapVar == null) mapVar = "colors"; // Fallback to known variable name
-                                    
-                                    #if debug_map_iterator
-                                    trace('[MapIteratorTransform] Map variable identified: $mapVar');
-                                    #end
-                                    
-                                    // Extract variable names and the body from the loop
-                                    var keyVarName = "name";  // Default names
-                                    var valueVarName = "hex";
-                                    var loopBody: ElixirAST = null;
-                                    
-                                    switch(loopFunc.def) {
-                                        case EFn(clauses) if (clauses.length > 0):
-                                            var body = clauses[0].body;
-                                            // Look for the if statement
-                                            switch(body.def) {
-                                                case EIf(_, thenBranch, _):
-                                                    #if debug_map_iterator
-                                                    trace('[MapIteratorTransform] Processing if branch for body extraction');
-                                                    #if debug_ast_structure
-                                                    ASTUtils.debugAST(thenBranch, 0, 3);
-                                                    #end
-                                                    #end
-                                                    
-                                                    // Use ASTUtils to handle nested blocks properly
-                                                    var allExprs = ASTUtils.flattenBlocks(thenBranch);
-                                                    
-                                                    #if debug_map_iterator
-                                                    trace('[MapIteratorTransform] Flattened ${allExprs.length} expressions from then branch');
-                                                    #end
-                                                    
-                                                    // Extract variable names from iterator assignments
-                                                    for (expr in allExprs) {
-                                                        switch(expr.def) {
-                                                            case EMatch(PVar(varName), rhs):
-                                                                // Check if this is a key or value extraction
-                                                                if (ASTUtils.containsIteratorPattern(rhs)) {
-                                                                    // Extract the field being accessed
-                                                                    switch(rhs.def) {
-                                                                        case EField(_, "key"):
-                                                                            keyVarName = varName;
-                                                                            #if debug_map_iterator
-                                                                            trace('[MapIteratorTransform] Found key variable: $keyVarName');
-                                                                            #end
-                                                                        case EField(_, "value"):
-                                                                            valueVarName = varName;
-                                                                            #if debug_map_iterator
-                                                                            trace('[MapIteratorTransform] Found value variable: $valueVarName');
-                                                                            #end
-                                                                        default:
-                                                                            // Check nested field access
-                                                                            var fieldChain = [];
-                                                                            var current = rhs;
-                                                                            while (current != null) {
-                                                                                switch(current.def) {
-                                                                                    case EField(obj, field):
-                                                                                        fieldChain.push(field);
-                                                                                        current = obj;
-                                                                                    case ECall(func, _, _):
-                                                                                        current = func;
-                                                                                    default:
-                                                                                        current = null;
-                                                                                }
-                                                                            }
-                                                                            // Check if this ends with .key or .value
-                                                                            if (fieldChain.length > 0) {
-                                                                                if (fieldChain[0] == "key") {
-                                                                                    keyVarName = varName;
-                                                                                    #if debug_map_iterator
-                                                                                    trace('[MapIteratorTransform] Found key variable via chain: $keyVarName');
-                                                                                    #end
-                                                                                } else if (fieldChain[0] == "value") {
-                                                                                    valueVarName = varName;
-                                                                                    #if debug_map_iterator
-                                                                                    trace('[MapIteratorTransform] Found value variable via chain: $valueVarName');
-                                                                                    #end
-                                                                                }
-                                                                            }
-                                                                    }
-                                                                }
-                                                            default:
-                                                        }
-                                                    }
-                                                    
-                                                    // Filter out iterator assignments and keep only the body
-                                                    var cleanExprs = ASTUtils.filterIteratorAssignments(allExprs);
-                                                    
-                                                    #if debug_map_iterator
-                                                    trace('[MapIteratorTransform] After filtering: ${cleanExprs.length} expressions remain');
-                                                    #end
-                                                    
-                                                    // Also filter out continuation tuples
-                                                    var bodyExprs = [];
-                                                    for (expr in cleanExprs) {
-                                                        switch(expr.def) {
-                                                            case ETuple(elements):
-                                                                // Skip continuation tuples {:cont, ...}
-                                                                var isCont = elements.length > 0 && switch(elements[0].def) {
-                                                                    case EAtom(atom): atom == "cont";
-                                                                    default: false;
-                                                                }
-                                                                if (!isCont) {
-                                                                    bodyExprs.push(expr);
-                                                                }
-                                                            default:
-                                                                bodyExprs.push(expr);
-                                                        }
-                                                    }
-                                                    
-                                                    // Create the loop body from the cleaned expressions
-                                                    loopBody = if (bodyExprs.length == 1) {
-                                                        bodyExprs[0];
-                                                    } else if (bodyExprs.length > 1) {
-                                                        makeAST(EBlock(bodyExprs));
-                                                    } else {
-                                                        null;
-                                                    }
-                                                default:
-                                            }
-                                        default:
-                                    }
-                                    
-                                    // If we have a body, create the idiomatic version
-                                    if (loopBody != null) {
-                                        #if debug_map_iterator
-                                        trace('[MapIteratorTransform] Creating Enum.each with {$keyVarName, $valueVarName} destructuring');
-                                        trace('[MapIteratorTransform] Map variable: $mapVar');
-                                        trace('[MapIteratorTransform] Body extracted, creating transformation');
-                                        #end
-                                        
-                                        var transformedAST = makeAST(ERemoteCall(
-                                            makeAST(EVar("Enum")),
-                                            "each",
-                                            [
-                                                makeAST(EVar(mapVar)),
-                                                makeAST(EFn([{
-                                                    args: [PTuple([PVar(keyVarName), PVar(valueVarName)])],
-                                                    guard: null,
-                                                    body: loopBody
-                                                }]))
-                                            ]
-                                        ));
-                                        
-                                        #if debug_map_iterator
-                                        trace('[MapIteratorTransform] *** TRANSFORMATION COMPLETE - RETURNING NEW AST ***');
-                                        #end
-                                        
-                                        return transformedAST;
-                                    }
-                                }
-                            }
-                        default:
-                    }
-                default:
-            }
-            
-            // Return unchanged if not a map iteration pattern
-            return node;
-        });
+        return reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass(ast);
     }
     
     // Helper function to check if an AST contains Map iterator patterns
-    static function containsIteratorPatterns(ast: ElixirAST): Bool {
-        if (ast == null || ast.def == null) return false;
-        
-        var hasKeyValueIterator = false;
-        var hasHasNext = false;
-        var hasNext = false;
-        
-        function scan(node: ElixirAST): Void {
-            if (node == null || node.def == null) return;
-            
-            switch(node.def) {
-                case EField(obj, field):
-                    // Check for Map iterator method names
-                    if (field == "key_value_iterator") {
-                        hasKeyValueIterator = true;
-                        #if debug_map_iterator
-                        trace('[MapIteratorTransform/scan] Found key_value_iterator field');
-                        #end
-                    } else if (field == "has_next") {
-                        hasHasNext = true;
-                        #if debug_map_iterator
-                        trace('[MapIteratorTransform/scan] Found has_next field');
-                        #end
-                    } else if (field == "next") {
-                        hasNext = true;
-                        #if debug_map_iterator
-                        trace('[MapIteratorTransform/scan] Found next field');
-                        #end
-                    }
-                    scan(obj);
-                    
-                case ECall(func, callType, args):
-                    // Also check the function being called
-                    switch(func.def) {
-                        case EField(obj, field):
-                            if (field == "key_value_iterator" || field == "has_next" || field == "next") {
-                                if (field == "key_value_iterator") hasKeyValueIterator = true;
-                                if (field == "has_next") hasHasNext = true;
-                                if (field == "next") hasNext = true;
-                                #if debug_map_iterator
-                                trace('[MapIteratorTransform/scan] Found iterator method call: $field()');
-                                #end
-                            }
-                            scan(obj);
-                        default:
-                            scan(func);
-                    }
-                    if (args != null) {
-                        for (arg in args) scan(arg);
-                    }
-                    
-                case EFn(clauses):
-                    for (clause in clauses) {
-                        if (clause.body != null) scan(clause.body);
-                    }
-                    
-                case EBlock(exprs):
-                    for (expr in exprs) scan(expr);
-                    
-                case EIf(cond, thenBranch, elseBranch):
-                    scan(cond);
-                    scan(thenBranch);
-                    if (elseBranch != null) scan(elseBranch);
-                    
-                case ETuple(elements):
-                    for (elem in elements) scan(elem);
-                    
-                case ERemoteCall(module, funcName, args):
-                    scan(module);
-                    if (args != null) {
-                        for (arg in args) scan(arg);
-                    }
-                    
-                case EVar(_):
-                    // Terminal case, no scanning needed
-                    
-                case EAtom(_) | EString(_):
-                    // Terminal cases - literals don't need scanning
-                    
-                default:
-                    #if debug_map_iterator
-                    var nodeType = Type.enumConstructor(node.def);
-                    trace('[MapIteratorTransform/scan] Unhandled node type: $nodeType');
-                    #end
-            }
-        }
-        
-        scan(ast);
-        
-        // We need at least key_value_iterator to be a Map pattern
-        var result = hasKeyValueIterator;
-        
-        #if debug_map_iterator
-        if (result) {
-            trace('[MapIteratorTransform/scan] ✅ PATTERN DETECTED - hasKeyValueIterator: $hasKeyValueIterator, hasHasNext: $hasHasNext, hasNext: $hasNext');
-        }
-        #end
-        
-        return result;
-    }
-    
-    // Helper to print AST structure for debugging
-    #if debug_map_iterator
-    static function printASTStructure(ast: ElixirAST, depth: Int = 0): String {
-        if (ast == null || ast.def == null) return "null";
-        if (depth > 3) return "..."; // Prevent too deep recursion
-        
-        var indent = [for (i in 0...depth) "  "].join("");
-        var nodeType = Type.enumConstructor(ast.def);
-        
-        return switch(ast.def) {
-            case EField(obj, field):
-                '$nodeType(.$field on ${printASTStructure(obj, depth + 1)})';
-            case ECall(func, callType, args):
-                var argsStr = args != null ? '[${args.length} args]' : '[no args]';
-                '$nodeType($argsStr, func=${printASTStructure(func, depth + 1)})';
-            case EVar(name):
-                '$nodeType($name)';
-            case EAtom(atom):
-                '$nodeType(:$atom)';
-            default:
-                nodeType;
-        };
-    }
-    #end
+    // (legacy helper functions removed; implemented in MapAndCollectionTransforms)
     
     /**
      * Comprehension conversion pass - convert loops to comprehensions
