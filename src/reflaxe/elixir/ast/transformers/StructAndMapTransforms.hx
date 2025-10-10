@@ -71,7 +71,7 @@ class StructAndMapTransforms {
                     }
                     return (transformed.length > 0) ? makeASTWithMeta(EBlock(transformed), node.metadata, node.pos) : node;
                 default:
-                    node;
+                    return node;
             }
         });
     }

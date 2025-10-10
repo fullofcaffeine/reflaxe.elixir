@@ -65,6 +65,7 @@ class MapAndCollectionTransforms {
             }
         });
     }
+
     
     private static function tryCollapseMapBuilder(statements: Array<ElixirAST>, metadata: ElixirMetadata, pos: Position): Null<ElixirAST> {
         if (statements == null || statements.length < 2) {
