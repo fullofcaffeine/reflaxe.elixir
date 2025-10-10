@@ -467,22 +467,293 @@ class BinderTransforms {
 
     // Qualify bare Repo.* calls to <App>.Repo based on module name prefix (e.g., TodoAppWeb.* -> TodoApp.Repo)
     public static function repoQualificationPass(ast: ElixirAST): ElixirAST {
-        var appPrefix: Null<String> = null;
-        // Find top-level module name to extract app prefix before "Web"
-        switch(ast.def) {
-            case EModule(name, _, _) if (name.indexOf("Web") > 0): appPrefix = name.substring(0, name.indexOf("Web"));
-            case EDefmodule(name, _) if (name.indexOf("Web") > 0): appPrefix = name.substring(0, name.indexOf("Web"));
-            default:
+        // Helper: derive app prefix from a module name like "TodoAppWeb.TodoLive" → "TodoApp"
+        inline function deriveAppPrefix(moduleName: String): Null<String> {
+            if (moduleName == null) return null;
+            var idx = moduleName.indexOf("Web");
+            return idx > 0 ? moduleName.substring(0, idx) : null;
         }
-        if (appPrefix == null) return ast;
-        var repoName = appPrefix + ".Repo";
+
+        // Helper: rewrite Repo.* inside a subtree using a specific repo name
+        function rewriteRepoRefs(subtree: ElixirAST, repoName: String): ElixirAST {
+            return ElixirASTTransformer.transformNode(subtree, function(n: ElixirAST): ElixirAST {
+                return switch (n.def) {
+                    case ERemoteCall(mod, func, args):
+                        switch (mod.def) {
+                            case EVar(m) if (m == "Repo"):
+                                #if debug_repo_qualification
+                                trace('[RepoQualification] Rewriting Repo.${func} to ${repoName}.${func}');
+                                #end
+                                makeASTWithMeta(ERemoteCall(makeAST(EVar(repoName)), func, args), n.metadata, n.pos);
+                            case EVar(m) if (m != null && m.indexOf(".Repo") != -1):
+                                // Already qualified Repo usage; log for visibility
+                                #if debug_repo_qualification
+                                trace('[RepoQualification] Found already-qualified ${m}.${func}');
+                                #end
+                                n;
+                            default: n;
+                        }
+                    case ECall(target, func, args) if (target != null):
+                        // Some builders may produce ECall(EVar("Repo"), func, args) for static-like calls
+                        switch (target.def) {
+                            case EVar(m) if (m == "Repo"):
+                                #if debug_repo_qualification
+                                trace('[RepoQualification] Rewriting (call) Repo.${func} to ${repoName}.${func}');
+                                #end
+                                makeASTWithMeta(ERemoteCall(makeAST(EVar(repoName)), func, args), n.metadata, n.pos);
+                            default:
+                                n;
+                        }
+                    default:
+                        n;
+                }
+            });
+        }
+
+        // Walk the AST; when entering a module/defmodule, compute repo and rewrite within that scope
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch(n.def) {
-                case ERemoteCall(mod, func, args):
-                    switch(mod.def) {
-                        case EVar(m) if (m == "Repo"): makeASTWithMeta(ERemoteCall(makeAST(EVar(repoName)), func, args), n.metadata, n.pos);
-                        default: n;
+            return switch (n.def) {
+                case EModule(name, attrs, body):
+                    var prefix = deriveAppPrefix(name);
+                    #if macro
+                    if (prefix == null) {
+                        try { prefix = haxe.macro.Compiler.getDefine("app_name"); } catch (e:Dynamic) {}
                     }
+                    #end
+                    if (prefix != null) {
+                        var repoName = prefix + ".Repo";
+                        var newBody: Array<ElixirAST> = [];
+                        for (b in body) newBody.push(rewriteRepoRefs(b, repoName));
+                        makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                    } else {
+                        n;
+                    }
+                case EDefmodule(name, doBlock):
+                    var prefix = deriveAppPrefix(name);
+                    #if macro
+                    if (prefix == null) {
+                        try { prefix = haxe.macro.Compiler.getDefine("app_name"); } catch (e:Dynamic) {}
+                    }
+                    #end
+                    if (prefix != null) {
+                        var repoName = prefix + ".Repo";
+                        var newDo = rewriteRepoRefs(doBlock, repoName);
+                        makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+                    } else {
+                        n;
+                    }
+                default:
+                    n;
+            }
+        });
+    }
+
+    // Late minimal sweep: prefix unused local assignment variables with underscore
+    public static function unusedLocalAssignmentUnderscorePass(ast: ElixirAST): ElixirAST {
+        // For each function, collect declared names and usages, then underscore unreferenced locals
+        function processBody(body: ElixirAST): ElixirAST {
+            var declared = new Map<String, Int>();
+            var used = new Map<String, Int>();
+
+            function collect(n: ElixirAST): Void {
+                if (n == null || n.def == null) return;
+                switch (n.def) {
+                    case EMatch(pattern, expr):
+                        // Collect variable names from pattern
+                        switch (pattern) {
+                            case PVar(name):
+                                declared.set(name, (declared.exists(name) ? declared.get(name) : 0) + 1);
+                            case PTuple(elems) | PList(elems):
+                                for (p in elems) collect({def: EMatch(p, makeAST(ENil)), metadata: {}, pos: n.pos});
+                            case _:
+                        }
+                        // Continue into expression
+                        collect(expr);
+                    case EVar(name):
+                        used.set(name, (used.exists(name) ? used.get(name) : 0) + 1);
+                    default:
+                        ElixirASTTransformer.iterateAST(n, collect);
+                }
+            }
+            collect(body);
+
+            function transform(n: ElixirAST): ElixirAST {
+                if (n == null || n.def == null) return n;
+                return switch (n.def) {
+                    case EMatch(pattern, expr):
+                        var newPattern = switch (pattern) {
+                            case PVar(name):
+                                // If declared but never used, and not already underscore-prefixed, prefix it
+                                var isDeclared = declared.exists(name);
+                                var isUsed = used.exists(name);
+                                if (isDeclared && !isUsed && name.charAt(0) != "_") PVar("_" + name) else pattern;
+                            case PTuple(elems):
+                                PTuple([for (p in elems) switch (p) { case PVar(nm) if (declared.exists(nm) && !used.exists(nm) && nm.charAt(0) != "_"): PVar("_"+nm); default: p; }]);
+                            case PList(elems):
+                                PList([for (p in elems) switch (p) { case PVar(nm) if (declared.exists(nm) && !used.exists(nm) && nm.charAt(0) != "_"): PVar("_"+nm); default: p; }]);
+                            default:
+                                pattern;
+                        };
+                        makeASTWithMeta(EMatch(newPattern, transform(expr)), n.metadata, n.pos);
+                    default:
+                        ElixirASTTransformer.transformNode(n, transform);
+                }
+            }
+
+            return transform(body);
+        }
+
+        return ElixirASTTransformer.transformNode(ast, function(n) {
+            return switch (n.def) {
+                case EDef(name, args, guards, body):
+                    makeASTWithMeta(EDef(name, args, guards, processBody(body)), n.metadata, n.pos);
+                case EDefp(name, args, guards, body):
+                    makeASTWithMeta(EDefp(name, args, guards, processBody(body)), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        });
+    }
+
+    // ERaw Repo Qualification: qualify "Repo." inside raw code within <App>Web modules
+    public static function erawRepoQualificationPass(ast: ElixirAST): ElixirAST {
+        inline function deriveAppPrefix(name: String): Null<String> {
+            if (name == null) return null;
+            var idx = name.indexOf("Web");
+            return idx > 0 ? name.substring(0, idx) : null;
+        }
+
+        // Replace occurrences of Repo. with <App>.Repo. respecting simple boundaries
+        function qualifyRepoToken(code: String, repoName: String): String {
+            // Replace patterns where Repo. is preceded by start or non-identifier/dot
+            var out = new StringBuf();
+            var i = 0;
+            while (i < code.length) {
+                if (i + 5 <= code.length && code.substr(i, 5) == "Repo.") {
+                    // Check boundary before "Repo."
+                    var prev = i > 0 ? code.charAt(i - 1) : "";
+                    var isBoundary = (i == 0) || !~/[A-Za-z0-9_\.]/.match(prev);
+                    if (isBoundary) {
+                        out.add(repoName);
+                        out.add(".");
+                        i += 5;
+                        continue;
+                    }
+                }
+                out.add(code.charAt(i));
+                i++;
+            }
+            return out.toString();
+        }
+        
+        // Qualify Repo. tokens inside ERaw nodes conservatively
+        function qualifyRepoInERaw(node: ElixirAST, repoName: String): ElixirAST {
+            return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
+                return switch (x.def) {
+                    case ERaw(code):
+                        var qualified = qualifyRepoToken(code, repoName);
+                        if (qualified != code) {
+                            #if debug_repo_qualification
+                            trace('[RepoQualification ERaw] Qualified Repo.* in raw code');
+                            #end
+                            makeASTWithMeta(ERaw(qualified), x.metadata, x.pos);
+                        } else x;
+                    default:
+                        x;
+                }
+            });
+        }
+        
+        // Only operate within modules to know app prefix
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EModule(name, attrs, body):
+                    var prefix = deriveAppPrefix(name);
+                    if (prefix == null) return n;
+                    var repoName = prefix + ".Repo";
+                    var newBody: Array<ElixirAST> = [];
+                    for (b in body) newBody.push(qualifyRepoInERaw(b, repoName));
+                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+
+                case EDefmodule(name, doBlock):
+                    var prefix = deriveAppPrefix(name);
+                    if (prefix == null) return n;
+                    var repoName = prefix + ".Repo";
+                    var newDo = qualifyRepoInERaw(doBlock, repoName);
+                    makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+
+                default:
+                    n;
+            }
+        });
+    }
+
+    // Inject `alias <App>.Repo, as: Repo` into <App>Web.* modules when Repo.* is referenced
+    public static function repoAliasInjectionPass(ast: ElixirAST): ElixirAST {
+        inline function deriveAppPrefix(name: String): Null<String> {
+            if (name == null) return null;
+            var idx = name.indexOf("Web");
+            return idx > 0 ? name.substring(0, idx) : null;
+        }
+
+        // Scan a subtree to determine if Repo.* is referenced
+        function referencesRepo(node: ElixirAST): Bool {
+            var found = false;
+            ElixirASTTransformer.transformNode(node, function(n) {
+                if (found) return n; // early stop not supported; just skip
+                switch (n.def) {
+                    case ERemoteCall(mod, _, _):
+                        switch (mod.def) { case EVar(m) if (m == "Repo"): found = true; default: }
+                    case ECall(target, _, _) if (target != null):
+                        switch (target.def) { case EVar(m) if (m == "Repo"): found = true; default: }
+                    case ERaw(code) if (code != null && code.indexOf("Repo.") != -1):
+                        found = true;
+                    default:
+                }
+                return n;
+            });
+            return found;
+        }
+
+        // Check if alias already present
+        function hasRepoAlias(body: Array<ElixirAST>, repoModule: String): Bool {
+            for (b in body) switch (b.def) {
+                case EAlias(module, as) if (module == repoModule && (as == null || as == "Repo")):
+                    return true;
+                default:
+            }
+            return false;
+        }
+
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EModule(name, attrs, body):
+                    var prefix = deriveAppPrefix(name);
+                    if (prefix == null) return n;
+                    var repoModule = prefix + ".Repo";
+                    if (hasRepoAlias(body, repoModule)) return n;
+                    var newBody: Array<ElixirAST> = [];
+                    newBody.push(makeAST(EAlias(repoModule, "Repo")));
+                    for (b in body) newBody.push(b);
+                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+
+                case EDefmodule(name, doBlock):
+                    var prefix = deriveAppPrefix(name);
+                    if (prefix == null) return n;
+                    var repoModule = prefix + ".Repo";
+                    // Inject alias inside do-block
+                    var newDo = switch (doBlock.def) {
+                        case EBlock(stmts):
+                            if (hasRepoAlias(stmts, repoModule)) doBlock else {
+                                var list = [ makeAST(EAlias(repoModule, "Repo")) ];
+                                for (s in stmts) list.push(s);
+                                makeAST(EBlock(list));
+                            }
+                        default:
+                            makeAST(EBlock([ makeAST(EAlias(repoModule, "Repo")), doBlock ]));
+                    };
+                    makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+
                 default:
                     n;
             }

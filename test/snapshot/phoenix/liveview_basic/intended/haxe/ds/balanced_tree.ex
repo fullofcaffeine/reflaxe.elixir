@@ -1,238 +1,149 @@
 defmodule BalancedTree do
-  defstruct root: nil
-
-  def new() do
-    %BalancedTree{root: nil}
+  def set(struct, key, value) do
+    root = struct.setLoop(key, value, struct.root)
+    %{struct | root: root}
   end
-
-  def set(tree, key, value) do
-    root = set_loop(tree, key, value, tree.root)
-    %{tree | root: root}
+  def get(struct, key) do
+    node = struct.root
+    Enum.each(node, fn {name, hex} ->
+  if c == 0, do: node.value
+  if c < 0 do
+    node = node.left
+  else
+    node = node.right
   end
-
-  def get(tree, key) do
-    find_node(tree.root, key, &compare/2)
+end)
+    nil
   end
-
-  def remove(tree, key) do
-    result = remove_loop(tree, key, tree.root)
-    if result != nil, do: result.found, else: false
+  def remove(struct, key) do
+    result = struct.removeLoop(key, struct.root)
+    if result != nil, do: result.found
+    false
   end
-
-  def exists(tree, key) do
-    exists_node(tree.root, key, &compare/2)
+  def exists(struct, key) do
+    node = struct.root
+    Enum.each(node, fn {name, hex} ->
+  cond do
+    c == 0 -> true
+    c < 0 -> node = node.left
+    :true -> node = node.right
+    :true -> :nil
   end
-
-  def iterator(tree) do
-    ret = iterator_loop(tree.root, [])
+end)
+    false
+  end
+  def iterator(struct) do
+    ret = []
+    struct.iteratorLoop(struct.root, ret)
     ArrayIterator.new(ret)
   end
-
-  def key_value_iterator(tree) do
-    MapKeyValueIterator.new(tree)
+  def key_value_iterator(struct) do
+    MapKeyValueIterator.new(struct)
   end
-
-  def keys(tree) do
-    ret = keys_loop(tree.root, [])
+  def keys(struct) do
+    ret = []
+    struct.keysLoop(struct.root, ret)
     ArrayIterator.new(ret)
   end
-
-  def copy(tree) do
-    # For immutable structures, copy can return the same tree
-    # If deep copy is needed, traverse and rebuild
-    %BalancedTree{root: copy_node(tree.root)}
+  def copy(struct) do
+    copied = BalancedTree.new()
+    root = struct.root
+    copied
   end
-
-  # Private helper functions using idiomatic recursion
-
-  defp find_node(nil, _key, _compare_fn), do: nil
-  defp find_node(node, key, compare_fn) do
-    case compare_fn.(key, node.key) do
-      0 -> node.value
-      x when x < 0 -> find_node(node.left, key, compare_fn)
-      _ -> find_node(node.right, key, compare_fn)
+  defp set_loop(struct, k, v, node) do
+    if Kernel.is_nil(node) do
+      TreeNode.new(nil, k, v, nil, -1)
+    end
+    c = struct.compare(k, node.key)
+    cond do
+      c == 0 -> TreeNode.new(node.left, k, v, node.right, node.get_height())
+      c < 0 ->
+        nl = struct.setLoop(k, v, node.left)
+        struct.balance(nl, node.key, node.value, node.right)
+      :true ->
+        nr = struct.setLoop(k, v, node.right)
+        struct.balance(node.left, node.key, node.value, nr)
+      :true -> :nil
     end
   end
-
-  defp exists_node(nil, _key, _compare_fn), do: false
-  defp exists_node(node, key, compare_fn) do
-    case compare_fn.(key, node.key) do
-      0 -> true
-      x when x < 0 -> exists_node(node.left, key, compare_fn)
-      _ -> exists_node(node.right, key, compare_fn)
+  defp remove_loop(struct, k, node) do
+    if Kernel.is_nil(node), do: %{:node => nil, :found => false}
+    c = struct.compare(k, node.key)
+    cond do
+      c == 0 -> %{:node => struct.merge(node.left, node.right), :found => true}
+      c < 0 ->
+        result = struct.removeLoop(k, node.left)
+        if result != nil and result.found, do: %{:node => struct.balance(result.node, node.key, node.value, node.right), :found => true}
+        %{:node => node, :found => false}
+      :true ->
+        result = struct.removeLoop(k, node.right)
+        if result != nil and result.found, do: %{:node => struct.balance(node.left, node.key, node.value, result.node), :found => true}
+        %{:node => node, :found => false}
+      :true -> :nil
     end
   end
-
-  defp set_loop(_tree, k, v, nil) do
-    TreeNode.new(nil, k, v, nil, 0)
-  end
-
-  defp set_loop(tree, k, v, node) do
-    case compare(k, node.key) do
-      0 ->
-        TreeNode.new(node.left, k, v, node.right, node.height)
-      x when x < 0 ->
-        balance(set_loop(tree, k, v, node.left), node.key, node.value, node.right)
-      _ ->
-        balance(node.left, node.key, node.value, set_loop(tree, k, v, node.right))
+  defp iterator_loop(struct, node, acc) do
+    if node != nil do
+      struct.iteratorLoop(node.left, acc)
+      %{struct | acc: struct.acc ++ [node.value]}
+      struct.iteratorLoop(node.right, acc)
     end
   end
-
-  defp remove_loop(_tree, _k, nil) do
-    %{node: nil, found: false}
-  end
-
-  defp remove_loop(tree, k, node) do
-    case compare(k, node.key) do
-      0 ->
-        %{node: merge(tree, node.left, node.right), found: true}
-      x when x < 0 ->
-        result = remove_loop(tree, k, node.left)
-        if result != nil and result.found do
-          %{node: balance(result.node, node.key, node.value, node.right), found: true}
-        else
-          %{node: node, found: false}
-        end
-      _ ->
-        result = remove_loop(tree, k, node.right)
-        if result != nil and result.found do
-          %{node: balance(node.left, node.key, node.value, result.node), found: true}
-        else
-          %{node: node, found: false}
-        end
+  defp keys_loop(struct, node, acc) do
+    if node != nil do
+      struct.keysLoop(node.left, acc)
+      %{struct | acc: struct.acc ++ [node.key]}
+      struct.keysLoop(node.right, acc)
     end
   end
-
-  defp iterator_loop(nil, acc), do: acc
-  defp iterator_loop(node, acc) do
-    acc = iterator_loop(node.left, acc)
-    acc = acc ++ [node.value]
-    iterator_loop(node.right, acc)
+  defp merge(struct, t1, t2) do
+    if Kernel.is_nil(t1), do: t2
+    if Kernel.is_nil(t2), do: t1
+    t = struct.minBinding(t2)
+    if Kernel.is_nil(t), do: t1
+    struct.balance(t1, t.key, t.value, struct.removeMinBinding(t2))
   end
-
-  defp keys_loop(nil, acc), do: acc
-  defp keys_loop(node, acc) do
-    acc = keys_loop(node.left, acc)
-    acc = acc ++ [node.key]
-    keys_loop(node.right, acc)
+  defp min_binding(struct, t) do
+    if Kernel.is_nil(t), do: nil
+    if Kernel.is_nil(t.left), do: t
+    struct.minBinding(t.left)
   end
-
-  defp copy_node(nil), do: nil
-  defp copy_node(node) do
-    TreeNode.new(
-      copy_node(node.left),
-      node.key,
-      node.value,
-      copy_node(node.right),
-      node.height
-    )
+  defp remove_min_binding(struct, t) do
+    if Kernel.is_nil(t), do: nil
+    if Kernel.is_nil(t.left), do: t.right
+    struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
-
-  defp merge(_tree, nil, t2), do: t2
-  defp merge(_tree, t1, nil), do: t1
-  defp merge(tree, t1, t2) do
-    case min_binding(t2) do
-      nil -> t1
-      t -> balance(t1, t.key, t.value, remove_min_binding(t2))
-    end
-  end
-
-  defp min_binding(nil), do: nil
-  defp min_binding(%{left: nil} = node), do: node
-  defp min_binding(%{left: left}), do: min_binding(left)
-
-  defp remove_min_binding(nil), do: nil
-  defp remove_min_binding(%{left: nil, right: right}), do: right
-  defp remove_min_binding(node) do
-    balance(remove_min_binding(node.left), node.key, node.value, node.right)
-  end
-
-  defp balance(l, k, v, r) do
-    hl = get_height(l)
-    hr = get_height(r)
-
+  defp balance(struct, l, k, v, r) do
+    hl = l.get_height()
+    hr = r.get_height()
     cond do
       hl > hr + 2 ->
-        if get_height(l.left) >= get_height(l.right) do
-          TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r, 0), 0)
+        if l.left.get_height() >= l.right.get_height() do
+          TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r, -1), -1)
         else
-          TreeNode.new(
-            TreeNode.new(l.left, l.key, l.value, l.right.left, 0),
-            l.right.key,
-            l.right.value,
-            TreeNode.new(l.right.right, k, v, r, 0),
-            0
-          )
+          TreeNode.new(TreeNode.new(l.left, l.key, l.value, l.right.left, -1), l.right.key, l.right.value, TreeNode.new(l.right.right, k, v, r, -1), -1)
         end
-
       hr > hl + 2 ->
-        if get_height(r.right) > get_height(r.left) do
-          TreeNode.new(TreeNode.new(l, k, v, r.left, 0), r.key, r.value, r.right, 0)
+        if r.right.get_height() > r.left.get_height() do
+          TreeNode.new(TreeNode.new(l, k, v, r.left, -1), r.key, r.value, r.right, -1)
         else
-          TreeNode.new(
-            TreeNode.new(l, k, v, r.left.left, 0),
-            r.left.key,
-            r.left.value,
-            TreeNode.new(r.left.right, r.key, r.value, r.right, 0),
-            0
-          )
+          TreeNode.new(TreeNode.new(l, k, v, r.left.left, -1), r.left.key, r.left.value, TreeNode.new(r.left.right, r.key, r.value, r.right, -1), -1)
         end
-
-      true ->
-        TreeNode.new(l, k, v, r, max(hl, hr) + 1)
+      :true -> TreeNode.new(l, k, v, r, (if hl > hr, do: hl, else: hr) + 1)
+      :true -> :nil
     end
   end
-
-  defp get_height(nil), do: 0
-  defp get_height(node), do: node.height
-
-  defp compare(k1, k2) do
-    cond do
-      k1 < k2 -> -1
-      k1 > k2 -> 1
-      true -> 0
-    end
+  defp compare(struct, k1, k2) do
+    Reflect.compare(k1, k2)
   end
-
-  def to_string(nil), do: "[]"
-  def to_string(%{root: nil}), do: "[]"
-  def to_string(%{root: root}), do: "[#{node_to_string(root)}]"
-
-  defp node_to_string(nil), do: ""
-  defp node_to_string(node) do
-    # In-order traversal for string representation
-    left_str = if node.left, do: node_to_string(node.left) <> ", ", else: ""
-    right_str = if node.right, do: ", " <> node_to_string(node.right), else: ""
-    "#{left_str}#{node.key}=>#{node.value}#{right_str}"
-  end
-
-  def clear(_tree) do
-    %BalancedTree{root: nil}
-  end
-end
-
-defmodule TreeNode do
-  defstruct [:left, :key, :value, :right, :height]
-
-  def new(left, key, value, right, height) do
-    actual_height = if height == 0 do
-      max(get_height(left), get_height(right)) + 1
+  def to_string(struct) do
+    if Kernel.is_nil(struct.root) do
+      "[]"
     else
-      height
+      "[#{struct.root.toString()}]"
     end
-
-    %TreeNode{
-      left: left,
-      key: key,
-      value: value,
-      right: right,
-      height: actual_height
-    }
   end
-
-  defp get_height(nil), do: 0
-  defp get_height(node), do: node.height
-
-  defp max(a, b) when a > b, do: a
-  defp max(_a, b), do: b
+  def clear(struct) do
+    root = nil
+  end
 end

@@ -36,6 +36,52 @@ import haxe.macro.Expr.Position;
 class MapAndCollectionTransforms {
     
     /**
+     * Map set-call rewrite pass
+     * 
+     * WHY: Some builders emit imperative map mutations like `g.set("key", value)` which
+     *      are invalid in Elixir (variables are not modules). This rewrites them to
+     *      `g = Map.put(g, :key, value)` so downstream passes (mapBuilderCollapsePass)
+     *      can collapse to a literal map.
+     */
+    public static function mapSetRewritePass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERemoteCall(target, func, args) if (func == "set" && args != null && args.length == 2):
+                    switch (target.def) {
+                        case EVar(name):
+                            var keyExpr = args[0];
+                            // Convert string literal keys to atoms when possible
+                            var atomKey: Null<ElixirAST> = switch (keyExpr.def) {
+                                case EString(s): makeAST(EAtom(s));
+                                default: null;
+                            };
+                            var finalKey = atomKey != null ? atomKey : keyExpr;
+                            var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [makeAST(EVar(name)), finalKey, args[1]]));
+                            makeAST(EMatch(PVar(name), putCall));
+                        default:
+                            n;
+                    }
+                case ECall(target, func, args) if (target != null && func == "set" && args != null && args.length == 2):
+                    switch (target.def) {
+                        case EVar(name):
+                            var keyExpr = args[0];
+                            var atomKey: Null<ElixirAST> = switch (keyExpr.def) {
+                                case EString(s): makeAST(EAtom(s));
+                                default: null;
+                            };
+                            var finalKey = atomKey != null ? atomKey : keyExpr;
+                            var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [makeAST(EVar(name)), finalKey, args[1]]));
+                            makeAST(EMatch(PVar(name), putCall));
+                        default:
+                            n;
+                    }
+                default:
+                    n;
+            }
+        });
+    }
+    
+    /**
      * Map builder collapse pass
      * 
      * WHY: Sequential Map.put calls create verbose imperative code

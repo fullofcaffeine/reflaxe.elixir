@@ -1,3 +1,3 @@
 defmodule SettingsLive do
-  nil
+  use Phoenix.Component
 end

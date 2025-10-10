@@ -1,4 +1,3 @@
 defmodule UserLive do
-  @show nil
-  @edit nil
+  use Phoenix.Component
 end

@@ -1957,7 +1957,15 @@ class ElixirCompiler extends GenericCompiler<
             trace('[ElixirCompiler] Set isSupervisor=true metadata for ${classType.name}');
             #end
         }
-        
+
+        // Enable Router transformation pass for @:router modules
+        if (classType.meta.has(":router")) {
+            metadata.isRouter = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isRouter=true metadata for ${classType.name}');
+            #end
+        }
+
         // Enable Endpoint transformation pass for @:endpoint modules
         // Endpoints are also supervisors and need child_spec/start_link preservation
         if (classType.meta.has(":endpoint")) {
