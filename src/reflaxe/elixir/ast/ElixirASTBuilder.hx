@@ -2914,17 +2914,21 @@ class ElixirASTBuilder {
                     if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
                         var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
 
+                        #if debug_ast_builder
                         trace('[TEnumParameter]   *** BINDING PLAN DATA ***');
                         trace('[TEnumParameter]     finalName: "${info.finalName}"');
                         trace('[TEnumParameter]     isUsed: ${info.isUsed}');
                         trace('[TEnumParameter]     charAt(0): "${info.finalName.charAt(0)}"');
                         trace('[TEnumParameter]     charAt(0) == "_": ${info.finalName.charAt(0) == "_"}');
+                        #end
 
                         // CRITICAL FIX: If parameter is unused (has underscore prefix), return null to skip TVar
                         // This prevents generating: x = _x (where _x is the unused pattern variable)
                         // Instead we skip the assignment entirely since the pattern already has _x
                         if (!info.isUsed || (info.finalName != null && info.finalName.charAt(0) == "_")) {
+                            #if debug_ast_builder
                             trace('[TEnumParameter]   *** RETURNING NULL - Parameter is UNUSED ***');
+                            #end
                             return null;
                         }
 
