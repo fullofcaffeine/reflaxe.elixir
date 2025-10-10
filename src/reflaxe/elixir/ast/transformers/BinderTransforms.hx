@@ -572,7 +572,8 @@ class BinderTransforms {
                     case EVar(name):
                         used.set(name, (used.exists(name) ? used.get(name) : 0) + 1);
                     default:
-                        ElixirASTTransformer.iterateAST(n, collect);
+                        // Use public walker to traverse children without relying on private helpers
+                        ASTUtils.walk(n, collect);
                 }
             }
             collect(body);
