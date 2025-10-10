@@ -555,28 +555,27 @@ class BinderTransforms {
             var declared = new Map<String, Int>();
             var used = new Map<String, Int>();
 
-            function collect(n: ElixirAST): Void {
+            // Single-pass read-only collection across the body
+            ASTUtils.walk(body, function(n: ElixirAST) {
                 if (n == null || n.def == null) return;
                 switch (n.def) {
-                    case EMatch(pattern, expr):
-                        // Collect variable names from pattern
-                        switch (pattern) {
-                            case PVar(name):
-                                declared.set(name, (declared.exists(name) ? declared.get(name) : 0) + 1);
-                            case PTuple(elems) | PList(elems):
-                                for (p in elems) collect({def: EMatch(p, makeAST(ENil)), metadata: {}, pos: n.pos});
-                            case _:
+                    case EMatch(pattern, _):
+                        // Collect variable names declared in patterns
+                        function collectPattern(p: EPattern): Void {
+                            switch (p) {
+                                case PVar(name):
+                                    declared.set(name, (declared.exists(name) ? declared.get(name) : 0) + 1);
+                                case PTuple(elems) | PList(elems):
+                                    for (ep in elems) collectPattern(ep);
+                                default:
+                            }
                         }
-                        // Continue into expression
-                        collect(expr);
+                        collectPattern(pattern);
                     case EVar(name):
                         used.set(name, (used.exists(name) ? used.get(name) : 0) + 1);
                     default:
-                        // Use public walker to traverse children without relying on private helpers
-                        ASTUtils.walk(n, collect);
                 }
-            }
-            collect(body);
+            });
 
             function transform(n: ElixirAST): ElixirAST {
                 if (n == null || n.def == null) return n;
