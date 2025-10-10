@@ -803,6 +803,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerPhoenixJsonAliasInjectionPass
         });
 
+        // Late safety net for error reason aliasing in any context
+        passes.push({
+            name: "ErrorReasonAliasInjection",
+            description: "Ensure {:error, v} arms alias reason when body uses it",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.errorReasonAliasInjectionPass
+        });
+
         // Normalize mixed-case variable references to existing snake_case bindings
         passes.push({
             name: "VarNameNormalization",

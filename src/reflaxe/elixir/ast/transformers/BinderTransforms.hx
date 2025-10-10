@@ -313,6 +313,36 @@ class BinderTransforms {
         });
     }
 
+    // Late safety net: ensure {:error, binder} arms alias reason when used in body
+    public static function errorReasonAliasInjectionPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case ECase(target, clauses):
+                    var newClauses = [];
+                    for (clause in clauses) {
+                        var pat = clause.pattern;
+                        var tag: Null<String> = switch(pat) { case PTuple(e) if (e.length > 0): extractAtom(e[0]); default: null; };
+                        if (tag == "error") {
+                            var binder = switch(pat) { case PTuple(e) if (e.length == 2): switch(e[1]) { case PVar(n): n; default: null; }; default: null; };
+                            if (binder != null && binder != "reason") {
+                                var aliasAssign = makeAST(EMatch(PVar("reason"), makeAST(EVar(binder))));
+                                var newBody = switch(clause.body.def) {
+                                    case EBlock(exprs): makeAST(EBlock([aliasAssign].concat(exprs)));
+                                    default: makeAST(EBlock([aliasAssign, clause.body]));
+                                };
+                                newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: newBody });
+                                continue;
+                            }
+                        }
+                        newClauses.push(clause);
+                    }
+                    makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
     // Controller-specific binder normalization: rename {:ok,_}/{:error,_} and add aliases for data/user/changeset
     public static function controllerResultBinderNormalizationPass(ast: ElixirAST): ElixirAST {
         inline function usesPhoenixController(body: ElixirAST): Bool {
