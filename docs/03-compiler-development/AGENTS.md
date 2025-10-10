@@ -327,6 +327,41 @@ function build(): String {
 - **Document significant changes** - Update relevant documentation after major modifications
 - **Use git bisect for debugging** - Commit often to enable effective regression debugging
 
+### Post‑Task Commit & Bisect Policy (MANDATORY)
+
+After each task is completed and locally verified, you must:
+
+1) Commit immediately
+- Use a descriptive message that summarizes WHAT changed and WHY.
+- Keep the working tree clean; do not leave generated artifacts untracked.
+
+2) If a bug/regression appears and the root cause is not obvious
+- Do not guess. Run a deterministic reproduction with `git bisect` right away.
+- Create or reuse a minimal script that returns non‑zero on failure/hang and zero on success.
+- Example (hang/timeout detector used in this repo):
+
+```bash
+# From repo root
+TIMEOUT_SEC=90 scripts/bisect-hang-test.sh   # manual run to validate
+
+# Automated bisect
+git bisect start
+git bisect bad HEAD             # current bad state
+git bisect good <known_good>    # e.g., a tag/commit SHA that passed
+TIMEOUT_SEC=90 git bisect run scripts/bisect-hang-test.sh
+# When bisect finishes:
+git bisect reset
+```
+
+3) Fix at the culprit commit scope
+- Prefer surgical fixes at the identified change site; avoid band‑aids elsewhere.
+- If the change was “observability only” (e.g., debug gating), ensure no functional drift occurred.
+- Add/extend a snapshot or a tiny script to guard the regression going forward.
+
+4) Re‑verify end‑to‑end
+- Run snapshot suite and the todo‑app integration to confirm the fix.
+- Commit with a message that references the bisected culprit and rationale for the fix.
+
 ## 🔗 Related Documentation
 
 ### Essential Reading

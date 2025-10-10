@@ -631,6 +631,7 @@ class ElixirASTBuilder {
                 #end
 
                 if (currentContext.currentClauseContext != null) {
+                    #if debug_ast_builder
                     #if sys
                     var debugFile4 = sys.io.File.append("/tmp/enum_debug.log");
                     debugFile4.writeString('[TVar CHECK] var=${v.name} id=${v.id}\n');
@@ -639,14 +640,17 @@ class ElixirASTBuilder {
                     debugFile4.writeString('[TVar CHECK]   localToName keys: [${[for (k in currentContext.currentClauseContext.localToName.keys()) k].join(", ")}]\n');
                     debugFile4.close();
                     #end
+                    #end
 
                     // Check localToName mapping (pattern variable bindings)
                     // CRITICAL: Check by ID first (exact match)
                     if (currentContext.currentClauseContext.localToName.exists(v.id)) {
+                        #if debug_ast_builder
                         #if sys
                         var debugFile5 = sys.io.File.append("/tmp/enum_debug.log");
                         debugFile5.writeString('[TVar] ✅ SKIPPING (by ID): Variable ${v.name} (id=${v.id}) already bound by pattern\n');
                         debugFile5.close();
+                        #end
                         #end
                         // Return null to skip this TVar - the pattern already bound the variable
                         return null;
@@ -656,10 +660,12 @@ class ElixirASTBuilder {
                     // In empty case bodies, Haxe generates new TVars with different IDs but same names
                     var patternVarNames = [for (name in currentContext.currentClauseContext.localToName) name];
                     if (patternVarNames.contains(v.name)) {
+                        #if debug_ast_builder
                         #if sys
                         var debugFile6 = sys.io.File.append("/tmp/enum_debug.log");
                         debugFile6.writeString('[TVar] ✅ SKIPPING (by NAME): Variable ${v.name} (id=${v.id}) matches pattern variable\n');
                         debugFile6.close();
+                        #end
                         #end
                         // Return null to skip this TVar - the pattern already bound a variable with this name
                         return null;
