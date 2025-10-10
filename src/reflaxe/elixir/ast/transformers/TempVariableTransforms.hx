@@ -289,7 +289,7 @@ class TempVariableTransforms {
                     // Look for temp alias pattern: g_temp = value followed by immediate use
                     if (i < exprs.length - 1) {
                         switch(exprs[i].def) {
-                            case EMatch(PVar(varName), value) if (varName.indexOf("g_") == 0):
+                            case EMatch(PVar(varName), value) if (isTempAliasVar(varName)):
                                 // Check if next expression immediately uses this temp var
                                 var nextExpr = exprs[i + 1];
                                 if (isSingleUseOfVar(nextExpr, varName)) {
@@ -330,6 +330,12 @@ class TempVariableTransforms {
                 }
             default: false;
         };
+    }
+
+    private static inline function isTempAliasVar(name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        // Handle g_*, _g, _g*, g, g1, etc.
+        return name.indexOf("g_") == 0 || StringTools.startsWith(name, "_g") || name == "g" || StringTools.startsWith(name, "g");
     }
     
     private static function replaceVarWithValue(expr: ElixirAST, varName: String, value: ElixirAST): ElixirAST {
