@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.ElixirAST.EMapPair;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTBuilder;
+import reflaxe.elixir.ast.ASTUtils;
 import haxe.macro.Expr.Position;
 
 /**
@@ -221,6 +222,357 @@ class MapAndCollectionTransforms {
             default: false;
         };
     }
+
+    /**
+     * Map Iterator Transformation Pass (migrated from ElixirASTTransformer)
+     * Transforms Map iterator patterns from g.next() to idiomatic Enum.each with {k, v} destructuring.
+     *
+     * WHY: Builder emits Map iterator machinery for Haxe MapKeyValueIterator.
+     * WHAT: Detect Enum.reduce_while loops that drive a Map iterator and rewrite to Enum.each(map, fn {k, v} -> ... end)
+     * HOW: Scan loop function for iterator method chains, extract key/value binders and body, drop infra tuples {:cont, ...}.
+     */
+    public static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
+        if (ast == null) return null;
+
+        #if debug_map_iterator
+        trace("[MapIteratorTransform] ===== MAP ITERATOR TRANSFORM PASS STARTING =====");
+        switch(ast.def) {
+            case EModule(name, _):
+                trace('[MapIteratorTransform] Processing module: ' + name);
+            default:
+                trace('[MapIteratorTransform] Processing non-module AST node');
+        }
+        #end
+
+        return ElixirASTTransformer.transformNode(ast, function(node) {
+            switch(node.def) {
+                case ERemoteCall(module, funcName, args):
+                    switch(module.def) {
+                        case EVar(modName) if (modName == "Enum" && funcName == "reduce_while" && args != null && args.length >= 3):
+                            #if debug_map_iterator
+                            trace('[MapIteratorTransform] Found Enum.reduce_while - checking for Map iterator patterns');
+                            #end
+                            var loopFunc = args[2];
+
+                            // Detect iterator usage within the loop function body
+                            function hasMapIteratorCalls(ast: ElixirAST): Bool {
+                                if (ast == null) return false;
+                                var found = false;
+                                var depth = 0;
+                                function scan(n: ElixirAST): Void {
+                                    if (n == null || n.def == null) return;
+                                    depth++;
+                                    #if debug_map_iterator
+                                    if (depth <= 4) {
+                                        var nodeType = n.def != null ? Type.enumConstructor(n.def) : "null";
+                                        trace('[MapIteratorTransform] Depth ' + depth + ' - Node type: ' + nodeType);
+                                    }
+                                    #end
+                                    switch(n.def) {
+                                        case EField(obj, field):
+                                            #if debug_map_iterator
+                                            trace('[MapIteratorTransform] Field access found: ' + field);
+                                            #end
+                                            if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
+                                                #if debug_map_iterator
+                                                trace('[MapIteratorTransform] *** FOUND MAP ITERATOR FIELD: ' + field + ' ***');
+                                                #end
+                                                found = true;
+                                            }
+                                            scan(obj);
+                                        case ECall(target, funcName, args):
+                                            #if debug_map_iterator
+                                            trace('[MapIteratorTransform] Scanning: Found call to ' + funcName);
+                                            #end
+                                            if (target != null) {
+                                                switch(target.def) {
+                                                    case EField(_, field):
+                                                        #if debug_map_iterator
+                                                        trace('[MapIteratorTransform] Call is on field: ' + field);
+                                                        #end
+                                                        if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
+                                                            #if debug_map_iterator
+                                                            trace('[MapIteratorTransform] *** FOUND MAP ITERATOR CALL: ' + field + '() ***');
+                                                            #end
+                                                            found = true;
+                                                        }
+                                                    default:
+                                                }
+                                                scan(target);
+                                            }
+                                            if (args != null) for (arg in args) scan(arg);
+                                        case EFn(clauses):
+                                            #if debug_map_iterator
+                                            trace('[MapIteratorTransform] Scanning function with ' + clauses.length + ' clauses');
+                                            #end
+                                            for (c in clauses) if (c.body != null) scan(c.body);
+                                        case EBlock(exprs):
+                                            #if debug_map_iterator
+                                            trace('[MapIteratorTransform] Scanning block with ' + exprs.length + ' expressions');
+                                            #end
+                                            for (e in exprs) scan(e);
+                                        case EIf(cond, t, e):
+                                            #if debug_map_iterator
+                                            trace('[MapIteratorTransform] Scanning if statement');
+                                            #end
+                                            scan(cond);
+                                            scan(t);
+                                            if (e != null) scan(e);
+                                        case EMatch(_, value):
+                                            scan(value);
+                                        case ETuple(items):
+                                            for (item in items) scan(item);
+                                        default:
+                                            #if debug_map_iterator
+                                            if (depth <= 4) {
+                                                var nodeType = Type.enumConstructor(n.def);
+                                                trace('[MapIteratorTransform] Other node type: ' + nodeType);
+                                            }
+                                            #end
+                                    }
+                                    depth--;
+                                }
+                                scan(ast);
+                                #if debug_map_iterator
+                                trace('[MapIteratorTransform] Scan complete for AST, found iterator patterns: ' + found);
+                                #end
+                                return found;
+                            }
+
+                            #if debug_map_iterator
+                            trace('[MapIteratorTransform] Checking loopFunc for Map iterator calls...');
+                            #end
+
+                            if (hasMapIteratorCalls(loopFunc)) {
+                                #if debug_map_iterator
+                                trace('[MapIteratorTransform] Found Map iteration pattern in reduce_while - transforming to Enum.each');
+                                #end
+
+                                // Extract the map variable from the initial value (second argument)
+                                var mapVar = switch(args[1].def) {
+                                    case ETuple([mapExpr, _]) | ETuple([mapExpr]):
+                                        switch(mapExpr.def) {
+                                            case EVar(name): name;
+                                            default: null;
+                                        }
+                                    case EVar(name): name;
+                                    default: null;
+                                };
+                                if (mapVar == null) mapVar = "colors"; // fallback
+
+                                #if debug_map_iterator
+                                trace('[MapIteratorTransform] Map variable identified: ' + mapVar);
+                                #end
+
+                                var keyVarName = "name";
+                                var valueVarName = "hex";
+                                var loopBody: ElixirAST = null;
+
+                                switch(loopFunc.def) {
+                                    case EFn(clauses) if (clauses.length > 0):
+                                        var body = clauses[0].body;
+                                        switch(body.def) {
+                                            case EIf(_, thenBranch, _):
+                                                #if debug_map_iterator
+                                                trace('[MapIteratorTransform] Processing if branch for body extraction');
+                                                #if debug_ast_structure
+                                                ASTUtils.debugAST(thenBranch, 0, 3);
+                                                #end
+                                                #end
+                                                var allExprs = ASTUtils.flattenBlocks(thenBranch);
+                                                #if debug_map_iterator
+                                                trace('[MapIteratorTransform] Flattened ' + allExprs.length + ' expressions from then branch');
+                                                #end
+                                                // Extract variable names from iterator assignments
+                                                for (expr in allExprs) {
+                                                    switch(expr.def) {
+                                                        case EMatch(PVar(varName), rhs):
+                                                            if (ASTUtils.containsIteratorPattern(rhs)) {
+                                                                switch(rhs.def) {
+                                                                    case EField(_, "key"):
+                                                                        keyVarName = varName;
+                                                                        #if debug_map_iterator
+                                                                        trace('[MapIteratorTransform] Found key variable: ' + keyVarName);
+                                                                        #end
+                                                                    case EField(_, "value"):
+                                                                        valueVarName = varName;
+                                                                        #if debug_map_iterator
+                                                                        trace('[MapIteratorTransform] Found value variable: ' + valueVarName);
+                                                                        #end
+                                                                    default:
+                                                                        var fieldChain = [];
+                                                                        var current = rhs;
+                                                                        while (current != null) {
+                                                                            switch(current.def) {
+                                                                                case EField(obj, field):
+                                                                                    fieldChain.push(field);
+                                                                                    current = obj;
+                                                                                case ECall(func, _, _):
+                                                                                    current = func;
+                                                                                default:
+                                                                                    current = null;
+                                                                            }
+                                                                        }
+                                                                        if (fieldChain.length > 0) {
+                                                                            if (fieldChain[0] == "key") {
+                                                                                keyVarName = varName;
+                                                                                #if debug_map_iterator
+                                                                                trace('[MapIteratorTransform] Found key variable via chain: ' + keyVarName);
+                                                                                #end
+                                                                            } else if (fieldChain[0] == "value") {
+                                                                                valueVarName = varName;
+                                                                                #if debug_map_iterator
+                                                                                trace('[MapIteratorTransform] Found value variable via chain: ' + valueVarName);
+                                                                                #end
+                                                                            }
+                                                                        }
+                                                                }
+                                                            }
+                                                        default:
+                                                    }
+                                                }
+                                                var cleanExprs = ASTUtils.filterIteratorAssignments(allExprs);
+                                                #if debug_map_iterator
+                                                trace('[MapIteratorTransform] After filtering: ' + cleanExprs.length + ' expressions remain');
+                                                #end
+                                                var bodyExprs = [];
+                                                for (expr in cleanExprs) {
+                                                    switch(expr.def) {
+                                                        case ETuple(elements):
+                                                            var isCont = elements.length > 0 && switch(elements[0].def) {
+                                                                case EAtom(atom): atom == "cont";
+                                                                default: false;
+                                                            };
+                                                            if (!isCont) bodyExprs.push(expr);
+                                                        default:
+                                                            bodyExprs.push(expr);
+                                                    }
+                                                }
+                                                loopBody = if (bodyExprs.length == 1) bodyExprs[0] else if (bodyExprs.length > 1) makeAST(EBlock(bodyExprs)) else null;
+                                            default:
+                                        }
+                                    default:
+                                }
+
+                                if (loopBody != null) {
+                                    #if debug_map_iterator
+                                    trace('[MapIteratorTransform] Creating Enum.each with {' + keyVarName + ', ' + valueVarName + '} destructuring');
+                                    trace('[MapIteratorTransform] Map variable: ' + mapVar);
+                                    trace('[MapIteratorTransform] Body extracted, creating transformation');
+                                    #end
+                                    var transformedAST = makeAST(ERemoteCall(
+                                        makeAST(EVar("Enum")),
+                                        "each",
+                                        [
+                                            makeAST(EVar(mapVar)),
+                                            makeAST(EFn([{
+                                                args: [PTuple([PVar(keyVarName), PVar(valueVarName)])],
+                                                guard: null,
+                                                body: loopBody
+                                            }]))
+                                        ]
+                                    ));
+                                    #if debug_map_iterator
+                                    trace('[MapIteratorTransform] *** TRANSFORMATION COMPLETE - RETURNING NEW AST ***');
+                                    #end
+                                    return transformedAST;
+                                }
+                            }
+                        default:
+                    }
+                default:
+            }
+            return node;
+        });
+    }
+
+    // Internal helper: conservative check for Map iterator signals
+    private static function containsIteratorPatterns(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+        var hasKeyValueIterator = false;
+        var hasHasNext = false;
+        var hasNext = false;
+        function scan(node: ElixirAST): Void {
+            if (node == null || node.def == null) return;
+            switch(node.def) {
+                case EField(obj, field):
+                    if (field == "key_value_iterator") {
+                        hasKeyValueIterator = true;
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform/scan] Found key_value_iterator field');
+                        #end
+                    } else if (field == "has_next") {
+                        hasHasNext = true;
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform/scan] Found has_next field');
+                        #end
+                    } else if (field == "next") {
+                        hasNext = true;
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform/scan] Found next field');
+                        #end
+                    }
+                    scan(obj);
+                case ECall(func, _, args):
+                    switch(func.def) {
+                        case EField(obj, field):
+                            if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+                                if (field == "key_value_iterator") hasKeyValueIterator = true;
+                                if (field == "has_next") hasHasNext = true;
+                                if (field == "next") hasNext = true;
+                                #if debug_map_iterator
+                                trace('[MapIteratorTransform/scan] Found iterator method call: ' + field + '()');
+                                #end
+                            }
+                            scan(obj);
+                        default:
+                            scan(func);
+                    }
+                    if (args != null) for (arg in args) scan(arg);
+                case EFn(clauses):
+                    for (clause in clauses) if (clause.body != null) scan(clause.body);
+                case EBlock(exprs):
+                    for (expr in exprs) scan(expr);
+                case EIf(cond, thenBranch, elseBranch):
+                    scan(cond);
+                    scan(thenBranch);
+                    if (elseBranch != null) scan(elseBranch);
+                case ETuple(elements):
+                    for (elem in elements) scan(elem);
+                case ERemoteCall(module, _, args):
+                    scan(module);
+                    if (args != null) for (arg in args) scan(arg);
+                case EVar(_), EAtom(_), EString(_):
+                default:
+                    #if debug_map_iterator
+                    var nodeType = Type.enumConstructor(node.def);
+                    trace('[MapIteratorTransform/scan] Unhandled node type: ' + nodeType);
+                    #end
+            }
+        }
+        scan(ast);
+        var result = hasKeyValueIterator;
+        #if debug_map_iterator
+        if (result) trace('[MapIteratorTransform/scan] ✅ PATTERN DETECTED - hasKeyValueIterator: ' + hasKeyValueIterator + ', hasHasNext: ' + hasHasNext + ', hasNext: ' + hasNext);
+        #end
+        return result;
+    }
+
+    // Debug helper to pretty-print nodes
+    #if debug_map_iterator
+    private static function printASTStructure(ast: ElixirAST, depth: Int = 0): String {
+        if (ast == null || ast.def == null) return "null";
+        if (depth > 3) return "...";
+        var nodeType = Type.enumConstructor(ast.def);
+        return switch(ast.def) {
+            case EField(obj, field): '$nodeType(.$field on ${printASTStructure(obj, depth + 1)})';
+            case ECall(func, _, args): var argsStr = args != null ? '[${args.length} args]' : '[no args]'; '$nodeType($argsStr, func=${printASTStructure(func, depth + 1)})';
+            case EVar(name): '$nodeType($name)';
+            case EAtom(atom): '$nodeType(:$atom)';
+            default: nodeType;
+        }
+    }
+    #end
 }
 
 #end
