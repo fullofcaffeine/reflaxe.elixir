@@ -258,15 +258,21 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
-     * Override shouldGenerateClass to allow extern classes with special annotations
-     * 
-     * WHY: By default, GenericCompiler ignores all extern classes, but we need to
-     * generate modules for extern classes with framework annotations like @:repo
-     * 
-     * @param classType The class to check
-     * @return True if the class should be compiled
+     * Override shouldGenerateClass to enforce strict std emission policy
+     *
+     * WHY: Prevent generation of Haxe std extern implementation modules and
+     *      macro-time/compiler-time dependencies (e.g., _Any.Any_Impl_, _EnumValue.EnumValue_Impl_,
+     *      haxe.iterators.ArrayIterator, haxe._call_stack.CallStack_Impl_, StringBuf, Type, ValueType)
+     *      which pollute snapshot outputs and are not required at runtime for idiomatic Elixir.
+     * WHAT: Suppress generation for internal/std utility classes unless explicitly whitelisted by
+     *      annotations (@:coreApi, @:presence, @:application, @:native for target modules).
+     * HOW: Apply name/package based filters early, then fall back to existing allow rules.
      */
     public override function shouldGenerateClass(classType: ClassType): Bool {
+        // Suppress obvious internal/impl/iterator/std support modules
+        if (shouldSuppressStdEmission(classType)) {
+            return false;
+        }
         // Debug for TodoApp investigation
         #if debug_annotation_transforms
         if (classType.name == "TodoApp") {
@@ -324,6 +330,42 @@ class ElixirCompiler extends GenericCompiler<
         
         // Otherwise use default behavior
         return super.shouldGenerateClass(classType);
+    }
+
+    /**
+     * Centralized suppression rules for std and internal modules
+     */
+    private function shouldSuppressStdEmission(classType: ClassType): Bool {
+        // Fast checks by name
+        var n = classType.name;
+        if (n == null) return false;
+
+        // Skip Haxe internal implementation modules
+        if (n.endsWith("_Impl_")) return true;
+
+        // Skip packages that are compiler/macro-only or Haxe-internal
+        if (classType.pack != null && classType.pack.length > 0) {
+            var top = classType.pack[0];
+            if (top == null) top = "";
+
+            // Compiler/macro-only libs (never emit as modules)
+            if (top == "reflaxe" || top == "js" || top == "genes") return true;
+
+            // Haxe std: allow by default, but filter internal subpackages starting with underscore
+            if (top == "haxe") {
+                if (classType.pack.length > 1) {
+                    var sub = classType.pack[1];
+                    if (sub != null && StringTools.startsWith(sub, "_")) return true; // _call_stack, _constraints, _int32, etc.
+                }
+            }
+
+            // Underscored pseudo-packages (e.g., _Any, _EnumValue)
+            if (StringTools.startsWith(top, "_")) return true;
+
+            // No additional bans beyond leading underscore
+        }
+
+        return false;
     }
     
     /**
@@ -523,10 +565,10 @@ class ElixirCompiler extends GenericCompiler<
         }
         #end
 
-        // Skip standard library classes that shouldn't generate Elixir modules
-        if (isStandardLibraryClass(classType.name)) {
+        // Skip standard library/internal classes that shouldn't generate Elixir modules
+        if (isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
             #if debug_compilation_flow
-            trace('[ElixirCompiler.compileClassImpl] Skipping standard library class: ${classType.name}');
+            trace('[ElixirCompiler.compileClassImpl] Skipping std/internal class: ${classType.name}');
             #end
             return null;
         }
@@ -1367,8 +1409,8 @@ class ElixirCompiler extends GenericCompiler<
         }
         #end
 
-        // Skip built-in types that shouldn't generate modules
-        if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name)) {
+        // Skip built-in types and std/internal classes that shouldn't generate modules
+        if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
             return null;
         }
         
@@ -2159,6 +2201,10 @@ class ElixirCompiler extends GenericCompiler<
      * Build enum AST - creates module with constructor functions
      */
     function buildEnumAST(enumType: EnumType, options: Array<EnumOptionData>): Null<reflaxe.elixir.ast.ElixirAST> {
+        // Suppress std/internal enums that should not become modules in Elixir output
+        if (shouldSuppressEnumEmission(enumType)) {
+            return null;
+        }
         var NameUtils = reflaxe.elixir.ast.NameUtils;
         
         // Check if this enum has @:elixirIdiomatic metadata
@@ -2243,6 +2289,26 @@ class ElixirCompiler extends GenericCompiler<
         }
         
         return moduleAST;
+    }
+
+    /**
+     * Suppression rules for enum emission (std/internal)
+     */
+    private function shouldSuppressEnumEmission(enumType: EnumType): Bool {
+        if (enumType == null) return false;
+        var n = enumType.name;
+        if (n == null) return false;
+
+        // Common Haxe std enums not needed as modules in Elixir
+        if (n == "ValueType" || n == "StackItem") return true;
+
+        if (enumType.pack != null && enumType.pack.length > 0) {
+            var top = enumType.pack[0];
+            if (top == "haxe") return true;
+            if (StringTools.startsWith(top, "_")) return true;
+        }
+
+        return false;
     }
     
     /**
