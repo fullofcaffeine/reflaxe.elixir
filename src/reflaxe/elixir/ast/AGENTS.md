@@ -110,6 +110,17 @@ The AST pipeline is the core of the Reflaxe.Elixir compiler, transforming Haxe's
 2. **Transformer Phase** (`ElixirASTTransformer.hx`) - Applies idiomatic transformations
 3. **Printer Phase** (`ElixirASTPrinter.hx`) - Generates final Elixir strings
 
+## 📏 File Size Limits (AST Scope)
+
+- Target per file: ~200–500 lines (ideal), ≤1,000 lines (acceptable), 1,000–2,000 lines (warning, justify), >2,000 lines (forbidden — extract immediately).
+- Apply these thresholds to all AST files (builders, transformers, helpers). Do not add new passes or large helpers to already large files.
+- Specific enforcement for transformers:
+  - ElixirASTTransformer.hx must be a thin orchestrator (pass registration + minimal shared glue). All pass logic belongs in `src/reflaxe/elixir/ast/transformers/*.hx`.
+  - When adding a new pass, create or extend a focused `*Transforms.hx` module rather than growing ElixirASTTransformer.hx.
+- Trigger for extraction: as soon as a file approaches ~1,000 lines, split by concern (e.g., ControllerTransforms, DomainTransforms, EventAndParamTransforms). Each new module must include WHAT/WHY/HOW hxdoc and pass ordering notes.
+
+Rationale: These limits align with the global maintainability standards in /AGENTS.md and /src/reflaxe/elixir/AGENTS.md and prevent monolithic files that slow iteration and increase bug risk.
+
 ## Descriptive Naming & Non‑Expert Documentation (AST Scope)
 
 - Use intention‑revealing names for builders/transformers and locals (e.g., `guardVars`, `fieldBaseVars`, `bodyUsedLocals`, `binderName`, `clauseBinders`).

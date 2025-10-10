@@ -274,17 +274,13 @@ class AnnotationTransforms {
         // Check the top-level node first for LiveView modules
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isLiveView == true):
-                #if debug_annotation_transforms
-                #end
-                
                 var liveViewBody = buildLiveViewBody(name, body);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, liveViewBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
+                return makeASTWithMeta(EDefmodule(name, liveViewBody), ast.metadata, ast.pos);
+            case EModule(name, attrs, exprs) if (ast.metadata?.isLiveView == true):
+                // Support modules represented as EModule as well
+                var existing = makeAST(EBlock(exprs));
+                var liveViewBody2 = buildLiveViewBody(name, existing);
+                return makeASTWithMeta(EModule(name, attrs, [liveViewBody2]), ast.metadata, ast.pos);
             default:
                 // Not a LiveView module, just pass through
                 return ast;
@@ -297,18 +293,15 @@ class AnnotationTransforms {
     static function buildLiveViewBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
         
-        // Extract app name from module name (e.g., TodoAppWeb.TodoLive -> todo_app)
+        // Extract app name only when module name fits Phoenix Web pattern
         var webIndex = moduleName.indexOf("Web");
-        var appNamePart = if (webIndex > 0) {
-            moduleName.substring(0, webIndex);
-        } else {
-            moduleName;
-        };
-        
-        // use TodoAppWeb, :live_view
-        statements.push(makeAST(EUse(appNamePart + "Web", [
-            makeAST(EAtom(ElixirAtom.raw("live_view")))
-        ])));
+        if (webIndex > 0) {
+            var appNamePart = moduleName.substring(0, webIndex);
+            // use AppNameWeb, :live_view (only for real Phoenix Web modules)
+            statements.push(makeAST(EUse(appNamePart + "Web", [
+                makeAST(EAtom(ElixirAtom.raw("live_view")))
+            ])));
+        }
         
         // Add existing functions from the body
         switch(existingBody.def) {
@@ -318,12 +311,29 @@ class AnnotationTransforms {
                     switch(stmt.def) {
                         case ENil:
                             // Skip
+                        case EDefp(fnName, fnArgs, fnGuard, fnBody) if (fnName == "render"):
+                            // Normalize LiveView render to public def render(assigns)
+                            var newArgs:Array<EPattern> = [PVar("assigns")];
+                            statements.push(makeAST(EDef("render", newArgs, fnGuard, fnBody)));
+                        case EDef(fnName2, fnArgs2, fnGuard2, fnBody2) if (fnName2 == "render"):
+                            var newArgs2:Array<EPattern> = [PVar("assigns")];
+                            statements.push(makeAST(EDef("render", newArgs2, fnGuard2, fnBody2)));
                         default:
                             statements.push(stmt);
                     }
                 }
             default:
-                statements.push(existingBody);
+                // Single expression body; if it's a private/public render/1, normalize to public with assigns
+                switch (existingBody.def) {
+                    case EDefp(fnName0, fnArgs0, fnGuard0, fnBody0) if (fnName0 == "render"):
+                        var newArgs0:Array<EPattern> = [PVar("assigns")];
+                        statements.push(makeAST(EDef("render", newArgs0, fnGuard0, fnBody0)));
+                    case EDef(fnName1, fnArgs1, fnGuard1, fnBody1) if (fnName1 == "render"):
+                        var newArgs1:Array<EPattern> = [PVar("assigns")];
+                        statements.push(makeAST(EDef("render", newArgs1, fnGuard1, fnBody1)));
+                    default:
+                        statements.push(existingBody);
+                }
         }
         
         return makeAST(EBlock(statements));
@@ -1237,8 +1247,7 @@ class AnnotationTransforms {
                     ]))}
                 ]))
             ])),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))])),
-            makeAST(EMatch(EPattern.PVar("_"), makeAST(EBlock([]))))
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
         ]))));
         
         statements.push(makeAST(EDef(
