@@ -787,6 +787,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoResultBinderNormalizationPass
         });
 
+        // Controller-specific Repo result binder normalization
+        passes.push({
+            name: "ControllerResultBinderNormalization",
+            description: "In controllers, rename {:ok,_}/{:error,_} binders and alias data as needed",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerResultBinderNormalizationPass
+        });
+
         // Normalize mixed-case variable references to existing snake_case bindings
         passes.push({
             name: "VarNameNormalization",
