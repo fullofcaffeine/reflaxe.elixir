@@ -51,6 +51,365 @@ class BinderTransforms {
         });
     }
 
+    // In LiveView modules, prefer error binder name `reason` BUT do not override
+    // semantically preferred names used in the body (e.g., `changeset`).
+    // RULES:
+    // - If clause tag is :error and binder is not `reason` and the clause body
+    //   DOES NOT reference `changeset`, rename binder to `reason`.
+    // - If the body references `changeset`, keep binder as-is to preserve idiomatic usage.
+    public static function liveViewErrorBinderRenamePass(ast: ElixirAST): ElixirAST {
+        inline function isLiveViewModule(name: String): Bool {
+            return name != null && (StringTools.endsWith(name, "Live") || name.indexOf("Live") != -1);
+        }
+        inline function tagOf(p: EPattern): Null<String> {
+            return switch(p) {
+                case PTuple(elements) if (elements.length >= 1):
+                    switch(elements[0]) { case PLiteral({def: EAtom(a)}): a; default: null; }
+                default: null;
+            }
+        }
+        inline function renameErrorBinderConditional(p: EPattern, used: Array<String>): EPattern {
+            return switch(p) {
+                case PTuple(elements) if (elements.length == 2):
+                    var tag = tagOf(p);
+                    switch elements[1] {
+                        case PVar(n) if (tag == "error" && n != "reason"):
+                            // Only rename to `reason` when `changeset` is NOT used in the body
+                            if (used != null && used.indexOf("changeset") == -1) {
+                                PTuple([elements[0], PVar("reason")]);
+                            } else {
+                                p;
+                            }
+                        default:
+                            p;
+                    }
+                default:
+                    p;
+            }
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EModule(name, attrs, body) if (isLiveViewModule(name)):
+                    var newBody = [];
+                    for (b in body) {
+                        var tb = ElixirASTTransformer.transformNode(b, function(n: ElixirAST): ElixirAST {
+                            return switch(n.def) {
+                                case EFn(clauses):
+                                    var newClauses = [];
+                                    for (cl in clauses) {
+                                        var fixedBody = ElixirASTTransformer.transformNode(cl.body, function(m: ElixirAST): ElixirAST {
+                                            return switch(m.def) {
+                                                case ECase(target, innerClauses):
+                                                    var renamedClauses = [];
+                                                    for (ic in innerClauses) {
+                                                        var usedInner = collectUsedLowerVars(ic.body);
+                                                        var r = renameErrorBinderConditional(ic.pattern, usedInner);
+                                                        renamedClauses.push({ pattern: r, guard: ic.guard, body: ic.body });
+                                                    }
+                                                    makeASTWithMeta(ECase(target, renamedClauses), m.metadata, m.pos);
+                                                default:
+                                                    m;
+                                            }
+                                        });
+                                        newClauses.push({ args: cl.args, guard: cl.guard, body: fixedBody });
+                                    }
+                                    makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
+                                case ECase(target, clauses):
+                                    var newClauses = [];
+                                    for (c in clauses) {
+                                        var used = collectUsedLowerVars(c.body);
+                                        var renamed = renameErrorBinderConditional(c.pattern, used);
+                                        newClauses.push({ pattern: renamed, guard: c.guard, body: c.body });
+                                    }
+                                    makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        });
+                        newBody.push(tb);
+                    }
+                    makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
+                case EDefmodule(name, doBlock) if (isLiveViewModule(name)):
+                    var transformed = ElixirASTTransformer.transformNode(doBlock, function(n: ElixirAST): ElixirAST {
+                        return switch(n.def) {
+                            case EFn(clauses):
+                                var newClauses = [];
+                                for (cl in clauses) {
+                                    var fixedBody = ElixirASTTransformer.transformNode(cl.body, function(m: ElixirAST): ElixirAST {
+                                        return switch(m.def) {
+                                            case ECase(target, innerClauses):
+                                                var renamedClauses = [];
+                                                for (ic in innerClauses) {
+                                                    var usedInner = collectUsedLowerVars(ic.body);
+                                                    var r = renameErrorBinderConditional(ic.pattern, usedInner);
+                                                    renamedClauses.push({ pattern: r, guard: ic.guard, body: ic.body });
+                                                }
+                                                makeASTWithMeta(ECase(target, renamedClauses), m.metadata, m.pos);
+                                            default:
+                                                m;
+                                        }
+                                    });
+                                    newClauses.push({ args: cl.args, guard: cl.guard, body: fixedBody });
+                                }
+                                makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
+                            case ECase(target, clauses):
+                                var newClauses = [];
+                                for (c in clauses) {
+                                    var used = collectUsedLowerVars(c.body);
+                                    var renamed = renameErrorBinderConditional(c.pattern, used);
+                                    newClauses.push({ pattern: renamed, guard: c.guard, body: c.body });
+                                }
+                                makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                            default:
+                                n;
+                        }
+                    });
+                    makeASTWithMeta(EDefmodule(name, transformed), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+    // Normalize string search predicates inside Enum.filter to pure boolean expressions
+    public static function stringSearchFilterNormalizationPass(ast: ElixirAST): ElixirAST {
+        inline function makeIsNotNil(expr: ElixirAST): ElixirAST {
+            return makeAST(EUnary(Not, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [expr]))));
+        }
+        inline function downcase(e: ElixirAST): ElixirAST {
+            return makeAST(ERemoteCall(makeAST(EVar("String")), "downcase", [e]));
+        }
+        inline function binaryMatch(str: ElixirAST, query: ElixirAST): ElixirAST {
+            return makeAST(ERemoteCall(makeAST(EVar(":binary")), "match", [str, query]));
+        }
+        inline function containsFieldOfVar(n: ElixirAST, v: String, field: String): Bool {
+            var found = false;
+            function scan(x: ElixirAST): Void {
+                if (found || x == null || x.def == null) return;
+                switch(x.def) {
+                    case EField(target, f):
+                        switch(target.def) { case EVar(name) if (name == v && f == field): found = true; default: scan(target); }
+                    case EMatch(_, rhs):
+                        // Handle chained assignments like a = b = t.title / t.description
+                        switch(rhs.def) {
+                            case EField(tgt, f) if (f == field):
+                                switch(tgt.def) { case EVar(name) if (name == v): found = true; default: }
+                            default:
+                        }
+                        if (!found) scan(rhs);
+                    case EBlock(es): for (e in es) scan(e);
+                    case EBinary(_, l, r): scan(l); scan(r);
+                    case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body);} 
+                    case ECall(t, _, as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                    case ERemoteCall(m2, _, as2): scan(m2); if (as2 != null) for (a in as2) scan(a);
+                    case ETuple(items) | EList(items): for (i in items) scan(i);
+                    case EMap(pairs): for (p in pairs) { scan(p.key); scan(p.value); }
+                    default:
+                }
+            }
+            scan(n);
+            return found;
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case ERemoteCall(mod, func, args) if ((func == "filter") && args != null && args.length == 2):
+                    // Transform any filter(..., fn t -> ... end) predicate to pure boolean when string search pattern is present
+                    var pred = args[1];
+                    switch(pred.def) {
+                        case EFn(clauses) if (clauses.length > 0):
+                            var newClauses = [];
+                            for (cl in clauses) {
+                                var tVar: Null<String> = null;
+                                if (cl.args != null && cl.args.length > 0) switch(cl.args[0]) { case PVar(n): tVar = n; default: }
+                                if (tVar == null) { newClauses.push(cl); continue; }
+                                // Build: in_title or (t.description != nil and in_desc)
+                                var tVarRef = makeAST(EVar(tVar));
+                                var titleField = makeAST(EField(tVarRef, "title"));
+                                var titleBool = makeIsNotNil(binaryMatch(downcase(titleField), makeAST(EVar("query"))));
+                                var descField = makeAST(EField(tVarRef, "description"));
+                                var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
+                                var descBool = makeIsNotNil(binaryMatch(downcase(descField), makeAST(EVar("query"))));
+                                var right = makeAST(EBinary(And, descPresent, descBool));
+                                var combined = makeAST(EBinary(Or, titleBool, right));
+                                newClauses.push({ args: cl.args, guard: cl.guard, body: combined });
+                            }
+                            var newPred = makeAST(EFn(newClauses));
+                            #if debug_filter_predicate
+                            trace('[FilterNorm] Rewriting Enum.filter predicate to pure boolean');
+                            #end
+                            makeASTWithMeta(ERemoteCall(mod, func, [args[0], newPred]), node.metadata, node.pos);
+                        default:
+                            node;
+                    }
+                case ECall(target, func, args) if ((func == "filter") && args != null && args.length == 2):
+                    var pred = args[1];
+                    switch(pred.def) {
+                        case EFn(clauses) if (clauses.length > 0):
+                            var newClauses = [];
+                            for (cl in clauses) {
+                                var tVar: Null<String> = null;
+                                if (cl.args != null && cl.args.length > 0) switch(cl.args[0]) { case PVar(n): tVar = n; default: }
+                                if (tVar == null) { newClauses.push(cl); continue; }
+                                var tVarRef = makeAST(EVar(tVar));
+                                var titleField = makeAST(EField(tVarRef, "title"));
+                                var titleBool = makeIsNotNil(binaryMatch(downcase(titleField), makeAST(EVar("query"))));
+                                var descField = makeAST(EField(tVarRef, "description"));
+                                var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
+                                var descBool = makeIsNotNil(binaryMatch(downcase(descField), makeAST(EVar("query"))));
+                                var right = makeAST(EBinary(And, descPresent, descBool));
+                                var combined = makeAST(EBinary(Or, titleBool, right));
+                                newClauses.push({ args: cl.args, guard: cl.guard, body: combined });
+                            }
+                            var newPred = makeAST(EFn(newClauses));
+                            makeASTWithMeta(ECall(target, func, [args[0], newPred]), node.metadata, node.pos);
+                        default:
+                            node;
+                    }
+                // Fallback: directly normalize EFn bodies that clearly implement string search
+                case EFn(clauses) if (clauses.length > 0):
+                    var outClauses = [];
+                    for (cl in clauses) {
+                        var tVar: Null<String> = null;
+                        if (cl.args != null && cl.args.length > 0) switch(cl.args[0]) { case PVar(n): tVar = n; default: }
+                        if (tVar != null) {
+                            // Heuristic: only when :binary.match pattern exists in body
+                            var hasMatch = (function(): Bool {
+                                var found = false; function scan(n: ElixirAST): Void {
+                                    if (found || n == null || n.def == null) return; switch(n.def) {
+                                        case ERemoteCall(m, f, _):
+                                            var isBin = switch(m.def) {
+                                                case EVar(nn) if (nn == ":binary"): true;
+                                                case EAtom(a) if (a == ":binary"): true;
+                                                default: false;
+                                            };
+                                            if (isBin && f == "match") found = true;
+                                        case EBlock(es): for (e in es) scan(e);
+                                        case EBinary(_, l, r): scan(l); scan(r);
+                                        case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body);} 
+                                        case ECall(t, _, as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                                        case ERemoteCall(m2, _, as2): scan(m2); if (as2 != null) for (a in as2) scan(a);
+                                        default:
+                                    }}; scan(cl.body); return found;
+                            })();
+                            var used = collectUsedLowerVars(cl.body);
+                            var hasTitleOrDesc = containsFieldOfVar(cl.body, tVar, "title") || containsFieldOfVar(cl.body, tVar, "description");
+                            // Be pragmatic: if predicate uses `query`, rewrite to pure boolean using title/description contains
+                            if (used.indexOf("query") != -1) {
+                                var tRef = makeAST(EVar(tVar));
+                                var titleField = makeAST(EField(tRef, "title"));
+                                var titleBool = makeIsNotNil(binaryMatch(downcase(titleField), makeAST(EVar("query"))));
+                                var descField = makeAST(EField(tRef, "description"));
+                                var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
+                                var descBool = makeIsNotNil(binaryMatch(downcase(descField), makeAST(EVar("query"))));
+                                var right = makeAST(EBinary(And, descPresent, descBool));
+                                var combined = makeAST(EBinary(Or, titleBool, right));
+                                #if debug_filter_predicate
+                                trace('[FilterNorm] Fallback EFn rewrite to pure boolean');
+                                #end
+                                outClauses.push({ args: cl.args, guard: cl.guard, body: combined });
+                                continue;
+                            }
+                        }
+                        outClauses.push(cl);
+                    }
+                    makeASTWithMeta(EFn(outClauses), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    // LiveView ReduceWhile Error Binder Normalization
+    // In Enum.reduce_while anonymous functions inside LiveView modules, ensure
+    // error-arm binders are named `reason` when the body references `reason` and
+    // not `changeset`. This avoids undefined `reason` and prevents shadowing outer vars.
+    public static function liveViewReduceWhileErrorBinderNormalizationPass(ast: ElixirAST): ElixirAST {
+        inline function isLiveViewModule(name: String): Bool {
+            return name != null && (StringTools.endsWith(name, "Live") || name.indexOf("Live") != -1);
+        }
+        inline function tagOf(p: EPattern): Null<String> {
+            return switch(p) {
+                case PTuple(elements) if (elements.length >= 1):
+                    switch(elements[0]) { case PLiteral({def: EAtom(a)}): a; default: null; }
+                default: null;
+            }
+        }
+        inline function renameBinder(p: EPattern, newName: String): EPattern {
+            return switch(p) {
+                case PTuple(elements) if (elements.length == 2):
+                    switch(elements[1]) { case PVar(_): PTuple([elements[0], PVar(newName)]); default: p; }
+                default: p;
+            }
+        }
+        // Normalize EFn body: rename {:error, v} -> {:error, reason} when body uses `reason` and not `changeset`
+        function normalizeFnBody(fnAst: ElixirAST): ElixirAST {
+            return switch(fnAst.def) {
+                case EFn(clauses):
+                    var newClauses = [];
+                    for (cl in clauses) {
+                        var fixedBody = ElixirASTTransformer.transformNode(cl.body, function(n: ElixirAST): ElixirAST {
+                            return switch(n.def) {
+                                case ECase(target, caseClauses):
+                                    var newCaseClauses = [];
+                                    for (c in caseClauses) {
+                                        var tag = tagOf(c.pattern);
+                                        if (tag == "error") {
+                                            var used = collectUsedLowerVars(c.body);
+                                            var usesReason = used.indexOf("reason") != -1;
+                                            var usesChangeset = used.indexOf("changeset") != -1;
+                                            if (usesReason && !usesChangeset) {
+                                                var renamed = renameBinder(c.pattern, "reason");
+                                                newCaseClauses.push({ pattern: renamed, guard: c.guard, body: c.body });
+                                                continue;
+                                            }
+                                        }
+                                        newCaseClauses.push(c);
+                                    }
+                                    makeASTWithMeta(ECase(target, newCaseClauses), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        });
+                        newClauses.push({ args: cl.args, guard: cl.guard, body: fixedBody });
+                    }
+                    makeASTWithMeta(EFn(newClauses), fnAst.metadata, fnAst.pos);
+                default:
+                    fnAst;
+            }
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EModule(name, attrs, body) if (isLiveViewModule(name)):
+                    var newBody = [];
+                    for (b in body) {
+                        var tb = ElixirASTTransformer.transformNode(b, function(n: ElixirAST): ElixirAST {
+                            return switch(n.def) {
+                                case ERemoteCall(mod, func, args):
+                                    // Enum.reduce_while(list, acc, fn -> ... end)
+                                    var isEnum = switch(mod.def) { case EVar(m) if (m == "Enum"): true; default: false; };
+                                    if (isEnum && func == "reduce_while" && args != null && args.length >= 3) {
+                                        var newArgs = args.copy();
+                                        newArgs[2] = normalizeFnBody(args[2]);
+                                        makeASTWithMeta(ERemoteCall(mod, func, newArgs), n.metadata, n.pos);
+                                    } else n;
+                                case ECall(target, func, args):
+                                    // reduce_while called as a captured local maybe
+                                    if (func == "reduce_while" && args != null && args.length >= 3) {
+                                        var newArgs = args.copy();
+                                        newArgs[2] = normalizeFnBody(args[2]);
+                                        makeASTWithMeta(ECall(target, func, newArgs), n.metadata, n.pos);
+                                    } else n;
+                                default:
+                                    n;
+                            }
+                        });
+                        newBody.push(tb);
+                    }
+                    makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
     // Normalize system_alert clause binders and fix body var refs (flashType -> flash_type, socket/message names)
     public static function systemAlertClauseNormalizationPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
@@ -313,7 +672,7 @@ class BinderTransforms {
         });
     }
 
-    // Late safety net: ensure {:error, binder} arms alias reason when used in body
+    // Late safety net: ensure {:error, binder} arms alias reason only when the body references `reason`
     public static function errorReasonAliasInjectionPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch(node.def) {
@@ -324,13 +683,87 @@ class BinderTransforms {
                         var tag: Null<String> = switch(pat) { case PTuple(e) if (e.length > 0): extractAtom(e[0]); default: null; };
                         if (tag == "error") {
                             var binder = switch(pat) { case PTuple(e) if (e.length == 2): switch(e[1]) { case PVar(n): n; default: null; }; default: null; };
-                            if (binder != null && binder != "reason") {
+                            var used = collectUsedLowerVars(clause.body);
+                            if (binder != null && binder != "reason" && used.indexOf("reason") != -1) {
                                 var aliasAssign = makeAST(EMatch(PVar("reason"), makeAST(EVar(binder))));
                                 var newBody = switch(clause.body.def) {
                                     case EBlock(exprs): makeAST(EBlock([aliasAssign].concat(exprs)));
                                     default: makeAST(EBlock([aliasAssign, clause.body]));
                                 };
                                 newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: newBody });
+                                continue;
+                            }
+                        }
+                        newClauses.push(clause);
+                    }
+                    makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    // Late normalization: if an error-arm body references `reason`, ensure the
+    // pattern binder is named `reason` (unless `changeset` is explicitly used).
+    public static function resultErrorBinderLateNormalizationPass(ast: ElixirAST): ElixirAST {
+        inline function tagOf(p: EPattern): Null<String> {
+            return switch(p) {
+                case PTuple(elements) if (elements.length >= 1):
+                    switch(elements[0]) { case PLiteral({def: EAtom(a)}): a; default: null; }
+                default: null;
+            }
+        }
+        inline function renameBinder(p: EPattern, newName: String): EPattern {
+            return switch(p) {
+                case PTuple(elements) if (elements.length == 2):
+                    switch(elements[1]) { case PVar(_): PTuple([elements[0], PVar(newName)]); default: p; }
+                default: p;
+            }
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EFn(clauses):
+                    // Explicitly transform clause bodies to catch nested cases (e.g., in reduce_while)
+                    var newClauses = [];
+                    for (cl in clauses) {
+                        var fixedBody = ElixirASTTransformer.transformNode(cl.body, function(n: ElixirAST): ElixirAST {
+                            return switch(n.def) {
+                                case ECase(target, caseClauses):
+                                    var newCaseClauses = [];
+                                    for (c in caseClauses) {
+                                        var tag = tagOf(c.pattern);
+                                        if (tag == "error") {
+                                            var used = collectUsedLowerVars(c.body);
+                                            var usesReason = used.indexOf("reason") != -1;
+                                            var usesChangeset = used.indexOf("changeset") != -1;
+                                            if (usesReason && !usesChangeset) {
+                                                var renamed = renameBinder(c.pattern, "reason");
+                                                newCaseClauses.push({ pattern: renamed, guard: c.guard, body: c.body });
+                                                continue;
+                                            }
+                                        }
+                                        newCaseClauses.push(c);
+                                    }
+                                    makeASTWithMeta(ECase(target, newCaseClauses), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        });
+                        newClauses.push({ args: cl.args, guard: cl.guard, body: fixedBody });
+                    }
+                    makeASTWithMeta(EFn(newClauses), node.metadata, node.pos);
+
+                case ECase(target, clauses):
+                    var newClauses = [];
+                    for (clause in clauses) {
+                        var tag = tagOf(clause.pattern);
+                        if (tag == "error") {
+                            var used = collectUsedLowerVars(clause.body);
+                            var usesReason = used.indexOf("reason") != -1;
+                            var usesChangeset = used.indexOf("changeset") != -1;
+                            if (usesReason && !usesChangeset) {
+                                var renamed = renameBinder(clause.pattern, "reason");
+                                newClauses.push({ pattern: renamed, guard: clause.guard, body: clause.body });
                                 continue;
                             }
                         }

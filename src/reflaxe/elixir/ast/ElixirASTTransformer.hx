@@ -731,6 +731,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameByTagPass
         });
 
+        // In LiveView modules, rename {:error, _} to {:error, reason}
+        passes.push({
+            name: "LiveViewErrorBinderRename",
+            description: "Rename LiveView error binders to reason",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewErrorBinderRenamePass
+        });
+
         // Rename Repo result binders based on body usage (user/data/changeset/reason)
         passes.push({
             name: "ResultBinderRenameByBodyUsage",
@@ -809,6 +817,39 @@ class ElixirASTTransformer {
             description: "Ensure {:error, v} arms alias reason when body uses it",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.errorReasonAliasInjectionPass
+        });
+
+        // Re-run LiveView error binder rename late to catch any newly generated case arms
+        passes.push({
+            name: "LiveViewErrorBinderRenameLate",
+            description: "Late rename of LiveView {:error,_} -> {:error, reason}",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewErrorBinderRenamePass
+        });
+
+        // Final safety: if an error-arm body references `reason`, enforce binder name `reason`
+        passes.push({
+            name: "ResultErrorBinderLateNormalization",
+            description: "If body uses `reason` and not `changeset`, rename error binder to `reason`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.resultErrorBinderLateNormalizationPass
+        });
+
+        // LiveView reduce_while anonymous fn error-binder normalization
+        passes.push({
+            name: "LiveViewReduceWhileErrorBinderNormalization",
+            description: "Within Enum.reduce_while anonymous functions, rename {:error,_} binder to reason when body uses it",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewReduceWhileErrorBinderNormalizationPass
+        });
+
+        // Late string search predicate normalization to sanitize any residual inline expansion
+        // in Enum.filter predicates or anonymous functions (produces pure boolean expressions)
+        passes.push({
+            name: "StringSearchFilterNormalization",
+            description: "Normalize string contains checks to pure boolean expressions in filter predicates",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.stringSearchFilterNormalizationPass
         });
 
         // Normalize mixed-case variable references to existing snake_case bindings
@@ -4748,6 +4789,18 @@ class ElixirASTTransformer {
                               guard: c.guard != null ? transformNode(c.guard, transformer) : null,
                               body: transformNode(c.body, transformer)
                           })),
+                    ast.metadata,
+                    ast.pos
+                );
+            
+            // Traverse anonymous functions and clause bodies
+            case EFn(clauses):
+                makeASTWithMeta(
+                    EFn(clauses.map(cl -> {
+                        args: cl.args,
+                        guard: cl.guard != null ? transformNode(cl.guard, transformer) : null,
+                        body: transformNode(cl.body, transformer)
+                    })),
                     ast.metadata,
                     ast.pos
                 );
