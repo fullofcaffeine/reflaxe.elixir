@@ -52,7 +52,7 @@ class EctoTransforms {
             switch (n.def) {
                 case EMatch(pattern, expr):
                     // Collect declared names
-                    collectPattern(pattern);
+                    collectPatternVars(pattern, declared);
                     // Detect Ecto.Queryable.to_query binding
                     switch (expr.def) {
                         case ERemoteCall(mod, func, _):
@@ -67,19 +67,7 @@ class EctoTransforms {
                         default:
                     }
                 default:
-                    ElixirASTTransformer.iterateAST(n, collect);
-            }
-        }
-
-        function collectPattern(p: EPattern): Void {
-            switch (p) {
-                case PVar(name): declared.set(name, true);
-                case PTuple(es) | PList(es): for (e in es) collectPattern(e);
-                case PCons(h, t): collectPattern(h); collectPattern(t);
-                case PMap(kvs): for (kv in kvs) collectPattern(kv.value);
-                case PStruct(_, fs): for (f in fs) collectPattern(f.value);
-                case PPin(inner): collectPattern(inner);
-                default:
+                    ASTUtils.walk(n, collect);
             }
         }
 
@@ -126,8 +114,9 @@ class EctoTransforms {
                     } else {
                         n;
                     }
+                // Recursively visit children for other nodes
                 default:
-                    n;
+                    return ElixirASTTransformer.transformNode(n, rewrite);
             }
         }
 
@@ -136,4 +125,3 @@ class EctoTransforms {
 }
 
 #end
-
