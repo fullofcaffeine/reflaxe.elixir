@@ -616,6 +616,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
         });
+
+        // Rewrite case discriminant from temp alias (_g/g/gN) to original expression
+        passes.push({
+            name: "DiscriminantRewrite",
+            description: "Rewrite case on temp discriminant (_g) to case on original expression",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass
+        });
         
         // Reduce while accumulator transformation (must run after assignment extraction)
         passes.push({
@@ -681,6 +689,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
         });
 
+        // Ensure case clause bodies are not empty (avoid syntax errors)
+        passes.push({
+            name: "CaseClauseEmptyBodyToNil",
+            description: "Replace empty case arm bodies with nil to ensure valid syntax",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseClauseFixTransforms.caseClauseEmptyBodyToNilPass
+        });
+
         // Guard sanitization pass (replace non-guard-safe calls with guard-safe equivalents)
         passes.push({
             name: "GuardSanitization",
@@ -703,6 +719,14 @@ class ElixirASTTransformer {
             description: "Inject clause-local aliases to reconcile binder names with body usage",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderAliasInjectionPass
+        });
+
+        // Normalize mixed-case variable references to existing snake_case bindings
+        passes.push({
+            name: "VarNameNormalization",
+            description: "Normalize camelCase references to snake_case when a binding exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.VarNameNormalizationTransforms.varNameNormalizationPass
         });
         
         // Pattern exhaustiveness check pass
