@@ -45,7 +45,21 @@ class VarNameNormalizationTransforms {
                 case EMatch(pattern, _): collectPatternVars(pattern, vars);
                 case EBlock(exprs): for (e in exprs) scan(e);
                 case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
-                case ECase(expr, clauses): scan(expr); for (c in clauses) { if (c.guard != null) scan(c.guard); scan(c.body); }
+                case ECase(expr, clauses):
+                    // Include variables bound by case clause patterns as defined in scope
+                    scan(expr);
+                    for (c in clauses) {
+                        collectPatternVars(c.pattern, vars);
+                        if (c.guard != null) scan(c.guard);
+                        scan(c.body);
+                    }
+                case EWith(clauses, doBlock, elseBlock):
+                    for (wc in clauses) {
+                        collectPatternVars(wc.pattern, vars);
+                        scan(wc.expr);
+                    }
+                    scan(doBlock);
+                    if (elseBlock != null) scan(elseBlock);
                 case ECall(target, _, args): if (target != null) scan(target); for (a in args) scan(a);
                 case ERemoteCall(mod, _, args): scan(mod); for (a in args) scan(a);
                 case EList(items) | ETuple(items): for (i in items) scan(i);

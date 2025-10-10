@@ -65,8 +65,8 @@ class DiscriminantRewriteTransforms {
                                         var j = idx - 1;
                                         var foundInit: Null<ElixirAST> = null;
                                         while (j >= 0) {
-                                            switch(out[j].def) {
-                                                case EMatch(PVar(n), init) if (n == v):
+                                        switch(out[j].def) {
+                                            case EMatch(PVar(n), init) if (namesMatch(n, v)):
                                                     foundInit = init; break;
                                                 default:
                                             }
@@ -90,6 +90,12 @@ class DiscriminantRewriteTransforms {
                     node;
             }
         });
+    }
+
+    static inline function namesMatch(a: String, b: String): Bool {
+        if (a == b) return true;
+        // Consider leading underscore variants equivalent: g3 == _g3
+        return (a.charAt(0) == '_' && a.substr(1) == b) || (b.charAt(0) == '_' && b.substr(1) == a);
     }
 }
 

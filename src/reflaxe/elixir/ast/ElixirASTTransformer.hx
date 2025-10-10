@@ -602,6 +602,14 @@ class ElixirASTTransformer {
         });
 
         // Cleanup redundant temp alias assignments introduced during enum extraction
+        // Rewrite case discriminant from temp alias (_g/g/gN) to original expression BEFORE alias cleanup
+        passes.push({
+            name: "DiscriminantRewrite",
+            description: "Rewrite case on temp discriminant (_g) to case on original expression",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass
+        });
+
         passes.push({
             name: "TempAliasCleanup",
             description: "Remove redundant temp alias assignments in statement contexts",
@@ -617,13 +625,7 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
         });
 
-        // Rewrite case discriminant from temp alias (_g/g/gN) to original expression
-        passes.push({
-            name: "DiscriminantRewrite",
-            description: "Rewrite case on temp discriminant (_g) to case on original expression",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms.discriminantRewritePass
-        });
+        // (DiscriminantRewrite already ran before alias cleanup)
         
         // Reduce while accumulator transformation (must run after assignment extraction)
         passes.push({
@@ -713,12 +715,76 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
         });
 
+        // Rename single tuple binders from case expr var (alert_level -> level)
+        passes.push({
+            name: "BinderRenameFromExpr",
+            description: "Rename single binders based on case expr var (e.g., alert_level -> level)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameFromExprPass
+        });
+
+        // Rename binders by message tag (e.g., {:todo_deleted, id}) for PubSub/message patterns
+        passes.push({
+            name: "BinderRenameByTag",
+            description: "Rename binders based on tuple tag for idiomatic names (id, user_id, todo, action)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameByTagPass
+        });
+
+        // Rename Repo result binders based on body usage (user/data/changeset/reason)
+        passes.push({
+            name: "ResultBinderRenameByBodyUsage",
+            description: "Rename {:ok,_}/{:error,_} binder to names used in bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.resultBinderRenameByBodyUsagePass
+        });
+
+        // Replace inner case on parsed_msg with the bound Some/Ok binder (value)
+        passes.push({
+            name: "InnerParsedMsgCaseToBinder",
+            description: "Replace inner case parsed_msg with the outer bound binder (:some value)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.innerParsedMsgCaseToBinderPass
+        });
+
+        // Normalize system_alert clause binders and body variable references
+        passes.push({
+            name: "SystemAlertClauseNormalization",
+            description: "Normalize {:system_alert, message, flash_type} and fix flashType usage",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.systemAlertClauseNormalizationPass
+        });
+
+        // Repair CancelEdit LiveView event branch to inline presence update call
+        passes.push({
+            name: "LiveViewCancelEditInlinePresence",
+            description: "Inline Presence.update_user_editing in CancelEdit event to ensure defined socket",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewCancelEditInlinePresencePass
+        });
+
+        // Inject event parameter aliases in case event do clauses based on tag
+        passes.push({
+            name: "EventParamAliasInjection",
+            description: "Inject clause-local alias for event params (id, params, filter, sort_by, query, tag)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eventParamAliasInjectionPass
+        });
+
         // Binder alias injection (must run before underscore cleanup) 
         passes.push({
             name: "BinderAliasInjection",
             description: "Inject clause-local aliases to reconcile binder names with body usage",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderAliasInjectionPass
+        });
+
+        // Normalize Repo {:ok,_}/{:error,_} result binders to canonical names in case arm bodies
+        passes.push({
+            name: "RepoResultBinderNormalization",
+            description: "Alias Repo result binder to canonical names (user/data/changeset/reason) used in clause bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoResultBinderNormalizationPass
         });
 
         // Normalize mixed-case variable references to existing snake_case bindings
