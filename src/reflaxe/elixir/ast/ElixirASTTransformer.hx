@@ -519,6 +519,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
         });
         
+        // Rewrite imperative var.set(key, value) calls to Map.put var rebinding
+        passes.push({
+            name: "MapSetRewrite",
+            description: "Rewrite var.set(key, value) to var = Map.put(var, :key, value)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapSetRewritePass
+        });
+        
         // Loop to comprehension pass
         #if !disable_comprehension_conversion
         passes.push({
@@ -867,12 +875,36 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoQualificationPass
         });
 
+        // Qualify Repo.* inside ERaw strings within <App>Web.* modules (minimal safety net)
+        passes.push({
+            name: "ERawRepoQualification",
+            description: "Qualify Repo.* tokens in ERaw within Web modules to <App>.Repo.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.erawRepoQualificationPass
+        });
+
+        // Insert alias <App>.Repo as Repo in Web modules that reference Repo.*
+        passes.push({
+            name: "RepoAliasInjection",
+            description: "Inject `alias <App>.Repo, as: Repo` when Repo.* is used in Web modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
+        });
+
         // Replace x == nil checks with Kernel.is_nil(x)
         passes.push({
             name: "EqNilToIsNil",
             description: "Replace (x == nil) with Kernel.is_nil(x)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
+
+        // Late sweep: underscore unused local assignments to avoid warnings
+        passes.push({
+            name: "UnusedLocalAssignmentUnderscore",
+            description: "Prefix unused local assignment variables with underscore",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.unusedLocalAssignmentUnderscorePass
         });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket

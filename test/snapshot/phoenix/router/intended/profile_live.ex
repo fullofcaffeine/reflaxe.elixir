@@ -1,3 +1,3 @@
 defmodule ProfileLive do
-  nil
+  use Phoenix.Component
 end

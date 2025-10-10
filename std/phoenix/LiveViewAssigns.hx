@@ -113,7 +113,8 @@ class LiveViewAssigns {
      * @return Updated socket
      */
     public static function merge<T>(socket: Socket<T>, assigns: T): Socket<T> {
-        return untyped __elixir__('Phoenix.LiveView.assign({0}, {1})', socket, assigns);
+        // Use fully-qualified Phoenix.Component.assign/2 to avoid reliance on imports
+        return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, assigns);
     }
     
     /**
@@ -126,7 +127,8 @@ class LiveViewAssigns {
      */
     public static function updateField<T>(socket: Socket<T>, field: String, value: Dynamic): Socket<T> {
         var snakeField = toSnakeCase(field);
-        return untyped __elixir__('Phoenix.LiveView.assign({0}, :{1}, {2})', socket, snakeField, value);
+        // Prefer Phoenix.Component.assign/3 for explicit, import-free qualification
+        return untyped __elixir__('Phoenix.Component.assign({0}, :{1}, {2})', socket, snakeField, value);
     }
     
     /**
@@ -142,7 +144,8 @@ class LiveViewAssigns {
             var snakeKey = toSnakeCase(key);
             Reflect.setField(elixirMap, snakeKey, updates.get(key));
         }
-        return untyped __elixir__('Phoenix.LiveView.assign({0}, {1})', socket, elixirMap);
+        // Use Phoenix.Component.assign/2 for bulk assigns
+        return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, elixirMap);
     }
     
     /**
@@ -231,7 +234,8 @@ class AssignsUpdater {
      */
     public static function reactive<T>(socket: Socket<T>, transform: T -> T): Socket<T> {
         var newAssigns = transform(socket.assigns);
-        return untyped __elixir__('Phoenix.LiveView.assign({0}, {1})', socket, newAssigns);
+        // Ensure explicit qualification via Phoenix.Component.assign/2
+        return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, newAssigns);
     }
     
     /**

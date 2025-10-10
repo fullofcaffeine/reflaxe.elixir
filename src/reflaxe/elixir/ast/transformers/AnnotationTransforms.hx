@@ -417,6 +417,11 @@ class AnnotationTransforms {
                 
                 var routerBody = buildRouterBody(name, body);
                 return makeASTWithMeta(EDefmodule(name, routerBody), ast.metadata, ast.pos);
+            case EModule(name, attrs, body) if (ast.metadata?.isRouter == true):
+                #if debug_annotation_transforms
+                #end
+                var routerBody2 = buildRouterBody(name, makeAST(EBlock(body)));
+                return makeASTWithMeta(EDefmodule(name, routerBody2), ast.metadata, ast.pos);
                 
             default:
                 return ast;
