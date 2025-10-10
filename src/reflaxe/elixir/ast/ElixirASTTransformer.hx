@@ -2169,6 +2169,10 @@ class ElixirASTTransformer {
                     trace("  methodName = " + methodName);
                     trace("  args = " + args);
                     #end
+                    // Handle synthetic super calls marker, if any
+                    if (methodName == "__super__") {
+                        return makeAST(ENil);
+                    }
                     
                     // First check if this is a call where the first arg is super.field access
                     if (methodName == "call" && args.length > 0) {
@@ -2346,16 +2350,7 @@ class ElixirASTTransformer {
                 // case EVar("super"):
                 //     makeAST(ENil);
                     
-                // Handle super calls - Elixir doesn't have super
-                case ECall(_target, funcName, _args):
-                    if (funcName == "__super__") {
-                        // Generate error or warning - super is not supported in Elixir
-                        // For now, just return nil
-                        makeAST(ENil);
-                    } else {
-                        node;
-                    }
-                    
+                // fallthrough
                 default:
                     node;
             }
