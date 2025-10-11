@@ -77,6 +77,14 @@ class EctoTransforms {
                                     default:
                                 }
                             }
+                            // Detect Ecto.Query.from binding as canonical query as well
+                            if (canonicalQuery == null && func == "from") {
+                                switch (mod.def) {
+                                    case EVar(nf) if (nf == "Ecto.Query"):
+                                        switch (pattern) { case PVar(vf): canonicalQuery = vf; default: }
+                                    default:
+                                }
+                            }
                         case EMatch(innerPat, innerExpr):
                             switch (innerExpr.def) {
                                 case ERemoteCall(mod3, func3, _):
@@ -87,7 +95,26 @@ class EctoTransforms {
                                             default:
                                         }
                                     }
+                                    if (canonicalQuery == null && func3 == "from") {
+                                        switch (mod3.def) {
+                                            case EVar(n4) if (n4 == "Ecto.Query"):
+                                                switch (innerPat) { case PVar(v4): canonicalQuery = v4; default: }
+                                            default:
+                                        }
+                                    }
+                                case ERaw(code2):
+                                    if (canonicalQuery == null && code2.indexOf("Ecto.Query.from") != -1) {
+                                        switch (innerPat) { case PVar(v5): canonicalQuery = v5; default: }
+                                    }
                                 default:
+                            }
+                        case ERaw(code):
+                            // Detect canonical query binding from raw Ecto.Query.from
+                            if (canonicalQuery == null && code.indexOf("Ecto.Query.from") != -1) {
+                                switch (pattern) {
+                                    case PVar(vr): canonicalQuery = vr;
+                                    default:
+                                }
                             }
                         default:
                     }
@@ -118,6 +145,10 @@ class EctoTransforms {
         }
         if (declared.exists("query2") && referenced.exists("query") && !declared.exists("query")) {
             renameMap.set("query2", "query");
+        }
+        // Prefer canonical query var name `query` if available and conflict-free
+        if (canonicalQuery != null && canonicalQuery != "query" && !declared.exists("query")) {
+            renameMap.set(canonicalQuery, "query");
         }
 
         // Helper: pattern rename
@@ -154,6 +185,16 @@ class EctoTransforms {
         function rewrite(n: ElixirAST): ElixirAST {
             if (n == null || n.def == null) return n;
             return switch (n.def) {
+                // Rewrite raw where(query, ...) → where(canonicalQuery, ...)
+                case ERaw(code) if (canonicalQuery != null):
+                    var newCode = code;
+                    // Only replace the first argument occurrence in where/2
+                    var needle = 'Ecto.Query.where(query,';
+                    var replacement = 'Ecto.Query.where(' + canonicalQuery + ',';
+                    if (newCode.indexOf(needle) != -1) {
+                        newCode = newCode.split(needle).join(replacement);
+                    }
+                    makeASTWithMeta(ERaw(newCode), n.metadata, n.pos);
                 // Rewrite Repo.all(query) → Repo.all(canonicalQuery)
                 case ERemoteCall(mod, func, args) if (func == "all" && args.length == 1 && canonicalQuery != null):
                     switch (mod.def) {
@@ -165,8 +206,8 @@ class EctoTransforms {
                             }
                         default: n;
                     }
-                // Rewrite Ecto.Query.where(query, ...) → Ecto.Query.where(canonicalQuery, ...)
-                case ERemoteCall(mod2, func2, args2) if (func2 == "where" && args2.length >= 1 && canonicalQuery != null):
+                // Rewrite Ecto.Query.where/order_by/preload first arg to canonical query var
+                case ERemoteCall(mod2, func2, args2) if ((func2 == "where" || func2 == "order_by" || func2 == "preload") && args2.length >= 1 && canonicalQuery != null):
                     switch (mod2.def) {
                         case EVar(mn2) if (mn2 == "Ecto.Query"):
                             switch (args2[0].def) {
@@ -190,9 +231,9 @@ class EctoTransforms {
                     } else {
                         n;
                     }
-                // Recursively visit children for other nodes
+                // Other nodes: traversal handled by outer transformNode call
                 default:
-                    return ElixirASTTransformer.transformNode(n, rewrite);
+                    n;
             }
         }
 

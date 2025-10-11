@@ -209,7 +209,7 @@ class PreserveSwitchReturnsImpl extends BasePreprocessor {
                         #end
 
                         // Create a unique variable name
-                        var varName = "__elixir_switch_result_" + (++preservationCounter);
+                        var varName = "switch_result_" + (++preservationCounter);
 
                         // Create a typed variable to hold the switch result
                         var tvar: TVar = {

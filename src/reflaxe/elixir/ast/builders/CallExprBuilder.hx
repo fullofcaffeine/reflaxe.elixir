@@ -91,6 +91,41 @@ class CallExprBuilder {
                     trace('[CallExpr] ✓ Detected __elixir__() injection: ${injectionString.substr(0, 50)}...');
                     #end
 
+                    // SPECIAL-CASE: Ecto.Query.where injection → build AST so downstream passes can rewrite
+                    if (injectionString.indexOf("Ecto.Query.where") != -1 && injectionString.indexOf("[t]") != -1 && args.length >= 3) {
+                        var rx = ~/\[t\]\s*,\s*t\.([a-zA-Z0-9_]+)\s*(==|!=|<=|>=|<|>)\s*\^\(/;
+                        if (rx.match(injectionString)) {
+                            var fieldName = rx.matched(1);
+                            var opStr = rx.matched(2);
+                            var queryAst = buildExpression(args[1]);
+                            var rhsAst = buildExpression(args[2]);
+                            var binding = makeAST(EList([makeAST(EVar("t"))]));
+                            var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(rhsAst);
+                            var condition = makeAST(ERaw('t.' + fieldName + ' ' + opStr + ' ^(' + rhsStr + ')'));
+                            return ERemoteCall(makeAST(EVar("Ecto.Query")), "where", [queryAst, binding, condition]);
+                        }
+                    }
+
+                    // SPECIAL-CASE: Ecto.Query.order_by injection → build AST
+                    if (injectionString.indexOf("Ecto.Query.order_by") != -1 && injectionString.indexOf("[t]") != -1 && args.length >= 3) {
+                        // Extract order-by field(s) in simple form t.field or [desc: t.field]
+                        var queryAst = buildExpression(args[1]);
+                        var orderArgAst = buildExpression(args[2]);
+                        var binding = makeAST(EList([makeAST(EVar("t"))]));
+                        // Print order arg as raw to preserve ^ pinning or keyword list
+                        var orderStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(orderArgAst);
+                        var orderRaw = makeAST(ERaw(orderStr));
+                        return ERemoteCall(makeAST(EVar("Ecto.Query")), "order_by", [queryAst, binding, orderRaw]);
+                    }
+
+                    // SPECIAL-CASE: Ecto.Query.preload injection → build AST
+                    if (injectionString.indexOf("Ecto.Query.preload") != -1 && args.length >= 3) {
+                        var queryAst = buildExpression(args[1]);
+                        var preloadAst = buildExpression(args[2]);
+                        // Preload does not require [t] binding; it accepts query and assoc list
+                        return ERemoteCall(makeAST(EVar("Ecto.Query")), "preload", [queryAst, preloadAst]);
+                    }
+
                     // Process parameter substitution with proper string interpolation handling
                     var finalCode = "";
                     var insideString = false;
@@ -497,19 +532,14 @@ class CallExprBuilder {
         if (StringTools.endsWith(className, "PubSub")) {
             switch(methodName) {
                 case "subscribe", "unsubscribe":
-                    // PubSub.subscribe needs self() as first argument in LiveView context
+                    // Phoenix.PubSub.subscribe/2 and unsubscribe/1 DO NOT take self()
                     var moduleRef = makeAST(EVar(className));
                     var argASTs = [for (arg in args) buildExpression(arg)];
-                    
-                    // Check if we're in a LiveView context (would need context metadata)
-                    // For now, always inject self() for PubSub operations
-                    var selfCall = makeAST(ECall(null, "self", []));
-                    argASTs.unshift(selfCall);
-                    
                     return ERemoteCall(moduleRef, methodName, argASTs);
-                    
+
                 case "broadcast", "broadcast_from":
-                    // These don't need self() injection
+                    // broadcast_from/3 takes a process (often self()) as first arg
+                    // but we only add self() when the source explicitly provides it.
                     var moduleRef = makeAST(EVar(className));
                     var argASTs = [for (arg in args) buildExpression(arg)];
                     return ERemoteCall(moduleRef, methodName, argASTs);

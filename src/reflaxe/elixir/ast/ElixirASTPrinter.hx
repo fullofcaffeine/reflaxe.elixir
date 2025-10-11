@@ -900,7 +900,12 @@ class ElixirASTPrinter {
                 }
                 #end
 
-                name;
+                // Normalize preserved switch result name to avoid leading underscores
+                var printed = name;
+                if (name != null && name.length >= 23 && name.substr(0,23) == "__elixir_switch_result_") {
+                    printed = "switch_result_" + name.substr(23);
+                }
+                printed;
                 
             case EPin(expr):
                 '^' + print(expr, 0);

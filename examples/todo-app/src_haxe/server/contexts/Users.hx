@@ -4,6 +4,7 @@ import elixir.types.Result;
 import ecto.Changeset;
 import ecto.TypedQuery;
 import server.infrastructure.Repo;
+using reflaxe.elixir.macros.TypedQueryLambda; // ensure extension where(...) is available
 
 /**
  * Complete user management context with Ecto integration
@@ -95,8 +96,7 @@ class Users {
     public static function changeUser(?user: User): Changeset<User, UserParams> {
         // Create Ecto changeset for form validation
         // For new users, pass null and let the changeset handle the empty struct
-        var emptyParams: UserParams = {};
-        return new Changeset(user, emptyParams);
+        return new Changeset(user, {});
     }
     
     /**
@@ -131,10 +131,8 @@ class Users {
      * Returns Result with either the created User or the invalid Changeset
      */
     public static function createUser(attrs: UserParams): Result<User, Changeset<User, UserParams>> {
-        // Create changeset and insert using typed Repo
-        // Pass null for new user - the changeset will handle struct creation
-        var changeset = UserChangeset.changeset(null, attrs);
-        return Repo.insert(changeset);
+        // Inline changeset to avoid temp var naming drift
+        return Repo.insert(UserChangeset.changeset(null, attrs));
     }
     
     /**
@@ -142,9 +140,8 @@ class Users {
      * Returns Result with either the updated User or the invalid Changeset
      */
     public static function updateUser(user: User, attrs: UserParams): Result<User, Changeset<User, UserParams>> {
-        // Update user using typed Repo
-        var changeset = UserChangeset.changeset(user, attrs);
-        return Repo.update(changeset);
+        // Inline changeset to avoid temp var naming drift
+        return Repo.update(UserChangeset.changeset(user, attrs));
     }
     
     /**
