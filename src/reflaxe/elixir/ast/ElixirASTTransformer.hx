@@ -899,13 +899,7 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
         });
 
-        // Normalize Ecto query variable usage and fix underscore-var references
-        passes.push({
-            name: "EctoQueryVarConsistency",
-            description: "Normalize Ecto query variable usage and underscore-var references within function scope",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.EctoTransforms.ectoQueryVarConsistencyPass
-        });
+        // (temporarily disabled) Ecto query var consistency — will be addressed via assignment extraction specialization
 
         // Late sweep: underscore unused local assignments to avoid warnings
         passes.push({
