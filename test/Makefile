@@ -106,7 +106,12 @@ test-%:
 				--exclude="erl_crash.dump" \
 				--exclude="bootstrap_*.ex" \
 				--exclude="*.exs.ex" \
+				--exclude="std.ex" \
+				--exclude="string_buf.ex" \
+				--exclude="type.ex" \
+				--exclude="int_iterator.ex" \
 				--exclude="_any/*" \
+				--exclude="haxe" \
 				--exclude="_enum_value/*" \
 				--exclude="haxe/_call_stack/*" \
 				--exclude="haxe/_constraints/*" \
