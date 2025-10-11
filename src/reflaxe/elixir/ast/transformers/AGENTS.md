@@ -189,6 +189,10 @@ The following rules prevent one-off, feature-specific passes and ensure we alway
   - Smell: App/feature-specific; duplicates generic underscore→name logic
   - Fix: Convert Presence injections → ERemoteCall in builders; let the generic variable alignment pass rewrite declarations/references consistently everywhere
 
+- Wrong: Special-casing names like `presenceSocket`, `live_socket`, `toggle_todo`, `cancel_edit`, or mapping `FooSocket`→`socket`
+  - Smell: Name-based coupling to example domains; not portable and not deterministic
+  - Fix: Use snake_case normalization only to existing bindings; use clause-local usage-driven aliasing when unambiguous and generic
+
 - Right: Injection shaping for Ecto.Changeset.validate_* and Phoenix.Presence.*
   - Enables binder/canonicalization and variable alignment passes to operate uniformly across all modules
 
@@ -198,4 +202,6 @@ The following rules prevent one-off, feature-specific passes and ensure we alway
 2. If not, can we shape inputs (injections) so the generic pass can handle it?
 3. Will this pass require module-name or feature-specific checks? If yes, rethink design
 4. Do we have tests/snapshots across multiple modules showing generality?
+5. Grep sanity check (logic only; docs allowed):
+   - `rg -n "todo_|toggle_todo|cancel_edit|presenceSocket|live_socket|updated_todo" src/` should return zero
 5. Is pass ordering correct so later passes won’t undo this change?
