@@ -642,6 +642,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass
         });
+
+        // Ensure reduce_while results are bound back to local accumulator variables
+        passes.push({
+            name: "ReduceWhileResultBinding",
+            description: "Bind Enum.reduce_while result to original accumulator locals",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass
+        });
         
         // Struct field update transformation (removes problematic field assignments)
         passes.push({
@@ -933,12 +941,64 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.unusedLocalAssignmentUnderscorePass
         });
 
+        // Normalize Supervisor.start_link(children, opts) to use declared local names
+        // inside Application.start/2 (prevents undefined variable errors when hygiene
+        // passes have prefixed binders with underscores)
+        passes.push({
+            name: "ApplicationStartArgNormalization",
+            description: "Align start_link arg names with declared locals in start/2",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ApplicationStartTransforms.normalizeStartLinkArgsPass
+        });
+
         // Normalize local var references to declared names in function scope (underscore/digit suffix cases)
         passes.push({
             name: "LocalVarReferenceFix",
             description: "Fix local references like changeset-> _changeset or query->query2 when only the latter is declared",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalVarReferenceFixTransforms.localVarReferenceFixPass
+        });
+
+        // Fallback: ensure references to plain names resolve to underscored
+        // locals when only the underscored variant is declared in function scope.
+        passes.push({
+            name: "LocalUnderscoreReferenceFallback",
+            description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
+        });
+
+        // Finally, if a local is declared underscored but used later, rename declaration
+        // to non-underscored to eliminate warnings and undefined refs
+        passes.push({
+            name: "UsedUnderscoreRename",
+            description: "Rename _var to var when var is referenced and var is not declared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass
+        });
+
+        // StringTools-specific local reference fix (len/result) to match declared locals
+        passes.push({
+            name: "StringToolsLocalFix",
+            description: "Align len/result references with declared locals in StringTools",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StringToolsTransforms.fixLocalReferencesPass
+        });
+
+        // StringTools native trim rewrite (idiomatic)
+        passes.push({
+            name: "StringToolsNativeRewrite",
+            description: "Rewrite ltrim/rtrim to String.trim_leading/trim_trailing",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StringToolsNativeRewrite.rewriteTrimPass
+        });
+
+        // Changeset normalization: canonicalize cs variable, opts binding, and validate_* targets
+        passes.push({
+            name: "ChangesetNormalize",
+            description: "Normalize Ecto.Changeset pipelines (cs/opts/thisN)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeChangesetPass
         });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
@@ -1135,6 +1195,20 @@ class ElixirASTTransformer {
             description: "Final guard against `lhs = _g*` after pattern binding",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.casePatternTempAssignmentRemovalPass
+        });
+
+        // Final local reference fixes (run late to avoid being undone by later passes)
+        passes.push({
+            name: "LocalUnderscoreReferenceFallback(Late)",
+            description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
+        });
+        passes.push({
+            name: "StringToolsLocalFix(Late)",
+            description: "Align len/result references with declared locals in StringTools (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StringToolsTransforms.fixLocalReferencesPass
         });
 
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
