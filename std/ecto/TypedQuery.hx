@@ -284,9 +284,10 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * @param schemaClass The schema class to query
      * @return A new TypedQuery instance
      */
-    public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
-        // Regular function that calls the macro - no macro-in-macro issue!
-        return reflaxe.elixir.macros.EctoQueryMacros.from(schemaClass);
+    extern inline public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
+        // Build an Ecto query struct directly to avoid macro dependency here
+        var q = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass);
+        return new TypedQuery<T>(q);
     }
     
     
