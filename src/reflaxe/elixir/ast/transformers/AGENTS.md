@@ -153,3 +153,49 @@ npx haxe compile.hxml -D debug_ast_transformer -D debug_loop_transforms
 ---
 
 **Remember**: Transformers run at macro-time, which is a normal Haxe runtime. Don't create artificial limitations based on confusion about compilation stages.
+
+## 🧭 Architectural Rules for Transformer Design (No Band-Aids)
+
+The following rules prevent one-off, feature-specific passes and ensure we always implement the real, scalable fix:
+
+- Prefer domain-generic passes over feature-specific ones
+  - Do NOT write transforms keyed off app modules or specific features (e.g., PresenceVarTransforms)
+  - If a pattern appears in multiple places (controllers, presence, schemas), extract the underlying cause and fix it generically
+
+- Shape injections to AST first, then transform generically
+  - Convert `__elixir__()` ERaw injections for standard libraries (Ecto.*, Phoenix.*, Ecto.Query.*) into proper `ERemoteCall`/`ECall` nodes in builders
+  - Rationale: Generic passes (name alignment, binder normalization) can only operate on AST they can “see”
+
+- Consolidate variable alignment logic
+  - Keep underscore removal, name→_name fallback, and numeric-suffix resolution in a single, well-scoped pass that:
+    - Works on all declarations (patterns, nested LHS chains, EFn args)
+    - Works on all references (including arguments to remote calls)
+    - Runs both early and late (post heavy rewrites) to re-align after other transforms
+  - Avoid adding one-off renamers for a specific module/pattern
+
+- Pass ordering is a tool, not a crutch
+  - Builders should expose structure (injections → AST) before normalization passes
+  - Early: Structural/semantic transforms (loops, pattern matching, query shaping)
+  - Middle: Generic normalizations (variable alignment, binder canonicalization)
+  - Late: Cleanups and verification (final alias injection, unused prefixing)
+
+- Document WHAT/WHY/HOW with hxdoc and keep files <2000 LOC
+  - Large or cross-cutting logic must be split into domain modules
+  - Include minimal before/after examples in hxdoc showing generic improvement
+
+### Examples of Right vs Wrong
+
+- Wrong: PresenceVarTransforms that renames `_key`/`_meta` only for Phoenix Presence
+  - Smell: App/feature-specific; duplicates generic underscore→name logic
+  - Fix: Convert Presence injections → ERemoteCall in builders; let the generic variable alignment pass rewrite declarations/references consistently everywhere
+
+- Right: Injection shaping for Ecto.Changeset.validate_* and Phoenix.Presence.*
+  - Enables binder/canonicalization and variable alignment passes to operate uniformly across all modules
+
+### Checklist Before Adding a New Pass
+
+1. Can the problem be solved by improving an existing generic pass?
+2. If not, can we shape inputs (injections) so the generic pass can handle it?
+3. Will this pass require module-name or feature-specific checks? If yes, rethink design
+4. Do we have tests/snapshots across multiple modules showing generality?
+5. Is pass ordering correct so later passes won’t undo this change?

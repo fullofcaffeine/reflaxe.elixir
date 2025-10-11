@@ -161,6 +161,32 @@ class CallExprBuilder {
                         return ERemoteCall(makeAST(EVar("Ecto.Changeset")), "validate_length", [thisAst, atomField, optionsAst]);
                     }
 
+                    // SPECIAL-CASE: Phoenix.Presence injections → build ERemoteCall to expose EVar usage
+                    if (injectionString.indexOf("Phoenix.Presence.track") != -1 && args.length >= 5) {
+                        var socketAst = buildExpression(args[1]);
+                        var topicAst = buildExpression(args[2]);
+                        var keyAst = buildExpression(args[3]);
+                        var metaAst = buildExpression(args[4]);
+                        return ERemoteCall(makeAST(EVar("Phoenix.Presence")), "track", [socketAst, topicAst, keyAst, metaAst]);
+                    }
+                    if (injectionString.indexOf("Phoenix.Presence.update") != -1 && args.length >= 5) {
+                        var socketAst = buildExpression(args[1]);
+                        var topicAst = buildExpression(args[2]);
+                        var keyAst = buildExpression(args[3]);
+                        var metaAst = buildExpression(args[4]);
+                        return ERemoteCall(makeAST(EVar("Phoenix.Presence")), "update", [socketAst, topicAst, keyAst, metaAst]);
+                    }
+                    if (injectionString.indexOf("Phoenix.Presence.untrack") != -1 && args.length >= 4) {
+                        var socketAst = buildExpression(args[1]);
+                        var topicAst = buildExpression(args[2]);
+                        var keyAst = buildExpression(args[3]);
+                        return ERemoteCall(makeAST(EVar("Phoenix.Presence")), "untrack", [socketAst, topicAst, keyAst]);
+                    }
+                    if (injectionString.indexOf("Phoenix.Presence.list") != -1 && args.length >= 2) {
+                        var topicAst = buildExpression(args[1]);
+                        return ERemoteCall(makeAST(EVar("Phoenix.Presence")), "list", [topicAst]);
+                    }
+
                     // Process parameter substitution with proper string interpolation handling
                     var finalCode = "";
                     var insideString = false;
