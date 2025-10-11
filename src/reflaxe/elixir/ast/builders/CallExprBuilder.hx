@@ -126,6 +126,41 @@ class CallExprBuilder {
                         return ERemoteCall(makeAST(EVar("Ecto.Query")), "preload", [queryAst, preloadAst]);
                     }
 
+                    // SPECIAL-CASE: Ecto.Changeset.validate_required injection → build ERemoteCall
+                    if (injectionString.indexOf("Ecto.Changeset.validate_required") != -1 && args.length >= 3) {
+                        var thisAst = buildExpression(args[1]);
+                        var fieldsAst = buildExpression(args[2]);
+                        // Keep Enum.map(fields, &String.to_atom/1) as ERaw
+                        var fieldsStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(fieldsAst);
+                        var mappedFields = makeAST(ERaw('Enum.map(' + fieldsStr + ', &String.to_atom/1)'));
+                        return ERemoteCall(makeAST(EVar("Ecto.Changeset")), "validate_required", [thisAst, mappedFields]);
+                    }
+
+                    // SPECIAL-CASE: Ecto.Changeset.validate_length injection → build ERemoteCall
+                    if (injectionString.indexOf("Ecto.Changeset.validate_length") != -1 && args.length >= 3) {
+                        var thisAst = buildExpression(args[1]);
+                        var fieldAst = buildExpression(args[2]);
+                        var atomField = makeAST(ERemoteCall(makeAST(EVar("String")), "to_atom", [fieldAst]));
+
+                        // Detect which options are present and their order
+                        var keys: Array<String> = [];
+                        if (injectionString.indexOf("min:") != -1) keys.push("min");
+                        if (injectionString.indexOf("max:") != -1) keys.push("max");
+                        if (injectionString.indexOf("is:") != -1) keys.push("is");
+
+                        var optIndex = 3;
+                        var pairs: Array<reflaxe.elixir.ast.ElixirAST.EKeywordPair> = [];
+                        for (k in keys) {
+                            if (optIndex < args.length) {
+                                var valAst = buildExpression(args[optIndex]);
+                                pairs.push({key: k, value: valAst});
+                                optIndex++;
+                            }
+                        }
+                        var optionsAst = makeAST(EKeywordList(pairs));
+                        return ERemoteCall(makeAST(EVar("Ecto.Changeset")), "validate_length", [thisAst, atomField, optionsAst]);
+                    }
+
                     // Process parameter substitution with proper string interpolation handling
                     var finalCode = "";
                     var insideString = false;
