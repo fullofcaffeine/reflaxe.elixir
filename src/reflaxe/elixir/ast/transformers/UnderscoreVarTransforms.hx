@@ -63,7 +63,8 @@ class UnderscoreVarTransforms {
             switch (n.def) {
                 case EMatch(p, _): collectPatternDecls(p, declared);
                 case EBinary(Match, left, _):
-                    switch (left.def) { case EVar(lhs): declared.set(lhs, true); default: }
+                    // Collect all vars on the left side, including nested chains a = b = c
+                    collectLhsDecls(left, declared);
                 default:
             }
         });
@@ -76,17 +77,22 @@ class UnderscoreVarTransforms {
             }
         });
 
-        // Build rename map: _name -> name when name is referenced and not declared
+        // Build rename map: _name -> name when name is referenced OR _name is referenced, and name is not declared
         var rename = new Map<String, String>();
         for (k in declared.keys()) {
             if (k.length > 1 && k.charAt(0) == "_") {
                 var base = k.substr(1);
-                if (referenced.exists(base) && !declared.exists(base)) {
+                if ((referenced.exists(base) || referenced.exists(k)) && !declared.exists(base)) {
                     rename.set(k, base);
                 }
             }
         }
 
+        #if true
+        if (Lambda.count(rename) > 0) {
+            trace('[UnderscoreVarTransforms] renames: ' + [for (k in rename.keys()) k + '->' + rename.get(k)].join(', '));
+        }
+        #end
         if (Lambda.count(rename) == 0) return body;
 
         // Rewrite declarations and references
@@ -97,10 +103,8 @@ class UnderscoreVarTransforms {
                     var newP = renamePattern(p, rename);
                     makeASTWithMeta(EMatch(newP, rhs), n.metadata, n.pos);
                 case EBinary(Match, left, rhs):
-                    var newLeft = switch (left.def) {
-                        case EVar(v) if (rename.exists(v)): makeASTWithMeta(EVar(rename.get(v)), left.metadata, left.pos);
-                        default: left;
-                    }
+                    // Recursively rename all EVar occurrences on the LHS
+                    var newLeft = renameLhs(left, rename);
                     makeASTWithMeta(EBinary(Match, newLeft, rhs), n.metadata, n.pos);
                 case EVar(v) if (rename.exists(v)):
                     makeASTWithMeta(EVar(rename.get(v)), n.metadata, n.pos);
@@ -121,6 +125,29 @@ class UnderscoreVarTransforms {
             case PStruct(_, fs): for (f in fs) collectPatternDecls(f.value, declared);
             case PPin(inner): collectPatternDecls(inner, declared);
             default:
+        }
+    }
+
+    static function collectLhsDecls(lhs: ElixirAST, declared: Map<String, Bool>): Void {
+        switch (lhs.def) {
+            case EVar(n): declared.set(n, true);
+            case EBinary(Match, l2, r2):
+                collectLhsDecls(l2, declared);
+                collectLhsDecls(r2, declared);
+            default:
+        }
+    }
+
+    static function renameLhs(lhs: ElixirAST, rename: Map<String, String>): ElixirAST {
+        return switch (lhs.def) {
+            case EVar(v) if (rename.exists(v)):
+                makeASTWithMeta(EVar(rename.get(v)), lhs.metadata, lhs.pos);
+            case EBinary(Match, l2, r2):
+                var nl = renameLhs(l2, rename);
+                var nr = renameLhs(r2, rename);
+                makeASTWithMeta(EBinary(Match, nl, nr), lhs.metadata, lhs.pos);
+            default:
+                lhs;
         }
     }
 

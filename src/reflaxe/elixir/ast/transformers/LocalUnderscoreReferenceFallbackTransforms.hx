@@ -58,10 +58,8 @@ class LocalUnderscoreReferenceFallbackTransforms {
                 case EMatch(p, _):
                     collectPattern(p, declared);
                 case EBinary(Match, left, _):
-                    switch (left.def) {
-                        case EVar(lhsName): declared.set(lhsName, true);
-                        default:
-                    }
+                    // Collect all vars on the left side, including nested chains a = b = c
+                    collectLhsDecls(left, declared);
                 default:
             }
         });
@@ -95,6 +93,16 @@ class LocalUnderscoreReferenceFallbackTransforms {
             case PMap(kvs): for (kv in kvs) collectPattern(kv.value, declared);
             case PStruct(_, fs): for (f in fs) collectPattern(f.value, declared);
             case PPin(inner): collectPattern(inner, declared);
+            default:
+        }
+    }
+
+    static function collectLhsDecls(lhs: ElixirAST, declared: Map<String, Bool>): Void {
+        switch (lhs.def) {
+            case EVar(n): declared.set(n, true);
+            case EBinary(Match, l2, r2):
+                collectLhsDecls(l2, declared);
+                collectLhsDecls(r2, declared);
             default:
         }
     }

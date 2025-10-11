@@ -62,11 +62,18 @@ class LocalVarReferenceFixTransforms {
                 case EMatch(pattern, _):
                     collectPattern(pattern);
                 case EBinary(Match, left, _):
-                    // Collect declarations from simple match form: lhs = rhs
-                    switch (left.def) {
-                        case EVar(lhsName): declared.set(lhsName, true);
-                        default:
+                    // Collect declarations from nested match chains: a = b = c = rhs
+                    function collectLhsVars(lhs: ElixirAST): Void {
+                        switch (lhs.def) {
+                            case EVar(lhsName):
+                                declared.set(lhsName, true);
+                            case EBinary(Match, l2, r2):
+                                collectLhsVars(l2);
+                                collectLhsVars(r2);
+                            default:
+                        }
                     }
+                    collectLhsVars(left);
                 default:
             }
         });

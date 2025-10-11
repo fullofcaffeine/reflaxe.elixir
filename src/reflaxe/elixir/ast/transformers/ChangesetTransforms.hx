@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 
 /**
  * ChangesetTransforms
@@ -55,15 +56,72 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  *   end
  */
 class ChangesetTransforms {
+    static var debugCount:Int = 0;
     public static function normalizeChangesetPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
-                // Normalize assignments: <var> = Ecto.Changeset.change(...)
-                case EMatch(patt, rhs) if (containsChangeCall(rhs)):
-                    makeASTWithMeta(EMatch(patt, extractChangeCall(rhs)), node.metadata, node.pos);
-                case EBinary(Match, left, rhs) if (containsChangeCall(rhs)):
-                    var lhs = switch (left.def) { case EVar(n): n; default: "cs"; };
-                    makeASTWithMeta(EMatch(PVar(lhs), extractChangeCall(rhs)), node.metadata, node.pos);
+                // Module-level fallback: if Ecto.Changeset is used/imported in the module,
+                // perform conservative reference canonicalization to avoid undefined thisN/cs
+                case EModule(modName, attrs, body):
+                    var usesChangeset = false;
+                    for (b in body) switch (b.def) {
+                        case EImport(m, _, _) if (m == "Ecto.Changeset"): usesChangeset = true;
+                        default:
+                    }
+                    if (!usesChangeset) {
+                        // Also detect direct usage by scanning remote calls
+                        function scan(x: ElixirAST): Void {
+                            if (usesChangeset || x == null || x.def == null) return;
+                            switch (x.def) {
+                                case ERemoteCall(m, _, _):
+                                    switch (m.def) { case EVar(n) if (n == "Ecto.Changeset"): usesChangeset = true; default: }
+                                case EBlock(es): for (e in es) scan(e);
+                                case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                                case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
+                                case EBinary(_, l, r): scan(l); scan(r);
+                                case EMatch(_, rhs): scan(rhs);
+                                case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                                case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
+                                default:
+                            }
+                        }
+                        for (b in body) scan(b);
+                    }
+                    if (!usesChangeset) node else {
+                        // Collect declared vars across module to choose a binder
+                        var declared = new Map<String,Bool>();
+                        reflaxe.elixir.ast.ASTUtils.walk(makeAST(EBlock(body)), function(n) {
+                            switch (n.def) {
+                                case EMatch(PVar(v), _): declared.set(v, true);
+                                case EBinary(Match, left, _):
+                                    // collect nested lhs vars
+                                    function collect(lhs: ElixirAST) {
+                                        switch (lhs.def) {
+                                            case EVar(v): declared.set(v, true);
+                                            case EBinary(Match, l2, r2): collect(l2); collect(r2);
+                                            default:
+                                        }
+                                    }
+                                    collect(left);
+                                default:
+                            }
+                        });
+                        var binder = if (declared.exists("cs")) "cs" else if (declared.exists("_this2")) "_this2" else if (declared.exists("_this1")) "_this1" else if (declared.exists("this2")) "this2" else if (declared.exists("this1")) "this1" else "cs";
+                        // Apply canonicalization of refs at module scope conservatively
+                        function tx(n: ElixirAST): ElixirAST {
+                            return switch (n.def) {
+                                case EVar(v) if (isThisLike(v)):
+                                    makeASTWithMeta(EVar(binder), n.metadata, n.pos);
+                                case EVar(v) if (v == "cs" && binder != "cs"):
+                                    makeASTWithMeta(EVar(binder), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        }
+                        var newBody = [for (b in body) ElixirASTTransformer.transformNode(b, tx)];
+                        makeASTWithMeta(EModule(modName, attrs, newBody), node.metadata, node.pos);
+                    }
+                // (handled in function body normalization)
 
                 // Within function bodies, canonicalize `thisN`/`_thisN` and `_opts` declarations
                 case EDef(name, params, guards, body):
@@ -82,6 +140,9 @@ class ChangesetTransforms {
     static function normalizeBody(body: ElixirAST): ElixirAST {
         // Determine canonical changeset variable name
         var csVar = findChangesetVar(body);
+        #if true
+        trace('[ChangesetTransforms] findChangesetVar -> ' + Std.string(csVar));
+        #end
         if (csVar == null) {
             // Fallback: pick a sensible binder from declared names
             var declared = new Array<String>();
@@ -115,22 +176,24 @@ class ChangesetTransforms {
             }
         }
 
-        // 2) Canonicalize references `thisN`/`_thisN` to csVar
-        function canonRefs(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EVar(v) if (isThisLike(v)):
-                    makeASTWithMeta(EVar(csVar), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        }
+        // 2) Determine binder after validate_required by inspecting its assignment LHS (pick rightmost LHS var)
+        var binderAfterRequired = findValidateRequiredVar(body);
+        if (binderAfterRequired == null) binderAfterRequired = csVar;
 
-        // 3) Rewrite validate_* calls to use csVar as first argument
+        // 3) Rewrite validate_* calls: first arg -> appropriate binder
         function rewriteValidateCalls(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ERemoteCall(mod, fn, args) if (isChangesetValidate(mod, fn, args)):
                     var a = args.copy();
-                    if (a.length > 0) a[0] = makeAST(EVar(csVar));
+                    if (a.length > 0) {
+                        // validate_required should use initial change binder (csVar)
+                        // validate_length should use binderAfterRequired (if available)
+                        // For validate_required, always use the binder from change/2 (csVar)
+                        // For validate_length, use the binder produced by validate_required assignment (binderAfterRequired)
+                        var targetBinder = (fn == "validate_required") ? csVar : binderAfterRequired;
+                        a[0] = makeAST(EVar(targetBinder));
+                    }
+                    
                     makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
                 default:
                     n;
@@ -142,6 +205,9 @@ class ChangesetTransforms {
             return switch (n.def) {
                 case ECond(clauses) if (condContainsValidateLength(clauses)):
                     var rewritten = rewriteCondToReturnCsVar(clauses, csVar);
+                    #if true
+                    trace('[ChangesetTransforms] wrap cond -> bind to ' + csVar);
+                    #end
                     makeASTWithMeta(EMatch(PVar(csVar), makeAST(ECond(rewritten))), n.metadata, n.pos);
                 default:
                     n;
@@ -150,12 +216,21 @@ class ChangesetTransforms {
 
         // First pass: rename opts declarations
         var pass1 = ElixirASTTransformer.transformNode(body, renameOptsDecl);
-        // Second pass: canonicalize references
-        var pass2 = ElixirASTTransformer.transformNode(pass1, canonRefs);
-        // Third pass: fix validate_* targets
-        var pass3 = ElixirASTTransformer.transformNode(pass2, rewriteValidateCalls);
-        // Fourth pass: rebind cond validate_length results
-        return ElixirASTTransformer.transformNode(pass3, wrapCond);
+        // Second pass: fix validate_* targets
+        var pass2 = ElixirASTTransformer.transformNode(pass1, rewriteValidateCalls);
+        // Fourth pass: rebind cond validate_length results using binderAfterRequired
+        function wrapCondWithBinder(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ECond(clauses) if (condContainsValidateLength(clauses)):
+                    var rewritten = rewriteCondToReturnCsVar(clauses, binderAfterRequired);
+                    
+                    makeASTWithMeta(EMatch(PVar(binderAfterRequired), makeAST(ECond(rewritten))), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        }
+
+        return ElixirASTTransformer.transformNode(pass2, wrapCondWithBinder);
     }
 
     static inline function isThisLike(v: String): Bool {
@@ -173,9 +248,12 @@ class ChangesetTransforms {
     static function containsChangeCall(e: ElixirAST): Bool {
         return switch (e.def) {
             case ERemoteCall(mod, fn, _) if (isChangeset(mod) && fn == "change"): true;
+            case ERaw(code) if (code != null && code.indexOf("Ecto.Changeset.change(") != -1): true;
             case EMatch(_, inner): containsChangeCall(inner);
             case EBinary(Match, _, right): containsChangeCall(right);
             case EParen(inner): containsChangeCall(inner);
+            case EBlock(stmts):
+                for (s in stmts) if (containsChangeCall(s)) return true; false;
             default: false;
         }
     }
@@ -183,9 +261,15 @@ class ChangesetTransforms {
     static function extractChangeCall(e: ElixirAST): ElixirAST {
         return switch (e.def) {
             case ERemoteCall(mod, fn, args) if (isChangeset(mod) && fn == "change"): e;
+            case ERaw(_): e; // Keep raw code as-is
             case EMatch(_, inner): extractChangeCall(inner);
             case EBinary(Match, _, right): extractChangeCall(right);
             case EParen(inner): extractChangeCall(inner);
+            case EBlock(stmts):
+                for (s in stmts) {
+                    if (containsChangeCall(s)) return extractChangeCall(s);
+                }
+                e;
             default: e;
         }
     }
@@ -209,9 +293,12 @@ class ChangesetTransforms {
     static function containsValidateCall(e: ElixirAST): Bool {
         return switch (e.def) {
             case ERemoteCall(mod, fn, _) if (isChangeset(mod) && (fn == "validate_required" || fn == "validate_length")): true;
+            case ERaw(code) if (code != null && (code.indexOf("Ecto.Changeset.validate_required(") != -1 || code.indexOf("Ecto.Changeset.validate_length(") != -1)): true;
             case EMatch(_, inner): containsValidateCall(inner);
             case EBinary(Match, _, right): containsValidateCall(right);
             case EParen(inner): containsValidateCall(inner);
+            case EBlock(stmts):
+                for (s in stmts) if (containsValidateCall(s)) return true; false;
             default: false;
         }
     }
@@ -268,13 +355,20 @@ class ChangesetTransforms {
 
     static function findChangesetVar(body: ElixirAST): Null<String> {
         var found: Null<String> = null;
+        var foundFromValidate: Null<String> = null;
         function visit(n: ElixirAST): Void {
             if (n == null || n.def == null || found != null) return;
             switch (n.def) {
                 case EMatch(PVar(v), rhs) if (containsChangeCall(rhs)):
+                    #if true
+                    trace('[ChangesetTransforms] found change match binder via EMatch: ' + v);
+                    #end
                     found = v;
                 case EBinary(Match, left, rhs) if (containsChangeCall(rhs)):
                     var v = getRightmostLhsVar(left);
+                    #if true
+                    trace('[ChangesetTransforms] found change match binder via EBinary: ' + Std.string(v));
+                    #end
                     if (v != null) found = v;
                 case EBlock(stmts):
                     for (s in stmts) visit(s);
@@ -283,6 +377,36 @@ class ChangesetTransforms {
         }
         visit(body);
         return found;
+    }
+
+    static function findValidateRequiredVar(body: ElixirAST): Null<String> {
+        var found: Null<String> = null;
+        function visit(n: ElixirAST): Void {
+            if (n == null || n.def == null || found != null) return;
+            switch (n.def) {
+                case EMatch(PVar(v), rhs) if (containsValidateRequiredCall(rhs)):
+                    found = v;
+                case EBinary(Match, left, rhs) if (containsValidateRequiredCall(rhs)):
+                    var v2 = getRightmostLhsVar(left);
+                    if (v2 != null) found = v2;
+                case EBlock(stmts):
+                    for (s in stmts) visit(s);
+                default:
+            }
+        }
+        visit(body);
+        return found;
+    }
+
+    static function containsValidateRequiredCall(e: ElixirAST): Bool {
+        return switch (e.def) {
+            case ERemoteCall(mod, fn, _) if (isChangeset(mod) && fn == "validate_required"): true;
+            case ERaw(code) if (code != null && code.indexOf("Ecto.Changeset.validate_required(") != -1): true;
+            case EMatch(_, inner): containsValidateRequiredCall(inner);
+            case EBinary(Match, _, right): containsValidateRequiredCall(right);
+            case EParen(inner): containsValidateRequiredCall(inner);
+            default: false;
+        }
     }
 
     static function getRightmostLhsVar(lhs: ElixirAST): Null<String> {
