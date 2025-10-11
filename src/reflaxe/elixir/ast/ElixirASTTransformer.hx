@@ -1211,6 +1211,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.StringToolsTransforms.fixLocalReferencesPass
         });
 
+        // Run underscore rename again late to catch flows introduced by earlier passes (e.g., Presence)
+        passes.push({
+            name: "UsedUnderscoreRename(Late)",
+            description: "Rename _var to var when var is referenced (late stage)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass
+        });
+
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
         passes.push({
             name: "EnsurePhoenixComponentUseInLive",
