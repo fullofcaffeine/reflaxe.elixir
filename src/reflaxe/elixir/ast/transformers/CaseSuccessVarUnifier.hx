@@ -47,20 +47,37 @@ class CaseSuccessVarUnifier {
     public static function unifySuccessVarPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
+                case EDef(name, args, guards, body):
+                    var defined = collectFunctionDefinedVars(args, body);
+                    var newBody = unifyInBody(body, defined);
+                    makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
+                case EDefp(name, args, guards, body):
+                    var defined = collectFunctionDefinedVars(args, body);
+                    var newBody = unifyInBody(body, defined);
+                    makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    static function unifyInBody(body: ElixirAST, funcDefined: Map<String, Bool>): ElixirAST {
+        return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
                 case ECase(expr, clauses):
                     var newClauses = [];
                     for (c in clauses) {
                         var successVar = extractOkVar(c.pattern);
                         if (successVar != null) {
-                            var newBody = rewritePlaceholders(c.body, successVar);
+                            var newBody = rewritePlaceholders(c.body, successVar, funcDefined);
                             newClauses.push({ pattern: c.pattern, guard: c.guard, body: newBody });
                         } else {
                             newClauses.push(c);
                         }
                     }
-                    makeASTWithMeta(ECase(expr, newClauses), node.metadata, node.pos);
+                    makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
                 default:
-                    node;
+                    n;
             }
         });
     }
@@ -87,7 +104,7 @@ class CaseSuccessVarUnifier {
         }
     }
 
-    static function rewritePlaceholders(body: ElixirAST, successVar: String): ElixirAST {
+    static function rewritePlaceholders(body: ElixirAST, successVar: String, funcDefined: Map<String, Bool>): ElixirAST {
         // Collect declared names inside this clause body
         var declared = new Map<String, Bool>();
         var referenced = new Map<String, Bool>();
@@ -101,12 +118,17 @@ class CaseSuccessVarUnifier {
         });
 
         // Undefined references in body that are simple vars
-        var undefined = [for (k in referenced.keys()) if (!declared.exists(k)) k];
+        var undefined = [for (k in referenced.keys()) if (!declared.exists(k) && !funcDefined.exists(k)) k];
+        #if debug_success_unifier
+        if (undefined.length > 0) {
+            Sys.println('[CaseSuccessVarUnifier] Rewriting ' + undefined.join(',') + ' -> ' + successVar);
+        }
+        #end
         if (undefined.length == 0) return body;
 
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EVar(name) if (!declared.exists(name)):
+                case EVar(name) if (!declared.exists(name) && !funcDefined.exists(name)):
                     // Replace undefined local with successVar
                     makeASTWithMeta(EVar(successVar), n.metadata, n.pos);
                 default:
@@ -135,6 +157,19 @@ class CaseSuccessVarUnifier {
                 collectLhsDecls(r2, declared);
             default:
         }
+    }
+
+    static function collectFunctionDefinedVars(args: Array<EPattern>, body: ElixirAST): Map<String, Bool> {
+        var vars = new Map<String, Bool>();
+        for (a in args) collectPatternDecls(a, vars);
+        reflaxe.elixir.ast.ASTUtils.walk(body, function(n: ElixirAST) {
+            switch (n.def) {
+                case EMatch(p, _): collectPatternDecls(p, vars);
+                case EBinary(Match, l, _): collectLhsDecls(l, vars);
+                default:
+            }
+        });
+        return vars;
     }
 }
 

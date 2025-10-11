@@ -169,10 +169,12 @@ class TodoLive {
 			case SaveTodo(params):
 				saveEditedTodoTyped(params, socket);
 			
-			case CancelEdit:
-				// Clear editing state in presence (idiomatic Phoenix pattern)
-				var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, null);
-				SafeAssigns.setEditingTodo(presenceSocket, null);
+            case CancelEdit:
+                // Clear editing state in presence (idiomatic Phoenix pattern)
+                SafeAssigns.setEditingTodo(
+                    server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, null),
+                    null
+                );
 			
 			// Filtering and sorting
 			case FilterTodos(filter):

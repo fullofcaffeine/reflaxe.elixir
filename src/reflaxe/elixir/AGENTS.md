@@ -18,6 +18,22 @@ This file contains compiler-specific development guidance for agents working on 
 - Consolidate name alignment: one generic pass handles underscore→name, name→_name fallback, and numeric-suffix mapping across all modules and node types (patterns, nested matches, EFn args), run early and late.
 - Avoid feature/app-specific passes: do not write transforms tied to a particular module or Phoenix feature (e.g., Presence-only fixes). Fix the underlying architecture so the general pass covers it.
   - Never couple transformers to example apps (e.g., todo-app). Passes must be generic, pattern-driven, and safe across any Elixir codebase. If a need arises from an example, encode it as a general language/framework pattern (e.g., {:ok, v} success tuples) — never by name matching (e.g., "todo").
+
+### Hard Rule: No App-Specific Name Heuristics
+
+- Do NOT key behavior on concrete variable names, atoms, or tags (e.g., "presenceSocket", "live_socket", "toggle_todo", "cancel_edit").
+- Do NOT implement suffix/prefix name mappings (e.g., FooSocket→socket). That is app coupling.
+- Allowed renames are only:
+  - Shape-derived (AST structure),
+  - snake_case equivalence to an existing binding, or
+  - Clause-local usage-driven when unambiguous (exactly one undefined var used in body).
+- Framework allowances must be shape/API-based (e.g., AppWeb.* → App.Repo via module name parts) — never domain strings.
+
+Pre-merge checks:
+- [ ] No literal example-name checks in logic
+- [ ] No suffix/prefix heuristics against variable names
+- [ ] hxdoc WHAT/WHY/HOW + generic examples included
+- [ ] `rg -n "todo_|toggle_todo|cancel_edit|presenceSocket|live_socket|updated_todo" src/` returns zero (docs allowed)
 - Pass ordering: Builders expose structure first, then generic normalizations, then cleanups. Don’t rely on ordering to paper over misdesigns.
 - Enforce hxdoc and <2000 LOC per transformer; extract domain modules when needed.
 
