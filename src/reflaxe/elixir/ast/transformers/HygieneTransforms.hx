@@ -560,6 +560,12 @@ class HygieneTransforms {
                     // Each argument needs to be properly traversed to mark variables as used
                     traverseWithContext(arg, state, allBindings);
                 }
+
+            case ERemoteCall(module, funcName, args):
+                // Remote call: Module.function(args) — traverse module and args in expression context
+                state.currentContext = Expr;
+                if (module != null) traverseWithContext(module, state, allBindings);
+                if (args != null) for (arg in args) traverseWithContext(arg, state, allBindings);
                 
             case EBlock(statements):
                 // Enter block scope

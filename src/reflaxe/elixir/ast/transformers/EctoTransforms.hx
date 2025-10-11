@@ -133,6 +133,11 @@ class EctoTransforms {
         // Single exhaustive walk to collect declarations and references
         ASTUtils.walk(body, collect);
 
+        // Force canonical query var preference if 'query' exists
+        if (declared.exists("query")) {
+            canonicalQuery = "query";
+        }
+
         // Build rename map for underscore/non-underscore pairs and query2→query
         var renameMap = new Map<String, String>();
         for (name in declared.keys()) {
@@ -143,8 +148,19 @@ class EctoTransforms {
                 }
             }
         }
-        if (declared.exists("query2") && referenced.exists("query") && !declared.exists("query")) {
-            renameMap.set("query2", "query");
+        // Generalize: map any queryN → query when query declared and queryN is only referenced
+        for (name in referenced.keys()) {
+            if (StringTools.startsWith(name, "query") && name.length > 5) {
+                var rest = name.substr(5);
+                var isDigits = true;
+                for (i in 0...rest.length) {
+                    var c = rest.charCodeAt(i);
+                    if (c < '0'.code || c > '9'.code) { isDigits = false; break; }
+                }
+                if (isDigits && declared.exists("query") && !declared.exists(name)) {
+                    renameMap.set(name, "query");
+                }
+            }
         }
         // Prefer canonical query var name `query` if available and conflict-free
         if (canonicalQuery != null && canonicalQuery != "query" && !declared.exists("query")) {

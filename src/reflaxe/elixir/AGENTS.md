@@ -17,6 +17,7 @@ This file contains compiler-specific development guidance for agents working on 
 - Shape to AST, then transform: convert `__elixir__()` injections for standard libs (Ecto.*, Phoenix.*, Ecto.Query.*) into proper AST (ERemoteCall/ECall) in builders so downstream passes can operate generically.
 - Consolidate name alignment: one generic pass handles underscore→name, name→_name fallback, and numeric-suffix mapping across all modules and node types (patterns, nested matches, EFn args), run early and late.
 - Avoid feature/app-specific passes: do not write transforms tied to a particular module or Phoenix feature (e.g., Presence-only fixes). Fix the underlying architecture so the general pass covers it.
+  - Never couple transformers to example apps (e.g., todo-app). Passes must be generic, pattern-driven, and safe across any Elixir codebase. If a need arises from an example, encode it as a general language/framework pattern (e.g., {:ok, v} success tuples) — never by name matching (e.g., "todo").
 - Pass ordering: Builders expose structure first, then generic normalizations, then cleanups. Don’t rely on ordering to paper over misdesigns.
 - Enforce hxdoc and <2000 LOC per transformer; extract domain modules when needed.
 

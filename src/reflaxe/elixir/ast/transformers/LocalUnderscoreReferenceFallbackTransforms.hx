@@ -50,6 +50,7 @@ class LocalUnderscoreReferenceFallbackTransforms {
     static function normalize(body: ElixirAST): ElixirAST {
         // Collect declared names in this function body (both plain and underscored)
         var declared = new Map<String, Bool>();
+        var referenced = new Map<String, Bool>();
 
         // Collect from match patterns and simple lhs matches
         ASTUtils.walk(body, function(n: ElixirAST) {
@@ -60,29 +61,104 @@ class LocalUnderscoreReferenceFallbackTransforms {
                 case EBinary(Match, left, _):
                     // Collect all vars on the left side, including nested chains a = b = c
                     collectLhsDecls(left, declared);
+                case EVar(name):
+                    referenced.set(name, true);
+                case ERaw(code):
+                    // Heuristic: mark base names referenced when they appear in raw code
+                    // Scan only for declared bases to avoid false positives
+                    for (dk in declared.keys()) {
+                        var base = StringTools.startsWith(dk, "_") && dk.length > 1 ? dk.substr(1) : dk;
+                        // Word boundary heuristic: base not surrounded by identifier chars
+                        // Build a simple search by splitting on non-identifier characters
+                        // to avoid regex dependency in build contexts.
+                        if (code != null && code.indexOf(base) != -1) {
+                            // Quick boundary checks (best-effort, avoids heavy regex):
+                            var idx = code.indexOf(base);
+                            var isBoundary = true;
+                            if (idx > 0) {
+                                var prev = code.charAt(idx - 1);
+                                if (isIdent(prev)) isBoundary = false;
+                            }
+                            var endIdx = idx + base.length;
+                            if (endIdx < code.length) {
+                                var nxt = code.charAt(endIdx);
+                                if (isIdent(nxt)) isBoundary = false;
+                            }
+                            if (isBoundary) referenced.set(base, true);
+                        }
+                    }
                 default:
             }
         });
 
-        // Build direct rename mapping: name -> _name if _name declared and name not declared
-        var rename = new Map<String, String>();
+        // Build direct rename mapping for references: name -> _name if only _name declared
+        var refFallback = new Map<String, String>();
         for (k in declared.keys()) {
             if (StringTools.startsWith(k, "_") && k.length > 1) {
                 var base = k.substr(1);
-                if (!declared.exists(base)) rename.set(base, k);
+                if (!declared.exists(base)) refFallback.set(base, k);
             }
         }
 
-        // Apply only to references (EVar)
+        // Build declaration normalization: _name -> name if base is referenced and not declared
+        var declNormalize = new Map<String, String>();
+        for (k in declared.keys()) {
+            if (StringTools.startsWith(k, "_") && k.length > 1) {
+                var base = k.substr(1);
+                if (referenced.exists(base) && !declared.exists(base)) {
+                    declNormalize.set(k, base);
+                }
+            }
+        }
+
+        // Apply renaming to declarations and references
+        function renamePattern(p: EPattern): EPattern {
+            return switch (p) {
+                case PVar(n) if (declNormalize.exists(n)):
+                    PVar(declNormalize.get(n));
+                case PTuple(es): PTuple([for (e in es) renamePattern(e)]);
+                case PList(es): PList([for (e in es) renamePattern(e)]);
+                case PCons(h, t): PCons(renamePattern(h), renamePattern(t));
+                case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: renamePattern(kv.value) }]);
+                case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: renamePattern(f.value) }]);
+                case PPin(inner): PPin(renamePattern(inner));
+                default: p;
+            }
+        }
+
+        function renameLhs(lhs: ElixirAST): ElixirAST {
+            return switch (lhs.def) {
+                case EVar(v) if (declNormalize.exists(v)):
+                    makeASTWithMeta(EVar(declNormalize.get(v)), lhs.metadata, lhs.pos);
+                case EBinary(Match, l2, r2):
+                    makeASTWithMeta(EBinary(Match, renameLhs(l2), renameLhs(r2)), lhs.metadata, lhs.pos);
+                default: lhs;
+            }
+        }
+
         function tx(n: ElixirAST): ElixirAST {
+            if (n == null || n.def == null) return n;
             return switch (n.def) {
-                case EVar(v) if (rename.exists(v)):
-                    makeASTWithMeta(EVar(rename.get(v)), n.metadata, n.pos);
+                // Declarations: normalize _name -> name when base referenced
+                case EMatch(p, rhs):
+                    makeASTWithMeta(EMatch(renamePattern(p), rhs), n.metadata, n.pos);
+                case EBinary(Match, left, rhs):
+                    makeASTWithMeta(EBinary(Match, renameLhs(left), rhs), n.metadata, n.pos);
+                // References: fallback name -> _name when only _name declared
+                case EVar(v) if (refFallback.exists(v)):
+                    makeASTWithMeta(EVar(refFallback.get(v)), n.metadata, n.pos);
                 default:
                     n;
             }
         }
         return ElixirASTTransformer.transformNode(body, tx);
+    }
+
+    static inline function isIdent(ch: String): Bool {
+        if (ch == null || ch.length == 0) return false;
+        var c = ch.charCodeAt(0);
+        // a..z, A..Z, 0..9, underscore
+        return (c >= 'a'.code && c <= 'z'.code) || (c >= 'A'.code && c <= 'Z'.code) || (c >= '0'.code && c <= '9'.code) || c == '_'.code;
     }
 
     static function collectPattern(p: EPattern, declared: Map<String, Bool>): Void {

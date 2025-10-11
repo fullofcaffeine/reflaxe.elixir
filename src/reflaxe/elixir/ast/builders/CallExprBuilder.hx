@@ -91,8 +91,9 @@ class CallExprBuilder {
                     trace('[CallExpr] ✓ Detected __elixir__() injection: ${injectionString.substr(0, 50)}...');
                     #end
 
-                    // SPECIAL-CASE: Ecto.Query.where injection → build AST so downstream passes can rewrite
+                    // SPECIAL-CASE: Ecto.Query.where injection → build full AST (no ERaw)
                     if (injectionString.indexOf("Ecto.Query.where") != -1 && injectionString.indexOf("[t]") != -1 && args.length >= 3) {
+                        // Match simple predicates of the form: [t], t.<field> <op> ^(...)
                         var rx = ~/\[t\]\s*,\s*t\.([a-zA-Z0-9_]+)\s*(==|!=|<=|>=|<|>)\s*\^\(/;
                         if (rx.match(injectionString)) {
                             var fieldName = rx.matched(1);
@@ -100,22 +101,57 @@ class CallExprBuilder {
                             var queryAst = buildExpression(args[1]);
                             var rhsAst = buildExpression(args[2]);
                             var binding = makeAST(EList([makeAST(EVar("t"))]));
-                            var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(rhsAst);
-                            var condition = makeAST(ERaw('t.' + fieldName + ' ' + opStr + ' ^(' + rhsStr + ')'));
+
+                            // Build condition: t.<field> <op> ^(rhs)
+                            var left = makeAST(EField(makeAST(EVar("t")), fieldName));
+                            // Preserve original formatting ^(rhs) by wrapping in parentheses
+                            var right = makeAST(EPin(makeAST(EParen(rhsAst))));
+                            var op: EBinaryOp = switch (opStr) {
+                                case "==": EBinaryOp.Equal;
+                                case "!=": EBinaryOp.NotEqual;
+                                case "<=": EBinaryOp.LessEqual;
+                                case ">=": EBinaryOp.GreaterEqual;
+                                case "<": EBinaryOp.Less;
+                                case ">": EBinaryOp.Greater;
+                                default: EBinaryOp.Equal; // Fallback shouldn't happen given regex
+                            };
+                            var condition = makeAST(EBinary(op, left, right));
                             return ERemoteCall(makeAST(EVar("Ecto.Query")), "where", [queryAst, binding, condition]);
                         }
                     }
 
-                    // SPECIAL-CASE: Ecto.Query.order_by injection → build AST
+                    // SPECIAL-CASE: Ecto.Query.order_by injection → build full AST (no ERaw)
                     if (injectionString.indexOf("Ecto.Query.order_by") != -1 && injectionString.indexOf("[t]") != -1 && args.length >= 3) {
-                        // Extract order-by field(s) in simple form t.field or [desc: t.field]
+                        // Handle common pattern: Ecto.Query.order_by({0}, [t], [asc: t.field]) or [desc: t.field]
+                        var rxOrder = ~/order_by\(\{0\},\s*\[t\],\s*\[(asc|desc):\s*t\.([a-zA-Z0-9_]+)\]\)/;
                         var queryAst = buildExpression(args[1]);
-                        var orderArgAst = buildExpression(args[2]);
                         var binding = makeAST(EList([makeAST(EVar("t"))]));
-                        // Print order arg as raw to preserve ^ pinning or keyword list
-                        var orderStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(orderArgAst);
-                        var orderRaw = makeAST(ERaw(orderStr));
-                        return ERemoteCall(makeAST(EVar("Ecto.Query")), "order_by", [queryAst, binding, orderRaw]);
+
+                        if (rxOrder.match(injectionString)) {
+                            var dir = rxOrder.matched(1);
+                            var fieldName2 = rxOrder.matched(2);
+                            var kv: reflaxe.elixir.ast.ElixirAST.EKeywordPair = {
+                                key: dir,
+                                value: makeAST(EField(makeAST(EVar("t")), fieldName2))
+                            };
+                            var kw = makeAST(EKeywordList([kv]));
+                            return ERemoteCall(makeAST(EVar("Ecto.Query")), "order_by", [queryAst, binding, kw]);
+                        } else {
+                            // Fallback: if injection didn't include direction, assume direct field arg passed as {1}
+                            // Build [asc: t.<field>] if args[2] is a string atom or field name
+                            var fieldAst = buildExpression(args[2]);
+                            // Try to detect plain field name string to build t.field
+                            var fieldNameMaybe: Null<String> = switch (args[2].expr) {
+                                case TConst(TString(s)): s;
+                                default: null;
+                            };
+                            var valueNode = fieldNameMaybe != null
+                                ? makeAST(EField(makeAST(EVar("t")), fieldNameMaybe))
+                                : fieldAst; // best effort
+                            var kvAsc: reflaxe.elixir.ast.ElixirAST.EKeywordPair = { key: "asc", value: valueNode };
+                            var kwAsc = makeAST(EKeywordList([kvAsc]));
+                            return ERemoteCall(makeAST(EVar("Ecto.Query")), "order_by", [queryAst, binding, kwAsc]);
+                        }
                     }
 
                     // SPECIAL-CASE: Ecto.Query.preload injection → build AST
@@ -126,13 +162,13 @@ class CallExprBuilder {
                         return ERemoteCall(makeAST(EVar("Ecto.Query")), "preload", [queryAst, preloadAst]);
                     }
 
-                    // SPECIAL-CASE: Ecto.Changeset.validate_required injection → build ERemoteCall
+                    // SPECIAL-CASE: Ecto.Changeset.validate_required injection → build ERemoteCall (no ERaw)
                     if (injectionString.indexOf("Ecto.Changeset.validate_required") != -1 && args.length >= 3) {
                         var thisAst = buildExpression(args[1]);
                         var fieldsAst = buildExpression(args[2]);
-                        // Keep Enum.map(fields, &String.to_atom/1) as ERaw
-                        var fieldsStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(fieldsAst);
-                        var mappedFields = makeAST(ERaw('Enum.map(' + fieldsStr + ', &String.to_atom/1)'));
+                        // Build Enum.map(fields, &String.to_atom/1)
+                        var capture = makeAST(ECapture(makeAST(EField(makeAST(EVar("String")), "to_atom")), 1));
+                        var mappedFields = makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [fieldsAst, capture]));
                         return ERemoteCall(makeAST(EVar("Ecto.Changeset")), "validate_required", [thisAst, mappedFields]);
                     }
 

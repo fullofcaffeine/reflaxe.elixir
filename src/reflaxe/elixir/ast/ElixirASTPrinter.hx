@@ -113,7 +113,7 @@ class ElixirASTPrinter {
 
                 var moduleResult = 'defmodule ${name} do\n' +
                     moduleContent + '\n' +
-                    indentStr(indent) + 'end';
+                    indentStr(indent) + 'end\n';
 
                 // Clear unused functions after module is printed
                 currentUnusedFunctions = null;
@@ -138,7 +138,7 @@ class ElixirASTPrinter {
                         }
                     }
                     
-                    result += indentStr(indent) + 'end';
+                    result += indentStr(indent) + 'end\n';
                     result;
                 } else {
                     // Regular module
@@ -158,7 +158,7 @@ class ElixirASTPrinter {
                         result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
                     }
                     
-                    result += indentStr(indent) + 'end';
+                    result += indentStr(indent) + 'end\n';
                     result;
                 }
 
@@ -202,7 +202,7 @@ class ElixirASTPrinter {
                     result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
                 }
                 
-                result += indentStr(indent) + 'end';
+                result += indentStr(indent) + 'end\n';
                 result;
                 
             case EDefmodule(name, doBlock):

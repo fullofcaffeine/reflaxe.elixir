@@ -923,6 +923,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.EctoTransforms.ectoQueryVarConsistencyPass
         });
 
+        // Unify case success vars in {:ok, v} branches to eliminate undefined placeholders
+        passes.push({
+            name: "CaseSuccessVarUnifier",
+            description: "Rewrite undefined placeholders (todo/updated_todo) to success var in {:ok, v} clauses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
+        });
+
         // Replace x == nil checks with Kernel.is_nil(x)
         passes.push({
             name: "EqNilToIsNil",
@@ -937,7 +945,7 @@ class ElixirASTTransformer {
         passes.push({
             name: "UnusedLocalAssignmentUnderscore",
             description: "Prefix unused local assignment variables with underscore",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.unusedLocalAssignmentUnderscorePass
         });
 
@@ -1207,11 +1215,26 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
         });
+        // Unify declarations and references to a canonical local name per base
+        passes.push({
+            name: "RefDeclAlignment",
+            description: "Align declaration/reference spellings (underscore/numeric) to canonical name",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
+        });
         passes.push({
             name: "StringToolsLocalFix(Late)",
             description: "Align len/result references with declared locals in StringTools (late)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.StringToolsTransforms.fixLocalReferencesPass
+        });
+
+        // Drop redundant local copies like this1 = query and new_query = ...
+        passes.push({
+            name: "RedundantAssignmentCleanup",
+            description: "Remove redundant assignments (thisN/new_query) that cause warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RedundantAssignmentCleanup.cleanupPass
         });
 
         // Run underscore rename again late to catch flows introduced by earlier passes (e.g., Presence)
@@ -1220,6 +1243,14 @@ class ElixirASTTransformer {
             description: "Rename _var to var when var is referenced (late stage)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass
+        });
+
+        // Final alignment after usage analysis may have prefixed underscores again
+        passes.push({
+            name: "RefDeclAlignment(Late)",
+            description: "Final alignment of declarations and references to canonical names",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
 
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
@@ -1255,6 +1286,22 @@ class ElixirASTTransformer {
                     }
                 });
             }
+        });
+
+        // Remove unused imports like Ecto.Changeset when unreferenced
+        passes.push({
+            name: "UnusedImportCleanup",
+            description: "Remove import Ecto.Changeset when module not used",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnusedImportCleanup.cleanupPass
+        });
+        
+        // Absolute last: ensure declarations and references agree after all prior rewrites
+        passes.push({
+            name: "RefDeclAlignment(Final)",
+            description: "Absolute final alignment of local names to canonical spelling",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
         
         // Pattern variable origin analysis pass
