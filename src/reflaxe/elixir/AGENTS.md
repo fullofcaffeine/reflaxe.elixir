@@ -12,6 +12,18 @@ This file contains compiler-specific development guidance for agents working on 
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 - **schema/** directory - Schema introspection and metadata processing
 
+## 🧭 Transform Design Principles (No Band-Aids)
+
+- Shape to AST, then transform: convert `__elixir__()` injections for standard libs (Ecto.*, Phoenix.*, Ecto.Query.*) into proper AST (ERemoteCall/ECall) in builders so downstream passes can operate generically.
+- Consolidate name alignment: one generic pass handles underscore→name, name→_name fallback, and numeric-suffix mapping across all modules and node types (patterns, nested matches, EFn args), run early and late.
+- Avoid feature/app-specific passes: do not write transforms tied to a particular module or Phoenix feature (e.g., Presence-only fixes). Fix the underlying architecture so the general pass covers it.
+- Pass ordering: Builders expose structure first, then generic normalizations, then cleanups. Don’t rely on ordering to paper over misdesigns.
+- Enforce hxdoc and <2000 LOC per transformer; extract domain modules when needed.
+
+Common pitfalls to avoid:
+- Adding a new pass for a single module (e.g., PresenceVarTransforms). Instead, improve injection shaping and the generic variable alignment pass.
+- Depending on ERaw for downstream rewrites; generic passes cannot “see” inside strings.
+
 ## ⚠️ CRITICAL: Haxe Metadata Storage Behavior
 
 **FUNDAMENTAL RULE: Haxe ALWAYS strips the colon prefix from metadata when storing internally.**

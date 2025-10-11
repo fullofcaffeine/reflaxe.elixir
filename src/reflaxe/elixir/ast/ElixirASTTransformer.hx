@@ -977,6 +977,9 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass
         });
 
+        // Note: Avoid feature/app-specific passes. Prefer generic variable alignment transforms
+        // that operate on all modules and rely on injection shaping to expose usage to AST.
+
         // StringTools-specific local reference fix (len/result) to match declared locals
         passes.push({
             name: "StringToolsLocalFix",
