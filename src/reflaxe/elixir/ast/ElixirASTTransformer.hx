@@ -755,11 +755,48 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameFromExprPass
         });
 
-        // Rename binders by message tag (e.g., {:todo_deleted, id}) for PubSub/message patterns
+        // Normalize camelCase binders in case patterns to snake_case and update clause bodies
+        passes.push({
+            name: "BinderCamelToSnake",
+            description: "Rename camelCase binders in case patterns to snake_case with body rewrite",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.binderCamelToSnakePass
+        });
+
+        // Rewrite camelCase references in clause bodies to existing snake_case binders
+        passes.push({
+            name: "ClauseCamelRefToSnake",
+            description: "Within case arms, convert camelCase body refs to snake_case when binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseCamelRefToSnakeTransforms.clauseCamelRefToSnakePass
+        });
+
+        // Prefix unused case-pattern binders with underscore to avoid warnings
+        passes.push({
+            name: "ClauseUnusedBinderUnderscore",
+            description: "Within case arms, prefix unused binders with underscore",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
+        });
+
+        /**
+         * BinderRenameByTag
+         *
+         * WHAT
+         * - Previously renamed {:tag, var} binders based on tag heuristics.
+         *
+         * WHY
+         * - Tag-driven renames risk coupling to app/domain semantics. Keep compiler generic
+         *   by avoiding tag name heuristics.
+         *
+         * HOW
+         * - Disabled in favor of the generic SingleBinderByUsage pass which aligns binder
+         *   names to actual clause body usage without relying on tags.
+         */
         passes.push({
             name: "BinderRenameByTag",
-            description: "Rename binders based on tuple tag for idiomatic names (id, user_id, todo, action)",
-            enabled: true,
+            description: "Disabled: avoid tag→binder heuristics",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameByTagPass
         });
 
@@ -779,6 +816,22 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.resultBinderRenameByBodyUsagePass
         });
 
+        // Generic: rename single payload binder in case arms based on clause body usage
+        passes.push({
+            name: "SingleBinderByUsage",
+            description: "Rename {:tag, value} binder to the unique undefined var used in body (e.g., todo/id/params)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SingleBinderByUsageTransforms.renameSingleBinderByBodyUsagePass
+        });
+
+        // Generic: replace undefined vars in clause bodies with the single bound binder when unambiguous
+        passes.push({
+            name: "ClauseUndefinedVarToBinder",
+            description: "Within {:tag, value} arms, replace unique undefined var in body with binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUndefinedVarToBinderTransforms.replaceUndefinedVarWithBinderPass
+        });
+
         // Replace inner case on parsed_msg with the bound Some/Ok binder (value)
         passes.push({
             name: "InnerParsedMsgCaseToBinder",
@@ -795,27 +848,75 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.systemAlertClauseNormalizationPass
         });
 
-        // Repair CancelEdit LiveView event branch to inline presence update call
+        /**
+         * LiveViewCancelEditInlinePresence
+         *
+         * WHAT
+         * - Previously inlined Presence.update_user_editing within a specific "cancel_edit" event branch.
+         *
+         * WHY
+         * - This was coupled to example-app behavior and event naming. We must avoid
+         *   app-specific assumptions in the compiler pipeline.
+         *
+         * HOW
+         * - Disabled in favor of generic, pattern-driven passes that do not depend on
+         *   concrete event tags or helper functions.
+         *
+         * EXAMPLES
+         * - Before: Special-cased {:cancel_edit, _} to inject Presence.update_user_editing.
+         * - After: No special-casing; Presence-related logic should live in user code.
+         */
         passes.push({
             name: "LiveViewCancelEditInlinePresence",
-            description: "Inline Presence.update_user_editing in CancelEdit event to ensure defined socket",
-            enabled: true,
+            description: "Disabled: remove app-specific Presence inline transform for cancel_edit",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewCancelEditInlinePresencePass
         });
 
-        // Inject event parameter aliases in case event do clauses based on tag
+        /**
+         * EventParamAliasInjection
+         *
+         * WHAT
+         * - Injected clause-local aliases for event payloads based on tag heuristics.
+         *
+         * WHY
+         * - Tag→alias mapping risks coupling to app/domain semantics. Maintain target-agnostic
+         *   compiler by avoiding tag-name driven behavior in the core pipeline.
+         *
+         * HOW
+         * - Disable this pass; rely on generic binder alignment and usage-driven renaming.
+         *
+         * EXAMPLES
+         * - Before: "delete_todo" -> alias id; "save_todo" -> alias params.
+         * - After: No automatic alias injection; user code remains explicit or other
+         *   generic passes align identifiers based on actual usage.
+         */
         passes.push({
             name: "EventParamAliasInjection",
-            description: "Inject clause-local alias for event params (id, params, filter, sort_by, query, tag)",
-            enabled: true,
+            description: "Disabled: remove tag→alias injection to avoid app coupling",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eventParamAliasInjectionPass
         });
 
-        // Binder alias injection (must run before underscore cleanup) 
+        /**
+         * BinderAliasInjection
+         *
+         * WHAT
+         * - Injected clause-local aliases to reconcile binder names with body usage,
+         *   using a preferred-name list that included app/domain terms.
+         *
+         * WHY
+         * - Preferred-name tables risk app coupling. We preserve only pattern-driven,
+         *   usage-based alignment in other passes.
+         *
+         * HOW
+         * - Disable this pass. Keep generic RefDeclAlignment/UsageAnalysis passes to
+         *   ensure declarations and references converge without app-specific bias.
+         */
         passes.push({
             name: "BinderAliasInjection",
-            description: "Inject clause-local aliases to reconcile binder names with body usage",
-            enabled: true,
+            description: "Disabled: avoid alias injection based on preferred-name tables",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderAliasInjectionPass
         });
 
@@ -891,10 +992,18 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.listPushRewritePass
         });
 
-        // Qualify Repo.* to <App>.Repo.* based on module name (TodoAppWeb.* -> TodoApp.Repo)
+        // Late replay of list push rewrite to catch push/1 introduced by later transforms
+        passes.push({
+            name: "ListPushRewrite(Late)",
+            description: "Late rewrite of list.push(v) to assignment with Enum.concat",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.listPushRewritePass
+        });
+
+        // Qualify bare Repo.* calls to <App>.Repo.* by deriving <App> from the enclosing module name (e.g., TodoAppWeb.* -> TodoApp)
         passes.push({
             name: "RepoQualification",
-            description: "Qualify bare Repo module calls to <App>.Repo",
+            description: "Rewrite bare Repo.* calls to <App>.Repo.* using the enclosing <App>Web module shape; ensures correctness without relying on aliases",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoQualificationPass
         });
@@ -1302,6 +1411,22 @@ class ElixirASTTransformer {
             description: "Absolute final alignment of local names to canonical spelling",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
+        });
+        
+        // Late safety net: re-run Repo qualification after all transformations
+        passes.push({
+            name: "RepoQualification(Late)",
+            description: "Re-run Repo qualification to catch any bare Repo.* introduced by prior passes; shape-derived from <App>Web.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoQualificationPass
+        });
+
+        // Late alias injection to ensure Repo alias exists when used
+        passes.push({
+            name: "RepoAliasInjection(Late)",
+            description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
         });
         
         // Pattern variable origin analysis pass

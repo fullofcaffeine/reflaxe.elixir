@@ -459,13 +459,56 @@ class BinderTransforms {
                         default:
                             n;
                     }
+                case ECall(target, func, args) if (func == "push" && target != null && args != null && args.length == 1):
+                    switch(target.def) {
+                        case EVar(name) if (name != null && name.length > 0 && isLower(name)):
+                            var listVar = makeAST(EVar(name));
+                            var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [listVar, makeAST(EList([args[0]]))]));
+                            makeAST(EMatch(PVar(name), newRight));
+                        default:
+                            n;
+                    }
                 default:
                     n;
             }
         });
     }
 
-    // Qualify bare Repo.* calls to <App>.Repo based on module name prefix (e.g., TodoAppWeb.* -> TodoApp.Repo)
+    /**
+     * repoQualificationPass
+     *
+     * WHAT
+     * - Rewrites bare Repo.* calls to <App>.Repo.* by deriving <App> from
+     *   the enclosing module name shape ("<App>Web.*" → "<App>").
+     *
+     * WHY
+     * - Phoenix conventions organize web modules as <App>Web.* and expect Repo
+     *   calls to be fully-qualified (or aliased). During code generation and
+     *   subsequent transforms, bare Repo.* can be introduced. This pass ensures
+     *   those calls are properly qualified so they resolve without relying on
+     *   fragile name lookups or alias presence.
+     * - Running this pass both early and late guarantees correctness even when
+     *   earlier passes add or move Repo calls.
+     *
+     * HOW
+     * - For EModule/EDefmodule where the name contains "Web":
+     *   1) Derive the app prefix from the module name by trimming the trailing
+     *      "Web" segment (e.g., "TodoAppWeb.TodoLive" → "TodoApp").
+     *   2) Rewrite any ERemoteCall/ECall whose target module is exactly "Repo"
+     *      into ERemoteCall with module "<App>.Repo".
+     *   3) Leaves already-qualified calls unchanged.
+     *
+     * EXAMPLES
+     * Before:
+     *   defmodule TodoAppWeb.TodoLive do
+     *     Repo.update(changeset)
+     *   end
+     *
+     * After:
+     *   defmodule TodoAppWeb.TodoLive do
+     *     TodoApp.Repo.update(changeset)
+     *   end
+     */
     public static function repoQualificationPass(ast: ElixirAST): ElixirAST {
         // Helper: derive app prefix from a module name like "TodoAppWeb.TodoLive" → "TodoApp"
         inline function deriveAppPrefix(moduleName: String): Null<String> {
@@ -859,7 +902,7 @@ class BinderTransforms {
         });
     }
 
-    // Inject `alias <App>.Repo, as: Repo` into <App>Web.* modules when Repo.* is referenced
+    // Inject `alias <App>.Repo, as: Repo` into <App>Web.* modules when bare Repo.* is referenced
     public static function repoAliasInjectionPass(ast: ElixirAST): ElixirAST {
         inline function deriveAppPrefix(name: String): Null<String> {
             if (name == null) return null;
@@ -902,6 +945,8 @@ class BinderTransforms {
                     var prefix = deriveAppPrefix(name);
                     if (prefix == null) return n;
                     var repoModule = prefix + ".Repo";
+                    // Only inject when bare Repo.* is referenced, to avoid unused-alias warnings
+                    if (!referencesRepo(n)) return n;
                     if (hasRepoAlias(body, repoModule)) return n;
                     var newBody: Array<ElixirAST> = [];
                     newBody.push(makeAST(EAlias(repoModule, "Repo")));
@@ -912,7 +957,8 @@ class BinderTransforms {
                     var prefix = deriveAppPrefix(name);
                     if (prefix == null) return n;
                     var repoModule = prefix + ".Repo";
-                    // Inject alias inside do-block
+                    // Inject alias inside do-block only when bare Repo.* is referenced
+                    if (!referencesRepo(n)) return n;
                     var newDo = switch (doBlock.def) {
                         case EBlock(stmts):
                             if (hasRepoAlias(stmts, repoModule)) doBlock else {
@@ -1050,111 +1096,9 @@ class BinderTransforms {
         });
     }
 
-    // For LiveView event case, repair CancelEdit branch by inlining Presence.update_user_editing
+    // Removed: app-coupled LiveView cancel_edit inline presence update pass
     public static function liveViewCancelEditInlinePresencePass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            // Only operate within handle_event definitions
-            return switch(node.def) {
-                case EDef(name, args, guards, body) if (name == "handle_event"):
-                    var newBody = ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-                        return switch(n.def) {
-                            case ECase(target, clauses):
-                                var newClauses = [];
-                                for (clause in clauses) {
-                                    var isCancel = switch(clause.pattern) {
-                                        case PLiteral({def: EAtom(a)}) if (a == "cancel_edit"): true;
-                                        case PTuple(items) if (items.length >= 1):
-                                            switch(items[0]) { case PLiteral({def: EAtom(a)}) if (a == "cancel_edit"): true; default: false; }
-                                        default: false;
-                                    };
-                                    if (!isCancel) { newClauses.push(clause); continue; }
-                                    var repairedBody = ElixirASTTransformer.transformNode(clause.body, function(x: ElixirAST): ElixirAST {
-                                        return switch(x.def) {
-                                            case ERemoteCall(mod, func, args) if (func == "set_editing_todo"):
-                                                if (args.length >= 2) {
-                                                    var replace = switch(args[0].def) {
-                                                        case EVar(v) if (v == "presenceSocket" || v == "presence_socket"): true;
-                                                        default: false;
-                                                    };
-                                                    if (replace) {
-                                                        var newFirst = makeAST(ERemoteCall(
-                                                            makeAST(EVar("Presence")),
-                                                            "update_user_editing",
-                                                            [
-                                                                makeAST(EVar("socket")),
-                                                                makeAST(EField(makeAST(EField(makeAST(EVar("socket")), "assigns")), "currentUser")),
-                                                                makeAST(ENil)
-                                                            ]
-                                                        ));
-                                                        var newArgs = args.copy(); newArgs[0] = newFirst;
-                                                        return makeASTWithMeta(ERemoteCall(mod, func, newArgs), x.metadata, x.pos);
-                                                    }
-                                                }
-                                                x;
-                                            default:
-                                                x;
-                                        };
-                                    });
-                                    newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: repairedBody });
-                                }
-                                makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
-                            default:
-                                n;
-                        }
-                    });
-                    makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
-                case EDefp(name, args, guards, body) if (name == "handle_event"):
-                    var newBody = ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-                        return switch(n.def) {
-                            case ECase(target, clauses):
-                                var newClauses = [];
-                                for (clause in clauses) {
-                                    var isCancel = switch(clause.pattern) {
-                                        case PLiteral({def: EAtom(a)}) if (a == "cancel_edit"): true;
-                                        case PTuple(items) if (items.length >= 1):
-                                            switch(items[0]) { case PLiteral({def: EAtom(a)}) if (a == "cancel_edit"): true; default: false; }
-                                        default: false;
-                                    };
-                                    if (!isCancel) { newClauses.push(clause); continue; }
-                                    var repairedBody = ElixirASTTransformer.transformNode(clause.body, function(x: ElixirAST): ElixirAST {
-                                        return switch(x.def) {
-                                            case ERemoteCall(mod, func, args) if (func == "set_editing_todo"):
-                                                if (args.length >= 2) {
-                                                    var replace = switch(args[0].def) {
-                                                        case EVar(v) if (v == "presenceSocket" || v == "presence_socket"): true;
-                                                        default: false;
-                                                    };
-                                                    if (replace) {
-                                                        var newFirst = makeAST(ERemoteCall(
-                                                            makeAST(EVar("Presence")),
-                                                            "update_user_editing",
-                                                            [
-                                                                makeAST(EVar("socket")),
-                                                                makeAST(EField(makeAST(EField(makeAST(EVar("socket")), "assigns")), "currentUser")),
-                                                                makeAST(ENil)
-                                                            ]
-                                                        ));
-                                                        var newArgs = args.copy(); newArgs[0] = newFirst;
-                                                        return makeASTWithMeta(ERemoteCall(mod, func, newArgs), x.metadata, x.pos);
-                                                    }
-                                                }
-                                                x;
-                                            default:
-                                                x;
-                                        };
-                                    });
-                                    newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: repairedBody });
-                                }
-                                makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
-                            default:
-                                n;
-                        }
-                    });
-                    makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
-                default:
-                    node;
-            }
-        });
+        return ast;
     }
 
     // Normalize Repo result binders in case arms to canonical names used in bodies (user/data/changeset/reason)
@@ -1669,7 +1613,7 @@ class BinderTransforms {
         });
     }
 
-    // Rename {:ok, v}/{:error, v} binder based on body usage (user/data/changeset/reason)
+    // Rename {:ok, v}/{:error, v} binder based on body usage
     public static function resultBinderRenameByBodyUsagePass(ast: ElixirAST): ElixirAST {
         inline function renameBinder(p: EPattern, newName: String): EPattern {
             return switch(p) {
@@ -1697,13 +1641,22 @@ class BinderTransforms {
                         if (tag == "ok" || tag == "error") {
                             var used = collectUsedLowerVars(clause.body);
                             var preferred: Null<String> = null;
-                            if (tag == "ok") {
-                                if (used.indexOf("user") != -1) preferred = "user";
-                                else if (used.indexOf("data") != -1) preferred = "data";
-                            } else { // error
-                                if (used.indexOf("reason") != -1) preferred = "reason";
-                                else if (used.indexOf("changeset") != -1) preferred = "changeset";
+                        if (tag == "ok") {
+                            // Prefer common generics first
+                            if (used.indexOf("user") != -1) preferred = "user";
+                            else if (used.indexOf("data") != -1) preferred = "data";
+                            // Fallback: if exactly one undefined lower-case var appears in body, use it
+                            if (preferred == null) {
+                                var declared = new Map<String, Bool>();
+                                var binds = collectPatternBinders(clause.pattern);
+                                for (b in binds) declared.set(b, true);
+                                var undef = used.filter(v -> !declared.exists(v));
+                                if (undef.length == 1) preferred = undef[0];
                             }
+                        } else { // error
+                            if (used.indexOf("reason") != -1) preferred = "reason";
+                            else if (used.indexOf("changeset") != -1) preferred = "changeset";
+                        }
                             // Special: avoid shadowing LiveView socket variables
                             switch(clause.pattern) {
                                 case PTuple(elements) if (elements.length == 2):
@@ -1770,48 +1723,12 @@ class BinderTransforms {
         });
     }
 
-    // Inject clause-local alias for event parameters based on tag when pattern binder name differs
+    // Removed: tag-driven event parameter alias injection pass
     public static function eventParamAliasInjectionPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            return switch(node.def) {
-                case ECase(target, clauses):
-                    var isEvent = switch(target.def) { case EVar(v): v == "event"; default: false; };
-                    if (!isEvent) return node;
-                    var newClauses = [];
-                    for (clause in clauses) {
-                        var tagAndVar = extractTagAndVar(clause.pattern);
-                        if (tagAndVar != null) {
-                            var preferred = preferredNameForTag(tagAndVar.tag);
-                            if (preferred != null && preferred != tagAndVar.varName) {
-                                var aliasAssign = makeAST(EMatch(PVar(preferred), makeAST(EVar(tagAndVar.varName))));
-                                var newBody = switch(clause.body.def) {
-                                    case EBlock(exprs): makeAST(EBlock([aliasAssign].concat(exprs)));
-                                    default: makeAST(EBlock([aliasAssign, clause.body]));
-                                };
-                                newClauses.push({ pattern: clause.pattern, guard: clause.guard, body: newBody });
-                                continue;
-                            }
-                        }
-                        newClauses.push(clause);
-                    }
-                    makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
-                default:
-                    node;
-            }
-        });
+        return ast;
     }
 
-    static function extractTagAndVar(pat: EPattern): Null<{tag: String, varName: String}> {
-        return switch(pat) {
-            case PTuple(elements) if (elements.length == 2):
-                var t = extractAtom(elements[0]);
-                switch(elements[1]) {
-                    case PVar(name) if (t != null): { tag: t, varName: name };
-                    default: null;
-                }
-            default: null;
-        }
-    }
+    // Removed helper for tag+var extraction (no longer needed)
 
     static function extractSomeBinder(pat: EPattern): Null<String> {
         return switch(pat) {
@@ -1860,25 +1777,39 @@ class BinderTransforms {
         }
     }
 
+    /**
+     * preferredNameForTag
+     *
+     * WHAT
+     * - Derives a generic preferred binder name for common event/message tags.
+     *
+     * WHY
+     * - Formerly included example-app specific mappings (e.g., todo_*). To avoid
+     *   app coupling, we retain only broadly applicable, target-agnostic heuristics.
+     *
+     * HOW
+     * - Use coarse-grained substring/prefix rules for common UX semantics (sort, filter,
+     *   query) and CRUD-style prefixes. Do not reference domain terms like "todo".
+     *
+     * EXAMPLES
+     * - "sort_users" -> sort_by
+     * - "delete_item" -> id
+     * - "save_user" -> params
+     */
     static function preferredNameForTag(tag: String): Null<String> {
         if (tag == null) return null;
-        // 1) Preserve known PubSub/message patterns that carry domain payloads
-        switch (tag) {
-            case "todo_created" | "todo_updated": return "todo"; // carries struct payload
-            case "todo_deleted": return "id";                      // carries identifier
-        }
 
-        // 2) Canonical LiveView event aliases (target-agnostic, table-driven by substring)
+        // Canonical, target-agnostic heuristics only
         var t = tag;
         inline function contains(substr: String): Bool return t.indexOf(substr) != -1;
         inline function startsWith(prefix: String): Bool return StringTools.startsWith(t, prefix);
 
-        // Sorting and filtering first (most specific UX semantics)
+        // Sorting and filtering semantics
         if (contains("sort")) return "sort_by";
         if (contains("filter")) return "filter";
 
         // Search/query semantics
-        if (contains("search")) return "params"; // LiveView search forms submit params
+        if (contains("search")) return "params"; // search forms typically submit params
         if (contains("query")) return "query";
 
         // Tagging / prioritization
@@ -1887,27 +1818,20 @@ class BinderTransforms {
 
         // CRUD-style events
         if (startsWith("delete_") || startsWith("remove_") || startsWith("toggle_") || startsWith("edit_")) {
-            return "id"; // conventionally operate on a single entity id
+            return "id"; // operate on a single entity id
         }
         if (startsWith("save_") || startsWith("create_") || startsWith("update_")) {
-            return "params"; // conventionally submit params payload
+            return "params"; // submit params payload
         }
 
-        // Known cross-app generic events
+        // Generic cross-app events
         switch (tag) {
             case "validate": return "params";
             case "clear_filters": return null; // no payload expected
-            case "bulk_update": return "action"; // retains legacy semantic
+            case "bulk_update": return "action";
             case "user_online" | "user_offline": return "user_id";
-            case "toggle_todo" | "delete_todo" | "edit_todo": return "id";
-            case "create_todo" | "save_todo": return "params";
-            case "filter_todos": return "filter";
-            case "sort_todos": return "sort_by";
-            case "search_todos": return "query";
-            case "toggle_tag": return "tag";
             default:
         }
-
         return null;
     }
 
@@ -1947,7 +1871,8 @@ class BinderTransforms {
                         if (binders.length == 1) {
                             var used = collectUsedLowerVars(clause.body);
                             var binder = binders[0];
-                            var toAlias = used.filter(v -> v != binder && (isPreferredAliasName(v) || toSnake(v) == binder));
+                            // Generic only: alias when body uses a camelCase variant that snakes to the binder name
+                            var toAlias = used.filter(v -> v != binder && toSnake(v) == binder);
                             if (toAlias.length > 0) {
                                 var body = clause.body;
                                 var assigns = [for (v in toAlias) makeAST(EMatch(PVar(v), makeAST(EVar(binder))))];
@@ -2046,14 +1971,7 @@ class BinderTransforms {
         return c.toLowerCase() == c; // crude but effective for variable vs module
     }
 
-    static inline function isPreferredAliasName(v: String): Bool {
-        // Restrict alias injection to common Phoenix/Repo and LiveView event names
-        return (
-            v == "user" || v == "changeset" || v == "data" || v == "reason" || v == "todo" ||
-            v == "params" || v == "id" || v == "filter" || v == "sort_by" || v == "query" || v == "tag" ||
-            v == "user_id" || v == "action" || v == "priority" || v == "updated_todo"
-        );
-    }
+    // Removed app-leaning alias whitelist; aliasing is strictly usage- and snake_case-driven
 
     static function toSnake(s: String): String {
         if (s == null || s.length == 0) return s;

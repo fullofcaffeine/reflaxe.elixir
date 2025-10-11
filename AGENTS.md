@@ -202,6 +202,22 @@ Example hxdoc template:
 - Add focused snapshots where output semantics change; include intended/ regression coverage.
 - Follow idiomatic Phoenix/Ecto/OTP patterns; never introduce fake APIs.
 
+### Hard Rule: No App-Specific Name Heuristics
+
+- Never key transforms on variable names, atoms, tags, or strings tied to examples/domains (e.g., "todo", "updated_todo", "toggle_todo", "cancel_edit", "presenceSocket", "live_socket").
+- Never add suffix/prefix name-based rules (e.g., mapping FooSocket→socket). This is application coupling and violates portability.
+- Allowed renames must be:
+  - Shape-derived (based on AST structure, not names), or
+  - Proven equivalence (snake_case of an existing binding), or
+  - Usage-driven within a clause and unambiguous (exactly one undefined body var).
+- Framework allowances are strictly API- and shape-based (e.g., AppWeb.* → App.Repo via module name parts), never domain terms.
+
+Checklist before merging a transform:
+- [ ] No literal checks for example app names or variables
+- [ ] No name-suffix/prefix heuristics unless deriving snake_case to an existing binding
+- [ ] Pass explains WHAT/WHY/HOW in hxdoc and includes generic examples
+- [ ] Grep check: `rg -n "todo_|toggle_todo|cancel_edit|presenceSocket|live_socket|updated_todo" src/` returns zero in logic (docs are allowed)
+
 ## ⚠️ CRITICAL: Target-Conditional Classpath Architecture (January 2025 Discovery)
 
 **FUNDAMENTAL ARCHITECTURAL ISSUE**: The current `.cross.hx` staging mechanism is flawed - it makes Elixir-specific code available in ALL compilation contexts (macro, interp, etc.) when it should ONLY be available when compiling to Elixir target.
