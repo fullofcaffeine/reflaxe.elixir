@@ -233,6 +233,22 @@ enum abstract JoinType(String) {
  * 
  * @param T The schema type being queried (e.g., Todo, User)
  */
+/**
+ * @:using(reflaxe.elixir.macros.TypedQueryLambda)
+ *
+ * WHY: Haxe @:using attaches extension methods to a type. We use it to add
+ * a macro-powered `where(predicate)` method to TypedQuery<T> while keeping the
+ * runtime representation small. The extension method is defined in
+ * reflaxe.elixir.macros.TypedQueryLambda as a static macro and provides
+ * compile-time field validation + idiomatic Ecto DSL generation.
+ *
+ * WHAT: With this metadata, calls like `query.where(u -> u.name == value)` are
+ * resolved by the macro and turned into `Ecto.Query.where(query, [t], t.name == ^value)`.
+ *
+ * BENEFIT: Type-safe field checks at compile time, no stringly-typed fields.
+ */
+@:using(reflaxe.elixir.macros.TypedQueryLambda)
+@:using(ecto.TypedQueryInstanceMacros)
 abstract TypedQuery<T>(EctoQueryStruct) {
     /**
      * Internal query representation - ONLY for Ecto interop
@@ -286,8 +302,10 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      */
     extern inline public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
         // Build an Ecto query struct directly to avoid macro dependency here
-        var q = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass);
-        return new TypedQuery<T>(q);
+        // Use a stable local name `query` so downstream injected calls referencing
+        // `query` (by Ecto DSL) remain in scope and Mix-compile cleanly.
+        var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass);
+        return new TypedQuery<T>(query);
     }
     
     
@@ -308,16 +326,8 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * // Generates: where: t.completed == false, where: t.user_id == ^current_user_id
      * ```
      */
-    extern inline public function where(predicate: T -> Bool): TypedQuery<T> {
-        // For now, we'll use a simplified version that doesn't validate fields at compile time
-        // The predicate function will be compiled to Elixir pattern matching
-        var newQuery = untyped __elixir__(
-            '(require Ecto.Query; Ecto.Query.where({0}, [t], {1}))',
-            this.query,
-            predicate
-        );
-        return new TypedQuery<T>(newQuery);
-    }
+    // where(predicate) provided via macro delegation for robust resolution
+    // instance macro provided by @:using(ecto.TypedQueryInstanceMacros)
     
     /**
      * Add order_by clause for sorting results

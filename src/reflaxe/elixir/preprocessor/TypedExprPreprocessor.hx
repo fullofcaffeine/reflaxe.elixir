@@ -631,10 +631,21 @@ class TypedExprPreprocessor {
                                         #end
                                         // Skip this assignment - pattern already extracted the value
                                         continue;
+                                    case TLocal(tempVar) if (isInfrastructureVar(tempVar.name)):
+                                        #if debug_preprocessor
+                                        trace('[TypedExprPreprocessor] Filtering temp→binder assignment in case body: ${v.name} = ${tempVar.name}');
+                                        #end
+                                        // Skip temp-to-binder alias inside case bodies
+                                        continue;
                                     default:
                                         // Keep other assignments
                                         filteredExprs.push(processExpr(expr, substitutions));
                                 }
+                            case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}) if (isInfrastructureVar(rhs.name)):
+                                #if debug_preprocessor
+                                trace('[TypedExprPreprocessor] Filtering OpAssign temp→binder in case body: ${lhs.name} = ${rhs.name}');
+                                #end
+                                continue;
                             default:
                                 filteredExprs.push(processExpr(expr, substitutions));
                         }

@@ -1109,6 +1109,16 @@ class ElixirASTBuilder {
                                 trace('  - Mapping: ${tempVar.id} -> ${v.id}');
                                 #end
                                 #end
+
+                                // Within a case clause, pattern already binds the variable.
+                                // Skip emitting temp→binder assignment to avoid `lhs = _g*` in case arms.
+                                if (currentContext.currentClauseContext != null) {
+                                    #if debug_ast_builder
+                                    trace('[TVar] Skipping temp→binder assignment inside case clause: ' + v.name + ' = ' + tempVar.name);
+                                    #end
+                                    return null;
+                                }
+
                             } else {
                                 // Regular local assignment, check if the source is a pattern variable
                                 // from an enum constructor (like RGB(r, g, b))

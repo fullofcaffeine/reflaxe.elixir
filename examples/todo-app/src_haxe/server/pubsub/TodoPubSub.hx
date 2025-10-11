@@ -139,47 +139,23 @@ class TodoPubSub {
      * Note: Must be public to be passed as function reference in Elixir
      */
     public static function messageToElixir(message: TodoPubSubMessage): Dynamic {
-        var basePayload = switch (message) {
+        // Avoid ephemeral locals: build payload inline and add timestamp
+        return SafePubSub.addTimestamp(switch (message) {
             case TodoCreated(todo):
-                {
-                    type: "todo_created",
-                    todo: todo
-                };
+                { type: "todo_created", todo: todo };
             case TodoUpdated(todo):
-                {
-                    type: "todo_updated", 
-                    todo: todo
-                };
+                { type: "todo_updated", todo: todo };
             case TodoDeleted(id):
-                cast {
-                    type: "todo_deleted",
-                    todo_id: id
-                };
+                cast { type: "todo_deleted", todo_id: id };
             case BulkUpdate(action):
-                cast {
-                    type: "bulk_update",
-                    action: bulkActionToString(action)
-                };
+                cast { type: "bulk_update", action: bulkActionToString(action) };
             case UserOnline(user_id):
-                cast {
-                    type: "user_online",
-                    user_id: user_id
-                };
+                cast { type: "user_online", user_id: user_id };
             case UserOffline(user_id):
-                cast {
-                    type: "user_offline",
-                    user_id: user_id
-                };
+                cast { type: "user_offline", user_id: user_id };
             case SystemAlert(message, level):
-                cast {
-                    type: "system_alert",
-                    message: message,
-                    level: alertLevelToString(level)
-                };
-        };
-        
-        // Add timestamp using framework utility
-        return SafePubSub.addTimestamp(basePayload);
+                cast { type: "system_alert", message: message, level: alertLevelToString(level) };
+        });
     }
     
     /**

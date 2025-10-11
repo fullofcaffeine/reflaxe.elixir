@@ -29,16 +29,24 @@ class Log {
      * This generates idiomatic Elixir code using IO.inspect instead of Log.trace
      */
     public static dynamic function trace(v: Dynamic, ?infos: PosInfos): Void {
-        // Use IO.inspect for idiomatic Elixir output
-        if (infos != null) {
-            // Generate IO.inspect with label showing position info
-            var label = '${infos.fileName}:${infos.lineNumber}';
-            if (infos.className != null) {
-                label = '${infos.className}.${infos.methodName} - ' + label;
-            }
-            untyped __elixir__('IO.inspect({0}, label: {1})', v, label);
-        } else {
-            untyped __elixir__('IO.inspect({0})', v);
-        }
+        // Build label and inspect entirely in injected Elixir to avoid local temp vars
+        untyped __elixir__(
+            '
+            case {1} do
+              nil -> IO.inspect({0})
+              infos ->
+                file = Map.get(infos, :fileName)
+                line = Map.get(infos, :lineNumber)
+                base = if file != nil and line != nil, do: "#{file}:#{line}", else: nil
+                class = Map.get(infos, :className)
+                method = Map.get(infos, :methodName)
+                label = cond do
+                  class != nil and method != nil and base != nil -> "#{class}.#{method} - #{base}"
+                  base != nil -> base
+                  true -> nil
+                end
+                if label != nil, do: IO.inspect({0}, label: label), else: IO.inspect({0})
+            end
+            ', v, infos);
     }
 }
