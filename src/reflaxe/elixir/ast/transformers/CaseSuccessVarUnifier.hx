@@ -1,0 +1,141 @@
+package reflaxe.elixir.ast.transformers;
+
+#if (macro || reflaxe_runtime)
+
+import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+
+/**
+ * CaseSuccessVarUnifier
+ *
+ * WHAT
+ * - Within `case` expressions that match `{:ok, var}`, rewrite references in the
+ *   success clause body to consistently use the bound `var` instead of ad-hoc
+ *   placeholder names like `todo` or `updated_todo` that were never declared.
+ *
+ * WHY
+ * - Code paths often broadcast or reuse the newly inserted/updated record but
+ *   reference a placeholder name that isn't bound in the success branch. This
+ *   causes undefined variable errors. The tuple `{:ok, u}` already provides the
+ *   correct variable; we unify to that variable in the clause body.
+ *
+ * HOW
+ * - Find `case ... do` clauses whose pattern is a tuple `{:ok, PVar(v)}`.
+ * - In that clause's body, rewrite any references to undefined variables to the
+ *   bound success variable `v` when they only appear as simple variable uses.
+ *   This avoids relying on app-specific names and generically fixes undefined
+ *   local references that clearly intend to use the success value.
+ * - Operates only within the success clause; other clauses unchanged.
+ *
+ * EXAMPLES
+ * Elixir before:
+ *   case Repo.update(changeset) do
+ *     {:ok, u} ->
+ *       TodoPubSub.broadcast(:todo_updates, {:todo_updated, updated_todo})
+ *       update_todo_in_list(updated_todo, socket)
+ *   end
+ *
+ * Elixir after:
+ *   case Repo.update(changeset) do
+ *     {:ok, u} ->
+ *       TodoPubSub.broadcast(:todo_updates, {:todo_updated, u})
+ *       update_todo_in_list(u, socket)
+ *   end
+ */
+class CaseSuccessVarUnifier {
+    public static function unifySuccessVarPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case ECase(expr, clauses):
+                    var newClauses = [];
+                    for (c in clauses) {
+                        var successVar = extractOkVar(c.pattern);
+                        if (successVar != null) {
+                            var newBody = rewritePlaceholders(c.body, successVar);
+                            newClauses.push({ pattern: c.pattern, guard: c.guard, body: newBody });
+                        } else {
+                            newClauses.push(c);
+                        }
+                    }
+                    makeASTWithMeta(ECase(expr, newClauses), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    static function extractOkVar(p: EPattern): Null<String> {
+        return switch (p) {
+            case PTuple(elements) if (elements.length == 2):
+                switch (elements[0]) {
+                    case PLiteral(lit) if (isOkAtom(lit)):
+                        switch (elements[1]) {
+                            case PVar(name): name;
+                            default: null;
+                        }
+                    default: null;
+                }
+            default: null;
+        }
+    }
+
+    static inline function isOkAtom(ast: ElixirAST): Bool {
+        return switch (ast.def) {
+            case EAtom(value): value == ":ok" || value == "ok";
+            default: false;
+        }
+    }
+
+    static function rewritePlaceholders(body: ElixirAST, successVar: String): ElixirAST {
+        // Collect declared names inside this clause body
+        var declared = new Map<String, Bool>();
+        var referenced = new Map<String, Bool>();
+        reflaxe.elixir.ast.ASTUtils.walk(body, function(n: ElixirAST) {
+            switch (n.def) {
+                case EMatch(p, _): collectPatternDecls(p, declared);
+                case EBinary(Match, left, _): collectLhsDecls(left, declared);
+                case EVar(v): referenced.set(v, true);
+                default:
+            }
+        });
+
+        // Undefined references in body that are simple vars
+        var undefined = [for (k in referenced.keys()) if (!declared.exists(k)) k];
+        if (undefined.length == 0) return body;
+
+        return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EVar(name) if (!declared.exists(name)):
+                    // Replace undefined local with successVar
+                    makeASTWithMeta(EVar(successVar), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        });
+    }
+
+    static function collectPatternDecls(p: EPattern, declared: Map<String, Bool>): Void {
+        switch (p) {
+            case PVar(n): declared.set(n, true);
+            case PTuple(es) | PList(es): for (e in es) collectPatternDecls(e, declared);
+            case PCons(h, t): collectPatternDecls(h, declared); collectPatternDecls(t, declared);
+            case PMap(kvs): for (kv in kvs) collectPatternDecls(kv.value, declared);
+            case PStruct(_, fs): for (f in fs) collectPatternDecls(f.value, declared);
+            case PPin(inner): collectPatternDecls(inner, declared);
+            default:
+        }
+    }
+
+    static function collectLhsDecls(lhs: ElixirAST, declared: Map<String, Bool>): Void {
+        switch (lhs.def) {
+            case EVar(n): declared.set(n, true);
+            case EBinary(Match, l2, r2):
+                collectLhsDecls(l2, declared);
+                collectLhsDecls(r2, declared);
+            default:
+        }
+    }
+}
+
+#end

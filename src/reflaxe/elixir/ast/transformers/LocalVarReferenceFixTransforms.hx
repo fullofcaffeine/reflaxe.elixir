@@ -124,6 +124,28 @@ class LocalVarReferenceFixTransforms {
             }
         }
 
+        // Rule 3: nameN -> name when base declared and nameN not declared
+        var referenced = new Map<String, Bool>();
+        reflaxe.elixir.ast.ASTUtils.walk(body, function(n: ElixirAST) {
+            switch (n.def) {
+                case EVar(v): referenced.set(v, true);
+                default:
+            }
+        });
+
+        for (k in referenced.keys()) {
+            // Detect numeric variant like base + digits
+            var i = k.length - 1;
+            while (i >= 0 && k.charCodeAt(i) >= '0'.code && k.charCodeAt(i) <= '9'.code) i--;
+            if (i < k.length - 1) {
+                var base = k.substr(0, i + 1);
+                var suffix = k.substr(i + 1);
+                if (suffix.length > 0 && declared.exists(base) && !declared.exists(k)) {
+                    rename.set(k, base);
+                }
+            }
+        }
+
         // Apply renaming only to references (EVar), not to declarations
         function transform(n: ElixirAST): ElixirAST {
             if (n == null || n.def == null) return n;
