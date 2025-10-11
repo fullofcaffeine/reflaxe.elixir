@@ -162,6 +162,46 @@ end)
 
 **See**: [`docs/01-getting-started/compiler-flags-guide.md`](docs/01-getting-started/compiler-flags-guide.md) - Complete compiler flags documentation
 
+## 📐 Transformer Documentation Directive (hxdoc required)
+
+When you create or modify AST transformers (Builder → Transformer → Printer pipeline):
+
+- Always add hxdoc block comments to the transformer with the following sections:
+  - WHAT: Concise description of the transformation and its scope
+  - WHY: The problem it solves and the architectural rationale
+  - HOW: High-level explanation of the algorithm and where it runs in the pipeline
+  - EXAMPLES: Minimal Haxe input → Generated Elixir before/after
+
+Example hxdoc template:
+
+"""
+/**
+ * MyTransformPass
+ *
+ * WHAT
+ * - Converts while→reduce_while loop patterns to idiomatic Enum.each.
+ *
+ * WHY
+ * - Preserve functional style; avoid mutable loop artifacts in Elixir.
+ *
+ * HOW
+ * - Detect Enum.reduce_while with Stream.iterate(0, fn n -> n + 1 end) and rewrite to
+ *   Enum.each(range, fn i -> ... end), preserving side effects and accumulator semantics.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   for (i in 0...3) trace(i);
+ * Elixir (before):
+ *   Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} -> ... end)
+ * Elixir (after):
+ *   Enum.each(0..2, fn i -> IO.puts(i) end)
+ */
+"""
+
+- Keep each transformer file under 2000 LOC. If approaching the limit, extract into domain modules.
+- Add focused snapshots where output semantics change; include intended/ regression coverage.
+- Follow idiomatic Phoenix/Ecto/OTP patterns; never introduce fake APIs.
+
 ## ⚠️ CRITICAL: Target-Conditional Classpath Architecture (January 2025 Discovery)
 
 **FUNDAMENTAL ARCHITECTURAL ISSUE**: The current `.cross.hx` staging mechanism is flawed - it makes Elixir-specific code available in ALL compilation contexts (macro, interp, etc.) when it should ONLY be available when compiling to Elixir target.
