@@ -56,6 +56,41 @@ using StringTools;
  */
 @:nullSafety(Off)
 class SwitchBuilder {
+    static function cleanupTempBinderAliases(body: ElixirAST): ElixirAST {
+        // Remove statements like `lhs = _g*` or `lhs = g*` inside blocks
+        function isInfraTemp(name:String):Bool {
+            if (name == null || name.length == 0) return false;
+            if (name.charAt(0) == "_") name = name.substr(1);
+            if (name == "g") return true;
+            if (name.charAt(0) == "g") {
+                for (i in 1...name.length) {
+                    var c = name.charCodeAt(i);
+                    if (c < '0'.code || c > '9'.code) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        switch (body.def) {
+            case EBlock(stmts):
+                var filtered:Array<ElixirAST> = [];
+                for (s in stmts) {
+                    var drop = false;
+                    switch (s.def) {
+                        case EBinary(Match, left, right):
+                            switch (right.def) { case EVar(rn) if (isInfraTemp(rn)): drop = true; default: }
+                        case EMatch(pat, rhs):
+                            switch (rhs.def) { case EVar(rn) if (isInfraTemp(rn)): drop = true; default: }
+                        default:
+                    }
+                    if (!drop) filtered.push(s);
+                }
+                return {def: EBlock(filtered), metadata: body.metadata, pos: body.pos};
+            default:
+                return body;
+        }
+    }
     
     /**
      * Build switch/case expression
@@ -313,10 +348,11 @@ class SwitchBuilder {
             };
 
             if (body != null) {
+                var cleanedBody = cleanupTempBinderAliases(body);
                 clauses.push({
                     pattern: pattern,
                     guard: null,
-                    body: body
+                    body: cleanedBody
                 });
             }
         }
@@ -351,9 +387,10 @@ class SwitchBuilder {
                     // Extract guard condition
                     var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
 
-                    // Compile then-branch as body
+                    // Compile then-branch as body and clean temp→binder aliases
                     var substitutedBody = context.substituteIfNeeded(eif);
-                    var body = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+                    var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+                    var body = cleanupTempBinderAliases(rawBody);
 
                     // Create clause with guard
                     clauses.push({
@@ -394,7 +431,8 @@ class SwitchBuilder {
                     trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause');
                     // Reached final else (not a TIf) - create clause without guard
                     var substitutedBody = context.substituteIfNeeded(current);
-                    var body = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+                    var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+                    var body = cleanupTempBinderAliases(rawBody);
 
                     clauses.push({
                         pattern: pattern,

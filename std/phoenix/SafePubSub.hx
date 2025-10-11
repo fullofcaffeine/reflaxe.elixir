@@ -103,30 +103,17 @@ class SafePubSub {
         topic: T, 
         topicConverter: T -> String
     ): Result<Void, String> {
-        // Dynamically get the PubSub module from the endpoint configuration
-        // This works for any Phoenix application, not just TodoApp
-        var pubsubModule = getPubSubModule();
-        var topicString = topicConverter(topic);
-        
-        // Phoenix.PubSub.subscribe returns :ok (atom) on success, not a tuple
-        // We need to handle this properly and convert to Result type
-        var subscribeResult = phoenix.Phoenix.PubSub.subscribe(pubsubModule, topicString);
-        
-        // Check if the result is :ok atom (success) or an error tuple
-        var isOk = untyped __elixir__('{0} == :ok', subscribeResult);
-        
-        if (isOk) {
-            return Ok(null);
-        } else {
-            // If it's not :ok, it should be {:error, reason}
-            // Extract the error reason from the tuple
-            var errorReason = untyped __elixir__('
-                case {0} do
-                    {:error, reason} -> to_string(reason)
-                    _ -> "Unknown subscription error"
-                end', subscribeResult);
-            return Error(errorReason);
-        }
+        // Injection Hygiene: compute ephemeral locals inside injected Elixir
+        // and return a Result-like tuple to avoid cross-scope variable issues.
+        return untyped __elixir__('
+          case Phoenix.PubSub.subscribe(
+                   Phoenix.SafePubSub.get_pub_sub_module(),
+                   {0}.({1})
+               ) do
+            :ok -> {:ok, nil}
+            {:error, reason} -> {:error, to_string(reason)}
+          end
+        ', topicConverter, topic);
     }
     
     /**
@@ -144,12 +131,18 @@ class SafePubSub {
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        // Dynamically get the PubSub module from the endpoint configuration
-        // This works for any Phoenix application, not just TodoApp
-        var pubsubModule = getPubSubModule();
-        var topicString = topicConverter(topic);
-        var messagePayload = messageConverter(message);
-        return phoenix.Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload);
+        // Injection Hygiene: compute pubsub/topic/message inside injected Elixir
+        // and normalize return to {:ok, nil} | {:error, reason}
+        return untyped __elixir__('
+          case Phoenix.PubSub.broadcast(
+                   Phoenix.SafePubSub.get_pub_sub_module(),
+                   {0}.({1}),
+                   {2}.({3})
+               ) do
+            :ok -> {:ok, nil}
+            {:error, reason} -> {:error, to_string(reason)}
+          end
+        ', topicConverter, topic, messageConverter, message);
     }
     
     /**
@@ -203,12 +196,15 @@ class SafePubSub {
      * Create a standard error message for malformed messages
      */
     public static function createMalformedMessageError(msg: Dynamic): String {
-        var msgStr = try {
-            haxe.Json.stringify(msg);
-        } catch (e: Dynamic) {
-            "unparseable message";
-        };
-        return 'Malformed PubSub message: $msgStr. Expected message with "type" field.';
+        // Build the whole message inside injected Elixir to avoid cross-scope locals
+        return untyped __elixir__('
+          msg_str = try do
+            Jason.encode!({0})
+          rescue
+            _e -> "unparseable message"
+          end
+          ~s(Malformed PubSub message: #{msg_str}. Expected message with "type" field.)
+        ', msg);
     }
     
     /**

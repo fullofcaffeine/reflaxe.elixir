@@ -1681,6 +1681,35 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 4. Variables are compiled to Elixir and substituted at placeholder positions
 5. Keyword lists and atoms should be written directly in the string
 
+### New Stdlib Mappings (JsonPrinter, Log)
+
+- haxe.format.JsonPrinter
+  - Implemented in `std/haxe/format/JsonPrinter.cross.hx` using native Elixir via `Jason.encode!/2` with:
+    - recursive `replacer(key, value)` support (maps/lists)
+    - `pretty: true` when `space != null`
+  - Rationale: Avoids bulky generated code; yields idiomatic, correct Elixir for all apps.
+  - Policy: Do not add app-level `.ex` for stdlib — implement once in `std/` with `__elixir__()` injection.
+
+- haxe.Log.trace
+  - Implemented in `std/haxe/Log.cross.hx`; builds label and calls `IO.inspect/2` entirely in injected Elixir, avoiding local temps that later passes underscore.
+  - Guarantees: No undefined label; stable output under code transforms.
+
+### Typed Ecto Query (Chainable where)
+
+- API: `TypedQuery.from(T)` → `TypedQuery<T>`, `query.where(u -> u.field OP value)`
+- Validation: compile-time field checking via `SchemaIntrospection` in `reflaxe.elixir.macros.TypedQueryLambda`.
+- Emission: `Ecto.Query.where(queryable, [t], t.field OP ^(rhs))` with correct pinning and RHS string concatenation support.
+- Extension style: instance-style macro to preserve fluent chaining (`query.where(...).where(...)`).
+
+### Ecto Query Variable Normalization
+
+- Pass: `EctoTransforms.ectoQueryVarConsistencyPass`
+  - Detects canonical query binding from both `Ecto.Queryable.to_query/1` and `Ecto.Query.from/2` patterns.
+  - Rewrites downstream `Ecto.Query.where` and `Repo.all` to use the canonical var when needed.
+  - Purpose: Prevent undefined variable errors without string post-processing; keeps output idiomatic.
+4. Variables are compiled to Elixir and substituted at placeholder positions
+5. Keyword lists and atoms should be written directly in the string
+
 ### Pragmatic Stdlib Implementation Strategy
 
 **Philosophy**: Use the right tool for the job - combine Haxe's type safety with Elixir's native efficiency.

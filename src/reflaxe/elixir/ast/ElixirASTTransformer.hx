@@ -723,6 +723,22 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
         });
 
+        // Rename preserved switch result temps to switch_result_* (avoid underscore-use warnings)
+        passes.push({
+            name: "RenameSwitchResultVars",
+            description: "Rename __elixir_switch_result_* to switch_result_*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.renameSwitchResultVarsPass
+        });
+
+        // Remove redundant temp-to-binder assignments inside case bodies
+        passes.push({
+            name: "CasePatternTempAssignmentRemoval",
+            description: "Drop assignments like `todo = _g` when pattern already binds `todo`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.casePatternTempAssignmentRemovalPass
+        });
+
         // Rename single tuple binders from case expr var (alert_level -> level)
         passes.push({
             name: "BinderRenameFromExpr",
@@ -891,6 +907,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
         });
 
+        // Normalize Ecto query variable usage and fix where/Repo.all first-arg to canonical binding
+        passes.push({
+            name: "EctoQueryVarConsistency",
+            description: "Normalize Ecto query variable usage and rewrite Ecto.Query.where/Repo.all to canonical query var",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoTransforms.ectoQueryVarConsistencyPass
+        });
+
         // Replace x == nil checks with Kernel.is_nil(x)
         passes.push({
             name: "EqNilToIsNil",
@@ -907,6 +931,14 @@ class ElixirASTTransformer {
             description: "Prefix unused local assignment variables with underscore",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.unusedLocalAssignmentUnderscorePass
+        });
+
+        // Normalize local var references to declared names in function scope (underscore/digit suffix cases)
+        passes.push({
+            name: "LocalVarReferenceFix",
+            description: "Fix local references like changeset-> _changeset or query->query2 when only the latter is declared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalVarReferenceFixTransforms.localVarReferenceFixPass
         });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
@@ -1095,6 +1127,14 @@ class ElixirASTTransformer {
                     }
                 });
             }
+        });
+
+        // Late sweep: remove any redundant temp-to-binder assignments inside case bodies
+        passes.push({
+            name: "CasePatternTempAssignmentRemoval(Late)",
+            description: "Final guard against `lhs = _g*` after pattern binding",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.casePatternTempAssignmentRemovalPass
         });
 
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
