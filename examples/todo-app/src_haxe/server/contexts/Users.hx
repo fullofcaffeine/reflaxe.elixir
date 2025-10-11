@@ -2,7 +2,7 @@ package contexts;
 
 import elixir.types.Result;
 import ecto.Changeset;
-import ecto.Query;
+import ecto.TypedQuery;
 import server.infrastructure.Repo;
 
 /**
@@ -71,17 +71,16 @@ class Users {
         // Use typed Repo extern for type-safe database access
         if (filter != null) {
             // Apply filtering based on the provided criteria
-            var query = Query.from(User);
+            var query = TypedQuery.from(User);
             
             if (filter.name != null) {
-                // Use the where method on the EctoQuery instance
-                query = query.where("name", '%${filter.name}%');
+                query = query.where(u -> u.name == '%${filter.name}%');
             }
             if (filter.email != null) {
-                query = query.where("email", '%${filter.email}%');
+                query = query.where(u -> u.email == '%${filter.email}%');
             }
             if (filter.isActive != null) {
-                query = query.where("active", filter.isActive);
+                query = query.where(u -> u.active == filter.isActive);
             }
             
             return Repo.all(query);
