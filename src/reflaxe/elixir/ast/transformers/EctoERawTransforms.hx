@@ -422,6 +422,32 @@ class EctoERawTransforms {
     }
 
     /**
+     * ERawEctoOptsAccessNormalize
+     *
+     * WHAT
+     * - In ERaw code blocks, normalize keyword list values using opts.<key>
+     *   to Map.get(opts, :key) to avoid typing warnings on dot-access.
+     */
+    public static function erawEctoOptsAccessNormalizePass(ast: ElixirAST): ElixirAST {
+        inline function normalize(code: String): String {
+            var out = code;
+            out = out.replace('min: opts.min', 'min: Map.get(opts, :min)');
+            out = out.replace('max: opts.max', 'max: Map.get(opts, :max)');
+            out = out.replace('is: opts.is', 'is: Map.get(opts, :is)');
+            return out;
+        }
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERaw(code):
+                    var c = normalize(code);
+                    c != code ? makeASTWithMeta(ERaw(c), n.metadata, n.pos) : n;
+                default:
+                    n;
+            }
+        });
+    }
+
+    /**
      * ERawEctoQueryableToSchema
      *
      * WHAT
