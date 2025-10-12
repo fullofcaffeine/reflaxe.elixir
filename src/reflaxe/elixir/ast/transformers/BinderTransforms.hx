@@ -756,13 +756,10 @@ class BinderTransforms {
             return idx > 0 ? moduleName.substring(0, idx) : null;
         }
 
-        // Globals that must never be qualified
-        var globalWhitelist = new Map<String, Bool>();
-        for (name in [
-            "Kernel","Enum","Map","List","Bitwise","String","Integer","Float","IO","File","Path","System",
-            "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
-            "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex"
-        ]) globalWhitelist.set(name, true);
+        // Centralized globals that must never be qualified
+        inline function isGlobalWhitelisted(name:String):Bool {
+            return reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(name);
+        }
 
         inline function isSingleSegmentModule(name: String): Bool {
             return name != null && name.indexOf(".") == -1 && name.length > 0;
@@ -773,14 +770,13 @@ class BinderTransforms {
         }
 
         function qualifyIn(subtree: ElixirAST, appPrefix: String): ElixirAST {
-            // Functions that indicate application domain modules (avoid qualifying utility modules)
-            var domainFuncs = new Map<String, Bool>();
-            for (f in ["new","changeset","toggle_completed","update_priority"]) domainFuncs.set(f, true);
+            if (appPrefix == null) return subtree;
+            // Qualify based on declared modules, not name heuristics
             return ElixirASTTransformer.transformNode(subtree, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
                     case ERemoteCall(mod, func, args):
                         switch (mod.def) {
-                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !globalWhitelist.exists(m)):
+                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
                                 // Always map Presence to <App>Web.Presence
                                 if (m == "Presence") {
                                     var fqP = appPrefix + "Web." + m;
@@ -790,16 +786,20 @@ class BinderTransforms {
                                 if (m == "SafePubSub") {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
                                 }
-                                // Only qualify when calling domain functions
-                                if (domainFuncs.exists(func)) {
-                                    var fq = appPrefix + "." + m;
+                                var fq = appPrefix + "." + m;
+                                if (reflaxe.elixir.ElixirCompiler.isModuleKnown(fq)) {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
-                                } else n;
+                                } else if (reflaxe.elixir.ElixirCompiler.isModuleKnown(m)) {
+                                    // Keep as top-level module if it exists globally
+                                    n;
+                                } else {
+                                    n;
+                                }
                             default: n;
                         }
                     case ECall(target, func, args) if (target != null):
                         switch (target.def) {
-                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !globalWhitelist.exists(m)):
+                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
                                 if (m == "Presence") {
                                     var fqP = appPrefix + "Web." + m;
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fqP)), func, args), n.metadata, n.pos);
@@ -807,10 +807,14 @@ class BinderTransforms {
                                 if (m == "SafePubSub") {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
                                 }
-                                if (domainFuncs.exists(func)) {
-                                    var fq = appPrefix + "." + m;
+                                var fq = appPrefix + "." + m;
+                                if (reflaxe.elixir.ElixirCompiler.isModuleKnown(fq)) {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
-                                } else n;
+                                } else if (reflaxe.elixir.ElixirCompiler.isModuleKnown(m)) {
+                                    n;
+                                } else {
+                                    n;
+                                }
                             default: n;
                         }
                     default:
@@ -875,6 +879,18 @@ class BinderTransforms {
                             }
                         }
                         collectPattern(pattern);
+                    case EBinary(Match, left, _):
+                        // Treat simple assignment LHS as declarations for cleanup
+                        function collectLhs(lhs: ElixirAST): Void {
+                            switch (lhs.def) {
+                                case EVar(nm):
+                                    declared.set(nm, (declared.exists(nm) ? declared.get(nm) : 0) + 1);
+                                case EBinary(Match, l2, r2):
+                                    collectLhs(l2); collectLhs(r2);
+                                default:
+                            }
+                        }
+                        collectLhs(left);
                     case EVar(name):
                         used.set(name, (used.exists(name) ? used.get(name) : 0) + 1);
                     default:
@@ -905,6 +921,24 @@ class BinderTransforms {
                                 pattern;
                         };
                         makeASTWithMeta(EMatch(newPattern, expr), n.metadata, n.pos);
+                    case EBinary(Match, left, expr):
+                        // Prefix simple assignment to unused locals with underscore
+                        var newLeft = switch (left.def) {
+                            case EVar(name):
+                                if ((name != null && name.length >= 14 && name.substr(0,14) == "switch_result_") || name == "g" || (name != null && name.length > 0 && name.charAt(0) == 'g') || (name != null && name.length > 1 && name.charAt(0) == '_' && name.charAt(1) == 'g')) {
+                                    left;
+                                } else {
+                                    var isDeclared = declared.exists(name);
+                                    var isUsed = used.exists(name);
+                                    if (isDeclared && !isUsed && name.charAt(0) != "_") makeAST(EVar("_" + name)) else left;
+                                }
+                            case EBinary(Match, _, _):
+                                // Recurse assignment chain
+                                left; // Leave nested chains unchanged for now
+                            default:
+                                left;
+                        }
+                        makeASTWithMeta(EBinary(Match, newLeft, expr), n.metadata, n.pos);
                     default:
                         n;
                 }
@@ -1081,12 +1115,18 @@ class BinderTransforms {
      *   (or leave as utc_now() if field is dynamic)
      */
     public static function dateImplRewritePass(ast: ElixirAST): ElixirAST {
+        inline function isDateImplModule(modName: String): Bool {
+            if (modName == null) return false;
+            var lastDot = modName.lastIndexOf(".");
+            var last = lastDot >= 0 ? modName.substring(lastDot + 1) : modName;
+            return last == "Date_Impl_";
+        }
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case ERemoteCall({def: EVar(m)}, f, args) if (m == "Date_Impl_" && f == "from_string" && args.length == 1):
+                case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_string" && args.length == 1):
                     // Passthrough string
                     args[0];
-                case ERemoteCall({def: EVar(m)}, f, args) if (m == "Date_Impl_" && f == "get_time" && args.length == 1):
+                case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_time" && args.length == 1):
                     // If arg is DateTime.utc_now(), map to DateTime.to_iso8601(utc_now())
                     switch (args[0].def) {
                         case ERemoteCall({def: EVar(dm)}, "utc_now", _ ) if (dm == "DateTime"):
@@ -1094,9 +1134,9 @@ class BinderTransforms {
                         default:
                             args[0];
                     }
-                case ECall({def: EVar(m)}, f, args) if (m == "Date_Impl_" && f == "from_string" && args.length == 1):
+                case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_string" && args.length == 1):
                     args[0];
-                case ECall({def: EVar(m)}, f, args) if (m == "Date_Impl_" && f == "get_time" && args.length == 1):
+                case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_time" && args.length == 1):
                     args[0];
                 default:
                     n;
@@ -1136,7 +1176,7 @@ class BinderTransforms {
         }
 
         function rewriteInScope(sub: ElixirAST, app: String): ElixirAST {
-            var presenceModule = app + ".Web.Presence";
+            var presenceModule = app + "Web.Presence";
             return ElixirASTTransformer.transformNode(sub, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
                     case ERemoteCall(mod, fn, args):
@@ -1578,6 +1618,56 @@ class BinderTransforms {
             });
             return found;
         }
+        // Rewrite EField(var, field) -> Map.get(var, :field) for vars coalesced to %{}
+        function rewriteFieldsAfterCoalesce(b: ElixirAST): ElixirAST {
+            return switch (b.def) {
+                case EBlock(stmts):
+                    var active: Map<String, Bool> = new Map();
+                    var newStmts: Array<ElixirAST> = [];
+                    // Helper to transform field uses for currently active vars
+                    function transformForActive(n: ElixirAST): ElixirAST {
+                        return ElixirASTTransformer.transformNode(n, function(x) {
+                            switch (x.def) {
+                                case EField({def: EVar(name)}, field):
+                                    if (active.exists(name)) {
+                                        var atomField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
+                                        return makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(name)), makeAST(EAtom(atomField)) ]));
+                                    } else {
+                                        return x;
+                                    }
+                                case EAccess({def: EVar(name)}, {def: EAtom(atom)}):
+                                    if (active.exists(name)) {
+                                        // Normalize to Map.get(var, :atom) for consistency
+                                        var atomField = reflaxe.elixir.ast.NameUtils.toSnakeCase(atom);
+                                        return makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(name)), makeAST(EAtom(atomField)) ]));
+                                    } else {
+                                        return x;
+                                    }
+                                default:
+                                    return x;
+                            }
+                        });
+                    }
+
+                    for (s in stmts) {
+                        var transformed = transformForActive(s);
+                        // Track start/stop of coalesce lifespan per variable
+                        switch (transformed.def) {
+                            case EMatch(PVar(name), {def: EMap([])}):
+                                // Start rewriting field accesses for this var
+                                active.set(name, true);
+                            case EMatch(PVar(name), _):
+                                // Any other assignment to the var ends the rewriting window
+                                if (active.exists(name)) active.remove(name);
+                            default:
+                        }
+                        newStmts.push(transformed);
+                    }
+                    makeASTWithMeta(EBlock(newStmts), b.metadata, b.pos);
+                default:
+                    b;
+            }
+        }
         function processBlock(b: ElixirAST): ElixirAST {
             return switch (b.def) {
                 case EBlock(stmts):
@@ -1605,7 +1695,13 @@ class BinderTransforms {
                                     var seenReassign = false;
                                     while (j < stmts.length && !seenFieldUse && !seenReassign) {
                                         switch (stmts[j].def) {
-                                            case EMatch(PVar(name), _): if (name == v) seenReassign = true;
+                                            case EMatch(PVar(name), _):
+                                                // Treat assignment to the tracked var as reassignment; otherwise, scan RHS for field usage
+                                                if (name == v) {
+                                                    seenReassign = true;
+                                                } else if (containsFieldUse(stmts[j], v)) {
+                                                    seenFieldUse = true;
+                                                }
                                             default:
                                                 if (containsFieldUse(stmts[j], v)) seenFieldUse = true;
                                         }
@@ -1630,9 +1726,11 @@ class BinderTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
-                    makeASTWithMeta(EDef(name, args, guards, processBlock(body)), n.metadata, n.pos);
+                    var pb = processBlock(body);
+                    makeASTWithMeta(EDef(name, args, guards, rewriteFieldsAfterCoalesce(pb)), n.metadata, n.pos);
                 case EDefp(name, args, guards, body):
-                    makeASTWithMeta(EDefp(name, args, guards, processBlock(body)), n.metadata, n.pos);
+                    var pb = processBlock(body);
+                    makeASTWithMeta(EDefp(name, args, guards, rewriteFieldsAfterCoalesce(pb)), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -1849,6 +1947,16 @@ class BinderTransforms {
                     switch [left.def, right.def] {
                         case [_, ENil]: makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [left]));
                         case [ENil, _]: makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [right]));
+                        default: n;
+                    }
+                case EBinary(NotEqual, left2, right2):
+                    switch [left2.def, right2.def] {
+                        case [_, ENil]:
+                            var inner = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [left2]));
+                            makeAST(ElixirASTDef.EUnary(Not, inner));
+                        case [ENil, _]:
+                            var inner2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [right2]));
+                            makeAST(ElixirASTDef.EUnary(Not, inner2));
                         default: n;
                     }
                 default:

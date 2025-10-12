@@ -7,7 +7,7 @@ Professional task execution framework designed specifically for **Reflaxe compil
 
 ### 0. Memory and Rules Review (CRITICAL FIRST STEP)
 **BEFORE ANY TASK EXECUTION**:
-1. **Review CLAUDE.md**: Always check `/CLAUDE.md` for critical development rules
+1. **Review AGENTS.md**: Always check `/AGENTS.md` for critical development rules
 2. **Review Memory Files**: Check `.llm-memory/` directory for relevant context
 3. **Apply Context7 Rule**: When user requests code examples, setup/configuration, or library/API documentation, use Context7 tools:
    - Use `resolve-library-id` to find the library
@@ -204,7 +204,7 @@ Before marking any task complete:
   - **User Documentation Updated**: Feature guides, API references, examples
   - **Task History Documented**: TASK_HISTORY.md updated with session summary
   - **Technical Documentation**: Architecture changes and decisions captured
-- [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Implementation details captured in CLAUDE.md
+- [ ] **🧠 AUTOMATIC MEMORY UPDATE** - Implementation details captured in AGENTS.md
 - [ ] **📊 PERFORMANCE DATA CAPTURED** - Benchmark results and timing data recorded
 
 ### 6. Compiler Testing Implementation Strategy
@@ -339,7 +339,7 @@ end
 - [ ] **🚨 FULL TEST SUITE PASSES**: Run `npm test` and verify all layers pass
 - [ ] **🚨 NO REGRESSIONS**: All previously passing tests must still pass
 - [ ] **📚 END-USER DOCS UPDATED**: User-facing features documented in guides
-- [ ] **🎯 DRY COMPLIANCE**: No duplicate content between CLAUDE.md and user docs
+- [ ] **🎯 DRY COMPLIANCE**: No duplicate content between AGENTS.md and user docs
 
 ### Success Metrics (Compiler-Focused)
 - **Compilation Confidence**: Haxe→Elixir transformation thoroughly validated

@@ -338,7 +338,7 @@ end
 
 1. ✅ **CRITICAL**: Add test validation - test exists, confirms failure
 2. ⚠️ **HIGH**: Implement Phase 1 band-aid fix - unblock development
-3. 📋 **MEDIUM**: Document architecture decision in CLAUDE.md
+3. 📋 **MEDIUM**: Document architecture decision in AGENTS.md
 4. 🔄 **LONG-TERM**: Implement Phase 2 proper fix - align with Reflaxe patterns
 
 ---

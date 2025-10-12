@@ -44,8 +44,8 @@ class NoOpArithmeticCleanup {
                 case EBlock(stmts):
                     var filtered: Array<ElixirAST> = [];
                     for (s in stmts) switch (s.def) {
-                        case EBinary(Add, {def: EInteger(0)}, {def: EInteger(1)}):
-                            // drop
+                        case EBinary(Add, {def: EInteger(_)} | {def: EFloat(_)}, {def: EInteger(_)} | {def: EFloat(_)}):
+                            // drop numeric constant-only arithmetic
                         default:
                             filtered.push(s);
                     }
@@ -58,4 +58,3 @@ class NoOpArithmeticCleanup {
 }
 
 #end
-

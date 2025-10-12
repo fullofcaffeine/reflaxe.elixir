@@ -107,6 +107,10 @@ class ModuleBuilder {
         #end
 
         var moduleName = extractModuleName(classType);
+        // Register module globally for cross-file qualification
+        try {
+            reflaxe.elixir.ElixirCompiler.registerModule(moduleName);
+        } catch (e:Dynamic) {}
         var attributes: Array<EAttribute> = [];
 
         // Use provided metadata or create empty object

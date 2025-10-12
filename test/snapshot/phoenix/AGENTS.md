@@ -1,6 +1,6 @@
 # Phoenix Test Suite Context for AI Assistants
 
-> **Parent Context**: See [/test/CLAUDE.md](/test/CLAUDE.md) for overall testing infrastructure
+> **Parent Context**: See [/test/AGENTS.md](/test/AGENTS.md) for overall testing infrastructure
 
 ## 🎯 Purpose of Phoenix Tests
 

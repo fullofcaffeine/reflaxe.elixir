@@ -58,7 +58,8 @@
     "clean": "npm run test:clean",
     "test:help": "scripts/test-runner.sh --help",
     "clean:generated": "bash -c 'echo \"Cleaning compiler-generated files...\"; for dir in examples/*/lib test/snapshot/*/out test/snapshot/*/intended; do if [ -f \"$dir/_GeneratedFiles.json\" ]; then echo \"Processing $dir\"; (cd \"$dir\" && jq -r \".filesGenerated[]\" _GeneratedFiles.json 2>/dev/null | while read -r file; do if [ -f \"$file\" ]; then echo \"  Removing: $file\"; rm \"$file\"; fi; done); elif [ -d \"$dir\" ]; then echo \"Cleaning $dir (no manifest)\"; find \"$dir\" -name \"*.ex\" -type f -delete 2>/dev/null; fi; done; echo \"✓ Cleaned all compiler-generated files\"'",
-    "setup": "lix scope create && lix install haxelib:reflaxe"
+    "setup": "lix scope create && lix install haxelib:reflaxe",
+    "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh"
   },
   "engines": {
     "node": ">=14.0.0"
@@ -102,4 +103,3 @@
     ]
   }
 }
-    "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh",

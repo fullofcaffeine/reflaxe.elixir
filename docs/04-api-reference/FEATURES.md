@@ -120,7 +120,7 @@ This document provides the current status of all major features in Reflaxe.Elixi
 - **Auto-Generation**: Automatic API documentation extraction from compiled code
 - **Pattern Detection**: Intelligent pattern extraction from real usage in examples
 - **Template System**: Comprehensive template-based documentation generation
-- **AI Instructions**: Project-specific CLAUDE.md generation with context
+- **AI Instructions**: Project-specific AGENTS.md generation with context
 - **Foundation Docs**: Complete Haxe and Reflaxe.Elixir guides for LLM agents
 
 ### 16. Project Generator
@@ -226,4 +226,4 @@ All production features meet or exceed the following performance requirements:
 - **Performance Validation**: All features well below performance targets
 - **Integration Testing**: Complete dual-ecosystem validation (Haxe→Elixir→BEAM)
 
-For detailed implementation notes and development context, see the main project documentation in CLAUDE.md.
+For detailed implementation notes and development context, see the main project documentation in AGENTS.md.

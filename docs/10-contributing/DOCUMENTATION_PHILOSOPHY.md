@@ -6,7 +6,7 @@ This document explains the documentation architecture, the purpose of each docum
 ## Documentation Categories
 
 ### 1. Agent Instruction Manual
-**File**: `CLAUDE.md`
+**File**: `AGENTS.md`
 - **Purpose**: Central truth source for AI agents working on the project
 - **Size Limit**: Must stay under 40k characters for optimal performance  
 - **Content**: Essential instructions, critical rules, architecture references
@@ -94,8 +94,8 @@ This document explains the documentation architecture, the purpose of each docum
 - **Remove fixed TODOs and resolved items** - Keep only current actionable items
 - **Documentation updates are part of implementation** - Update docs when changing code
 
-### 2. CLAUDE.md Maintenance
-- **Size Check**: Run `wc -c CLAUDE.md` after major updates
+### 2. AGENTS.md Maintenance
+- **Size Check**: Run `wc -c AGENTS.md` after major updates
 - **Target**: Keep under 40,000 characters
 - **Actions when over limit**:
   1. Move historical content to TASK_HISTORY.md
@@ -157,7 +157,7 @@ class CounterLive {
 ## Documentation Review Checklist
 
 Before committing documentation changes:
-- [ ] Is CLAUDE.md still under 40k characters?
+- [ ] Is AGENTS.md still under 40k characters?
 - [ ] Are all cross-references valid?
 - [ ] Do code examples compile/work?
 - [ ] Is the content in the right file?

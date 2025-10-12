@@ -144,7 +144,7 @@ Haxe TypedExpr (do-while)
 
 ### 3.2 Related Known Issues
 
-From `/src/reflaxe/elixir/ast/CLAUDE.md`:
+From `/src/reflaxe/elixir/ast/AGENTS.md`:
 
 > **⚠️ KNOWN ISSUE: Switch Side-Effects in Loops (October 2025)**
 >
@@ -367,7 +367,7 @@ end
 ### Step 5: Documentation (30 minutes)
 1. Document the fix in `/docs/03-compiler-development/`
 2. Add regression test to prevent recurrence
-3. Update CLAUDE.md with lessons learned
+3. Update AGENTS.md with lessons learned
 
 ---
 
@@ -382,7 +382,7 @@ end
   - `src/reflaxe/elixir/ast/ElixirASTTransformer.hx`
 
 ### Documentation
-- `/src/reflaxe/elixir/ast/CLAUDE.md` - Known Issues section
+- `/src/reflaxe/elixir/ast/AGENTS.md` - Known Issues section
 - `/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md` - Related bug fixes
 - `/test/snapshot/regression/SwitchSideEffects/` - Existing regression test
 

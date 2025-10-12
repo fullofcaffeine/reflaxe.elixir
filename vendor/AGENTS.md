@@ -1,6 +1,6 @@
 # Vendor Directory Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions
 
 ## 📦 Vendored Dependencies
 

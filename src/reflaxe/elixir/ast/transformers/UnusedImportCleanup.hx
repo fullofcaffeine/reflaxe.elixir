@@ -88,3 +88,23 @@ class UnusedImportCleanup {
 }
 
 #end
+/**
+ * UnusedImportCleanup
+ *
+ * WHAT
+ * - Removes unused `import`/`alias` statements introduced during transformation.
+ *
+ * WHY
+ * - Prevents compiler warnings and keeps generated modules tidy.
+ *
+ * HOW
+ * - Scans module bodies for references to imported/aliased names and drops those
+ *   not referenced.
+ *
+ * EXAMPLES
+ * Before:
+ *   import Foo.Bar
+ *   # (no usage)
+ * After:
+ *   # import removed
+ */

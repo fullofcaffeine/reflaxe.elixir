@@ -1,6 +1,6 @@
 # Standard Library Development Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
 
 ## 🔗 Shared AI Context (Import System)
 

@@ -38,6 +38,15 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Transparent Bridge Variables**: When compiler-generated variables are needed (like `g` for switch expressions), add comments explaining their purpose
 - **🔥 Pragmatic Stdlib Implementation**: Use `__elixir__()` for efficient native stdlib - [see Standard Library Philosophy](#standard-library-philosophy--pragmatic-native-implementation)
 
+### No-Dynamic Policy (Hard Rule)
+- Do not introduce `Dynamic` types in new compiler code, stdlib externs, or tests unless absolutely unavoidable at boundary integration points.
+- Prefer precise types in Haxe signatures and Elixir outputs. Avoid using `Dynamic` as a workaround for typing mismatches.
+- If a type mismatch occurs during a transform, fix the transform to produce correctly typed Elixir (and adjust Haxe signatures) instead of widening to `Dynamic`.
+- Snapshot tests must be strictly typed: do not change return types to `Dynamic` to placate compilation; correct the logic or test inputs instead.
+- Exceptions (must be documented):
+  - External APIs that are inherently dynamic (e.g., Map-like payloads) may use `Dynamic` locally, but public surfaces should remain typed.
+  - Transitional refactors require an issue and a TODO linked to the proper fix — not allowed for 1.0 scope.
+
 ## 📚 Complete Documentation Index
 
 **All documentation is organized in [`docs/`](docs/) - Always check here first for comprehensive information.**
@@ -56,7 +65,7 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 
 #### **Working on the Compiler?**
 → **[docs/03-compiler-development/](docs/03-compiler-development/)** - Specialized compiler development context
-- [Compiler Development CLAUDE.md](docs/03-compiler-development/CLAUDE.md) - **AI context for compiler work**
+- [Compiler Development AGENTS.md](docs/03-compiler-development/AGENTS.md) - **AI context for compiler work**
 - [Architecture Overview](docs/03-compiler-development/architecture.md) - How the compiler works
 - [Testing Infrastructure](docs/03-compiler-development/testing-infrastructure.md) - Snapshot testing system
 
@@ -666,7 +675,7 @@ Issue with vendor code → Can I fix in compiler? → YES → Fix in compiler
                       Is this fundamental? → YES → Modify vendor (document WHY)
 ```
 
-**See**: [`vendor/CLAUDE.md`](vendor/CLAUDE.md) - Complete vendor modification policy and guidelines
+**See**: [`vendor/AGENTS.md`](vendor/AGENTS.md) - Complete vendor modification policy and guidelines
 
 ## 🚀 Essential Commands
 
@@ -726,28 +735,28 @@ npx haxe build-server.hxml -D eval-stack -D debug_pattern_matching -D debug_expr
 npx haxe build-server.hxml -D eval-debugger
 ```
 
-## CLAUDE.md Maintenance Rule ⚠️
+## AGENTS.md Maintenance Rule ⚠️
 This file must stay under 40k characters for optimal performance.
 - Keep only essential agent instructions  
 - Use imports from `docs/claude-includes/` for shared content
 - Move detailed content to appropriate [docs/](docs/) sections
 - Reference docs instead of duplicating content
-- Review size after major updates: `wc -c CLAUDE.md`
+- Review size after major updates: `wc -c AGENTS.md`
 
-### ❌ NEVER Add Detailed Technical Content to Root CLAUDE.md
+### ❌ NEVER Add Detailed Technical Content to Root AGENTS.md
 When documenting new features, fixes, or insights:
-1. **Use the nearest CLAUDE.md** - Save insights and directives to the nearest CLAUDE.md dir-wise (e.g., `src/reflaxe/elixir/ast/CLAUDE.md` for AST issues)
+1. **Use the nearest AGENTS.md** - Save insights and directives to the nearest AGENTS.md dir-wise (e.g., `src/reflaxe/elixir/ast/AGENTS.md` for AST issues)
 2. **Create or update appropriate docs** in `docs/` directory for general documentation
-3. **Add only a brief reference** in root CLAUDE.md with link to full documentation  
-4. **Check character count** before and after: `wc -c CLAUDE.md`
-5. **If over 40k**, identify and move non-essential content to subdirectory CLAUDE.md files
+3. **Add only a brief reference** in root AGENTS.md with link to full documentation  
+4. **Check character count** before and after: `wc -c AGENTS.md`
+5. **If over 40k**, identify and move non-essential content to subdirectory AGENTS.md files
 
-### 📍 CLAUDE.md Hierarchy
-- **Root CLAUDE.md** (`/CLAUDE.md`) - Project-wide conventions, navigation, critical rules only
-- **Module CLAUDE.md** (`src/reflaxe/elixir/CLAUDE.md`) - Compiler-specific development guidance
-- **Component CLAUDE.md** (`src/reflaxe/elixir/ast/CLAUDE.md`) - AST-specific patterns and limitations
-- **Test CLAUDE.md** (`test/CLAUDE.md`) - Testing infrastructure and patterns
-- **Example CLAUDE.md** (`examples/todo-app/CLAUDE.md`) - Application-specific patterns
+### 📍 AGENTS.md Hierarchy
+- **Root AGENTS.md** (`/AGENTS.md`) - Project-wide conventions, navigation, critical rules only
+- **Module AGENTS.md** (`src/reflaxe/elixir/AGENTS.md`) - Compiler-specific development guidance
+- **Component AGENTS.md** (`src/reflaxe/elixir/ast/AGENTS.md`) - AST-specific patterns and limitations
+- **Test AGENTS.md** (`test/AGENTS.md`) - Testing infrastructure and patterns
+- **Example AGENTS.md** (`examples/todo-app/AGENTS.md`) - Application-specific patterns
 
 ## 📁 Project Directory Structure Map
 
@@ -772,7 +781,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 ├── docs/                             # 📚 ALL DOCUMENTATION
 │   ├── 01-getting-started/           # Setup and quickstart
 │   ├── 02-user-guide/                # Application development
-│   ├── 03-compiler-development/      # Compiler contributor docs (with CLAUDE.md)
+│   ├── 03-compiler-development/      # Compiler contributor docs (with AGENTS.md)
 │   ├── 04-api-reference/             # Technical references
 │   ├── 05-architecture/              # System design
 │   ├── 06-guides/                    # How-to guides and troubleshooting
@@ -820,7 +829,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 1. **ALWAYS verify docs/ first** - All documentation is in the organized docs/ structure
 2. **USE THE DIRECTORY MAP** - Navigate correctly using the structure above
 3. **Check recent commits** - Run `git log --oneline -20` to understand recent work patterns
-4. **Use specialized CLAUDE.md** - Check [docs/03-compiler-development/CLAUDE.md](docs/03-compiler-development/CLAUDE.md) for compiler work
+4. **Use specialized AGENTS.md** - Check [docs/03-compiler-development/AGENTS.md](docs/03-compiler-development/AGENTS.md) for compiler work
 5. **FOLLOW DOCUMENTATION GUIDE** - See [docs/](docs/) for comprehensive guides
 6. **Check Haxe documentation** when needed:
    - https://api.haxe.org/ - Latest API reference
@@ -2657,11 +2666,11 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Postgrex.TypeManager Race Condition**: When using `mix phx.server`, may encounter "unknown registry: Postgrex.TypeManager" errors due to a race condition in Phoenix server startup. Workaround: Use `iex -S mix` to start in interactive mode, or ensure database is configured correctly. The application works correctly in interactive mode and with `mix run`.
 
 ## Recently Resolved Issues ✅
-- **Empty If-Expression and Switch Side-Effects (October 2025)**: PARTIAL FIX - Bug #1 (empty if-expression invalid syntax) FIXED by correcting `isSimpleExpression()` logic in ElixirASTPrinter.hx. Empty blocks now properly generate block syntax with explicit `nil`. Bug #2 (switch cases disappearing inside loops) ROOT CAUSE IDENTIFIED as pipeline coordination issue between LoopBuilder and SwitchBuilder - not yet fixed but comprehensive investigation complete. Created regression tests for both patterns. (see [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) and [`src/reflaxe/elixir/ast/CLAUDE.md`](src/reflaxe/elixir/ast/CLAUDE.md))
+- **Empty If-Expression and Switch Side-Effects (October 2025)**: PARTIAL FIX - Bug #1 (empty if-expression invalid syntax) FIXED by correcting `isSimpleExpression()` logic in ElixirASTPrinter.hx. Empty blocks now properly generate block syntax with explicit `nil`. Bug #2 (switch cases disappearing inside loops) ROOT CAUSE IDENTIFIED as pipeline coordination issue between LoopBuilder and SwitchBuilder - not yet fixed but comprehensive investigation complete. Created regression tests for both patterns. (see [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) and [`src/reflaxe/elixir/ast/AGENTS.md`](src/reflaxe/elixir/ast/AGENTS.md))
 - **Dead Code Elimination for Abstract Operators (September 2025)**: SOLUTION - Fixed unused function warnings in Date_Impl_ and other abstract types by enabling DCE (`-dce full`). Abstract types with `@:op` metadata generate ALL operator helper functions, but DCE removes unused ones before transpilation. Reduces Date_Impl_ from 140 lines to 2 lines when operators aren't used. This is the standard solution - no compiler changes needed. (see [`docs/03-compiler-development/DCE_AND_ABSTRACT_OPERATORS.md`](docs/03-compiler-development/DCE_AND_ABSTRACT_OPERATORS.md))
 - **Unused Parameter Detection (September 2025)**: IMPLEMENTATION - Added UsageDetector helper class to analyze parameter usage in function bodies. Function parameters now correctly receive underscore prefixes when unused, eliminating Elixir compiler warnings. Uses tempVarRenameMap for consistent naming between signatures and bodies.
 - **Phoenix.Presence Circular Fix Pattern (January 2025)**: MAJOR FIX - Resolved recurring Phoenix.Tracker.track/5 FunctionClauseError that kept resurfacing in git history. Root cause: Phoenix.Tracker expects PID as first argument, not socket. Solution: Enhanced PresenceMacro to generate proper self() injection in all presence methods (trackSimple, updateSimple, untrackSimple, listSimple). Added @:presenceTopic annotation support for type-safe topic configuration. Eliminated all __elixir__ usage from TodoPresence by providing comprehensive macro-generated methods. Git history showed this issue was "fixed" multiple times but kept breaking - now properly resolved at macro level with test coverage.
-- **Idiomatic Enum Pattern Matching (September 2025)**: MAJOR IMPROVEMENT - Compiler now generates idiomatic Elixir pattern matching with atoms `{:created, content}` instead of integer index checking `elem(msg, 0)`. This makes generated code much more readable and Elixir-like. Fixed TEnumParameter extraction for ignored parameters to prevent runtime errors. (see [`src/reflaxe/elixir/ast/CLAUDE.md`](src/reflaxe/elixir/ast/CLAUDE.md#tenum-parameter-extraction-bug-fix-september-2025))
+- **Idiomatic Enum Pattern Matching (September 2025)**: MAJOR IMPROVEMENT - Compiler now generates idiomatic Elixir pattern matching with atoms `{:created, content}` instead of integer index checking `elem(msg, 0)`. This makes generated code much more readable and Elixir-like. Fixed TEnumParameter extraction for ignored parameters to prevent runtime errors. (see [`src/reflaxe/elixir/ast/AGENTS.md`](src/reflaxe/elixir/ast/AGENTS.md#tenum-parameter-extraction-bug-fix-september-2025))
 - **Major Loop Compilation Refactoring (August 2025)**: Reduced loop compilation from 10,668 lines across 10+ files to a single 334-line UnifiedLoopCompiler using TDD approach. Eliminated complex Y-combinator patterns in favor of simple recursive functions. Fixed g_array variable mismatch bugs. (see commit c85745e)
 - **Array Desugaring & Y Combinator Patterns**: Discovered how Haxe desugars array.filter/map into TBlock/TWhile patterns and implemented detection framework (see [`docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md`](docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md))
 - **Untyped Usage Violations**: Eliminated all unnecessary `untyped` usage in compiler code (VariableCompiler, OperatorCompiler, ControlFlowCompiler) for better type safety and IDE support
@@ -2718,7 +2727,7 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 - **Development Workflow**: [docs/01-getting-started/development-workflow.md](docs/01-getting-started/development-workflow.md)
 - **Quick Patterns**: [docs/07-patterns/quick-start-patterns.md](docs/07-patterns/quick-start-patterns.md)
 - **Troubleshooting**: [docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)
-- **Compiler Development**: [docs/03-compiler-development/CLAUDE.md](docs/03-compiler-development/CLAUDE.md)
+- **Compiler Development**: [docs/03-compiler-development/AGENTS.md](docs/03-compiler-development/AGENTS.md)
 
 **⚡ Critical Standard Library Implementation Guides**:
 - **Stdlib Implementation Guide**: [`docs/03-compiler-development/STDLIB_IMPLEMENTATION_GUIDE.md`](docs/03-compiler-development/STDLIB_IMPLEMENTATION_GUIDE.md) - Definitive guide for implementing stdlib with idiomatic output

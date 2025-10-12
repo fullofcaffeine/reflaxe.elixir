@@ -1,6 +1,6 @@
 # Pattern Analysis Guide
 
-> **Parent Context**: See [CLAUDE.md](CLAUDE.md) for compiler development context
+> **Parent Context**: See [AGENTS.md](AGENTS.md) for compiler development context
 
 This guide covers the comprehensive pattern detection system used in Reflaxe.Elixir to identify and transform AST patterns for optimal Elixir code generation.
 

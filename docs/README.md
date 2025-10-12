@@ -87,7 +87,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
 - [Code Style](10-contributing/code-style.md) - Coding standards
-- [Updating CLAUDE.md](10-contributing/updating-claude-md.md) - AI context and unified documentation strategy
+- [Updating AGENTS.md](10-contributing/updating-agents-md.md) - AI context and unified documentation strategy
 - [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation
 - [LLM Documentation Index](10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md) - Complete 232-file navigation index
 - [Commit Conventions](10-contributing/commit-conventions.md) - Git conventions
@@ -95,10 +95,10 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 
 ## 🤖 AI Assistant Integration
 
-This documentation is optimized for AI assistant development with **CLAUDE.md** files providing specialized context:
+This documentation is optimized for AI assistant development with **AGENTS.md** files providing specialized context:
 
-- **[CLAUDE.md](CLAUDE.md)** - Main AI instructions for documentation navigation
-- **[03-compiler-development/CLAUDE.md](03-compiler-development/CLAUDE.md)** - Compiler-specific AI context
+- **[AGENTS.md](AGENTS.md)** - Main AI instructions for documentation navigation
+- **[03-compiler-development/AGENTS.md](03-compiler-development/AGENTS.md)** - Compiler-specific AI context
 
 ## 🔗 Quick Links
 

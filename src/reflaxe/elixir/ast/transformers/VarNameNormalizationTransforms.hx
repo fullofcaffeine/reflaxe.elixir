@@ -144,3 +144,22 @@ class VarNameNormalizationTransforms {
 }
 
 #end
+/**
+ * VarNameNormalizationTransforms
+ *
+ * WHAT
+ * - Normalizes variable references from camelCase to snake_case when a
+ *   corresponding snake_case binding exists in scope.
+ *
+ * WHY
+ * - Haxe sources use camelCase; Elixir idiomatically uses snake_case.
+ *   Normalizing references prevents undefined variable errors and warnings.
+ *
+ * HOW
+ * - Within a function (EDef/EDefp), collect declared binders; rewrite EVar
+ *   names to their snake_case equivalent when that binder exists.
+ *
+ * EXAMPLES
+ * Before: presenceSocket -> undefined
+ * After:  presence_socket -> uses declared binder
+ */

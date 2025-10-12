@@ -1,4 +1,4 @@
-# Updating CLAUDE.md Files - Unified Documentation Strategy
+# Updating AGENTS.md Files - Unified Documentation Strategy
 
 ## 🤖 Philosophy: User Docs = AI Context
 
@@ -10,18 +10,18 @@
 - **Better documentation** - AI context forces clarity and completeness
 - **Efficient maintenance** - Update once, benefits everyone
 
-## 📋 CLAUDE.md Architecture Overview
+## 📋 AGENTS.md Architecture Overview
 
 ### Current Structure (8 files)
 ```
-./CLAUDE.md                               # 13.6K - Project root context
-./docs/CLAUDE.md                          # 8.1K  - Documentation navigation
-./docs/03-compiler-development/CLAUDE.md  # 7.4K  - Compiler-specific context
-./docs/08-roadmap/CLAUDE.md               # 2.8K  - PRD and planning context
-./examples/todo-app/CLAUDE.md             # 22.9K - Example integration context
-./src/reflaxe/elixir/CLAUDE.md            # 7.9K  - Compiler source context
-./std/CLAUDE.md                           # 17.9K - Standard library context
-./test/CLAUDE.md                          # 5.5K  - Testing context
+./AGENTS.md                               # 13.6K - Project root context
+./docs/AGENTS.md                          # 8.1K  - Documentation navigation
+./docs/03-compiler-development/AGENTS.md  # 7.4K  - Compiler-specific context
+./docs/08-roadmap/AGENTS.md               # 2.8K  - PRD and planning context
+./examples/todo-app/AGENTS.md             # 22.9K - Example integration context
+./src/reflaxe/elixir/AGENTS.md            # 7.9K  - Compiler source context
+./std/AGENTS.md                           # 17.9K - Standard library context
+./test/AGENTS.md                          # 5.5K  - Testing context
 ```
 
 ### Import System (Anthropic Best Practice)
@@ -32,9 +32,9 @@
 @docs/claude-includes/code-style.md
 ```
 
-## 🎯 When to Update CLAUDE.md vs Documentation
+## 🎯 When to Update AGENTS.md vs Documentation
 
-### Update CLAUDE.md When:
+### Update AGENTS.md When:
 - **AI behavior needs changing** - Different responses or priorities
 - **New development patterns** - Workflow changes or best practices  
 - **Context-specific rules** - Directory-specific instructions
@@ -47,7 +47,7 @@
 - **Historical records** - Implementation history and decisions
 
 ### Update Both When:
-- **Core principles** - Fundamental project rules (import into CLAUDE.md)
+- **Core principles** - Fundamental project rules (import into AGENTS.md)
 - **Common workflows** - Patterns used by both humans and AI
 - **Quality standards** - Code style and testing requirements
 
@@ -55,8 +55,8 @@
 
 ### Character Limit Management (40K per file)
 ```bash
-# Check all CLAUDE.md file sizes
-for file in $(find . -name "CLAUDE.md" -type f); do 
+# Check all AGENTS.md file sizes
+for file in $(find . -name "AGENTS.md" -type f); do 
     echo "$file: $(wc -c < "$file") chars"; 
 done | sort
 ```
@@ -64,23 +64,23 @@ done | sort
 ### Import Strategy
 1. **Extract shared content** to `docs/claude-includes/`
 2. **Use imports** instead of duplicating principles
-3. **Keep context-specific** content in local CLAUDE.md
+3. **Keep context-specific** content in local AGENTS.md
 4. **Monitor character counts** after changes
 
 ### Hierarchy and Precedence
 ```
-Root CLAUDE.md (project-wide rules)
+Root AGENTS.md (project-wide rules)
 ├── @docs/claude-includes/core-principles.md
 ├── Context-specific overrides
-└── Child CLAUDE.md files inherit and extend
+└── Child AGENTS.md files inherit and extend
 ```
 
-## 📝 Template for New CLAUDE.md Files
+## 📝 Template for New AGENTS.md Files
 
 ```markdown
 # [Context Name] - AI Instructions
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide rules
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide rules
 
 ## Import Shared Components
 @docs/claude-includes/compiler-principles.md
@@ -104,7 +104,7 @@ Root CLAUDE.md (project-wide rules)
 - ✅ Extract framework integration patterns
 
 ### Phase 2: Implement Imports  
-- Update root CLAUDE.md to use imports
+- Update root AGENTS.md to use imports
 - Refactor large files (todo-app, std) to use shared components
 - Add common commands sections
 
@@ -132,3 +132,4 @@ Root CLAUDE.md (project-wide rules)
 ---
 
 **Remember**: Every documentation update should ask: "Does this help both humans AND AI assistants work effectively with our project?"
+

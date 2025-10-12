@@ -277,7 +277,7 @@ var result = BuilderUtils.compileWithContext(expr, context);
 - **Original Bug Report**: infrastructure_variable_substitution test
 - **Fix Commit**: [To be filled after commit]
 - **Related Pattern**: TypedExpr Preprocessor (also preserves context)
-- **See Also**: `/docs/03-compiler-development/CLAUDE.md` - Compiler development context
+- **See Also**: `/docs/03-compiler-development/AGENTS.md` - Compiler development context
 
 ---
 

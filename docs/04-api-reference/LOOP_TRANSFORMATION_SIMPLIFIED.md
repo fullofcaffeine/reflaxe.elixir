@@ -135,6 +135,6 @@ All 49 snapshot tests pass with the simplified implementation, confirming that t
 
 ## Related Documentation
 
-- [Compiler Development Best Practices](../CLAUDE.md) - See principles #9 and #10
+- [Compiler Development Best Practices](../AGENTS.md) - See principles #9 and #10
 - [Loop Optimization Lessons](LOOP_OPTIMIZATION_LESSONS.md) - Previous iteration documentation
 - [Compiler Patterns](COMPILER_PATTERNS.md) - General patterns and approaches

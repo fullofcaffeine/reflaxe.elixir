@@ -113,6 +113,6 @@ As of August 2025:
 
 ## References
 
-- [CLAUDE.md](/CLAUDE.md) - Architectural principles
+- [AGENTS.md](/AGENTS.md) - Architectural principles
 - [ElixirASTBuilder.hx](../../src/reflaxe/elixir/ast/ElixirASTBuilder.hx) - Where transformations were removed
 - [Array.hx](../../std/Array.hx) - Current stdlib implementation

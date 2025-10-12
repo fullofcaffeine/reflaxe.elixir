@@ -399,7 +399,7 @@ var doubled = [for (v in values) v * 2];
 
 ### Architectural Contradiction
 
-From `/CLAUDE.md`:
+From `/AGENTS.md`:
 
 > **⚠️ CRITICAL: Compiler Optimization Flags - DO NOT USE `-D analyzer-optimize`**
 >
@@ -543,7 +543,7 @@ var valid = [for (item in items) if (validate(item)) transform(item)];
 **DON'T:**
 - ❌ Try to force comprehension generation for constant ranges
 - ❌ Assume static lists are "wrong" or "non-idiomatic"
-- ❌ Use `-D analyzer-optimize` unless necessary (see CLAUDE.md)
+- ❌ Use `-D analyzer-optimize` unless necessary (see AGENTS.md)
 
 ### FAQ
 
@@ -599,7 +599,7 @@ Complete research on reconstruction feasibility is archived in:
 
 ### Internal Documentation
 
-- [/CLAUDE.md](/CLAUDE.md) - Compiler optimization flags guidance
+- [/AGENTS.md](/AGENTS.md) - Compiler optimization flags guidance
 - [/docs/03-compiler-development/testing-infrastructure.md](/docs/03-compiler-development/testing-infrastructure.md) - Test methodology
 - [/src/reflaxe/elixir/ast/transformers/LoopTransforms.hx](/src/reflaxe/elixir/ast/transformers/LoopTransforms.hx) - Implementation
 

@@ -1,6 +1,6 @@
 # Documentation Navigation & Context for AI Assistants
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for complete project context and development principles
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for complete project context and development principles
 
 ## 🤖 Documentation Specialist Identity
 
@@ -14,7 +14,7 @@ This documentation follows a **progressive disclosure pattern** with numbered se
 docs/
 ├── 01-getting-started/     # New user onboarding
 ├── 02-user-guide/          # Application development  
-├── 03-compiler-development/ # Compiler contributor docs (has own CLAUDE.md)
+├── 03-compiler-development/ # Compiler contributor docs (has own AGENTS.md)
 ├── 04-api-reference/       # Technical references
 ├── 05-architecture/        # System design
 ├── 06-guides/              # Task-oriented how-tos
@@ -54,7 +54,7 @@ docs/
 - **Mix tasks** → [04-api-reference/mix-tasks.md](04-api-reference/mix-tasks.md)
 
 ### "How does the compiler...?" → Compiler Development
-**Special Context**: Use [03-compiler-development/CLAUDE.md](03-compiler-development/CLAUDE.md) for compiler-specific AI context
+**Special Context**: Use [03-compiler-development/AGENTS.md](03-compiler-development/AGENTS.md) for compiler-specific AI context
 
 - **Architecture overview** → [03-compiler-development/architecture.md](03-compiler-development/architecture.md)
 - **AST processing** → [03-compiler-development/ast-processing.md](03-compiler-development/ast-processing.md)
@@ -140,7 +140,7 @@ docs/
 **LLM Documentation Maintenance**:
 ```
 @10-contributing/llm-integration/*.md      # LLM documentation guides
-@10-contributing/updating-claude-md.md     # CLAUDE.md maintenance
+@10-contributing/updating-agents-md.md     # AGENTS.md maintenance
 ```
 
 **Complete Reference Index**:
@@ -189,7 +189,7 @@ docs/
 ### ✅ Completed Sections
 - **01-getting-started/**: Installation, development workflow, project structure
 - **07-patterns/**: Quick-start patterns with copy-paste examples
-- **03-compiler-development/**: Specialized CLAUDE.md for compiler context
+- **03-compiler-development/**: Specialized AGENTS.md for compiler context
 
 ### 🔄 In Progress
 - **05-architecture/**: Migrating from `/documentation/architecture/`
@@ -212,9 +212,9 @@ docs/
 5. **Validate with troubleshooting** - Common issues are well-documented
 
 ### Context Switching
-- **Main project context**: [/CLAUDE.md](/CLAUDE.md) for project-wide rules
+- **Main project context**: [/AGENTS.md](/AGENTS.md) for project-wide rules
 - **Documentation context**: This file for navigation and content organization
-- **Compiler context**: [03-compiler-development/CLAUDE.md](03-compiler-development/CLAUDE.md) for compiler work
+- **Compiler context**: [03-compiler-development/AGENTS.md](03-compiler-development/AGENTS.md) for compiler work
 - **Inherit upward**: Each context includes the one above it
 
 ---

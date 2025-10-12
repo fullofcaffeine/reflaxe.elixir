@@ -1,6 +1,6 @@
 # Compiler Development Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions, architecture, and core development principles
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
 
 This file contains compiler-specific development guidance for agents working on the Reflaxe.Elixir transpiler source code.
 
@@ -88,7 +88,7 @@ src/reflaxe/elixir/
 ├── ElixirCompiler.hx             # Main transpiler (MUST stay <2000 lines)
 ├── ElixirPrinter.hx              # AST to string conversion
 ├── ElixirTyper.hx                # Type mapping (Haxe → Elixir)
-├── CLAUDE.md                     # THIS FILE - Keep updated!
+├── AGENTS.md                     # THIS FILE - Keep updated!
 └── helpers/                      # Specialized compilers (Single Responsibility)
     ├── AnnotationSystem.hx       # @:annotation processing system
     ├── ApplicationCompiler.hx   # @:application OTP app generation
@@ -131,7 +131,7 @@ src/reflaxe/elixir/
 2. Check if similar functionality exists
 3. If not found, ADD to CompilerUtilities, NOT to individual compilers
 4. Document with WHY/WHAT/HOW pattern
-5. Update this CLAUDE.md file
+5. Update this AGENTS.md file
 
 ## ⚠️ CRITICAL: CallExprBuilder Duplication and self() Bug (January 2025)
 

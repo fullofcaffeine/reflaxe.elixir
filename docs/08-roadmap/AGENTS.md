@@ -13,7 +13,7 @@ This directory contains Product Requirements Documents (PRDs) for Reflaxe.Elixir
 ### 1. PRD Reading Priority
 1. Read ACTIVE_PRD.md for current priorities
 2. Check archive/ for historical context if needed
-3. Cross-reference with main CLAUDE.md for global rules
+3. Cross-reference with main AGENTS.md for global rules
 
 ### 2. PRD Updates
 - **Never modify ACTIVE_PRD.md lightly** - it's the source of truth
@@ -73,8 +73,8 @@ A good PRD session results in:
 
 ## Context Integration
 
-This CLAUDE.md provides PRD-specific guidance. For general project context:
-- **Main CLAUDE.md**: Overall project rules and architecture
+This AGENTS.md provides PRD-specific guidance. For general project context:
+- **Main AGENTS.md**: Overall project rules and architecture
 - **documentation/**: Technical implementation guides
 - **src/**: Actual compiler implementation
 

@@ -1,6 +1,6 @@
 # AST Transformers Development Context
 
-> **Parent Context**: See [/src/reflaxe/elixir/ast/CLAUDE.md](/src/reflaxe/elixir/ast/CLAUDE.md) for AST-wide conventions
+> **Parent Context**: See [/src/reflaxe/elixir/ast/AGENTS.md](/src/reflaxe/elixir/ast/AGENTS.md) for AST-wide conventions
 
 This file contains transformer-specific development guidance to prevent common confusions and mistakes.
 
