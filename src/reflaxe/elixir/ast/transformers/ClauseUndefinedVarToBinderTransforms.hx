@@ -2,6 +2,24 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * ClauseUndefinedVarToBinderTransforms
+ *
+ * WHAT
+ * - Rewrites undefined variables in clause bodies to the corresponding
+ *   pattern binders when there is an unambiguous match.
+ *
+ * WHY
+ * - Avoids runtime errors by binding body references to known clause variables
+ *   without app-specific heuristics.
+ *
+ * HOW
+ * - If exactly one binder matches the undefined name (after snake_case normalization),
+ *   replace the reference with that binder.
+ *
+ * EXAMPLES
+ * Before: case {:ok, v} -> data end; After: case {:ok, v} -> v end
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;

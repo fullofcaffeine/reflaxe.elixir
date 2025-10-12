@@ -2,6 +2,31 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * CaseClauseFixTransforms
+ *
+ * WHAT
+ * - Repairs clause bodies after enum/tuple pattern extraction, removing redundant
+ *   elem(...) calls and fixing references to bound variables.
+ *
+ * WHY
+ * - Earlier extraction may leave artifacts like elem(_g, 1) even after binding.
+ *   Cleaning them improves readability and avoids unused temp warnings.
+ *
+ * HOW
+ * - Detect assigns like v = elem(_g, i) where v is already pattern-bound, and drop them.
+ *   Replace remaining elem(_g, i) with the bound variable.
+ *
+ * EXAMPLES
+ * Before:
+ *   case _g do
+ *     {_, id} -> id1 = elem(_g, 1); id1
+ *   end
+ * After:
+ *   case tuple do
+ *     {_, id} -> id
+ *   end
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;

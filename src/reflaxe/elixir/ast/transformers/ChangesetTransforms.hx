@@ -137,6 +137,62 @@ class ChangesetTransforms {
         });
     }
 
+    /**
+     * normalizeValidateFieldAtomPass
+     *
+     * WHAT
+     * - Rewrites the field argument of Ecto.Changeset.validate_* calls from
+     *   String.to_atom("field") or "field" to the literal atom :field when safe.
+     *
+     * WHY
+     * - Using runtime conversion hides intent and triggers typing warnings in strict
+     *   environments. Literal atoms are idiomatic and safer.
+     *
+     * HOW
+     * - Traverse the AST and match ERemoteCall(Ecto.Changeset, validate_*), replace
+     *   second argument if it is String.to_atom(EString) or EString with EAtom.
+     */
+    public static function normalizeValidateFieldAtomPass(ast: ElixirAST): ElixirAST {
+        function normalizeFieldArg(arg: ElixirAST): ElixirAST {
+            return switch (arg.def) {
+                // String.to_atom("field") -> :field
+                case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && f == "to_atom"):
+                    switch (fld.def) {
+                        case EString(s): makeAST(EAtom(s));
+                        default: arg;
+                    }
+                // String.to_existing_atom("field") -> :field
+                case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && f == "to_existing_atom"):
+                    switch (fld.def) {
+                        case EString(s): makeAST(EAtom(s));
+                        default: arg;
+                    }
+                // String.to_existing_atom(Macro.underscore("FieldName")) -> :field_name (for static strings)
+                case ERemoteCall({def: EVar(m1)}, f1, [{def: ECall(null, f2, [inner])}]) if (m1 == "String" && (f1 == "to_existing_atom" || f1 == "to_atom") && f2 == "Macro.underscore"):
+                    switch (inner.def) {
+                        case EString(s): makeAST(EAtom(s));
+                        default: arg;
+                    }
+                // Plain string literal -> atom
+                case EString(s): makeAST(EAtom(s));
+                default: arg;
+            }
+        }
+        function rewrite(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERemoteCall(mod, fn, args) if (isChangeset(mod) && (fn == "validate_required" || fn == "validate_length")):
+                    var a = args.copy();
+                    if (a.length >= 2) {
+                        a[1] = normalizeFieldArg(a[1]);
+                    }
+                    makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        }
+        return ElixirASTTransformer.transformNode(ast, rewrite);
+    }
+
     static function normalizeBody(body: ElixirAST): ElixirAST {
         // Determine canonical changeset variable name
         var csVar = findChangesetVar(body);
@@ -144,27 +200,8 @@ class ChangesetTransforms {
         trace('[ChangesetTransforms] findChangesetVar -> ' + Std.string(csVar));
         #end
         if (csVar == null) {
-            // Fallback: pick a sensible binder from declared names
-            var declared = new Array<String>();
-            ASTUtils.walk(body, function(n: ElixirAST) {
-                switch (n.def) {
-                    case EMatch(PVar(v), _): declared.push(v);
-                    case EBinary(Match, left, _):
-                        switch (left.def) { case EVar(v): declared.push(v); default: }
-                    default:
-                }
-            });
-            // Prefer 'changeset'
-            var pick: Null<String> = null;
-            for (n in declared) if (n == "changeset") { pick = n; break; }
-            // Else last _?thisN
-            if (pick == null) {
-                for (i in 0...declared.length) {
-                    var name = declared[declared.length - 1 - i];
-                    if (StringTools.startsWith(name, "this") || StringTools.startsWith(name, "_this")) { pick = name; break; }
-                }
-            }
-            csVar = pick != null ? pick : "cs";
+            // Fallback: enforce canonical binder name "cs" for changeset pipelines
+            csVar = "cs";
         }
         // 1) Rename `_opts = %{} | [..]` to `opts = ...`
         function renameOptsDecl(n: ElixirAST): ElixirAST {
@@ -192,11 +229,103 @@ class ChangesetTransforms {
                         // For validate_length, use the binder produced by validate_required assignment (binderAfterRequired)
                         var targetBinder = (fn == "validate_required") ? csVar : binderAfterRequired;
                         a[0] = makeAST(EVar(targetBinder));
+                        // Normalize field argument to atom when possible: String.to_atom("title") -> :title
+                        if (a.length >= 2) {
+                            a[1] = (function(arg: ElixirAST) {
+                                return switch (arg.def) {
+                                    case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && f == "to_atom"):
+                                        switch (fld.def) {
+                                            case EString(s): makeAST(EAtom(s));
+                                            default: arg;
+                                        }
+                                    case EString(s):
+                                        makeAST(EAtom(s));
+                                    default:
+                                        arg;
+                                }
+                            })(a[1]);
+                        }
                     }
                     
                     makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
                 default:
                     n;
+            }
+        }
+
+        // 3b) Canonicalize assignment LHS of change/validate_* to csVar (drop thisN temps)
+        inline function isThisTemp(name: String): Bool {
+            return name != null && (StringTools.startsWith(name, "this") || StringTools.startsWith(name, "_this"));
+        }
+        function rewriteAssignmentLhs(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EMatch(PVar(lhs), rhs) if (rhs != null):
+                    var isTarget = switch (rhs.def) {
+                        case ERemoteCall(m, f, _): isChangeset(m) && (f == "change" || f == "validate_required" || f == "validate_length");
+                        case EMatch(_, inner):
+                            switch (inner.def) {
+                                case ERemoteCall(m2, f2, _): isChangeset(m2) && (f2 == "change" || f2 == "validate_required" || f2 == "validate_length");
+                                default: false;
+                            }
+                        case EBinary(Match, _, r2):
+                            switch (r2.def) {
+                                case ERemoteCall(m3, f3, _): isChangeset(m3) && (f3 == "change" || f3 == "validate_required" || f3 == "validate_length");
+                                default: false;
+                            }
+                        default: false;
+                    };
+                    if (isTarget) {
+                        var newRhs = rhs;
+                        // Collapse nested chain: cs = (thisN = expr) -> cs = expr
+                        switch (rhs.def) {
+                            case EMatch(PVar(inner), innerExpr) if (isThisTemp(inner)):
+                                newRhs = innerExpr;
+                            default:
+                        }
+                        if (lhs != csVar) {
+                            makeASTWithMeta(EMatch(PVar(csVar), newRhs), n.metadata, n.pos);
+                        } else makeASTWithMeta(EMatch(PVar(csVar), newRhs), n.metadata, n.pos);
+                    } else n;
+                case EBinary(Match, left, rhs):
+                    // dst = (thisN = change/validate_*) -> cs = change/validate_*
+                    var isTarget = switch (rhs.def) {
+                        case ERemoteCall(m, f, _): isChangeset(m) && (f == "change" || f == "validate_required" || f == "validate_length");
+                        case EMatch(_, inner):
+                            switch (inner.def) {
+                                case ERemoteCall(m2, f2, _): isChangeset(m2) && (f2 == "change" || f2 == "validate_required" || f2 == "validate_length");
+                                default: false;
+                            }
+                        case EBinary(Match, _, r2):
+                            switch (r2.def) {
+                                case ERemoteCall(m3, f3, _): isChangeset(m3) && (f3 == "change" || f3 == "validate_required" || f3 == "validate_length");
+                                default: false;
+                            }
+                        default: false;
+                    };
+                    if (isTarget) {
+                        var newRhs = rhs;
+                        // Collapse nested chain on RHS: cs = (thisN = expr) -> cs = expr
+                        switch (rhs.def) {
+                            case EMatch(PVar(inner), innerExpr) if (isThisTemp(inner)):
+                                newRhs = innerExpr;
+                            default:
+                        }
+                        makeASTWithMeta(EBinary(Match, makeAST(EVar(csVar)), newRhs), n.metadata, n.pos);
+                    } else n;
+                default:
+                    n;
+            }
+        }
+
+        // 3c) Rewrite opts.* access to Map.get(opts, :*) to avoid typed unknown key warnings
+        function rewriteOptsAccess(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EAccess({def: EVar(v)}, key) if (v == "opts"):
+                    var keyAtom = switch (key.def) { case EAtom(a): a; default: null; };
+                    if (keyAtom != null) {
+                        makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(keyAtom))]), n.metadata, n.pos);
+                    } else n;
+                default: n;
             }
         }
 
@@ -218,19 +347,22 @@ class ChangesetTransforms {
         var pass1 = ElixirASTTransformer.transformNode(body, renameOptsDecl);
         // Second pass: fix validate_* targets
         var pass2 = ElixirASTTransformer.transformNode(pass1, rewriteValidateCalls);
-        // Fourth pass: rebind cond validate_length results using binderAfterRequired
+        // 3c: apply opts access rewrite globally within the body to convert opts.* to Map.get(opts,:*)
+        var pass2c = ElixirASTTransformer.transformNode(pass2, rewriteOptsAccess);
+        // 4) Rebind cond validate_length results to csVar (single canonical binder)
         function wrapCondWithBinder(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECond(clauses) if (condContainsValidateLength(clauses)):
-                    var rewritten = rewriteCondToReturnCsVar(clauses, binderAfterRequired);
-                    
-                    makeASTWithMeta(EMatch(PVar(binderAfterRequired), makeAST(ECond(rewritten))), n.metadata, n.pos);
+                    var rewritten = rewriteCondToReturnCsVar(clauses, csVar);
+                    makeASTWithMeta(EMatch(PVar(csVar), makeAST(ECond(rewritten))), n.metadata, n.pos);
                 default:
                     n;
             }
         }
-
-        return ElixirASTTransformer.transformNode(pass2, wrapCondWithBinder);
+        // Third pass-b: canonicalize assignment LHS to csVar
+        var pass2b = ElixirASTTransformer.transformNode(pass2c, rewriteAssignmentLhs);
+        // Fourth pass: wrap conds rebinding to csVar
+        return ElixirASTTransformer.transformNode(pass2b, wrapCondWithBinder);
     }
 
     static inline function isThisLike(v: String): Bool {
@@ -342,6 +474,8 @@ class ChangesetTransforms {
                             newBody = makeAST(EVar(csVar));
                         default:
                     }
+                    // Normalize :true to boolean true
+                    newCond = makeAST(EBoolean(true));
                 default:
             }
             out.push({condition: newCond, body: newBody});
