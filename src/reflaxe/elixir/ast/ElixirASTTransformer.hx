@@ -1232,6 +1232,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeValidateFieldAtomPass
         });
+        // Ecto where pinned-nil guard: rewrite `field == ^var` to guarded case using Kernel.is_nil(var)
+        passes.push({
+            name: "EctoEqPinnedNilGuard(Late)",
+            description: "Guard Ecto where comparisons with pinned vars that may be nil",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.transformPass
+        });
+
         // Final EqNilToIsNil to catch any newly introduced comparisons
         passes.push({
             name: "EqNilToIsNil(Final)",
@@ -1266,7 +1274,7 @@ class ElixirASTTransformer {
             name: "IncrementToAssignment",
             description: "Rewrite standalone increments to explicit assignments in blocks and if-branches",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.incrementToAssignmentPass
+            pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.transformPass
         });
         // NOTE: FnArgUnusedUnderscore disabled due to false-positives in LiveView filters
         // passes.push({
@@ -1779,6 +1787,33 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnderscoreRefFixTransforms.fixPass
         });
+        // Absolute sweep to ensure no stray numeric literals or bare increments remain anywhere
+        passes.push({
+            name: "ArithmeticIncrementCleanup(AbsoluteFinal)",
+            description: "Final sweep: drop bare numeric literals and normalize increments",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.transformPass
+        });
+        passes.push({
+            name: "ReduceWhileSentinelCleanup(AbsoluteFinal)",
+            description: "Final sweep: drop numeric sentinels inside reduce_while bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
+        });
+        passes.push({
+            name: "DropStandaloneLiteralOne(UltraFinal)",
+            description: "Ultra-final sweep to remove any bare numeric sentinels left by late injections",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+        });
+
+        // Absolute late sweep: ensure HEEx raw(content) uses assigns and assigns has :content
+        passes.push({
+            name: "HeexAssignsCapture(Final)",
+            description: "Ensure @content usage inside ~H and assign content into assigns",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms.transformPass
+        });
         
         // Late safety net: re-run Repo qualification after all transformations
         passes.push({
@@ -1905,12 +1940,38 @@ class ElixirASTTransformer {
             pass: heexContentInlinePass
         });
 
+        // Robust sweep: inline when raw(content) pattern wasn't caught by structural match
+        passes.push({
+            name: "HeexAssignsCapture",
+            description: "Replace ~H raw(content) with literal html and drop local var",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms.transformPass
+        });
+
         // Cleanup numeric no-op expressions and fix missed increments
         passes.push({
             name: "NumericNoOpCleanup",
             description: "Remove standalone numeric ops like 0 + 1 and convert bare count + 1 to assignments",
             enabled: true,
             pass: numericNoOpCleanupPass
+        });
+        passes.push({
+            name: "ReduceWhileSentinelCleanup",
+            description: "Drop numeric sentinel literals inside Enum.reduce_while function bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
+        });
+        passes.push({
+            name: "ReduceWhileToEnumEach",
+            description: "Rewrite trivial reduce_while(Stream.iterate ...) scans to Enum.each",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms.transformPass
+        });
+        passes.push({
+            name: "ArithmeticIncrementCleanup",
+            description: "Rewrite standalone increments to assignments; drop bare numeric literals",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.transformPass
         });
         
         // Pattern variable origin analysis pass
@@ -3392,24 +3453,39 @@ class ElixirASTTransformer {
                         case EBlock(stmts):
                             var contentHtml: Null<String> = null;
                             var contentAssignIdx: Int = -1;
-                            // Find content = "..."
+                            // Find content = "..." (allow optional parentheses)
                             for (i in 0...stmts.length) {
                                 switch (stmts[i].def) {
-                                    case EMatch(PVar(varName), {def: EString(s)}) if (varName == "content"):
-                                        contentHtml = s;
+                                    case EMatch(PVar(varName), rhs) if (varName == "content"):
+                                        switch (rhs.def) {
+                                            case EString(s): contentHtml = s;
+                                            case EParen(inner):
+                                                switch (inner.def) {
+                                                    case EString(s2): contentHtml = s2;
+                                                    default:
+                                                }
+                                            default:
+                                        }
                                         contentAssignIdx = i;
                                         break;
                                     default:
                                 }
                             }
                             if (contentHtml == null) return node;
-                            // Find ~H that references Phoenix.HTML.raw(content)
+                            // Find ~H that references Phoenix.HTML.raw(content) (allow EParen wrapping)
                             var sigilIdx: Int = -1;
                             for (i in 0...stmts.length) {
                                 switch (stmts[i].def) {
                                     case ESigil(type, content, modifiers) if (type == "H" && content.indexOf("Phoenix.HTML.raw(content)") != -1):
                                         sigilIdx = i;
                                         break;
+                                    case EParen(inner):
+                                        switch (inner.def) {
+                                            case ESigil(type2, content2, modifiers2) if (type2 == "H" && content2.indexOf("Phoenix.HTML.raw(content)") != -1):
+                                                sigilIdx = i;
+                                                break;
+                                            default:
+                                        }
                                     default:
                                 }
                             }
@@ -3419,7 +3495,13 @@ class ElixirASTTransformer {
                             for (i in 0...stmts.length) {
                                 if (i == contentAssignIdx) continue; // drop assignment
                                 if (i == sigilIdx) {
-                                    newStmts.push(makeASTWithMeta(ESigil("H", contentHtml, ""), stmts[i].metadata, stmts[i].pos));
+                                    // Preserve parentheses if original was parenthesized
+                                    switch (stmts[i].def) {
+                                        case EParen(_):
+                                            newStmts.push(makeASTWithMeta(EParen(makeAST(ESigil("H", contentHtml, ""))), stmts[i].metadata, stmts[i].pos));
+                                        default:
+                                            newStmts.push(makeASTWithMeta(ESigil("H", contentHtml, ""), stmts[i].metadata, stmts[i].pos));
+                                    }
                                 } else {
                                     newStmts.push(stmts[i]);
                                 }

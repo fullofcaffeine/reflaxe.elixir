@@ -11,67 +11,87 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * ArithmeticIncrementTransforms
  *
  * WHAT
- * - Converts standalone increment/decrement arithmetic expressions into explicit
- *   assignments, e.g., `i + 1` → `i = i + 1` when used as a statement.
- * - Also covers if-branch bodies and general block statements.
+ * - Converts standalone arithmetic increments/decrements used as statements into
+ *   explicit assignments (count = count + 1), and drops bare numeric literals
+ *   (1/0/0.0) used as statements anywhere in blocks or function bodies.
  *
  * WHY
- * - Elixir has no ++/-- operators or compound assignments; increments must be
- *   represented as rebindings. Prevents stray `count + 1` statements that have
- *   no effect and trigger warnings.
+ * - Prevents warnings from unused numeric expressions and ensures mutation intent
+ *   is explicit and idiomatic in generated Elixir.
  *
  * HOW
- * - Walk blocks and condition branches. When a statement is exactly an
- *   `EBinary(Add|Subtract, EVar(name), EInteger(1))` or `...EFloat(1.0)`,
- *   rewrite to `EMatch(PVar(name), EBinary(op, EVar(name), 1))`.
- * - Conservative: only rewrite when the expression is a direct statement.
- *   Does not alter nested arithmetic inside larger expressions.
- *
- * EXAMPLES
- * Before:
- *   if cond do
- *     count + 1
- *   end
- * After:
- *   if cond do
- *     count = count + 1
- *   end
+ * - In EBlock/EDo bodies, for each statement:
+ *   - If EBinary(Add|Subtract, EVar(v), EInteger(1|…)) → EMatch(PVar(v), EBinary(...))
+ *   - Drop EInteger(1|0) and EFloat(0.0)
+ * - Apply the same normalization to EFn clause bodies when they are blocks.
  */
 class ArithmeticIncrementTransforms {
-    public static function incrementToAssignmentPass(ast: ElixirAST): ElixirAST {
+    static function rewriteStmt(stmt: ElixirAST): Null<ElixirAST> {
+        return switch (stmt.def) {
+            case EBinary(op, left, right):
+                switch (op) {
+                    case Add | Subtract:
+                        switch [left.def, right.def] {
+                            case [EVar(v), EInteger(_) | EFloat(_)]:
+                                makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));
+                            case [EInteger(_) | EFloat(_), EVar(v)]:
+                                makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));
+                            default:
+                                null;
+                        }
+                    default: null;
+                }
+            case EInteger(v) if (v == 1 || v == 0):
+                // drop
+                makeAST(ENil);
+            case EFloat(f) if (f == 0.0):
+                makeAST(ENil);
+            default:
+                null;
+        }
+    }
+
+    static function normalizeBlock(stmts: Array<ElixirAST>): Array<ElixirAST> {
+        var out: Array<ElixirAST> = [];
+        for (s in stmts) {
+            var r = rewriteStmt(s);
+            if (r == null) {
+                // keep original
+                out.push(s);
+            } else if (r.def != ENil) {
+                out.push(r);
+            } else {
+                // dropped literal -> skip
+            }
+        }
+        return out;
+    }
+
+    public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EBlock(stmts):
-                    var out:Array<ElixirAST> = [];
-                    for (s in stmts) out.push(rewriteIncStmt(s));
-                    makeASTWithMeta(EBlock(out), n.metadata, n.pos);
-
-                case EIf(cond, thenB, elseB):
-                    var newThen = rewriteIncStmt(thenB);
-                    var newElse = elseB != null ? rewriteIncStmt(elseB) : null;
-                    makeASTWithMeta(EIf(cond, newThen, newElse), n.metadata, n.pos);
-
+                    makeASTWithMeta(EBlock(normalizeBlock(stmts)), n.metadata, n.pos);
+                case EDo(stmts):
+                    makeASTWithMeta(EDo(normalizeBlock(stmts)), n.metadata, n.pos);
+                case EFn(clauses):
+                    var newClauses = [];
+                    for (cl in clauses) {
+                        var b = cl.body;
+                        switch (b.def) {
+                            case EBlock(stmts):
+                                newClauses.push({ args: cl.args, guard: cl.guard, body: makeASTWithMeta(EBlock(normalizeBlock(stmts)), b.metadata, b.pos) });
+                            case EDo(stmts):
+                                newClauses.push({ args: cl.args, guard: cl.guard, body: makeASTWithMeta(EDo(normalizeBlock(stmts)), b.metadata, b.pos) });
+                            default:
+                                newClauses.push(cl);
+                        }
+                    }
+                    makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
                 default:
                     n;
             }
         });
-    }
-
-    static function isOneLiteral(e: ElixirAST): Bool {
-        return switch (e.def) {
-            case EInteger(v): v == 1;
-            case EFloat(f): f == 1.0 || f == 1;
-            default: false;
-        };
-    }
-
-    static function rewriteIncStmt(s: ElixirAST): ElixirAST {
-        return switch (s.def) {
-            case EBinary(op, {def: EVar(name)}, rhs) if ((op == Add || op == Subtract) && isOneLiteral(rhs)):
-                makeASTWithMeta(EMatch(PVar(name), makeAST(EBinary(op, makeAST(EVar(name)), rhs))), s.metadata, s.pos);
-            default:
-                s;
-        }
     }
 }
 

@@ -1,0 +1,184 @@
+Compiling 118 files (.ex)
+    warning: variable "cs" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 24 │     cs = case Enum.filter([min: Map.get(opts, :min), max: Map.get(opts, :max), is: Map.get(opts, :is)], fn {_, v} -> v != nil end) do
+    │     ~~
+    │
+    └─ lib/todo_app/todo.ex:24:5: TodoApp.Todo.changeset/2
+
+    warning: variable "this1" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 14 │     cs = this1 = Ecto.Changeset.change(todo, params)
+    │          ~~~~~
+    │
+    └─ lib/todo_app/todo.ex:14:10: TodoApp.Todo.changeset/2
+
+    warning: variable "this1" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 15 │     this1 = cs = Ecto.Changeset.validate_required(cs, [:title, :user_id])
+    │     ~~~~~
+    │
+    └─ lib/todo_app/todo.ex:15:5: TodoApp.Todo.changeset/2
+
+    warning: variable "id" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 67 │           {:todo_deleted, id} ->
+    │                           ~
+    │
+    └─ lib/todo_app_web/todo_live.ex:67:27: TodoAppWeb.TodoLive.handle_info/2
+
+    warning: variable "parsed_msg" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 61 │       {:some, parsed_msg} ->
+    │               ~
+    │
+    └─ lib/todo_app_web/todo_live.ex:61:15: TodoAppWeb.TodoLive.handle_info/2
+
+    warning: variable "g" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 59 │     result_socket = g = TodoPubSub.parse_message(msg)
+    │                     ~
+    │
+    └─ lib/todo_app_web/todo_live.ex:59:21: TodoAppWeb.TodoLive.handle_info/2
+
+    warning: variable "reason" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 99 │       {:error, reason} ->
+    │                ~
+    │
+    └─ lib/todo_app_web/todo_live.ex:99:16: TodoAppWeb.TodoLive.create_todo_typed/2
+
+    warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+    │
+ 46 │   if 0 < length(Reflect.fields(all_users)) do
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/todo_app_web/presence.ex:46: TodoAppWeb.Presence.get_users_editing_todo/2
+
+    warning: variable "editing_users" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 52 │       if meta.editingTodoId == todo_id, do: editing_users = Enum.concat(editing_users, [meta])
+    │                                             ~
+    │
+    └─ lib/todo_app_web/presence.ex:52:45: TodoAppWeb.Presence.get_users_editing_todo/2
+
+    warning: variable "all_users" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 45 │     {all_users} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {all_users}, fn _, {all_users} ->
+    │      ~~~~~~~~~
+    │
+    └─ lib/todo_app_web/presence.ex:45:6: TodoAppWeb.Presence.get_users_editing_todo/2
+
+     warning: variable "this1" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 163 │ this1 = nil
+     │ ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:163:1: TodoAppWeb.TodoLive.load_todos/1
+
+     warning: variable "this1" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 158 │ this1 = nil
+     │ ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:158:1: TodoAppWeb.TodoLive.load_todos/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 170 │   defp find_todo(id, todos) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:170: TodoAppWeb.TodoLive.find_todo/2
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 183 │   defp count_completed(todos) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:183: TodoAppWeb.TodoLive.count_completed/1
+
+     warning: variable "count" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 189 │     if todo.completed, do: count = count + 1
+     │                            ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:189:28: TodoAppWeb.TodoLive.count_completed/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 197 │   defp count_pending(todos) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:197: TodoAppWeb.TodoLive.count_pending/1
+
+     warning: variable "count" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 203 │     if not todo.completed, do: count = count + 1
+     │                                ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:203:32: TodoAppWeb.TodoLive.count_pending/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 238 │   defp complete_all_todos(socket) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:238: TodoAppWeb.TodoLive.complete_all_todos/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 268 │   defp delete_completed_todos(socket) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:268: TodoAppWeb.TodoLive.delete_completed_todos/1
+
+     warning: variable "reason" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 304 │       {:error, reason} ->
+     │                ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:304:16: TodoAppWeb.TodoLive.save_edited_todo_typed/2
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 536 │   defp render_todo_list(assigns) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:536: TodoAppWeb.TodoLive.render_todo_list/1
+
+     warning: variable "todo_items" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 544 │     todo_items = Enum.concat(todo_items, [render_todo_item(todo, assigns.editing_todo)])
+     │     ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:544:5: TodoAppWeb.TodoLive.render_todo_list/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 647 │   defp render_tags(tags) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:647: TodoAppWeb.TodoLive.render_tags/1
+
+     warning: variable "tag_elements" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 654 │     tag_elements = Enum.concat(tag_elements, ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"])
+     │     ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:654:5: TodoAppWeb.TodoLive.render_tags/1
+
+     warning: variable "tags" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 650 │     {tags} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags}, fn _, {tags} ->
+     │      ~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:650:6: TodoAppWeb.TodoLive.render_tags/1
+
+     warning: variable "todos" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 673 │       todos = Enum.filter(todos, fn t -> not Kernel.is_nil(:binary.match(String.downcase(t.title), query)) or not Kernel.is_nil(t.description) and not Kernel.is_nil(:binary.match(String.downcase(t.description), query)) end)
+     │       ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:673:7: TodoAppWeb.TodoLive.filter_todos/3
+
+Generated todo_app app
