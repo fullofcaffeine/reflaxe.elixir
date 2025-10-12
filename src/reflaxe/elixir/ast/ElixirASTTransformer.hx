@@ -809,6 +809,18 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
         });
+        passes.push({
+            name: "ClauseUnusedBinderUnderscore(Final)",
+            description: "Final sweep to underscore unused binders in case arms",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
+        });
+        passes.push({
+            name: "CaseUnderscoreBinderPromoteByUse(Final)",
+            description: "Promote underscored binders (_name) to name when body uses name and no conflict exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
+        });
 
         /**
          * BinderRenameByTag
@@ -1898,6 +1910,12 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
         });
+        passes.push({
+            name: "AssignChainPrune(Final)",
+            description: "Prune unused binders in chain assignments and drop var=nil when unused",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignChainPruneTransforms.prunePass
+        });
 
         // Qualify struct literals passed to changeset/2 inside <App>Web.* modules
         passes.push({
@@ -1963,6 +1981,12 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
         });
         passes.push({
+            name: "EnumEachLhsDiscard",
+            description: "Discard tuple LHS for Enum.each matches (shape-based cleanup)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachLhsDiscardPass
+        });
+        passes.push({
             name: "ReduceWhileSentinelCleanup",
             description: "Drop numeric sentinel literals inside Enum.reduce_while function bodies",
             enabled: true,
@@ -1994,10 +2018,22 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.countRewritePass
         });
         passes.push({
+            name: "CountBinderNormalize",
+            description: "Normalize underscored binder in Enum.count/2 (rename when used)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.countBinderNormalizePass
+        });
+        passes.push({
             name: "MapJoinRewrite",
             description: "Collapse temp += concat inside Enum.each + Enum.join to Enum.map |> Enum.join",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapJoinRewritePass
+        });
+        passes.push({
+            name: "MapConcatEachToMapAssign",
+            description: "Rewrite temp=[], Enum.each(... temp=Enum.concat(temp,[expr]) ...) → temp = Enum.map(list, fn -> expr) end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapConcatEachToMapAssignPass
         });
         passes.push({
             name: "FindRewrite",
@@ -2016,6 +2052,50 @@ class ElixirASTTransformer {
             description: "Rewrite standalone increments to assignments; drop bare numeric literals",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.transformPass
+        });
+        // Final sweep: ensure anonymous function binders don't keep a leading underscore
+        // if they are actually referenced in the body (prevents "underscored variable used" warnings)
+        passes.push({
+            name: "AnonFnArgBinderFix(Final)",
+            description: "Rename underscored fn binders and body references when used (no ERaw rewrites)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnonFnArgBinderFixTransforms.fixPass
+        });
+        passes.push({
+            name: "FnArgBodyRefNormalize(Final)",
+            description: "Normalize body refs _name -> name after late binder fixes",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.fnArgBodyRefNormalizePass
+        });
+        passes.push({
+            name: "EFnArgCleanup(Final)",
+            description: "Final cleanup of EFn arg/body underscore mismatches",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnArgCleanupTransforms.cleanupPass
+        });
+        passes.push({
+            name: "EFnScopedUnderscoreRefCleanup(Final)",
+            description: "Rewrite _name -> name in EFn bodies when a matching binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnScopedUnderscoreRefCleanup.cleanupPass
+        });
+        passes.push({
+            name: "EFnNumericSentinelCleanup(Final)",
+            description: "Drop EInteger(0|1) and EFloat(0.0) statements in EFn bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnNumericSentinelCleanupTransforms.cleanupPass
+        });
+        passes.push({
+            name: "EFnLocalAssignDiscard(Final)",
+            description: "Replace unused local rebinds in EFn bodies with wildcard assignment",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnLocalAssignDiscardTransforms.discardPass
+        });
+        passes.push({
+            name: "TupleLhsDiscard(Final)",
+            description: "Discard {x} = expr (arity-1 tuple LHS) and keep expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms.discardPass
         });
         
         // Pattern variable origin analysis pass

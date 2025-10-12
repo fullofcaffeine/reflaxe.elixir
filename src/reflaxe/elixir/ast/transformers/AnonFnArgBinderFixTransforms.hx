@@ -30,6 +30,28 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   Enum.map(items, fn t -> do_something(t) end)
  */
 class AnonFnArgBinderFixTransforms {
+    /**
+     * WHAT
+     * - Normalize anonymous function argument binders to avoid underscore-usage warnings.
+     * - If an underscore-prefixed binder (e.g. `_t`) is actually referenced in the body,
+     *   rename the binder to its trimmed variant (e.g. `t`) and rewrite body references
+     *   accordingly. If the body already refers to the trimmed variant, just rename the
+     *   binder. If the binder is unused, leave it underscored.
+     *
+     * WHY
+     * - Elixir warns when variables starting with an underscore are used after being set.
+     *   Generated callbacks like `Enum.map/2`, `Enum.count/2` often use `_elem` while
+     *   referencing it in the body, producing warnings. This pass removes such warnings
+     *   without changing semantics.
+     *
+     * HOW
+     * - For each EFn clause, collect used variable names in the body.
+     * - For each argument pattern:
+     *   - If it is `_name` and body uses `_name`: rename binder to `name` and rewrite
+     *     body occurrences from `_name` to `name`.
+     *   - Else if body uses `name`: rename binder to `name`.
+     *   - Else: keep as-is (intentionally unused).
+     */
     public static function fixPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -37,9 +59,45 @@ class AnonFnArgBinderFixTransforms {
                     var newClauses = [];
                     for (cl in clauses) {
                         var used = collectUsedVars(cl.body);
-                        var args = [];
-                        for (a in cl.args) args.push(fixPattern(a, used));
-                        newClauses.push({args: args, guard: cl.guard, body: cl.body});
+                        var renamePairs:Array<{from:String, to:String}> = [];
+
+                        // First pass: decide arg renames
+                        var newArgs:Array<EPattern> = [];
+                        for (a in cl.args) {
+                            switch (a) {
+                                case PVar(name) if (name != null && name.length > 1 && name.charAt(0) == '_'):
+                                    var trimmed = name.substr(1);
+                                    if (used.exists(name)) {
+                                        // Body refers to underscored name; schedule rewrite to trimmed
+                                        renamePairs.push({from: name, to: trimmed});
+                                        newArgs.push(PVar(trimmed));
+                                    } else if (used.exists(trimmed)) {
+                                        newArgs.push(PVar(trimmed));
+                                    } else {
+                                        newArgs.push(a);
+                                    }
+                                case PAlias(name, pat) if (name != null && name.length > 1 && name.charAt(0) == '_'):
+                                    var trimmed2 = name.substr(1);
+                                    if (used.exists(name)) {
+                                        renamePairs.push({from: name, to: trimmed2});
+                                        newArgs.push(PAlias(trimmed2, pat));
+                                    } else if (used.exists(trimmed2)) {
+                                        newArgs.push(PAlias(trimmed2, pat));
+                                    } else {
+                                        newArgs.push(a);
+                                    }
+                                default:
+                                    newArgs.push(a);
+                            }
+                        }
+
+                        // Second pass: apply body var renames when necessary
+                        var newBody = cl.body;
+                        for (rp in renamePairs) {
+                            newBody = renameVarInNode(newBody, rp.from, rp.to);
+                        }
+
+                        newClauses.push({args: newArgs, guard: cl.guard, body: newBody});
                     }
                     makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
                 default:
@@ -54,6 +112,7 @@ class AnonFnArgBinderFixTransforms {
             if (e == null || e.def == null) return;
             switch (e.def) {
                 case EVar(name): used.set(name, true);
+                case EField(target, _): visit(target);
                 case EBlock(stmts): for (s in stmts) visit(s);
                 case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
                 case ECase(expr, clauses): visit(expr); for (c in clauses) { if (c.guard != null) visit(c.guard); visit(c.body); }
@@ -74,25 +133,15 @@ class AnonFnArgBinderFixTransforms {
         return used;
     }
 
-    static function fixPattern(p: EPattern, used: Map<String, Bool>): EPattern {
-        return switch (p) {
-            case PVar(name) if (name != null && name.length > 1 && name.charAt(0) == '_'):
-                var trimmed = name.substr(1);
-                if (used.exists(trimmed) && !used.exists(name)) PVar(trimmed) else PVar(name);
-            case PVar(name): PVar(name);
-            case PTuple(els): PTuple(els.map(e -> fixPattern(e, used)));
-            case PList(els): PList(els.map(e -> fixPattern(e, used)));
-            case PCons(h, t): PCons(fixPattern(h, used), fixPattern(t, used));
-            case PMap(pairs): PMap(pairs.map(pa -> {key: pa.key, value: fixPattern(pa.value, used)}));
-            case PStruct(m, fields): PStruct(m, fields.map(f -> {key: f.key, value: fixPattern(f.value, used)}));
-            case PAlias(name, pat) if (name != null && name.length > 1 && name.charAt(0) == '_'):
-                var trimmed = name.substr(1);
-                if (used.exists(trimmed) && !used.exists(name)) PAlias(trimmed, fixPattern(pat, used)) else PAlias(name, fixPattern(pat, used));
-            case PAlias(name, pat): PAlias(name, fixPattern(pat, used));
-            case PPin(inner): PPin(fixPattern(inner, used));
-            case PBinary(segs): PBinary(segs.map(s -> {pattern: fixPattern(s.pattern, used), size: s.size, type: s.type, modifiers: s.modifiers}));
-            case PWildcard | PLiteral(_): p;
-        }
+    // Apply a local variable rename inside an AST node (ERaw left untouched intentionally)
+    static function renameVarInNode(node: ElixirAST, from: String, to: String): ElixirAST {
+        return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EVar(name) if (name == from): makeASTWithMeta(EVar(to), n.metadata, n.pos);
+                case ERaw(_): n; // avoid touching raw HEEx/code strings
+                default: n;
+            }
+        });
     }
 }
 
