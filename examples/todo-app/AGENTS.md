@@ -118,6 +118,42 @@ return HXX.hxx('<button class={@className} id={@id}>
 ### HXX → HEEx Translation Rules
 
 #### 1. Attribute Values: `{@field}` → `{@field}`
+
+## 🚦 Background Server Validation (Non‑blocking)
+
+When you need to boot the Phoenix server and probe it from automation (or Codex CLI) without blocking the session, run it in the background and curl the endpoint. This is useful for quick smoke checks during compiler iterations.
+
+Example (dev, custom port):
+
+```bash
+cd examples/todo-app
+# Build Haxe → Elixir output
+npx haxe build-server.hxml
+
+# Ensure deps and database
+mix deps.get
+mix ecto.create
+mix ecto.migrate
+
+# Start server in background on a free port and wait briefly
+PORT=4011 MIX_ENV=dev mix phx.server > tmp_server.log 2>&1 & echo $! > tmp_server.pid
+sleep 10
+
+# Probe with GET (avoid HEAD in dev, as reloader can trip it)
+curl -sS -i http://127.0.0.1:4011/ | head -n 20 || true
+
+# Stop server and inspect recent logs if needed
+kill $(cat tmp_server.pid) >/dev/null 2>&1 || true
+sleep 1
+tail -n 120 tmp_server.log || true
+```
+
+Notes
+- If port 4000 is busy locally, use an alternate port via `PORT=<free_port>`.
+- If you run into DB connection errors, ensure Postgres is running with the credentials from `config/dev.exs`. A quick local option is Docker:
+  - `docker run --rm -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=todo_app_dev -p 5432:5432 postgres:14`
+- For repeatable CI checks, wait for a log line like `Running ...Endpoint with cowboy` before probing.
+
 ```haxe
 // Haxe HXX Input
 <meta name="csrf-token" content={Component.get_csrf_token()}/>

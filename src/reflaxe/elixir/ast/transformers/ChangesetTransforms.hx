@@ -28,7 +28,7 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   side and treat that as the canonical changeset variable (e.g., `_this1`, `changeset`).
  *   If none is found, fallback to `cs`.
  * - For `Ecto.Changeset.validate_required/validate_length`, force the first argument
- *   to use the canonical changeset variable.
+ *   to use the canonical changeset variable; ensure normalization works inside cond/if bodies.
  * - Rename `_opts = %{...}` to `opts = %{...}` to match downstream field accesses.
  * - Canonicalize any references to `thisN`/`_thisN` to `cs` within the function.
  *
@@ -73,15 +73,16 @@ class ChangesetTransforms {
                         function scan(x: ElixirAST): Void {
                             if (usesChangeset || x == null || x.def == null) return;
                             switch (x.def) {
-                                case ERemoteCall(m, _, _):
+                                case ERemoteCall(m, _, as):
                                     switch (m.def) { case EVar(n) if (n == "Ecto.Changeset"): usesChangeset = true; default: }
+                                    // traverse target and args
+                                    scan(m); if (as != null) for (a in as) scan(a);
                                 case EBlock(es): for (e in es) scan(e);
                                 case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
                                 case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                                 case EBinary(_, l, r): scan(l); scan(r);
                                 case EMatch(_, rhs): scan(rhs);
-                                case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
-                                case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
+                                case ECall(t,_,as2): if (t != null) scan(t); if (as2 != null) for (a in as2) scan(a);
                                 default:
                             }
                         }
@@ -110,10 +111,18 @@ class ChangesetTransforms {
                         // Apply canonicalization of refs at module scope conservatively
                         function tx(n: ElixirAST): ElixirAST {
                             return switch (n.def) {
+                                // Canonicalize references first
                                 case EVar(v) if (isThisLike(v)):
                                     makeASTWithMeta(EVar(binder), n.metadata, n.pos);
                                 case EVar(v) if (v == "cs" && binder != "cs"):
                                     makeASTWithMeta(EVar(binder), n.metadata, n.pos);
+                                // Also run function-body normalization within module scope
+                                case EDef(name, params, guards, body):
+                                    var newB = normalizeBody(body);
+                                    makeASTWithMeta(EDef(name, params, guards, newB), n.metadata, n.pos);
+                                case EDefp(name, params, guards, body):
+                                    var newBp = normalizeBody(body);
+                                    makeASTWithMeta(EDefp(name, params, guards, newBp), n.metadata, n.pos);
                                 default:
                                     n;
                             }
@@ -122,6 +131,65 @@ class ChangesetTransforms {
                         makeASTWithMeta(EModule(modName, attrs, newBody), node.metadata, node.pos);
                     }
                 // (handled in function body normalization)
+
+                // Within defmodule blocks, apply the same normalization as EModule
+                case EDefmodule(modName, doBlock):
+                    var usesChangeset2 = false;
+                    // Detect usage within doBlock
+                    function scanDefBlock(x: ElixirAST): Void {
+                        if (usesChangeset2 || x == null || x.def == null) return;
+                        switch (x.def) {
+                            case EImport(m, _, _) if (m == "Ecto.Changeset"): usesChangeset2 = true;
+                            case ERemoteCall(m, _, as):
+                                switch (m.def) { case EVar(n) if (n == "Ecto.Changeset"): usesChangeset2 = true; default: }
+                                scanDefBlock(m); if (as != null) for (a in as) scanDefBlock(a);
+                            case EBlock(es): for (e in es) scanDefBlock(e);
+                            case EIf(c,t,e): scanDefBlock(c); scanDefBlock(t); if (e != null) scanDefBlock(e);
+                            case ECase(e, cs): scanDefBlock(e); for (c in cs) { if (c.guard != null) scanDefBlock(c.guard); scanDefBlock(c.body); }
+                            case EBinary(_, l, r): scanDefBlock(l); scanDefBlock(r);
+                            case EMatch(_, rhs): scanDefBlock(rhs);
+                            case ECall(t,_,as2): if (t != null) scanDefBlock(t); if (as2 != null) for (a in as2) scanDefBlock(a);
+                            default:
+                        }
+                    }
+                    scanDefBlock(doBlock);
+                    if (!usesChangeset2) node else {
+                        var declared2 = new Map<String,Bool>();
+                        reflaxe.elixir.ast.ASTUtils.walk(doBlock, function(n) {
+                            switch (n.def) {
+                                case EMatch(PVar(v), _): declared2.set(v, true);
+                                case EBinary(Match, left, _):
+                                    function collect2(lhs: ElixirAST) {
+                                        switch (lhs.def) {
+                                            case EVar(v): declared2.set(v, true);
+                                            case EBinary(Match, l2, r2): collect2(l2); collect2(r2);
+                                            default:
+                                        }
+                                    }
+                                    collect2(left);
+                                default:
+                            }
+                        });
+                        var binder2 = if (declared2.exists("cs")) "cs" else if (declared2.exists("_this2")) "_this2" else if (declared2.exists("_this1")) "_this1" else if (declared2.exists("this2")) "this2" else if (declared2.exists("this1")) "this1" else "cs";
+                        function tx2(n: ElixirAST): ElixirAST {
+                            return switch (n.def) {
+                                case EVar(v) if (isThisLike(v)):
+                                    makeASTWithMeta(EVar(binder2), n.metadata, n.pos);
+                                case EVar(v) if (v == "cs" && binder2 != "cs"):
+                                    makeASTWithMeta(EVar(binder2), n.metadata, n.pos);
+                                case EDef(name, params, guards, body):
+                                    var newB = normalizeBody(body);
+                                    makeASTWithMeta(EDef(name, params, guards, newB), n.metadata, n.pos);
+                                case EDefp(name, params, guards, body):
+                                    var newBp = normalizeBody(body);
+                                    makeASTWithMeta(EDefp(name, params, guards, newBp), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        }
+                        var newDo = ElixirASTTransformer.transformNode(doBlock, tx2);
+                        makeASTWithMeta(EDefmodule(modName, newDo), node.metadata, node.pos);
+                    }
 
                 // Within function bodies, canonicalize `thisN`/`_thisN` and `_opts` declarations
                 case EDef(name, params, guards, body):
@@ -178,12 +246,93 @@ class ChangesetTransforms {
                 default: arg;
             }
         }
+        function normalizeFieldsList(arg: ElixirAST): ElixirAST {
+            return switch (arg.def) {
+                case EList(elements):
+                    var out = [];
+                    for (e in elements) {
+                        switch (e.def) {
+                            case EString(s): out.push(makeAST(EAtom(s)));
+                            case EAtom(_): out.push(e);
+                            default: out.push(e);
+                        }
+                    }
+                    makeAST(EList(out));
+                case ERemoteCall({def: EVar(m)}, f, [listExpr, funExpr]) if (m == "Enum" && f == "map"):
+                    // Detect &String.to_atom/1 or &String.to_existing_atom/1
+                    var isStringToAtomCapture = false;
+                    switch (funExpr.def) {
+                        case ECapture(inner, _):
+                            switch (inner.def) {
+                                case ERemoteCall({def: EVar(m2)}, f2, _):
+                                    if (m2 == "String" && (f2 == "to_atom" || f2 == "to_existing_atom")) isStringToAtomCapture = true;
+                                case EField({def: EVar(cls)}, meth) if (cls == "String" && (meth == "to_atom" || meth == "to_existing_atom")):
+                                    isStringToAtomCapture = true;
+                                default:
+                            }
+                        default:
+                    }
+                    if (isStringToAtomCapture) {
+                        switch (listExpr.def) {
+                            case EList(elements2):
+                                var out2 = [];
+                                for (e2 in elements2) {
+                                    switch (e2.def) {
+                                        case EString(s2): out2.push(makeAST(EAtom(s2)));
+                                        case EAtom(_): out2.push(e2);
+                                        default: out2.push(e2);
+                                    }
+                                }
+                                makeAST(EList(out2));
+                            default:
+                                arg;
+                        }
+                    } else arg;
+                default: arg;
+            }
+        }
+        // Replace opts.field ==/!= nil with Kernel.is_nil(Map.get(opts,:field)) in conditions (applies inside nested boolean/cond trees)
+        function rewriteNilComparisons(n: ElixirAST): ElixirAST {
+            inline function isOptsField(e: ElixirAST): Null<String> {
+                return switch (e.def) {
+                    case EField({def: EVar(v)}, fld) if (v == "opts"): fld;
+                    case EAccess({def: EVar(v)}, key) if (v == "opts"):
+                        switch (key.def) { case EAtom(a): a; default: null; }
+                    default: null;
+                };
+            }
+            return switch (n.def) {
+                case EBinary(Equal, l, r):
+                    switch [isOptsField(l), r.def, isOptsField(r), l.def] {
+                        case [f, ENil, _, _] if (f != null):
+                            makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f))])) ]));
+                        case [_, _, f2, ENil] if (f2 != null):
+                            makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f2))])) ]));
+                        default: n;
+                    }
+                case EBinary(NotEqual, l2, r2):
+                    switch [isOptsField(l2), r2.def, isOptsField(r2), l2.def] {
+                        case [f, ENil, _, _] if (f != null):
+                            var inner = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f))])) ]));
+                            makeAST(ElixirASTDef.EUnary(Not, inner));
+                        case [_, _, f2, ENil] if (f2 != null):
+                            var inner2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f2))])) ]));
+                            makeAST(ElixirASTDef.EUnary(Not, inner2));
+                        default: n;
+                    }
+                default: n;
+            }
+        }
         function rewrite(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ERemoteCall(mod, fn, args) if (isChangeset(mod) && (fn == "validate_required" || fn == "validate_length")):
                     var a = args.copy();
                     if (a.length >= 2) {
-                        a[1] = normalizeFieldArg(a[1]);
+                        if (fn == "validate_required") {
+                            a[1] = normalizeFieldsList(a[1]);
+                        } else {
+                            a[1] = normalizeFieldArg(a[1]);
+                        }
                     }
                     makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
                 default:
@@ -196,9 +345,6 @@ class ChangesetTransforms {
     static function normalizeBody(body: ElixirAST): ElixirAST {
         // Determine canonical changeset variable name
         var csVar = findChangesetVar(body);
-        #if true
-        trace('[ChangesetTransforms] findChangesetVar -> ' + Std.string(csVar));
-        #end
         if (csVar == null) {
             // Fallback: enforce canonical binder name "cs" for changeset pipelines
             csVar = "cs";
@@ -325,6 +471,9 @@ class ChangesetTransforms {
                     if (keyAtom != null) {
                         makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(keyAtom))]), n.metadata, n.pos);
                     } else n;
+                case EField({def: EVar(v2)}, fld) if (v2 == "opts"):
+                    // opts.min -> Map.get(opts, :min)
+                    makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(fld))]), n.metadata, n.pos);
                 default: n;
             }
         }
@@ -334,9 +483,6 @@ class ChangesetTransforms {
             return switch (n.def) {
                 case ECond(clauses) if (condContainsValidateLength(clauses)):
                     var rewritten = rewriteCondToReturnCsVar(clauses, csVar);
-                    #if true
-                    trace('[ChangesetTransforms] wrap cond -> bind to ' + csVar);
-                    #end
                     makeASTWithMeta(EMatch(PVar(csVar), makeAST(ECond(rewritten))), n.metadata, n.pos);
                 default:
                     n;
@@ -349,6 +495,45 @@ class ChangesetTransforms {
         var pass2 = ElixirASTTransformer.transformNode(pass1, rewriteValidateCalls);
         // 3c: apply opts access rewrite globally within the body to convert opts.* to Map.get(opts,:*)
         var pass2c = ElixirASTTransformer.transformNode(pass2, rewriteOptsAccess);
+        // 3c-2: Normalize nil comparisons on opts.* to use Kernel.is_nil(Map.get(...))
+        function rewriteNilComparisonsLocal(n: ElixirAST): ElixirAST {
+            inline function isOptsField(e: ElixirAST): Null<String> {
+                return switch (e.def) {
+                    case EField({def: EVar(v)}, fld) if (v == "opts"): fld;
+                    case EAccess({def: EVar(v)}, key) if (v == "opts"):
+                        switch (key.def) { case EAtom(a): a; default: null; }
+                    case ERemoteCall({def: EVar(m)}, f, [tgt, key]) if (m == "Map" && f == "get"):
+                        switch (tgt.def) {
+                            case EVar(v) if (v == "opts"):
+                                switch (key.def) { case EAtom(a): a; default: null; }
+                            default: null;
+                        }
+                    default: null;
+                };
+            }
+            return switch (n.def) {
+                case EBinary(Equal, l, r):
+                    switch [isOptsField(l), r.def, isOptsField(r), l.def] {
+                        case [f, ENil, _, _] if (f != null):
+                            makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f))])) ]));
+                        case [_, _, f2, ENil] if (f2 != null):
+                            makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f2))])) ]));
+                        default: n;
+                    }
+                case EBinary(NotEqual, l2, r2):
+                    switch [isOptsField(l2), r2.def, isOptsField(r2), l2.def] {
+                        case [f, ENil, _, _] if (f != null):
+                            var inner = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f))])) ]));
+                            makeAST(ElixirASTDef.EUnary(Not, inner));
+                        case [_, _, f2, ENil] if (f2 != null):
+                            var inner2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f2))])) ]));
+                            makeAST(ElixirASTDef.EUnary(Not, inner2));
+                        default: n;
+                    }
+                default: n;
+            }
+        }
+        var pass2c2 = ElixirASTTransformer.transformNode(pass2c, rewriteNilComparisonsLocal);
         // 4) Rebind cond validate_length results to csVar (single canonical binder)
         function wrapCondWithBinder(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -360,9 +545,26 @@ class ChangesetTransforms {
             }
         }
         // Third pass-b: canonicalize assignment LHS to csVar
-        var pass2b = ElixirASTTransformer.transformNode(pass2c, rewriteAssignmentLhs);
+        var pass2b = ElixirASTTransformer.transformNode(pass2c2, rewriteAssignmentLhs);
+
+        // 3d) Compress duplicated self-assignments like `cs = cs = cond do ... end`
+        function compressDoubleAssign(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EMatch(PVar(v1), {def: EMatch(PVar(v2), expr)}) if (v1 == v2):
+                    makeASTWithMeta(EMatch(PVar(v1), expr), n.metadata, n.pos);
+                case EBinary(Match, left, {def: EBinary(Match, left2, expr2)}):
+                    // Only when both LHS refer to the same var
+                    var l1 = switch (left.def) { case EVar(nm): nm; default: null; };
+                    var l2 = switch (left2.def) { case EVar(nm2): nm2; default: null; };
+                    if (l1 != null && l1 == l2) makeASTWithMeta(EBinary(Match, left, expr2), n.metadata, n.pos) else n;
+                default:
+                    n;
+            }
+        }
+        var pass2d = ElixirASTTransformer.transformNode(pass2b, compressDoubleAssign);
+
         // Fourth pass: wrap conds rebinding to csVar
-        return ElixirASTTransformer.transformNode(pass2b, wrapCondWithBinder);
+        return ElixirASTTransformer.transformNode(pass2d, wrapCondWithBinder);
     }
 
     static inline function isThisLike(v: String): Bool {
@@ -453,37 +655,99 @@ class ChangesetTransforms {
     }
 
     static function rewriteCondToReturnCsVar(clauses: Array<ECondClause>, csVar: String): Array<ECondClause> {
-        var out = [];
+        var out:Array<ECondClause> = [];
         for (c in clauses) {
             if (c == null) continue;
+            // Drop any existing default true/:true arms; we'll add a single canonical default later
+            var isDefault = switch (c.condition.def) {
+                case EBoolean(true): true;
+                case EAtom(name) if (name == "true"): true;
+                default: false;
+            };
+            if (isDefault) continue;
+
             var newBody: ElixirAST = c.body;
-            // Ensure validate_length first arg is cs
+            // Ensure validate_length first arg is cs and atomize field arg
             switch (newBody.def) {
                 case ERemoteCall(mod, fn, args) if (isChangeset(mod) && fn == "validate_length"):
                     var a = args.copy();
                     if (a.length > 0) a[0] = makeAST(EVar(csVar));
+                    if (a.length > 1) {
+                        a[1] = (function(arg: ElixirAST) {
+                            return switch (arg.def) {
+                                case EString(s): makeAST(EAtom(s));
+                                case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && (f == "to_atom" || f == "to_existing_atom")):
+                                    switch (fld.def) {
+                                        case EString(s2): makeAST(EAtom(s2));
+                                        default: arg;
+                                    }
+                                default: arg;
+                            }
+                        })(a[1]);
+                    }
                     newBody = makeAST(ERemoteCall(mod, fn, a));
                 default:
             }
-            // Replace default :true -> :nil with true -> cs
-            var newCond = c.condition;
-            switch (newCond.def) {
-                case EAtom(name) if (name == "true"):
-                    switch (newBody.def) {
-                        case ENil | EAtom(_):
-                            newBody = makeAST(EVar(csVar));
-                        default:
+            // Re-normalize conditions to Map.get/Kernel.is_nil to guarantee correctness
+            var normalizedCond = (function(condIn: ElixirAST): ElixirAST {
+                // local helpers mirror normalizeBody ones
+                function rewriteOptsAccessLocal(n: ElixirAST): ElixirAST {
+                    return switch (n.def) {
+                        case EAccess({def: EVar(v)}, key) if (v == "opts"):
+                            var keyAtom = switch (key.def) { case EAtom(a): a; default: null; };
+                            if (keyAtom != null) {
+                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(keyAtom))]), n.metadata, n.pos);
+                            } else n;
+                        case EField({def: EVar(v2)}, fld) if (v2 == "opts"):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(fld))]), n.metadata, n.pos);
+                        default: n;
                     }
-                    // Normalize :true to boolean true
-                    newCond = makeAST(EBoolean(true));
-                default:
-            }
-            out.push({condition: newCond, body: newBody});
+                }
+                function rewriteNilComparisonsLocal2(n: ElixirAST): ElixirAST {
+                    inline function isOptsField(e: ElixirAST): Null<String> {
+                        return switch (e.def) {
+                            case EField({def: EVar(v)}, fld) if (v == "opts"): fld;
+                            case EAccess({def: EVar(v)}, key) if (v == "opts"):
+                                switch (key.def) { case EAtom(a): a; default: null; }
+                            case ERemoteCall({def: EVar(m)}, f, [tgt, key]) if (m == "Map" && f == "get"):
+                                switch (tgt.def) {
+                                    case EVar(v) if (v == "opts"):
+                                        switch (key.def) { case EAtom(a): a; default: null; }
+                                    default: null;
+                                }
+                            default: null;
+                        };
+                    }
+                    return switch (n.def) {
+                        case EBinary(Equal, l, r):
+                            switch [isOptsField(l), r.def, isOptsField(r), l.def] {
+                                case [f, ENil, _, _] if (f != null):
+                                    makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f))])) ]));
+                                case [_, _, f2, ENil] if (f2 != null):
+                                    makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f2))])) ]));
+                                default: n;
+                            }
+                        case EBinary(NotEqual, l2, r2):
+                            switch [isOptsField(l2), r2.def, isOptsField(r2), l2.def] {
+                                case [f, ENil, _, _] if (f != null):
+                                    var inner = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f))])) ]));
+                                    makeAST(ElixirASTDef.EUnary(Not, inner));
+                                case [_, _, f2, ENil] if (f2 != null):
+                                    var inner2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [ makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(f2))])) ]));
+                                    makeAST(ElixirASTDef.EUnary(Not, inner2));
+                                default: n;
+                            }
+                        default: n;
+                    }
+                }
+                var stepA = ElixirASTTransformer.transformNode(condIn, rewriteOptsAccessLocal);
+                var stepB = ElixirASTTransformer.transformNode(stepA, rewriteNilComparisonsLocal2);
+                return stepB;
+            })(c.condition);
+            out.push({condition: normalizedCond, body: newBody});
         }
-        // Ensure there is a default true -> cs clause
-        var hasDefault = false;
-        for (c in out) switch (c.condition.def) { case EBoolean(true): hasDefault = true; default: }
-        if (!hasDefault) out.push({condition: makeAST(EBoolean(true)), body: makeAST(EVar(csVar))});
+        // Append a single default clause returning the canonical changeset
+        out.push({condition: makeAST(EBoolean(true)), body: makeAST(EVar(csVar))});
         return out;
     }
 
@@ -494,15 +758,9 @@ class ChangesetTransforms {
             if (n == null || n.def == null || found != null) return;
             switch (n.def) {
                 case EMatch(PVar(v), rhs) if (containsChangeCall(rhs)):
-                    #if true
-                    trace('[ChangesetTransforms] found change match binder via EMatch: ' + v);
-                    #end
                     found = v;
                 case EBinary(Match, left, rhs) if (containsChangeCall(rhs)):
                     var v = getRightmostLhsVar(left);
-                    #if true
-                    trace('[ChangesetTransforms] found change match binder via EBinary: ' + Std.string(v));
-                    #end
                     if (v != null) found = v;
                 case EBlock(stmts):
                     for (s in stmts) visit(s);
@@ -564,3 +822,4 @@ class ChangesetTransforms {
 }
 
 #end
+        

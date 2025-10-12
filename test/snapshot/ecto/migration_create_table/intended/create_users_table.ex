@@ -1,28 +1,30 @@
 defmodule CreateUsersTable do
+  @compile {:nowarn_unused_function, [create_table: 2, drop_table: 2, add_column: 4, add_index: 3, timestamps: 1]}
+
   def up(struct) do
-    struct.create_table("users")
-    struct.add_column("users", "name", "string")
-    struct.add_column("users", "email", "string")
-    struct.add_column("users", "age", "integer")
-    struct.add_index("users", ["email"])
+    struct.createTable("users")
+    struct.addColumn("users", "name", "string")
+    struct.addColumn("users", "email", "string")
+    struct.addColumn("users", "age", "integer")
+    struct.addIndex("users", ["email"])
     struct.timestamps()
   end
   def down(struct) do
-    struct.drop_table("users")
+    struct.dropTable("users")
   end
   defp create_table(struct, _table_name) do
-    nil
+    
   end
   defp drop_table(struct, _table_name) do
-    nil
+    
   end
   defp add_column(struct, _table, _column, _type) do
-    nil
+    
   end
   defp add_index(struct, _table, _columns) do
-    nil
+    
   end
   defp timestamps(struct) do
-    nil
+    
   end
 end

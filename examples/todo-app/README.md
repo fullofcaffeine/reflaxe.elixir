@@ -58,6 +58,92 @@ mix phx.server
 
 Visit [http://localhost:4000](http://localhost:4000) to see the app!
 
+## 🔍 Background Runtime-Debug Loop
+
+Once the app compiles, use a background server + curl loop to surface and fix runtime errors quickly. This augments the compile loop with fast runtime validation.
+
+Prerequisites
+- Postgres running and accessible (see `config/dev.exs`)
+- Deps installed and DB created/migrated
+
+Build (Haxe → Elixir) + Prepare
+```bash
+# From examples/todo-app
+npx haxe build-server.hxml        # Generate Elixir from Haxe
+mix deps.get                      # Ensure deps are installed
+mix ecto.create                   # Create dev DB (first run)
+mix ecto.migrate                  # Run migrations
+```
+
+Start Phoenix in the background with logs
+```bash
+# Kill previous run (if any)
+if [ -f tmp_server_bg.pid ]; then kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true; rm -f tmp_server_bg.pid; fi
+
+# Start and capture logs
+: > tmp_server_bg.log
+( MIX_ENV=dev nohup mix phx.server >> tmp_server_bg.log 2>&1 & echo $! > tmp_server_bg.pid )
+
+# Give it a moment to boot
+sleep 5
+```
+
+Health check and error capture
+```bash
+# Verify it is listening
+lsof -i :4000 -sTCP:LISTEN -n -P || true
+
+# Inspect the response (headers + first lines)
+curl -sS -i http://localhost:4000 | sed -n '1,60p'
+
+# Save full error page for precise stack details when 500 occurs
+curl -sS http://localhost:4000 > /tmp/todo_err.html
+
+# Tail recent server logs
+tail -n 120 tmp_server_bg.log
+
+# Grep for common runtime issues
+rg -n "KeyError|RuntimeError|Undefined|Protocol.UndefinedError" tmp_server_bg.log -S || true
+```
+
+Iteration loop (fix → rebuild → reload)
+```bash
+# 1) Edit Haxe/AST transforms or example source to fix the root cause
+
+# 2) Rebuild server output
+npx haxe build-server.hxml
+
+# 3) Let Phoenix code reloader pick up changes, or restart the background server
+kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true
+( MIX_ENV=dev nohup mix phx.server >> tmp_server_bg.log 2>&1 & echo $! > tmp_server_bg.pid )
+sleep 5
+
+# 4) Re-check runtime behavior
+curl -sS -i http://localhost:4000 | sed -n '1,60p'
+tail -n 120 tmp_server_bg.log
+```
+
+Alternative: stable background run without code reloader
+```bash
+# Some debugging sessions are more stable with the application tree under :run --no-halt
+if [ -f tmp_run_bg.pid ]; then kill "$(cat tmp_run_bg.pid)" 2>/dev/null || true; rm -f tmp_run_bg.pid; fi
+: > tmp_run_bg.log
+( MIX_ENV=dev nohup mix run --no-halt >> tmp_run_bg.log 2>&1 & echo $! > tmp_run_bg.pid )
+sleep 5
+curl -sS -i http://localhost:4000 | sed -n '1,60p'
+```
+
+Clean stop
+```bash
+if [ -f tmp_server_bg.pid ]; then kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true; rm -f tmp_server_bg.pid; fi
+if [ -f tmp_run_bg.pid ]; then kill "$(cat tmp_run_bg.pid)" 2>/dev/null || true; rm -f tmp_run_bg.pid; fi
+```
+
+Tips
+- Keep using `npx haxe build-server.hxml` on source changes; add the curl+logs check to catch assign shape issues, HEEX contract violations, Presence wiring, etc.
+- Prefer fixing transforms/Haxe source over editing generated Elixir. If you patch generated files for triage, follow up with proper fixes in the AST pipeline.
+- If custom Postgrex `types:` config causes local TypeManager errors, either define the types module or remove the option for local debugging.
+
 ## 🏗️ Architecture
 
 ### Project Structure

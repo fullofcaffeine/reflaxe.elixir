@@ -91,7 +91,7 @@ class TodoPubSub {
      * @return Result indicating success or failure with descriptive error
      */
     public static function subscribe(topic: TodoPubSubTopic): Result<Void, String> {
-        return SafePubSub.subscribeWithConverter(topic, topicToString);
+        return SafePubSub.subscribeTopic(topicToString(topic));
     }
     
     /**
@@ -102,7 +102,7 @@ class TodoPubSub {
      * @return Result indicating success or failure with descriptive error
      */
     public static function broadcast(topic: TodoPubSubTopic, message: TodoPubSubMessage): Result<Void, String> {
-        return SafePubSub.broadcastWithConverters(topic, message, topicToString, messageToElixir);
+        return SafePubSub.broadcastTopicPayload(topicToString(topic), messageToElixir(message));
     }
     
     /**

@@ -403,10 +403,10 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
 	
     static function loadTodos(userId: Int): Array<server.schemas.Todo> {
-        // Temporarily load all todos due to schema field mismatch; keep deterministic order
-        var query = Query.from(server.schemas.Todo)
-            .where("userId", userId)
-            .orderBy("inserted_at", "asc");
+        // Build a typed Ecto query to avoid Atom-based :todo errors and ensure proper module usage
+        // Idiomatic Phoenix pattern with compile-time validation where possible
+        var query = ecto.TypedQuery.from(server.schemas.Todo)
+            .where(t -> t.userId == userId);
         return Repo.all(query);
     }
 	
@@ -887,7 +887,7 @@ static function getUserFromSession(session: Dynamic): User {
 					</div>
 					
 					<!-- Online Users Panel -->
-					${renderPresencePanel(assigns)}
+					${renderPresencePanel(assigns.onlineUsers)}
 					
 					<!-- Bulk Actions -->
 					${renderBulkActions(assigns)}
@@ -906,13 +906,14 @@ static function getUserFromSession(session: Dynamic): User {
 	 * 
 	 * Uses idiomatic Phoenix pattern: single presence map with all user state
 	 */
-	static function renderPresencePanel(assigns: TodoLiveAssigns): String {
+	static function renderPresencePanel(onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
 		var onlineCount = 0;
 		var onlineUsersList = [];
 		var editingIndicators = [];
 		
 		// Iterate once through the single presence map (Phoenix pattern)
-		for (userId => entry in assigns.onlineUsers) {
+		for (userId in onlineUsers.keys()) {
+			var entry = onlineUsers.get(userId);
 			onlineCount++;
 			if (entry.metas.length > 0) {
 				var meta = entry.metas[0];

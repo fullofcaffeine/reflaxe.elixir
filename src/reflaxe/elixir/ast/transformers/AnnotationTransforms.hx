@@ -91,22 +91,21 @@ class AnnotationTransforms {
                 trace('[XRay Endpoint Transform] Processing endpoint EModule: ${name}');
                 #end
                 
-                var appName = ast.metadata.appName ?? "app";
-                var endpointBodyStatements = buildEndpointBodyStatements(name, appName);
-                
-                // Create new module with endpoint body, preserving metadata
-                return makeASTWithMeta(
-                    EModule(name, attrs, endpointBodyStatements),
-                    ast.metadata,
-                    ast.pos
-                );
+                var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
+                var endpointBody = buildEndpointBody(name, appName);
+                // EModule expects Array<ElixirAST> body; unwrap block to statements
+                var stmts = switch (endpointBody.def) {
+                    case EBlock(s): s;
+                    default: [endpointBody];
+                };
+                return makeASTWithMeta(EModule(name, attrs, stmts), ast.metadata, ast.pos);
                 
             case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
                 #if debug_annotation_transforms
                 trace('[XRay Endpoint Transform] Processing endpoint EDefmodule: ${name}');
                 #end
                 
-                var appName = ast.metadata.appName ?? "app";
+                var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
                 var endpointBody = buildEndpointBody(name, appName);
                 
                 // Create new module with endpoint body, preserving metadata

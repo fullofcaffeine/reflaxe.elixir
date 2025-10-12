@@ -13,10 +13,10 @@
 # Paths relative to the project root using SCOPE_DIR
 -cp ${SCOPE_DIR}/src/
 
-# Include staged .cross.hx files (must come before std/ for proper override)
--cp ${SCOPE_DIR}/std/_std/
+# Staged .cross.hx files are injected conditionally by the bootstrap macro
+# to avoid leaking __elixir__() into macro/other targets.
 
-# Include the Elixir standard library definitions
+# Include the Elixir standard library definitions (generic externs)
 -cp ${SCOPE_DIR}/std/
 
 # Depend on the base Reflaxe framework

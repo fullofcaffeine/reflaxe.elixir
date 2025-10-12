@@ -14,6 +14,10 @@ config :todo_app, TodoAppWeb.Endpoint,
   pubsub_server: TodoApp.PubSub,
   live_view: [signing_salt: "secret_salt"]
 
+# Configure Presence to use the app's PubSub server
+config :todo_app, TodoAppWeb.Presence,
+  pubsub_server: TodoApp.PubSub
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

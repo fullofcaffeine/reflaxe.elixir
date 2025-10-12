@@ -47,6 +47,55 @@ import reflaxe.elixir.ast.ASTUtils;
  * query var. Rewrite relevant ERemoteCall arguments and Repo.all call sites.
  */
 class EctoTransforms {
+    /**
+     * ectoQueryableAtomToSchemaPass
+     *
+     * WHAT
+     * - Rewrites Ecto.Queryable.to_query(:atom) to the schema module <App>.<CamelCase(atom)>
+     *   so Repo and Ecto.Query APIs receive a valid queryable.
+     *
+     * WHY
+     * - Ecto.Queryable does not accept plain atoms that are not modules. Passing :todo triggers
+     *   Protocol.UndefinedError. Phoenix idiom is to use the schema module.
+     *
+     * HOW
+     * - For any ERemoteCall(Ecto.Queryable, "to_query", [EAtom(name)]), derive <App> prefix from the
+     *   enclosing module name (e.g., TodoAppWeb.* -> TodoApp) and replace the call with EVar("<App>.<CamelName>")
+     *   to hand a proper queryable to downstream where/order_by/all.
+     */
+    public static function ectoQueryableAtomToSchemaPass(ast: ElixirAST): ElixirAST {
+        inline function camelize(s: String): String {
+            var parts = s.split("_");
+            var out = [];
+            for (p in parts) if (p.length > 0) out.push(p.charAt(0).toUpperCase() + p.substr(1));
+            return out.join("");
+        }
+        var defaultApp = (function() {
+            try {
+                return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            } catch (e:Dynamic) {
+                return null;
+            }
+        })();
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERemoteCall(modAst, func, args) if (func == "to_query" && args != null && args.length == 1):
+                    var modStr = switch (modAst.def) {
+                        case EVar(mn): mn;
+                        default: reflaxe.elixir.ast.ElixirASTPrinter.printAST(modAst);
+                    };
+                    if (modStr != "Ecto.Queryable") return n;
+                    switch (args[0].def) {
+                        case EAtom(atomName) if (defaultApp != null):
+                            var newArgs = args.copy();
+                            newArgs[0] = makeAST(EVar(defaultApp + "." + camelize(atomName)));
+                            makeASTWithMeta(ERemoteCall(modAst, func, newArgs), n.metadata, n.pos);
+                        default: n;
+                    }
+                default: n;
+            }
+        });
+    }
     public static function ectoQueryVarConsistencyPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {

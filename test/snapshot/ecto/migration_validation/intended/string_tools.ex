@@ -1,186 +1,225 @@
 defmodule StringTools do
-  import Bitwise
+  @import :Bitwise
 
   def url_encode(s) do
-    s
-    |> String.to_charlist()
-    |> Enum.map(fn c ->
-      if (c >= ?A and c <= ?Z) or (c >= ?a and c <= ?z) or
-         (c >= ?0 and c <= ?9) or c in [?-, ?_, ?., ?~] do
-        <<c>>
-      else
-        "%#{Integer.to_string(c, 16) |> String.upcase()}"
-      end
-    end)
-    |> IO.iodata_to_binary()
+    result = ""
+    {s, result} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, result}, fn _, {s, result} ->
+  if 0 < length(s) do
+    i = 0 + 1
+    c = result2 = :binary.at(s, i)
+    if result2 == nil, do: nil, else: result2
+    {:cont, {s, result}}
+  else
+    {:halt, {s, result}}
   end
-
+end)
+    result
+  end
   def url_decode(s) do
-    url_decode_impl(String.graphemes(s), "")
-  end
-
-  defp url_decode_impl([], acc), do: acc
-  defp url_decode_impl(["%", hex1, hex2 | rest], acc) do
-    case Integer.parse(hex1 <> hex2, 16) do
-      {code, ""} -> url_decode_impl(rest, acc <> <<code>>)
-      _ -> url_decode_impl([hex1, hex2 | rest], acc <> "%")
+    result = ""
+    i = 0
+    Enum.each(0..(length(s) - 1), fn i ->
+  c = String.at(s, i) || ""
+  if c == "%" do
+    if i + 2 < length(s) do
+      hex = pos = i + 1
+      String.slice(s, pos, 2)
+      code = parse_int("0x" <> hex)
+      if code != nil do
+        result = result <> code2 = code
+<<code2::utf8>>
+        i = i + 3
+        throw(:continue)
+      end
     end
   end
-  defp url_decode_impl([char | rest], acc) do
-    url_decode_impl(rest, acc <> char)
+  result = result <> c
+  i + 1
+end)
+    result
   end
-
-  def html_escape(s, quotes \\ false) do
-    escaped = s
-      |> String.replace("&", "&amp;")
-      |> String.replace("<", "&lt;")
-      |> String.replace(">", "&gt;")
-
-    if quotes do
-      escaped
-      |> String.replace("\"", "&quot;")
-      |> String.replace("'", "&#039;")
-    else
-      escaped
-    end
+  def html_escape(s, quotes) do
+    s = s |> replace("&", "&amp;") |> replace("<", "&lt;") |> replace(">", "&gt;")
   end
-
   def html_unescape(s) do
-    s
-    |> String.replace("&gt;", ">")
-    |> String.replace("&lt;", "<")
-    |> String.replace("&quot;", "\"")
-    |> String.replace("&#039;", "'")
-    |> String.replace("&amp;", "&")
+    s = s |> replace("&gt;", ">") |> replace("&lt;", "<") |> replace("&quot;", "\"") |> replace("&#039;", "'") |> replace("&amp;", "&")
   end
-
   def starts_with(s, start) do
-    String.starts_with?(s, start)
+    length(s) >= length(start) and len = length(start)
+if Kernel.is_nil(len) do
+  String.slice(s, 0..-1)
+else
+  String.slice(s, 0, len)
+end == start
   end
-
-  def ends_with(s, end_str) do
-    String.ends_with?(s, end_str)
+  def ends_with(s, end_param) do
+    elen = length(end_param)
+    slen = length(s)
+    slen >= elen and pos = (slen - elen)
+if Kernel.is_nil(elen) do
+  String.slice(s, pos..-1)
+else
+  String.slice(s, pos, elen)
+end == end_param
   end
-
   def is_space(s, pos) do
-    case String.at(s, pos) do
-      nil -> false
-      char ->
-        <<c::utf8>> = char
-        (c > 8 and c < 14) or c == 32
-    end
+    c = :binary.at(s, pos)
+    c > 8 and c < 14 or c == 32
   end
-
   def ltrim(s) do
     String.trim_leading(s)
   end
-
   def rtrim(s) do
     String.trim_trailing(s)
   end
-
   def trim(s) do
-    String.trim(s)
+    ltrim(rtrim(s))
   end
-
   def lpad(s, c, l) do
-    current_length = String.length(s)
-    if current_length >= l or String.length(c) == 0 do
-      s
-    else
-      padding_needed = l - current_length
-      padding = String.duplicate(c, div(padding_needed, String.length(c)) + 1)
-      String.slice(padding, 0, padding_needed) <> s
-    end
+    if length(c) <= 0, do: s
+    buf = ""
+    {s, l, buf} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, buf}, fn _, {s, l, buf} ->
+  if length(buf) + length(s) < l do
+    buf = buf <> c
+    {:cont, {s, l, buf <> c}}
+  else
+    {:halt, {s, l, buf}}
   end
-
+end)
+    "#{buf}#{s}"
+  end
   def rpad(s, c, l) do
-    current_length = String.length(s)
-    if current_length >= l or String.length(c) == 0 do
-      s
-    else
-      padding_needed = l - current_length
-      padding = String.duplicate(c, div(padding_needed, String.length(c)) + 1)
-      s <> String.slice(padding, 0, padding_needed)
-    end
+    if length(c) <= 0, do: s
+    {s, l} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l}, fn _, {s, l} ->
+  if length(s) < l do
+    s = s <> c
+    {:cont, {s <> c, l}}
+  else
+    {:halt, {s, l}}
   end
-
+end)
+    s
+  end
   def replace(s, sub, by) do
-    String.replace(s, sub, by)
+    Enum.join(String.split(s, sub), by)
   end
-
-  def hex(n, digits \\ nil) do
-    hex_string = Integer.to_string(n, 16) |> String.upcase()
-
-    if digits != nil and String.length(hex_string) < digits do
-      String.pad_leading(hex_string, digits, "0")
-    else
-      hex_string
+  def hex(n, digits) do
+    s = ""
+    hex_chars = "0123456789ABCDEF"
+    {n, s} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {n, s} ->
+  if n > 0 do
+    s = String.at(hex_chars, Bitwise.band(n, 15)) || "" <> s
+    n = Bitwise.bsr(n, 4)
+    {:cont, {n, s}}
+  else
+    {:halt, {n, s}}
+  end
+end)
+    if not Kernel.is_nil(digits) do
+      {digits, s} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s}, fn _, {digits, s} ->
+  if length(s) < digits do
+    s = "0" <> s
+    {:cont, {digits, "0" <> s}}
+  else
+    {:halt, {digits, s}}
+  end
+end)
     end
+    s
   end
-
   def fast_code_at(s, index) do
-    case String.at(s, index) do
-      nil -> nil
-      char ->
-        <<code::utf8>> = char
-        code
-    end
+    result = :binary.at(s, index)
+    if result == nil, do: nil, else: result
   end
-
   def contains(s, value) do
-    String.contains?(s, value)
+    case :binary.match(s, value) do
+                {pos, _} -> pos
+                nil -> -1
+            end != -1
   end
-
   def is_eof(c) do
     c < 0
   end
-
   def utf16_code_point_at(s, index) do
-    case String.at(s, index) do
-      nil -> nil
-      char ->
-        <<code::utf8>> = char
-        code
-    end
+    result = :binary.at(s, index)
+    if result == nil, do: nil, else: result
   end
-
   def is_high_surrogate(code) do
-    code >= 0xD800 and code <= 0xDBFF
+    code >= 55296 and code <= 56319
   end
-
   def is_low_surrogate(code) do
-    code >= 0xDC00 and code <= 0xDFFF
+    code >= 56320 and code <= 57343
   end
-
   def quote_regexp_meta(s) do
-    special_chars = ~w(\\ ^ $ . | ? * + ( ) [ ] { })
-    Enum.reduce(special_chars, s, fn char, acc ->
-      String.replace(acc, char, "\\" <> char)
-    end)
+    special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
+    {s, special_chars} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, special_chars}, fn _, {s, special_chars} ->
+  if 0 < length(special_chars) do
+    char = special_chars[0]
+    0 + 1
+    s = replace(s, char, "\\" <> char)
+    {:cont, {s, special_chars}}
+  else
+    {:halt, {s, special_chars}}
   end
-
+end)
+    s
+  end
   def parse_int(str) do
+    if String.slice(str, 0, 2) == "0x" do
+      hex = len = nil
+      if Kernel.is_nil(len) do
+        String.slice(str, 2..-1)
+      else
+        String.slice(str, 2, len)
+      end
+      result = 0
+      {hex, result} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {hex, result}, fn _, {hex, result} ->
+  if 0 < length(hex) do
+    i = 0 + 1
+    c = result2 = :binary.at(hex, i)
+    if result2 == nil, do: nil, else: result2
+    result = result * 16
     cond do
-      String.starts_with?(str, "0x") or String.starts_with?(str, "0X") ->
-        hex_part = String.slice(str, 2..-1)
-        case Integer.parse(hex_part, 16) do
-          {value, ""} -> value
-          _ -> nil
-        end
-
-      true ->
-        case Integer.parse(str) do
-          {value, ""} -> value
-          _ -> nil
-        end
+      c >= 48 and c <= 57 -> result = result + (c - 48)
+      c >= 65 and c <= 70 -> result = result + (c - 65) + 10
+      c >= 97 and c <= 102 -> result = result + (c - 97) + 10
+      :true -> nil
+      :true -> :nil
+    end
+    {:cont, {hex, result}}
+  else
+    {:halt, {hex, result}}
+  end
+end)
+      result
+    end
+    result = 0
+    negative = false
+    start = 0
+    cond do
+      String.at(str, 0) || "" == "-" ->
+        negative = true
+        start = 1
+      String.at(str, 0) || "" == "+" -> start = 1
+      :true -> :nil
+    end
+    Enum.each(0..(length(str) - 1), fn start ->
+  i = start + 1
+  c = result2 = :binary.at(str, i)
+  if result2 == nil, do: nil, else: result2
+  if c >= 48 and c <= 57 do
+    result = result * 10 + (c - 48)
+  else
+    nil
+  end
+end)
+    if negative do
+      -result
+    else
+      result
     end
   end
-
   def parse_float(str) do
-    case Float.parse(str) do
-      {value, ""} -> value
-      _ -> nil
-    end
+    String.to_float(str)
   end
 end
