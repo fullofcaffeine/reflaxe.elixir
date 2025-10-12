@@ -30,6 +30,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Maintainable: Small focused functions for specific optimizations
  * - Testable: Each optimization can be tested independently
  * - Performance: Eliminates unnecessary variable allocations
+ *
+ * EXAMPLES
+ * Haxe:
+ *   var v = { field: (tmp = f(), g(tmp)) };
+ * Elixir (after):
+ *   v = %{field: g(f())}
  */
 class TempVariableTransforms {
     

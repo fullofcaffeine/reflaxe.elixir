@@ -53,6 +53,9 @@ class ReduceWhileResultBindingTransforms {
                                 // {v1, v2, ...} = Enum.reduce_while(...)
                                 makeASTWithMeta(EMatch(PTuple(patterns), node), node.metadata, node.pos);
                             }
+                        case EVar(name):
+                            // Single-variable accumulator: v = Enum.reduce_while(...)
+                            makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);
                         default:
                             node;
                     }

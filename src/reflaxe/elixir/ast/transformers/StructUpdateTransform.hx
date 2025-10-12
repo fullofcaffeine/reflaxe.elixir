@@ -34,6 +34,12 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  * - Methods that assign multiple fields need all updates combined
  * - Conditional assignments need special handling
  * - Recursive methods need careful struct threading
+ *
+ * EXAMPLES
+ * Haxe:
+ *   this.name = "A"; this.age = 1;
+ * Elixir (after):
+ *   %User{struct | name: "A", age: 1}
  */
 @:nullSafety(Off)
 class StructUpdateTransform {

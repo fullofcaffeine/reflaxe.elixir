@@ -507,6 +507,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ModuleNewToStructLiteral.moduleNewToStructLiteralPass
         });
+        // Final re-run for app module qualification in Web contexts
+        passes.push({
+            name: "ModuleQualification(Final)",
+            description: "Final Web-context qualification <App>.Module after all rewrites",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleQualificationPass
+        });
         
         // Array method transformations are handled in ElixirASTBuilder
         // at the TCall(TField(...)) pattern to generate idiomatic Elixir directly
@@ -1174,6 +1181,34 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeChangesetPass
         });
+        // Ensure validate_* field argument uses literal atom when possible
+        passes.push({
+            name: "ChangesetFieldAtomNormalize",
+            description: "Rewrite String.to_atom(\"field\") to :field in validate_* calls",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeValidateFieldAtomPass
+        });
+        // Ensure no late-introduced validate_* fields remain as String.to_atom/strings
+        passes.push({
+            name: "ChangesetFieldAtomNormalize(Late)",
+            description: "Late sweep to normalize validate_* field argument to literal atom",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeValidateFieldAtomPass
+        });
+        // Final guarantee: normalize validate_* field atom literals at the very end
+        passes.push({
+            name: "ChangesetFieldAtomNormalize(Final)",
+            description: "Final normalization of validate_* field args to :field",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeValidateFieldAtomPass
+        });
+        // Final EqNilToIsNil to catch any newly introduced comparisons
+        passes.push({
+            name: "EqNilToIsNil(Final)",
+            description: "Final replacement of (x == nil)/(x != nil) with Kernel.is_nil/1",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
         passes.push({
@@ -1431,6 +1466,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
         });
+        // Late simplification: fold is_nil(var) -> false when var provably non-nil literal
+        passes.push({
+            name: "SimplifyIsNilFalse(Late)",
+            description: "Fold Kernel.is_nil(var) to false when var assigned literal non-nil earlier",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass
+        });
 
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
         passes.push({
@@ -1521,6 +1563,15 @@ class ElixirASTTransformer {
             description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
+        });
+
+        // Late re-qualification of application modules in Web contexts to catch newly
+        // introduced calls by previous passes (shape-derived; avoids registry dependency)
+        passes.push({
+            name: "ModuleQualification(Late)",
+            description: "Re-run Web-context <App>.Module qualification after later transforms",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleQualificationPass
         });
 
         // Qualify struct literals passed to changeset/2 inside <App>Web.* modules

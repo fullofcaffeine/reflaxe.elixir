@@ -10,6 +10,25 @@ import reflaxe.elixir.ast.ElixirAST.GuardBranch;       // Use from ElixirAST
 import reflaxe.elixir.ast.ElixirAST.ValidationResult;  // Use from ElixirAST
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+
+/**
+ * GuardConditionFlattener
+ *
+ * WHAT
+ * - Three-phase system to flatten nested guard if/else chains into a flat cond
+ *   with grouped guard expressions.
+ *
+ * WHY
+ * - Guard lowering can create nested branches with r2=nil artifacts and broken
+ *   scoping. Flattening restores clarity and correctness.
+ *
+ * HOW
+ * - Collect guard branches, validate grouping against bound vars, rebuild cond.
+ *
+ * EXAMPLES
+ * Before: if g1, do: if g2, do: body, else: next
+ * After:  cond do g1 and g2 -> body; true -> next end
+ */
 import haxe.ds.StringMap;
 
 /**

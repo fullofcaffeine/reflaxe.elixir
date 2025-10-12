@@ -2,6 +2,25 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * ClauseUnusedBinderUnderscoreTransforms
+ *
+ * WHAT
+ * - Prefix unused clause-binder variables with underscore to silence compiler warnings
+ *   while preserving readability and scope.
+ *
+ * WHY
+ * - Haxe-generated patterns may bind variables not referenced in the clause body.
+ *   Elixir warns on unused vars; adding underscore is idiomatic.
+ *
+ * HOW
+ * - For each case clause, collect body-used names, compare against pattern binders,
+ *   and rewrite unused PVar(name) -> PVar("_" + name).
+ *
+ * EXAMPLES
+ * Before: case x do {a, b} -> a end
+ * After:  case x do {a, _b} -> a end
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -87,4 +106,3 @@ class ClauseUnusedBinderUnderscoreTransforms {
 }
 
 #end
-

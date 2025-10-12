@@ -2,6 +2,26 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * EctoTransforms
+ *
+ * WHAT
+ * - Normalizes Ecto.Query usage: ensures consistent query variable binding,
+ *   qualifies from/in atoms to schema modules, and rewrites Repo.all/where
+ *   to use the canonical query variable.
+ *
+ * WHY
+ * - Generated code may drift between different query var names and rely on
+ *   atoms for table names. Normalization improves correctness and readability.
+ *
+ * HOW
+ * - Track first query var and rewrite subsequent calls to use it.
+ * - Convert ERaw from/in :table to <App>.Schema in both ERaw and AST forms.
+ *
+ * EXAMPLES
+ * Before: from u in :user |> where([t], t.id == ^id) |> Repo.all()
+ * After:  from u in App.User |> where([u], u.id == ^id) |> Repo.all()
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;

@@ -2,6 +2,24 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * DiscriminantRewriteTransforms
+ *
+ * WHAT
+ * - Rewrites case discriminants from temp alias variables (_g) back to the
+ *   original expressions before alias cleanup.
+ *
+ * WHY
+ * - Alias introduction during enum extraction adds an extra indirection that
+ *   harms readability. Rewriting early preserves intent and enables further cleanup.
+ *
+ * HOW
+ * - Detect `_g = expr; case _g do ... end` and rewrite to `case expr do ... end`.
+ *
+ * EXAMPLES
+ * Before: _g = foo(); case _g do ... end
+ * After:  case foo() do ... end
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;

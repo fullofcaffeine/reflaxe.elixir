@@ -24,6 +24,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   internal uppercase letters, compute snake_case and:
  *   - rename the pattern variable
  *   - replace EVar(oldName) with EVar(newName) in the clause body
+ *
+ * EXAMPLES
+ * Haxe:
+ *   switch (x) {
+ *     case {userId: idValue}: idValue
+ *   }
+ * Elixir (before):
+ *   case x do
+ *     %{userId: idValue} -> idValue
+ *   end
+ * Elixir (after):
+ *   case x do
+ *     %{userId: id_value} -> id_value
+ *   end
  */
 class BinderCamelToSnakeTransforms {
     public static function binderCamelToSnakePass(ast: ElixirAST): ElixirAST {
@@ -91,4 +105,3 @@ class BinderCamelToSnakeTransforms {
 }
 
 #end
-
