@@ -64,6 +64,7 @@ class ElixirASTPrinter {
      */
     // Track current module name to enable context-aware printing (e.g., Repo qualification)
     static var currentModuleName: Null<String> = null;
+    static var observedAppPrefix: Null<String> = null;
 
     public static function print(ast: ElixirAST, indent: Int = 0): String {
         // Handle null nodes
@@ -106,6 +107,58 @@ class ElixirASTPrinter {
                 var prevModule = currentModuleName;
                 currentModuleName = name;
 
+                // Capture observed app prefix if this is an <App>.Repo module
+                if (observedAppPrefix == null) {
+                    var idxCap = name.indexOf(".Repo");
+                    if (idxCap > 0) observedAppPrefix = name.substring(0, idxCap);
+                    var idxWeb = name.indexOf("Web");
+                    if (idxWeb > 0) observedAppPrefix = name.substring(0, idxWeb);
+                }
+
+                // Optional alias injection for Repo in non-Web modules
+                inline function needsRepoAliasInBlock(block: ElixirAST): Bool {
+                    var hasAlias = false;
+                    var hasBare = false;
+                    switch (block.def) {
+                        case EBlock(stmts):
+                            for (s in stmts) switch (s.def) {
+                                case EAlias(module, as) if ((as == null || as == "Repo")):
+                                    if (module != null && module.indexOf(".Repo") > 0) hasAlias = true;
+                                default:
+                            }
+                            // scan for bare repo like above
+                            function scan(n: ElixirAST): Void {
+                                if (n == null || n.def == null || hasBare) return;
+                                switch (n.def) {
+                                    case ERemoteCall({def: EVar(m)}, _, _): if (m == "Repo") hasBare = true;
+                                    case ECall({def: EVar(m)}, _, _): if (m == "Repo") hasBare = true;
+                                    case EBlock(es): for (e in es) scan(e);
+                                    case EIf(c, t, e): scan(c); scan(t); if (e != null) scan(e);
+                                    case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
+                                    case ECond(cs): for (cl in cs) { scan(cl.condition); scan(cl.body); }
+                                    case EMatch(_, rhs): scan(rhs);
+                                    case EBinary(_, l, r): scan(l); scan(r);
+                                    case ERemoteCall(m, _, args): scan(m); for (a in args) scan(a);
+                                    case ECall(t, _, args): if (t != null) scan(t); for (a in args) scan(a);
+                                    default:
+                                }
+                            }
+                            for (s in stmts) scan(s);
+                        default:
+                    }
+                    return (hasBare && !hasAlias);
+                }
+                // Inject alias before printing block when needed and not a Web module
+                if (name.indexOf("Web") == -1 && needsRepoAliasInBlock(doBlock)) {
+                    var app3: Null<String> = null;
+                    if (observedAppPrefix != null) app3 = observedAppPrefix; else {
+                        try app3 = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                    }
+                    if (app3 != null && app3.length > 0) {
+                        moduleContent += indentStr(indent + 1) + 'alias ' + app3 + '.Repo, as: Repo\n\n';
+                    }
+                }
+
                 moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
 
                 // Restore context
@@ -128,6 +181,9 @@ class ElixirASTPrinter {
                     // This is the proper Elixir pattern for custom exceptions
                     var result = 'defmodule ${name} do\n';
                     result += indentStr(indent + 1) + 'defexception [:message]\n';
+                    // Set module context while printing body for proper qualification
+                    var prevModuleCtx = currentModuleName;
+                    currentModuleName = name;
                     
                     // Print any other methods (like toString)
                     for (expr in body) {
@@ -137,12 +193,17 @@ class ElixirASTPrinter {
                             result += '\n' + indentStr(indent + 1) + exprStr + '\n';
                         }
                     }
+                    // Restore printer module context
+                    currentModuleName = prevModuleCtx;
                     
                     result += indentStr(indent) + 'end\n';
                     result;
                 } else {
                     // Regular module
                     var result = 'defmodule ${name} do\n';
+                    // Preserve and set current module context for body printing
+                    var prevModuleCtx = currentModuleName;
+                    currentModuleName = name;
                     
                     // Print attributes
                     for (attr in attributes) {
@@ -153,10 +214,19 @@ class ElixirASTPrinter {
                         result += '\n';
                     }
                     
+                    // Capture observed app prefix if this is an <App>.Repo module
+                    if (observedAppPrefix == null) {
+                        var idxCap2 = name.indexOf(".Repo");
+                        if (idxCap2 > 0) observedAppPrefix = name.substring(0, idxCap2);
+                        var idxWeb2 = name.indexOf("Web");
+                        if (idxWeb2 > 0) observedAppPrefix = name.substring(0, idxWeb2);
+                    }
                     // Print body
                     for (expr in body) {
                         result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
                     }
+                    // Restore printer module context
+                    currentModuleName = prevModuleCtx;
                     
                     result += indentStr(indent) + 'end\n';
                     result;
@@ -187,6 +257,9 @@ class ElixirASTPrinter {
                 // This is handled in the main print() function, not here
                 // For now, generate regular defmodule
                 var result = 'defmodule ${name} do\n';
+                // Preserve and set current module name while printing this module body
+                var prevModuleCtx = currentModuleName;
+                currentModuleName = name;
                 
                 // Print attributes
                 for (attr in attributes) {
@@ -197,11 +270,60 @@ class ElixirASTPrinter {
                     result += '\n';
                 }
                 
+                // Inject alias <App>.Repo as Repo in non-Web modules when bare Repo.* is referenced
+                inline function needsRepoAlias(stmts: Array<ElixirAST>): Bool {
+                    var hasAlias = false;
+                    var hasBare = false;
+                    for (s in stmts) switch (s.def) {
+                        case EAlias(module, as) if ((as == null || as == "Repo")):
+                            // Any alias to *.Repo counts
+                            if (module != null && module.indexOf(".Repo") > 0) hasAlias = true;
+                        default:
+                    }
+                    // Scan for bare Repo usage by walking AST
+                    function scan(n: ElixirAST): Void {
+                        if (n == null || n.def == null || hasBare) return;
+                        switch (n.def) {
+                            case ERemoteCall({def: EVar(m)}, _, _): if (m == "Repo") hasBare = true;
+                            case ECall({def: EVar(m)}, _, _): if (m == "Repo") hasBare = true;
+                            case EDef(_, _, _, body): scan(body);
+                            case EDefp(_, _, _, body): scan(body);
+                            case EBlock(es): for (e in es) scan(e);
+                            case EIf(c, t, e): scan(c); scan(t); if (e != null) scan(e);
+                            case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
+                            case ECond(cs): for (cl in cs) { scan(cl.condition); scan(cl.body); }
+                            case EMatch(pat, rhs): scan(rhs);
+                            case EBinary(_, l, r): scan(l); scan(r);
+                            case ERemoteCall(m, _, args): scan(m); for (a in args) scan(a);
+                            case ECall(t, _, args): if (t != null) scan(t); for (a in args) scan(a);
+                            case ETuple(elts): for (e in elts) scan(e);
+                            case EMap(pairs): for (p in pairs) { scan(p.key); scan(p.value); }
+                            case EKeywordList(pairs): for (p in pairs) { scan(p.value); }
+                            case EStructUpdate(st, fields): scan(st); for (f in fields) scan(f.value);
+                            default:
+                        }
+                    }
+                    for (s in stmts) scan(s);
+                    return (hasBare && !hasAlias);
+                }
+                if ((name.indexOf("Web") == -1) && body.length > 0 && needsRepoAlias(body)) {
+                    var app: Null<String> = null;
+                    if (observedAppPrefix != null) app = observedAppPrefix; else {
+                        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                    }
+                    if (app != null && app.length > 0) {
+                        result += indentStr(indent + 1) + 'alias ' + app + '.Repo, as: Repo\n\n';
+                    }
+                }
+
                 // Print body
                 for (expr in body) {
                     result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
                 }
                 
+                // Restore module context
+                currentModuleName = prevModuleCtx;
+
                 result += indentStr(indent) + 'end\n';
                 result;
                 
@@ -509,7 +631,18 @@ class ElixirASTPrinter {
                 }].join(', ') + '}';
                 
             case EStruct(module, fields):
-                '%' + module + '{' + 
+                // Qualify bare struct module with <App> prefix when inside <App>Web.*
+                var qualifiedModule = (function() {
+                    if (module.indexOf('.') != -1) return module;
+                    inline function appPrefix(): Null<String> {
+                        if (currentModuleName == null) return observedAppPrefix;
+                        var idx = currentModuleName.indexOf("Web");
+                        return idx > 0 ? currentModuleName.substring(0, idx) : observedAppPrefix;
+                    }
+                    var p = appPrefix();
+                    return (p != null ? p + '.' + module : module);
+                })();
+                '%' + qualifiedModule + '{' + 
                 [for (f in fields) {
                     var value = f.value;
                     
@@ -650,6 +783,27 @@ class ElixirASTPrinter {
                     // Normal function call
                     var argStr = [for (a in args) printFunctionArg(a)].join(', ');
                     if (target != null) {
+                        // Fallback: Module.new() -> %<App>.Module{}
+                        if (funcName == "new" && args.length == 0) {
+                            inline function appPrefix(): Null<String> {
+                                if (currentModuleName == null) return observedAppPrefix;
+                                var idx = currentModuleName.indexOf("Web");
+                                return idx > 0 ? currentModuleName.substring(0, idx) : observedAppPrefix;
+                            }
+                            switch (target.def) {
+                                case EVar(n):
+                                    var modStr = (function(){
+                                        if (n.indexOf('.') == -1) {
+                                            var p = appPrefix();
+                                            return (p != null ? p + '.' + n : n);
+                                        } else {
+                                            return n;
+                                        }
+                                    })();
+                                    return '%'+modStr+'{}';
+                                default:
+                            }
+                        }
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
                             // Function variable call - use .() syntax
@@ -680,6 +834,26 @@ class ElixirASTPrinter {
                                     enumCall + ')';
                                 }
                             } else {
+                                // Special-case: to_iso8601 on DateTime values
+                                if (funcName == "to_iso8601") {
+                                    // Render as DateTime.to_iso8601(target)
+                                    var tstr = print(target, indent);
+                                    return 'DateTime.to_iso8601(' + tstr + ')';
+                                }
+                                // Special-case: list.push(elem) → list = Enum.concat(list, [elem])
+                                if (funcName == "push") {
+                                    // Only when target is a simple variable (lowercase start)
+                                    switch (target.def) {
+                                        case EVar(varName):
+                                            var first = varName.charAt(0);
+                                            if (first == first.toLowerCase()) {
+                                                // Use the first argument only
+                                                var printedArg = args.length > 0 ? printFunctionArg(args[0]) : "";
+                                                return varName + ' = Enum.concat(' + varName + ', [' + printedArg + '])';
+                                            }
+                                        default:
+                                    }
+                                }
                                 // Check if target is a block expression that needs parentheses
                                 var targetStr = switch(target.def) {
                                     case ECase(_, _) | ECond(_) | EWith(_, _, _):
@@ -695,7 +869,35 @@ class ElixirASTPrinter {
                                         var modStr = switch(target.def) {
                                             case EVar(name) if (name == "Repo"):
                                                 var idx = (currentModuleName != null) ? currentModuleName.indexOf("Web") : -1;
-                                                if (idx > 0) currentModuleName.substring(0, idx) + ".Repo" else name;
+                                                if (idx > 0) currentModuleName.substring(0, idx) + ".Repo" else {
+                                                    if (observedAppPrefix != null) observedAppPrefix + ".Repo" else {
+                                                        try {
+                                                            var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+                                                            if (app != null && app.length > 0) app + ".Repo" else name;
+                                                        } catch (e:Dynamic) {
+                                                            name;
+                                                        }
+                                                    }
+                                                };
+                                            case EVar(name):
+                                                // If target looks like a module (UpperCamel) and we're inside <App>Web.*,
+                                                // qualify to <App>.<Name> (fallback for cases missed by AST pass)
+                                                var first = name.charAt(0);
+                                                var isUpper = first == first.toUpperCase() && first != first.toLowerCase();
+                                                var idx = (currentModuleName != null) ? currentModuleName.indexOf("Web") : -1;
+                                                inline function isStdModule(n: String): Bool {
+                                                    return switch (n) {
+                                                        case "Enum" | "String" | "Map" | "List" | "Tuple" | "DateTime" |
+                                                             "Bitwise" | "Kernel" | "IO" | "File" | "Regex" | "Process" |
+                                                             "Task" | "Agent" | "GenServer" | "Stream" | "Keyword" | "Access" |
+                                                             "Path" | "System" | "Application" | "Logger" | "Ecto" | "Ecto.Query" |
+                                                             "Phoenix" | "Phoenix.LiveView" | "Phoenix.Component" | "Phoenix.Controller":
+                                                            true;
+                                                        default:
+                                                            false;
+                                                    };
+                                                }
+                                                if (isUpper && idx > 0 && !isStdModule(name)) currentModuleName.substring(0, idx) + "." + name else name;
                                             default:
                                                 print(target, indent);
                                         };
@@ -718,7 +920,99 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case ERemoteCall(module, funcName, args):
-                var argStr = [for (a in args) printFunctionArg(a)].join(', ');
+                // Special remappings before generic remote call printing
+                switch (module.def) {
+                    case EVar(m) if (m == "Date_Impl_"):
+                        // Date_Impl_.get_time(x) -> DateTime.to_iso8601(x)
+                        if (funcName == "get_time" && args.length == 1) {
+                            return 'DateTime.to_iso8601(' + printFunctionArg(args[0]) + ')';
+                        }
+                        // Date_Impl_.from_string(x) -> x
+                        if (funcName == "from_string" && args.length == 1) {
+                            return printFunctionArg(args[0]);
+                        }
+                    default:
+                }
+                // Module.new() -> %Module{}
+                if (funcName == "new" && args.length == 0) {
+                    inline function appPrefix(): Null<String> {
+                        if (currentModuleName == null) return observedAppPrefix;
+                        var idx = currentModuleName.indexOf("Web");
+                        return idx > 0 ? currentModuleName.substring(0, idx) : observedAppPrefix;
+                    }
+                    var modStr = switch (module.def) {
+                        case EVar(n) if (n.indexOf('.') == -1):
+                            var p = appPrefix();
+                            (p != null ? p + '.' + n : n);
+                        default:
+                            printQualifiedModule(module);
+                    };
+                    return '%'+modStr+'{}';
+                }
+                // Qualify struct literal in changeset/2 to match remote module
+                var argStr = (function(){
+                    if (funcName == "changeset" && args.length >= 1) {
+                        var parts: Array<String> = [];
+                        // Force first arg to %<RemoteModule>{} when it's a bare struct literal
+                        // Inspect printed first arg; if it is a bare %Module{} with no prefix,
+                        // replace with %<RemoteModule>{} to avoid __struct__/1 undefined.
+                        var firstPrinted = print(args[0], 0);
+                        var needsQual = false;
+                        if (StringTools.startsWith(firstPrinted, "%")) {
+                            var open = firstPrinted.indexOf("{");
+                            var closeDot = firstPrinted.indexOf(".");
+                            needsQual = (open > 1 && (closeDot == -1 || closeDot > open));
+                        }
+                        if (needsQual) {
+                            var remote = printQualifiedModule(module);
+                            parts.push('%' + remote + '{}');
+                        } else {
+                            parts.push(firstPrinted);
+                        }
+                        for (i in 1...args.length) parts.push(printFunctionArg(args[i]));
+                        return parts.join(', ');
+                    } else {
+                        var s = [for (a in args) printFunctionArg(a)].join(', ');
+                        // Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
+                        var mstr = printQualifiedModule(module);
+                        if (mstr == "Ecto.Query" && funcName == "from") {
+                            inline function camelize(x: String): String {
+                                var parts = x.split("_");
+                                var out = [];
+                                for (p in parts) if (p.length > 0) out.push(p.charAt(0).toUpperCase() + p.substr(1));
+                                return out.join("");
+                            }
+                            var idxIn = s.indexOf(" in :");
+                            if (idxIn != -1) {
+                                var start = idxIn + 6; // after " in :"
+                                var j = start;
+                                while (j < s.length) {
+                                    var ch = s.charAt(j);
+                                    var isAlnum = ~/^[A-Za-z0-9_]$/.match(ch);
+                                    if (!isAlnum) break;
+                                    j++;
+                                }
+                                var raw = s.substr(start, j - start);
+                                if (raw.length > 0) {
+                                    var app = (function(){
+                                        var pfx: Null<String> = null;
+                                        if (currentModuleName != null) {
+                                            var w = currentModuleName.indexOf("Web");
+                                            if (w > 0) pfx = currentModuleName.substring(0, w);
+                                        }
+                                        if (pfx == null) pfx = observedAppPrefix;
+                                        if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {} }
+                                        return pfx;
+                                    })();
+                                    if (app != null && app.length > 0) {
+                                        s = s.substr(0, idxIn + 4) + ' ' + app + '.' + camelize(raw) + s.substr(j);
+                                    }
+                                }
+                            }
+                        }
+                        return s;
+                    }
+                })();
                 var moduleStr = printQualifiedModule(module);
                 moduleStr + '.' + funcName + '(' + argStr + ')';
                 
@@ -798,6 +1092,14 @@ class ElixirASTPrinter {
                 unaryOpToString(op) + print(expr, 0);
                 
             case EField(target, field):
+                // Special-case: list.length -> length(list)
+                if (field == "length") {
+                    return 'length(' + print(target, 0) + ')';
+                }
+                // Special-case: now.to_iso8601 -> DateTime.to_iso8601(now)
+                if (field == "to_iso8601") {
+                    return 'DateTime.to_iso8601(' + print(target, 0) + ')';
+                }
                 // If target is an atom, combine into a single atom with proper quoting
                 switch (target.def) {
                     case EAtom(atomBase):
@@ -1177,15 +1479,56 @@ class ElixirASTPrinter {
                 '~' + type + '"""' + '\n' + content + '\n' + '"""' + modifiers;
                 
             case ERaw(code):
-                // Raw code injection
-                // Check if the code is multi-line and needs wrapping
-                // Multi-line Elixir expressions in assignments need parentheses
-                if (code.indexOf('\n') != -1 && code.indexOf('=') != -1) {
-                    // Multi-line code with assignments needs parentheses for proper scoping
-                    '(\n' + code + '\n)';
+                // Raw code injection with conservative Ecto.from atom→module qualification
+                inline function camelize(s: String): String {
+                    var parts = s.split("_");
+                    var out = [];
+                    for (p in parts) if (p.length > 0) out.push(p.charAt(0).toUpperCase() + p.substr(1));
+                    return out.join("");
+                }
+                var out = code;
+                if (out.indexOf("Ecto.Query.from(") != -1) {
+                    var pfx: Null<String> = null;
+                    if (currentModuleName != null) {
+                        var idxA = currentModuleName.indexOf("Web");
+                        if (idxA > 0) pfx = currentModuleName.substring(0, idxA) else {
+                            var idxB = currentModuleName.indexOf(".Repo");
+                            if (idxB > 0) pfx = currentModuleName.substring(0, idxB);
+                        }
+                    }
+                    if (pfx == null && observedAppPrefix != null) pfx = observedAppPrefix;
+                    if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {} }
+                    if (pfx != null && pfx.length > 0) {
+                        var buf = new StringBuf();
+                        var i = 0;
+                        while (i < out.length) {
+                            if (i + 5 < out.length && out.substr(i, 5) == " in :") {
+                                var j = i + 5;
+                                var name = new StringBuf();
+                                while (j < out.length) {
+                                    var ch = out.charAt(j);
+                                    var isAlnum = ~/^[A-Za-z0-9_]$/.match(ch);
+                                    if (!isAlnum) break;
+                                    name.add(ch);
+                                    j++;
+                                }
+                                var raw = name.toString();
+                                if (raw.length > 0) {
+                                    buf.add(" in "); buf.add(pfx); buf.add("."); buf.add(camelize(raw));
+                                    i = j; continue;
+                                }
+                            }
+                            buf.add(out.charAt(i));
+                            i++;
+                        }
+                        out = buf.toString();
+                    }
+                }
+                // Check if the (possibly rewritten) code is multi-line and needs wrapping
+                if (out.indexOf('\n') != -1 && out.indexOf('=') != -1) {
+                    '(\n' + out + '\n)';
                 } else {
-                    // Single line or simple code - output as-is
-                    code;
+                    out;
                 }
                 
             case EAssign(name):
@@ -1608,6 +1951,12 @@ class ElixirASTPrinter {
         
         // Check what kind of expression this is
         switch(arg.def) {
+            case ERemoteCall(module, funcName, args) if (funcName == "new" && args.length == 0):
+                var moduleStr = printQualifiedModule(module);
+                return '%'+moduleStr+'{}';
+            case ECall(module, funcName, args) if (module != null && funcName == "new" && args.length == 0):
+                var moduleStr = printQualifiedModule(module);
+                return '%'+moduleStr+'{}';
             case EIf(condition, thenBranch, elseBranch):
                 // An if expression needs parentheses when used as a function argument
                 // if it will be printed inline (single line)
@@ -1654,11 +2003,19 @@ class ElixirASTPrinter {
         switch (module.def) {
             case EVar(name) if (name == "Repo"):
                 var prefix = currentAppPrefix();
-                if (prefix != null) {
-                    return prefix + ".Repo";
-                } else {
-                    return name;
-                }
+                if (prefix != null) return prefix + ".Repo";
+                if (observedAppPrefix != null) return observedAppPrefix + ".Repo";
+                // Fallback to app_name define (global) if available
+                try {
+                    var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+                    if (app != null && app.length > 0) return app + ".Repo";
+                } catch (e:Dynamic) {}
+                return name;
+            case EVar(name) if (name == "Presence"):
+                var prefix = currentAppPrefix();
+                if (prefix != null) return prefix + "Web.Presence"; else return name;
+            case EVar(_):
+                return print(module, 0);
             default:
                 return print(module, 0);
         }
