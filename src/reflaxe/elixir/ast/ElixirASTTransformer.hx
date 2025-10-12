@@ -1955,6 +1955,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: numericNoOpCleanupPass
         });
+        // Late sweep: drop sentinels inside Enum.each bodies
+        passes.push({
+            name: "EnumEachSentinelCleanup(Final)",
+            description: "Drop bare numeric sentinels in Enum.each anonymous function bodies (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
+        });
         passes.push({
             name: "ReduceWhileSentinelCleanup",
             description: "Drop numeric sentinel literals inside Enum.reduce_while function bodies",
@@ -1966,6 +1973,43 @@ class ElixirASTTransformer {
             description: "Rewrite trivial reduce_while(Stream.iterate ...) scans to Enum.each",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms.transformPass
+        });
+        // New: Clean up Enum.each bodies and rewrite common idioms
+        passes.push({
+            name: "EnumEachHeadExtraction",
+            description: "Inside Enum.each fns, replace head extraction list[0] with binder and drop sentinels",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachHeadExtractionPass
+        });
+        passes.push({
+            name: "EnumEachSentinelCleanup",
+            description: "Drop bare numeric sentinels in Enum.each anonymous function bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
+        });
+        passes.push({
+            name: "CountRewrite",
+            description: "Rewrite accumulator-style counting loops to Enum.count(list, &pred/1)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.countRewritePass
+        });
+        passes.push({
+            name: "MapJoinRewrite",
+            description: "Collapse temp += concat inside Enum.each + Enum.join to Enum.map |> Enum.join",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapJoinRewritePass
+        });
+        passes.push({
+            name: "FindRewrite",
+            description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
+        });
+        passes.push({
+            name: "FnArgBodyRefNormalize",
+            description: "Normalize body references of underscored variants to declared non-underscore binder in anonymous functions",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.fnArgBodyRefNormalizePass
         });
         passes.push({
             name: "ArithmeticIncrementCleanup",
