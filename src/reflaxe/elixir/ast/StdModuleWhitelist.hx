@@ -29,7 +29,7 @@ class StdModuleWhitelist {
             "Kernel","Enum","Map","List","Bitwise","String","Integer","Float","IO","File","Path","System",
             "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
             "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex",
-            "Keyword","Access",
+            "Keyword","Access","Reflect",
             // Common helper modules generated at top-level (project-local utilities)
             "StringTools","Log","SafeAssigns","TodoPubSub",
             // Framework roots

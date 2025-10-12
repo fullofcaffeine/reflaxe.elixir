@@ -389,27 +389,23 @@ class PresenceHelpers {
      * Utility function to get just the keys without metadata
      */
     public static function simpleList(presences: PresenceList): Array<PresenceKey> {
-        var keys = [];
-        // Implementation: extract keys from presence map
-        // for (key in Reflect.fields(presences)) keys.push(key);
-        return keys;
+        // Map.keys returns list of binary keys for Presence maps
+        return untyped __elixir__('Map.keys({0})', presences);
     }
     
     /**
      * Check if a key is present in the presence list
      */
     public static function isPresent(presences: PresenceList, key: PresenceKey): Bool {
-        // Implementation: check if key exists in presences
-        // return Reflect.hasField(presences, key);
-        return false;
+        // Presence keys are strings; Map.has_key? supports binary keys
+        return untyped __elixir__('Map.has_key?({0}, {1})', presences, key);
     }
     
     /**
      * Count total number of presences
      */
     public static function count(presences: PresenceList): Int {
-        // Implementation: count keys in presence map
-        // return Reflect.fields(presences).length;
-        return 0;
+        // map_size/1 returns number of entries
+        return untyped __elixir__('map_size({0})', presences);
     }
 }

@@ -1197,6 +1197,20 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeValidateFieldAtomPass
         });
+        // Rewrite opts.* in validate_length keyword lists to Map.get(opts, :key)
+        passes.push({
+            name: "ValidateLengthOptsAccessRewrite",
+            description: "In validate_length calls, rewrite opts.* to Map.get(opts, :key)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ValidateLengthOptsAccessRewrite.rewritePass
+        });
+        // Filter nil-valued options in validate_length keyword lists
+        passes.push({
+            name: "ChangesetLengthOptionFilter",
+            description: "Drop nil options in validate_length by filtering keyword list",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetOptionFilterTransforms.filterValidateLengthOptionsPass
+        });
         // Ensure no late-introduced validate_* fields remain as String.to_atom/strings
         passes.push({
             name: "ChangesetFieldAtomNormalize(Late)",
@@ -1218,6 +1232,42 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
         });
+        // Final sweep: rewrite opts.* in validate_length keyword lists
+        passes.push({
+            name: "ValidateLengthOptsAccessRewrite(Final)",
+            description: "Final rewrite of opts.* to Map.get(opts, :key) in validate_length",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ValidateLengthOptsAccessRewrite.rewritePass
+        });
+        // Broad normalization: convert opts.* inside any keyword list to Map.get(opts, :key)
+        passes.push({
+            name: "OptsKeywordMapGet(Final)",
+            description: "Normalize opts.* in keyword lists to Map.get",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.OptsKeywordMapGetTransforms.transformPass
+        });
+        // Final SafePubSub alias injection
+        passes.push({
+            name: "SafePubSubAliasInject(Final)",
+            description: "Ensure alias Phoenix.SafePubSub as SafePubSub present",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.injectPass
+        });
+
+        // Convert stray increment statements (i + 1) into assignments (i = i + 1)
+        passes.push({
+            name: "IncrementToAssignment",
+            description: "Rewrite standalone increments to explicit assignments in blocks and if-branches",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.incrementToAssignmentPass
+        });
+        // NOTE: FnArgUnusedUnderscore disabled due to false-positives in LiveView filters
+        // passes.push({
+        //     name: "FnArgUnusedUnderscore",
+        //     description: "Underscore unused anonymous function argument binders",
+        //     enabled: false,
+        //     pass: reflaxe.elixir.ast.transformers.FnArgUnusedUnderscoreTransforms.transformPass
+        // });
         // Final sweep: convert String.to_atom("field") to :field when literal
         passes.push({
             name: "StringToAtomLiteral(Late)",
@@ -1232,6 +1282,13 @@ class ElixirASTTransformer {
             description: "Inject `use <App>Web, :live_view` into <App>Web.*Live when missing",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewUseInjectionPass
+        });
+        // Rename unused local assignment binders to underscore to silence warnings
+        passes.push({
+            name: "UnusedLocalAssignmentUnderscore",
+            description: "Prefix unused local assignment names with underscore in blocks",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignmentUnderscoreTransforms.transformPass
         });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
@@ -1540,6 +1597,49 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.presenceApiModuleRewritePass
         });
+        // Inject alias for SafePubSub if bare module is referenced
+        passes.push({
+            name: "SafePubSubAliasInject",
+            description: "Insert alias Phoenix.SafePubSub as SafePubSub when referenced",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.injectPass
+        });
+
+        // Normalize Presence helpers to avoid Atom.to_string on Presence string keys
+        passes.push({
+            name: "PresenceHelpersNormalization",
+            description: "Collapse Enum.map(Map.keys(..), &Atom.to_string/1) to Map.keys(..) in Presence modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceHelpersTransforms.presenceHelpersNormalizationPass
+        });
+        // Presence ERaw normalization for Reflect.fields expansion
+        passes.push({
+            name: "PresenceERawNormalization",
+            description: "Within Presence modules, collapse ERaw Map.keys |> Enum.map(&Atom.to_string/1) to Map.keys",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceERawTransforms.erawPresenceKeysNormalizePass
+        });
+        // Safety net: qualify bare SafePubSub to Phoenix.SafePubSub
+        passes.push({
+            name: "SafePubSubAliasFix",
+            description: "Fix bare SafePubSub references to Phoenix.SafePubSub",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubAliasFixTransforms.fixPass
+        });
+        // Fix Telemetry.start_link children var name mismatch
+        passes.push({
+            name: "TelemetryChildrenArgFix",
+            description: "Use _children in Supervisor.start_link when assignment was underscored",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TelemetryChildrenArgFixTransforms.fixPass
+        });
+        // Fix anon fn arg binder underscore vs usage mismatch (e.g., fn _t -> t.id end)
+        passes.push({
+            name: "AnonFnArgBinderFix",
+            description: "Rename underscore binders when body uses non-underscore variant",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnonFnArgBinderFixTransforms.fixPass
+        });
 
         // Remove unused imports like Ecto.Changeset when unreferenced
         passes.push({
@@ -1547,6 +1647,14 @@ class ElixirASTTransformer {
             description: "Remove import Ecto.Changeset when module not used",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnusedImportCleanup.cleanupPass
+        });
+
+        // Module-local: prune private functions that are not referenced
+        passes.push({
+            name: "UnusedDefpPrune",
+            description: "Drop defp helpers not referenced within module",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnusedDefpPrune.prunePass
         });
         
         // Late safety net: normalize String.to_atom/1 and to_existing_atom/1 to literals where safe
@@ -1571,6 +1679,13 @@ class ElixirASTTransformer {
             description: "Normalize ERaw validate_* atoms and opts nil comparisons (final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoValidateAtomNormalizePass
+        });
+        // Normalize ERaw opts.* access in keyword lists to Map.get to avoid typing warnings
+        passes.push({
+            name: "ERawEctoOptsAccessNormalize(Final)",
+            description: "Rewrite opts.* in ERaw keyword lists to Map.get(opts, :key)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoOptsAccessNormalizePass
         });
         // Rewrite ERaw Ecto.Queryable.to_query(:atom) to <App>.<CamelCase> (final sweep)
         passes.push({
@@ -3265,6 +3380,7 @@ class ElixirASTTransformer {
                         // Drop standalone numeric operations like 0 + 1
                         var drop = switch (s.def) {
                             case EBinary(_, l, r) if (isNumericLiteral(l) && isNumericLiteral(r)): true;
+                            case EInteger(_): true; // Drop bare integer literal statements
                             default: false;
                         };
                         if (!drop) out.push(rewriteIfIncrements(s));

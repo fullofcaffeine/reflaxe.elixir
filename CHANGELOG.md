@@ -194,3 +194,32 @@ First public release of Reflaxe.Elixir - A Haxe compilation target for Elixir/BE
 - Claude Code - Development assistance and documentation
 
 [0.1.0]: https://github.com/fullofcaffeine/reflaxe.elixir/releases/tag/v0.1.0
+[New] Presence Helpers Normalization (AST)
+
+- Replace Reflect.fields chains on Presence maps with Map.keys/1 within Presence modules
+- Avoid Atom.to_string/1 on Presence string keys
+- Implement std PresenceHelpers.simpleList/isPresent/count using native Map APIs
+
+[New] Changeset Options Typing Finalization
+
+- validate_length now filters out nil-valued options via Enum.filter([...], fn {_, v} -> v != nil end)
+- Ensure field arguments are literal atoms where possible
+- Rewrote opts.* access to Map.get(opts, :key) and normalized nil comparisons
+
+[New] Arithmetic/Increment Cleanup Completion
+
+- Transform standalone increment/decrement statements (i + 1 / i - 1) into explicit rebindings (i = i + 1 / i = i - 1)
+- Covered if-branch bodies and general block statements
+
+[New] UnusedDefpPrune (module-local)
+
+- Drop defp helpers not referenced within their module (local calls and captures)
+
+[New] Snapshot & Tests Expansion
+
+- Added tests for increment-to-assignment and validate_length options filtering
+- Presence helper normalization covered via Presence module rewrite path
+
+[New] Todo-App Runtime Gate
+
+- Added scripts/todo_app_runtime_gate.sh to build, compile with warnings-as-errors, boot app, curl /, and check logs
