@@ -21,6 +21,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For each EFn clause, collect PVar names in args; check usage in body; if a
  *   name is unused, rewrite its pattern occurrence to _name.
+ *
+ * EXAMPLES
+ * Before:
+ *   Enum.reduce(list, 0, fn x, acc -> acc end)  # x unused
+ * After:
+ *   Enum.reduce(list, 0, fn _x, acc -> acc end)
  */
 class FnArgUnusedUnderscoreTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -108,4 +114,3 @@ class FnArgUnusedUnderscoreTransforms {
 }
 
 #end
-

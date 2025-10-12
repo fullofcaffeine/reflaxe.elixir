@@ -23,7 +23,19 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each module, collect defp names. Walk the module body to find usages:
  *   - Local calls: ECall(null, name, ...)
  *   - Captures: &name/arity represented as ECapture(EVar(name), arity)
+ *   - Appearance in ERaw code as "name(" or snake/camel variants
  * - Any defp not referenced is pruned from the module body.
+ *
+ * EXAMPLES
+ * Before:
+ *   defp unused_helper(a), do: a
+ *   def handle_event(_, _, socket) do
+ *     {:noreply, socket}
+ *   end
+ * After:
+ *   def handle_event(_, _, socket) do
+ *     {:noreply, socket}
+ *   end
  */
 class UnusedDefpPrune {
     public static function prunePass(ast: ElixirAST): ElixirAST {
@@ -38,10 +50,13 @@ class UnusedDefpPrune {
                 case EDefmodule(name, doBlock):
                     var isPhoenixWeb2 = (n.metadata?.isPhoenixWeb == true) || (name != null && StringTools.endsWith(name, "Web") && name.indexOf(".") == -1);
                     if (isPhoenixWeb2) return n;
-                    var newDo = switch (doBlock.def) {
-                        case EBlock(stmts): makeAST(EBlock(pruneModuleBody(stmts)));
-                        default: makeAST(EBlock(pruneModuleBody([doBlock])));
+                    var stmts: Array<ElixirAST> = switch (doBlock.def) {
+                        case EBlock(ss): ss;
+                        case EDo(ss): ss;
+                        default: [doBlock];
                     };
+                    var pruned = pruneModuleBody(stmts);
+                    var newDo = makeAST(EBlock(pruned));
                     makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                 default:
                     n;

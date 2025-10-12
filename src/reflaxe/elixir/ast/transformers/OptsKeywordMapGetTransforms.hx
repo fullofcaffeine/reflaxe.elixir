@@ -12,6 +12,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Rewrite any keyword list values of the form opts.<key> to Map.get(opts, :<key>),
  *   regardless of surrounding call site. This is a broad, safe normalization.
+ *
+ * WHY
+ * - Avoid non-idiomatic and warning-prone dot/access usage on maps in option lists.
+ *   Ensures uniform Map.get usage across late-emitted keyword lists.
+ *
+ * HOW
+ * - Traverse EKeywordList and replace values that are either EField(opts, key)
+ *   or EAccess(opts, :key) with Map.get(opts, :key). Leaves other values intact.
+ *
+ * EXAMPLES
+ * Before:
+ *   [min: opts.min, max: opts[:max], step: 1]
+ * After:
+ *   [min: Map.get(opts, :min), max: Map.get(opts, :max), step: 1]
  */
 class OptsKeywordMapGetTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -40,4 +54,3 @@ class OptsKeywordMapGetTransforms {
 }
 
 #end
-

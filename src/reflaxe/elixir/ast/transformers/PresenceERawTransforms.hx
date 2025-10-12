@@ -25,6 +25,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Limit to modules with metadata.isPresence or names matching *Web.Presence.
  * - Process ERaw nodes: scan for Map.keys( ... ) |> Enum.map(&Atom.to_string/1)
  *   with proper parenthesis balance and remove the pipeline segment.
+ *
+ * EXAMPLES
+ * Before (in <App>Web.Presence):
+ *   ERaw("Map.keys(presences) |> Enum.map(&Atom.to_string/1)")
+ * After:
+ *   ERaw("Map.keys(presences)")
  */
 class PresenceERawTransforms {
     static inline function isPresenceModuleName(name: String): Bool {
@@ -110,4 +116,3 @@ class PresenceERawTransforms {
 }
 
 #end
-

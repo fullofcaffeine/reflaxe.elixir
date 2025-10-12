@@ -56,10 +56,10 @@ class RefDeclAlignmentTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, params, guards, body):
-                    var newBody = align(body);
+                    var newBody = align(body, params);
                     makeASTWithMeta(EDef(name, params, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, params, guards, body):
-                    var newBody = align(body);
+                    var newBody = align(body, params);
                     makeASTWithMeta(EDefp(name, params, guards, newBody), node.metadata, node.pos);
                 default:
                     node;
@@ -67,9 +67,14 @@ class RefDeclAlignmentTransforms {
         });
     }
 
-    static function align(body: ElixirAST): ElixirAST {
+    static function align(body: ElixirAST, ?params:Array<EPattern>): ElixirAST {
         var declared = new Map<String, Bool>();
         var referenced = new Map<String, Bool>();
+
+        // Collect declared from function parameters as well
+        if (params != null) {
+            for (p in params) collectPatternDecls(p, declared);
+        }
 
         // Collect declarations
         ASTUtils.walk(body, function(n: ElixirAST) {
