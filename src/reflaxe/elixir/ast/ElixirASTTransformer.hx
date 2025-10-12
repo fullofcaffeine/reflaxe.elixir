@@ -499,6 +499,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: instanceMethodTransformPass
         });
+
+        // Normalize zero-arity Module.new() to struct literals (context-aware app prefix)
+        passes.push({
+            name: "ModuleNewToStructLiteral",
+            description: "Rewrite Module.new() → %<App>.Module{} using module context to derive <App>",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ModuleNewToStructLiteral.moduleNewToStructLiteralPass
+        });
         
         // Array method transformations are handled in ElixirASTBuilder
         // at the TCall(TField(...)) pattern to generate idiomatic Elixir directly
@@ -673,6 +681,14 @@ class ElixirASTTransformer {
             description: "Transform array.length field access to length(array) function calls",
             enabled: true,
             pass: arrayLengthFieldToFunctionPass
+        });
+
+        // DateTime method rewrite: now.to_iso8601() -> DateTime.to_iso8601(now)
+        passes.push({
+            name: "DateTimeMethodRewrite",
+            description: "Rewrite method-style DateTime calls to module calls",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DateTimeTransforms.dateTimeMethodRewritePass
         });
         
         // Tuple element field to function transformation (must run before enum pattern matching)
@@ -992,6 +1008,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.listPushRewritePass
         });
 
+        // Qualify bare application module calls inside <App>Web.* when target module exists
+        passes.push({
+            name: "ModuleQualification",
+            description: "Rewrite Foo.bar(...) to <App>.Foo.bar(...) inside <App>Web.* when <App>.Foo is defined",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleQualificationPass
+        });
+
         // Late replay of list push rewrite to catch push/1 introduced by later transforms
         passes.push({
             name: "ListPushRewrite(Late)",
@@ -1014,6 +1038,20 @@ class ElixirASTTransformer {
             description: "Qualify Repo.* tokens in ERaw within Web modules to <App>.Repo.*",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.erawRepoQualificationPass
+        });
+
+        // Qualify Ecto.Query.from ERaw snippets to use schema modules instead of table atoms
+        passes.push({
+            name: "ERawEctoFromQualification",
+            description: "Rewrite Ecto.Query.from(... in :user, ...) to ... in <App>.User, ... in ERaw",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoFromQualificationPass
+        });
+        passes.push({
+            name: "EctoFromInAtomQualification",
+            description: "Rewrite Ecto.Query.from(t in :table, ...) to t in <App>.CamelCase in AST nodes",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.fromInAtomQualificationPass
         });
 
         // Insert alias <App>.Repo as Repo in Web modules that reference Repo.*
@@ -1046,6 +1084,14 @@ class ElixirASTTransformer {
             description: "Replace (x == nil) with Kernel.is_nil(x)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
+
+        // Simplify provably false is_nil checks based on prior literal assignments
+        passes.push({
+            name: "SimplifyIsNilFalse",
+            description: "Replace is_nil(var) with false when var is known non-nil from earlier literal assignment",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass
         });
 
         // (temporarily disabled) Ecto query var consistency — will be addressed via assignment extraction specialization
@@ -1111,6 +1157,14 @@ class ElixirASTTransformer {
             description: "Rewrite ltrim/rtrim to String.trim_leading/trim_trailing",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.StringToolsNativeRewrite.rewriteTrimPass
+        });
+
+        // Wrap parse_* helpers to return {:some, v} | :none to match caller patterns
+        passes.push({
+            name: "OptionWrapParseFunctions",
+            description: "Wrap results of parse_* functions into {:some, v} | :none",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.OptionWrapTransforms.optionWrapParseFunctionsPass
         });
 
         // Changeset normalization: canonicalize cs variable, opts binding, and validate_* targets
@@ -1346,6 +1400,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.RedundantAssignmentCleanup.cleanupPass
         });
 
+        // Remove `0 + 1` standalone statements introduced by lowerings
+        passes.push({
+            name: "NoOpArithmeticCleanup",
+            description: "Drop standalone `0 + 1` expressions in blocks (no-op arithmetic)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.NoOpArithmeticCleanup.cleanupPass
+        });
+
         // Run underscore rename again late to catch flows introduced by earlier passes (e.g., Presence)
         passes.push({
             name: "UsedUnderscoreRename(Late)",
@@ -1397,6 +1459,14 @@ class ElixirASTTransformer {
             }
         });
 
+        // Rewrite Phoenix.Presence.* calls to <App>Web.Presence.* where appropriate
+        passes.push({
+            name: "PresenceApiModuleRewrite",
+            description: "Rewrite Phoenix.Presence.track/update/list/untrack to <App>Web.Presence.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.presenceApiModuleRewritePass
+        });
+
         // Remove unused imports like Ecto.Changeset when unreferenced
         passes.push({
             name: "UnusedImportCleanup",
@@ -1421,12 +1491,60 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoQualificationPass
         });
 
+        // Global Repo qualification (non-Web modules) using -D app_name define
+        passes.push({
+            name: "RepoQualification(Global)",
+            description: "Qualify bare Repo.* to <App>.Repo.* in all modules based on app_name define",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.globalRepoQualificationPass
+        });
+
+        // Global Repo alias injection for any module that references Repo.*
+        passes.push({
+            name: "RepoAliasInjection(Global)",
+            description: "Inject alias <App>.Repo as Repo in any module referencing Repo.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionGlobalPass
+        });
+
         // Late alias injection to ensure Repo alias exists when used
         passes.push({
             name: "RepoAliasInjection(Late)",
             description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
+        });
+
+        // Qualify struct literals passed to changeset/2 inside <App>Web.* modules
+        passes.push({
+            name: "ChangesetStructQualification",
+            description: "Ensure %Module{} struct argument to changeset/2 is qualified to %<App>.Module{} in Web modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.changesetStructQualificationPass
+        });
+
+        // Coalesce variables to empty map after nil-guard when fields are used
+        passes.push({
+            name: "NilGuardCoalesceToMap",
+            description: "Insert v = %{} after if Kernel.is_nil(v) when v.field is used later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.nilGuardCoalesceToMapPass
+        });
+
+        // Rewrite Haxe Date_Impl_ helpers to Elixir forms
+        passes.push({
+            name: "DateImplRewrite",
+            description: "Map Date_Impl_.from_string/get_time to Elixir equivalents",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.dateImplRewritePass
+        });
+
+        // Convert Module.new() (Haxe-style) to %Module{} struct literal for Ecto schemas
+        passes.push({
+            name: "ModuleNewToStructLiteral",
+            description: "Rewrite Module.new() to %Module{}",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleNewToStructLiteralPass
         });
         
         // Pattern variable origin analysis pass

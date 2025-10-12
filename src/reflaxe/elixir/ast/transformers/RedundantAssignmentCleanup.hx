@@ -10,23 +10,24 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  * RedundantAssignmentCleanup
  *
  * WHAT
- * - Remove clearly redundant local reassignments like `this1 = query` or
- *   `this1 = query`-style placeholders that serve no purpose and trigger unused
- *   variable warnings.
+ * - Eliminates redundant placeholder binds that trigger unused-variable warnings
+ *   and collapses trivial chained assignments into a single assignment.
  *
  * WHY
- * - The generator sometimes emits `thisN` placeholder binds to satisfy earlier
- *   transforms. These produce warnings and clutter. Since they simply copy a
- *   variable without side effects, we can safely drop them.
+ * - Builder/transforms can emit `thisN` temporaries (e.g., `changeset = this1 = change(...)`).
+ *   Elixir warns that `this1` is unused. Such chains are semantically equivalent to a
+ *   single assignment and should be collapsed for idiomatic output.
  *
  * HOW
- * - Transform `EMatch(PVar(name), EVar(rhs))` where `name` matches `^this\d*$`
- *   into an empty expression (we rewrite to `EBlock([])` which prints nothing).
- * - Similarly remove `EMatch(PVar("new_query"), <expr>)` since it’s never used.
+ * - Remove pure copies: `EMatch(PVar(thisN), EVar(x))` → drop.
+ * - Remove known throwaway binds like `new_query = ...`.
+ * - Collapse nested chain: `EMatch(PVar(dst), EMatch(PVar(thisN), expr))` → `dst = expr`.
+ * - Collapse sequential chain inside blocks: `thisN = expr; dst = thisN` → `dst = expr`.
+ *   Only applies when `thisN` matches `^this\d*$` to avoid touching user vars.
  *
  * EXAMPLES
- *   this1 = query        -> (removed)
- *   new_query = where..  -> (removed)
+ *   changeset = this1 = Ecto.Changeset.change(..)  ->  changeset = Ecto.Changeset.change(..)
+ *   this2 = query; changeset = this2               ->  changeset = query
  */
 class RedundantAssignmentCleanup {
     public static function cleanupPass(ast: ElixirAST): ElixirAST {
@@ -40,8 +41,43 @@ class RedundantAssignmentCleanup {
                         case PVar(name) if (name == "new_query"):
                             makeASTWithMeta(EBlock([]), n.metadata, n.pos);
                         default:
-                            n;
+                            // Collapse nested chained match: dst = (thisN = expr) -> dst = expr
+                            switch (expr.def) {
+                                case EMatch(innerPat, innerExpr):
+                                    switch (innerPat) {
+                                        case PVar(innerName) if (isRedundantName(innerName)):
+                                            makeASTWithMeta(EMatch(pattern, innerExpr), n.metadata, n.pos);
+                                        default:
+                                            n;
+                                    }
+                                default:
+                                    n;
+                            }
                     }
+                case EBlock(stmts):
+                    // Collapse sequential pattern: thisN = expr; dst = thisN
+                    var out = [];
+                    var i = 0;
+                    while (i < stmts.length) {
+                        var s = stmts[i];
+                        var collapsed = false;
+                        switch (s.def) {
+                            case EMatch(PVar(tmp), rhs) if (isRedundantName(tmp)):
+                                if (i + 1 < stmts.length) {
+                                    var s2 = stmts[i + 1];
+                                    switch (s2.def) {
+                                        case EMatch(PVar(dst), {def: EVar(v)}) if (v == tmp):
+                                            out.push(makeASTWithMeta(EMatch(PVar(dst), rhs), s2.metadata, s2.pos));
+                                            i += 2;
+                                            collapsed = true;
+                                        default:
+                                    }
+                                }
+                            default:
+                        }
+                        if (!collapsed) { out.push(s); i++; }
+                    }
+                    makeASTWithMeta(EBlock(out), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -74,4 +110,3 @@ class RedundantAssignmentCleanup {
 }
 
 #end
-
