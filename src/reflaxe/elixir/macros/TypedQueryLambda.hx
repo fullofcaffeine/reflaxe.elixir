@@ -31,10 +31,8 @@ class TypedQueryLambda {
                 var fieldSnake = toField(left, argName, classType.name, body.pos);
                 var opStr = opToString(op);
                 var code = '(require Ecto.Query; Ecto.Query.where({0}, [t], ' + fieldSnake + ' ' + opStr + ' ^({1})))';
-                macro {
-                    var newQuery = untyped __elixir__($v{code}, $ethis, $right);
-                    new ecto.TypedQuery.TypedQuery(newQuery);
-                };
+                // Return a pure expression (no TBlock/TVar), to avoid broken assignments in generated code
+                macro new ecto.TypedQuery.TypedQuery(untyped __elixir__($v{code}, $ethis, $right));
             case _:
                 Context.error('Unsupported where() condition. Supported: ==, !=, <, <=, >, >=, &&, ||, !', body.pos);
                 macro $ethis;

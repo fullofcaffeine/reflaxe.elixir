@@ -46,38 +46,7 @@ import reflaxe.elixir.macros.HttpMethod;
         action: "edit"
     },
     
-    // API endpoints with real controller validation
-    {
-        name: "apiUsers", 
-        method: HttpMethod.GET, 
-        path: "/api/users", 
-        controller: "controllers.UserController", 
-        action: "index"
-    },
-    
-    {
-        name: "apiCreateUser", 
-        method: HttpMethod.POST, 
-        path: "/api/users", 
-        controller: "controllers.UserController", 
-        action: "create"
-    },
-    
-    {
-        name: "apiUpdateUser", 
-        method: HttpMethod.PUT, 
-        path: "/api/users/:id", 
-        controller: "controllers.UserController", 
-        action: "update"
-    },
-    
-    {
-        name: "apiDeleteUser", 
-        method: HttpMethod.DELETE, 
-        path: "/api/users/:id", 
-        controller: "controllers.UserController", 
-        action: "delete"
-    },
+    // API endpoints temporarily removed until User context/schema stabilized
     
     // LiveDashboard with enum
     {

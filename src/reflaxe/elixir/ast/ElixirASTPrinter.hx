@@ -159,6 +159,46 @@ class ElixirASTPrinter {
                     }
                 }
 
+                // Ensure `require Ecto.Query` in Web modules (LiveView/Controller often use Ecto DSL)
+                // This avoids macro-availability errors; harmless if unused
+                if (name.indexOf("Web.") > 0) {
+                    moduleContent += indentStr(indent + 1) + 'require Ecto.Query\n\n';
+                }
+
+                // Ensure `require Ecto.Query` when Ecto.Query macros are used in the module body
+                inline function needsEctoRequireInBlock(block: ElixirAST): Bool {
+                    var needs = false;
+                    var has = false;
+                    switch (block.def) {
+                        case EBlock(stmts):
+                            for (s in stmts) switch (s.def) {
+                                case ERequire(mod, _): if (mod == "Ecto.Query") has = true;
+                                default:
+                            }
+                            function scan(n: ElixirAST): Void {
+                                if (n == null || n.def == null || needs) return;
+                                switch (n.def) {
+                                    case ERemoteCall({def: EVar(m)}, _, _): if (m == "Ecto.Query") needs = true;
+                                    case ECall(t, _, args): if (t != null) scan(t); for (a in args) scan(a);
+                                    case EDef(_, _, _, body): scan(body);
+                                    case EDefp(_, _, _, body): scan(body);
+                                    case EBlock(es): for (e in es) scan(e);
+                                    case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                                    case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
+                                    case EBinary(_, l, r): scan(l); scan(r);
+                                    case EFn(cs): for (cl in cs) scan(cl.body);
+                                    default:
+                                }
+                            }
+                            for (s in stmts) scan(s);
+                        default:
+                    }
+                    return needs && !has;
+                }
+                if (needsEctoRequireInBlock(doBlock)) {
+                    moduleContent += indentStr(indent + 1) + 'require Ecto.Query\n\n';
+                }
+
                 moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
 
                 // Restore context
@@ -229,6 +269,10 @@ class ElixirASTPrinter {
                         if (idxCap2 > 0) observedAppPrefix = name.substring(0, idxCap2);
                         var idxWeb2 = name.indexOf("Web");
                         if (idxWeb2 > 0) observedAppPrefix = name.substring(0, idxWeb2);
+                    }
+                    // In Web modules, proactively require Ecto.Query for macro usage
+                    if (name.indexOf("Web.") > 0) {
+                        result += indentStr(indent + 1) + 'require Ecto.Query\n\n';
                     }
                     // Print body
                     for (expr in body) {
@@ -509,7 +553,12 @@ class ElixirASTPrinter {
                     indentStr(indent) + 'end';
                 } else if (isInline) {
                     // Inline if without else: if condition, do: then_val
-                    'if ' + conditionStr + ', do: ' + print(thenBranch, 0);
+                    // Special-case increment shapes to avoid operator-warning when result is ignored
+                    var thenStr = switch (thenBranch.def) {
+                        case EBinary(Add, {def: EVar(v)}, rhs): v + ' = ' + v + ' + ' + print(rhs, 0);
+                        default: print(thenBranch, 0);
+                    };
+                    'if ' + conditionStr + ', do: ' + thenStr;
                 } else {
                     // Multi-line if without else
                     'if ' + conditionStr + ' do\n' +
@@ -1066,6 +1115,18 @@ class ElixirASTPrinter {
                     var rightStr = print(right, 0);
                     'Bitwise.' + funcName + '(' + leftStr + ', ' + rightStr + ')';
                 } else {
+                    // Constant folding for simple arithmetic to avoid no-op operator warnings
+                    if (op == Add) {
+                        switch (left.def) {
+                            case EInteger(a):
+                                switch (right.def) {
+                                    case EInteger(b):
+                                        return Std.string(a + b);
+                                    default:
+                                }
+                            default:
+                        }
+                    }
                     var needsParens = needsParentheses(node);
                     var opStr = binaryOpToString(op);
 

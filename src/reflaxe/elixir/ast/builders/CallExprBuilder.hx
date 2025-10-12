@@ -116,7 +116,8 @@ class CallExprBuilder {
                                 default: EBinaryOp.Equal; // Fallback shouldn't happen given regex
                             };
                             var condition = makeAST(EBinary(op, left, right));
-                            return ERemoteCall(makeAST(EVar("Ecto.Query")), "where", [queryAst, binding, condition]);
+                            var whereCall = makeAST(ERemoteCall(makeAST(EVar("Ecto.Query")), "where", [queryAst, binding, condition]));
+                            return whereCall.def;
                         }
                     }
 
@@ -160,6 +161,38 @@ class CallExprBuilder {
                         var preloadAst = buildExpression(args[2]);
                         // Preload does not require [t] binding; it accepts query and assoc list
                         return ERemoteCall(makeAST(EVar("Ecto.Query")), "preload", [queryAst, preloadAst]);
+                    }
+
+                    // SPECIAL-CASE: Ecto.Query.from injection → build pure AST (no ERaw)
+                    // Pattern used by TypedQuery.from: '(require Ecto.Query; Ecto.Query.from(t in {0}, []))'
+                    if (injectionString.indexOf("Ecto.Query.from") != -1 && injectionString.indexOf(" in ") != -1 && args.length >= 2) {
+                        // Args: [ codeString, schemaClass ]
+                        // Build first argument as binary 't in <Schema>' with proper AST nodes
+                        // Resolve schema module name robustly (prefer @:native on class)
+                        var schemaModuleAst: reflaxe.elixir.ast.ElixirAST = null;
+                        switch (args[1].expr) {
+                            case TTypeExpr(TClassDecl(classRef)):
+                                var cls = classRef.get();
+                                var nativeName: Null<String> = null;
+                                if (cls.meta.has(":native")) {
+                                    var meta = cls.meta.extract(":native");
+                                    if (meta != null && meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
+                                        switch (meta[0].params[0].expr) {
+                                            case EConst(CString(s, _)): nativeName = s;
+                                            default:
+                                        }
+                                    }
+                                }
+                                var moduleName = nativeName != null ? nativeName : cls.name;
+                                schemaModuleAst = makeAST(EVar(moduleName));
+                            default:
+                                // Fallback: build expression normally (covers already-built module refs)
+                                schemaModuleAst = buildExpression(args[1]);
+                        }
+                        var inExpr = makeAST(EBinary(In, makeAST(EVar("t")), schemaModuleAst));
+                        var emptyOpts = makeAST(EList([]));
+                        var fromCall = makeAST(ERemoteCall(makeAST(EVar("Ecto.Query")), "from", [inExpr, emptyOpts]));
+                        return fromCall.def;
                     }
 
                     // SPECIAL-CASE: Ecto.Changeset.validate_required injection → build ERemoteCall (no ERaw)
@@ -324,6 +357,22 @@ class CallExprBuilder {
                         var specialCall = handleSpecialCall(className, methodName, args, context);
                         if (specialCall != null) {
                             return specialCall;
+                        }
+
+                        // Ecto TypedQuery: expand TypedQuery.from(Schema) to raw Ecto.Query.from DSL
+                        // WHY: Ensure "from" part of a TypedQuery chain is emitted as proper Ecto code,
+                        // so downstream where/order_by transforms receive a valid query AST.
+                        // Detect ecto.TypedQuery.from
+                        var classPack = classRef.get().pack != null ? classRef.get().pack.join(".") : "";
+                        if (className == "TypedQuery" && classPack == "ecto" && methodName == "from") {
+                            // Expect signature from<T>(schemaClass: Class<T>)
+                            if (args.length >= 1) {
+                                var schemaAst = buildExpression(args[0]);
+                                // Render schema AST to string for injection composition
+                                var schemaStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(schemaAst);
+                                var code = '(require Ecto.Query; Ecto.Query.from(t in ' + schemaStr + ', []))';
+                                return ERaw(code);
+                            }
                         }
 
                         // Check for Phoenix-specific patterns

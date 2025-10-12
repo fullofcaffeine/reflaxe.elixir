@@ -72,7 +72,7 @@ class Users {
         // Use typed Repo extern for type-safe database access
         if (filter != null) {
             // Apply filtering based on the provided criteria
-            var query = TypedQuery.from(User);
+            var query = TypedQuery.from(server.schemas.User);
             
             if (filter.name != null) {
                 query = query.where(u -> u.name == '%${filter.name}%');
@@ -87,7 +87,7 @@ class Users {
             return Repo.all(query);
         }
         
-        return Repo.all(User);
+        return Repo.all(server.schemas.User);
     }
     
     /**
