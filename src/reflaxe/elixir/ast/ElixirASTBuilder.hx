@@ -3626,7 +3626,21 @@ class ElixirASTBuilder {
                 }
                 
             case TBlock(exprs):
-                // Check the last expression (implicit return)
+                // First, scan for a local var initialized via __elixir__() and expand it.
+                // This covers patterns like:
+                //   var query = __elixir__("(require Ecto.Query; Ecto.Query.from(...))", ...);
+                //   return new TypedQuery(query)
+                for (e in exprs) {
+                    switch (e.expr) {
+                        case TVar(_, init) if (init != null):
+                            var expanded = tryExpandElixirCall(init, thisExpr, args, context);
+                            if (expanded != null) {
+                                return expanded;
+                            }
+                        default:
+                    }
+                }
+                // Otherwise check the last expression (implicit return)
                 if (exprs.length > 0) {
                     var lastExpr = exprs[exprs.length - 1];
                     return tryExpandElixirCall(lastExpr, thisExpr, args, context);

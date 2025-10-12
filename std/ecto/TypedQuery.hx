@@ -301,11 +301,10 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * @return A new TypedQuery instance
      */
     extern inline public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
-        // Build an Ecto query struct directly to avoid macro dependency here
-        // Use a stable local name `query` so downstream injected calls referencing
-        // `query` (by Ecto DSL) remain in scope and Mix-compile cleanly.
-        var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass);
-        return new TypedQuery<T>(query);
+        // Build an Ecto query struct directly (no intermediate local variable)
+        return new TypedQuery<T>(
+            untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass)
+        );
     }
     
     

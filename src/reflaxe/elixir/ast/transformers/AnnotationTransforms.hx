@@ -292,6 +292,8 @@ class AnnotationTransforms {
                 ]));
                 var newBody: Array<ElixirAST> = [];
                 newBody.push(useStmt);
+                // Ensure Ecto.Query macros are available for LiveViews
+                newBody.push(makeAST(ERequire("Ecto.Query", null)));
                 for (stmt in body) newBody.push(stmt);
                 return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
             default:
@@ -318,6 +320,10 @@ class AnnotationTransforms {
         statements.push(makeAST(EUse(appNamePart + "Web", [
             makeAST(EAtom(ElixirAtom.raw("live_view")))
         ])));
+
+        // Ensure Ecto.Query macros are available for LiveViews that use queries
+        // Safe to include even if not used; avoids macro require errors
+        statements.push(makeAST(ERequire("Ecto.Query", null)));
         
         // Add existing functions from the body
         switch(existingBody.def) {
@@ -471,14 +477,7 @@ class AnnotationTransforms {
     live "/todos/:id/edit", TodoLive, :edit
   end
 
-  scope "/api", ${StringTools.replace(moduleName, ".Router", "")} do
-    pipe_through :api
-
-    get "/users", UserController, :index
-    post "/users", UserController, :create
-    put "/users/:id", UserController, :update
-    delete "/users/:id", UserController, :delete
-  end
+  # API routes omitted by default; add explicit routes in Haxe when needed
 
   if Mix.env() in [:dev, :test] do
     import Phoenix.LiveDashboard.Router

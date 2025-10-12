@@ -28,6 +28,10 @@ class TodoApp {
             // PubSub system with proper child spec
             TypeSafeChildSpec.pubSub("TodoApp.PubSub"),
             
+            // Presence tracker - starts Phoenix.Tracker backing ETS tables
+            // Presence module defines child_spec via `use Phoenix.Presence`
+            ModuleRef("TodoAppWeb.Presence"),
+            
             // Telemetry supervisor
             TypeSafeChildSpec.telemetry("TodoAppWeb.Telemetry"),
             

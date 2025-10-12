@@ -13,15 +13,18 @@ class Layouts {
      * Root layout function
      * Called by Phoenix for rendering the main HTML document
      */
-    public static function root(assigns: Dynamic): String {
-        return RootLayout.render(assigns);
+    @:keep public static function root(assigns: Dynamic): Dynamic {
+        // Minimal root that simply yields inner content, avoiding cross-module calls
+        // Return inner_content as safe HTML without requiring ~H
+        return untyped __elixir__('Map.get({0}, :inner_content)', assigns);
     }
     
     /**
      * Application layout function
      * Called by Phoenix for rendering the application wrapper
      */
-    public static function app(assigns: Dynamic): String {
-        return AppLayout.render(assigns);
+    @:keep public static function app(assigns: Dynamic): Dynamic {
+        // Minimal app layout that simply yields inner content
+        return untyped __elixir__('Map.get({0}, :inner_content)', assigns);
     }
 }
