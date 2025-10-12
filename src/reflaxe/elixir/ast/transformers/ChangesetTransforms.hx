@@ -685,7 +685,22 @@ class ChangesetTransforms {
                             }
                         })(a[1]);
                     }
-                    newBody = makeAST(ERemoteCall(mod, fn, a));
+                    // Rebuild call and normalize opts.* access inside keyword list (third arg)
+                    var rebuilt = makeAST(ERemoteCall(mod, fn, a));
+                    // Local normalizer for opts.* access
+                    function rewriteOptsAccessLocal3(n: ElixirAST): ElixirAST {
+                        return switch (n.def) {
+                            case EAccess({def: EVar(v)}, key) if (v == "opts"):
+                                var keyAtom = switch (key.def) { case EAtom(a): a; default: null; };
+                                if (keyAtom != null) {
+                                    makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(keyAtom))]), n.metadata, n.pos);
+                                } else n;
+                            case EField({def: EVar(v2)}, fld) if (v2 == "opts"):
+                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(fld))]), n.metadata, n.pos);
+                            default: n;
+                        }
+                    }
+                    newBody = ElixirASTTransformer.transformNode(rebuilt, rewriteOptsAccessLocal3);
                 default:
             }
             // Re-normalize conditions to Map.get/Kernel.is_nil to guarantee correctness
