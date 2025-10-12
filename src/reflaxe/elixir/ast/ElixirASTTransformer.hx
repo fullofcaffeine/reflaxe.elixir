@@ -355,6 +355,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: phoenixFunctionMappingPass
         });
+
+        // Inject `require Ecto.Query` in modules that call Ecto.Query macros (from/where/order_by/preload)
+        passes.push({
+            name: "EctoQueryRequireInjection",
+            description: "Add `require Ecto.Query` to modules that use Ecto.Query macros",
+            enabled: true,
+            pass: ectoQueryRequirePass
+        });
         
         passes.push({
             name: "ControllerTransform",
@@ -1672,6 +1680,23 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleNewToStructLiteralPass
         });
+
+        // Inline ~H content by replacing Phoenix.HTML.raw(content) with the actual string literal
+        // assigned to `content` earlier in render(assigns), removing the intermediate var.
+        passes.push({
+            name: "HeexContentInline",
+            description: "Inline ~H content to avoid accessing local variables inside templates",
+            enabled: true,
+            pass: heexContentInlinePass
+        });
+
+        // Cleanup numeric no-op expressions and fix missed increments
+        passes.push({
+            name: "NumericNoOpCleanup",
+            description: "Remove standalone numeric ops like 0 + 1 and convert bare count + 1 to assignments",
+            enabled: true,
+            pass: numericNoOpCleanupPass
+        });
         
         // Pattern variable origin analysis pass
         // TODO: Temporarily disabled - needs proper implementation
@@ -1681,6 +1706,14 @@ class ElixirASTTransformer {
         //     enabled: false,
         //     pass: null // patternVariableOriginAnalysisPass
         // });
+
+        // Safety net: ensure `require Ecto.Query` after all late passes
+        passes.push({
+            name: "EctoQueryRequireInjection(Final)",
+            description: "Final sweep to inject `require Ecto.Query` in modules using Ecto.Query macros",
+            enabled: true,
+            pass: ectoQueryRequirePass
+        });
 
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
@@ -3041,6 +3074,207 @@ class ElixirASTTransformer {
                     return node;
             }
         });
+    }
+
+    /**
+     * Ecto Query Require Pass
+     *
+     * WHAT
+     * - Scans modules for calls to Ecto.Query.* (macros like from/where/order_by/preload)
+     * - Injects `require Ecto.Query` at module top if missing
+     *
+     * WHY
+     * - In Elixir, macros must be required in the caller module
+     * - Our builder emits ERemoteCall(EVar("Ecto.Query"), ...), which needs `require Ecto.Query`
+     *
+     * HOW
+     * - Traverse defmodule body; if any ERemoteCall with module EVar("Ecto.Query") found, set needsRequire
+     * - Check existing statements for Kernel.require("Ecto.Query"); if missing, prepend it
+     */
+    static function ectoQueryRequirePass(node: ElixirAST): ElixirAST {
+        // Support both EDefmodule (do/end body) and EModule (attribute + body array) shapes
+        function scanForEctoCalls(x: ElixirAST, found: {needs:Bool, has:Bool}): Void {
+            if (x == null || x.def == null) return;
+            switch (x.def) {
+                case ERemoteCall(mod, func, args):
+                    switch (mod.def) {
+                        case EVar(m) if (m == "Kernel" && func == "require" && args != null && args.length == 1):
+                            switch (args[0].def) { case EVar(v) if (v == "Ecto.Query"): found.has = true; default: }
+                        case EVar(m) if (m == "Ecto.Query"): found.needs = true;
+                        default:
+                    }
+                    if (args != null) for (a in args) scanForEctoCalls(a, found);
+                case ECall(target, _, args):
+                    if (target != null) scanForEctoCalls(target, found);
+                    if (args != null) for (a in args) scanForEctoCalls(a, found);
+                case EBlock(es): for (e in es) scanForEctoCalls(e, found);
+                case EIf(c,t,e): scanForEctoCalls(c, found); scanForEctoCalls(t, found); if (e != null) scanForEctoCalls(e, found);
+                case ECase(e, cs): scanForEctoCalls(e, found); for (c in cs) { if (c.guard != null) scanForEctoCalls(c.guard, found); scanForEctoCalls(c.body, found); }
+                case EBinary(_, l, r): scanForEctoCalls(l, found); scanForEctoCalls(r, found);
+                case EFn(cs): for (cl in cs) scanForEctoCalls(cl.body, found);
+                case EDef(_, _, _, body): scanForEctoCalls(body, found);
+                case EDefp(_, _, _, body): scanForEctoCalls(body, found);
+                default:
+            }
+        }
+        
+        return transformNode(node, function(n: ElixirAST): ElixirAST {
+            switch (n.def) {
+                case EDefmodule(name, doBlock):
+                    switch (doBlock.def) {
+                        case EBlock(statements):
+                            var found = {needs:false, has:false};
+                            for (s in statements) scanForEctoCalls(s, found);
+                            if (found.needs && !found.has) {
+                                var requireStmt = makeAST(ERequire("Ecto.Query", null));
+                                var newStatements = [requireStmt].concat(statements);
+                                var newDo = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+                                return makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+                            }
+                            return n;
+                        default:
+                            return n;
+                    }
+                case EModule(name, attrs, body):
+                    var found2 = {needs:false, has:false};
+                    for (b in body) scanForEctoCalls(b, found2);
+                    if (found2.needs && !found2.has) {
+                        var requireStmt2 = makeAST(ERequire("Ecto.Query", null));
+                        var newBody = [requireStmt2].concat(body);
+                        return makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                    }
+                    return n;
+                default:
+                    return n;
+            }
+        });
+    }
+
+    /**
+     * HeexContentInlinePass
+     *
+     * WHAT
+     * - Replaces ~H"""<%= Phoenix.HTML.raw(content) %>""" in render(assigns) with ~H"""<html...>"""
+     *   when `content` was assigned from a string literal earlier in the function.
+     * - Removes the `content = "..."` intermediate assignment.
+     *
+     * WHY
+     * - LiveView warns when templates access local variables; templates should use assigns
+     *   or be self-contained. Inlining avoids variable access and keeps idiomatic ~H usage.
+     *
+     * HOW
+     * - For EDef("render", [assigns], _, EBlock(stmts)) find:
+     *   a) EMatch(PVar("content"), EString(html))
+     *   b) ESigil("H", s) where s contains "Phoenix.HTML.raw(content)"
+     *   Replace (b) with ESigil("H", html) and drop (a).
+     */
+    static function heexContentInlinePass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch (node.def) {
+                case EDef(name, args, guards, body) if (name == "render"):
+                    // Only handle block bodies
+                    switch (body.def) {
+                        case EBlock(stmts):
+                            var contentHtml: Null<String> = null;
+                            var contentAssignIdx: Int = -1;
+                            // Find content = "..."
+                            for (i in 0...stmts.length) {
+                                switch (stmts[i].def) {
+                                    case EMatch(PVar(varName), {def: EString(s)}) if (varName == "content"):
+                                        contentHtml = s;
+                                        contentAssignIdx = i;
+                                        break;
+                                    default:
+                                }
+                            }
+                            if (contentHtml == null) return node;
+                            // Find ~H that references Phoenix.HTML.raw(content)
+                            var sigilIdx: Int = -1;
+                            for (i in 0...stmts.length) {
+                                switch (stmts[i].def) {
+                                    case ESigil(type, content, modifiers) if (type == "H" && content.indexOf("Phoenix.HTML.raw(content)") != -1):
+                                        sigilIdx = i;
+                                        break;
+                                    default:
+                                }
+                            }
+                            if (sigilIdx == -1) return node;
+                            // Build new statements: replace sigil with literal html, drop the assignment
+                            var newStmts = [];
+                            for (i in 0...stmts.length) {
+                                if (i == contentAssignIdx) continue; // drop assignment
+                                if (i == sigilIdx) {
+                                    newStmts.push(makeASTWithMeta(ESigil("H", contentHtml, ""), stmts[i].metadata, stmts[i].pos));
+                                } else {
+                                    newStmts.push(stmts[i]);
+                                }
+                            }
+                            return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), node.metadata, node.pos);
+                        default:
+                            return node;
+                    }
+                default:
+                    return node;
+            }
+        });
+    }
+
+    /**
+     * NumericNoOpCleanupPass
+     *
+     * WHAT
+     * - Removes EBinary operations with numeric literals when used as statements.
+     * - Converts bare increments like `if cond, do: count + 1` into `if cond, do: count = count + 1`.
+     *
+     * WHY
+     * - Avoids Elixir warnings and preserves intended increment semantics when missed by earlier passes.
+     */
+    static function numericNoOpCleanupPass(ast: ElixirAST): ElixirAST {
+        function isNumericLiteral(n: ElixirAST): Bool {
+            return switch (n.def) {
+                case EInteger(_) | EFloat(_): true;
+                default: false;
+            }
+        }
+        function rewriteIfIncrements(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EBinary(Add, {def: EInteger(a)}, {def: EInteger(b)}):
+                    // Fold constant addition to a single literal (eliminates operator warning)
+                    makeAST(EInteger(a + b));
+                case EIf(cond, thenB, elseB):
+                    var newThen = switch (thenB.def) {
+                        case EBinary(Add, {def: EVar(v)}, rhs):
+                            makeAST(EMatch(PVar(v), makeAST(EBinary(Add, makeAST(EVar(v)), rewriteIfIncrements(rhs)))));
+                        case EBinary(Add, l, r) if (isNumericLiteral(l) && isNumericLiteral(r)):
+                            makeAST(ENil);
+                        default:
+                            rewriteIfIncrements(thenB);
+                    };
+                    var newElse = if (elseB != null) switch (elseB.def) {
+                        case EBinary(Add, {def: EVar(v2)}, rhs2):
+                            makeAST(EMatch(PVar(v2), makeAST(EBinary(Add, makeAST(EVar(v2)), rewriteIfIncrements(rhs2)))));
+                        case EBinary(Add, l2, r2) if (isNumericLiteral(l2) && isNumericLiteral(r2)):
+                            makeAST(ENil);
+                        default:
+                            rewriteIfIncrements(elseB);
+                    } else null;
+                    makeASTWithMeta(EIf(rewriteIfIncrements(cond), newThen, newElse), n.metadata, n.pos);
+                case EBlock(stmts):
+                    var out: Array<ElixirAST> = [];
+                    for (s in stmts) {
+                        // Drop standalone numeric operations like 0 + 1
+                        var drop = switch (s.def) {
+                            case EBinary(_, l, r) if (isNumericLiteral(l) && isNumericLiteral(r)): true;
+                            default: false;
+                        };
+                        if (!drop) out.push(rewriteIfIncrements(s));
+                    }
+                    makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        }
+        return rewriteIfIncrements(ast);
     }
     
     /**

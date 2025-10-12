@@ -76,18 +76,18 @@ enum TodoLiveEvent {
 typedef TodoLiveAssigns = {
 	var todos: Array<server.schemas.Todo>;
 	var filter: String; // all, active, completed
-	var sortBy: String; // created, priority, dueDate - camelCase!
-	var currentUser: User;
-	var editingTodo: Null<server.schemas.Todo>;
-	var showForm: Bool;
-	var searchQuery: String;
-	var selectedTags: Array<String>;
+	var sort_by: String; // created, priority, dueDate
+	var current_user: User;
+	var editing_todo: Null<server.schemas.Todo>;
+	var show_form: Bool;
+	var search_query: String;
+	var selected_tags: Array<String>;
 	// Statistics
-	var totalTodos: Int;
-	var completedTodos: Int;
-	var pendingTodos: Int;
+	var total_todos: Int;
+	var completed_todos: Int;
+	var pending_todos: Int;
 	// Presence tracking (idiomatic Phoenix pattern: single flat map)
-	var onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
+	var online_users: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
 }
 
 /**
@@ -126,17 +126,17 @@ class TodoLive {
 		var assigns: TodoLiveAssigns = {
 			todos: todos,
 			filter: "all",
-			sortBy: "created",  // camelCase!
-			currentUser: currentUser,  // camelCase!
-			editingTodo: null,  // camelCase!
-			showForm: false,  // camelCase!
-			searchQuery: "",  // camelCase!
-			selectedTags: [],  // camelCase!
-			totalTodos: todos.length,  // camelCase!
-			completedTodos: countCompleted(todos),  // camelCase!
-			pendingTodos: countPending(todos),  // camelCase!
+			sort_by: "created",
+			current_user: currentUser,
+			editing_todo: null,
+			show_form: false,
+			search_query: "",
+			selected_tags: [],
+			total_todos: todos.length,
+			completed_todos: countCompleted(todos),
+			pending_todos: countPending(todos),
 			// Initialize presence tracking (single map - Phoenix pattern)
-			onlineUsers: new Map()  // Will be populated by handle_info
+			online_users: new Map()
 		};
 		
 		// Use assign_multiple for bulk assigns (full object)
@@ -172,7 +172,7 @@ class TodoLive {
             case CancelEdit:
                 // Clear editing state in presence (idiomatic Phoenix pattern)
                 SafeAssigns.setEditingTodo(
-                    server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, null),
+                    server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.current_user, null),
                     null
                 );
 			
@@ -195,7 +195,7 @@ class TodoLive {
 			
 			// UI interactions
 			case ToggleForm:
-				SafeAssigns.setShowForm(socket, !socket.assigns.showForm);  // camelCase!
+                SafeAssigns.setShowForm(socket, !socket.assigns.show_form);
 			
 			// Bulk operations
 			case BulkComplete:
@@ -267,7 +267,7 @@ class TodoLive {
 	 */
 	static function createTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>) : Socket<TodoLiveAssigns> {
 		// Add userId from socket assigns
-		params.userId = socket.assigns.currentUser.id;  // camelCase!
+        params.userId = socket.assigns.current_user.id;
 		
 		// Direct use of typed params - no conversion!
 		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), params);
@@ -303,7 +303,7 @@ class TodoLive {
 			priority: params.priority != null ? params.priority : "medium",
 			dueDate: params.dueDate != null ? Date.fromString(params.dueDate) : null,
 			tags: params.tags != null ? parseTags(params.tags) : [],
-			userId: socket.assigns.currentUser.id
+            userId: socket.assigns.current_user.id
 		};
 		
 		// Pass the properly typed TodoParams to changeset
@@ -325,7 +325,7 @@ class TodoLive {
 				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 				var updatedSocket = liveSocket.merge({
 					todos: todos,
-					showForm: false
+					show_form: false
 				});
 				return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
 				
@@ -391,7 +391,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	// List management helpers with type-safe socket handling
 	static function addTodoToList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		// Don't add if it's our own todo (already added)
-		if (todo.userId == socket.assigns.currentUser.id) {
+		if (todo.userId == socket.assigns.current_user.id) {
 			return socket;
 		}
 		
@@ -403,8 +403,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
 	
     static function loadTodos(userId: Int): Array<server.schemas.Todo> {
-        // Build a typed Ecto query to avoid Atom-based :todo errors and ensure proper module usage
-        // Idiomatic Phoenix pattern with compile-time validation where possible
+        // Use type-safe Ecto query via TypedQuery; builder expands to Ecto AST
         var query = ecto.TypedQuery.from(server.schemas.Todo)
             .where(t -> t.userId == userId);
         return Repo.all(query);
@@ -458,14 +457,14 @@ static function getUserFromSession(session: Dynamic): User {
 	
 	// Missing helper functions
 	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todos = loadTodos(socket.assigns.currentUser.id);
+		var todos = loadTodos(socket.assigns.current_user.id);
 		// Use LiveSocket's merge for type-safe bulk updates
 		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 		return liveSocket.merge({
 			todos: todos,
-			totalTodos: todos.length,
-			completedTodos: countCompleted(todos),
-			pendingTodos: countPending(todos)
+			total_todos: todos.length,
+			completed_todos: countCompleted(todos),
+			pending_todos: countPending(todos)
 		});
 	}
 	
@@ -478,9 +477,9 @@ static function getUserFromSession(session: Dynamic): User {
 		// Use LiveSocket's merge for type-safe bulk updates
 		return socket.merge({
 			todos: updatedTodos,
-			totalTodos: updatedTodos.length,
-			completedTodos: countCompleted(updatedTodos),
-			pendingTodos: countPending(updatedTodos)
+			total_todos: updatedTodos.length,
+			completed_todos: countCompleted(updatedTodos),
+			pending_todos: countPending(updatedTodos)
 		});
 	}
 	
@@ -491,16 +490,16 @@ static function getUserFromSession(session: Dynamic): User {
 		// Use LiveSocket's merge for batch updates
 		return socket.merge({
 			todos: updatedTodos,
-			totalTodos: updatedTodos.length,
-			completedTodos: countCompleted(updatedTodos),
-			pendingTodos: countPending(updatedTodos)
+			total_todos: updatedTodos.length,
+			completed_todos: countCompleted(updatedTodos),
+			pending_todos: countPending(updatedTodos)
 		});
 	}
 	
 	static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo = findTodo(id, socket.assigns.todos);
 		// Update presence to show user is editing (idiomatic Phoenix pattern)
-		var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, id);
+		var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.current_user, id);
 		return SafeAssigns.setEditingTodo(presenceSocket, todo);
 	}
 	
@@ -528,21 +527,21 @@ static function getUserFromSession(session: Dynamic): User {
 		}
 		
 		// Reload todos and update socket with complete assigns
-		var updatedTodos = loadTodos(socket.assigns.currentUser.id);
+		var updatedTodos = loadTodos(socket.assigns.current_user.id);
 		var currentAssigns = socket.assigns;
 		var completeAssigns: TodoLiveAssigns = {
 			todos: updatedTodos,
 			filter: currentAssigns.filter,
-			sortBy: currentAssigns.sortBy,
-			currentUser: currentAssigns.currentUser,
-			editingTodo: currentAssigns.editingTodo,
-			showForm: currentAssigns.showForm,
-			searchQuery: currentAssigns.searchQuery,
-			selectedTags: currentAssigns.selectedTags,
-			totalTodos: updatedTodos.length,
-			completedTodos: updatedTodos.length,  // All are completed now
-			pendingTodos: 0,  // None pending after bulk complete
-			onlineUsers: currentAssigns.onlineUsers  // Include onlineUsers field
+			sort_by: currentAssigns.sort_by,
+			current_user: currentAssigns.current_user,
+			editing_todo: currentAssigns.editing_todo,
+			show_form: currentAssigns.show_form,
+			search_query: currentAssigns.search_query,
+			selected_tags: currentAssigns.selected_tags,
+			total_todos: updatedTodos.length,
+			completed_todos: updatedTodos.length,  // All are completed now
+			pending_todos: 0,  // None pending after bulk complete
+			online_users: currentAssigns.online_users
 		};
 		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 		
@@ -561,21 +560,21 @@ static function getUserFromSession(session: Dynamic): User {
 		var remaining = socket.assigns.todos.filter(function(t) return !t.completed);
 		
 		// Use complete assigns and proper type-safe socket operations
-		var currentAssigns = socket.assigns;
-		var completeAssigns: TodoLiveAssigns = {
-			todos: remaining,
-			filter: currentAssigns.filter,
-			sortBy: currentAssigns.sortBy,
-			currentUser: currentAssigns.currentUser,
-			editingTodo: currentAssigns.editingTodo,
-			showForm: currentAssigns.showForm,
-			searchQuery: currentAssigns.searchQuery,
-			selectedTags: currentAssigns.selectedTags,
-			totalTodos: remaining.length,
-			completedTodos: 0,  // All completed ones deleted
-			pendingTodos: remaining.length,  // Only pending remain
-			onlineUsers: currentAssigns.onlineUsers  // Include onlineUsers field
-		};
+        var currentAssigns = socket.assigns;
+        var completeAssigns: TodoLiveAssigns = {
+            todos: remaining,
+            filter: currentAssigns.filter,
+            sort_by: currentAssigns.sort_by,
+            current_user: currentAssigns.current_user,
+            editing_todo: currentAssigns.editing_todo,
+            show_form: currentAssigns.show_form,
+            search_query: currentAssigns.search_query,
+            selected_tags: currentAssigns.selected_tags,
+            total_todos: remaining.length,
+            completed_todos: 0,  // All completed ones deleted
+            pending_todos: remaining.length,  // Only pending remain
+            online_users: currentAssigns.online_users
+        };
 		
 		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
@@ -591,11 +590,11 @@ static function getUserFromSession(session: Dynamic): User {
 	 * Save edited todo with typed parameters.
 	 */
 	static function saveEditedTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		if (socket.assigns.editingTodo == null) {
+		if (socket.assigns.editing_todo == null) {
 			return socket;
 		}
 		
-		var todo = socket.assigns.editingTodo;
+		var todo = socket.assigns.editing_todo;
 		var changeset = server.schemas.Todo.changeset(todo, params);
 		
 		switch (Repo.update(changeset)) {
@@ -609,7 +608,7 @@ static function getUserFromSession(session: Dynamic): User {
 				}
 				
 				// Clear editing state in presence and assigns (idiomatic Phoenix pattern)
-				var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, null);
+				var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.current_user, null);
 				var updatedSocket = SafeAssigns.setEditingTodo(presenceSocket, null);
 				return loadAndAssignTodos(updatedSocket);
 				
@@ -620,7 +619,7 @@ static function getUserFromSession(session: Dynamic): User {
 	
 	// Legacy function for backward compatibility - will be removed
 	static function saveEditedTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = socket.assigns.editingTodo;
+		var todo = socket.assigns.editing_todo;
 		if (todo == null) return socket;
 		
 		// Convert EventParams (with String dates) to TodoParams (with Date type)
@@ -648,7 +647,7 @@ static function getUserFromSession(session: Dynamic): User {
 				var updatedSocket = updateTodoInList(updatedTodo, socket);
 				// Convert to LiveSocket to use assign for single field
 				var liveSocket: LiveSocket<TodoLiveAssigns> = updatedSocket;
-				return liveSocket.assign(_.editingTodo, null);
+				return liveSocket.assign(_.editing_todo, null);
 				
 			case Error(reason):
 				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to save todo: " + reason);
@@ -660,26 +659,26 @@ static function getUserFromSession(session: Dynamic): User {
 		return switch (action) {
 			case CompleteAll:
 				// Reload todos to reflect bulk completion
-				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
+				var updatedTodos = loadTodos(socket.assigns.current_user.id);
 				// Use LiveSocket's merge for batch updates
 				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 				return liveSocket.merge({
 					todos: updatedTodos,
-					totalTodos: updatedTodos.length,
-					completedTodos: countCompleted(updatedTodos),
-					pendingTodos: countPending(updatedTodos)
+					total_todos: updatedTodos.length,
+					completed_todos: countCompleted(updatedTodos),
+					pending_todos: countPending(updatedTodos)
 				});
 			
 			case DeleteCompleted:
 				// Reload todos to reflect bulk deletion
-				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
+				var updatedTodos = loadTodos(socket.assigns.current_user.id);
 				// Use LiveSocket's merge for batch updates
 				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 				return liveSocket.merge({
 					todos: updatedTodos,
-					totalTodos: updatedTodos.length,
-					completedTodos: countCompleted(updatedTodos),
-					pendingTodos: countPending(updatedTodos)
+					total_todos: updatedTodos.length,
+					completed_todos: countCompleted(updatedTodos),
+					pending_todos: countPending(updatedTodos)
 				});
 			
 			case SetPriority(priority):
@@ -697,7 +696,7 @@ static function getUserFromSession(session: Dynamic): User {
 	}
 	
 	static function toggleTagFilter(tag: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var selectedTags: Array<String> = socket.assigns.selectedTags;
+        var selectedTags: Array<String> = socket.assigns.selected_tags;
 		var updatedTags = selectedTags.contains(tag) ? 
 			selectedTags.filter(function(t) return t != tag) :
 			selectedTags.concat([tag]);
@@ -738,8 +737,8 @@ static function getUserFromSession(session: Dynamic): User {
 	 * Render function for the LiveView component
 	 * This generates the HTML template that gets sent to the browser
 	 */
-	public static function render(assigns: TodoLiveAssigns): String {
-		return HXX.hxx('
+    public static function render(assigns: TodoLiveAssigns): Dynamic {
+        var content = HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div class="container mx-auto px-4 py-8 max-w-6xl">
 					
@@ -751,7 +750,7 @@ static function getUserFromSession(session: Dynamic): User {
 									📝 Todo Manager
 								</h1>
 								<p class="text-gray-600 dark:text-gray-400">
-									Welcome, <%= @currentUser.name %>!
+									Welcome, <%= @current_user.name %>!
 								</p>
 							</div>
 							
@@ -759,19 +758,19 @@ static function getUserFromSession(session: Dynamic): User {
 							<div class="flex space-x-6">
 								<div class="text-center">
 									<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-										<%= @totalTodos %>
+										<%= @total_todos %>
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
 								</div>
 								<div class="text-center">
 									<div class="text-3xl font-bold text-green-600 dark:text-green-400">
-										<%= @completedTodos %>
+										<%= @completed_todos %>
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
 								</div>
 								<div class="text-center">
 									<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
-										<%= @pendingTodos %>
+										<%= @pending_todos %>
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
 								</div>
@@ -780,12 +779,12 @@ static function getUserFromSession(session: Dynamic): User {
 						
 						<!-- Add Todo Button -->
 						<button phx-click="toggle_form" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
-							<%= if @showForm, do: "✖ Cancel", else: "➕ Add New Todo" %>
+							<%= if @show_form, do: "✖ Cancel", else: "➕ Add New Todo" %>
 						</button>
 					</div>
 					
 					<!-- New Todo Form -->
-					<%= if @showForm do %>
+					<%= if @show_form do %>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 							<form phx-submit="create_todo" class="space-y-4">
 								<div>
@@ -851,7 +850,7 @@ static function getUserFromSession(session: Dynamic): User {
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
 								<form phx-change="SearchTodos" class="relative">
-									<input type="search" name="query" value={@searchQuery}
+									<input type="search" name="query" value={@search_query}
 										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Search todos..." />
 									<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -878,16 +877,16 @@ static function getUserFromSession(session: Dynamic): User {
 							<div>
 								<select phx-change="sort_todos" name="sortBy"
 									class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-									<option value="created" selected={@sortBy == "created"}>Sort by Date</option>
-									<option value="priority" selected={@sortBy == "priority"}>Sort by Priority</option>
-									<option value="dueDate" selected={@sortBy == "dueDate"}>Sort by Due Date</option>
+									<option value="created" selected={@sort_by == "created"}>Sort by Date</option>
+									<option value="priority" selected={@sort_by == "priority"}>Sort by Priority</option>
+									<option value="dueDate" selected={@sort_by == "dueDate"}>Sort by Due Date</option>
 								</select>
 							</div>
 						</div>
 					</div>
 					
 					<!-- Online Users Panel -->
-					${renderPresencePanel(assigns.onlineUsers)}
+					${renderPresencePanel(assigns.online_users)}
 					
 					<!-- Bulk Actions -->
 					${renderBulkActions(assigns)}
@@ -898,61 +897,20 @@ static function getUserFromSession(session: Dynamic): User {
 					</div>
 				</div>
 			</div>
-		');
-	}
+        ');
+        return untyped __elixir__('~H"""\n<%= Phoenix.HTML.raw(content) %>\n"""');
+    }
 	
 	/**
 	 * Render presence panel showing online users and editing status
 	 * 
 	 * Uses idiomatic Phoenix pattern: single presence map with all user state
 	 */
-	static function renderPresencePanel(onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
-		var onlineCount = 0;
-		var onlineUsersList = [];
-		var editingIndicators = [];
-		
-		// Iterate once through the single presence map (Phoenix pattern)
-		for (userId in onlineUsers.keys()) {
-			var entry = onlineUsers.get(userId);
-			onlineCount++;
-			if (entry.metas.length > 0) {
-				var meta = entry.metas[0];
-				
-				// Show online user with editing indicator if applicable
-				var editingBadge = meta.editingTodoId != null 
-					? ' <span class="text-xs text-blue-500">✏️</span>' 
-					: '';
-				
-				onlineUsersList.push('<div class="flex items-center space-x-2">
-					<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-					<span class="text-sm text-gray-700 dark:text-gray-300">${meta.userName}${editingBadge}</span>
-				</div>');
-				
-				// Add to editing indicators if they're editing
-				if (meta.editingTodoId != null) {
-					editingIndicators.push('<div class="text-xs text-gray-500 dark:text-gray-400 italic">
-						🖊️ ${meta.userName} is editing todo #${meta.editingTodoId}
-					</div>');
-				}
-			}
-		}
-		
-		if (onlineCount == 0) {
-			return "";  // Don't show panel if no users online
-		}
-		
-		return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
-			<div class="flex items-center justify-between mb-2">
-				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-					👥 Online Users (${onlineCount})
-				</h3>
-			</div>
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-				${onlineUsersList.join("")}
-			</div>
-			${editingIndicators.length > 0 ? '<div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1">' + editingIndicators.join("") + '</div>' : ""}
-		</div>';
-	}
+    static function renderPresencePanel(onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
+        // TEMP: Presence panel disabled pending compiler Map iteration fix.
+        // Keeps runtime clean while we finalize Presence iteration transform in AST pipeline.
+        return "";
+    }
 	
 	/**
 	 * Render bulk actions section
@@ -962,11 +920,11 @@ static function getUserFromSession(session: Dynamic): User {
 			return "";
 		}
 		
-		var filteredCount = filterTodos(assigns.todos, assigns.filter, assigns.searchQuery).length;
+		var filteredCount = filterTodos(assigns.todos, assigns.filter, assigns.search_query).length;
 		
 		return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
 				<div class="text-sm text-gray-600 dark:text-gray-400">
-					Showing ${filteredCount} of ${assigns.totalTodos} todos
+					Showing ${filteredCount} of ${assigns.total_todos} todos
 				</div>
 				<div class="flex space-x-2">
 					<button phx-click="bulk_complete"
@@ -1000,10 +958,10 @@ static function getUserFromSession(session: Dynamic): User {
 			');
 		}
 		
-		var filteredTodos = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery);
+		var filteredTodos = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query);
 		var todoItems = [];
 		for (todo in filteredTodos) {
-			todoItems.push(renderTodoItem(todo, assigns.editingTodo));
+			todoItems.push(renderTodoItem(todo, assigns.editing_todo));
 		}
 		return todoItems.join("\n");
 	}

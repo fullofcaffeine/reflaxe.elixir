@@ -60,9 +60,7 @@ TestInjection
 server.live.TodoLive
 server.schemas.Todo
 server.migrations.CreateTodos
-server.live.UserLive
 server.presence.TodoPresence
-controllers.UserController
 server.layouts.Layouts
 server.infrastructure.Repo
 server.infrastructure.Telemetry
