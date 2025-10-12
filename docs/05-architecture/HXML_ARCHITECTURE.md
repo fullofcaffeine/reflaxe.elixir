@@ -238,6 +238,12 @@ Most modern Haxe IDEs use HXML files for:
 -cp src/sys
 #end
 
+## Target-Conditional Stdlib Gating (Elixir)
+
+Elixir-specific staged overrides under `std/_std/` are added to the classpath only when compiling to the Elixir target. This is handled in `CompilerInit.Start()` and prevents `__elixir__()` usage from leaking into macro contexts or other targets.
+
+See: docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md
+
 #if js
 -cp src/js
 #end

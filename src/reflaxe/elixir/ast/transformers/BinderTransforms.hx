@@ -23,6 +23,69 @@ import StringTools;
  *      binder exists, prepend alias assignments for missing variables.
  */
 class BinderTransforms {
+    /**
+     * liveViewUseInjectionPass
+     *
+     * WHAT
+     * - Inject `use <App>Web, :live_view` into modules under `<App>Web.*` whose
+     *   module name ends with `Live` when LiveView use is not already present.
+     *
+     * WHY
+     * - Some LiveView modules may be generated without the @:liveview metadata,
+     *   causing Phoenix to miss the required `__live__/0` function and crash
+     *   with UndefinedFunctionError. This shape-derived fallback ensures LiveView
+     *   hooks are present without app-specific coupling.
+     *
+     * HOW
+     * - For each EModule/EDefmodule with name matching `<App>Web.*Live`:
+     *   - Derive `<App>` from the module name prefix before `Web`
+     *   - Check body for an existing `use <App>Web, :live_view` or `use Phoenix.LiveView`
+     *   - If missing, prepend the proper `use <App>Web, :live_view` statement
+     */
+    public static function liveViewUseInjectionPass(ast: ElixirAST): ElixirAST {
+        inline function deriveAppPrefix(moduleName: String): Null<String> {
+            var idx = moduleName.indexOf("Web");
+            return idx > 0 ? moduleName.substring(0, idx) : null;
+        }
+        inline function looksLikeLiveModule(name: String): Bool {
+            return name != null && (name.indexOf("Web.") > 0) && (StringTools.endsWith(name, "Live") || name.indexOf(".Live") != -1);
+        }
+        function hasLiveUse(body: Array<ElixirAST>, appPrefix: String): Bool {
+            var found = false;
+            for (b in body) switch (b.def) {
+                case EUse(module, args):
+                    if (module == appPrefix + "Web") {
+                        for (a in args) switch (a.def) { case EAtom(x) if (x == "live_view"): found = true; default: }
+                    }
+                    if (module == "Phoenix.LiveView") found = true;
+                default:
+            }
+            return found;
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EModule(name, attrs, body) if (looksLikeLiveModule(name)):
+                    var app = deriveAppPrefix(name);
+                    if (app != null && !hasLiveUse(body, app)) {
+                        var useStmt = makeAST(EUse(app + "Web", [ makeAST(EAtom("live_view")) ]));
+                        var newBody = [useStmt];
+                        for (b in body) newBody.push(b);
+                        makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
+                    } else node;
+                case EDefmodule(name, doBlock) if (looksLikeLiveModule(name)):
+                    var app2 = deriveAppPrefix(name);
+                    switch (doBlock.def) {
+                        case EBlock(stmts) if (app2 != null && !hasLiveUse(stmts, app2)):
+                            var useStmt = makeAST(EUse(app2 + "Web", [ makeAST(EAtom("live_view")) ]));
+                            var newDo = makeAST(EBlock([useStmt].concat(stmts)));
+                            makeASTWithMeta(EDefmodule(name, newDo), node.metadata, node.pos);
+                        default: node;
+                    }
+                default:
+                    node;
+            }
+        });
+    }
     public static function caseClauseBinderRenameFromExprPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             if (node == null || node.def == null) return node;
@@ -775,6 +838,27 @@ class BinderTransforms {
             // rewrites when it is available.
             return ElixirASTTransformer.transformNode(subtree, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
+                    case ECapture(expr, arity):
+                        // Handle &Module.func/arity captures
+                        switch (expr.def) {
+                            case ERemoteCall(mod, func, args):
+                                switch (mod.def) {
+                                    case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+                                        if (m == "Presence" && appPrefix != null) {
+                                            var fqP = appPrefix + "Web." + m;
+                                            return makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(fqP)), func, args)), arity), n.metadata, n.pos);
+                                        }
+                                        if (m == "SafePubSub") {
+                                            return makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args)), arity), n.metadata, n.pos);
+                                        }
+                                        if (appPrefix != null) {
+                                            var fq = appPrefix + "." + m;
+                                            return makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(fq)), func, args)), arity), n.metadata, n.pos);
+                                        } else n;
+                                    default: n;
+                                }
+                            default: n;
+                        }
                     case ERemoteCall(mod, func, args):
                         switch (mod.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
@@ -848,108 +932,285 @@ class BinderTransforms {
         });
     }
 
-    // Late minimal sweep: prefix unused local assignment variables with underscore
-    public static function unusedLocalAssignmentUnderscorePass(ast: ElixirAST): ElixirAST {
-        // For each function, collect declared names and usages, then underscore unreferenced locals
-        function processBody(body: ElixirAST): ElixirAST {
-            var declared = new Map<String, Int>();
-            var used = new Map<String, Int>();
-
-            // Single-pass read-only collection across the body
-            ASTUtils.walk(body, function(n: ElixirAST) {
-                if (n == null || n.def == null) return;
-                switch (n.def) {
-                    case EMatch(pattern, _):
-                        // Collect variable names declared in patterns
-                        function collectPattern(p: EPattern): Void {
-                            switch (p) {
-                                case PVar(name):
-                                    declared.set(name, (declared.exists(name) ? declared.get(name) : 0) + 1);
-                                case PTuple(elems) | PList(elems):
-                                    for (ep in elems) collectPattern(ep);
-                                default:
-                            }
-                        }
-                        collectPattern(pattern);
-                    case EBinary(Match, left, _):
-                        // Treat simple assignment LHS as declarations for cleanup
-                        function collectLhs(lhs: ElixirAST): Void {
-                            switch (lhs.def) {
-                                case EVar(nm):
-                                    declared.set(nm, (declared.exists(nm) ? declared.get(nm) : 0) + 1);
-                                case EBinary(Match, l2, r2):
-                                    collectLhs(l2); collectLhs(r2);
-                                default:
-                            }
-                        }
-                        collectLhs(left);
-                    case EVar(name):
-                        used.set(name, (used.exists(name) ? used.get(name) : 0) + 1);
-                    default:
-                }
-            });
-
-            // Non-recursive rewriter: rely on transformNode for traversal
-            function rewrite(n: ElixirAST): ElixirAST {
-                if (n == null || n.def == null) return n;
+    /**
+     * WebEFnModuleQualificationPass
+     *
+     * WHAT
+     * - Final sweep to qualify single-segment CamelCase module calls inside <App>Web.* modules,
+     *   with focus on calls appearing within EFn bodies (lambdas) used by Enum.each/reduce_while etc.
+     *
+     * WHY
+     * - Earlier passes may miss or later introduce bare module calls inside anonymous functions. This
+     *   pass ensures Web-context code consistently qualifies to <App>.Module.
+     *
+     * HOW
+     * - For EModule/EDefmodule names containing "Web", derive <App> prefix and rewrite ERemoteCall/ECall
+     *   targets where module is a single-segment CamelCase and not in the std/framework whitelist.
+     */
+    public static function webEFnModuleQualificationPass(ast: ElixirAST): ElixirAST {
+        inline function deriveAppPrefix(moduleName: String): Null<String> {
+            if (moduleName == null) return null;
+            var idx = moduleName.indexOf("Web");
+            return idx > 0 ? moduleName.substring(0, idx) : null;
+        }
+        inline function isSingleSegmentModule(name: String): Bool {
+            return name != null && name.indexOf(".") == -1 && name.length > 0;
+        }
+        inline function isUpperCamel(name: String): Bool {
+            var c = name.charAt(0);
+            return c.toUpperCase() == c && c.toLowerCase() != c;
+        }
+        inline function isGlobalWhitelisted(name:String):Bool {
+            return reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(name);
+        }
+        function qualifySubtree(sub: ElixirAST, appPrefix: String): ElixirAST {
+            return ElixirASTTransformer.transformNode(sub, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
-                    case EMatch(pattern, expr):
-                        var newPattern = switch (pattern) {
-                            case PVar(name):
-                                // Do not underscore compiler temps or preserved switch results
-                                if ((name != null && name.length >= 14 && name.substr(0,14) == "switch_result_") || name == "g" || (name != null && name.length > 0 && name.charAt(0) == 'g') || (name != null && name.length > 1 && name.charAt(0) == '_' && name.charAt(1) == 'g')) {
-                                    pattern;
-                                } else {
-                                // If declared but never used, and not already underscore-prefixed, prefix it
-                                var isDeclared = declared.exists(name);
-                                var isUsed = used.exists(name);
-                                if (isDeclared && !isUsed && name.charAt(0) != "_") PVar("_" + name) else pattern;
-                                }
-                            case PTuple(elems):
-                                PTuple([for (p in elems) switch (p) { case PVar(nm) if (declared.exists(nm) && !used.exists(nm) && nm.charAt(0) != "_"): PVar("_"+nm); default: p; }]);
-                            case PList(elems):
-                                PList([for (p in elems) switch (p) { case PVar(nm) if (declared.exists(nm) && !used.exists(nm) && nm.charAt(0) != "_"): PVar("_"+nm); default: p; }]);
-                            default:
-                                pattern;
-                        };
-                        makeASTWithMeta(EMatch(newPattern, expr), n.metadata, n.pos);
-                    case EBinary(Match, left, expr):
-                        // Prefix simple assignment to unused locals with underscore
-                        var newLeft = switch (left.def) {
-                            case EVar(name):
-                                if ((name != null && name.length >= 14 && name.substr(0,14) == "switch_result_") || name == "g" || (name != null && name.length > 0 && name.charAt(0) == 'g') || (name != null && name.length > 1 && name.charAt(0) == '_' && name.charAt(1) == 'g')) {
-                                    left;
-                                } else {
-                                    var isDeclared = declared.exists(name);
-                                    var isUsed = used.exists(name);
-                                    if (isDeclared && !isUsed && name.charAt(0) != "_") makeAST(EVar("_" + name)) else left;
-                                }
-                            case EBinary(Match, _, _):
-                                // Recurse assignment chain
-                                left; // Leave nested chains unchanged for now
-                            default:
-                                left;
+                    case ERemoteCall(mod, func, args):
+                        switch (mod.def) {
+                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+                                if (appPrefix != null) {
+                                    var fq = appPrefix + "." + m;
+                                    makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
+                                } else n;
+                            default: n;
                         }
-                        makeASTWithMeta(EBinary(Match, newLeft, expr), n.metadata, n.pos);
+                    case ECall(target, func, args) if (target != null):
+                        switch (target.def) {
+                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+                                if (appPrefix != null) {
+                                    var fq = appPrefix + "." + m;
+                                    makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
+                                } else n;
+                            default: n;
+                        }
                     default:
                         n;
                 }
-            }
-
-            return ElixirASTTransformer.transformNode(body, rewrite);
+            });
         }
-
-        return ElixirASTTransformer.transformNode(ast, function(n) {
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EDef(name, args, guards, body):
-                    makeASTWithMeta(EDef(name, args, guards, processBody(body)), n.metadata, n.pos);
-                case EDefp(name, args, guards, body):
-                    makeASTWithMeta(EDefp(name, args, guards, processBody(body)), n.metadata, n.pos);
+                case EModule(name, attrs, body) if (name.indexOf("Web") != -1):
+                    var prefix = deriveAppPrefix(name);
+                    var newBody: Array<ElixirAST> = [];
+                    for (b in body) newBody.push(qualifySubtree(b, prefix));
+                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
+                    var prefix2 = deriveAppPrefix(name);
+                    var newDo = qualifySubtree(doBlock, prefix2);
+                    makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                 default:
                     n;
             }
         });
     }
+
+    /**
+     * WebReduceWhileEFnQualificationPass
+     *
+     * WHAT
+     * - Specifically qualify single-segment module calls inside Enum.reduce_while anonymous function bodies
+     *   within <App>Web.* modules. This acts as a final, targeted safety net in case previous generic
+     *   qualification passes missed reduce_while EFns emitted late in the pipeline.
+     *
+     * HOW
+     * - For each ERemoteCall/ECall of reduce_while within <App>Web.* modules, rewrite the 3rd argument (the function)
+     *   by qualifying any ERemoteCall/ECall whose target is a single-segment, non-whitelisted CamelCase module
+     *   to <App>.<Module>.
+     */
+    public static function webReduceWhileEFnQualificationPass(ast: ElixirAST): ElixirAST {
+        inline function deriveAppPrefix(moduleName: String): Null<String> {
+            if (moduleName == null) return null;
+            var idx = moduleName.indexOf("Web");
+            return idx > 0 ? moduleName.substring(0, idx) : null;
+        }
+        inline function isSingleSegmentModule(name: String): Bool {
+            return name != null && name.indexOf(".") == -1 && name.length > 0;
+        }
+        inline function isUpperCamel(name: String): Bool {
+            var c = name.charAt(0);
+            return c.toUpperCase() == c && c.toLowerCase() != c;
+        }
+        inline function isGlobalWhitelisted(name:String):Bool {
+            return reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(name);
+        }
+        function qualifyFnBody(fnAst: ElixirAST, appPrefix: String): ElixirAST {
+            return ElixirASTTransformer.transformNode(fnAst, function(n: ElixirAST): ElixirAST {
+                return switch (n.def) {
+                    case ERemoteCall(mod, func, args):
+                        switch (mod.def) {
+                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+                                if (appPrefix != null) {
+                                    var fq = appPrefix + "." + m;
+                                    makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
+                                } else n;
+                            default: n;
+                        }
+                    case ECall(target, func, args) if (target != null):
+                        switch (target.def) {
+                            case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
+                                if (appPrefix != null) {
+                                    var fq = appPrefix + "." + m;
+                                    makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
+                                } else n;
+                            default: n;
+                        }
+                    default:
+                        n;
+                }
+            });
+        }
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EModule(name, attrs, body) if (name.indexOf("Web") != -1):
+                    var app = deriveAppPrefix(name);
+                    var newBody = [];
+                    for (b in body) newBody.push(ElixirASTTransformer.transformNode(b, function(n: ElixirAST): ElixirAST {
+                        return switch (n.def) {
+                            case ERemoteCall(mod, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
+                                var isEnum = switch (mod.def) { case EVar(m) if (m == "Enum"): true; default: false; };
+                                if (isEnum) {
+                                    var a = args.copy();
+                                    a[2] = qualifyFnBody(a[2], app);
+                                    makeASTWithMeta(ERemoteCall(mod, func, a), n.metadata, n.pos);
+                                } else n;
+                            case ECall(target, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
+                                var a2 = args.copy();
+                                a2[2] = qualifyFnBody(a2[2], app);
+                                makeASTWithMeta(ECall(target, func, a2), n.metadata, n.pos);
+                            default:
+                                n;
+                        }
+                    }));
+                    makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
+                case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
+                    var app2 = deriveAppPrefix(name);
+                    var newDo = ElixirASTTransformer.transformNode(doBlock, function(n: ElixirAST): ElixirAST {
+                        return switch (n.def) {
+                            case ERemoteCall(mod, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
+                                var isEnum2 = switch (mod.def) { case EVar(m) if (m == "Enum"): true; default: false; };
+                                if (isEnum2) {
+                                    var a3 = args.copy();
+                                    a3[2] = qualifyFnBody(a3[2], app2);
+                                    makeASTWithMeta(ERemoteCall(mod, func, a3), n.metadata, n.pos);
+                                } else n;
+                            case ECall(target, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
+                                var a4 = args.copy();
+                                a4[2] = qualifyFnBody(a4[2], app2);
+                                makeASTWithMeta(ECall(target, func, a4), n.metadata, n.pos);
+                            default:
+                                n;
+                        }
+                    });
+                    makeASTWithMeta(EDefmodule(name, newDo), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    /**
+     * ERawWebModuleQualificationPass
+     *
+     * WHAT
+     * - Qualify bare module calls inside ERaw strings within <App>Web.* modules.
+     *
+     * HOW
+     * - Scan ERaw code and prefix tokens like `Foo.` with `<App>.Foo.` when Foo is a single-segment
+     *   CamelCase module and not whitelisted (Enum, Map, Ecto, Phoenix, etc.).
+     */
+    public static function erawWebModuleQualificationPass(ast: ElixirAST): ElixirAST {
+        inline function isUpper(c:String):Bool return c.toUpperCase() == c && c.toLowerCase() != c;
+        function qualify(code:String, app:String):String {
+            var out = new StringBuf();
+            var i = 0;
+            while (i < code.length) {
+                var ch = code.charAt(i);
+                // Eligible start: uppercase letter and not part of an identifier
+                var prev = i > 0 ? code.charAt(i - 1) : "";
+                var isPrevIdent = ~/^[A-Za-z0-9_]$/.match(prev);
+                if (!isPrevIdent && isUpper(ch)) {
+                    // Capture identifier
+                    var j = i;
+                    var name = new StringBuf();
+                    while (j < code.length) {
+                        var c = code.charAt(j);
+                        if (!~/^[A-Za-z0-9_]$/.match(c)) break;
+                        name.add(c);
+                        j++;
+                    }
+                    var token = name.toString();
+                    // Next char must be '.' to be a module call
+                    if (j < code.length && code.charAt(j) == '.') {
+                        // Do not qualify whitelisted roots
+                        if (!reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(token) && app != null && app.length > 0) {
+                            out.add(app);
+                            out.add(".");
+                        }
+                        out.add(token);
+                        i = j; // Keep '.' in stream for default handler
+                        continue;
+                    }
+                }
+                out.add(ch);
+                i++;
+            }
+            return out.toString();
+        }
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EModule(name, attrs, body) if (name.indexOf("Web") != -1):
+                    var app = name.substring(0, name.indexOf("Web"));
+                    var newBody:Array<ElixirAST> = [];
+                    for (b in body) newBody.push(ElixirASTTransformer.transformNode(b, function(x){
+                        return switch (x.def) {
+                            case ERaw(code):
+                                var q = qualify(code, app);
+                                q != code ? makeASTWithMeta(ERaw(q), x.metadata, x.pos) : x;
+                            default: x;
+                        }
+                    }));
+                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
+                    var app2 = name.substring(0, name.indexOf("Web"));
+                    var newDo = ElixirASTTransformer.transformNode(doBlock, function(x){
+                        return switch (x.def) {
+                            case ERaw(code):
+                                var q = qualify(code, app2);
+                                q != code ? makeASTWithMeta(ERaw(q), x.metadata, x.pos) : x;
+                            default: x;
+                        }
+                    });
+                    makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        });
+    }
+
+    /**
+     * SelfAssignCompressionPass
+     *
+     * WHAT
+     * - Compress duplicated self-assignments like `x = x = expr` to `x = expr`.
+     */
+    public static function selfAssignCompressionPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EMatch(PVar(v1), {def: EMatch(PVar(v2), expr)}) if (v1 == v2):
+                    makeASTWithMeta(EMatch(PVar(v1), expr), n.metadata, n.pos);
+                case EBinary(Match, left, {def: EBinary(Match, left2, expr2)}):
+                    var l1 = switch (left.def) { case EVar(nm): nm; default: null; };
+                    var l2 = switch (left2.def) { case EVar(nm2): nm2; default: null; };
+                    if (l1 != null && l1 == l2) makeASTWithMeta(EBinary(Match, left, expr2), n.metadata, n.pos) else n;
+                default:
+                    n;
+            }
+        });
+    }
+
+    // (Removed) unusedLocalAssignmentUnderscorePass: prefer fixing root causes and deleting dead code
 
     /**
      * simplifyProvableIsNilFalsePass
@@ -1086,6 +1347,36 @@ class BinderTransforms {
                     makeASTWithMeta(EDefp(name, args, guards, processBlock(body, new Map())), n.metadata, n.pos);
                 default:
                     n;
+            }
+        });
+    }
+
+    /**
+     * stringToAtomLiteralPass
+     *
+     * WHAT
+     * - Converts String.to_atom("field") and String.to_existing_atom("field") to literal atoms :field
+     *   when the argument is a string literal.
+     *
+     * WHY
+     * - Eliminates runtime conversion and ensures idiomatic atom literals in generated code.
+     */
+    public static function stringToAtomLiteralPass(ast: ElixirAST): ElixirAST {
+        inline function toAtom(e: ElixirAST): ElixirAST {
+            return switch (e.def) {
+                case EString(s): makeAST(EAtom(s));
+                default: e;
+            };
+        }
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERemoteCall(mod, func, args):
+                    switch (mod.def) {
+                        case EVar(m) if (m == "String" && (func == "to_atom" || func == "to_existing_atom") && args != null && args.length == 1):
+                            toAtom(args[0]);
+                        default: n;
+                    }
+                default: n;
             }
         });
     }
