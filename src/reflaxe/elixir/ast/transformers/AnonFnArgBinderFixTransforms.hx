@@ -14,10 +14,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   body references the non-underscored variant (t). Renames binder to the
  *   referenced name to avoid undefined variable and underscore-usage warnings.
  *
+ * WHY
+ * - Some LiveView helpers and Enum.reduce/concat callbacks end up with `_x`
+ *   binders while the body refers to `x`, causing mismatches and warnings.
+ *
  * HOW
  * - For each EFn clause, collect body var names. For any PVar name starting
  *   with '_' where the body references its non-underscore variant and not the
  *   underscored one, rename binder to non-underscore name.
+ *
+ * EXAMPLES
+ * Before:
+ *   Enum.map(items, fn _t -> do_something(t) end)
+ * After:
+ *   Enum.map(items, fn t -> do_something(t) end)
  */
 class AnonFnArgBinderFixTransforms {
     public static function fixPass(ast: ElixirAST): ElixirAST {

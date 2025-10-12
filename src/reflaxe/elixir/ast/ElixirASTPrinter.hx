@@ -159,6 +159,43 @@ class ElixirASTPrinter {
                     }
                 }
 
+                // Ensure alias Phoenix.SafePubSub as SafePubSub when bare SafePubSub references exist
+                inline function needsSafePubSubAliasInBlock(block: ElixirAST): Bool {
+                    var hasAlias = false;
+                    var needs = false;
+                    switch (block.def) {
+                        case EBlock(stmts) | EDo(stmts):
+                            for (s in stmts) switch (s.def) {
+                                case EAlias(module, as) if (as == "SafePubSub" || module == "Phoenix.SafePubSub"): hasAlias = true;
+                                default:
+                            }
+                            function scan(n: ElixirAST): Void {
+                                if (n == null || n.def == null || needs) return;
+                                switch (n.def) {
+                                    case ERemoteCall({def: EVar(m)}, _, _) if (m == "SafePubSub"): needs = true;
+                                    case ECall({def: EVar(m2)}, _, _) if (m2 == "SafePubSub"): needs = true;
+                                    case EVar(v) if (v == "SafePubSub"): needs = true;
+                                    case ERaw(code): if (code != null && code.indexOf("SafePubSub.") != -1) needs = true;
+                                    case EDef(_, _, _, b): scan(b);
+                                    case EDefp(_, _, _, b2): scan(b2);
+                                    case EBlock(es): for (e in es) scan(e);
+                                    case EIf(c, t, e): scan(c); scan(t); if (e != null) scan(e);
+                                    case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
+                                    case EBinary(_, l, r): scan(l); scan(r);
+                                    case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
+                                    case ECall(t,_,as2): if (t != null) scan(t); if (as2 != null) for (a in as2) scan(a);
+                                    default:
+                                }
+                            }
+                            for (s in stmts) scan(s);
+                        default:
+                    }
+                    return needs && !hasAlias;
+                }
+                if (needsSafePubSubAliasInBlock(doBlock)) {
+                    moduleContent += indentStr(indent + 1) + 'alias Phoenix.SafePubSub, as: SafePubSub\n\n';
+                }
+
                 // Ensure `require Ecto.Query` in Web modules (LiveView/Controller often use Ecto DSL)
                 // This avoids macro-availability errors; harmless if unused
                 if (name.indexOf("Web.") > 0) {
@@ -253,6 +290,39 @@ class ElixirASTPrinter {
                     // Preserve and set current module context for body printing
                     var prevModuleCtx = currentModuleName;
                     currentModuleName = name;
+
+                    // Inject alias Phoenix.SafePubSub as SafePubSub when bare references exist in EModule body
+                    inline function moduleNeedsSafePubSubAlias(stmts: Array<ElixirAST>): Bool {
+                        var hasAlias = false;
+                        var needs = false;
+                        for (s in stmts) switch (s.def) {
+                            case EAlias(module, as) if (as == 'SafePubSub' || module == 'Phoenix.SafePubSub'): hasAlias = true;
+                            default:
+                        }
+                        function scan(n: ElixirAST): Void {
+                            if (needs || n == null || n.def == null) return;
+                            switch (n.def) {
+                                case ERemoteCall({def: EVar(m)}, _, _) if (m == 'SafePubSub'): needs = true;
+                                case ECall({def: EVar(m2)}, _, _) if (m2 == 'SafePubSub'): needs = true;
+                                case EVar(v) if (v == 'SafePubSub'): needs = true;
+                                case ERaw(code): if (code != null && code.indexOf('SafePubSub.') != -1) needs = true;
+                                case EDef(_, _, _, b): scan(b);
+                                case EDefp(_, _, _, b2): scan(b2);
+                                case EBlock(es): for (e in es) scan(e);
+                                case EIf(c, t, e): scan(c); scan(t); if (e != null) scan(e);
+                                case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
+                                case EBinary(_, l, r): scan(l); scan(r);
+                                case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
+                                case ECall(t,_,as2): if (t != null) scan(t); if (as2 != null) for (a in as2) scan(a);
+                                default:
+                            }
+                        }
+                        for (s in stmts) scan(s);
+                        return needs && !hasAlias;
+                    }
+                    if (name != 'Phoenix.SafePubSub' && !StringTools.endsWith(name, '.SafePubSub') && moduleNeedsSafePubSubAlias(body)) {
+                        result += indentStr(indent + 1) + 'alias Phoenix.SafePubSub, as: SafePubSub\n\n';
+                    }
                     
                     // Print attributes
                     for (attr in attributes) {

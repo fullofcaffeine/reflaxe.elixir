@@ -1197,6 +1197,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeValidateFieldAtomPass
         });
+        // Collapse cond trees guarding validate_length into single filtered keyword list call
+        passes.push({
+            name: "ChangesetLengthCondCollapse",
+            description: "Collapse cond-combination trees for validate_length to filtered Map.get keyword list",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetLengthCondCollapseTransforms.collapsePass
+        });
         // Rewrite opts.* in validate_length keyword lists to Map.get(opts, :key)
         passes.push({
             name: "ValidateLengthOptsAccessRewrite",
@@ -1289,6 +1296,27 @@ class ElixirASTTransformer {
             description: "Prefix unused local assignment names with underscore in blocks",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignmentUnderscoreTransforms.transformPass
+        });
+        // Promote binders underscored earlier when body uses the base name
+        passes.push({
+            name: "LocalUnderscoreBinderPromote",
+            description: "Rename EMatch(_name = ...) to name = ... when subsequent code uses name",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
+        });
+        // Within a block, prefer consistent underscore references when only underscored binder exists
+        passes.push({
+            name: "BlockUnderscoreReferenceFix",
+            description: "Rewrite name -> _name within a block when only _name is declared in that block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BlockUnderscoreReferenceFixTransforms.fixPass
+        });
+        // Immediately fix adjacent statement references to base after underscored binder assignment
+        passes.push({
+            name: "AdjacentUnderscoreBinderRefFix",
+            description: "In blocks, rewrite next statement references name-> _name after _name = ... assignment",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.fixPass
         });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
@@ -1523,6 +1551,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.NoOpArithmeticCleanup.cleanupPass
         });
+        // Drop stray numeric literals (1/0) used as placeholders in blocks
+        passes.push({
+            name: "DropStandaloneLiteralOne",
+            description: "Remove standalone numeric literals (1/0) causing unused literal warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+        });
 
         // Run underscore rename again late to catch flows introduced by earlier passes (e.g., Presence)
         passes.push({
@@ -1546,6 +1581,41 @@ class ElixirASTTransformer {
             description: "Late replacement of (x != nil) with not Kernel.is_nil(x)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
+        // Drop stray numeric literals (final)
+        passes.push({
+            name: "DropStandaloneLiteralOne(Final)",
+            description: "Final sweep to remove standalone numeric literals (1/0)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+        });
+        // Replace inline if assignments with discard (final)
+        passes.push({
+            name: "InlineIfAssignmentDiscard(Final)",
+            description: "Final rewrite of inline if assignments to _ = expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineIfAssignmentDiscardTransforms.fixPass
+        });
+        // Prune unused defp helpers at the very end
+        passes.push({
+            name: "UnusedDefpPrune(Final)",
+            description: "Final pruning of unused private functions",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnusedDefpPrune.prunePass
+        });
+        // Ensure functions ending with assignment return the assigned variable
+        passes.push({
+            name: "AssignReturnInjection(Final)",
+            description: "Append var as final expression when function ends with var = expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignReturnInjectionTransforms.injectPass
+        });
+        // Absolute final sweep to drop stray numeric literals reintroduced by later passes
+        passes.push({
+            name: "DropStandaloneLiteralOne(AbsoluteFinal)",
+            description: "Absolute final sweep to remove standalone numeric literals (1/0)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
         // Late simplification: fold is_nil(var) -> false when var provably non-nil literal
         passes.push({
@@ -1702,6 +1772,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
+        // Final safety: fix references to underscored variants of function params
+        passes.push({
+            name: "DefParamUnderscoreRefFix(Final)",
+            description: "Rewrite _param references to param when only param is declared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnderscoreRefFixTransforms.fixPass
+        });
         
         // Late safety net: re-run Repo qualification after all transformations
         passes.push({
@@ -1733,6 +1810,29 @@ class ElixirASTTransformer {
             description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
+        });
+
+        // Absolute final binder promotion: ensure _name -> name when name is referenced later
+        passes.push({
+            name: "LocalUnderscoreBinderPromote(Final)",
+            description: "Final promotion of local binders _name to name when body references name",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
+        });
+
+        // Final safety: rename references name -> _name when only underscored binder exists
+        passes.push({
+            name: "LocalUnderscoreReferenceFallback(Final)",
+            description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
+        });
+        // Discard unused assignments inside closures (EFn clause bodies)
+        passes.push({
+            name: "ClosureUnusedAssignmentDiscard(Final)",
+            description: "Rewrite var = expr to _ = expr in EFn bodies when var unused later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClosureUnusedAssignmentDiscardTransforms.discardPass
         });
 
         // Late re-qualification of application modules in Web contexts to catch newly
