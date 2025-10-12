@@ -22,6 +22,19 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Match ERemoteCall(Ecto.Changeset, "validate_length", [cs, field, kw])
  * - Rebuild third argument: traverse keyword pairs and rewrite any values that
  *   access `opts` via field or access into Map.get(opts, :key).
+ *
+ * EXAMPLES
+ * Haxe:
+ *   // validate_length with options from a map `opts`
+ *   Ecto.Changeset.validate_length(cs, "title", [min: opts.min, max: opts.max, is: opts.is]);
+ * Elixir (before):
+ *   Ecto.Changeset.validate_length(cs, :title, [min: opts.min, max: opts.max, is: opts.is])
+ * Elixir (after):
+ *   Ecto.Changeset.validate_length(cs, :title, [
+ *     min: Map.get(opts, :min),
+ *     max: Map.get(opts, :max),
+ *     is:  Map.get(opts, :is)
+ *   ])
  */
 class ValidateLengthOptsAccessRewrite {
     public static function rewritePass(ast: ElixirAST): ElixirAST {
