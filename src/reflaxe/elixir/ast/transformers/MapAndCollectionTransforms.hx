@@ -100,9 +100,19 @@ class MapAndCollectionTransforms {
                         if (args.length == 1) {
                             switch (args[0]) {
                                 case PVar(name) if (name != null && name.length > 0 && name.charAt(0) != '_'):
+                                    // Body may still reference _name from earlier passes; normalize to name
                                     var underscore = "_" + name;
                                     var fixed = replaceVarInExpr(body, underscore, name);
                                     newClauses.push({args: args, guard: cl.guard, body: fixed});
+                                case PVar(name) if (name != null && name.length > 1 && name.charAt(0) == '_'):
+                                    // If underscored binder is actually referenced, rename binder to trimmed and rewrite body references
+                                    if (bodyUsesVar(body, name)) {
+                                        var trimmed = name.substr(1);
+                                        var fixedBody = replaceVarInExpr(body, name, trimmed);
+                                        newClauses.push({args: [PVar(trimmed)], guard: cl.guard, body: fixedBody});
+                                    } else {
+                                        newClauses.push(cl);
+                                    }
                                 default:
                                     newClauses.push(cl);
                             }
@@ -151,7 +161,8 @@ class MapAndCollectionTransforms {
                                 case PVar(n): binderName = n;
                                 default:
                             }
-                            if (binderName == null) return node;
+                            // Allow wildcard binder; if body extracts head alias, synthesize binder name
+                            // We'll detect alias below; if binderName is null, we can default to "elem"
                             var newStmts: Array<ElixirAST> = [];
                             var removedAlias: Null<String> = null;
                             var stmts: Array<ElixirAST> = switch (clause.body.def) {
@@ -182,6 +193,9 @@ class MapAndCollectionTransforms {
                                 }
                                 if (!matched) newStmts.push(s);
                             }
+                            // If no binder provided (PWildcard), synthesize one when alias is present
+                            if (binderName == null && removedAlias != null) binderName = "elem";
+                            if (binderName == null) return node;
                             var rewritten: Array<ElixirAST> = [];
                             for (s in newStmts) {
                                 var keep = switch (s.def) {
@@ -222,7 +236,16 @@ class MapAndCollectionTransforms {
         return switch (expr.def) {
             case EAccess(target, key):
                 var keyIsZero = switch (key.def) { case EInteger(v) if (v == 0): true; default: false; };
-                keyIsZero && astEquals(target, listExpr);
+                if (!keyIsZero) return false;
+                // Direct head: listExpr[0]
+                if (astEquals(target, listExpr)) return true;
+                // Reflect.fields(listExpr)[0]
+                switch (target.def) {
+                    case ERemoteCall({def: EVar(mod)}, func, args) if (mod == "Reflect" && func == "fields" && args != null && args.length == 1):
+                        return astEquals(args[0], listExpr);
+                    default:
+                }
+                false;
             default: false;
         };
     }
@@ -308,7 +331,11 @@ class MapAndCollectionTransforms {
                         // match return count
                         var returns0 = switch (stmts[2].def) { case EVar(nr0) if (cvar != null && nr0 == cvar): true; default: false; };
                         if (returns0 && listExpr0 != null && pred0 != null) {
-                            var fn0 = makeAST(EFn([{ args: [PVar(binder0)], guard: null, body: pred0 }]));
+                            var adjusted0 = safeBinder(binder0);
+                            pred0 = replaceVarInExpr(pred0, binder0, adjusted0);
+                            pred0 = replaceVarInExpr(pred0, "_" + adjusted0, adjusted0);
+                            pred0 = normalizePredicateToBinder(pred0, adjusted0);
+                            var fn0 = makeAST(EFn([{ args: [PVar(adjusted0)], guard: null, body: pred0 }]));
                             var new0 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "count", [listExpr0, fn0]));
                             return makeASTWithMeta(new0.def, node.metadata, node.pos);
                         }
@@ -445,30 +472,31 @@ class MapAndCollectionTransforms {
             return switch (node.def) {
                 case EBlock(stmts) if (stmts.length >= 3):
                     var tempVar: Null<String> = null;
+                    var initIdx = -1;
                     var listExpr: Null<ElixirAST> = null;
                     var binderName: String = "_elem";
                     var mapExpr: Null<ElixirAST> = null;
                     var aliasLocal: Null<String> = null;
                     var sep: Null<ElixirAST> = null;
-                    // temp = []
-                    switch (stmts[0].def) {
+                    // Find any `temp = []` initialization in the block
+                    for (idx in 0...stmts.length) switch (stmts[idx].def) {
                         case EBinary(Match, leftInit, rhs):
                             switch (leftInit.def) {
                                 case EVar(name):
-                                    switch (rhs.def) { case EList(_): tempVar = name; default: }
+                                    switch (rhs.def) { case EList(_): tempVar = name; initIdx = idx; default: }
                                 default:
                             }
                         case EMatch(patInit, rhsInit):
                             switch (patInit) {
                                 case PVar(name2):
-                                    switch (rhsInit.def) { case EList(_): tempVar = name2; default: }
+                                    switch (rhsInit.def) { case EList(_): tempVar = name2; initIdx = idx; default: }
                                 default:
                             }
                         default:
                     }
-                    if (tempVar == null) return node;
+                    if (tempVar == null || initIdx == -1) return node;
                     // Enum.each with temp = Enum.concat(temp, [expr])
-                    for (i in 1...stmts.length) {
+                    for (i in (initIdx+1)...stmts.length) {
                         var eachStmt: Null<ElixirAST> = null;
                         switch (stmts[i].def) {
                             case ERemoteCall(mod, func, args) if (isEnumEach(mod, func, args)):
@@ -562,6 +590,167 @@ class MapAndCollectionTransforms {
                     makeASTWithMeta(joinCall.def, node.metadata, node.pos);
                 default:
                     node;
+            }
+        });
+    }
+
+    /**
+     * Map Concat-Each → Direct Map Assignment Pass
+     *
+     * WHAT
+     * - Rewrites patterns of the form:
+     *     temp = []
+     *     Enum.each(list, fn binder -> temp = Enum.concat(temp, [expr]) end)
+     *     ... (later uses temp)
+     *   into:
+     *     temp = Enum.map(list, fn binder -> expr end)
+     *
+     * WHY
+     * - Eliminates closure-local rebind warnings and sentinel literals; produces
+     *   idiomatic accumulation without changing semantics.
+     */
+    public static function mapConcatEachToMapAssignPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(stmts) if (stmts.length >= 2):
+                    var temp:Null<String> = null;
+                    var initIdx = -1;
+                    for (i in 0...stmts.length) switch (stmts[i].def) {
+                        case EBinary(Match, left, rhs):
+                            switch (left.def) { case EVar(n): switch (rhs.def) { case EList(_): temp = n; initIdx = i; default: } default: }
+                        case EMatch(pat, rhs2):
+                            switch (pat) { case PVar(n2): switch (rhs2.def) { case EList(_): temp = n2; initIdx = i; default: } default: }
+                        default:
+                    }
+                    if (temp == null) return node;
+                    var listExpr:Null<ElixirAST> = null;
+                    var binderName:String = "_elem";
+                    var exprInside:Null<ElixirAST> = null;
+                    var eachIdx = -1;
+                    for (i in initIdx+1...stmts.length) switch (stmts[i].def) {
+                        case ERemoteCall(mod, func, args) if (isEnumEach(mod, func, args)):
+                            listExpr = args[0]; eachIdx = i;
+                            switch (args[1].def) {
+                                case EFn(clauses) if (clauses.length == 1):
+                                    var cl = clauses[0];
+                                    switch (cl.args.length > 0 ? cl.args[0] : null) { case PVar(n): binderName = n; default: }
+                                    var bodyStmts = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
+                                    for (bs in bodyStmts) switch (bs.def) {
+                                        case EBinary(Match, leftX, rhsX):
+                                            var lhsName:Null<String> = switch (leftX.def) { case EVar(nm): nm; default: null; };
+                                            if (lhsName == temp) switch (rhsX.def) {
+                                                case ERemoteCall({def: EVar(mn)}, "concat", cargs) if (mn == "Enum" && cargs.length == 2):
+                                                    switch (cargs[0].def) { case EVar(nv) if (nv == temp): switch (cargs[1].def) { case EList(items) if (items.length == 1): exprInside = items[0]; default: } default: }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    if (listExpr == null || exprInside == null || eachIdx == -1) return node;
+                    var adjusted = safeBinder(binderName);
+                    exprInside = replaceVarInExpr(exprInside, binderName, adjusted);
+                    exprInside = replaceVarInExpr(exprInside, "_" + adjusted, adjusted);
+                    var fn = makeAST(EFn([{ args: [PVar(adjusted)], guard: null, body: exprInside }]));
+                    var mapCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [listExpr, fn]));
+                    var newStmts:Array<ElixirAST> = [];
+                    for (i in 0...stmts.length) {
+                        if (i == initIdx) {
+                            // Replace init with assignment to mapCall
+                            newStmts.push(makeAST(EBinary(Match, makeAST(EVar(temp)), mapCall)));
+                        } else if (i == eachIdx) {
+                            // Drop the Enum.each statement
+                        } else newStmts.push(stmts[i]);
+                    }
+                    makeASTWithMeta(EBlock(newStmts), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    /**
+     * Enum.each LHS Discard Pass
+     *
+     * WHAT
+     * - Rewrites `{x} = Enum.each(list, fn -> ... end)` to `Enum.each(list, fn -> ... end)`
+     *   when the LHS is a tuple pattern used only to bind the return value (unused).
+     */
+    public static function enumEachLhsDiscardPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(stmts):
+                    var out = [];
+                    for (i in 0...stmts.length) {
+                        var s = stmts[i];
+                        switch (s.def) {
+                            case EMatch(pat, rhs):
+                                var isTuple = switch (pat) { case PTuple(_): true; default: false; };
+                                switch (rhs.def) {
+                                    case ERemoteCall(mod, func, args) if (isTuple && isEnumEach(mod, func, args)):
+                                        out.push(makeASTWithMeta(ERemoteCall(mod, func, args), s.metadata, s.pos));
+                                    default:
+                                        out.push(s);
+                                }
+                            case EBinary(Match, left, rhs2):
+                                var isTuple2 = switch (left.def) { case ETuple(_): true; default: false; };
+                                switch (rhs2.def) {
+                                    case ERemoteCall(mod2, func2, args2) if (isTuple2 && isEnumEach(mod2, func2, args2)):
+                                        out.push(makeASTWithMeta(ERemoteCall(mod2, func2, args2), s.metadata, s.pos));
+                                    default:
+                                        out.push(s);
+                                }
+                            default:
+                                out.push(s);
+                        }
+                    }
+                    makeASTWithMeta(EBlock(out), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    /**
+     * Count Binder Normalize Pass
+     *
+     * WHAT
+     * - For Enum.count(list, fn _x -> ... end) where the binder starts with underscore
+     *   and is referenced in the body, rename binder to its trimmed variant and rewrite
+     *   body references accordingly to avoid underscore-used warnings.
+     */
+    public static function countBinderNormalizePass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERemoteCall({def: EVar(m)}, "count", [list, fnExpr]) if (m == "Enum"):
+                    switch (fnExpr.def) {
+                        case EFn(clauses) if (clauses.length == 1):
+                            var cl = clauses[0];
+                            if (cl.args.length == 1) {
+                                switch (cl.args[0]) {
+                                    case PVar(name) if (name != null && name.length > 0):
+                                        var trimmed = safeBinder(name);
+                                        var newBody = cl.body;
+                                        // Rewrite body refs: _trimmed -> trimmed
+                                        newBody = replaceVarInExpr(newBody, "_" + trimmed, trimmed);
+                                        // If binder itself is underscored, also rewrite binder refs to trimmed
+                                        if (name != trimmed) newBody = replaceVarInExpr(newBody, name, trimmed);
+                                        #if debug_hygiene
+                                        trace('[CountBinderNormalize] binder=' + name + ' trimmed=' + trimmed + ' rewrote body in Enum.count');
+                                        #end
+                                        var newFn = makeAST(EFn([{ args: [PVar(trimmed)], guard: cl.guard, body: newBody }]));
+                                        makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "count", [list, newFn]), n.metadata, n.pos);
+                                    default:
+                                        n;
+                                }
+                            } else n;
+                        default:
+                            n;
+                    }
+                default:
+                    n;
             }
         });
     }
@@ -719,6 +908,7 @@ class MapAndCollectionTransforms {
             if (used || n == null || n.def == null) return;
             switch (n.def) {
                 case EVar(nm) if (nm == name): used = true;
+                case EField(target, _): visit(target);
                 case EBlock(sts): for (s in sts) visit(s);
                 case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
                 case EBinary(_, l, r): visit(l); visit(r);

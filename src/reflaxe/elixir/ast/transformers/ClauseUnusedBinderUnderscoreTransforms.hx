@@ -50,6 +50,8 @@ class ClauseUnusedBinderUnderscoreTransforms {
                     for (cl in clauses) {
                         var binders = collectPatternBinders(cl.pattern);
                         var used = collectUsedVars(cl.body);
+                        // Treat EString/ERaw interpolations ("#{name}") as usage as well
+                        for (b in binders) if (!arrayContains(used, b) && stringInterpolatesName(cl.body, b)) used.push(b);
                         var unused = [for (b in binders) if (used.indexOf(b) == -1) b];
                         var newPat = (unused.length > 0) ? underscoreBinders(cl.pattern, unused) : cl.pattern;
                         newClauses.push({ pattern: newPat, guard: cl.guard, body: cl.body });
@@ -102,6 +104,33 @@ class ClauseUnusedBinderUnderscoreTransforms {
             }
             return n;
         }) != null ? [for (k in names.keys()) k] : [];
+    }
+
+    static function arrayContains(a:Array<String>, s:String):Bool {
+        for (x in a) if (x == s) return true; return false;
+    }
+
+    static function stringInterpolatesName(body: ElixirAST, name: String): Bool {
+        var found = false;
+        function visit(n: ElixirAST):Void {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case EString(v):
+                    if (v != null && name != null && v.indexOf("#{" + name) != -1) found = true;
+                case ERaw(code):
+                    if (code != null && name != null && code.indexOf("#{" + name) != -1) found = true;
+                case EBlock(ss): for (s in ss) visit(s);
+                case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
+                case EBinary(_, l, r): visit(l); visit(r);
+                case EMatch(_, rhs): visit(rhs);
+                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
+                case ERemoteCall(t2, _, args2): visit(t2); for (a2 in args2) visit(a2);
+                case ECase(expr, cs): visit(expr); for (c in cs) visit(c.body);
+                default:
+            }
+        }
+        visit(body);
+        return found;
     }
 }
 
