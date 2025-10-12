@@ -419,12 +419,12 @@ class ProjectGenerator {
 			}
 		}
 		
-		// Always regenerate CLAUDE.md from template to ensure correct project name
-		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+		// Always regenerate AGENTS.md from template to ensure correct project name
+		var claudePath = Path.join([projectPath, "AGENTS.md"]);
 		var content = generateClaudeInstructions(options);
 		File.saveContent(claudePath, content);
 		if (options.verbose) {
-			Sys.println('Created CLAUDE.md with AI development instructions');
+			Sys.println('Created AGENTS.md with AI development instructions');
 		}
 		
 		// Update mix.exs compiler configuration
@@ -500,12 +500,12 @@ class ProjectGenerator {
 			File.saveContent(gitignorePath, content);
 		}
 		
-		// Always regenerate CLAUDE.md from template to ensure correct project name
-		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+		// Always regenerate AGENTS.md from template to ensure correct project name
+		var claudePath = Path.join([projectPath, "AGENTS.md"]);
 		var content = generateClaudeInstructions(options);
 		File.saveContent(claudePath, content);
 		if (options.verbose) {
-			Sys.println('Created CLAUDE.md with AI development instructions');
+			Sys.println('Created AGENTS.md with AI development instructions');
 		}
 		
 		// Create LLM documentation directory structure
@@ -1136,7 +1136,7 @@ $projectName/
 │   └── generated/         # ⚡ Auto-generated Elixir code
 ├── build.hxml             # Haxe build configuration  
 ├── mix.exs                # Elixir project configuration
-└── CLAUDE.md              # This file
+└── AGENTS.md              # This file
 ```
 
 ## ✅ Best Practices

@@ -301,7 +301,7 @@ scripts/test-runner.sh --pattern "*loop*"    # Loop tests only
 - [Testing Infrastructure](./testing-infrastructure.md) - Architectural details
 - [Test Types](./TEST_TYPES.md) - Deep dive into test categories
 - [CI Configuration](../10-contributing/CI.md) - Continuous integration setup
-- [CLAUDE.md](/CLAUDE.md) - Main project documentation
+- [AGENTS.md](/AGENTS.md) - Main project documentation
 
 ## 💡 Tips and Tricks
 

@@ -41,6 +41,31 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class OptionWrapTransforms {
     public static function optionWrapParseFunctionsPass(ast: ElixirAST): ElixirAST {
+        // Wrap a value expression into {:some, v} unless it's :none
+        inline function wrapValueIfNeeded(val: ElixirAST): ElixirAST {
+            return switch (val.def) {
+                case EAtom(atom) if (atom == "none"): val;
+                case ETuple(_): makeAST(ETuple([ makeAST(EAtom("some")), val ]));
+                default: makeAST(ETuple([ makeAST(EAtom("some")), val ]));
+            };
+        }
+
+        // For blocks, wrap the last expression when it's a simple value
+        function wrapBlockLastExpr(b: ElixirAST): ElixirAST {
+            return switch (b.def) {
+                case EBlock(stmts) if (stmts.length > 0):
+                    var out = stmts.copy();
+                    var last = out.pop();
+                    // Only wrap when last is a value or tuple; keep control structures as-is
+                    switch (last.def) {
+                        case EAtom(_) | ETuple(_): out.push(wrapValueIfNeeded(last));
+                        default: out.push(last);
+                    }
+                    makeASTWithMeta(EBlock(out), b.metadata, b.pos);
+                default:
+                    b;
+            }
+        }
         function wrapCase(c: ElixirAST): ElixirAST {
             return ElixirASTTransformer.transformNode(c, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
@@ -61,13 +86,25 @@ class OptionWrapTransforms {
                         for (cl in clauses) {
                             var body = cl.body;
                             var newBody = switch (body.def) {
-                                case EAtom(atom) if (atom != "none"): makeAST(ETuple([ makeAST(EAtom("some")), body ]));
-                                case ETuple(_): makeAST(ETuple([ makeAST(EAtom("some")), body ]));
+                                case EAtom(atom) if (atom != "none"): wrapValueIfNeeded(body);
+                                case ETuple(_): wrapValueIfNeeded(body);
+                                case EBlock(_): wrapBlockLastExpr(body);
                                 default: body;
                             };
                             wrapped.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
                         }
                         makeASTWithMeta(ECase(target, wrapped), n.metadata, n.pos);
+                    case EIf(cond, thenB, elseB):
+                        function wrapBranch(b: ElixirAST): ElixirAST {
+                            return switch (b.def) {
+                                case EBlock(_): wrapBlockLastExpr(b);
+                                case EAtom(_) | ETuple(_): wrapValueIfNeeded(b);
+                                default: b;
+                            }
+                        }
+                        var newThen = wrapBranch(thenB);
+                        var newElse = elseB != null ? wrapBranch(elseB) : elseB;
+                        makeASTWithMeta(EIf(cond, newThen, newElse), n.metadata, n.pos);
                     default:
                         n;
                 }

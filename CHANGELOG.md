@@ -80,12 +80,12 @@
 - **NEW**: Created comprehensive HXX_IMPLEMENTATION.md with complete technical implementation details
 - **Enhanced**: Updated README.md with HXX feature highlights, examples, and corrected test counts
 - **Improved**: Updated FEATURES.md to reflect enhanced HXX template processing as production-ready
-- **Added**: Documentation Completeness Checklist in CLAUDE.md to ensure future comprehensive documentation
+- **Added**: Documentation Completeness Checklist in AGENTS.md to ensure future comprehensive documentation
 - **Comprehensive**: Added detailed session documentation to TASK_HISTORY.md for knowledge preservation
 - **Updated**: Added comprehensive @:appName annotation documentation to ANNOTATIONS.md
 - **Enhanced**: Added @:native method best practices to EXTERN_CREATION_GUIDE.md
 - **Improved**: Updated FEATURES.md with new production-ready features
-- **Guidelines**: Added development principles about avoiding workarounds in CLAUDE.md
+- **Guidelines**: Added development principles about avoiding workarounds in AGENTS.md
 
 ### 🔧 Technical Improvements
 

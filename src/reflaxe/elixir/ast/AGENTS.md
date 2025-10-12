@@ -1,6 +1,6 @@
 # AST Development Context for Reflaxe.Elixir
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) and [/src/reflaxe/elixir/CLAUDE.md](/src/reflaxe/elixir/CLAUDE.md) for project-wide conventions
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) and [/src/reflaxe/elixir/AGENTS.md](/src/reflaxe/elixir/AGENTS.md) for project-wide conventions
 
 This file contains AST-specific development guidance for agents working on the Reflaxe.Elixir AST transformation pipeline.
 

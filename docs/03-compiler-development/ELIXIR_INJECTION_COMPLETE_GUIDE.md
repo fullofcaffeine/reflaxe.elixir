@@ -216,7 +216,7 @@ extern inline public function clearFlash(): Socket<T> {
 - [`/std/phoenix/LiveSocket.hx`](/std/phoenix/LiveSocket.hx) - Abstract type with `extern inline` (working example)
 - [`/std/Array.hx`](/std/Array.hx) - @:coreApi class with direct `__elixir__` usage
 - [`/std/phoenix/Phoenix.hx`](/std/phoenix/Phoenix.hx) - Pure extern with @:native
-- [`/CLAUDE.md`](/CLAUDE.md#critical-abstract-types-require-extern-inline-for-__elixir__-injection) - Critical lesson learned
+- [`/AGENTS.md`](/AGENTS.md#critical-abstract-types-require-extern-inline-for-__elixir__-injection) - Critical lesson learned
 
 ## Conclusion
 

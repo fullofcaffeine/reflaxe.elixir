@@ -351,12 +351,19 @@ class AnnotationTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case EDefmodule(name, body):
-                    if (node.metadata?.isPresence == true) {
+                    var looksLikePresence = node.metadata?.isPresence == true || (name != null && name.indexOf("Web.Presence") > 0);
+                    if (looksLikePresence) {
                         var presenceBody = buildPresenceBody(name, body);
                         return makeASTWithMeta(EDefmodule(name, presenceBody), node.metadata, node.pos);
                     }
                     return node;
-                    
+                case EModule(name, attrs, bodyExprs):
+                    var looksLikePresence2 = node.metadata?.isPresence == true || (name != null && name.indexOf("Web.Presence") > 0);
+                    if (looksLikePresence2) {
+                        var presenceBody2 = buildPresenceBody(name, makeAST(EBlock(bodyExprs)));
+                        return makeASTWithMeta(EDefmodule(name, presenceBody2), node.metadata, node.pos);
+                    }
+                    return node;
                 default:
                     return node;
             }
@@ -500,7 +507,7 @@ class AnnotationTransforms {
     public static function controllerTransformPass(ast: ElixirAST): ElixirAST {
         // Check the top-level node first for Controller modules
         switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isController == true):
+            case EDefmodule(name, body) if (ast.metadata?.isController == true || (name != null && name.indexOf("Web.") > 0 && name.indexOf("Controller") > 0)):
                 #if debug_annotation_transforms
                 #end
                 
@@ -512,7 +519,10 @@ class AnnotationTransforms {
                     ast.metadata,
                     ast.pos
                 );
-                
+            case EModule(name, attrs, exprs) if (ast.metadata?.isController == true || (name != null && name.indexOf("Web.") > 0 && name.indexOf("Controller") > 0)):
+                var appName2 = ast.metadata.appName ?? "app";
+                var controllerBody2 = buildControllerBody(name, appName2, makeAST(EBlock(exprs)));
+                return makeASTWithMeta(EDefmodule(name, controllerBody2), ast.metadata, ast.pos);
             default:
                 // Not a Controller module, just pass through
                 return ast;
@@ -1107,7 +1117,7 @@ class AnnotationTransforms {
         
         // Check the top-level node first for PhoenixWeb modules
         switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isPhoenixWeb == true):
+            case EDefmodule(name, body) if (ast.metadata?.isPhoenixWeb == true || (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
                 #if debug_annotation_transforms
                 #end
                 
@@ -1118,7 +1128,9 @@ class AnnotationTransforms {
                     ast.metadata,
                     ast.pos
                 );
-                
+            case EModule(name, attrs, exprs) if (ast.metadata?.isPhoenixWeb == true || (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
+                var phoenixWebBody2 = buildPhoenixWebBody(name, makeAST(EBlock(exprs)));
+                return makeASTWithMeta(EDefmodule(name, phoenixWebBody2), ast.metadata, ast.pos);
             default:
                 // Not a PhoenixWeb module, just pass through
                 return ast;
@@ -1218,8 +1230,7 @@ class AnnotationTransforms {
                     ]))}
                 ]))
             ])),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))])),
-            makeAST(EMatch(EPattern.PVar("_"), makeAST(EBlock([]))))
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
         ]))));
         
         statements.push(makeAST(EDef(

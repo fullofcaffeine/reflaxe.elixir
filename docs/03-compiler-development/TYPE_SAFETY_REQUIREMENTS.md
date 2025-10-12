@@ -244,7 +244,7 @@ When reviewing code, check for:
 
 ## Enforcement
 
-This requirement is now part of the core development standards in `/CLAUDE.md`:
+This requirement is now part of the core development standards in `/AGENTS.md`:
 
 > **⚠️ CRITICAL: No Untyped Usage**  
 > **FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` unless there's a very good justified reason.**

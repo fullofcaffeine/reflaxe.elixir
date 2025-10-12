@@ -1,6 +1,6 @@
 # Pipeline Analysis Guide
 
-> **Parent Context**: See [CLAUDE.md](CLAUDE.md) for compiler development context
+> **Parent Context**: See [AGENTS.md](AGENTS.md) for compiler development context
 
 This guide covers the comprehensive pipeline pattern detection and analysis system used in Reflaxe.Elixir to generate idiomatic Elixir code with pipeline operators.
 

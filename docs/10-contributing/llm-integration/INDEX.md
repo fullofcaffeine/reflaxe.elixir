@@ -23,5 +23,5 @@ Generated: 2025-08-12 20:58:31
 ## Integration with Claude Code CLI
 
 This documentation is optimized for Claude Code CLI.
-The CLAUDE.md file in project root is automatically updated.
+The AGENTS.md file in project root is automatically updated.
 

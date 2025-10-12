@@ -191,4 +191,4 @@ Supervisor.start_link(children, {strategy: "one_for_one"});  // Could detect thi
 
 - [Elixir Map Documentation](https://hexdocs.pm/elixir/Map.html)
 - [OTP Supervisor Documentation](https://hexdocs.pm/elixir/Supervisor.html)
-- [Compiler Development Best Practices](../CLAUDE.md#compiler-development-best-practices)
+- [Compiler Development Best Practices](../AGENTS.md#compiler-development-best-practices)
