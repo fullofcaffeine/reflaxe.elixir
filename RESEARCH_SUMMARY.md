@@ -130,7 +130,7 @@ SwitchBuilder.build(targetAST: ElixirAST, ...) {
    - Verify todo-app compiles
 
 5. **Phase 1: Document band-aid fix** (ID: 40226929...)
-   - Update CLAUDE.md files
+   - Update AGENTS.md files
    - Create Phase 2 architecture plan
    - Add TODO comments in code
 
@@ -186,7 +186,7 @@ We deviated from Reflaxe patterns by:
    - Solution architecture
    - Shrimp task plan
 
-3. **Next Steps**: Update CLAUDE.md files after Phase 1 implementation
+3. **Next Steps**: Update AGENTS.md files after Phase 1 implementation
 
 ---
 

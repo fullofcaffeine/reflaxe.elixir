@@ -603,7 +603,7 @@ After implementing fixes:
 4. **Update Documentation**
    - Document the empty block handling pattern
    - Document compound assignment → rebinding transformation
-   - Add to CLAUDE.md as lessons learned
+   - Add to AGENTS.md as lessons learned
 
 ---
 

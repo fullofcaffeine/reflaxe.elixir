@@ -143,3 +143,22 @@ class GuardSanitizationTransforms {
 }
 
 #end
+/**
+ * GuardSanitizationTransforms
+ *
+ * WHAT
+ * - Rewrites problematic guard expressions into safe alternatives
+ *   (e.g., Map.get(map, key) != nil ⇒ is_map_key(map, key)).
+ *
+ * WHY
+ * - Elixir warns on cross-type comparisons in guards and disallows some constructs.
+ *   Sanitizing guards preserves intent while avoiding warnings.
+ *
+ * HOW
+ * - Matches Binary(Equal|NotEqual, Map.get(...), nil) and replaces with
+ *   is_map_key/2 or not is_map_key/2 depending on operator.
+ *
+ * EXAMPLES
+ * Before: Map.get(m, :a) != nil
+ * After:  is_map_key(m, :a)
+ */

@@ -223,7 +223,7 @@ This approach could significantly reduce the complexity of handling unoptimized 
 ## Related Documentation
 - [ADR-001: Handling Unoptimized AST](ADR-001-handling-unoptimized-ast.md) - Current orphaned variable solution
 - [AST Cleanup Patterns](../03-compiler-development/AST_CLEANUP_PATTERNS.md) - Manual optimization handling
-- [Compiler Development CLAUDE.md](../03-compiler-development/CLAUDE.md) - Development context
+- [Compiler Development AGENTS.md](../03-compiler-development/AGENTS.md) - Development context
 
 ## Test Files
 - `src/reflaxe/elixir/OptimizationTestCompiler.hx` - Experimental dual-phase compiler

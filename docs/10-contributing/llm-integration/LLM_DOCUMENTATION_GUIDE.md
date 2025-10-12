@@ -9,7 +9,7 @@ This guide teaches LLMs how to efficiently query, write, and maintain documentat
 1. [Quick Reference](#quick-reference)
 2. [Documentation Patterns](#documentation-patterns)
 3. [Feature Documentation Template](#feature-documentation-template)
-4. [CLAUDE.md Integration](#claudemd-integration)
+4. [AGENTS.md Integration](#claudemd-integration)
 5. [Memory Files](#memory-files)
 6. [Cross-referencing](#cross-referencing)
 7. [Maintenance Responsibilities](#maintenance-responsibilities)
@@ -20,7 +20,7 @@ This guide teaches LLMs how to efficiently query, write, and maintain documentat
 
 ```
 Project Root/
-├── CLAUDE.md                          # LLM execution instructions & project truth  
+├── AGENTS.md                          # LLM execution instructions & project truth  
 ├── README.md                          # User-facing project overview
 ├── docs/                              # All feature documentation (organized structure)
 │   ├── 01-getting-started/           # Installation, quickstart, workflows
@@ -33,12 +33,12 @@ Project Root/
 │   ├── 08-roadmap/                  # Vision and planning documents
 │   ├── 09-history/                  # Historical records and decisions
 │   ├── 10-contributing/             # Contribution guidelines
-│   ├── claude-includes/             # Shared CLAUDE.md components for imports
-│   ├── CLAUDE.md                    # Documentation navigation for AI
+│   ├── claude-includes/             # Shared AGENTS.md components for imports
+│   ├── AGENTS.md                    # Documentation navigation for AI
 │   └── README.md                    # Documentation index and entry point
 ```
 
-### Import System for CLAUDE.md Files
+### Import System for AGENTS.md Files
 ```
 @docs/claude-includes/compiler-principles.md   # Shared compiler concepts
 @docs/claude-includes/testing-commands.md      # Common test commands  
@@ -48,7 +48,7 @@ Project Root/
 
 ### Documentation Priority Levels
 
-1. **CLAUDE.md** - Always check first, contains project truth
+1. **AGENTS.md** - Always check first, contains project truth
 2. **Feature Docs** - documentation/*.md for specific features
 3. **Memory Files** - .llm-memory/*.md for implementation details
 4. **README.md** - For user-facing feature status
@@ -173,7 +173,7 @@ When documenting a new feature, create FOUR interconnected pieces:
 [Key benefits and capabilities]
 ```
 
-### 2. Technical Implementation (in CLAUDE.md)
+### 2. Technical Implementation (in AGENTS.md)
 
 Add to "Recent Task Completions" section:
 
@@ -254,17 +254,17 @@ If complex architecture, create separate doc or add section:
 [What to avoid when modifying this feature]
 ```
 
-## CLAUDE.md Integration
+## AGENTS.md Integration
 
-### When to Update CLAUDE.md
+### When to Update AGENTS.md
 
-**ALWAYS update CLAUDE.md when**:
+**ALWAYS update AGENTS.md when**:
 - Completing a major feature
 - Discovering critical architectural insights
 - Learning important patterns or anti-patterns
 - Changing core compilation behavior
 
-### What Goes in CLAUDE.md
+### What Goes in AGENTS.md
 
 1. **User Documentation References** - Links to all major guides
 2. **Recent Task Completions** - Implementation summaries
@@ -332,7 +332,7 @@ When adding `NEW_FEATURE.md`, review and update:
 - [ ] **ARCHITECTURE.md** - Add to relevant architecture section
 - [ ] **Related feature docs** - Add "See Also" cross-references
 - [ ] **Parent category index** - e.g., guides/README.md
-- [ ] **CLAUDE.md** - Add reference if critical for development
+- [ ] **AGENTS.md** - Add reference if critical for development
 - [ ] **Paradigm/pattern docs** - If introducing new patterns
 - [ ] **FEATURES.md** - Update feature status
 - [ ] **EXAMPLES.md** - Add usage examples
@@ -396,7 +396,7 @@ Test coverage in `test/tests/source_map_basic/`
    - Documentation is part of the implementation
 
 2. **Check these files for needed updates**:
-   - CLAUDE.md - Update task completions, known issues
+   - AGENTS.md - Update task completions, known issues
    - README.md - Update feature list, test count, status
    - Feature guides - Update usage, examples, troubleshooting
    - INSTALLATION.md - Update if setup changes
@@ -426,7 +426,7 @@ Test coverage in `test/tests/source_map_basic/`
 
 Before completing any task, verify:
 
-- [ ] CLAUDE.md updated with task completion
+- [ ] AGENTS.md updated with task completion
 - [ ] User-facing docs explain the feature
 - [ ] Examples compile and work
 - [ ] Troubleshooting covers common issues
@@ -449,8 +449,8 @@ find documentation -name "*SOURCE*"
 # Check memory files
 ls -la .llm-memory/
 
-# Search CLAUDE.md for completions
-grep "Complete ✅" CLAUDE.md
+# Search AGENTS.md for completions
+grep "Complete ✅" AGENTS.md
 ```
 
 ## Best Practices
@@ -539,7 +539,7 @@ This guide ensures LLMs can:
 - ✅ **Maintain documentation** as the system evolves
 - ✅ **Create comprehensive feature docs** with 4-layer approach
 - ✅ **Cross-reference effectively** with proper linking
-- ✅ **Keep CLAUDE.md current** as the source of truth
+- ✅ **Keep AGENTS.md current** as the source of truth
 
 **Remember**: Documentation is not separate from implementation - it IS part of the implementation. Always update docs when changing code, and always check existing docs before implementing new features.
 

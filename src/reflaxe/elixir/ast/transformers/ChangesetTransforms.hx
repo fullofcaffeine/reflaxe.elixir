@@ -348,8 +348,8 @@ class ChangesetTransforms {
         }
         // Ensure there is a default true -> cs clause
         var hasDefault = false;
-        for (c in out) switch (c.condition.def) { case EAtom(n) if (n == "true"): hasDefault = true; default: }
-        if (!hasDefault) out.push({condition: makeAST(EAtom(ElixirAtom.raw("true"))), body: makeAST(EVar(csVar))});
+        for (c in out) switch (c.condition.def) { case EBoolean(true): hasDefault = true; default: }
+        if (!hasDefault) out.push({condition: makeAST(EBoolean(true)), body: makeAST(EVar(csVar))});
         return out;
     }
 

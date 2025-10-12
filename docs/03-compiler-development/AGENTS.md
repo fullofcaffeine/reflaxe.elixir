@@ -1,6 +1,6 @@
 # AI Compiler Development Instructions
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for complete project context and [/docs/CLAUDE.md](/docs/CLAUDE.md) for documentation navigation
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for complete project context and [/docs/AGENTS.md](/docs/AGENTS.md) for documentation navigation
 
 ## 🤖 Expert Compiler Developer Identity
 

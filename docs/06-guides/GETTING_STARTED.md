@@ -56,7 +56,7 @@ mix haxe.gen.project --basic-modules --phoenix
 - **liveview** - Phoenix with LiveView components
 - **add-to-existing** - Add Haxe to existing Elixir project
 
-All project types include **CLAUDE.md** with AI development instructions for using the watcher and source mapping.
+All project types include **AGENTS.md** with AI development instructions for using the watcher and source mapping.
 
 ### Generator Options Reference
 
@@ -732,4 +732,4 @@ mix compile.haxe --watch --port 6001
 - **Leverage Caching**: lix and HaxeServer cache parsed files for speed
 - **Testing**: Use `npm test` for comprehensive validation
 
-For detailed feature status and technical implementation notes, see [FEATURES.md](../FEATURES.md) and the project's CLAUDE.md file.
+For detailed feature status and technical implementation notes, see [FEATURES.md](../FEATURES.md) and the project's AGENTS.md file.

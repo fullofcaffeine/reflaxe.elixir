@@ -622,3 +622,25 @@ class MapAndCollectionTransforms {
 }
 
 #end
+/**
+ * MapAndCollectionTransforms
+ *
+ * WHAT
+ * - Normalizes Map/Keyword/List building patterns into idiomatic Elixir forms by
+ *   collapsing builder blocks and standardizing access/put operations.
+ *
+ * WHY
+ * - Haxe desugarings and intermediate temps often produce verbose Map.put chains
+ *   and uneven List concatenations. This pass improves readability and reduces
+ *   chances of warnings.
+ *
+ * HOW
+ * - Detects Map.put pipelines and rewrites to literal maps when safe.
+ * - Ensures keyword lists use standard literal syntax where possible.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   var m = {}; m = Map.put(m, :a, 1); m = Map.put(m, :b, 2)
+ * Elixir (after):
+ *   %{a: 1, b: 2}
+ */

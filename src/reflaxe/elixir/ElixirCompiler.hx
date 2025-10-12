@@ -70,6 +70,15 @@ class ElixirCompiler extends GenericCompiler<
     reflaxe.elixir.ast.ElixirAST   // CompiledAbstractType
 > {
 
+    // Global module registry for cross-file qualification decisions
+    static var globalModuleRegistry: Map<String, Bool> = new Map();
+    public static function registerModule(name: String): Void {
+        if (name != null && name.length > 0) globalModuleRegistry.set(name, true);
+    }
+    public static function isModuleKnown(name: String): Bool {
+        return name != null && globalModuleRegistry.exists(name);
+    }
+
     // Static instance reference for helpers to access the compiler
     public static var instance: ElixirCompiler;
     
@@ -2059,6 +2068,14 @@ class ElixirCompiler extends GenericCompiler<
             metadata.isRouter = true;
             #if debug_annotation_transforms
             trace('[ElixirCompiler] Set isRouter=true metadata for ${classType.name}');
+            #end
+        }
+
+        // Enable Presence transformation pass for @:presence modules
+        if (classType.meta.has(":presence")) {
+            metadata.isPresence = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isPresence=true metadata for ${classType.name}');
             #end
         }
 

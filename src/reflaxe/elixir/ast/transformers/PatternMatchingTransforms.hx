@@ -390,3 +390,24 @@ class PatternMatchingTransforms {
 }
 
 #end
+/**
+ * PatternMatchingTransforms
+ *
+ * WHAT
+ * - Transforms switch constructs into idiomatic Elixir case expressions with
+ *   proper pattern tuples and guards.
+ *
+ * WHY
+ * - Haxe desugaring can obscure enum/tagged tuple structure. Explicit case
+ *   patterns in Elixir improve readability and avoid runtime errors.
+ *
+ * HOW
+ * - Detects enum discriminants, constructs PTuple patterns with atom tags,
+ *   and shapes guards accordingly. Ensures no orphaned parameter extracts.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   switch (msg) { case Created(content): ... }
+ * Elixir:
+ *   case msg do {:created, content} -> ... end
+ */

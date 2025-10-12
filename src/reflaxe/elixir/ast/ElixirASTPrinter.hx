@@ -94,7 +94,7 @@ class ElixirASTPrinter {
                         for (s in stmts) switch (s.def) {
                             case EDefp(fnName, fnArgs, _, _):
                                 var arity = fnArgs.length;
-                                nowarnList.push(fnName + ':' + arity);
+                                nowarnList.push(fnName + ': ' + arity);
                             default:
                         }
                     default:
@@ -201,6 +201,15 @@ class ElixirASTPrinter {
                 } else {
                     // Regular module
                     var result = 'defmodule ${name} do\n';
+                    // Inject @compile nowarn_unused_function for defp in simple module form
+                    var nowarnList2: Array<String> = [];
+                    for (expr in body) switch (expr.def) {
+                        case EDefp(fnName2, fnArgs2, _, _): nowarnList2.push(fnName2 + ': ' + fnArgs2.length);
+                        default:
+                    }
+                    if (nowarnList2.length > 0) {
+                        result += indentStr(indent + 1) + '@compile {:nowarn_unused_function, [' + nowarnList2.join(', ') + ']}\n\n';
+                    }
                     // Preserve and set current module context for body printing
                     var prevModuleCtx = currentModuleName;
                     currentModuleName = name;
@@ -2014,7 +2023,11 @@ class ElixirASTPrinter {
             case EVar(name) if (name == "Presence"):
                 var prefix = currentAppPrefix();
                 if (prefix != null) return prefix + "Web.Presence"; else return name;
-            case EVar(_):
+            case EVar(n):
+                // Never qualify standard/framework modules
+                if (reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedQualified(n)) {
+                    return print(module, 0);
+                }
                 return print(module, 0);
             default:
                 return print(module, 0);

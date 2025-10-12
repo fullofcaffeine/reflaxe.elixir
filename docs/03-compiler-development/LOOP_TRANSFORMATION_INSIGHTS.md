@@ -24,7 +24,7 @@ var pattern1 = '#{$i}';                    // String interpolation ✅
 var pattern2 = '#{' + Std.string(i) + '}'; // Concatenation ✅
 ```
 
-**Documentation Created**: `/src/reflaxe/elixir/ast/transformers/CLAUDE.md` now clearly explains the three stages of compilation and when each feature is available.
+**Documentation Created**: `/src/reflaxe/elixir/ast/transformers/AGENTS.md` now clearly explains the three stages of compilation and when each feature is available.
 
 ### 2. Nested Loop Detection Architecture
 
@@ -110,7 +110,7 @@ The indices `#{0}` and `#{1}` appear to be coming from an earlier transformation
 
 - `/src/reflaxe/elixir/ast/transformers/LoopTransforms.hx` - Main loop transformations
 - `/src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx` - Nested pattern detection  
-- `/src/reflaxe/elixir/ast/transformers/CLAUDE.md` - Compilation stages documentation
+- `/src/reflaxe/elixir/ast/transformers/AGENTS.md` - Compilation stages documentation
 - `/test/snapshot/regression/loop_unrolling_nested/` - Test case demonstrating the issue
 
 ## Status

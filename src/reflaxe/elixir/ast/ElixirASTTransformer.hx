@@ -1424,6 +1424,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
 
+        // Late sweep: ensure any '!= nil' remaining are converted to not is_nil
+        passes.push({
+            name: "EqNilToIsNil(Late)",
+            description: "Late replacement of (x != nil) with not Kernel.is_nil(x)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
+
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
         passes.push({
             name: "EnsurePhoenixComponentUseInLive",

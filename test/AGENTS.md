@@ -1,6 +1,6 @@
 # Test Suite Context for AI Assistants
 
-> **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions and [/docs/03-compiler-development/CLAUDE.md](/docs/03-compiler-development/CLAUDE.md) for compiler development context
+> **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions and [/docs/03-compiler-development/AGENTS.md](/docs/03-compiler-development/AGENTS.md) for compiler development context
 
 ## ⚠️ CRITICAL DIRECTIVE FOR AI AGENTS
 
@@ -641,7 +641,7 @@ Documents the pipeline coordination issue where switch cases with compound assig
 
 **See Documentation**:
 - [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) - Complete bug analysis
-- [`src/reflaxe/elixir/ast/CLAUDE.md`](/src/reflaxe/elixir/ast/CLAUDE.md) - AST-specific patterns
+- [`src/reflaxe/elixir/ast/AGENTS.md`](/src/reflaxe/elixir/ast/AGENTS.md) - AST-specific patterns
 
 ## 📈 Test Maintenance
 

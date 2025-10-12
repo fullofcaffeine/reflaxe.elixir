@@ -54,7 +54,7 @@ When Haxe's `-D analyzer-optimize` flag is enabled, loop variables in string con
 ## Risk Mitigation
 - **Getting Stuck**: Consult Codex with detailed context
 - **Circular Work**: Check git history before implementing
-- **Code Quality**: Follow CLAUDE.md rules strictly
+- **Code Quality**: Follow AGENTS.md rules strictly
 - **File Size**: Refactor when files exceed 2000 lines
 
 ## Reference Resources

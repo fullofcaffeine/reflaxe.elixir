@@ -10,7 +10,7 @@
 
 ```
 lib/mix/tasks/
-├── CLAUDE.md                    # THIS FILE - Documentation (DO NOT DELETE)
+├── AGENTS.md                    # THIS FILE - Documentation (DO NOT DELETE)
 ├── compile.haxe.ex             # Mix compiler integration for Haxe→Elixir
 ├── haxe.watch.ex               # File watching for auto-recompilation
 ├── haxe.errors.ex              # Error display and debugging tools
