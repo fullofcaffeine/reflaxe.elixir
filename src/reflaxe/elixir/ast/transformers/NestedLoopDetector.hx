@@ -2,6 +2,23 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * NestedLoopDetector
+ *
+ * WHAT
+ * - Identifies nested loop constructs to enable targeted transformations
+ *   and prevent mis-optimizations.
+ *
+ * WHY
+ * - Certain optimizations should not cross loop boundaries; detection guides
+ *   safe application of passes.
+ *
+ * HOW
+ * - Walk AST and mark nested Enum.each/comprehension contexts via metadata.
+ *
+ * EXAMPLES
+ * Detect nested Enum.each blocks and annotate for later passes.
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;

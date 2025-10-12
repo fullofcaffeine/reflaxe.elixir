@@ -29,6 +29,9 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  * - Recursive Design: Handles deeply nested assignments
  * - Clean Separation: Doesn't modify other AST transformations
  * 
+ * EXAMPLES
+ * Before: f((x = 1) + 2) -> After: x = 1; f(x + 2)
+ *
  * EDGE CASES:
  * - Nested assignments (index = i = i + 1)
  * - Multiple assignments in one expression

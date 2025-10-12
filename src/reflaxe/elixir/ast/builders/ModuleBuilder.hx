@@ -110,6 +110,12 @@ class ModuleBuilder {
         // Register module globally for cross-file qualification
         try {
             reflaxe.elixir.ElixirCompiler.registerModule(moduleName);
+            // Also register app-prefixed variant for Web-context qualification,
+            // e.g., TodoApp + "." + Todo -> "TodoApp.Todo"
+            var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            if (app != null && app.length > 0 && moduleName.indexOf('.') == -1) {
+                reflaxe.elixir.ElixirCompiler.registerModule(app + "." + moduleName);
+            }
         } catch (e:Dynamic) {}
         var attributes: Array<EAttribute> = [];
 

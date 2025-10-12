@@ -2,6 +2,24 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * LoopVariableRestorer
+ *
+ * WHAT
+ * - Restores loop variables inside string interpolations and nested scopes
+ *   where the optimizer may have replaced them with temps.
+ *
+ * WHY
+ * - Prevents undefined variable issues and preserves intended bindings,
+ *   especially in Enum.each and comprehension contexts.
+ *
+ * HOW
+ * - Track loop var introductions and replace string interpolation references
+ *   with the correct variable.
+ *
+ * EXAMPLES
+ * Before: "#{i}" where i was renamed -> After: restore i
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.EPattern;

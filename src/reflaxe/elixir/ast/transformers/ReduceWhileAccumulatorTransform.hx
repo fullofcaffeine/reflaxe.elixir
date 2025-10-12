@@ -33,6 +33,15 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  * - Multiple variable mutations in one iteration
  * - Conditional mutations (inside if/case)
  * - Early returns with :halt
+ *
+ * EXAMPLES
+ * Haxe:
+ *   var users = [];
+ *   for (u in 0...n) users.push(u);
+ * Elixir (after lowering, before):
+ *   Enum.reduce_while(..., {users}, fn _, {users} -> {:cont, {users}} end)
+ * Elixir (after):
+ *   {users} = Enum.reduce_while(...)
  */
 @:nullSafety(Off)
 class ReduceWhileAccumulatorTransform {

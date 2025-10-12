@@ -2,6 +2,27 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * DesugarredForDetector
+ *
+ * WHAT
+ * - Detects for-loop forms that were previously desugared to reduce_while/iterate
+ *   patterns so later passes can recover idiomatic Enum.each/comprehension forms.
+ *
+ * WHY
+ * - Haxe may emit reduce_while(Stream.iterate(...)) patterns for loops. Recognizing
+ *   these shapes enables restoration to idiomatic Elixir constructs.
+ *
+ * HOW
+ * - Match Stream.iterate + Enum.reduce_while patterns over numeric ranges/iterators
+ *   and emit metadata hints used by LoopTransforms.
+ *
+ * EXAMPLES
+ * Before:
+ *   Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, ...)
+ * After (by later pass):
+ *   Enum.each(0..max, fn i -> ... end)
+ */
 import haxe.macro.Type;
 import haxe.macro.Type.TypedExprDef;
 

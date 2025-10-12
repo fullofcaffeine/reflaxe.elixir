@@ -78,6 +78,36 @@ class RedundantAssignmentCleanup {
                         if (!collapsed) { out.push(s); i++; }
                     }
                     makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+                case EBinary(Match, left, right):
+                    // Collapse nested left chain: (thisN = dst) = expr  -> dst = expr
+                    switch (left.def) {
+                        case EBinary(Match, lleft, lright):
+                            switch (lleft.def) {
+                                case EVar(tmp) if (isRedundantName(tmp)):
+                                    // Use the right-hand var of left chain as final destination
+                                    switch (lright.def) {
+                                        case EVar(dst):
+                                            makeASTWithMeta(EBinary(Match, makeAST(EVar(dst)), right), n.metadata, n.pos);
+                                        default:
+                                            n;
+                                    }
+                                default:
+                                    n;
+                            }
+                        default:
+                            // Collapse nested right chain: dst = (thisN = expr) -> dst = expr
+                            switch (right.def) {
+                                case EBinary(Match, rleft, rright):
+                                    switch (rleft.def) {
+                                        case EVar(tmp) if (isRedundantName(tmp)):
+                                            makeASTWithMeta(EBinary(Match, left, rright), n.metadata, n.pos);
+                                        default:
+                                            n;
+                                    }
+                                default:
+                                    n;
+                            }
+                    }
                 default:
                     n;
             }

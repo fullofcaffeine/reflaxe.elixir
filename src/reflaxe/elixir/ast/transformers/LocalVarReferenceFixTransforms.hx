@@ -2,6 +2,23 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * LocalVarReferenceFixTransforms
+ *
+ * WHAT
+ * - Aligns EVar references to declared local names when builder/optimizer phases
+ *   introduced underscore/numeric variants.
+ *
+ * WHY
+ * - Prevents undefined local errors and reduces naming noise, especially after
+ *   hygiene passes and temp alias rewrites.
+ *
+ * HOW
+ * - Build a map of declared locals per scope and normalize references accordingly.
+ *
+ * EXAMPLES
+ * Before: len = 0; ...; l3 -> align to len
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;

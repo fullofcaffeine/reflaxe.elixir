@@ -770,15 +770,16 @@ class BinderTransforms {
         }
 
         function qualifyIn(subtree: ElixirAST, appPrefix: String): ElixirAST {
-            if (appPrefix == null) return subtree;
-            // Qualify based on declared modules, not name heuristics
+            // Note: SafePubSub mapping does not require appPrefix; we still
+            // traverse even when appPrefix is null but only apply prefix-based
+            // rewrites when it is available.
             return ElixirASTTransformer.transformNode(subtree, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
                     case ERemoteCall(mod, func, args):
                         switch (mod.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
                                 // Always map Presence to <App>Web.Presence
-                                if (m == "Presence") {
+                                if (m == "Presence" && appPrefix != null) {
                                     var fqP = appPrefix + "Web." + m;
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fqP)), func, args), n.metadata, n.pos);
                                 }
@@ -786,35 +787,26 @@ class BinderTransforms {
                                 if (m == "SafePubSub") {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
                                 }
-                                var fq = appPrefix + "." + m;
-                                if (reflaxe.elixir.ElixirCompiler.isModuleKnown(fq)) {
+                                if (appPrefix != null) {
+                                    var fq = appPrefix + "." + m;
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
-                                } else if (reflaxe.elixir.ElixirCompiler.isModuleKnown(m)) {
-                                    // Keep as top-level module if it exists globally
-                                    n;
-                                } else {
-                                    n;
-                                }
+                                } else n;
                             default: n;
                         }
                     case ECall(target, func, args) if (target != null):
                         switch (target.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                if (m == "Presence") {
+                                if (m == "Presence" && appPrefix != null) {
                                     var fqP = appPrefix + "Web." + m;
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fqP)), func, args), n.metadata, n.pos);
                                 }
                                 if (m == "SafePubSub") {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
                                 }
-                                var fq = appPrefix + "." + m;
-                                if (reflaxe.elixir.ElixirCompiler.isModuleKnown(fq)) {
+                                if (appPrefix != null) {
+                                    var fq = appPrefix + "." + m;
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
-                                } else if (reflaxe.elixir.ElixirCompiler.isModuleKnown(m)) {
-                                    n;
-                                } else {
-                                    n;
-                                }
+                                } else n;
                             default: n;
                         }
                     default:

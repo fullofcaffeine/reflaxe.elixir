@@ -30,6 +30,8 @@ class StdModuleWhitelist {
             "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
             "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex",
             "Keyword","Access",
+            // Common helper modules generated at top-level (project-local utilities)
+            "StringTools","Log","SafeAssigns","TodoPubSub",
             // Framework roots
             "Ecto","Phoenix"
         ]) m.set(name, true);
@@ -48,4 +50,3 @@ class StdModuleWhitelist {
         return isWhitelistedRoot(root);
     }
 }
-

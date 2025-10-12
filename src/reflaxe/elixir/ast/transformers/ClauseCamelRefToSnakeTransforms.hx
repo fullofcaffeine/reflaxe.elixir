@@ -2,6 +2,31 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * ClauseCamelRefToSnakeTransforms
+ *
+ * WHAT
+ * - Rewrites EVar references inside a case clause body from camelCase to snake_case
+ *   when the corresponding binder has already been normalized to snake_case.
+ *
+ * WHY
+ * - Some sources bind snake_case in the pattern but still reference camelCase in the body.
+ *   Aligning references avoids undefined variable errors and preserves idiomatic style.
+ *
+ * HOW
+ * - For each case clause, build a rename map from known binder names to their snake_case
+ *   spelling, then walk the body and replace EVar occurrences accordingly.
+ *
+ * EXAMPLES
+ * Before:
+ *   case x do
+ *     %{user_id: id_value} -> render(idValue)
+ *   end
+ * After:
+ *   case x do
+ *     %{user_id: id_value} -> render(id_value)
+ *   end
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;

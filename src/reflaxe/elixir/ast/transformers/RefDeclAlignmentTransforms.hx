@@ -2,6 +2,23 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * RefDeclAlignmentTransforms
+ *
+ * WHAT
+ * - Aligns variable declarations and references to a canonical spelling
+ *   (underscore prefixing, numeric suffixes) within the same scope.
+ *
+ * WHY
+ * - Ensures consistent naming after transformations that introduce variants
+ *   like _var, var1, var_2, avoiding confusion and undefined references.
+ *
+ * HOW
+ * - Compute canonical base name per variable and rewrite both decls and refs.
+ *
+ * EXAMPLES
+ * Before: var; _var referenced -> After: either var or _var consistently
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;

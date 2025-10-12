@@ -2,6 +2,25 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * HygieneTransforms
+ *
+ * WHAT
+ * - A set of passes that ensure declarations and references are hygienic:
+ *   underscore prefixing for unused, alignment of ref/decl spellings, and
+ *   stable local naming across transformations.
+ *
+ * WHY
+ * - Complex lowerings introduce temp vars and binder mismatches that cause
+ *   warnings or undefined variables. Hygiene keeps the code robust and idiomatic.
+ *
+ * HOW
+ * - Usage analysis to detect unused vars, ref/decl alignment to unify names,
+ *   and fallback underscore fixes for last-mile correctness.
+ *
+ * EXAMPLES
+ * Before: var = 1; _var used; After: _var = 1; var used -> align to _var or var depending on usage.
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;

@@ -4,8 +4,8 @@ class Main {
     static function main() {}
 
     public static function testUtcNow(): String {
-        // Produce ISO8601 string without Dynamic
-        return untyped __elixir__('DateTime.to_iso8601(DateTime.utc_now())');
+        // Produce ISO8601 string using typed externs (no Dynamic)
+        return elixir.DateTime.utcNow().to_iso8601();
     }
 
     public static function passthrough(s: String): String {

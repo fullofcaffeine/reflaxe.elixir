@@ -2,6 +2,25 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+/**
+ * LoopTransforms
+ *
+ * WHAT
+ * - Restores idiomatic loop forms from desugared patterns and improves
+ *   readability/performance: reduce_while unrolling, comprehension conversion,
+ *   and map/iterator lowering fixes.
+ *
+ * WHY
+ * - Sources and lowerings produce non-idiomatic patterns not aligned with Elixir
+ *   best practices. Normalization yields clean Enum.each/for comprehensions.
+ *
+ * HOW
+ * - Detect unrolled sequences and reconstruct loops; convert imperative loops
+ *   to comprehensions; rewrite map iterators g.next() to Enum.each.
+ *
+ * EXAMPLES
+ * Before: a=0; a=a+1; a=a+1; -> After: Enum.each(1..2, fn _ -> a=a+1 end)
+ */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
