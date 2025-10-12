@@ -264,11 +264,19 @@ The staging mechanism works but requires all contexts to handle Elixir-specific 
 - `haxe_libraries/reflaxe.elixir.hxml` includes them unconditionally
 - This causes "Unknown identifier: __elixir__" in macro context
 
-### Proper Implementation (TODO)
-1. Move classpath injection to bootstrap macro
-2. Check compilation target before adding paths
-3. Macro context uses original Haxe stdlib
-4. Only Elixir target compilation sees .cross.hx overrides
+### Implementation (Complete)
+Classpath gating is implemented in `CompilerInit.Start()`:
+- Adds `std/_std/` only when compiling to Elixir target.
+- Haxe 5: gated by `CustomTarget("elixir")`.
+- Haxe 4: gated by `target.name == "elixir"` or presence of `-D elixir_output`.
+- `haxe_libraries/reflaxe.elixir.hxml` no longer unconditionally includes `std/_std/`.
+
+Activation scenarios:
+- Elixir builds in tests/examples (`-D elixir_output`) → activated
+- Custom target Elixir (Haxe 5) → activated
+- JS/genes builds, macro-only tools → not activated
+
+See: `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md` for details and verification steps.
 
 **Reference Implementations**:
 - hxcpp: Conditionally adds C++ stdlib based on target
@@ -757,6 +765,15 @@ When documenting new features, fixes, or insights:
 - **Component AGENTS.md** (`src/reflaxe/elixir/ast/AGENTS.md`) - AST-specific patterns and limitations
 - **Test AGENTS.md** (`test/AGENTS.md`) - Testing infrastructure and patterns
 - **Example AGENTS.md** (`examples/todo-app/AGENTS.md`) - Application-specific patterns
+
+## 🧹 Dead Code and Deprecated Logic Removal
+
+- Prefer deletion over deactivation: remove deprecated/disabled passes and unused helpers instead of keeping them commented or permanently disabled.
+- Justification: less code surface reduces maintenance, avoids drift, and prevents accidental re‑enablement; git history preserves removed code if it’s ever needed again.
+- Exception: keep short‑lived debug scaffolding only when it immediately leads to a proper fix, and remove it as the fix lands.
+- When removing:
+  - Eliminate all references (transformer registry entries, docs, comments).
+  - Note the decision briefly in the commit message and relevant module AGENTS.md if non‑obvious.
 
 ## 📁 Project Directory Structure Map
 

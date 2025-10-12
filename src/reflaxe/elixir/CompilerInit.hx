@@ -3,6 +3,9 @@ package reflaxe.elixir;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.ReflectCompiler;
+import haxe.macro.Context;
+import haxe.macro.Compiler;
+import haxe.io.Path;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.macros.LiveViewPreserver;
 
@@ -36,7 +39,28 @@ class CompilerInit {
         
         // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
         LiveViewPreserver.init();
-        
+
+        // Target-conditional classpath gating for staged overrides in std/_std
+        // Only add Elixir-specific staged stdlib when compiling to Elixir target.
+        // This prevents __elixir__ usage from leaking into macro/other targets.
+        var targetName = Context.definedValue("target.name");
+        // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
+        try {
+            var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
+            var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
+            var d1 = Path.directory(d0);                 // .../src/reflaxe
+            var d2 = Path.directory(d1);                 // .../src
+            var repoRoot = Path.directory(d2);           // .../
+            var stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
+            // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
+            // target.name may be unset: rely on presence of -D elixir_output define used by this target.
+            if (targetName == "elixir" || Context.defined("elixir_output")) {
+                Compiler.addClassPath(stagedStd);
+            }
+        } catch (e:Dynamic) {
+            // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
+        }
+
         // Register the Elixir compiler with Reflaxe
         ReflectCompiler.AddCompiler(new ElixirCompiler(), {
             fileOutputExtension: ".ex",

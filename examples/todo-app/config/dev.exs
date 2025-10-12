@@ -6,8 +6,7 @@ config :todo_app, TodoApp.Repo,
   password: "postgres",
   hostname: "localhost",
   database: "todo_app_dev",
-  # Use Postgrex types to ensure TypeManager registry is properly initialized
-  types: TodoApp.PostgrexTypes,
+  # Use default Postgrex types
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10

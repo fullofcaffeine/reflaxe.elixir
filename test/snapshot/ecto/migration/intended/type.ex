@@ -1,6 +1,6 @@
 defmodule Type do
   def typeof(_v) do
-    {:t_unknown}
+    :t_unknown
   end
   def enum_index(_e) do
     0

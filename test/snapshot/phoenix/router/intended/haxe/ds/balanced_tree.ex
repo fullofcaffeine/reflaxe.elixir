@@ -1,4 +1,6 @@
 defmodule BalancedTree do
+  @compile {:nowarn_unused_function, [set_loop: 4, remove_loop: 3, iterator_loop: 3, keys_loop: 3, merge: 3, min_binding: 2, remove_min_binding: 2, balance: 5, compare: 3]}
+
   def set(struct, key, value) do
     root = struct.setLoop(key, value, struct.root)
     %{struct | root: root}
@@ -17,7 +19,7 @@ end)
   end
   def remove(struct, key) do
     result = struct.removeLoop(key, struct.root)
-    if result != nil, do: result.found
+    if not Kernel.is_nil(result), do: result.found
     false
   end
   def exists(struct, key) do
@@ -35,26 +37,27 @@ end)
   def iterator(struct) do
     ret = []
     struct.iteratorLoop(struct.root, ret)
-    ArrayIterator.new(ret)
+    MyApp.ArrayIterator.new(ret)
   end
   def key_value_iterator(struct) do
-    MapKeyValueIterator.new(struct)
+    MyApp.MapKeyValueIterator.new(struct)
   end
   def keys(struct) do
     ret = []
     struct.keysLoop(struct.root, ret)
-    ArrayIterator.new(ret)
+    MyApp.ArrayIterator.new(ret)
   end
   def copy(struct) do
-    copied = BalancedTree.new()
+    copied = %BalancedTree{}
     root = struct.root
     copied
   end
   defp set_loop(struct, k, v, node) do
     if Kernel.is_nil(node) do
-      TreeNode.new(nil, k, v, nil, -1)
+      MyApp.TreeNode.new(nil, k, v, nil, -1)
     end
-    c = struct.compare(k, node.key)
+    node = %{}
+    c = struct.compare(k, Map.get(node, :key))
     cond do
       c == 0 -> TreeNode.new(node.left, k, v, node.right, node.get_height())
       c < 0 ->
@@ -68,7 +71,8 @@ end)
   end
   defp remove_loop(struct, k, node) do
     if Kernel.is_nil(node), do: %{:node => nil, :found => false}
-    c = struct.compare(k, node.key)
+    node = %{}
+    c = struct.compare(k, Map.get(node, :key))
     cond do
       c == 0 -> %{:node => struct.merge(node.left, node.right), :found => true}
       c < 0 ->
@@ -83,35 +87,40 @@ end)
     end
   end
   defp iterator_loop(struct, node, acc) do
-    if node != nil do
+    if not Kernel.is_nil(node) do
       struct.iteratorLoop(node.left, acc)
       %{struct | acc: struct.acc ++ [node.value]}
       struct.iteratorLoop(node.right, acc)
     end
   end
   defp keys_loop(struct, node, acc) do
-    if node != nil do
+    if not Kernel.is_nil(node) do
       struct.keysLoop(node.left, acc)
       %{struct | acc: struct.acc ++ [node.key]}
       struct.keysLoop(node.right, acc)
     end
   end
   defp merge(struct, t1, t2) do
-    if Kernel.is_nil(t1), do: t2
-    if Kernel.is_nil(t2), do: t1
-    t = struct.minBinding(t2)
-    if Kernel.is_nil(t), do: t1
-    struct.balance(t1, t.key, t.value, struct.removeMinBinding(t2))
+    if Kernel.is_nil(t), do: t
+    if Kernel.is_nil(t), do: t
+    t = struct.minBinding(t)
+    if Kernel.is_nil(t), do: t
+    t = %{}
+    struct.balance(t, Map.get(t, :key), Map.get(t, :value), struct.removeMinBinding(t))
   end
   defp min_binding(struct, t) do
     if Kernel.is_nil(t), do: nil
+    t = %{}
     if Kernel.is_nil(t.left), do: t
-    struct.minBinding(t.left)
+    struct.minBinding(Map.get(t, :left))
   end
   defp remove_min_binding(struct, t) do
     if Kernel.is_nil(t), do: nil
-    if Kernel.is_nil(t.left), do: t.right
-    struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
+    t = %{}
+    if Kernel.is_nil(t.left) do
+      Map.get(t, :right)
+    end
+    struct.balance(struct.removeMinBinding(Map.get(t, :left)), Map.get(t, :key), Map.get(t, :value), Map.get(t, :right))
   end
   defp balance(struct, l, k, v, r) do
     hl = l.get_height()
@@ -134,7 +143,7 @@ end)
     end
   end
   defp compare(struct, k1, k2) do
-    Reflect.compare(k1, k2)
+    MyApp.Reflect.compare(k1, k2)
   end
   def to_string(struct) do
     if Kernel.is_nil(struct.root) do

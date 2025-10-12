@@ -1,5 +1,6 @@
 defmodule RegularPresence do
+  use Phoenix.Presence, otp_app: :regular_presence
   def track_user(socket, user_id, meta) do
-    Presence.track(self(), socket, user_id, meta)
+    MyAppWeb.Presence.track(self(), socket, user_id, meta)
   end
 end

@@ -1987,7 +1987,8 @@ class ElixirCompiler extends GenericCompiler<
         }
         
         // Enable Repo transformation pass for @:repo modules
-        // This was lost when ModuleBuilder was deleted in commit ecf50d9d
+        // Note: After prior refactors, some repo metadata fields were lost; restore
+        // essential flags here to ensure companion modules (PostgrexTypes) are generated.
         if (classType.meta.has(":repo")) {
             metadata.isRepo = true;
             
@@ -1998,6 +1999,10 @@ class ElixirCompiler extends GenericCompiler<
                 // The configuration handling was also lost in the refactoring
                 // For now, just set the basic metadata
                 metadata.dbAdapter = "Ecto.Adapters.Postgres"; // Default to Postgres
+                // Companion module generation for Postgres
+                metadata.needsPostgrexTypes = true;
+                // Default JSON library (configurable via @:repo json field when parser restored)
+                metadata.jsonModule = "Jason";
             }
             
             #if debug_annotation_transforms

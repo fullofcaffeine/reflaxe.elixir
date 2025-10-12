@@ -99,21 +99,24 @@ class SafePubSub {
      * @param topicConverter Function to convert topic to string
      * @return Result indicating success or failure
      */
-    public static function subscribeWithConverter<T>(
-        topic: T, 
-        topicConverter: T -> String
-    ): Result<Void, String> {
-        // Injection Hygiene: compute ephemeral locals inside injected Elixir
-        // and return a Result-like tuple to avoid cross-scope variable issues.
+    public static function subscribeTopic(topicString: String): Result<Void, String> {
         return untyped __elixir__('
           case Phoenix.PubSub.subscribe(
                    Phoenix.SafePubSub.get_pub_sub_module(),
-                   {0}.({1})
+                   {0}
                ) do
             :ok -> {:ok, nil}
             {:error, reason} -> {:error, to_string(reason)}
           end
-        ', topicConverter, topic);
+        ', topicString);
+    }
+
+    public static function subscribeWithConverter<T>(
+        topic: T,
+        topicConverter: T -> String
+    ): Result<Void, String> {
+        // Prefer passing the converted string directly to avoid function-capture issues
+        return subscribeTopic(topicConverter(topic));
     }
     
     /**
@@ -125,24 +128,26 @@ class SafePubSub {
      * @param messageConverter Function to convert message to Dynamic
      * @return Result indicating success or failure
      */
+    public static function broadcastTopicPayload(topicString: String, payload: Dynamic): Result<Void, String> {
+        return untyped __elixir__('
+          case Phoenix.PubSub.broadcast(
+                   Phoenix.SafePubSub.get_pub_sub_module(),
+                   {0},
+                   {1}
+               ) do
+            :ok -> {:ok, nil}
+            {:error, reason} -> {:error, to_string(reason)}
+          end
+        ', topicString, payload);
+    }
+
     public static function broadcastWithConverters<T, M>(
         topic: T,
         message: M,
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        // Injection Hygiene: compute pubsub/topic/message inside injected Elixir
-        // and normalize return to {:ok, nil} | {:error, reason}
-        return untyped __elixir__('
-          case Phoenix.PubSub.broadcast(
-                   Phoenix.SafePubSub.get_pub_sub_module(),
-                   {0}.({1}),
-                   {2}.({3})
-               ) do
-            :ok -> {:ok, nil}
-            {:error, reason} -> {:error, to_string(reason)}
-          end
-        ', topicConverter, topic, messageConverter, message);
+        return broadcastTopicPayload(topicConverter(topic), messageConverter(message));
     }
     
     /**
@@ -220,6 +225,10 @@ class SafePubSub {
      * 
      * @return The PubSub module atom for the current application
      */
+    /**
+     * Exposed to Elixir as get_pub_sub_module/0 and marked @:keep to avoid DCE.
+     */
+    @:keep @:native("get_pub_sub_module")
     public static function getPubSubModule(): Dynamic {
         // Get the PubSub module dynamically from endpoint configuration
         // This is a proper Phoenix way to retrieve the PubSub server

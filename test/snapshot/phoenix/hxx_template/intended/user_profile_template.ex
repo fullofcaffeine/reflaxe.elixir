@@ -8,11 +8,11 @@ defmodule UserProfileTemplate do
   end
   def render_user_list(users) do
     items = []
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {users}, fn _, {users} ->
+    {users} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {users}, fn _, {users} ->
   if 0 < length(users) do
     user = users[0]
     0 + 1
-    items.push("<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>")
+    items = Enum.concat(items, ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"])
     {:cont, {users}}
   else
     {:halt, {users}}

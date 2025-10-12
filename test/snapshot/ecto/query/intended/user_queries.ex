@@ -1,4 +1,6 @@
 defmodule UserQueries do
+  @compile {:nowarn_unused_function, [from: 3, where: 3]}
+
   def get_all_users() do
     from("users", "u", %{:select => "u"})
   end
@@ -21,43 +23,44 @@ defmodule UserQueries do
     from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_active_posters(min_posts) do
-    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Kernel.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
+    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> MyApp.StringBuf.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_top_users() do
-    from("users", "u", %{:join => %{:table => (from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})), :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
+    subquery = from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})
+    from("users", "u", %{:join => %{:table => subquery, :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
   end
   def get_users_with_associations() do
     from("users", "u", %{:preload => ["posts", "profile", "comments"], :select => "u"})
   end
   def deactivate_old_users(days) do
-    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> Kernel.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
+    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> MyApp.StringBuf.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
   end
   def delete_inactive_users() do
     from("users", "u", %{:where => %{:active => false}, :delete_all => true})
   end
   def search_users(filters) do
     query = from("users", "u", %{:select => "u"})
-    query = if (filters.name != nil) do
-  where(query, "u", %{:name_ilike => filters.name})
-else
-  query
-end
-    query = if (filters.email != nil) do
-  where(query, "u", %{:email => filters.email})
-else
-  query
-end
-    query = if (filters.min_age != nil) do
-  where(query, "u", %{:age_gte => filters.min_age})
-else
-  query
-end
+    query = if not Kernel.is_nil(Map.get(filters, :name)) do
+      where(query, "u", %{:name_ilike => Map.get(filters, :name)})
+    else
+      query
+    end
+    query = if not Kernel.is_nil(Map.get(filters, :email)) do
+      where(query, "u", %{:email => Map.get(filters, :email)})
+    else
+      query
+    end
+    query = if not Kernel.is_nil(Map.get(filters, :min_age)) do
+      where(query, "u", %{:age_gte => Map.get(filters, :min_age)})
+    else
+      query
+    end
     query
   end
-  defp from(_table, _alias, _opts) do
+  defp from(_table, _alias_param, _opts) do
     nil
   end
-  defp where(_query, _alias, _condition) do
+  defp where(_query, _alias_param, _condition) do
     nil
   end
 end

@@ -1046,7 +1046,6 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.erawRepoQualificationPass
         });
-
         // Qualify Ecto.Query.from ERaw snippets to use schema modules instead of table atoms
         passes.push({
             name: "ERawEctoFromQualification",
@@ -1076,6 +1075,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoTransforms.ectoQueryVarConsistencyPass
         });
+        // Rewrite Ecto.Queryable.to_query(:atom) -> <App>.<CamelCase(atom)>
+        passes.push({
+            name: "EctoQueryableAtomToSchema",
+            description: "Rewrite Ecto.Queryable.to_query(:table) to schema module <App>.<Camel>",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoTransforms.ectoQueryableAtomToSchemaPass
+        });
 
         // Unify case success vars in {:ok, v} branches to eliminate undefined placeholders
         passes.push({
@@ -1085,13 +1091,7 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });
 
-        // Replace x == nil checks with Kernel.is_nil(x)
-        passes.push({
-            name: "EqNilToIsNil",
-            description: "Replace (x == nil) with Kernel.is_nil(x)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
-        });
+        // (moved) EqNilToIsNil should run after ChangesetNormalize so opts.* -> Map.get rewrites happen first
 
         // Simplify provably false is_nil checks based on prior literal assignments
         passes.push({
@@ -1103,13 +1103,7 @@ class ElixirASTTransformer {
 
         // (temporarily disabled) Ecto query var consistency — will be addressed via assignment extraction specialization
 
-        // Late sweep: underscore unused local assignments to avoid warnings
-        passes.push({
-            name: "UnusedLocalAssignmentUnderscore",
-            description: "Prefix unused local assignment variables with underscore",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.unusedLocalAssignmentUnderscorePass
-        });
+        // (Removed) UnusedLocalAssignmentUnderscore: prefer fixing root causes and removing dead code
 
         // Normalize Supervisor.start_link(children, opts) to use declared local names
         // inside Application.start/2 (prevents undefined variable errors when hygiene
@@ -1181,6 +1175,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeChangesetPass
         });
+        // Replace x == nil checks with Kernel.is_nil(x) AFTER Map.get(opts, :key) rewrites
+        passes.push({
+            name: "EqNilToIsNil",
+            description: "Replace (x == nil) with Kernel.is_nil(x) (post-ChangesetNormalize)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
         // Ensure validate_* field argument uses literal atom when possible
         passes.push({
             name: "ChangesetFieldAtomNormalize",
@@ -1208,6 +1209,21 @@ class ElixirASTTransformer {
             description: "Final replacement of (x == nil)/(x != nil) with Kernel.is_nil/1",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
+        });
+        // Final sweep: convert String.to_atom("field") to :field when literal
+        passes.push({
+            name: "StringToAtomLiteral(Late)",
+            description: "Replace String.to_atom(\"field\") with :field when argument is a string literal",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.stringToAtomLiteralPass
+        });
+
+        // Inject `use <App>Web, :live_view` for modules like <App>Web.*Live (shape-derived)
+        passes.push({
+            name: "LiveViewUseInjection",
+            description: "Inject `use <App>Web, :live_view` into <App>Web.*Live when missing",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewUseInjectionPass
         });
 
         // Inject `use Phoenix.Component` in regular modules that call assign/2 with a socket
@@ -1525,6 +1541,37 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.UnusedImportCleanup.cleanupPass
         });
         
+        // Late safety net: normalize String.to_atom/1 and to_existing_atom/1 to literals where safe
+        passes.push({
+            name: "StringToAtomLiteral(Late)",
+            description: "Convert String.to_atom(\"field\") to :field when argument is a literal string",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.stringToAtomLiteralPass
+        });
+
+        // Qualify single-segment modules inside ERaw strings within <App>Web.* (run very late to catch late ERaw injections)
+        passes.push({
+            name: "ERawWebModuleQualification(Final)",
+            description: "Qualify single-segment modules inside ERaw within Web modules (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.erawWebModuleQualificationPass
+        });
+
+        // Normalize ERaw validate_required lists, validate_length field argument, opts nil comparisons (run at the very end)
+        passes.push({
+            name: "ERawEctoValidateAtomNormalize(Final)",
+            description: "Normalize ERaw validate_* atoms and opts nil comparisons (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoValidateAtomNormalizePass
+        });
+        // Rewrite ERaw Ecto.Queryable.to_query(:atom) to <App>.<CamelCase> (final sweep)
+        passes.push({
+            name: "ERawEctoQueryableToSchema(Final)",
+            description: "Rewrite ERaw to_query(:atom) to schema module <App>.<Camel>",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoQueryableToSchemaPass
+        });
+
         // Absolute last: ensure declarations and references agree after all prior rewrites
         passes.push({
             name: "RefDeclAlignment(Final)",
@@ -1572,6 +1619,26 @@ class ElixirASTTransformer {
             description: "Re-run Web-context <App>.Module qualification after later transforms",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleQualificationPass
+        });
+        // Absolute final sweep: ensure Web EFns contain qualified application module calls
+        passes.push({
+            name: "WebEFnModuleQualification(Final)",
+            description: "Final sweep to qualify single-segment modules inside <App>Web.* EFn bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.webEFnModuleQualificationPass
+        });
+        // Targeted final pass to ensure Enum.reduce_while bodies are qualified in Web modules
+        passes.push({
+            name: "WebReduceWhileEFnQualification(Final)",
+            description: "Explicitly qualify single-segment modules inside Enum.reduce_while EFns in <App>Web.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.webReduceWhileEFnQualificationPass
+        });
+        passes.push({
+            name: "SelfAssignCompression(Final)",
+            description: "Compress duplicated self-assignments x = x = expr to x = expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
         });
 
         // Qualify struct literals passed to changeset/2 inside <App>Web.* modules
