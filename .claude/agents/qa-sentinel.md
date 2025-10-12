@@ -22,6 +22,9 @@ When evaluating a task completion claim, you will:
 
 2. **Run Comprehensive Tests**
    - Execute `npm test` to verify all snapshot tests pass
+   - Enforce transformer documentation gate:
+     - Run `npm run lint:hxdoc` to ensure all transformer passes contain hxdoc with WHAT/WHY/HOW/EXAMPLES
+     - Treat any failure as a blocker; tasks are not complete until hxdoc passes
    - Run specific test categories relevant to the change (test:core, test:stdlib, etc.)
    - Check for new test failures that weren't present before
    - Verify any new tests that should have been added actually exist

@@ -102,3 +102,4 @@
     ]
   }
 }
+    "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh",
