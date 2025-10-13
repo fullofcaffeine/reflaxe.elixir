@@ -843,7 +843,6 @@ class MapAndCollectionTransforms {
                             return null;
                         }
                         cond = findCond(bodyStmts);
-                        if (cond == null) cond = makeAST(EInteger(1));
                         // Normalize references in cond: local entry alias and meta alias to binder/metaExpr
                         if (localEntryAlias != null) cond = replaceVarInExpr(cond, localEntryAlias, binderSafe);
                         // Replace common names
@@ -867,8 +866,8 @@ class MapAndCollectionTransforms {
 
                         var appendMeta = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExpr]))));
                         var outerCond = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [ makeAST(EField(makeAST(EVar(binderSafe)), "metas")) ])), makeAST(EInteger(0))));
-                        var inner = makeAST(EIf(cond, appendMeta, makeAST(EVar("acc"))));
-                        var reducer = makeAST(EFn([{ args: [PVar(binderSafe), PVar("acc")], guard: clause.guard, body: makeAST(EBlock([ makeAST(EIf(outerCond, inner, makeAST(EVar("acc")))), makeAST(EVar("acc")) ])) }]));
+                        var inner = (cond != null) ? makeAST(EIf(cond, appendMeta, makeAST(EVar("acc")))) : appendMeta;
+                        var reducer = makeAST(EFn([{ args: [PVar(binderSafe), PVar("acc")], guard: clause.guard, body: makeAST(EIf(outerCond, inner, makeAST(EVar("acc")))) }]));
                         var reduceInput = makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [listExpr]));
                         var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [reduceInput, makeAST(EList([])), reducer]));
                         var out2:Array<ElixirAST> = [];

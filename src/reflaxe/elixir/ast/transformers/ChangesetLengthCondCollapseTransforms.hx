@@ -116,13 +116,11 @@ class ChangesetLengthCondCollapseTransforms {
                 }]));
                 var filtered = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [kw, pred]));
 
-                // Build case on filtered to avoid passing []
-                var kwVar = "kw";
-                var caseDef:ElixirASTDef = ECase(filtered, [
-                    { pattern: EPattern.PList([]), guard: null, body: makeAST(EVar(csVar)) },
-                    { pattern: EPattern.PVar(kwVar), guard: null, body: makeAST(ERemoteCall(makeAST(EVar("Ecto.Changeset")), "validate_length", [ makeAST(EVar(csVar)), fieldArg, makeAST(EVar(kwVar)) ])) }
-                ]);
-                makeASTWithMeta(caseDef, node.metadata, node.pos);
+                // Use if to avoid introducing a new binder that may be underscored later
+                var nonEmpty = makeAST(EBinary(NotEqual, filtered, makeAST(EList([]))));
+                var thenCall = makeAST(ERemoteCall(makeAST(EVar("Ecto.Changeset")), "validate_length", [ makeAST(EVar(csVar)), fieldArg, filtered ]));
+                var ifDef: ElixirASTDef = EIf(nonEmpty, thenCall, makeAST(EVar(csVar)));
+                makeASTWithMeta(ifDef, node.metadata, node.pos);
             default:
                 node;
         }

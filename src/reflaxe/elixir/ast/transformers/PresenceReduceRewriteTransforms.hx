@@ -81,25 +81,18 @@ class PresenceReduceRewriteTransforms {
         return (name != null && name.length > 0 && name.charAt(0) == '_') ? name.substr(1) : name;
     }
     static inline function isPresenceModuleName(name: String): Bool {
-        if (name == null) return false;
-        if (name.indexOf("Web.Presence") >= 0) return true;
-        var suffix = ".Presence";
-        var len = name.length;
-        return len >= suffix.length && name.substr(len - suffix.length) == suffix;
+        // Deprecated: avoid name-based gating; kept for compatibility
+        return false;
     }
 
     public static function presenceReduceRewritePass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
-                    var inPresence = (n.metadata?.isPresence == true) || isPresenceModuleName(name);
-                    if (!inPresence) return n;
                     var newBody: Array<ElixirAST> = [];
                     for (b in body) newBody.push(rewriteInNode(b));
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
-                    var inPresence2 = (n.metadata?.isPresence == true) || isPresenceModuleName(name);
-                    if (!inPresence2) return n;
                     makeASTWithMeta(EDefmodule(name, rewriteInNode(doBlock)), n.metadata, n.pos);
                 default:
                     n;
@@ -180,7 +173,7 @@ class PresenceReduceRewriteTransforms {
                         // Build reduce(Map.values(listVar), [], fn entry, acc -> if cond' do acc ++ [entry.metas[0]] else acc end end)
                         var binder = "entry";
                         var metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder)), "metas")), makeAST(EInteger(0))));
-                        if (cond == null) cond = makeAST(EInteger(1));
+                        // If no condition is discoverable, keep it null so we can append unconditionally
                         // Normalize cond: replace common alias names with binder/meta
                         cond = replaceVarInExpr(cond, "entry", binder);
                         cond = ElixirASTTransformer.transformNode(cond, function(t: ElixirAST): ElixirAST {
@@ -188,8 +181,10 @@ class PresenceReduceRewriteTransforms {
                         });
                         var appendMeta = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExpr]))));
                         var outerCond = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [ makeAST(EField(makeAST(EVar(binder)), "metas")) ])), makeAST(EInteger(0))));
-                        var inner = makeAST(EIf(cond, appendMeta, makeAST(EVar("acc"))));
-                        var body = makeAST(EBlock([ makeAST(EIf(outerCond, inner, makeAST(EVar("acc")))), makeAST(EVar("acc")) ]));
+                        // If no condition could be derived, perform unconditional append when outerCond holds
+                        var inner = (cond != null) ? makeAST(EIf(cond, appendMeta, makeAST(EVar("acc")))) : appendMeta;
+                        // Return the conditional result directly (no trailing `acc` that discards the branch value)
+                        var body = makeAST(EIf(outerCond, inner, makeAST(EVar("acc"))));
                         var reduceFn = makeAST(EFn([{ args: [PVar(binder), PVar("acc")], guard: null, body: body }]));
                         var valuesCall2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [makeAST(EVar(listVar))]));
                         var reduceCall2 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesCall2, makeAST(EList([])), reduceFn]));
@@ -346,17 +341,15 @@ class PresenceReduceRewriteTransforms {
                         var binderSafe = safeBinder(binderName);
                         var metaExprSyn = makeAST(EAccess(makeAST(EField(makeAST(EVar(binderSafe)), "metas")), makeAST(EInteger(0))));
                         var condFromBody: Null<ElixirAST> = findMetaFilterCond(rawStmts, metaAliasName);
-                        if (condFromBody == null) condFromBody = makeAST(EInteger(1));
                         // Normalize condition to binder/meta expression
                         if (metaAliasName != null) condFromBody = replaceVarWithExpr(condFromBody, metaAliasName, metaExprSyn);
                         condFromBody = replaceVarInExpr(condFromBody, "entry", binderSafe);
                         var appendMetaSyn = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExprSyn]))));
                         var outerCondSyn = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [ makeAST(EField(makeAST(EVar(binderSafe)), "metas")) ])), makeAST(EInteger(0))));
-                        var innerSyn = makeAST(EIf(condFromBody, appendMetaSyn, makeAST(EVar("acc"))));
-                        var bodySyn = makeAST(EBlock([
-                            makeAST(EIf(outerCondSyn, innerSyn, makeAST(EVar("acc")))),
-                            makeAST(EVar("acc"))
-                        ]));
+                        var innerSyn = (condFromBody != null)
+                            ? makeAST(EIf(condFromBody, appendMetaSyn, makeAST(EVar("acc"))))
+                            : appendMetaSyn;
+                        var bodySyn = makeAST(EIf(outerCondSyn, innerSyn, makeAST(EVar("acc"))));
                         var reduceSynFn = makeAST(EFn([{ args: [PVar(binderSafe), PVar("acc")], guard: fnClause.guard, body: bodySyn }]));
                         var reduceSynCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesCall, makeAST(EList([])), reduceSynFn]));
                         var outSyn: Array<ElixirAST> = [];
