@@ -642,6 +642,91 @@ class HygieneTransforms {
                     pos = interpolationPattern.matchedPos().pos + interpolationPattern.matchedPos().len;
                 }
 
+                /**
+                 * CRITICAL: Variables referenced in ERaw outside of string interpolation
+                 *
+                 * WHAT
+                 * - Detect bare token usages of variables (e.g., `payload`, `topic_string`)
+                 *   inside ERaw code produced by __elixir__() expansion.
+                 *
+                 * WHY
+                 * - The ERaw node contains plain Elixir code where placeholders have been
+                 *   substituted with printed AST (variable names). Since ERaw holds a raw string,
+                 *   downstream usage analysis cannot see these references and may incorrectly
+                 *   mark parameters as unused, leading to underscore-prefix renames and
+                 *   undefined-variable errors in generated code.
+                 *
+                 * HOW
+                 * - Gather currently-bound variable names from the nearest Function scope.
+                 * - For each name, scan the ERaw code for identifier-bounded occurrences
+                 *   (i.e., not part of a larger identifier). When found, resolve the variable
+                 *   as used in expression context to prevent renaming.
+                 */
+                var functionScopeBindings: Array<String> = [];
+                // Walk scope stack from innermost to outermost until we reach the current Function scope
+                var idx = state.scopeStack.length - 1;
+                while (idx >= 0) {
+                    var frame = state.scopeStack[idx];
+                    // Collect names from this frame
+                    for (name in frame.bindings.keys()) {
+                        functionScopeBindings.push(name);
+                    }
+                    if (frame.kind == Function) {
+                        break; // Stop at the function boundary
+                    }
+                    idx--;
+                }
+
+                // Helper: check if a char is an identifier character
+                inline function isIdentChar(c: String): Bool {
+                    if (c == null || c.length == 0) return false;
+                    var ch = c.charCodeAt(0);
+                    // 0-9, A-Z, a-z, underscore
+                    return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+                }
+
+                // For each binding name, scan ERaw code for token-bounded occurrences
+                for (name in functionScopeBindings) {
+                    if (name == null || name.length == 0) continue;
+                    // Skip already-underscored names; they won't appear in ERaw as originals
+                    if (name.charAt(0) == '_') continue;
+
+                    var start = 0;
+                    var found = false;
+                    while (!found) {
+                        var i = code.indexOf(name, start);
+                        if (i == -1) break;
+                        var before = i > 0 ? code.substr(i - 1, 1) : null;
+                        var afterIdx = i + name.length;
+                        var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+
+                        var beforeIsIdent = isIdentChar(before);
+                        var afterIsIdent = isIdentChar(after);
+
+                        if (!beforeIsIdent && !afterIsIdent) {
+                            // Treat as a real token usage of the variable
+                            state.currentContext = Expr;
+                            resolveVariable(state, name);
+                            found = true; // no need to mark multiple times
+                        } else {
+                            start = i + name.length; // continue searching
+                        }
+                    }
+                }
+
+                // Additionally, honor builder-provided explicit references in metadata (rawVarRefs)
+                if (node.metadata != null) {
+                    var provided:Array<String> = cast Reflect.field(node.metadata, "rawVarRefs");
+                    if (provided != null) {
+                        for (n in provided) {
+                            if (n != null && n.length > 0) {
+                                state.currentContext = Expr;
+                                resolveVariable(state, n);
+                            }
+                        }
+                    }
+                }
+
                 #if debug_hygiene
                 trace('[XRay Hygiene] Total matches found: $matchCount');
                 #end
