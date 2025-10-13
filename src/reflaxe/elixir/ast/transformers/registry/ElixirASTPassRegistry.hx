@@ -2172,6 +2172,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms.unifyPass
         });
+        // Unified structural canonicalization (non-destructive alongside existing passes)
+        passes.push({
+            name: "ReduceCanonicalize(Absolute)",
+            description: "Canonicalize alias self-append and head extraction within two-arg reducers",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceCanonicalize.pass
+        });
         passes.push({
             name: "EFnAliasConcatToAcc(Absolute)",
             description: "Normalize alias concat -> acc concat inside any two-arg anonymous function (safety net)",
@@ -2229,6 +2236,25 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DropTempNilAssign(UltraFinal)",
             description: "Drop thisN/_thisN = nil sentinel assignments",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
+        });
+        // Ultra-final again: underscore unused reduce results, then drop any reintroduced temp nil assigns
+        passes.push({
+            name: "ReduceResultUnusedUnderscore(AbsoluteFinal)",
+            description: "Underscore binders in reduce/reduce_while result match when unused later in block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.transformPass
+        });
+        passes.push({
+            name: "ReduceWhileSentinelCleanup(AbsoluteFinal2)",
+            description: "Final sweep: drop numeric sentinel literals inside reduce_while bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
+        });
+        passes.push({
+            name: "DropTempNilAssign(AbsoluteFinal2)",
+            description: "Last guard: drop thisN/_thisN = nil sentinels if any got reintroduced",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
         });
