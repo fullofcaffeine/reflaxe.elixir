@@ -263,6 +263,15 @@ class MapAndCollectionTransforms {
         });
     }
 
+    static function replaceVarWithExpr(n: ElixirAST, from: String, toExpr: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
+            return switch (x.def) {
+                case EVar(name) if (name == from): makeASTWithMeta(toExpr.def, x.metadata, x.pos);
+                default: x;
+            }
+        });
+    }
+
     /**
      * Count Rewrite Pass
      *
@@ -665,6 +674,330 @@ class MapAndCollectionTransforms {
                         } else newStmts.push(stmts[i]);
                     }
                     makeASTWithMeta(EBlock(newStmts), node.metadata, node.pos);
+                default:
+                    node;
+            }
+        });
+    }
+
+    /**
+     * Concat-Each → Reduce (Conditional Append) Pass
+     *
+     * WHAT
+     * - Rewrites patterns of the form:
+     *     temp = []
+     *     Enum.each(list, fn binder ->
+     *       ... (nested/guarded) ...
+     *       if cond do
+     *         temp = Enum.concat(temp, [expr])  # or temp = temp ++ [expr]
+     *       end
+     *     end)
+     *     temp
+     *   into:
+     *     Enum.reduce(list, [], fn binder, acc ->
+     *       if cond, do: acc ++ [expr], else: acc
+     *     end)
+     *
+     * WHY
+     * - Handles guarded/nested closures where a simple map rewrite is not correct.
+     * - Eliminates closure-local rebind warnings and produces idiomatic accumulation.
+     */
+    public static function concatEachToReducePass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case EBlock(stmts) if (stmts.length >= 3):
+                    var temp:Null<String> = null;
+                    var initIdx = -1;
+                    for (i in 0...stmts.length) switch (stmts[i].def) {
+                        case EBinary(Match, left, rhs):
+                            switch (left.def) { case EVar(n): switch (rhs.def) { case EList(items) if (items.length == 0): temp = n; initIdx = i; default: } default: }
+                        case EMatch(pat, rhs2):
+                            switch (pat) { case PVar(n2): switch (rhs2.def) { case EList(items2) if (items2.length == 0): temp = n2; initIdx = i; default: } default: }
+                        default:
+                    }
+                    if (temp == null) return node;
+
+                    // Find Enum.each
+                    var eachIdx = -1;
+                    var listExpr: Null<ElixirAST> = null;
+                    var clause: Null<{args:Array<EPattern>, body:ElixirAST, guard:Null<ElixirAST>}> = null;
+                    for (i in initIdx+1...stmts.length) switch (stmts[i].def) {
+                        case ERemoteCall(mod, func, args) if (func == "each" && args.length == 2):
+                            switch (mod.def) { case EVar(m) if (m == "Enum"): listExpr = args[0];
+                                switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): clause = clauses[0]; eachIdx = i; default: } default: }
+                        case EBinary(Match, _, rhs) | EMatch(_, rhs):
+                            switch (rhs.def) { case ERemoteCall(mod2, func2, args2) if (func2 == "each" && args2.length == 2):
+                                switch (mod2.def) { case EVar(m2) if (m2 == "Enum"): listExpr = args2[0];
+                                    switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): clause = clauses2[0]; eachIdx = i; default: } default: } default: }
+                        default:
+                    }
+                    if (eachIdx == -1 || listExpr == null || clause == null) return node;
+
+                    // Final statement must return temp
+                    var returnsTemp = switch (stmts[stmts.length - 1].def) { case EVar(vn) if (vn == temp): true; default: false; };
+                    if (!returnsTemp) return node;
+
+                    // Find at least one conditional append inside fn body
+                    var binder: String = switch (clause.args.length > 0 ? clause.args[0] : null) { case PVar(n): n; default: "elem"; };
+                    var bodyStmts: Array<ElixirAST> = switch (clause.body.def) { case EBlock(ss): ss; default: [clause.body]; };
+
+                    // Presence-like shape detection and cleanup: drop
+                    //   user_id = Reflect.fields(listExpr)[0]
+                    //   entry = Map.get(listExpr, user_id)
+                    // and use binder instead of local alias
+                    var localEntryAlias: Null<String> = null;
+                    var cleanedStmts: Array<ElixirAST> = [];
+                    var presenceShape = false;
+                    for (bs in bodyStmts) {
+                        var drop = false;
+                        switch (bs.def) {
+                            case EBinary(Match, left, right):
+                                // a = Reflect.fields(listExpr)[0]
+                                switch (right.def) {
+                                    case EAccess(tgt, _):
+                                        switch (tgt.def) {
+                                            case ERemoteCall({def: EVar("Reflect")}, "fields", [arg]) if (ElixirASTPrinter.print(arg, 0) == ElixirASTPrinter.print(listExpr, 0)):
+                                                drop = true; presenceShape = true;
+                                            default:
+                                        }
+                                    default:
+                                }
+                                if (!drop) switch (left.def) {
+                                    case EVar(aliasName):
+                                        // alias = Map.get(listExpr, key)
+                                        switch (right.def) {
+                                            case ERemoteCall({def: EVar("Map")}, "get", [m, _key]) if (ElixirASTPrinter.print(m, 0) == ElixirASTPrinter.print(listExpr, 0)):
+                                                localEntryAlias = aliasName; drop = true; presenceShape = true;
+                                            default:
+                                        }
+                                    default:
+                                }
+                            case EMatch(pat, right2):
+                                switch (right2.def) {
+                                    case EAccess(tgt2, _):
+                                        switch (tgt2.def) {
+                                            case ERemoteCall({def: EVar("Reflect")}, "fields", [arg2]) if (ElixirASTPrinter.print(arg2, 0) == ElixirASTPrinter.print(listExpr, 0)):
+                                                drop = true; presenceShape = true;
+                                            default:
+                                        }
+                                    default:
+                                }
+                                if (!drop) switch (pat) {
+                                    case PVar(aliasName2):
+                                        switch (right2.def) {
+                                            case ERemoteCall({def: EVar("Map")}, "get", [m2, _key2]) if (ElixirASTPrinter.print(m2, 0) == ElixirASTPrinter.print(listExpr, 0)):
+                                                localEntryAlias = aliasName2; drop = true; presenceShape = true;
+                                            default:
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                        if (!drop) cleanedStmts.push(bs);
+                    }
+
+                    // If presence-like shape detected, synthesize a presence-friendly reduce(Map.values(...))
+                    if (presenceShape) {
+                        var binderSafe = safeBinder(binder);
+                        // Build meta expr and extract condition from branch that appends temp
+                        var metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binderSafe)), "metas")), makeAST(EInteger(0))));
+                        var cond: Null<ElixirAST> = null;
+                        // Find a condition in body that controls append of temp
+                        function isTempAppendAssign(s:ElixirAST, name:String):Bool {
+                            return switch (s.def) {
+                                case EBinary(Match, left, rhs):
+                                    switch (left.def) {
+                                        case EVar(v) if (v == name):
+                                            switch (rhs.def) {
+                                                case ERemoteCall({def: EVar("Enum")}, "concat", [a0, _]):
+                                                    switch (a0.def) { case EVar(v0) if (v0 == name): true; default: false; }
+                                                case EBinary(Concat, llist, _):
+                                                    switch (llist.def) { case EVar(v1) if (v1 == name): true; default: false; }
+                                                default: false;
+                                            }
+                                        default: false;
+                                    }
+                                default: false;
+                            };
+                        }
+                        function presenceAppendsTemp(expr:ElixirAST, name:String):Bool {
+                            switch (expr?.def) {
+                                case EBlock(ss): for (s in ss) if (isTempAppendAssign(s, name)) return true; return false;
+                                default: return isTempAppendAssign(expr, name);
+                            }
+                        }
+                        function findCond(nodes:Array<ElixirAST>):Null<ElixirAST> {
+                            if (nodes == null) return null;
+                            for (n in nodes) {
+                                switch (n.def) {
+                                    case EIf(c, t, e):
+                                        // If then-branch appends temp, pick c
+                                        if (presenceAppendsTemp(t, temp)) return c;
+                                        var a = findCond(switch (t.def) { case EBlock(ss): ss; default: [t]; });
+                                        if (a != null) return a;
+                                        var b = findCond(switch (e?.def) { case EBlock(ss2): ss2; default: e != null ? [e] : []; });
+                                        if (b != null) return b;
+                                    default:
+                                }
+                            }
+                            return null;
+                        }
+                        cond = findCond(bodyStmts);
+                        if (cond == null) cond = makeAST(EInteger(1));
+                        // Normalize references in cond: local entry alias and meta alias to binder/metaExpr
+                        if (localEntryAlias != null) cond = replaceVarInExpr(cond, localEntryAlias, binderSafe);
+                        // Replace common names
+                        cond = replaceVarInExpr(cond, "entry", binderSafe);
+                        // Detect meta alias name and replace
+                        var metaAlias: Null<String> = null;
+                        for (bs in bodyStmts) switch (bs.def) {
+                            case EBinary(Match, leftX, rightX):
+                                switch (leftX.def) {
+                                    case EVar(mn):
+                                        switch (rightX.def) {
+                                            case EAccess(arrX, _):
+                                                switch (arrX.def) { case EField(_, fieldX) if (fieldX == "metas"): metaAlias = mn; default: }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                        if (metaAlias != null) cond = replaceVarWithExpr(cond, metaAlias, metaExpr);
+
+                        var appendMeta = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExpr]))));
+                        var outerCond = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [ makeAST(EField(makeAST(EVar(binderSafe)), "metas")) ])), makeAST(EInteger(0))));
+                        var inner = makeAST(EIf(cond, appendMeta, makeAST(EVar("acc"))));
+                        var reducer = makeAST(EFn([{ args: [PVar(binderSafe), PVar("acc")], guard: clause.guard, body: makeAST(EBlock([ makeAST(EIf(outerCond, inner, makeAST(EVar("acc")))), makeAST(EVar("acc")) ])) }]));
+                        var reduceInput = makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [listExpr]));
+                        var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [reduceInput, makeAST(EList([])), reducer]));
+                        var out2:Array<ElixirAST> = [];
+                        for (i in 0...stmts.length) {
+                            if (i == initIdx) out2.push(reduceCall) else if (i == eachIdx || i == stmts.length - 1) {} else out2.push(stmts[i]);
+                        }
+                        return makeASTWithMeta(EBlock(out2), node.metadata, node.pos);
+                    }
+
+                    // Apply alias replacement to cleaned statements when present
+                    var normalizedStmts: Array<ElixirAST> = [];
+                    for (cs in cleanedStmts) {
+                        var cs2 = cs;
+                        if (localEntryAlias != null) cs2 = replaceVarInExpr(cs2, localEntryAlias, binder);
+                        normalizedStmts.push(cs2);
+                    }
+
+                    function rewriteAccAssign(s: ElixirAST): Null<ElixirAST> {
+                        return switch (s.def) {
+                            case EBinary(Match, left, rhs):
+                                switch (left.def) {
+                                    case EVar(lhs) if (lhs == temp):
+                                        switch (rhs.def) {
+                                            case ERemoteCall({def: EVar("Enum")}, "concat", [a0, a1]):
+                                                switch (a0.def) {
+                                                    case EVar(v0) if (v0 == temp):
+                                                        switch (a1.def) { case EList(items) if (items.length == 1): makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([items[0]])))); default: null; }
+                                                    default: null;
+                                                }
+                                            case EBinary(Concat, llist, rlist):
+                                                switch (llist.def) { case EVar(v1) if (v1 == temp): makeAST(EBinary(Concat, makeAST(EVar("acc")), rlist)); default: null; }
+                                            default: null;
+                                        }
+                                    default: null;
+                                }
+                            default: null;
+                        };
+                    }
+
+                    // Construct reduced body: traverse guarded conditionals and rewrite rebinds to acc = acc ++ [expr]
+                    function transformBody(expr: ElixirAST): ElixirAST {
+                        if (expr == null) return makeAST(EVar("acc"));
+                        return switch (expr.def) {
+                            case EIf(cond, thenBr, elseBr):
+                                // Try direct rewrite on original branches first
+                                var directThenAppend = rewriteAccAssign(thenBr);
+                                var directElseAppend = (elseBr == null) ? null : rewriteAccAssign(elseBr);
+                                var thenX = (directThenAppend != null) ? directThenAppend : transformBody(thenBr);
+                                var elseX = (elseBr == null) ? makeAST(EVar("acc")) : ((directElseAppend != null) ? directElseAppend : transformBody(elseBr));
+                                // If a branch boils down to an append expression, emit conditional acc append; else keep shape
+                                var thenAppend = rewriteAccAssign(thenX);
+                                var elseAppend = rewriteAccAssign(elseX);
+                                if (thenAppend != null && elseAppend == null) {
+                                    // if cond do acc ++ [expr] else acc end
+                                    makeAST(EIf(cond, thenAppend, makeAST(EVar("acc"))));
+                                } else if (thenAppend != null && elseAppend != null) {
+                                    // both sides append; keep original if; result expression is chosen by branch
+                                    makeAST(EIf(cond, thenAppend, elseAppend));
+                                } else {
+                                    // keep structure but ensure branches produce accumulator
+                                    var keptElse = (elseBr == null) ? makeAST(EVar("acc")) : transformBody(elseBr);
+                                    makeAST(EIf(cond, transformBody(thenBr), keptElse));
+                                }
+                            case EBlock(ss):
+                                var out:Array<ElixirAST> = [];
+                                for (s in ss) {
+                                    var r = transformBody(s);
+                                    // Drop standalone sentinels
+                                    switch (r.def) {
+                                        case EInteger(v) if (v == 0 || v == 1):
+                                        case EFloat(f) if (f == 0.0):
+                                        default: out.push(r);
+                                    }
+                                }
+                                makeAST(EBlock(out));
+                            default:
+                                expr;
+                        };
+                    }
+
+                    // Rebuild a body AST from normalized statements
+                    var bodyForTransform: ElixirAST = (normalizedStmts.length == 1) ? normalizedStmts[0] : makeAST(EBlock(normalizedStmts));
+                    var rewrittenBody = transformBody(bodyForTransform);
+                    // Ensure the final expression of the reducer returns acc
+                    var reducerBody = switch (rewrittenBody.def) {
+                        case EBlock(ss):
+                            var needTail = true;
+                            if (ss.length > 0) switch (ss[ss.length - 1].def) { case EVar(nm) if (nm == "acc"): needTail = false; default: }
+                            makeAST(needTail ? EBlock(ss.concat([makeAST(EVar("acc"))])) : EBlock(ss));
+                        default:
+                            var lastIsAcc = switch (rewrittenBody.def) { case EVar(nm2) if (nm2 == "acc"): true; default: false; };
+                            lastIsAcc ? rewrittenBody : makeAST(EBlock([rewrittenBody, makeAST(EVar("acc"))]));
+                    };
+
+                    // Final sanitation on reducer body:
+                    // - Replace any lingering temp rebinds with acc-based concat
+                    // - Replace local entry alias with binder if still present
+                    reducerBody = ElixirASTTransformer.transformNode(reducerBody, function(t: ElixirAST): ElixirAST {
+                        return switch (t.def) {
+                            case EBinary(Match, leftT, rhsT):
+                                switch (leftT.def) {
+                                    case EVar(lhsT) if (lhsT == temp):
+                                        // Normalize to acc = acc ++ [expr] when possible
+                                        var repl = rewriteAccAssign(t);
+                                        if (repl != null) makeASTWithMeta(EBinary(Match, makeAST(EVar("acc")), repl), t.metadata, t.pos) else t;
+                                    default: t;
+                                }
+                            default: t;
+                        };
+                    });
+                    if (localEntryAlias != null) reducerBody = replaceVarInExpr(reducerBody, localEntryAlias, binder);
+
+                    var reducer = makeAST(EFn([{ args: [PVar(safeBinder(binder)), PVar("acc")], guard: clause.guard, body: reducerBody }]));
+                    // If presence shape detected, prefer Map.values(listExpr)
+                    var reduceInput = presenceShape ? makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [listExpr])) : listExpr;
+                    var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [reduceInput, makeAST(EList([])), reducer]));
+
+                    // Emit new block: replace init with reduceCall; drop each and final temp
+                    var out:Array<ElixirAST> = [];
+                    for (i in 0...stmts.length) {
+                        if (i == initIdx) {
+                            // Replace init with reduce result; do not include original init
+                            out.push(reduceCall);
+                        } else if (i == eachIdx || i == stmts.length - 1) {
+                            // drop Enum.each and final temp return
+                        } else out.push(stmts[i]);
+                    }
+                    makeASTWithMeta(EBlock(out), node.metadata, node.pos);
+
                 default:
                     node;
             }

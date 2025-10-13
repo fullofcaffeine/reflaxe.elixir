@@ -274,6 +274,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.inlineTempBindingInExprPass
         });
 
+        // Presence reduce rewrite very early to catch Enum.each over presence maps before other list rewrites
+        passes.push({
+            name: "PresenceReduceRewrite(VeryEarly)",
+            description: "Rewrite Presence Enum.each + Reflect.fields/Map.get scans to Enum.reduce(Map.values(map), [], ...) with conditional append",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
+        });
+
         // Debug: XRay map field values that contain EBlock
         passes.push({
             name: "XRayMapBlocks",
@@ -1709,6 +1717,13 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceERawTransforms.erawPresenceKeysNormalizePass
         });
+        // Presence list-building reduce rewrite
+        passes.push({
+            name: "PresenceReduceRewrite",
+            description: "Rewrite Presence Enum.each + Reflect.fields list construction to Enum.reduce(Map.values(map), [], ...) with conditional append",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
+        });
         // Safety net: qualify bare SafePubSub to Phoenix.SafePubSub
         passes.push({
             name: "SafePubSubAliasFix",
@@ -2029,11 +2044,24 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapJoinRewritePass
         });
+        // Presence reduce rewrite (early) to catch Presence.list scans before generic rewrites
+        passes.push({
+            name: "PresenceReduceRewrite(Early)",
+            description: "Rewrite Presence Enum.each + Reflect.fields to Enum.reduce(Map.values(map), [], ...) with conditional append (early)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
+        });
         passes.push({
             name: "MapConcatEachToMapAssign",
             description: "Rewrite temp=[], Enum.each(... temp=Enum.concat(temp,[expr]) ...) → temp = Enum.map(list, fn -> expr) end",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapConcatEachToMapAssignPass
+        });
+        passes.push({
+            name: "ConcatEachToReduce",
+            description: "Rewrite temp=[], Enum.each(... if cond do temp=concat(temp,[expr]) end ...) → Enum.reduce(list, [], ...)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.concatEachToReducePass
         });
         passes.push({
             name: "FindRewrite",
@@ -2090,6 +2118,20 @@ class ElixirASTTransformer {
             description: "Replace unused local rebinds in EFn bodies with wildcard assignment",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnLocalAssignDiscardTransforms.discardPass
+        });
+        // Simplify chained assignments in def/defp when inner var is unused later in block
+        passes.push({
+            name: "BlockAssignChainSimplify(Final)",
+            description: "Rewrite outer = inner = expr → outer = expr when inner is unused later in function block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FunctionHygieneTransforms.blockAssignChainSimplifyPass
+        });
+        // Drop top-level numeric sentinel literals in function bodies
+        passes.push({
+            name: "FunctionTopLevelSentinelCleanup(Final)",
+            description: "Remove bare 1/0/0.0 statements at top-level in def/defp bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FunctionHygieneTransforms.functionTopLevelSentinelCleanupPass
         });
         passes.push({
             name: "TupleLhsDiscard(Final)",
