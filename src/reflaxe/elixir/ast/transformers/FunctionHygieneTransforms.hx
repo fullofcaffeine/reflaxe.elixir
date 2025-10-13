@@ -32,6 +32,9 @@ class FunctionHygieneTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
+                    #if debug_hygiene
+                    Sys.println('[BlockAssignChainSimplify] visiting def ' + name);
+                    #end
                     var newBody = simplifyChainsInBody(body);
                     makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
                 default:
@@ -51,10 +54,42 @@ class FunctionHygieneTransforms {
                             switch (rhsOuter.def) {
                                 case EBinary(Match, leftInner, expr):
                                     var innerName: Null<String> = switch (leftInner.def) { case EVar(n): n; default: null; };
+                                    var outerName: Null<String> = switch (leftOuter.def) { case EVar(n2): n2; default: null; };
+                                    #if debug_hygiene
+                                    Sys.println('[BlockAssignChainSimplify] chain detected outer=' + (outerName == null ? 'null' : outerName) + ', inner=' + (innerName == null ? 'null' : innerName));
+                                    #end
+                                    // Rule A: drop inner temp if not used later → outer = expr
                                     if (innerName != null && !usedLater(stmts, i + 1, innerName)) {
+                                        #if debug_hygiene
+                                        Sys.println('[BlockAssignChainSimplify] dropping inner temp ' + innerName);
+                                        #end
                                         out.push(makeAST(EBinary(Match, leftOuter, expr)));
                                         continue;
-                                    } else out.push(s);
+                                    }
+                                    // Rule B: drop outer temp if not used later → inner = expr
+                                    if (outerName != null && !usedLater(stmts, i + 1, outerName)) {
+                                        #if debug_hygiene
+                                        Sys.println('[BlockAssignChainSimplify] dropping outer temp ' + outerName);
+                                        #end
+                                        out.push(makeAST(EBinary(Match, leftInner, expr)));
+                                        continue;
+                                    }
+                                    out.push(s);
+                                case EMatch(patInner, expr2):
+                                    var innerName2: Null<String> = switch (patInner) { case PVar(n3): n3; default: null; };
+                                    var outerName2: Null<String> = switch (leftOuter.def) { case EVar(n4): n4; default: null; };
+                                    #if debug_hygiene
+                                    Sys.println('[BlockAssignChainSimplify] chain (EMatch) detected outer=' + (outerName2 == null ? 'null' : outerName2) + ', inner=' + (innerName2 == null ? 'null' : innerName2));
+                                    #end
+                                    if (innerName2 != null && !usedLater(stmts, i + 1, innerName2)) {
+                                        out.push(makeAST(EBinary(Match, leftOuter, expr2)));
+                                        continue;
+                                    }
+                                    if (outerName2 != null && !usedLater(stmts, i + 1, outerName2)) {
+                                        out.push(makeAST(EMatch(patInner, expr2)));
+                                        continue;
+                                    }
+                                    out.push(s);
                                 default:
                                     out.push(s);
                             }
@@ -76,20 +111,25 @@ class FunctionHygieneTransforms {
     static function stmtUsesVar(n: ElixirAST, name: String): Bool {
         var found = false;
 
-        // Helper: check if a char is an identifier character
         inline function isIdentChar(c: String): Bool {
             if (c == null || c.length == 0) return false;
             var ch = c.charCodeAt(0);
-            // 0-9, A-Z, a-z, underscore
             return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
         }
 
-        ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
+        function walk(x: ElixirAST, inPattern: Bool): Void {
+            if (x == null || found) return;
             switch (x.def) {
-                case EVar(v) if (v == name):
-                    found = true;
+                case EVar(v):
+                    // Count only expression-position vars, ignore pattern binders
+                    if (!inPattern && v == name) { found = true; return; }
+                case EBinary(Match, left, rhs):
+                    // Do not descend into left (pattern); only inspect RHS
+                    walk(rhs, false);
+                case EMatch(pat, rhs2):
+                    // Pattern match form: ignore pattern
+                    walk(rhs2, false);
                 case ERaw(code):
-                    // Detect bare token occurrences in raw Elixir code
                     if (name != null && name.length > 0 && name.charAt(0) != '_') {
                         var start = 0;
                         while (!found) {
@@ -100,18 +140,21 @@ class FunctionHygieneTransforms {
                             var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
                             var beforeIsIdent = isIdentChar(before);
                             var afterIsIdent = isIdentChar(after);
-                            if (!beforeIsIdent && !afterIsIdent) {
-                                found = true;
-                                break;
-                            } else {
-                                start = i + name.length;
-                            }
+                            if (!beforeIsIdent && !afterIsIdent) { found = true; break; }
+                            start = i + name.length;
                         }
                     }
+                case EBlock(ss): for (s in ss) walk(s, false);
+                case EDo(ss2): for (s in ss2) walk(s, false);
+                case EIf(c,t,e): walk(c, false); walk(t, false); if (e != null) walk(e, false);
+                case EBinary(_, l, r): walk(l, false); walk(r, false);
+                case ECall(tgt, _, args): if (tgt != null) walk(tgt, false); for (a in args) walk(a, false);
+                case ERemoteCall(tgt2, _, args2): walk(tgt2, false); for (a2 in args2) walk(a2, false);
+                case ECase(expr, cs): walk(expr, false); for (c in cs) walk(c.body, false);
                 default:
             }
-            return x;
-        });
+        }
+        walk(n, false);
         return found;
     }
 

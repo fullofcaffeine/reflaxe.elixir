@@ -2035,6 +2035,12 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignChainPruneTransforms.prunePass
         });
+        passes.push({
+            name: "AssignChainGenericSimplify(Final)",
+            description: "Simplify nested match chains by dropping unused side (generic)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.simplifyPass
+        });
 
         // Qualify struct literals passed to changeset/2 inside <App>Web.* modules
         passes.push({
@@ -2323,6 +2329,120 @@ class ElixirASTTransformer {
             description: "Canonicalize append inside Enum.reduce: alias concat -> acc concat; alias element -> binder",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceAppendCanonicalizeTransforms.transformPass
+        });
+
+        // Ultra-final guard: ensure any lingering alias self-append inside two-arg anonymous functions
+        // are rewritten to canonical acc = Enum.concat(acc, list)
+        passes.push({
+            name: "AccAliasLateRewrite(UltraFinal)",
+            description: "Rewrite alias self-append to acc within any two-arg EFn (ultra-final safety)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.transformPass
+        });
+
+        // Ultra-final strict reduce fixer: if a reduce body still contains alias self-append,
+        // rebuild it to canonical acc concat + acc return (structural, name-agnostic)
+        passes.push({
+            name: "ReduceStrictSelfAppendRewrite(UltraFinal)",
+            description: "Rebuild reduce body to acc concat when alias self-append detected (structural)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms.transformPass
+        });
+
+        // ERaw reduce canonicalization: normalize alias concat and binder alias inside ERaw reduce bodies
+        passes.push({
+            name: "ReduceERawAliasCanonicalize(UltraFinal)",
+            description: "Canonicalize alias concat and binder alias inside ERaw Enum.reduce bodies (ultra-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.transformPass
+        });
+
+        // Ultra-final hygiene: underscore case binders immediately rebound before any use
+        passes.push({
+            name: "CaseBinderRebindUnderscore(UltraFinal)",
+            description: "In case arms, underscore binders that are immediately rebound before use",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBinderRebindUnderscoreTransforms.pass
+        });
+
+        // Ultra-final numeric sentinel dropper to ensure removal after late rewrites
+        passes.push({
+            name: "DropStandaloneLiteralOne(UltraFinal)",
+            description: "Drop stray 1/0/0.0 literals in blocks, do-blocks, EFn bodies (ultra-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+        });
+        passes.push({
+            name: "DropTempNilAssign(UltraFinal)",
+            description: "Drop thisN/_thisN = nil sentinel assignments",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
+        });
+        passes.push({
+            name: "LocalAssignUnderscoreLate(UltraFinal)",
+            description: "Underscore local assigns when unused later; also nested inner assigns",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalAssignUnderscoreLateTransforms.pass
+        });
+        passes.push({
+            name: "EFnTempChainSimplify(UltraFinal)",
+            description: "Inside EFn, rewrite var=nil; var=expr; var → expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnTempChainSimplifyTransforms.pass
+        });
+        passes.push({
+            name: "TrailingTempReturnSimplify(UltraFinal)",
+            description: "Replace trailing temp returns with the rhs expression",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.pass
+        });
+        passes.push({
+            name: "NestedAssignCollapseGlobal(UltraFinal)",
+            description: "Collapse nested chain assignments outer=(inner=expr) → outer=expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.NestedAssignCollapseGlobalTransforms.pass
+        });
+        passes.push({
+            name: "DefTrailingAssignedVarReturn(UltraFinal)",
+            description: "Append trailing var when last statement is assignment to non-temp",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefTrailingAssignedVarReturnTransforms.pass
+        });
+        passes.push({
+            name: "EctoChangesetReturnFix(UltraFinal)",
+            description: "Ensure changeset/2 returns cs at the end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoChangesetReturnFixTransforms.pass
+        });
+        passes.push({
+            name: "ChangesetChainCleanup(UltraFinal)",
+            description: "Collapse changeset nested assigns cs/thisN → direct cs assign",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.pass
+        });
+        passes.push({
+            name: "BlockUnusedAssignmentDiscard(UltraFinal)",
+            description: "Rewrite var = expr to _ = expr in function bodies when var unused later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BlockUnusedAssignmentDiscardTransforms.pass
+        });
+        passes.push({
+            name: "ChangesetEnsureReturn(UltraFinal)",
+            description: "Ensure functions building Ecto.Changeset return last assigned var",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms.pass
+        });
+        passes.push({
+            name: "TempAssignFlattenGlobal(UltraFinal)",
+            description: "Flatten temp alias chains globally: outer=(temp=expr) → outer=expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TempAssignFlattenGlobalTransforms.pass
+        });
+        passes.push({
+            name: "DefParamUnusedUnderscoreSafe(UltraFinal)",
+            description: "Underscore unused def parameters when truly unused (safe)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass
         });
 
         // Return only enabled passes

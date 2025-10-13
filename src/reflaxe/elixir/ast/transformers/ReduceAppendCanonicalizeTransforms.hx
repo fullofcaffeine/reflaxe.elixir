@@ -172,11 +172,11 @@ class ReduceAppendCanonicalizeTransforms {
                                 if (localRewrote) didRewrite = true;
                                 newBody.push(rewritten);
                             }
-                            // Fallback: If no specific statement was rewritten but an alias exists,
-                            // and there is any Enum.concat(_, list) call in the body, rebuild body as
+                            // Fallback: If no specific statement was rewritten but there is any
+                            // Enum.concat(_, list) call in the body, rebuild body as
                             // acc = Enum.concat(acc, list') ; acc
                             var usedSpecificRewrite = didRewrite;
-                            if (!usedSpecificRewrite && elementAlias != null) {
+                            if (!usedSpecificRewrite) {
                                 Sys.println('[ReduceAppendCanonicalize] entering fallback with alias=' + elementAlias);
                                 var foundList:Null<ElixirAST> = null;
                                 var foundExpr:Null<ElixirAST> = null;
@@ -199,7 +199,9 @@ class ReduceAppendCanonicalizeTransforms {
                                     if (foundList != null) break;
                                 }
                                 Sys.println('[ReduceAppendCanonicalize] fallback foundList=' + (foundList == null ? 'null' : ElixirASTPrinter.print(foundList, 0)) + ', foundExpr=' + (foundExpr == null ? 'null' : ElixirASTPrinter.print(foundExpr, 0)));
-                                if (foundList != null || foundExpr != null) {
+                                // Guard: only rebuild if body currently returns acc
+                                var returnsAcc = switch (bodyStmts.length > 0 ? bodyStmts[bodyStmts.length - 1].def : ENil) { case EVar(v) if (v == accName): true; default: false; };
+                                if ((foundList != null || foundExpr != null) && returnsAcc) {
                                     var listNode:ElixirAST = (foundList != null) ? foundList : makeAST(EList([foundExpr]));
                                     var listPrime = (elementAlias == null) ? listNode : ElixirASTTransformer.transformNode(listNode, function(w: ElixirAST): ElixirAST {
                                         return switch (w.def) {

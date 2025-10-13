@@ -84,6 +84,14 @@ Elixir Code Strings
 Generated .ex Files
 ```
 
+## 🔧 Transformer Overview (Read Me First for Pass Work)
+
+We use many small, ordered AST transforms because Haxe→Elixir spans imperative→functional and OOP→modules/structs paradigms. Each pass is single‑purpose, shape‑based, and runs in a specific phase (Final/Absolute/UltraFinal) to harmonize residual shapes without app heuristics. For a concise map of the key passes, ordering, and safety rules, see:
+
+- docs/03-compiler-development/transformers-overview.md
+
+When adding/updating a pass: include hxdoc WHAT/WHY/HOW/EXAMPLES, keep it shape‑based and under 2,000 LOC, and link snapshots in the hxdoc block.
+
 ## 📝 Code Quality Standards
 
 ### Pattern Matching Readability (NEW STANDARD)
