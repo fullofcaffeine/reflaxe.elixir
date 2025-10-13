@@ -211,6 +211,20 @@ Example hxdoc template:
 - Add focused snapshots where output semantics change; include intended/ regression coverage.
 - Follow idiomatic Phoenix/Ecto/OTP patterns; never introduce fake APIs.
 
+### New Entities Documentation Policy (Required)
+
+- Document every new compiler entity thoroughly at creation time. This applies to:
+  - Transformers, builder helpers, printer rules, analyzers, macros, passes, and shims
+  - Any new public types/externs in std/phoenix/ecto or vendor surfaces we expose
+- Each entity must include hxdoc (or module-level doc) with:
+  - WHAT: Concise description and exact scope/guards (shape/API-based)
+  - WHY: Architectural rationale and the concrete problem it solves
+  - HOW: High-level algorithm, where it runs in the pipeline, and ordering assumptions
+  - EXAMPLES: Minimal Haxe input → before/after Elixir output (focused on changed shape)
+- Cross-reference tests: note the snapshot(s) that cover the change and intended behavior
+- Note limitations and non-goals explicitly to prevent scope creep and name heuristics
+- Keep docs in-source (hxdoc) and, when cross-cutting, add a short pointer in `docs/03-compiler-development/`
+
 ### Hard Rule: No App-Specific Name Heuristics
 
 - Never key transforms on variable names, atoms, tags, or strings tied to examples/domains (e.g., "todo", "updated_todo", "toggle_todo", "cancel_edit", "presenceSocket", "live_socket").

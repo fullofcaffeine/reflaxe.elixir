@@ -75,8 +75,41 @@ class FunctionHygieneTransforms {
 
     static function stmtUsesVar(n: ElixirAST, name: String): Bool {
         var found = false;
+
+        // Helper: check if a char is an identifier character
+        inline function isIdentChar(c: String): Bool {
+            if (c == null || c.length == 0) return false;
+            var ch = c.charCodeAt(0);
+            // 0-9, A-Z, a-z, underscore
+            return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+        }
+
         ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
-            switch (x.def) { case EVar(v) if (v == name): found = true; default: }
+            switch (x.def) {
+                case EVar(v) if (v == name):
+                    found = true;
+                case ERaw(code):
+                    // Detect bare token occurrences in raw Elixir code
+                    if (name != null && name.length > 0 && name.charAt(0) != '_') {
+                        var start = 0;
+                        while (!found) {
+                            var i = code.indexOf(name, start);
+                            if (i == -1) break;
+                            var before = i > 0 ? code.substr(i - 1, 1) : null;
+                            var afterIdx = i + name.length;
+                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                            var beforeIsIdent = isIdentChar(before);
+                            var afterIsIdent = isIdentChar(after);
+                            if (!beforeIsIdent && !afterIsIdent) {
+                                found = true;
+                                break;
+                            } else {
+                                start = i + name.length;
+                            }
+                        }
+                    }
+                default:
+            }
             return x;
         });
         return found;
@@ -131,4 +164,3 @@ class FunctionHygieneTransforms {
 }
 
 #end
-

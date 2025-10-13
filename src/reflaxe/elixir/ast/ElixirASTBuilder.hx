@@ -3817,8 +3817,38 @@ class ElixirASTBuilder {
                                     #end
                                     #end
                                     
-                                    // Return the expanded raw Elixir code
-                                    return makeAST(ERaw(processedCode));
+                                    // Collect variable references from substituted argument ASTs
+                                    var referencedVars = new Map<String, Bool>();
+
+                                    inline function collectVars(ast: ElixirAST): Void {
+                                        if (ast == null) return;
+                                        ElixirASTTransformer.transformNode(ast, function(x: ElixirAST): ElixirAST {
+                                            switch (x.def) {
+                                                case EVar(v): referencedVars.set(v, true);
+                                                default:
+                                            }
+                                            return x;
+                                        });
+                                    }
+
+                                    // Scan all method arguments for variable references
+                                    // Note: 'thisAst' and each 'argAst' were built above when substituting
+                                    // We conservatively rebuild to ensure coverage
+                                    var tmpThisAst = buildFromTypedExpr(thisExpr, context);
+                                    collectVars(tmpThisAst);
+                                    for (mi in 0...methodArgs.length) {
+                                        var tmpArgAst = buildFromTypedExpr(methodArgs[mi], context);
+                                        collectVars(tmpArgAst);
+                                    }
+
+                                    // Prepare metadata with raw variable references
+                                    var meta: Dynamic = {};
+                                    var names: Array<String> = [];
+                                    for (k in referencedVars.keys()) names.push(k);
+                                    Reflect.setField(meta, "rawVarRefs", names);
+
+                                    // Return the expanded raw Elixir code with metadata for hygiene
+                                    return makeASTWithMeta(ERaw(processedCode), meta, expr.pos);
                                     
                                 default:
                                     #if debug_elixir_injection

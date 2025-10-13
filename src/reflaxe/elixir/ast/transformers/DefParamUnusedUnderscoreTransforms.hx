@@ -51,17 +51,37 @@ class DefParamUnusedUnderscoreTransforms {
         return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
             return switch (x.def) {
                 case EDef(name, args, guards, body):
-                    var used = collectUsedNames(body);
+                    var paramNames = extractParamNames(args);
+                    var used = collectUsedNames(body, paramNames);
                     var newArgs = underscoreUnusedParams(args, used);
                     makeASTWithMeta(EDef(name, newArgs, guards, body), x.metadata, x.pos);
                 case EDefp(name, args2, guards2, body2):
-                    var used2 = collectUsedNames(body2);
+                    var paramNames2 = extractParamNames(args2);
+                    var used2 = collectUsedNames(body2, paramNames2);
                     var newArgs2 = underscoreUnusedParams(args2, used2);
                     makeASTWithMeta(EDefp(name, newArgs2, guards2, body2), x.metadata, x.pos);
                 default:
                     x;
             }
         });
+    }
+
+    static function extractParamNames(args: Array<EPattern>): Array<String> {
+        var names: Array<String> = [];
+        function visit(p: EPattern): Void {
+            switch (p) {
+                case PVar(n): if (n != null && n.length > 0) names.push(n);
+                case PTuple(es): for (e in es) visit(e);
+                case PList(es): for (e in es) visit(e);
+                case PCons(h, t): visit(h); visit(t);
+                case PMap(kvs): for (kv in kvs) visit(kv.value);
+                case PStruct(_, fs): for (f in fs) visit(f.value);
+                case PPin(inner): visit(inner);
+                default:
+            }
+        }
+        if (args != null) for (a in args) visit(a);
+        return names;
     }
 
     static function underscoreUnusedParams(args: Array<EPattern>, used: Map<String, Bool>): Array<EPattern> {
@@ -85,8 +105,36 @@ class DefParamUnusedUnderscoreTransforms {
         }
     }
 
-    static function collectUsedNames(body: ElixirAST): Map<String, Bool> {
+    static function collectUsedNames(body: ElixirAST, paramNames: Array<String>): Map<String, Bool> {
         var names = new Map<String, Bool>();
+        var paramSet = new Map<String, Bool>();
+        if (paramNames != null) for (pn in paramNames) if (pn != null && pn.length > 0) paramSet.set(pn, true);
+
+        inline function isIdentChar(c: String): Bool {
+            if (c == null || c.length == 0) return false;
+            var ch = c.charCodeAt(0);
+            return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+        }
+
+        inline function markTokenUsage(text: String): Void {
+            if (text == null) return;
+            for (pn in paramSet.keys()) {
+                if (pn == null || pn.length == 0 || pn.charAt(0) == '_') continue;
+                var start = 0;
+                while (true) {
+                    var i = text.indexOf(pn, start);
+                    if (i == -1) break;
+                    var before = i > 0 ? text.substr(i - 1, 1) : null;
+                    var afterIdx = i + pn.length;
+                    var after = afterIdx < text.length ? text.substr(afterIdx, 1) : null;
+                    if (!isIdentChar(before) && !isIdentChar(after)) {
+                        names.set(pn, true);
+                        break;
+                    }
+                    start = i + pn.length;
+                }
+            }
+        }
         function visit(n: ElixirAST): Void {
             if (n == null || n.def == null) return;
             switch (n.def) {
@@ -95,7 +143,11 @@ class DefParamUnusedUnderscoreTransforms {
                     // Naive interpolation check
                     if (s != null) scanInterpolation(s, names);
                 case ERaw(code):
-                    if (code != null) scanInterpolation(code, names);
+                    if (code != null) {
+                        scanInterpolation(code, names);
+                        // Also consider bare token usage of parameters in ERaw code
+                        markTokenUsage(code);
+                    }
                 case EList(els): for (el in els) visit(el);
                 case ETuple(els): for (el in els) visit(el);
                 case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }

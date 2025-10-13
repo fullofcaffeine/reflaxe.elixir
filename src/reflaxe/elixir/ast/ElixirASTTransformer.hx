@@ -1964,6 +1964,26 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });
+        // Extra absolute: promote underscore binders {:ok,_x} -> {:ok,x} when body references x
+        passes.push({
+            name: "CaseSuccessVarUnify(Absolute2)",
+            description: "Promote {:ok, _x} binder to {:ok, x} when body references x (extra absolute)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifyTransforms.transformPass
+        });
+        // Align success binder to single undefined var used in body (usage-driven, no heuristics)
+        passes.push({
+            name: "SuccessBinderAlignByBodyUse(Absolute)",
+            description: "Rename {:ok, binder} binder to the single undefined var used in body, if unambiguous",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
+        });
+        passes.push({
+            name: "SuccessVarAbsoluteReplaceUndefined(Absolute)",
+            description: "Final safety: replace any undefined lower-case var in {:ok, binder} clause body with binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
+        });
         // Absolute: rerun Enum.each sentinel cleanup after all earlier rewrites
         passes.push({
             name: "EnumEachSentinelCleanup(Absolute)",
@@ -2165,6 +2185,20 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
         });
+        // Avoid duplicate side-effect calls: reuse prior assignment as case scrutinee
+        passes.push({
+            name: "CaseCallReuse",
+            description: "Rewrite case Mod.func(args) to case tmp when tmp = Mod.func(args) was evaluated earlier in block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseCallReuseTransforms.transformPass
+        });
+        // Unify success var names when body references non-underscore variant
+        passes.push({
+            name: "CaseSuccessVarUnify",
+            description: "Rename {:ok, _x} -> {:ok, x} when body references x",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifyTransforms.transformPass
+        });
         passes.push({
             name: "FnArgBodyRefNormalize",
             description: "Normalize body references of underscored variants to declared non-underscore binder in anonymous functions",
@@ -2221,6 +2255,19 @@ class ElixirASTTransformer {
             description: "Rewrite outer = inner = expr → outer = expr when inner is unused later in function block",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.FunctionHygieneTransforms.blockAssignChainSimplifyPass
+        });
+        // Late sanitation of reduce bodies after most rewrites
+        passes.push({
+            name: "ReduceBodySanitize(Final)",
+            description: "Fix head extraction and accumulator rebinds inside Enum.reduce bodies; drop stray arithmetic (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceBodySanitizeTransforms.transformPass
+        });
+        passes.push({
+            name: "ReduceAccAliasUnify(Final)",
+            description: "Unify reduce accumulator alias (lhs = Enum.concat(lhs, ...)) to acc across reducer body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms.unifyPass
         });
         // Drop top-level numeric sentinel literals in function bodies
         passes.push({
