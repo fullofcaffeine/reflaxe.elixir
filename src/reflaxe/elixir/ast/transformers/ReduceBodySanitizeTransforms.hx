@@ -137,6 +137,7 @@ class ReduceBodySanitizeTransforms {
                                                 // temp = Enum.concat(temp, [expr])  → acc = Enum.concat(acc, [expr])
                                                 var lhs:Null<String> = switch (left.def) { case EVar(nm): nm; default: null; };
                                                 var isSelf = switch (cargs[0].def) { case EVar(nm2): (lhs != null && nm2 == lhs); default: false; };
+                                                Sys.println('[ReduceBodySanitize] concat lhs=' + (lhs == null ? 'null' : lhs) + ', arg0=' + (switch (cargs[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelf);
                                                 if (isSelf) {
                                                     var replLeft = makeAST(EVar(accName));
                                                     var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
@@ -155,6 +156,7 @@ class ReduceBodySanitizeTransforms {
                                                 // tmp = Enum.concat(tmp, [expr]) → acc = Enum.concat(acc, [expr])
                                                 var lhsNameM:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
                                                 var isSelfM = switch (cargsM[0].def) { case EVar(nm2): (lhsNameM != null && nm2 == lhsNameM); default: false; };
+                                                Sys.println('[ReduceBodySanitize] ematch concat lhs=' + (lhsNameM == null ? 'null' : lhsNameM) + ', arg0=' + (switch (cargsM[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelfM);
                                                 if (isSelfM) {
                                                     var newLeft = makeAST(EVar(accName));
                                                     var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargsM[1]]));
