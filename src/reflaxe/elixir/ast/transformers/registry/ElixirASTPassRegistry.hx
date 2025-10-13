@@ -7,7 +7,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer; // qualify local pass fns
  * ElixirASTPassRegistry
  *
  * WHAT
- * - Centralizes pass registration previously embedded in ElixirASTTransformer.getEnabledPasses.
+ * - Centralizes pass registration previously embedded in ElixirASTTransformer.alias_getEnabledPasses.
  *
  * WHY
  * - Keep ElixirASTTransformer under 2000 LOC; improve maintainability and ordering clarity.
@@ -26,7 +26,7 @@ class ElixirASTPassRegistry {
             name: "Identity",
             description: "Pass-through transformation (no changes)",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.identityPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_identityPass
         });
         
         // Resolve clause locals pass (must run very early to fix variable references)
@@ -42,7 +42,7 @@ class ElixirASTPassRegistry {
             name: "RemoveRedundantEnumExtraction",
             description: "Remove redundant elem() calls after pattern extraction in case clauses",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.removeRedundantEnumExtractionPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantEnumExtractionPass
         });
 
         // Throw statement transformation (must run early to fix complex expressions)
@@ -50,7 +50,7 @@ class ElixirASTPassRegistry {
             name: "ThrowStatementTransform",
             description: "Transform complex throw expressions to avoid syntax errors",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.throwStatementTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_throwStatementTransformPass
         });
         
         // Inline expansion fixes (should run very early to fix AST structure)
@@ -69,12 +69,20 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractTupleInlineAssignmentsPass
         });
         
+        // Extract inline assignments from map/keyword/struct literal values (must run early)
+        passes.push({
+            name: "ExtractLiteralValueInlineAssignments",
+            description: "Hoist inline assignments out of map/keyword/struct literal values to preceding block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractLiteralValueInlineAssignmentsPass
+        });
+        
         // Function reference transformation (must run early to add capture operators)
         passes.push({
             name: "FunctionReferenceTransform",
             description: "Transform function references to use capture operator (&Module.func/arity)",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.functionReferenceTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_functionReferenceTransformPass
         });
         
         // Bitwise import pass (should run early to add imports)
@@ -82,7 +90,7 @@ class ElixirASTPassRegistry {
             name: "BitwiseImport",
             description: "Add Bitwise import when bitwise operators are used",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.bitwiseImportPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_bitwiseImportPass
         });
         
         // Loop transformation pass (convert reduce_while patterns to idiomatic loops)
@@ -90,7 +98,7 @@ class ElixirASTPassRegistry {
             name: "LoopTransformation",
             description: "Transform non-idiomatic loop patterns (reduce_while with Stream.iterate) to idiomatic Enum operations and comprehensions",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.loopTransformationPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_loopTransformationPass
         });
 
         // Collapse simple temp-binding blocks in expression contexts
@@ -172,7 +180,7 @@ class ElixirASTPassRegistry {
             name: "PhoenixComponentImport",
             description: "Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it)",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.phoenixComponentImportPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixComponentImportPass
         });
         
         // LiveView CoreComponents import pass (should run after Phoenix Component)
@@ -180,7 +188,7 @@ class ElixirASTPassRegistry {
             name: "LiveViewCoreComponentsImport",
             description: "Add CoreComponents import for LiveView modules that use components",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.liveViewCoreComponentsImportPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_liveViewCoreComponentsImportPass
         });
         
         // Phoenix function name mapping pass (transforms assign_multiple to assign, etc.)
@@ -188,7 +196,7 @@ class ElixirASTPassRegistry {
             name: "PhoenixFunctionMapping",
             description: "Map custom function names to Phoenix conventions",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.phoenixFunctionMappingPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixFunctionMappingPass
         });
 
         // Inject `require Ecto.Query` in modules that call Ecto.Query macros (from/where/order_by/preload)
@@ -196,7 +204,7 @@ class ElixirASTPassRegistry {
             name: "EctoQueryRequireInjection",
             description: "Add `require Ecto.Query` to modules that use Ecto.Query macros",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.ectoQueryRequirePass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass
         });
         
         passes.push({
@@ -267,7 +275,7 @@ class ElixirASTPassRegistry {
             name: "GuardGrouping",
             description: "Transform multiple case clauses with same pattern and guards into cond",
             enabled: true,
-            pass: function(ast) return ElixirASTTransformer.guardGroupingPass(ast)
+            pass: function(ast) return ElixirASTTransformer.alias_guardGroupingPass(ast)
         });
         
         // Constant folding pass
@@ -276,7 +284,7 @@ class ElixirASTPassRegistry {
             name: "StringInterpolation",
             description: "Convert string concatenation to idiomatic string interpolation",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.stringInterpolationPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_stringInterpolationPass
         });
         
         // Loop variable restoration pass (must run after string interpolation)
@@ -284,7 +292,7 @@ class ElixirASTPassRegistry {
             name: "LoopVariableRestore",
             description: "Restore loop variables in string interpolations (fixes Haxe optimizer issue)",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.LoopVariableRestorer.restoreLoopVariablesPass
+            pass: reflaxe.elixir.ast.transformers.LoopVariableRestorer.restoreLoopVariablesPass
         });
 
         #if !disable_constant_folding
@@ -292,7 +300,7 @@ class ElixirASTPassRegistry {
             name: "ConstantFolding",
             description: "Fold constant expressions at compile time",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.constantFoldingPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_constantFoldingPass
         });
         #end
         
@@ -301,7 +309,7 @@ class ElixirASTPassRegistry {
             name: "ConditionalReassignment",
             description: "Convert conditional reassignments to functional style",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.conditionalReassignmentPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_conditionalReassignmentPass
         });
         
         // Remove redundant nil initialization pass (should run before pipeline optimization)
@@ -309,7 +317,7 @@ class ElixirASTPassRegistry {
             name: "RemoveRedundantNilInit",
             description: "Remove redundant nil initialization when variable is immediately reassigned",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.removeRedundantNilInitPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantNilInitPass
         });
         
         // String method transformation pass (before pipeline optimization)
@@ -321,7 +329,7 @@ class ElixirASTPassRegistry {
             name: "StringMethodTransform",
             description: "Convert string method calls to String module calls",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.stringMethodTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_stringMethodTransformPass
         });
         */
         
@@ -331,7 +339,7 @@ class ElixirASTPassRegistry {
             name: "PipelineOptimization",
             description: "Convert sequential operations to pipeline",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.pipelineOptimizationPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_pipelineOptimizationPass
         });
         #end
         
@@ -340,7 +348,7 @@ class ElixirASTPassRegistry {
             name: "InstanceMethodTransform",
             description: "Transform instance.method() to Module.function(instance) for stdlib types",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.instanceMethodTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_instanceMethodTransformPass
         });
 
         // Normalize zero-arity Module.new() to struct literals (context-aware app prefix)
@@ -391,7 +399,7 @@ class ElixirASTPassRegistry {
             name: "ComprehensionConversion",
             description: "Convert imperative loops to comprehensions",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.comprehensionConversionPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_comprehensionConversionPass
         });
         #end
         
@@ -402,7 +410,7 @@ class ElixirASTPassRegistry {
             name: "UnrolledComprehensionOptimization",
             description: "Optimize unrolled array comprehensions with bare concatenations",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.unrolledComprehensionOptimizationPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_unrolledComprehensionOptimizationPass
         });
         */
         
@@ -411,7 +419,7 @@ class ElixirASTPassRegistry {
             name: "ListEffectLifting",
             description: "Lift side-effecting expressions out of list literals",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.listEffectLiftingPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_listEffectLiftingPass
         });
         
         // Immutability transformation pass
@@ -420,7 +428,7 @@ class ElixirASTPassRegistry {
             name: "ImmutabilityTransform",
             description: "Convert mutable patterns to immutable",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.immutabilityTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_immutabilityTransformPass
         });
         #end
         
@@ -429,7 +437,7 @@ class ElixirASTPassRegistry {
             name: "NullCoalescingInline",
             description: "Convert null coalescing blocks to inline expressions",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.nullCoalescingInlinePass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_nullCoalescingInlinePass
         });
         
         // Statement context transformation pass (MUST run after immutability)
@@ -440,7 +448,7 @@ class ElixirASTPassRegistry {
             name: "StatementContextTransform",
             description: "Add reassignments for immutable operations in statement context",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.statementContextTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_statementContextTransformPass
         });
         #end
         
@@ -449,7 +457,7 @@ class ElixirASTPassRegistry {
             name: "SelfReferenceTransform",
             description: "Convert self/this references to struct parameter",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.selfReferenceTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_selfReferenceTransformPass
         });
         
         // Struct field assignment transformation pass
@@ -457,7 +465,7 @@ class ElixirASTPassRegistry {
             name: "StructFieldAssignmentTransform",
             description: "Convert struct field assignments to struct update syntax",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.structFieldAssignmentTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_structFieldAssignmentTransformPass
         });
 
         passes.push({
@@ -530,7 +538,7 @@ class ElixirASTPassRegistry {
             name: "FluentApiOptimization",
             description: "Optimize fluent API patterns to avoid unused struct assignments",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.fluentApiOptimizationPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_fluentApiOptimizationPass
         });
 
         // Array length field to function transformation (must run early to fix field access)
@@ -538,7 +546,7 @@ class ElixirASTPassRegistry {
             name: "ArrayLengthFieldToFunction",
             description: "Transform array.length field access to length(array) function calls",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.arrayLengthFieldToFunctionPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_arrayLengthFieldToFunctionPass
         });
 
         // DateTime method rewrite: now.to_iso8601() -> DateTime.to_iso8601(now)
@@ -554,7 +562,7 @@ class ElixirASTPassRegistry {
             name: "TupleElemFieldToFunction",
             description: "Transform tuple.elem field access to elem(tuple, index) function calls",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.tupleElemFieldToFunctionPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_tupleElemFieldToFunctionPass
         });
         
         // Idiomatic enum pattern matching transformation (must run before underscore cleanup)
@@ -562,7 +570,7 @@ class ElixirASTPassRegistry {
             name: "IdiomaticEnumPatternMatching",
             description: "Transform enum tuple access patterns to idiomatic pattern matching",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.idiomaticEnumPatternMatchingPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_idiomaticEnumPatternMatchingPass
         });
         
         // Pattern matching transformation pass (comprehensive switch→case conversion)
@@ -1259,7 +1267,7 @@ class ElixirASTPassRegistry {
             name: "UnderscoreVariableCleanup",
             description: "Remove underscore prefix from used temporary variables",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.underscoreVariableCleanupPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_underscoreVariableCleanupPass
         });
         #end
         
@@ -1268,7 +1276,7 @@ class ElixirASTPassRegistry {
             name: "AbstractMethodThis",
             description: "Fix 'this' references in abstract methods",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.abstractMethodThisPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_abstractMethodThisPass
         });
         
         // Supervisor options transformation pass (convert maps to keyword lists)
@@ -1277,7 +1285,7 @@ class ElixirASTPassRegistry {
             name: "SupervisorOptionsTransform",
             description: "Convert supervisor option maps to keyword lists",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.supervisorOptionsTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_supervisorOptionsTransformPass
         });
         #end
         
@@ -1287,7 +1295,7 @@ class ElixirASTPassRegistry {
             name: "OTPChildSpecTransform",
             description: "Convert enum-based child specs to proper OTP child specifications",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.otpChildSpecTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_otpChildSpecTransformPass
         });
         #end
         
@@ -1300,7 +1308,7 @@ class ElixirASTPassRegistry {
             name: "PrefixUnusedParameters", 
             description: "Prefix unused function parameters with underscore to follow Elixir conventions",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.prefixUnusedParametersPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_prefixUnusedParametersPass
         });
         */
         
@@ -1348,7 +1356,7 @@ class ElixirASTPassRegistry {
             name: "FixBareConcatenations",
             description: "Convert bare concatenations in blocks to assignments",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.fixBareConcatenationsPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_fixBareConcatenationsPass
         });
 
         // Final safeguard: rewrite any remaining free assign(socket, map) to Component.assign(socket, map)
@@ -1926,7 +1934,7 @@ class ElixirASTPassRegistry {
             name: "HeexContentInline",
             description: "Inline ~H content to avoid accessing local variables inside templates",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.heexContentInlinePass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
         });
 
         // Robust sweep: inline when raw(content) pattern wasn't caught by structural match
@@ -1942,7 +1950,7 @@ class ElixirASTPassRegistry {
             name: "NumericNoOpCleanup",
             description: "Remove standalone numeric ops like 0 + 1 and convert bare count + 1 to assignments",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.numericNoOpCleanupPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_numericNoOpCleanupPass
         });
         // Late sweep: drop sentinels inside Enum.each bodies
         passes.push({
@@ -2124,7 +2132,7 @@ class ElixirASTPassRegistry {
         //     name: "PatternVariableOriginAnalysis",
         //     description: "Use VarOrigin metadata to properly handle pattern variables vs temp extraction variables",
         //     enabled: false,
-        //     pass: reflaxe.elixir.ast.ElixirASTTransformer.null // patternVariableOriginAnalysisPass
+        //     pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_null // patternVariableOriginAnalysisPass
         // });
 
         // Safety net: ensure `require Ecto.Query` after all late passes
@@ -2132,7 +2140,7 @@ class ElixirASTPassRegistry {
             name: "EctoQueryRequireInjection(Final)",
             description: "Final sweep to inject `require Ecto.Query` in modules using Ecto.Query macros",
             enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.ectoQueryRequirePass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass
         });
 
         // Absolute success-case alignment: must run as the very last shape-affecting passes
