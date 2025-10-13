@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+
+echo "[pre-commit] Running name-heuristics guard..."
+"$ROOT_DIR/scripts/lint/name_heuristics_guard.sh"
+
+echo "[pre-commit] OK"
+

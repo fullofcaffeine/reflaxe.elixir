@@ -168,6 +168,12 @@ class LocalAssignUnderscoreLateTransforms {
                         if (inner.indexOf(name) != -1) { found = true; break; }
                         i2 = j2 + 1;
                     }
+                case EMap(pairs):
+                    for (p in pairs) {
+                        // traverse both key and value; keys are often atoms, but may be expressions
+                        if (!found) walk(p.key, false);
+                        if (!found) walk(p.value, false);
+                    }
                 case ETuple(elems): for (e in elems) walk(e, false);
                 case EKeywordList(pairs): for (p in pairs) walk(p.value, false);
                 case EStructUpdate(base, fields): walk(base, false); for (f in fields) walk(f.value, false);
