@@ -53,6 +53,10 @@
 -D reflaxe.elixir=0.1.0
 --macro reflaxe.elixir.CompilerInit.Start()
 
+# Debug specific late passes (temporary, development only)
+-D debug_success_unifier
+-D debug_presence
+
 # Main server classes to compile
 TodoApp
 TodoAppRouter

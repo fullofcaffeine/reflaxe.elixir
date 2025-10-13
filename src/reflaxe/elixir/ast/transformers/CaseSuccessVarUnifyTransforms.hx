@@ -61,13 +61,13 @@ class CaseSuccessVarUnifyTransforms {
                         collectNames(cl.body, used);
                         // Rewrite {:ok, _x} -> {:ok, x} when body references x
                         var newPattern:EPattern = cl.pattern;
-                        switch (cl.pattern) {
+                                switch (cl.pattern) {
                             case PTuple(parts) if (parts.length == 2):
                                 var firstIsOk = false;
                                 switch (parts[0]) {
                                     case PLiteral(lit):
                                         firstIsOk = switch (lit.def) {
-                                            case EAtom(val) if (val == ":ok"): true;
+                                            case EAtom(val) if (val == ":ok" || val == "ok"): true;
                                             default: false;
                                         };
                                     default:

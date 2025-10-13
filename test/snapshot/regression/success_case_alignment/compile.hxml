@@ -1,0 +1,7 @@
+-cp /REDACTED_LOCAL_PATH
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=/REDACTED_LOCAL_PATH
+
