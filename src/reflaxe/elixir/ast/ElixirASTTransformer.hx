@@ -2465,6 +2465,16 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass
         });
 
+        // Absolute final: promote `_ = rhs` to named binder using targeted usage detection
+        // WHY: Some late hygiene passes may discard necessary binders; restore them at the end
+        // SCOPE: Live modules and helpers; shape/usage-based, Phoenix-idiomatic only
+        passes.push({
+            name: "WildcardPromoteByUndeclaredUse(AbsoluteFinal)",
+            description: "Final promotion of `_ = rhs` to binder by targeted usage (length/assign/DateTime)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WildcardPromoteByUndeclaredUseTransforms.pass
+        });
+
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
     }

@@ -178,3 +178,7 @@ jobs:
       run: |
         # Verify all examples in docs compile
         echo "Documentation validation placeholder"
+
+    - name: Guardrails - No app-specific name heuristics
+      run: |
+        bash scripts/lint/name-heuristics-guard.sh
