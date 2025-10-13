@@ -59,7 +59,10 @@
     "test:help": "scripts/test-runner.sh --help",
     "clean:generated": "bash -c 'echo \"Cleaning compiler-generated files...\"; for dir in examples/*/lib test/snapshot/*/out test/snapshot/*/intended; do if [ -f \"$dir/_GeneratedFiles.json\" ]; then echo \"Processing $dir\"; (cd \"$dir\" && jq -r \".filesGenerated[]\" _GeneratedFiles.json 2>/dev/null | while read -r file; do if [ -f \"$file\" ]; then echo \"  Removing: $file\"; rm \"$file\"; fi; done); elif [ -d \"$dir\" ]; then echo \"Cleaning $dir (no manifest)\"; find \"$dir\" -name \"*.ex\" -type f -delete 2>/dev/null; fi; done; echo \"✓ Cleaned all compiler-generated files\"'",
     "setup": "lix scope create && lix install haxelib:reflaxe",
-    "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh"
+    "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh",
+    "guard:names": "bash scripts/lint/name_heuristics_guard.sh",
+    "ci:guards": "npm run guard:names && echo 'Name heuristics guard passed'",
+    "hooks:install": "bash scripts/install-git-hooks.sh"
   },
   "engines": {
     "node": ">=14.0.0"

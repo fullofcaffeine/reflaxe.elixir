@@ -2026,6 +2026,12 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
         });
         passes.push({
+            name: "EnumEachBinderIntegrity",
+            description: "Ensure Enum.each bodies use binder (not list[0]); promote wildcard binder when needed",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachBinderIntegrityPass
+        });
+        passes.push({
             name: "CountRewrite",
             description: "Rewrite accumulator-style counting loops to Enum.count(list, &pred/1)",
             enabled: true,
@@ -2108,6 +2114,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.fnArgBodyRefNormalizePass
         });
+        // Synthesize `query` binding when predicate references it and no prior binding exists
+        passes.push({
+            name: "FilterQueryBinderSynthesis",
+            description: "Insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FilterQueryBinderTransforms.synthesizeQueryBindingPass
+        });
         passes.push({
             name: "EFnArgCleanup(Final)",
             description: "Final cleanup of EFn arg/body underscore mismatches",
@@ -2132,6 +2145,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnLocalAssignDiscardTransforms.discardPass
         });
+        // Normalize Phoenix assign/2 map argument by inlining preceding literal map
+        // Removed to avoid app-specific coupling; rely on hygiene hardening instead
         // Simplify chained assignments in def/defp when inner var is unused later in block
         passes.push({
             name: "BlockAssignChainSimplify(Final)",

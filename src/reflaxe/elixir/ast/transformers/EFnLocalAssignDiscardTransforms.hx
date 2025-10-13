@@ -62,6 +62,21 @@ class EFnLocalAssignDiscardTransforms {
             case ERemoteCall(t2, _, args2): collectAssignedAndUsed(t2, assigned, used); for (a in args2) collectAssignedAndUsed(a, assigned, used);
             case EBinary(_, l, r): collectAssignedAndUsed(l, assigned, used); collectAssignedAndUsed(r, assigned, used);
             case EField(t, _): collectAssignedAndUsed(t, assigned, used);
+            case EMap(pairs): for (p in pairs) { collectAssignedAndUsed(p.key, assigned, used); collectAssignedAndUsed(p.value, assigned, used); }
+            case EString(str):
+                // Mark variables referenced in string interpolation as used
+                var i = 0;
+                while (str != null && i < str.length) {
+                    var idx = str.indexOf("#{", i);
+                    if (idx == -1) break;
+                    var j = str.indexOf("}", idx + 2);
+                    if (j == -1) break;
+                    var inner = str.substr(idx + 2, j - (idx + 2));
+                    // crude parse: mark any bare token segments as used
+                    var vars = inner.split(/[^a-zA-Z0-9_]/);
+                    for (v in vars) if (v != null && v.length > 0) used.set(v, true);
+                    i = j + 1;
+                }
             default:
         }
     }
@@ -152,6 +167,17 @@ class EFnLocalAssignDiscardTransforms {
                 case EKeywordList(pairs): for (p in pairs) visit(p.value);
                 case EStructUpdate(base, fields): visit(base); for (f in fields) visit(f.value);
                 case EFn(clauses): for (cl in clauses) visit(cl.body);
+                case EString(str):
+                    var k = 0;
+                    while (!found && str != null && k < str.length) {
+                        var idx2 = str.indexOf("#{", k);
+                        if (idx2 == -1) break;
+                        var j2 = str.indexOf("}", idx2 + 2);
+                        if (j2 == -1) break;
+                        var inner = str.substr(idx2 + 2, j2 - (idx2 + 2));
+                        if (inner.indexOf(name) != -1) { found = true; break; }
+                        k = j2 + 1;
+                    }
                 default:
             }
         }

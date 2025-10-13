@@ -39,6 +39,208 @@ class MapAndCollectionTransforms {
     }
 
     /**
+     * Enum Each Binder Integrity Pass
+     *
+     * WHAT
+     * - Ensures Enum.each anonymous function bodies use the element binder instead of
+     *   indexing into the source list with [0]. Promotes a wildcard binder to a named
+     *   binder when the body references the element, and removes stray numeric sentinels
+     *   (0/1) that may persist from lowering.
+     *
+     * WHY
+     * - Some lowering paths leave `alias = list[0]` or direct `list[0]` usages in the
+     *   body, and occasionally a bare `1` sentinel. This produces non-idiomatic code
+     *   and can trigger undefined-variable issues if alias removal happens earlier.
+     *   Using the binder consistently is the idiomatic Elixir style.
+     *
+     * HOW
+     * - For ERemoteCall(Enum, "each", [listExpr, fn([binder]) -> body end]):
+     *   - Scan body for occurrences of head access `listExpr[0]` and replace them
+     *     with the binder variable. If the function argument is a wildcard and the
+     *     body references the element, promote the binder to a named variable.
+     *   - Drop standalone numeric sentinel literals (1/0, 0.0) inside the body.
+     *
+     * EXAMPLES
+     * Before:
+     *   Enum.each(pending, fn _ ->
+     *     todo = pending[0]
+     *     1
+     *     update(todo)
+     *   end)
+     * After:
+     *   Enum.each(pending, fn elem ->
+     *     update(elem)
+     *   end)
+     */
+    public static function enumEachBinderIntegrityPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch (node.def) {
+                case ERemoteCall(mod, func, args) if (isEnumEach(mod, func, args)):
+                    var listExpr = args[0];
+                    var fnNode = args[1];
+                    switch (fnNode.def) {
+                        case EFn(clauses) if (clauses.length == 1):
+                            var clause = clauses[0];
+                            // Determine current binder
+                            var binderName: Null<String> = null;
+                            switch (clause.args.length > 0 ? clause.args[0] : null) {
+                                case PVar(n): binderName = n;
+                                case PWildcard: binderName = null;
+                                default:
+                            }
+
+                            // Normalize body into a statement list
+                            var stmts: Array<ElixirAST> = switch (clause.body.def) {
+                                case EBlock(ss): ss;
+                                case EDo(ss2): ss2;
+                                default: [clause.body];
+                            };
+
+                            // Replace listExpr[0] usages with binder (or a synthesized name)
+                            var replacementName = binderName != null ? safeBinder(binderName) : "elem";
+
+                            function replaceHeadAccess(e: ElixirAST): ElixirAST {
+                                return ElixirASTTransformer.transformNode(e, function(x: ElixirAST): ElixirAST {
+                                    return switch (x.def) {
+                                        case EAccess(target, key):
+                                            var isZero = switch (key.def) { case EInteger(v) if (v == 0): true; default: false; };
+                                            if (isZero && astEquals(target, listExpr))
+                                                makeASTWithMeta(EVar(replacementName), x.metadata, x.pos)
+                                            else x;
+                                        default: x;
+                                    }
+                                });
+                            }
+
+                            var newStmts: Array<ElixirAST> = [];
+                            var droppedAlias: Null<String> = null;
+                            for (s in stmts) {
+                                // Drop bare numeric sentinels
+                                var keep = switch (s.def) {
+                                    case EInteger(v) if (v == 0 || v == 1): false;
+                                    case EFloat(f) if (f == 0.0): false;
+                                    default: true;
+                                };
+                                if (!keep) continue;
+                                var s1 = replaceHeadAccess(s);
+                                // If statement is aliasing binder to a new local, drop it and remember alias
+                                switch (s1.def) {
+                                    case EBinary(Match, l, r):
+                                        var lvar:Null<String> = switch (l.def) { case EVar(nm): nm; default: null; };
+                                        var rIsBinder = switch (r.def) { case EVar(nm2) if (nm2 == replacementName): true; default: false; };
+                                        if (lvar != null && rIsBinder) { droppedAlias = lvar; continue; }
+                                    case EMatch(patX, r2):
+                                        var pvar:Null<String> = switch (patX) { case PVar(nm3): nm3; default: null; };
+                                        var rIsBinder2 = switch (r2.def) { case EVar(nm4) if (nm4 == replacementName): true; default: false; };
+                                        if (pvar != null && rIsBinder2) { droppedAlias = pvar; continue; }
+                                    default:
+                                }
+                                if (droppedAlias != null) s1 = replaceVarInExpr(s1, droppedAlias, replacementName);
+                                newStmts.push(s1);
+                            }
+
+                            // Choose binder based on actual usage in the rewritten body
+                            var bodyExpr: ElixirAST = (newStmts.length == 1)
+                                ? newStmts[0]
+                                : makeAST(EBlock(newStmts));
+                            // Usage-driven fallback: if body still references exactly one undefined lower-case var,
+                            // treat it as the element alias and rewrite to the binder name (replacementName).
+                            function collectUsedVars(n: ElixirAST, out: Map<String,Bool>): Void {
+                                if (n == null || n.def == null) return;
+                switch (n.def) {
+                    case EVar(v): out.set(v, true);
+                    case EBlock(ss): for (x in ss) collectUsedVars(x, out);
+                    case EDo(ss2): for (x in ss2) collectUsedVars(x, out);
+                    case EIf(c,t,e): collectUsedVars(c, out); collectUsedVars(t, out); if (e != null) collectUsedVars(e, out);
+                    case ECase(expr, cs): collectUsedVars(expr, out); for (c in cs) collectUsedVars(c.body, out);
+                    case EBinary(_, l, r): collectUsedVars(l, out); collectUsedVars(r, out);
+                    case EField(obj, _): collectUsedVars(obj, out);
+                    case EMatch(_, rhs): collectUsedVars(rhs, out);
+                    case ECall(tgt, _, argsC): if (tgt != null) collectUsedVars(tgt, out); for (a in argsC) collectUsedVars(a, out);
+                    case ERemoteCall(tgt2, _, argsR): collectUsedVars(tgt2, out); for (a in argsR) collectUsedVars(a, out);
+                    case EList(els): for (el in els) collectUsedVars(el, out);
+                    case ETuple(els2): for (el in els2) collectUsedVars(el, out);
+                    case EKeywordList(ps): for (p in ps) collectUsedVars(p.value, out);
+                    case EStructUpdate(base, fs): collectUsedVars(base, out); for (f in fs) collectUsedVars(f.value, out);
+                    default:
+                }
+            }
+                            function collectPatternVars(p: EPattern, out: Map<String,Bool>): Void {
+                                switch (p) {
+                                    case PVar(nm): out.set(nm, true);
+                                    case PTuple(elems): for (pe in elems) collectPatternVars(pe, out);
+                                    case PAlias(varName, pattern): out.set(varName, true); collectPatternVars(pattern, out);
+                                    case PList(ps): for (pe2 in ps) collectPatternVars(pe2, out);
+                                    default:
+                                }
+                            }
+                            function collectBoundVars(stmts2:Array<ElixirAST>): Map<String,Bool> {
+                                var m = new Map<String,Bool>();
+                                if (binderName != null) m.set(safeBinder(binderName), true);
+                                for (sSt in stmts2) switch (sSt.def) {
+                                    case EBinary(Match, lft, _): switch (lft.def) { case EVar(nv): m.set(nv, true); default: }
+                                    case EMatch(patY, _): collectPatternVars(patY, m);
+                                    case ECase(_, clauses): for (cl in clauses) collectPatternVars(cl.pattern, m);
+                                    default:
+                                }
+                                return m;
+                            }
+            var used = new Map<String,Bool>();
+            collectUsedVars(bodyExpr, used);
+            var bound = collectBoundVars(newStmts);
+            var free:Array<String> = [];
+            for (k in used.keys()) if (!bound.exists(k)) free.push(k);
+            // Prefer candidates that appear as receiver/arg or in interpolations
+            function appearsAsReceiverOrArg(n: ElixirAST, name:String): Bool {
+                var found = false;
+                ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
+                    if (found) return x;
+                    switch (x.def) {
+                        case EField({def: EVar(v)}, _ ) if (v == name): found = true; return x;
+                        case ECall(_, _, argsC): for (a in argsC) switch (a.def) { case EVar(v2) if (v2 == name): found = true; default: } return x;
+                        case ERemoteCall(tgt2, _, argsR):
+                            switch (tgt2.def) { case EVar(v3) if (v3 == name): found = true; default: }
+                            for (a in argsR) switch (a.def) { case EVar(v4) if (v4 == name): found = true; default: }
+                            return x;
+                        case EString(str): if (str != null && (str.indexOf("#{" + name + "}") != -1 || str.indexOf("#{" + name + ".") != -1)) found = true; return x;
+                        default: return x;
+                    }
+                });
+                return found;
+            }
+            var eligible:Array<String> = [];
+            for (nm in free) if (appearsAsReceiverOrArg(bodyExpr, nm)) eligible.push(nm);
+            var didReplace = false;
+            if (eligible.length == 1) {
+                var aliasName = eligible[0];
+                bodyExpr = replaceVarInExpr(bodyExpr, aliasName, replacementName);
+                didReplace = true;
+            } else if (free.length == 1) {
+                var aliasName2 = free[0];
+                bodyExpr = replaceVarInExpr(bodyExpr, aliasName2, replacementName);
+                didReplace = true;
+            } else if (free.length > 0) {
+                // Conservative fallback: pick the first free lower-case name
+                var aliasName3 = free[0];
+                bodyExpr = replaceVarInExpr(bodyExpr, aliasName3, replacementName);
+                didReplace = true;
+            }
+                            // If alias was dropped or free-var replaced, body will reference replacementName now
+            var finalBinder: EPattern = (didReplace || bodyUsesVar(bodyExpr, replacementName))
+                ? PVar(replacementName)
+                : PWildcard;
+                            var newFn = makeAST(EFn([{ args: [finalBinder], guard: clause.guard, body: bodyExpr }]));
+                            makeASTWithMeta(ERemoteCall(mod, func, [listExpr, newFn]), node.metadata, node.pos);
+                        default:
+                            node;
+                    }
+                default:
+                    node;
+            }
+        });
+    }
+
+    /**
      * Enum Each Sentinel Cleanup Pass
      * Remove bare 1/0 literals inside Enum.each anonymous function bodies.
      */
@@ -258,6 +460,17 @@ class MapAndCollectionTransforms {
         return ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
             return switch (x.def) {
                 case EVar(name) if (name == from): makeASTWithMeta(EVar(to), x.metadata, x.pos);
+                case EString(str):
+                    var s = str;
+                    if (s != null && s.indexOf("#{") != -1) {
+                        var needle1 = "#{" + from + "}";
+                        var needle2 = "#{" + from + ".";
+                        var repl1 = "#{" + to + "}";
+                        var repl2 = "#{" + to + ".";
+                        s = s.split(needle1).join(repl1);
+                        s = s.split(needle2).join(repl2);
+                    }
+                    makeASTWithMeta(EString(s), x.metadata, x.pos);
                 default: x;
             }
         });

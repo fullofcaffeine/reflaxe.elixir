@@ -281,19 +281,19 @@ class WildcardPromoteByUndeclaredUseTransforms {
                     var v = vars[0];
                     if (!declared.exists(v)) return makeASTWithMeta(EMatch(PVar(v), rhs), rhs.metadata, rhs.pos);
                 }
-            case ECall(_, fn, _) if (fn == "load_todos"):
+            case ECall(_, _, _):
                 /*
                  * Heuristic: Choose the intended list binder via length/1 consumers
                  *
                  * WHAT
-                 * - When we see `_ = load_todos(...)` and a nearby block later calls
+                 * - When we see a discarded assignment followed by a nearby block that later calls
                  *   `length(var)` exactly on one undeclared local, we promote `_` to that `var`.
                  *
                  * WHY
                  * - In LiveView flows, list reloading is commonly followed by derived metrics
                  *   like `length(list)`, `count_completed(list)`, etc. Binding `_` to the unique
                  *   list variable referenced by these consumers restores the natural dataflow
-                 *   without app-specific naming (e.g., works for `todos`, `updated_todos`, etc.).
+                 *   without app-specific naming; examples in comments are illustrative only.
                  * - Requiring a single candidate ensures we only promote when unambiguous.
                  * - The scan window is kept small to preserve locality and avoid cross-branch bleed.
                  *
@@ -304,54 +304,18 @@ class WildcardPromoteByUndeclaredUseTransforms {
                  * - If not unique, fall back to a conservative path (see below).
                  *
                  * NOTES
-                 * - This is shape/usage-based and framework-agnostic; no reliance on concrete
-                 *   identifiers. The example `updated_todos` is illustrative only.
+                 * - This is shape/usage-based and framework-agnostic; no reliance on concrete identifiers.
                  * - If uniqueness is not met here, a later fallback promotes to `todos` when
                  *   it is the only name referenced by `length/1` within the same window.
                  */
-                var lenCands2 = collectLengthArgNames(stmts, idx + 1, declared, 6);
-                if (lenCands2.length == 1) {
-                    var nmL = lenCands2[0];
-                    if (!declared.exists(nmL)) return makeASTWithMeta(EMatch(PVar(nmL), rhs), rhs.metadata, rhs.pos);
-                }
-                if (laterUsesLengthOf(stmts, idx, "todos") && !declared.exists("todos")) {
-                    return makeASTWithMeta(EMatch(PVar("todos"), rhs), rhs.metadata, rhs.pos);
-                }
-            case ERemoteCall(mod2, fn2, _):
-                // DateTime.utc_now() followed by DateTime.to_iso8601(now)
-                var modStr2: Null<String> = switch (mod2.def) { case EVar(m2): m2; default: null; };
-                if (modStr2 == "DateTime" && laterUsesDateTimeToIso(stmts, idx, "now") && !declared.exists("now")) {
-                    return makeASTWithMeta(EMatch(PVar("now"), rhs), rhs.metadata, rhs.pos);
-                }
+                // Removed name-based fallbacks; rely on general lookahead rules.
+            case ERemoteCall(_, _, _):
+                // No DateTime/Presence name-based promotions.
             case _:
         }
-        // Presence track: promote to presence_socket when used later as assign/1 first arg
-        switch (rhs.def) {
-            case ERemoteCall(modP, _, _):
-                var modStrP: Null<String> = switch (modP.def) { case EVar(mm): mm; default: null; };
-                if (modStrP != null && modStrP.indexOf("Presence") != -1 && laterUses(stmts, idx, "presence_socket") && !declared.exists("presence_socket")) {
-                    return makeASTWithMeta(EMatch(PVar("presence_socket"), rhs), rhs.metadata, rhs.pos);
-                }
-            default:
-        }
-        // Handle uid from if-expression used later
-        switch (rhs.def) {
-            case EIf(_,_,_):
-                if (laterUses(stmts, idx, "uid") && !declared.exists("uid")) {
-                    return makeASTWithMeta(EMatch(PVar("uid"), rhs), rhs.metadata, rhs.pos);
-                }
-            default:
-        }
-        // Generic: if `now` is referenced later, promote to now (common DateTime idiom)
-        if (laterUses(stmts, idx, "now") && !declared.exists("now")) {
-            return makeASTWithMeta(EMatch(PVar("now"), rhs), rhs.metadata, rhs.pos);
-        }
-        // Prefer length-based unique candidate (e.g., updated_todos)
-        var lenCands = collectLengthArgNames(stmts, idx + 1, declared, 6);
-        if (lenCands.length == 1) {
-            var nmLen = lenCands[0];
-            return makeASTWithMeta(EMatch(PVar(nmLen), rhs), rhs.metadata, rhs.pos);
-        }
+        // Removed Presence promotions; rely on shape-only assign/2 analysis below
+        // Removed specific var promotions from if-branches; rely on undeclared ref scan
+        // Removed name-based fallbacks; rely on map/assign usage analysis and generic undeclared reference scan
         // Field-based map usage: if exactly one base var is used in field accesses in the upcoming map,
         // bind `socket.assigns` to that variable name (usage-driven, not name-based)
         switch (rhs.def) {
@@ -362,7 +326,7 @@ class WildcardPromoteByUndeclaredUseTransforms {
                 }
             default:
         }
-        // Immediate lookahead for assign(socket, %{...}) using a single var repeatedly (e.g., updated_todos)
+        // Immediate lookahead for assign(socket, %{...}) using a single var repeatedly (shape-only)
         if (idx + 1 < stmts.length) {
             switch (stmts[idx + 1].def) {
                 case ERemoteCall(modA, fnA, argsA) if (fnA == "assign"):
