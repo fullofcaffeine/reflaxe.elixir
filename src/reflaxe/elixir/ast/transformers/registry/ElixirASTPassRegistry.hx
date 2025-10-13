@@ -74,7 +74,7 @@ class ElixirASTPassRegistry {
             name: "FunctionReferenceTransform",
             description: "Transform function references to use capture operator (&Module.func/arity)",
             enabled: true,
-            pass: functionReferenceTransformPass
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.functionReferenceTransformPass
         });
         
         // Bitwise import pass (should run early to add imports)
