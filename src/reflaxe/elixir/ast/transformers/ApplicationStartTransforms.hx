@@ -96,6 +96,13 @@ class ApplicationStartTransforms {
                                         if (v == "opts" || v == "_opts") declaredOpts = v;
                                     default:
                                 }
+                            case EBinary(Match, left, _):
+                                switch (left.def) {
+                                    case EVar(v2):
+                                        if (v2 == "children" || v2 == "_children") declaredChildren = v2;
+                                        if (v2 == "opts" || v2 == "_opts") declaredOpts = v2;
+                                    default:
+                                }
                             default:
                         }
                     });
@@ -143,22 +150,26 @@ class ApplicationStartTransforms {
                     var transformedBody = ElixirASTTransformer.transformNode(body, rewrite);
                     // Ensure Supervisor.start_link(children, opts) exists; if missing, append it
                     var hasStartLink = false;
-                    var finalBody = switch (transformedBody.def) {
+                    var finalBody: ElixirAST = null;
+                    switch (transformedBody.def) {
                         case EBlock(stmts):
                             for (s in stmts) switch (s.def) { case ERemoteCall(mod, fn, _) if (fn == "start_link"): hasStartLink = true; default: }
                             if (!hasStartLink && declaredChildren != null) {
                                 var appended = stmts.copy();
                                 var defaultOpts = makeAST(EKeywordList([
-                                    { key: "strategy", value: makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) },
-                                    { key: "max_restarts", value: makeAST(EInteger(3)) },
-                                    { key: "max_seconds", value: makeAST(EInteger(5)) }
+                                    { key: "strategy", value: makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) }
                                 ]));
                                 appended.push(makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts])));
-                                makeASTWithMeta(EBlock(appended), transformedBody.metadata, transformedBody.pos);
-                            } else transformedBody;
+                                finalBody = makeASTWithMeta(EBlock(appended), transformedBody.metadata, transformedBody.pos);
+                            } else finalBody = transformedBody;
                         default:
-                            transformedBody;
-                    };
+                            if (!hasStartLink && declaredChildren != null) {
+                                var defaultOpts2 = makeAST(EKeywordList([
+                                    { key: "strategy", value: makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) }
+                                ]));
+                                finalBody = makeASTWithMeta(EBlock([transformedBody, makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts2]))]), transformedBody.metadata, transformedBody.pos);
+                            } else finalBody = transformedBody;
+                    }
                     makeASTWithMeta(EDef(name, params, guards, finalBody), node.metadata, node.pos);
 
                 default:

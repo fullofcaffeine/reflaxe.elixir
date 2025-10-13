@@ -358,6 +358,25 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ModuleNewToStructLiteral.moduleNewToStructLiteralPass
         });
+        passes.push({
+            name: "ApplicationEnsureStartLink",
+            description: "Ensure Application.start/2 appends Supervisor.start_link(children, opts)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ApplicationEnsureStartLinkTransforms.transformPass
+        });
+        // Override problematic Haxe DS modules with minimal native implementations
+        passes.push({
+            name: "StdDsOverrides",
+            description: "Override haxe.ds BalancedTree/EnumValueMap modules with minimal Elixir implementations",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StdDsOverrideTransforms.transformPass
+        });
+        passes.push({
+            name: "StdStringBufOverride",
+            description: "Override StringBuf with native parts-list implementation",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StdStringBufOverrideTransforms.transformPass
+        });
         // Final re-run for app module qualification in Web contexts
         passes.push({
             name: "ModuleQualification(Final)",
@@ -985,6 +1004,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ApplicationStartTransforms.normalizeStartLinkArgsPass
         });
+        passes.push({
+            name: "TypeSafeChildSpecNormalize",
+            description: "Normalize TypeSafeChildSpec.supervisor/3 to bind parameters and avoid undefined vars",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TypeSafeChildSpecNormalizeTransforms.transformPass
+        });
 
         // Normalize local var references to declared names in function scope (underscore/digit suffix cases)
         passes.push({
@@ -1392,6 +1417,14 @@ class ElixirASTPassRegistry {
             description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (late)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
+        });
+        
+        // Consolidated hygiene sweep (usage-driven), orchestrating core hygiene steps in order
+        passes.push({
+            name: "HygieneConsolidated(Late)",
+            description: "Consolidated pass: params underscore, underscore fallback, used underscore promotion, ref/decl alignment, case binder hygiene",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HygieneConsolidatedTransforms.pass
         });
         // Unify declarations and references to a canonical local name per base
         passes.push({
@@ -1921,12 +1954,14 @@ class ElixirASTPassRegistry {
         });
 
         // Convert Module.new() (Haxe-style) to %Module{} struct literal for Ecto schemas
-        passes.push({
-            name: "ModuleNewToStructLiteral",
-            description: "Rewrite Module.new() to %Module{}",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleNewToStructLiteralPass
-        });
+        // NOTE: Prefer the guarded ModuleNewToStructLiteral pass; BinderTransforms variant disabled to avoid
+        // rewriting non-schema modules (e.g., BalancedTree) into struct literals.
+        // passes.push({
+        //     name: "ModuleNewToStructLiteral",
+        //     description: "Rewrite Module.new() to %Module{}",
+        //     enabled: false,
+        //     pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleNewToStructLiteralPass
+        // });
 
         // Inline ~H content by replacing Phoenix.HTML.raw(content) with the actual string literal
         // assigned to `content` earlier in render(assigns), removing the intermediate var.
@@ -2323,6 +2358,12 @@ class ElixirASTPassRegistry {
             description: "Underscore unused def parameters when truly unused (safe)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass
+        });
+        passes.push({
+            name: "ApplicationEnsureStartLink(UltraFinal)",
+            description: "Ensure Application.start/2 appends Supervisor.start_link(children, opts) (ultra final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ApplicationEnsureStartLinkTransforms.transformPass
         });
 
         // Absolute final: promote `_ = rhs` to named binder using targeted usage detection

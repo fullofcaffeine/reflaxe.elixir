@@ -124,11 +124,13 @@ class ConstructorBuilder {
             var moduleRef = makeAST(EVar(className));
             return ECall(moduleRef, "new", args);
         } else {
-            // Simple data class - create as struct
+            // Simple data class (no methods/ctor) -> prefer Module.new() for non-schema classes
+            // to avoid generating invalid struct literals for modules without defstruct.
             #if debug_ast_builder
-            trace('[ConstructorBuilder] Generating struct literal for data class');
+            trace('[ConstructorBuilder] Generating Module.new() call for data class (non-schema)');
             #end
-            return EStruct(className, []);
+            var moduleRef2 = makeAST(EVar(className));
+            return ECall(moduleRef2, "new", args);
         }
     }
     
