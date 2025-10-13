@@ -172,6 +172,55 @@ if (ASTUtils.containsIteratorPattern(rhs)) {
 ### Historical Context
 Created in response to Map iterator transformation failures where pattern matching failed on unexpected AST structures (nested EBlock issues). User specifically requested "abstractions/patterns to prevent hard-to-debug mismatchers" - ASTUtils is the solution.
 
+## 🔍 Hygiene & Usage Analysis — Single Source of Truth (NEW - October 2025)
+
+### WHAT
+- Centralize variable usage detection in a single analyzer used by all hygiene-related passes.
+- File: `src/reflaxe/elixir/ast/analyzers/VarUseAnalyzer.hx`
+
+### WHY
+- Multiple passes had ad‑hoc `usedLater`/`stmtUsesVar` implementations with inconsistent coverage (missed EFn closures, string interpolation, ERaw, map/keyword/struct fields, case clause bodies). This led to discarding locals actually used in closures/interpolations and produced undefined‑variable errors at runtime.
+
+### HOW
+- All hygiene/binder passes MUST import and use `VarUseAnalyzer.usedLater` and `VarUseAnalyzer.stmtUsesVar`.
+- Analyzer responsibilities (non‑negotiable):
+  - Traverse EFn clause bodies (closures)
+  - Scan `"#{...}"` string interpolations
+  - Token‑boundary search inside ERaw
+  - Walk maps/keyword lists/struct updates/access/field/tuples
+  - Include case/with clause bodies
+
+### RULES (Do/Don’t)
+- Do
+  - Use VarUseAnalyzer everywhere you need usage checks (discard, underscore, promotion, aliasing).
+  - Add missing coverage to VarUseAnalyzer first — never in individual passes.
+  - Add focused tests for newly covered constructs before using them in passes.
+- Don’t
+  - Re‑implement usage scans in passes.
+  - Special‑case specific modules or app names.
+
+### CLOSURE EMISSION REQUIREMENT
+- Structured transforms depend on structured AST. ERaw closures block analysis/rewrites.
+- Builders MUST emit EFn for predicate/closure arguments (e.g., `Enum.filter`, `Enum.each`).
+- Printers MUST render EFn as `fn ... -> ... end` in all positions.
+
+### REGISTRY ORDERING
+- Run binder synthesis/promotions BEFORE discard/underscore passes.
+- Late/ultra‑final sentinel cleanup must follow any pass that can re‑introduce numeric literals.
+
+### CHECKLIST (Gate before merging hygiene changes)
+- [ ] Passes use `VarUseAnalyzer` (no local scanners)
+- [ ] EFn emitted for closures that passes will touch (no ERaw in those positions)
+- [ ] Registry order: binder synth/promote → discard/underscore → sentinel cleanup (final)
+- [ ] Focused tests cover EFn, string interpolation, ERaw, maps/keyword, case bodies
+- [ ] No app‑specific heuristics or invented var names
+
+### CROSS‑REFS
+- Analyzer: `src/reflaxe/elixir/ast/analyzers/VarUseAnalyzer.hx`
+- Examples of adoption:
+  - `BlockUnusedAssignmentDiscardTransforms.hx`
+  - `LocalAssignUnderscoreLateTransforms.hx`
+
 ## ⚠️ CRITICAL: Context Preservation in Builders (January 2025)
 
 **FUNDAMENTAL RULE: Builders must NEVER call `compiler.compileExpressionImpl` - use `ElixirASTBuilder.buildFromTypedExpr` instead.**
