@@ -52,12 +52,10 @@ class ClauseUndefinedVarToBinderTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, args, guards, body):
-                    var defined = collectFunctionDefinedVars(args, body);
-                    var newBody = process(body, defined);
+                    var newBody = process(body);
                     makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, args, guards, body):
-                    var defined = collectFunctionDefinedVars(args, body);
-                    var newBody = process(body, defined);
+                    var newBody = process(body);
                     makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
                 default:
                     node;
@@ -65,7 +63,7 @@ class ClauseUndefinedVarToBinderTransforms {
         });
     }
 
-    static function process(body: ElixirAST, defined: Map<String, Bool>): ElixirAST {
+    static function process(body: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
@@ -73,6 +71,10 @@ class ClauseUndefinedVarToBinderTransforms {
                     for (cl in clauses) {
                         var binder = extractSingleBinder(cl.pattern);
                         if (binder != null) {
+                            // Build clause-local defined set: pattern + LHS binds in clause body
+                            var clauseDefined = new Map<String,Bool>();
+                            collectPatternVars(cl.pattern, clauseDefined);
+                            collectLhsVarsInBody(cl.body, clauseDefined);
                             var used = collectUsedLowerVars(cl.body);
                             // Prefer well-known, generic event payload names when present
                             var preferred = pickPreferred(used, binder);
@@ -82,7 +84,7 @@ class ClauseUndefinedVarToBinderTransforms {
                                 continue;
                             } else {
                                 // Fallback: single undefined variable in body
-                                var undef = used.filter(v -> v != binder && !isDefined(v, defined))
+                                var undef = used.filter(v -> v != binder && !isDefined(v, clauseDefined))
                                     .filter(v -> v != "socket" && v != "live_socket" && v != "liveSocket"
                                         && !StringTools.endsWith(v, "socket") && !StringTools.endsWith(v, "Socket"));
                                 if (undef.length == 1) {
@@ -111,18 +113,16 @@ class ClauseUndefinedVarToBinderTransforms {
         });
     }
 
-    static function collectFunctionDefinedVars(args: Array<EPattern>, body: ElixirAST): Map<String, Bool> {
-        var vars = new Map<String, Bool>();
-        for (a in args) collectPatternVars(a, vars);
+    static function collectLhsVarsInBody(body: ElixirAST, vars: Map<String,Bool>): Void {
         ASTUtils.walk(body, function(x: ElixirAST) {
             if (x == null || x.def == null) return;
             switch (x.def) {
                 case EMatch(p, _): collectPatternVars(p, vars);
                 case EBinary(Match, l, _): collectLhsVars(l, vars);
+                case ECase(_, cs): for (c in cs) collectPatternVars(c.pattern, vars);
                 default:
             }
         });
-        return vars;
     }
 
     static function collectPatternVars(p: EPattern, vars: Map<String, Bool>): Void {
