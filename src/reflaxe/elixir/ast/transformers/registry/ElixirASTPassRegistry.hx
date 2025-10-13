@@ -2145,6 +2145,19 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnLocalAssignDiscardTransforms.discardPass
         });
+        // Promote `_ = String.downcase(x)` to `query = String.downcase(x)` when next Enum.filter uses `query`
+        passes.push({
+            name: "PromoteQueryFromWildcard(Final)",
+            description: "Promote wildcard downcase assignment to query when immediately used by filter predicate",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.pass
+        });
+        passes.push({
+            name: "InlineQueryFromPreviousDowncase(Final)",
+            description: "Inline query in Enum.filter predicate from preceding `_ = String.downcase(x)` when query is unbound",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineQueryFromPreviousDowncaseTransforms.pass
+        });
         // Normalize Phoenix assign/2 map argument by inlining preceding literal map
         // Removed to avoid app-specific coupling; rely on hygiene hardening instead
         // Simplify chained assignments in def/defp when inner var is unused later in block
@@ -2313,6 +2326,32 @@ class ElixirASTPassRegistry {
             description: "Underscore local assigns when unused later; also nested inner assigns",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnderscoreLateTransforms.pass
+        });
+        // Ultra-final: synthesize `query` binder for Enum.filter predicates referencing it when missing
+        passes.push({
+            name: "QueryBinderSynthesis(UltraFinal)",
+            description: "Insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query` and no prior binding exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.QueryBinderSynthesisLateTransforms.transformPass
+        });
+        // Ultra-final: promote and inline query directly before filter predicates as last-ditch fix
+        passes.push({
+            name: "PromoteQueryFromWildcard(UltraFinal2)",
+            description: "Promote `_ = String.downcase(x)` to `query = ...` when next filter predicate uses query",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.pass
+        });
+        passes.push({
+            name: "InlineQueryFromPreviousDowncase(UltraFinal2)",
+            description: "Inline query in filter predicate from previous downcase when no query binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineQueryFromPreviousDowncaseTransforms.pass
+        });
+        passes.push({
+            name: "FilterPredicateQueryInline(UltraFinal3)",
+            description: "Inline `query` in Enum.filter predicate to String.downcase(search_query) when no binder and search_query present in block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FilterPredicateQueryInlineUltraFinalTransforms.pass
         });
         passes.push({
             name: "EFnTempChainSimplify(UltraFinal)",

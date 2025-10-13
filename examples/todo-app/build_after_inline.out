@@ -1,0 +1,6 @@
+haxe_libraries/reflaxe.hxml:2: [Warning] Using dev version of library reflaxe
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:72: characters 17-94 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:95: characters 17-95 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:96: characters 17-107 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/MapAndCollectionTransforms.hx:746: lines 746-784 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/InlineQueryFromPreviousDowncaseTransforms.hx:74: characters 193-194 : Missing ;
