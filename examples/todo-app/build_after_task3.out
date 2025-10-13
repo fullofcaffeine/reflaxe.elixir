@@ -1,0 +1,22 @@
+haxe_libraries/reflaxe.hxml:2: [Warning] Using dev version of library reflaxe
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:72: characters 17-94 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:95: characters 17-95 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:96: characters 17-107 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/MapAndCollectionTransforms.hx:746: lines 746-784 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/FilterQueryBinderTransforms.hx:79: characters 50-56 : reflaxe.elixir.ast.ElixirAST should be reflaxe.elixir.ast.ElixirASTDef
+../../src/reflaxe/elixir/ast/transformers/FilterQueryBinderTransforms.hx:79: characters 50-56 : ... For function argument 'def'
+../../src/reflaxe/elixir/ast/transformers/FilterQueryBinderTransforms.hx:119: characters 55-62 : reflaxe.elixir.ast.ElixirAST should be reflaxe.elixir.ast.ElixirASTDef
+../../src/reflaxe/elixir/ast/transformers/FilterQueryBinderTransforms.hx:119: characters 55-62 : ... For function argument 'def'
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:80: characters 55-64 : Unknown identifier : usedLater
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:86: characters 34-37 : reflaxe.elixir.ast.ElixirAST should be Void
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:77: characters 25-31 : Variables of type Void are not allowed
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:100: characters 74-80 : Void should be reflaxe.elixir.ast.ElixirAST
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:100: characters 74-80 : ... For function argument 'right'
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:108: characters 56-65 : Unknown identifier : usedLater
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:113: characters 56-65 : Unknown identifier : usedLater
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:116: characters 34-37 : reflaxe.elixir.ast.ElixirAST should be Void
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:105: characters 25-32 : Variables of type Void are not allowed
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:126: characters 65-72 : Void should be reflaxe.elixir.ast.ElixirAST
+../../src/reflaxe/elixir/ast/transformers/LocalAssignUnderscoreLateTransforms.hx:126: characters 65-72 : ... For function argument 'expr'
+../../src/reflaxe/elixir/ast/transformers/ChangesetEnsureReturnTransforms.hx:58: characters 17-91 : Warning : (WUnusedPattern) This case is unused
+src_haxe/server/migrations/CreateTodos.hx:13: character 1 : Build failure
