@@ -60,9 +60,15 @@ class SuccessBinderAlignByBodyUseTransforms {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
+#if debug_success_unifier
+                    Sys.println('[SuccessBinderAlign] Inspecting ECase with ' + clauses.length + ' clauses');
+#end
                     var newClauses = [];
                     for (cl in clauses) {
                         var okBinder = extractOkBinder(cl.pattern);
+#if debug_success_unifier
+                        if (okBinder != null) Sys.println('[SuccessBinderAlign] Found {:ok, ' + okBinder + '}');
+#end
                         if (okBinder != null) {
                             // Collect declared names inside clause body (pattern LHS and matches)
                             var clauseDeclared: Map<String,Bool> = new Map();
@@ -73,8 +79,14 @@ class SuccessBinderAlignByBodyUseTransforms {
                             // Find exactly one undefined, excluding env names
                             var undef = [];
                             for (u in used.keys()) if (!clauseDeclared.exists(u) && u != okBinder && allowUndefined(u)) undef.push(u);
+#if debug_success_unifier
+                            if (undef.length > 0) Sys.println('[SuccessBinderAlign] undefined candidates: ' + undef.join(','));
+#end
                             if (undef.length == 1) {
                                 var newName = undef[0];
+#if debug_success_unifier
+                                Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName);
+#end
                                 // Rewrite pattern binder to newName
                                 var newPattern = rewriteOkBinder(cl.pattern, newName);
                                 // Rewrite old binder references in body to newName

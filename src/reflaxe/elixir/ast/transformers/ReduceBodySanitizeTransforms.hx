@@ -112,11 +112,13 @@ class ReduceBodySanitizeTransforms {
                     switch (fnNode.def) {
                         case EFn(clauses) if (clauses.length == 1):
                             var cl = clauses[0];
+                            Sys.println('[ReduceBodySanitize] reducer clauses=' + clauses.length);
                             // Expect two-arg reducer: fn binder, acc -> ... end
                             var binderName:Null<String> = null;
                             var accName:Null<String> = null;
                             if (cl.args.length >= 1) switch (cl.args[0]) { case PVar(n): binderName = n; default: }
                             if (cl.args.length >= 2) switch (cl.args[1]) { case PVar(n2): accName = n2; default: }
+                            Sys.println('[ReduceBodySanitize] binder=' + binderName + ', acc=' + accName);
                             if (binderName == null || accName == null) return n;
 
                             var bodyStmts:Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };

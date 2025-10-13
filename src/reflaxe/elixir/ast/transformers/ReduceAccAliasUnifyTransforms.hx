@@ -45,14 +45,22 @@ class ReduceAccAliasUnifyTransforms {
                                         var lhs:Null<String> = switch (left.def) { case EVar(nm): nm; default: null; };
                                         switch (rhs.def) {
                                             case ERemoteCall(_, "concat", cargs) if (lhs != null && cargs.length == 2):
-                                                switch (cargs[0].def) { case EVar(nm2) if (nm2 == lhs && lhs != accName): aliasSet.set(lhs, true); default: }
+                                                switch (cargs[0].def) { case EVar(nm2) if (nm2 == lhs && lhs != accName): aliasSet.set(lhs, true); Sys.println('[ReduceAccAliasUnify] alias candidate: ' + lhs + ' (acc=' + accName + ')'); default: }
+                                            case ECall(_, "concat", cargsC) if (lhs != null && cargsC.length == 2):
+                                                switch (cargsC[0].def) { case EVar(nc) if (nc == lhs && lhs != accName): aliasSet.set(lhs, true); Sys.println('[ReduceAccAliasUnify] alias candidate(call): ' + lhs + ' (acc=' + accName + ')'); default: }
+                                            case EBinary(Concat, lcat, _):
+                                                switch (lcat.def) { case EVar(nm3) if (lhs != null && nm3 == lhs && lhs != accName): aliasSet.set(lhs, true); Sys.println('[ReduceAccAliasUnify] alias candidate(++) : ' + lhs + ' (acc=' + accName + ')'); default: }
                                             default:
                                         }
                                     case EMatch(pat, rhs2):
                                         var lhs2:Null<String> = switch (pat) { case PVar(n2): n2; default: null; };
                                         switch (rhs2.def) {
                                             case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
-                                                switch (cargs2[0].def) { case EVar(nm3) if (nm3 == lhs2 && lhs2 != accName): aliasSet.set(lhs2, true); default: }
+                                                switch (cargs2[0].def) { case EVar(nm3) if (nm3 == lhs2 && lhs2 != accName): aliasSet.set(lhs2, true); Sys.println('[ReduceAccAliasUnify] alias candidate: ' + lhs2 + ' (acc=' + accName + ')'); default: }
+                                            case ECall(_, "concat", cargs2C) if (lhs2 != null && cargs2C.length == 2):
+                                                switch (cargs2C[0].def) { case EVar(nc2) if (nc2 == lhs2 && lhs2 != accName): aliasSet.set(lhs2, true); Sys.println('[ReduceAccAliasUnify] alias candidate(call): ' + lhs2 + ' (acc=' + accName + ')'); default: }
+                                            case EBinary(Concat, lcat2, _):
+                                                switch (lcat2.def) { case EVar(nm4) if (lhs2 != null && nm4 == lhs2 && lhs2 != accName): aliasSet.set(lhs2, true); Sys.println('[ReduceAccAliasUnify] alias candidate(++) : ' + lhs2 + ' (acc=' + accName + ')'); default: }
                                             default:
                                         }
                                     default:
@@ -64,8 +72,25 @@ class ReduceAccAliasUnifyTransforms {
                             if (aliases.length == 0) return n;
                             var newBody = ElixirASTTransformer.transformNode(cl.body, function(y: ElixirAST): ElixirAST {
                                 return switch (y.def) {
-                                    case EVar(v) if (aliases.indexOf(v) != -1): makeASTWithMeta(EVar(accName), y.metadata, y.pos);
-                                    default: y;
+                                    case EVar(v) if (aliases.indexOf(v) != -1):
+                                        makeASTWithMeta(EVar(accName), y.metadata, y.pos);
+                                    case EBinary(Match, left, rhs):
+                                        var isAliasLhs = switch (left.def) { case EVar(vl) if (aliases.indexOf(vl) != -1): true; default: false; };
+                                        if (isAliasLhs) {
+                                            var newLeft = makeAST(EVar(accName));
+                                            makeASTWithMeta(EBinary(Match, newLeft, rhs), y.metadata, y.pos);
+                                        } else {
+                                            y;
+                                        }
+                                    case EMatch(pat, rhs2):
+                                        var isAliasPat = switch (pat) { case PVar(vp) if (aliases.indexOf(vp) != -1): true; default: false; };
+                                        if (isAliasPat) {
+                                            makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), rhs2), y.metadata, y.pos);
+                                        } else {
+                                            y;
+                                        }
+                                    default:
+                                        y;
                                 }
                             });
                             var newFn = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: newBody }]) );

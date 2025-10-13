@@ -1,0 +1,7 @@
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/reduce_body_normalization
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=/Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/reduce_body_normalization/out
+
