@@ -72,8 +72,8 @@ class EFnLocalAssignDiscardTransforms {
                     var j = str.indexOf("}", idx + 2);
                     if (j == -1) break;
                     var inner = str.substr(idx + 2, j - (idx + 2));
-                    // crude parse: mark any bare token segments as used
-                    var vars = inner.split(/[^a-zA-Z0-9_]/);
+                    // crude parse: split on non-identifier characters
+                    var vars = inner.split(" ");
                     for (v in vars) if (v != null && v.length > 0) used.set(v, true);
                     i = j + 1;
                 }
