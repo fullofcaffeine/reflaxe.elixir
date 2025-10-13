@@ -166,6 +166,9 @@ class BlockUnusedAssignmentDiscardTransforms {
                 case ERemoteCall(tgt2, _, args2): walk(tgt2, false); for (a2 in args2) walk(a2, false);
                 case ECase(expr, cs): walk(expr, false); for (c in cs) walk(c.body, false);
                 case EKeywordList(pairs): for (p in pairs) walk(p.value, false);
+                case EMap(pairs):
+                    // Ensure we detect usage inside literal maps like %{ key => var }
+                    for (p in pairs) { walk(p.key, false); walk(p.value, false); }
                 case EStructUpdate(base, fields): walk(base, false); for (f in fields) walk(f.value, false);
                 case EField(obj, _): walk(obj, false);
                 case EAccess(tgt3, key): walk(tgt3, false); walk(key, false);
