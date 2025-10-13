@@ -751,6 +751,16 @@ This file must stay under 40k characters for optimal performance.
 - Reference docs instead of duplicating content
 - Review size after major updates: `wc -c AGENTS.md`
 
+## Transformer Scope Discipline
+
+- Prefer shape- and usage-based transforms. Do not gate transforms by module/app names (e.g., "Web.", ".Live", ".Presence") unless:
+  - The module carries an explicit annotation (e.g., @:liveview, @:schema), or
+  - The transform positively detects a framework/API usage pattern (e.g., Phoenix.Presence.list/track/update) and operates only where that usage exists.
+- Never couple to application-specific identifiers. Use structural guards and body-usage checks (e.g., promote {:ok, _x} → {:ok, x} only when x is referenced in the clause body).
+- Framework-specific passes must be API-scoped, not name-scoped. Avoid brittle heuristics based on module naming.
+- All new/modified transformers must include hxdoc (WHAT/WHY/HOW/EXAMPLES) and explicitly state scope/guards.
+- QA: add grep gates to flag literal name heuristics in transformers (e.g., `/Web\.|\.Live|\.Presence/`) unless justified by annotations/API shape.
+
 ### ❌ NEVER Add Detailed Technical Content to Root AGENTS.md
 When documenting new features, fixes, or insights:
 1. **Use the nearest AGENTS.md** - Save insights and directives to the nearest AGENTS.md dir-wise (e.g., `src/reflaxe/elixir/ast/AGENTS.md` for AST issues)
