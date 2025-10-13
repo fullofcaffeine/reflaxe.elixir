@@ -69,18 +69,16 @@ class StringToolsNativeRewrite {
                 makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);
             case EDef(fnName, params, guards, body) if (fnName == "is_space" && params.length == 2):
                 // def is_space(s, pos) do
-                //   c = :binary.at(s, pos)
-                //   (c > 8 and c < 14) or c == 32
+                //   (:binary.at(s, pos) > 8 and :binary.at(s, pos) < 14) or :binary.at(s, pos) == 32
                 // end
                 var sVar = paramVar(params[0]);
                 var posVar = paramVar(params[1]);
-                var cAssign = makeAST(EMatch(PVar("c"), makeAST(ERemoteCall(makeAST(EAtom(ElixirAtom.raw("binary"))), "at", [sVar, posVar]))));
+                var atCall = function() return makeAST(ERemoteCall(makeAST(EAtom(ElixirAtom.raw("binary"))), "at", [sVar, posVar]));
                 var cond = makeAST(EBinary(Or,
-                    makeAST(EBinary(And, makeAST(EBinary(Greater, makeAST(EVar("c")), makeAST(EInteger(8)))), makeAST(EBinary(Less, makeAST(EVar("c")), makeAST(EInteger(14)))))),
-                    makeAST(EBinary(Equal, makeAST(EVar("c")), makeAST(EInteger(32))))
+                    makeAST(EBinary(And, makeAST(EBinary(Greater, atCall(), makeAST(EInteger(8)))), makeAST(EBinary(Less, atCall(), makeAST(EInteger(14)))))),
+                    makeAST(EBinary(Equal, atCall(), makeAST(EInteger(32))))
                 ));
-                var newBody = makeAST(EBlock([cAssign, cond]));
-                makeASTWithMeta(EDef(fnName, params, guards, newBody), n.metadata, n.pos);
+                makeASTWithMeta(EDef(fnName, params, guards, cond), n.metadata, n.pos);
             default:
                 n;
         }

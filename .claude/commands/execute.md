@@ -7,6 +7,6 @@ Also, make sure that when creating tests, you create it in the right direcotry. 
 
 Keep shrimp updated. Follow the shrimp workflow strictly. Complete tasks after you run qa-sentinel and MAKE SURE they are working as expected.
 
-Follow AGETNS.md rules!!
+Follow AGENTS.md rules!!
 
 When your context is < 20%, suggest replanning with shrimp.

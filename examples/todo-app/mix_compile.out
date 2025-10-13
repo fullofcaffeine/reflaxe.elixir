@@ -1,0 +1,173 @@
+Compiling 118 files (.ex)
+     warning: variable "this1" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 163 │ this1 = nil
+     │ ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:163:1: TodoAppWeb.TodoLive.load_todos/1
+
+     warning: variable "this1" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 158 │ this1 = nil
+     │ ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:158:1: TodoAppWeb.TodoLive.load_todos/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 206 │   defp complete_all_todos(socket) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:206: TodoAppWeb.TodoLive.complete_all_todos/1
+
+     warning: variable "elem" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 208 │     Enum.each(pending, fn elem ->
+     │                           ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:208:27: TodoAppWeb.TodoLive.complete_all_todos/1
+
+     warning: code block contains unused literal 1 (remove the literal or assign it to _ to avoid warnings)
+     │
+ 230 │   defp delete_completed_todos(socket) do
+     │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:230: TodoAppWeb.TodoLive.delete_completed_todos/1
+
+     warning: variable "elem" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 232 │     Enum.each(completed, fn elem ->
+     │                             ~
+     │
+     └─ lib/todo_app_web/todo_live.ex:232:29: TodoAppWeb.TodoLive.delete_completed_todos/1
+
+     warning: variable "todos" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 472 │     todos = length(filter_todos(assigns.todos, assigns.filter, assigns.search_query))
+     │     ~~~~~
+     │
+     └─ lib/todo_app_web/todo_live.ex:472:5: TodoAppWeb.TodoLive.render_bulk_actions/1
+
+     error: undefined variable "query"
+     │
+ 613 │       _ = Enum.filter(todos, fn t -> not Kernel.is_nil(:binary.match(String.downcase(t.title), query)) or not Kernel.is_nil(t.description) and not Kernel.is_nil(:binary.match(String.downcase(t.description), query)) end)
+     │                                                                                                                                                                                                                ^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:613:208: TodoAppWeb.TodoLive.filter_todos/3
+
+     error: undefined variable "query"
+     │
+ 613 │       _ = Enum.filter(todos, fn t -> not Kernel.is_nil(:binary.match(String.downcase(t.title), query)) or not Kernel.is_nil(t.description) and not Kernel.is_nil(:binary.match(String.downcase(t.description), query)) end)
+     │                                                                                                ^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:613:96: TodoAppWeb.TodoLive.filter_todos/3
+
+     error: undefined variable "priority_color"
+     │
+ 515 │ "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 #{priority_color}\">
+     │                                                                               ^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:515:79: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "text_decoration"
+     │
+ 552 │   "<p class=\"text-gray-600 dark:text-gray-400 mt-1 #{text_decoration}\">#{todo.description}</p>"
+     │                                                       ^^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:552:55: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "text_decoration"
+     │
+ 548 │ ...                   <h3 class=\"text-lg font-semibold text-gray-800 dark:text-white #{text_decoration}\">
+     │                                        ^^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:548:74: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "checkmark"
+     │
+ 543 │ ...                   #{checkmark}
+     │ ^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:543:10: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "completed_class"
+     │
+ 538 │ "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 #{priority_color} #{completed_class} transition-all hover:shadow-xl\">
+     │                                                                                                 ^^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:538:97: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "priority_color"
+     │
+ 538 │ "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 #{priority_color} #{completed_class} transition-all hover:shadow-xl\">
+     │                                                                               ^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:538:79: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "priority_color"
+     │
+ 503 │     case priority_color do
+     │          ^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:503:10: TodoAppWeb.TodoLive.render_todo_item/2
+
+     error: undefined variable "filtered_count"
+     │
+ 476 │ ...                   Showing #{filtered_count} of #{assigns.total_todos} todos
+     │ ^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:476:16: TodoAppWeb.TodoLive.render_bulk_actions/1
+
+     error: undefined variable "complete_assigns"
+     │
+ 240 │     updated_socket = Phoenix.Component.assign(socket, complete_assigns)
+     │                                                       ^^^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:240:55: TodoAppWeb.TodoLive.delete_completed_todos/1
+
+     error: undefined variable "todo"
+     │
+ 234 │   TodoApp.Repo.delete(todo)
+     │                       ^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:234:23: TodoAppWeb.TodoLive.delete_completed_todos/1
+
+     error: undefined variable "complete_assigns"
+     │
+ 227 │     updated_socket = Phoenix.Component.assign(socket, complete_assigns)
+     │                                                       ^^^^^^^^^^^^^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:227:55: TodoAppWeb.TodoLive.complete_all_todos/1
+
+     error: undefined variable "todo"
+     │
+ 215 │       Log.trace("Failed to complete todo " <> todo.id.to_string() <> ": " <> reason.to_string(), %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 517, :class_name => "server.live.TodoLive", :method_name => "completeAllTodos"})
+     │                                               ^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:215:47: TodoAppWeb.TodoLive.complete_all_todos/1
+
+     error: undefined variable "todo"
+     │
+ 210 │   updated_changeset = TodoApp.Todo.toggle_completed(todo)
+     │                                                     ^^^^
+     │
+     └─ lib/todo_app_web/todo_live.ex:210:53: TodoAppWeb.TodoLive.complete_all_todos/1
+
+    error: undefined variable "presence_socket"
+    │
+ 22 │     updated_socket = Phoenix.Component.assign(presence_socket, assigns)
+    │                                               ^^^^^^^^^^^^^^^
+    │
+    └─ lib/todo_app_web/todo_live.ex:22:47: TodoAppWeb.TodoLive.mount/3
+
+    error: undefined variable "now"
+    │
+ 10 │     Log.trace("Current time: #{DateTime.to_iso8601(now)}", %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 109, :class_name => "server.live.TodoLive", :method_name => "mount"})
+    │                                                    ^^^
+    │
+    └─ lib/todo_app_web/todo_live.ex:10:52: TodoAppWeb.TodoLive.mount/3
+
+
+== Compilation error in file lib/todo_app_web/todo_live.ex ==
+** (CompileError) lib/todo_app_web/todo_live.ex: cannot compile module TodoAppWeb.TodoLive (errors have been logged)
+

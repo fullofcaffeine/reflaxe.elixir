@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * LocalAssignUnderscoreLateTransforms
@@ -76,7 +77,7 @@ class LocalAssignUnderscoreLateTransforms {
                     var newRhs = switch (rhs.def) {
                         case EBinary(Match, leftInner, expr):
                             var innerName:Null<String> = switch (leftInner.def) { case EVar(n): n; default: null; };
-                            if (innerName != null && !usedLater(stmts, i + 1, innerName)) {
+                            if (innerName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName)) {
                                 // Collapse nested: outer = (inner = expr) -> outer = expr
                                 collapse = true;
                                 collapsedExpr = expr;
@@ -87,7 +88,7 @@ class LocalAssignUnderscoreLateTransforms {
                     // Left var unused later → underscore
                     var leftName:Null<String> = switch (left.def) { case EVar(n): n; default: null; };
                     var newLeft = left;
-                    if (leftName != null && !usedLater(stmts, i + 1, leftName)) {
+                    if (leftName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName)) {
                         newLeft = makeASTWithMeta(EVar('_' + leftName), left.metadata, left.pos);
                     }
                     if (collapse && collapsedExpr != null) {
@@ -104,19 +105,19 @@ class LocalAssignUnderscoreLateTransforms {
                     var newRhs2 = switch (rhs.def) {
                         case EBinary(Match, leftInner2, expr2):
                             var innerName2:Null<String> = switch (leftInner2.def) { case EVar(n): n; default: null; };
-                            if (innerName2 != null && !usedLater(stmts, i + 1, innerName2)) {
+                            if (innerName2 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName2)) {
                                 collapse2 = true; collapsedExpr2 = expr2; rhs;
                             } else rhs;
                         case EMatch(patInner2, expr3):
                             var innerName3:Null<String> = switch (patInner2) { case PVar(n3): n3; default: null; };
-                            if (innerName3 != null && !usedLater(stmts, i + 1, innerName3)) {
+                            if (innerName3 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName3)) {
                                 collapse2 = true; collapsedExpr2 = expr3; rhs;
                             } else rhs;
                         default: rhs;
                     };
                     var leftName2:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
                     var newPat = pat;
-                    if (leftName2 != null && !usedLater(stmts, i + 1, leftName2) && leftName2.charAt(0) != '_') {
+                    if (leftName2 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName2) && leftName2.charAt(0) != '_') {
                         newPat = PVar('_' + leftName2);
                     }
                     if (collapse2 && collapsedExpr2 != null) {
@@ -131,60 +132,7 @@ class LocalAssignUnderscoreLateTransforms {
         return out;
     }
 
-    static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
-        for (j in start...stmts.length) if (stmtUsesVar(stmts[j], name)) return true; return false;
-    }
-
-    /**
-     * stmtUsesVar
-     *
-     * WHAT
-     * - Determines whether `name` is used in `n` (expression position), ignoring
-     *   pattern binders but traversing typical nested forms.
-     */
-    static function stmtUsesVar(n:ElixirAST, name:String):Bool {
-        var found = false;
-        function walk(x:ElixirAST, inPattern:Bool):Void {
-            if (x == null || found) return;
-            switch (x.def) {
-                case EVar(v) if (!inPattern && v == name): found = true;
-                case EBinary(Match, left, rhs): walk(rhs, false);
-                case EMatch(pat, rhs2): walk(rhs2, false);
-                case EBlock(ss): for (s in ss) walk(s, false);
-                case EDo(ss2): for (s in ss2) walk(s, false);
-                case EIf(c,t,e): walk(c, false); walk(t, false); if (e != null) walk(e, false);
-                case EBinary(_, l, r): walk(l, false); walk(r, false);
-                case ECall(tgt, _, args): if (tgt != null) walk(tgt, false); for (a in args) walk(a, false);
-                case ERemoteCall(tgt2, _, args2): walk(tgt2, false); for (a2 in args2) walk(a2, false);
-                case ECase(expr, cs): walk(expr, false); for (c in cs) walk(c.body, false);
-                case EString(str):
-                    var i2 = 0;
-                    while (!found && str != null && i2 < str.length) {
-                        var idx2 = str.indexOf("#{", i2);
-                        if (idx2 == -1) break;
-                        var j2 = str.indexOf("}", idx2 + 2);
-                        if (j2 == -1) break;
-                        var inner = str.substr(idx2 + 2, j2 - (idx2 + 2));
-                        if (inner.indexOf(name) != -1) { found = true; break; }
-                        i2 = j2 + 1;
-                    }
-                case EMap(pairs):
-                    for (p in pairs) {
-                        // traverse both key and value; keys are often atoms, but may be expressions
-                        if (!found) walk(p.key, false);
-                        if (!found) walk(p.value, false);
-                    }
-                case ETuple(elems): for (e in elems) walk(e, false);
-                case EKeywordList(pairs): for (p in pairs) walk(p.value, false);
-                case EStructUpdate(base, fields): walk(base, false); for (f in fields) walk(f.value, false);
-                case EField(obj, _): walk(obj, false);
-                case EAccess(tgt3, key): walk(tgt3, false); walk(key, false);
-                default:
-            }
-        }
-        walk(n, false);
-        return found;
-    }
+    // usage analysis delegated to VarUseAnalyzer
 }
 
 #end
