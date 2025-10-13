@@ -65,13 +65,20 @@ class CaseSuccessVarUnifier {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(expr, clauses):
+                    Sys.println('[CaseSuccessVarUnifier] Inspecting ECase with ' + clauses.length + ' clauses');
                     var newClauses = [];
                     for (c in clauses) {
                         var successVar = extractOkVar(c.pattern);
+#if debug_success_unifier
+                        if (successVar != null) Sys.println('[CaseSuccessVarUnifier] Found {:ok, ' + successVar + '} pattern');
+#end
                         if (successVar != null) {
                             // Promote underscore binder when body uses the trimmed name
                             var pat2 = promoteUnderscoreBinder(c.pattern, c.body);
                             var effectiveVar = extractOkVar(pat2);
+#if debug_success_unifier
+                            Sys.println('[CaseSuccessVarUnifier] Effective success var: ' + effectiveVar);
+#end
                             var newBody = rewritePlaceholders(c.body, effectiveVar, funcDefined);
                             newClauses.push({ pattern: pat2, guard: c.guard, body: newBody });
                         } else newClauses.push(c);

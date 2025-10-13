@@ -1971,19 +1971,7 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifyTransforms.transformPass
         });
-        // Align success binder to single undefined var used in body (usage-driven, no heuristics)
-        passes.push({
-            name: "SuccessBinderAlignByBodyUse(Absolute)",
-            description: "Rename {:ok, binder} binder to the single undefined var used in body, if unambiguous",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
-        });
-        passes.push({
-            name: "SuccessVarAbsoluteReplaceUndefined(Absolute)",
-            description: "Final safety: replace any undefined lower-case var in {:ok, binder} clause body with binder",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
-        });
+        // (Moved to absolute end): Success binder/var alignment passes run at the end of pipeline
         // Absolute: rerun Enum.each sentinel cleanup after all earlier rewrites
         passes.push({
             name: "EnumEachSentinelCleanup(Absolute)",
@@ -2263,12 +2251,6 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceBodySanitizeTransforms.transformPass
         });
-        passes.push({
-            name: "ReduceAccAliasUnify(Final)",
-            description: "Unify reduce accumulator alias (lhs = Enum.concat(lhs, ...)) to acc across reducer body",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms.unifyPass
-        });
         // Drop top-level numeric sentinel literals in function bodies
         passes.push({
             name: "FunctionTopLevelSentinelCleanup(Final)",
@@ -2282,6 +2264,7 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms.discardPass
         });
+        
         
         // Pattern variable origin analysis pass
         // TODO: Temporarily disabled - needs proper implementation
@@ -2298,6 +2281,48 @@ class ElixirASTTransformer {
             description: "Final sweep to inject `require Ecto.Query` in modules using Ecto.Query macros",
             enabled: true,
             pass: ectoQueryRequirePass
+        });
+
+        // Absolute success-case alignment: must run as the very last shape-affecting passes
+        // Align success binder to the single undefined var used in body (usage-driven, shape-based)
+        passes.push({
+            name: "SuccessBinderAlignByBodyUse(Absolute)",
+            description: "Rename {:ok, binder} binder to the single undefined var used in body, if unambiguous",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
+        });
+        // Final safety: replace undefined lowercase refs in {:ok, binder} clause bodies with binder
+        passes.push({
+            name: "SuccessVarAbsoluteReplaceUndefined(Absolute)",
+            description: "Final safety: replace any undefined lower-case var in {:ok, binder} clause body with binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
+        });
+
+        // Final reducer alias normalization (absolute end): fix lingering alias concat -> acc concat and unify aliases
+        passes.push({
+            name: "ReduceAliasConcatToAcc(Absolute)",
+            description: "Normalize alias-based accumulator concat to canonical acc concat inside Enum.reduce (absolute)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceAliasConcatToAccTransforms.transformPass
+        });
+        passes.push({
+            name: "ReduceAccAliasUnify(Absolute)",
+            description: "Unify reduce accumulator alias to acc across reducer body (absolute)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms.unifyPass
+        });
+        passes.push({
+            name: "EFnAliasConcatToAcc(Absolute)",
+            description: "Normalize alias concat -> acc concat inside any two-arg anonymous function (safety net)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnAliasConcatToAccTransforms.transformPass
+        });
+        passes.push({
+            name: "ReduceAppendCanonicalize(Absolute)",
+            description: "Canonicalize append inside Enum.reduce: alias concat -> acc concat; alias element -> binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceAppendCanonicalizeTransforms.transformPass
         });
 
         // Return only enabled passes
