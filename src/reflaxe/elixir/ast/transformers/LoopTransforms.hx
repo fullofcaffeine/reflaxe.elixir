@@ -2621,10 +2621,12 @@ class LoopTransforms {
                     
                     if (hasEmptyBody) {
                         #if debug_while_loops
-                        trace('[WhileLoopTransform] Found empty reduce_while, transforming to recursive function');
+                        trace('[WhileLoopTransform] Found empty reduce_while, replacing with initial accumulator');
                         #end
-                        // Transform to a simpler pattern or remove entirely
-                        return makeAST(ENil); // Placeholder - needs proper implementation
+                        // Proper fix: an empty reducer does not alter the accumulator; replace the call
+                        // with the initial accumulator expression to preserve semantics.
+                        var initAcc = args[1];
+                        return initAcc;
                     }
                     
                     // Otherwise, recursively transform
