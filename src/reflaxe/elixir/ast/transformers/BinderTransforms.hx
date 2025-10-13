@@ -904,28 +904,26 @@ class BinderTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
+                    // Gate qualification STRICTLY to <App>Web.* modules to avoid leaking
+                    // app-specific prefixes into generic/core code.
                     var prefix = deriveAppPrefix(name);
                     if (prefix == null) {
-                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e:Dynamic) {}
-                        #if macro
-                        if (prefix == null) {
-                            try {
-                                var d = haxe.macro.Compiler.getDefine("app_name");
-                                if (d != null && d.length > 0) prefix = d;
-                            } catch (e:Dynamic) {}
-                        }
-                        #end
+                        // Not a Web module: do not qualify application modules globally.
+                        n;
+                    } else {
+                        var newBody: Array<ElixirAST> = [];
+                        for (b in body) newBody.push(qualifyIn(b, prefix));
+                        makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                     }
-                    var newBody: Array<ElixirAST> = [];
-                    for (b in body) newBody.push(qualifyIn(b, prefix));
-                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var prefix = deriveAppPrefix(name);
                     if (prefix == null) {
-                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e:Dynamic) {}
+                        // Not a Web module: pass through unchanged.
+                        n;
+                    } else {
+                        var newDo = qualifyIn(doBlock, prefix);
+                        makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                     }
-                    var newDo = qualifyIn(doBlock, prefix);
-                    makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                 default:
                     n;
             }

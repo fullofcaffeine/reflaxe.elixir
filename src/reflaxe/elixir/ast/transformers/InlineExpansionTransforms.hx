@@ -181,6 +181,88 @@ class InlineExpansionTransforms {
             return node;
         });
     }
+
+    /**
+     * extractLiteralValueInlineAssignmentsPass
+     *
+     * WHAT
+     * - Hoists inline assignments embedded in literal value positions (map/keyword/struct values and
+     *   struct update base) into a preceding block, preserving evaluation order and Elixir syntax rules.
+     *
+     * WHY
+     * - Elixir does not allow assignment statements inside literal constructors. Haxe inline expansion
+     *   commonly emits EBlock([... assignments ... , value]) in these positions (ex: Presence meta maps).
+     *   We must extract assignments before constructing the literal.
+     *
+     * HOW
+     * - For EMap/EKeywordList/EStructUpdate nodes, inspect each value (and base for struct update).
+     *   If the value is an EBlock with one or more assignment statements followed by a final expression,
+     *   hoist the assignments into a prefix list and replace the value with the final expression.
+     *   If any hoists occur for the node, wrap the node itself as EBlock(prefix ++ [cleanedNode]).
+     *   This keeps scope and evaluation order correct at the expression site.
+     */
+    public static function extractLiteralValueInlineAssignmentsPass(ast: ElixirAST): ElixirAST {
+        function splitBlockAssignments(e: ElixirAST): { prefix: Array<ElixirAST>, value: ElixirAST } {
+            return switch (e.def) {
+                case EBlock(stmts) if (stmts != null && stmts.length > 0):
+                    var prefix: Array<ElixirAST> = [];
+                    // Hoist all leading statements except the final expression
+                    for (i in 0...stmts.length - 1) prefix.push(stmts[i]);
+                    var v = stmts[stmts.length - 1];
+                    { prefix: prefix, value: v };
+                default:
+                    { prefix: [], value: e };
+            }
+        }
+
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            switch (n.def) {
+                case EMap(pairs):
+                    var hoisted:Array<ElixirAST> = [];
+                    var newPairs = [];
+                    for (p in pairs) {
+                        var s = splitBlockAssignments(p.value);
+                        if (s.prefix.length > 0) for (x in s.prefix) hoisted.push(x);
+                        newPairs.push({ key: p.key, value: s.value });
+                    }
+                    if (hoisted.length > 0) {
+                        return ElixirASTHelpers.make(EBlock(hoisted.concat([ElixirASTHelpers.make(EMap(newPairs))])));
+                    } else {
+                        return n;
+                    }
+                case EKeywordList(pairs):
+                    var hoisted2:Array<ElixirAST> = [];
+                    var newPairs2 = [];
+                    for (p in pairs) {
+                        var s2 = splitBlockAssignments(p.value);
+                        if (s2.prefix.length > 0) for (x in s2.prefix) hoisted2.push(x);
+                        newPairs2.push({ key: p.key, value: s2.value });
+                    }
+                    if (hoisted2.length > 0) {
+                        return ElixirASTHelpers.make(EBlock(hoisted2.concat([ElixirASTHelpers.make(EKeywordList(newPairs2))])));
+                    } else {
+                        return n;
+                    }
+                case EStructUpdate(base, fields):
+                    var hoisted3:Array<ElixirAST> = [];
+                    var sb = splitBlockAssignments(base);
+                    if (sb.prefix.length > 0) for (x in sb.prefix) hoisted3.push(x);
+                    var newFields = [];
+                    for (f in fields) {
+                        var sf = splitBlockAssignments(f.value);
+                        if (sf.prefix.length > 0) for (x in sf.prefix) hoisted3.push(x);
+                        newFields.push({ key: f.key, value: sf.value });
+                    }
+                    if (hoisted3.length > 0) {
+                        return ElixirASTHelpers.make(EBlock(hoisted3.concat([ElixirASTHelpers.make(EStructUpdate(sb.value, newFields))])));
+                    } else {
+                        return n;
+                    }
+                default:
+                    return n;
+            }
+        });
+    }
     
     /**
      * Checks if two expressions match the inline expansion split pattern
