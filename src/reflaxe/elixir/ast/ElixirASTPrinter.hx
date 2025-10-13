@@ -1061,22 +1061,9 @@ class ElixirASTPrinter {
                         }
                     default:
                 }
-                // Module.new() -> %Module{}
-                if (funcName == "new" && args.length == 0) {
-                    inline function appPrefix(): Null<String> {
-                        if (currentModuleName == null) return observedAppPrefix;
-                        var idx = currentModuleName.indexOf("Web");
-                        return idx > 0 ? currentModuleName.substring(0, idx) : observedAppPrefix;
-                    }
-                    var modStr = switch (module.def) {
-                        case EVar(n) if (n.indexOf('.') == -1):
-                            var p = appPrefix();
-                            (p != null ? p + '.' + n : n);
-                        default:
-                            printQualifiedModule(module);
-                    };
-                    return '%'+modStr+'{}';
-                }
+                // Module.new() → %Module{} is handled by AST passes (ModuleNewToStructLiteral)
+                // Printer no longer rewrites new/0 to struct literal to avoid generating invalid
+                // structs for non-schema modules (e.g., BalancedTree). Rely on AST transform stage.
                 // Qualify struct literal in changeset/2 to match remote module
                 var argStr = (function(){
                     if (funcName == "changeset" && args.length >= 1) {

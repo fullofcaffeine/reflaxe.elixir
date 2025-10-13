@@ -57,19 +57,19 @@ class ModuleNewToStructLiteral {
                     case EStruct(modName, fields) if (appPrefix != null && modName.indexOf('.') == -1):
                         // Qualify bare struct literals inside <App>Web.* to %<App>.Module{}
                         makeASTWithMeta(EStruct(appPrefix + "." + modName, fields), n.metadata, n.pos);
-                    case ERemoteCall(module, funcName, args) if (funcName == "new" && args.length == 0):
+                    case ERemoteCall(module, funcName, args) if (funcName == "new" && args.length == 0 && appPrefix != null):
                         switch (module.def) {
                             case EVar(name):
-                                // Only qualify simple module names (no dot) when prefix is known
-                                var full = if (name.indexOf('.') == -1 && appPrefix != null) appPrefix + "." + name else name;
+                                // Only rewrite when prefix is known (Web/Repo/Schema contexts)
+                                var full = (name.indexOf('.') == -1) ? appPrefix + "." + name : name;
                                 makeASTWithMeta(EStruct(full, []), n.metadata, n.pos);
                             default:
                                 n; // Leave other module expressions as-is
                         }
-                    case ECall(target, funcName, args) if (funcName == "new" && args.length == 0):
+                    case ECall(target, funcName, args) if (funcName == "new" && args.length == 0 && appPrefix != null):
                         switch (target.def) {
                             case EVar(name):
-                                var full = if (name.indexOf('.') == -1 && appPrefix != null) appPrefix + "." + name else name;
+                                var full = (name.indexOf('.') == -1) ? appPrefix + "." + name : name;
                                 makeASTWithMeta(EStruct(full, []), n.metadata, n.pos);
                             default:
                                 n;
