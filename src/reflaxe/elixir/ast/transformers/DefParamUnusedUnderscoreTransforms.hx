@@ -31,15 +31,34 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * After:
  *   def get_users_editing_todo(socket, _todo_id) do ... end
  */
+/**
+ * DefParamUnusedUnderscoreTransforms
+ *
+ * WHAT
+ * - Prefixes unused function parameters with underscore in Phoenix Web/Live/Presence
+ *   contexts to silence warnings without changing semantics.
+ *
+ * WHY (PHOENIX GATING)
+ * - Phoenix callbacks often include parameters that are unused in some clauses; we
+ *   restrict this transformation to Phoenix-shaped modules to avoid touching
+ *   framework-agnostic code and stdlib.
+ */
 class DefParamUnusedUnderscoreTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
+                    // Gate to Phoenix contexts only (shape-based + metadata)
+                    var isPhoenixCtx = (n.metadata?.isPhoenixWeb == true)
+                        || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
+                    if (!isPhoenixCtx) return n;
                     var newBody = [];
                     for (b in body) newBody.push(rewriteDefs(b));
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
+                    var isPhoenixCtx2 = (n.metadata?.isPhoenixWeb == true)
+                        || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
+                    if (!isPhoenixCtx2) return n;
                     makeASTWithMeta(EDefmodule(name, rewriteDefs(doBlock)), n.metadata, n.pos);
                 default:
                     n;

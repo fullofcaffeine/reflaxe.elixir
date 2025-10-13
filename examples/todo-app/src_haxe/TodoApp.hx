@@ -40,17 +40,8 @@ class TodoApp {
         ];
 
         // Start supervisor with children
-        var opts: SupervisorOptions = {
-            strategy: OneForOne,
-            max_restarts: 3,
-            max_seconds: 5
-        };
-        
-        // Start the supervisor and return proper ApplicationResult
-        var supervisorResult = SupervisorExtern.startLink(children, opts);
-        
-        // Return the supervisor result directly - it's already {:ok, pid} format
-        return supervisorResult;
+        // Start supervisor using inline keyword options to ensure clean output
+        return untyped __elixir__('Supervisor.start_link({0}, [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])', children);
     }
 
     /**
