@@ -90,13 +90,9 @@ class Telemetry {
      */
     @:keep
     public static function start_link(args: TelemetryOptions): ApplicationResult {
-        // Start with empty children - telemetry reporters are added dynamically at runtime
-        // This is the standard OTP pattern for telemetry supervisors
-        var children: Array<ChildSpecFormat> = [];
-        
-        // Use __elixir__ injection to call Supervisor.start_link with proper keyword list
-        // The keyword list is injected directly as Elixir code to avoid string quoting
-        return untyped __elixir__('Supervisor.start_link({0}, [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])', children);
+        // Start a telemetry supervisor with no children; reporters are added dynamically.
+        // Inline empty list directly to avoid intermediate temp and ensure WAE=0.
+        return untyped __elixir__('Supervisor.start_link([], [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])');
     }
     
     /**
