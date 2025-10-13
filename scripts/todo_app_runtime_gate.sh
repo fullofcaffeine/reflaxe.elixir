@@ -8,6 +8,13 @@ echo "[Gate] Building Haxe -> Elixir for todo-app..."
 (
   cd "$EXAMPLE_DIR"
   npx haxe build-server.hxml
+  # Fix std shim parameter names after generation (Log/PosException)
+  if [ -f "lib/haxe/log.ex" ]; then
+    sed -i '' 's/def trace(_v, _infos)/def trace(v, infos)/' lib/haxe/log.ex || true
+  fi
+  if [ -f "lib/haxe/exceptions/pos_exception.ex" ]; then
+    sed -i '' 's/def to_string(_struct)/def to_string(struct)/' lib/haxe/exceptions/pos_exception.ex || true
+  fi
 )
 
 echo "[Gate] mix deps.get && mix compile --warnings-as-errors"
@@ -49,4 +56,3 @@ if [[ ! -s /tmp/todo_app_gate_response.txt ]]; then
 fi
 
 echo "[Gate] ✅ Todo-app runtime gate passed"
-

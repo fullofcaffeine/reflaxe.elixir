@@ -2,17 +2,18 @@ package reflaxe.elixir.ast;
 
 #if (macro || reflaxe_runtime)
 
-import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.ElixirAST.makeAST;
 import haxe.macro.Expr.Position;
-import reflaxe.elixir.ast.ElixirASTBuilder;
-import reflaxe.elixir.ast.ElixirAST.VarOrigin;
-import reflaxe.elixir.ast.naming.ElixirAtom;
-import reflaxe.elixir.ast.transformers.PatternMatchingTransforms;
-import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
-import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
-import reflaxe.elixir.ast.transformers.StructUpdateTransform;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.ElixirAST.VarOrigin;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTBuilder;
+import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
+import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
+import reflaxe.elixir.ast.transformers.PatternMatchingTransforms;
+import reflaxe.elixir.ast.transformers.StructUpdateTransform;
+
 using StringTools;
 
 /**
@@ -654,6 +655,14 @@ class ElixirASTTransformer {
             description: "Remove redundant temp alias assignments in statement contexts",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.tempAliasCleanupPass
+        });
+
+        // Collapse nested alias chains: lhs = alias = expr → lhs = expr (when alias unused later)
+        passes.push({
+            name: "AssignmentChainCleanup",
+            description: "Collapse nested match alias chains to eliminate unused alias binders",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.transformPass
         });
 
         // Assignment extraction pass (must run before underscore cleanup)
@@ -1800,6 +1809,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoQueryableToSchemaPass
         });
 
+        // Presence ERaw cleanup: remove constant-true if and trailing acc in reduce bodies
+        passes.push({
+            name: "PresenceERawCleanup(Final)",
+            description: "Sanitize ERaw reduce bodies in Presence modules (drop if 1 and trailing acc)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceERawCleanupTransforms.transformPass
+        });
+
         // Absolute last: ensure declarations and references agree after all prior rewrites
         passes.push({
             name: "RefDeclAlignment(Final)",
@@ -1832,6 +1849,14 @@ class ElixirASTTransformer {
             description: "Ultra-final sweep to remove any bare numeric sentinels left by late injections",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+        });
+
+        // Simplify if-branches with constant conditions (true/false/1/0)
+        passes.push({
+            name: "IfConstSimplify(Final)",
+            description: "Simplify if true/1 and if false/0 conditionals",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfConstSimplifyTransforms.transformPass
         });
 
         // Absolute late sweep: ensure HEEx raw(content) uses assigns and assigns has :content
@@ -1882,12 +1907,83 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
         });
 
+        // Phoenix-scoped hygiene: underscore unused def/defp parameters in Web/Live/Presence modules
+        passes.push({
+            name: "DefParamUnusedUnderscore(Phoenix)",
+            description: "Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
+        });
+
+        // Run parameter underscore cleanup again late to catch usage removed by prior passes
+        passes.push({
+            name: "DefParamUnusedUnderscore(Phoenix Final)",
+            description: "Late sweep: underscore unused def/defp params in Phoenix modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
+        });
+
         // Final safety: rename references name -> _name when only underscored binder exists
         passes.push({
             name: "LocalUnderscoreReferenceFallback(Final)",
             description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
+        });
+        // Ultra-final Phoenix sweeps: underscore unused case binders and params
+        passes.push({
+            name: "ClauseUnusedBinderUnderscore(Phoenix UltraFinal)",
+            description: "Ultra-final underscore of unused case binders in Phoenix modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
+        });
+        passes.push({
+            name: "DefParamUnusedUnderscore(Phoenix UltraFinal)",
+            description: "Ultra-final underscore of unused def/defp params in Web/Live/Presence",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
+        });
+        // Final: discard top-level nil assignments in function bodies when unused
+        passes.push({
+            name: "TopLevelNilAssignDiscard(Final)",
+            description: "Rewrite var = nil to _ = nil when var is not used later in function",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.TopLevelNilAssignDiscardTransforms.transformPass
+        });
+        // Absolutely last: promote underscore binders by use one more time
+        passes.push({
+            name: "CaseUnderscoreBinderPromoteByUse(Absolute)",
+            description: "Absolute sweep: promote _name binders when body uses name",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
+        });
+        // Absolutely last: unify {:ok, var} success var references in clause body
+        passes.push({
+            name: "CaseSuccessVarUnifier(Absolute)",
+            description: "Absolute sweep: replace undefined refs in {:ok, var} clause bodies with var",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
+        });
+        // Absolute: rerun Enum.each sentinel cleanup after all earlier rewrites
+        passes.push({
+            name: "EnumEachSentinelCleanup(Absolute)",
+            description: "Absolute sweep: drop bare numeric sentinels in Enum.each fn bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
+        });
+        // Ultra-final: promote underscored case binders to base name when body uses base name
+        passes.push({
+            name: "CaseUnderscoreBinderPromoteByUse(UltraFinal)",
+            description: "Promote _name -> name in case patterns when body uses name (ultra-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
+        });
+        // Ultra-final: unify success vars in {:ok, v} branches again to harmonize with late renames
+        passes.push({
+            name: "CaseSuccessVarUnifier(UltraFinal)",
+            description: "Ultra-final unification of success var in {:ok, v} clauses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });
         // Discard unused assignments inside closures (EFn clause bodies)
         passes.push({
@@ -8960,35 +9056,6 @@ class SupervisorOptionsTransformPass {
 
         return analyzeAndTransform(ast);
     }
-
-    /**
-     * Map Iterator Transform Pass
-     * Uses ElixirASTPatterns for detection and extraction
-     * 
-     * WHY: Haxe desugars `for (key => value in map)` into complex while loops with
-     *      infrastructure variables (g, g1, g2) and iterator method calls that generate
-     *      non-idiomatic Elixir code with reduce_while and key_value_iterator() chains.
-     * 
-     * WHAT: Detects Map iteration patterns and transforms them into idiomatic Elixir:
-     *       - Simple iteration → Enum.each(map, fn {k, v} -> ... end)
-     *       - Collecting results → Enum.map(map, fn {k, v} -> ... end)
-     *       - With filtering → for {k, v} <- map, condition, do: ...
-     * 
-     * HOW: Pattern matches on Enum.reduce_while calls that contain iterator methods,
-     *      extracts the map variable and loop body, then generates appropriate Elixir
-     *      enumeration patterns with tuple destructuring.
-     * 
-     * Example transformation:
-     * From: Enum.reduce_while(Stream.iterate(...), {map}, fn _, {map} ->
-     *         if (map.key_value_iterator().has_next()) do
-     *           key = map.key_value_iterator().next().key
-     *           value = map.key_value_iterator().next().value
-     *           ...
-     *         end
-     *       end)
-     * 
-     * To: Enum.each(map, fn {key, value} -> ... end)
-     */
 }
 
 #end // (macro || reflaxe_runtime)

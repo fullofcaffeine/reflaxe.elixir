@@ -69,11 +69,12 @@ class CaseSuccessVarUnifier {
                     for (c in clauses) {
                         var successVar = extractOkVar(c.pattern);
                         if (successVar != null) {
-                            var newBody = rewritePlaceholders(c.body, successVar, funcDefined);
-                            newClauses.push({ pattern: c.pattern, guard: c.guard, body: newBody });
-                        } else {
-                            newClauses.push(c);
-                        }
+                            // Promote underscore binder when body uses the trimmed name
+                            var pat2 = promoteUnderscoreBinder(c.pattern, c.body);
+                            var effectiveVar = extractOkVar(pat2);
+                            var newBody = rewritePlaceholders(c.body, effectiveVar, funcDefined);
+                            newClauses.push({ pattern: pat2, guard: c.guard, body: newBody });
+                        } else newClauses.push(c);
                     }
                     makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
                 default:
@@ -102,6 +103,35 @@ class CaseSuccessVarUnifier {
             case EAtom(value): value == ":ok" || value == "ok";
             default: false;
         }
+    }
+
+    static function promoteUnderscoreBinder(p: EPattern, body: ElixirAST): EPattern {
+        return switch (p) {
+            case PTuple(els) if (els.length == 2):
+                switch (els[0]) {
+                    case PLiteral(l) if (isOkAtom(l)):
+                        switch (els[1]) {
+                            case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
+                                var trimmed = n.substr(1);
+                                if (bodyUsesName(body, trimmed)) PTuple([els[0], PVar(trimmed)]) else p;
+                            default: p;
+                        }
+                    default: p;
+                }
+            default: p;
+        }
+    }
+
+    static function bodyUsesName(body: ElixirAST, name: String): Bool {
+        var used = false;
+        ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+            switch (n.def) {
+                case EVar(v) if (v == name): used = true;
+                default:
+            }
+            return n;
+        });
+        return used;
     }
 
     static function rewritePlaceholders(body: ElixirAST, successVar: String, funcDefined: Map<String, Bool>): ElixirAST {
