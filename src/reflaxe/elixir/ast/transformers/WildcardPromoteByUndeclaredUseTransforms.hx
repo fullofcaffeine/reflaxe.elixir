@@ -313,7 +313,16 @@ class WildcardPromoteByUndeclaredUseTransforms {
                 // No DateTime/Presence name-based promotions.
             case _:
         }
-        // Removed Presence promotions; rely on shape-only assign/2 analysis below
+        // Shape-only assign/2 analysis: if the next assign/2 uses a single undeclared var as first arg, promote
+        var firstArgs = collectRemoteArgVars(stmts, idx + 1, declared, 5, "Phoenix.Component", "assign", 0);
+        if (firstArgs.length == 1 && !declared.exists(firstArgs[0])) {
+            return makeASTWithMeta(EMatch(PVar(firstArgs[0]), rhs), rhs.metadata, rhs.pos);
+        }
+        // Shape-only DateTime to_iso8601 analysis: if exactly one undeclared var is used as its arg, promote to it
+        var dtVars = collectDateTimeToIsoArgs(stmts, idx + 1, declared, 6);
+        if (dtVars.length == 1 && !declared.exists(dtVars[0])) {
+            return makeASTWithMeta(EMatch(PVar(dtVars[0]), rhs), rhs.metadata, rhs.pos);
+        }
         // Removed specific var promotions from if-branches; rely on undeclared ref scan
         // Removed name-based fallbacks; rely on map/assign usage analysis and generic undeclared reference scan
         // Field-based map usage: if exactly one base var is used in field accesses in the upcoming map,
