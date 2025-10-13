@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.transformers;
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
 
@@ -41,7 +42,43 @@ import reflaxe.elixir.ast.ASTUtils;
  *     Supervisor.start_link(_children, _opts)
  *   end
  */
+/**
+ * ApplicationStartTransforms
+ *
+ * WHAT
+ * - Normalizes `Supervisor.start_link(children, opts)` in Application.start/2 by
+ *   aligning argument names to actually declared locals and appending the call when
+ *   missing (with safe default opts).
+ *
+ * WHY
+ * - Hygiene and extraction passes may rename or remove locals like `children`/`opts`.
+ *   Aligning call arguments to declared binders and providing defaults when needed
+ *   prevents undefined-variable errors while preserving idiomatic Elixir.
+ *
+ * HOW
+ * - Scan the function body to detect declarations for `children`/`opts` (including
+ *   underscored variants), rewrite call-site arguments accordingly, and if the call
+ *   is missing add `Supervisor.start_link(children, [strategy: :one_for_one, ...])`.
+ *
+ * EXAMPLES
+ * Before:
+ *   _children = [...]; _opts = [strategy: :one_for_one]; Supervisor.start_link(children, opts)
+ * After:
+ *   children = [...]; opts = [strategy: :one_for_one]; Supervisor.start_link(children, opts)
+ */
 class ApplicationStartTransforms {
+    /**
+     * normalizeStartLinkArgsPass
+     *
+     * WHAT
+     * - Align `Supervisor.start_link(children, opts)` with locally declared names and
+     *   append a call with default keyword opts if absent.
+     *
+     * WHY DEFAULT/INLINE OPTS
+     * - Using a keyword list literal at the call site avoids relying on a separate
+     *   `opts` binding that might be removed by late hygiene passes. It keeps the
+     *   generated code explicit and WAE-safe without changing semantics.
+     */
     public static function normalizeStartLinkArgsPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
@@ -103,8 +140,26 @@ class ApplicationStartTransforms {
                         }
                     }
 
-                    var newBody = ElixirASTTransformer.transformNode(body, rewrite);
-                    makeASTWithMeta(EDef(name, params, guards, newBody), node.metadata, node.pos);
+                    var transformedBody = ElixirASTTransformer.transformNode(body, rewrite);
+                    // Ensure Supervisor.start_link(children, opts) exists; if missing, append it
+                    var hasStartLink = false;
+                    var finalBody = switch (transformedBody.def) {
+                        case EBlock(stmts):
+                            for (s in stmts) switch (s.def) { case ERemoteCall(mod, fn, _) if (fn == "start_link"): hasStartLink = true; default: }
+                            if (!hasStartLink && declaredChildren != null) {
+                                var appended = stmts.copy();
+                                var defaultOpts = makeAST(EKeywordList([
+                                    { key: "strategy", value: makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) },
+                                    { key: "max_restarts", value: makeAST(EInteger(3)) },
+                                    { key: "max_seconds", value: makeAST(EInteger(5)) }
+                                ]));
+                                appended.push(makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts])));
+                                makeASTWithMeta(EBlock(appended), transformedBody.metadata, transformedBody.pos);
+                            } else transformedBody;
+                        default:
+                            transformedBody;
+                    };
+                    makeASTWithMeta(EDef(name, params, guards, finalBody), node.metadata, node.pos);
 
                 default:
                     node;

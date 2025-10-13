@@ -2778,3 +2778,21 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 ---
 
 **Remember**: All detailed information is in the organized [docs/](docs/) structure. This file provides navigation and critical rules only.
+## Documentation Directive (hxdoc Required)
+
+To maintain high-quality, self-explanatory compiler code, the following rules are mandatory for all changes under `src/reflaxe/elixir/**` (builders, transformers, analyzers, printer rules, macros, shims) and for vendor edits:
+
+- Mandatory hxdoc on creation or modification of any compiler entity, including:
+  - Transformers, builders, analyzers, printer rules, passes, macros, shims
+  - Any new public externs in std/phoenix/ecto or vendor surfaces we expose
+  - Vendor modifications (with file header comment and changelog entry as per vendor policy)
+- hxdoc must include: WHAT, WHY, HOW, and EXAMPLES (minimal Haxe input → Elixir before/after)
+- Cross-reference the snapshot(s) that cover the change and intended behavior; note limitations/non‑goals
+- Keep transformer files < 2000 LOC; extract helpers when approaching the limit
+- Inline rationale: when inlining values or using inline helpers for performance or WAE safety, explain the reason in hxdoc (e.g., “inline [] to avoid undefined children after hygiene passes”)
+- No app-specific name heuristics; scope all rules by shape/API (see Hard Rule section)
+
+CI/QA Sentinel expectations:
+
+- QA checks must fail if any modified file under `src/reflaxe/elixir/ast/transformers/*.hx` lacks an hxdoc block describing the change per the above format.
+- Shrimp tasks must reference the files touched and the snapshots that verify the behavior.

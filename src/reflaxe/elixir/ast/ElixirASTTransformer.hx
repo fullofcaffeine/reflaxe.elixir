@@ -1747,6 +1747,26 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TelemetryChildrenArgFixTransforms.fixPass
         });
+        // LiveView mount flow normalization to restore required binders
+        passes.push({
+            name: "LiveMountNormalize(UltraFinal)",
+            description: "Normalize LiveView mount/3: promote discards to named binders and bind updated_socket",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveMountNormalizeTransforms.pass
+        });
+        passes.push({
+            name: "WildcardPromoteByUndeclaredUse(UltraFinal)",
+            description: "Promote `_ = rhs` to named binder when a single undeclared var is used later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WildcardPromoteByUndeclaredUseTransforms.pass
+        });
+        // Final safety: inline [] for Supervisor.start_link(children, opts) in Telemetry modules
+        passes.push({
+            name: "SupervisorStartLinkChildrenInlineFix(UltraFinal)",
+            description: "Inline [] for Supervisor.start_link(children, ...) in <App>Web.Telemetry",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SupervisorStartLinkChildrenInlineFixTransforms.pass
+        });
         // Fix anon fn arg binder underscore vs usage mismatch (e.g., fn _t -> t.id end)
         passes.push({
             name: "AnonFnArgBinderFix",

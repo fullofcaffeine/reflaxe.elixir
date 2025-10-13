@@ -50,6 +50,17 @@ class UnusedLocalAssignmentUnderscoreTransforms {
         });
     }
 
+    /**
+     * applyToBlocks
+     *
+     * WHAT
+     * - Applies the underscore rewrite to unused local assignment binders inside
+     *   block-like contexts in Live modules.
+     *
+     * WHY INLINE HELPERS
+     * - Local inline helpers for token/interpolation scanning keep traversal simple
+     *   and performant in hot code paths without creating extra allocations.
+     */
     static function applyToBlocks(node: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -118,12 +129,44 @@ class UnusedLocalAssignmentUnderscoreTransforms {
         });
     }
 
+    /**
+     * statementContainsNameInRaw
+     *
+     * WHAT
+     * - Detects if a name occurs in ERaw or interpolated strings (#{name}) within
+     *   a statement, signaling that the name should be considered as “used”.
+     *
+     * WHY
+     * - Many Phoenix helpers and macros are emitted through ERaw; names referenced
+     *   there must not be treated as unused to avoid incorrect underscore/discard.
+     */
     static function statementContainsNameInRaw(s: ElixirAST, name: String): Bool {
         var found = false;
+        function scanInterpolation(text:String, target:String):Bool {
+            if (text == null || target == null || target.length == 0) return false;
+            var i = 0;
+            while (i < text.length) {
+                var idx = text.indexOf("#{", i);
+                if (idx == -1) break;
+                var j = idx + 2;
+                var buf = new StringBuf();
+                while (j < text.length) {
+                    var c = text.charAt(j);
+                    if (c == '}') break;
+                    if (~/[A-Za-z0-9_]/.match(c)) buf.add(c);
+                    j++;
+                }
+                var name = buf.toString();
+                if (name == target) return true;
+                i = j + 1;
+            }
+            return false;
+        }
         function visit(e: ElixirAST): Void {
             if (found || e == null || e.def == null) return;
             switch (e.def) {
                 case ERaw(code): if (code != null && code.indexOf(name) != -1) found = true;
+                case EString(str): if (scanInterpolation(str, name)) found = true;
                 case EBlock(ss): for (x in ss) visit(x);
                 case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
                 case ECase(expr, cs): visit(expr); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
