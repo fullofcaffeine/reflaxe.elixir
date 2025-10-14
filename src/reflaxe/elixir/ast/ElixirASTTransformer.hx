@@ -6975,8 +6975,9 @@ class SupervisorOptionsTransformPass {
                         if (key == "strategy") {
                             switch (value.def) {
                                 case EAtom(a):
-                                    if (a != null && a.length > 0 && a.charAt(0) == ':') {
-                                        var trimmed = a.substr(1);
+                                    var aStr:String = a;
+                                    if (aStr != null && aStr.length > 0 && aStr.charAt(0) == ':') {
+                                        var trimmed = aStr.substr(1);
                                         value = makeAST(EAtom(ElixirAtom.raw(trimmed)));
                                     }
                                 case EString(s):
