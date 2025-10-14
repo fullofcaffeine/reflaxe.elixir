@@ -78,6 +78,16 @@ class ArrayBuilder {
                             default:
                                 // Not a comprehension, proceed with normal list
                         }
+                    } else {
+                        // Fallback: loose extraction of list-building blocks to avoid emitting
+                        // invalid bare concatenations inside array elements.
+                        var loose = ComprehensionBuilder.extractListElementsLoose(stmts, context);
+                        if (loose != null && loose.length > 0) {
+                            #if debug_ast_builder
+                            trace('[AST Builder] Loose extraction produced ' + loose.length + ' element(s) for nested block');
+                            #end
+                            return EList(loose);
+                        }
                     }
                 default:
             }

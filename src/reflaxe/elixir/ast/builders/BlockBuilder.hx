@@ -203,6 +203,18 @@ class BlockBuilder {
         // ====================================================================
         // DEFAULT: Build Regular Block
         // ====================================================================
+        // Before falling back, attempt a lenient extraction of list-building
+        // statements to avoid emitting invalid bare concatenations.
+        if (el.length >= 2) {
+            var loose = ComprehensionBuilder.extractListElementsLoose(el, context);
+            if (loose != null && loose.length > 0) {
+                #if debug_array_comprehension
+                trace('[BlockBuilder] ✓ Loose list-building extraction succeeded (elements=' + loose.length + ')');
+                #end
+                return EList(loose);
+            }
+        }
+
         return buildRegularBlock(el, context);
     }
     

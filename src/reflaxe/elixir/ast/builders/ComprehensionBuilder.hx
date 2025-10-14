@@ -841,6 +841,110 @@ class ComprehensionBuilder {
         
         return elements;
     }
+
+    /**
+     * extractListElementsLoose
+     *
+     * WHAT
+     * - Lenient extraction of list elements from a block that contains bare
+     *   concatenation statements, even when the canonical "var g = []; ...; g"
+     *   initialization/terminator pattern is missing or has been altered by
+     *   downstream hygiene/underscore passes.
+     *
+     * WHY
+     * - Some desugared nested comprehensions surface as sequences of
+     *   concatenations where the accumulator variable initialization or the
+     *   final reference has been optimized away or renamed (e.g. to `_`).
+     *   Emitting those concatenations as statements produces invalid Elixir
+     *   syntax. We must recover the intended list literal early.
+     *
+     * HOW
+     * - Scan all statements and collect RHS values from patterns of the form:
+     *     - g ++ [value]
+     *     - g = g ++ [value]
+     *     - g ++ (block) where block itself is a list-building block
+     *     - g = g ++ (block) with nested list-building
+     * - Recursively process nested blocks to construct list-of-lists when
+     *   encountering inner list-building blocks.
+     * - Return null if no elements can be extracted to avoid false positives.
+     *
+     * EXAMPLES
+     * Haxe:
+     *   [for (i in 0...2) [for (j in 0...2) i * 2 + j]]
+     * Desugared (schematic):
+     *   var g = [];
+     *   g = g ++ [{ var g3 = []; g3 = g3 ++ [0]; g3 = g3 ++ [1]; g3 }];
+     *   g = g ++ [{ var g3 = []; g3 = g3 ++ [2]; g3 = g3 ++ [3]; g3 }];
+     *   g;
+     * Loose extraction builds: [[0,1],[2,3]]
+     */
+    public static function extractListElementsLoose(stmts: Array<TypedExpr>, context: BuildContext): Null<Array<ElixirAST>> {
+        var build = context.getExpressionBuilder();
+        var out: Array<ElixirAST> = [];
+
+        for (stmt in stmts) {
+            var s = unwrapMetaParens(stmt);
+            switch (s.expr) {
+                // Bare concatenation: g ++ [value]
+                case TBinop(OpAdd, _, {expr: TArrayDecl([value])}):
+                    out.push(build(value));
+
+                // Assignment with concatenation: g = g ++ [value]
+                case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}):
+                    out.push(build(value));
+
+                // Bare concatenation with nested block: g ++ (block)
+                case TBinop(OpAdd, _, {expr: TBlock(blockStmts)}):
+                    var nested: Null<Array<ElixirAST>> = null;
+                    // Prefer strict extractor when shape is canonical; otherwise recurse loosely
+                    if (looksLikeListBuildingBlock(blockStmts)) {
+                        var nestedValues = extractListElements(blockStmts);
+                        if (nestedValues != null) {
+                            var built = nestedValues.map(v -> build(v));
+                            nested = built;
+                        }
+                    }
+                    if (nested == null) {
+                        nested = extractListElementsLoose(blockStmts, context);
+                    }
+                    if (nested != null && nested.length > 0) {
+                        out.push(makeAST(EList(nested)));
+                    } else {
+                        out.push(makeAST(EBlock(blockStmts.map(e -> build(e)))));
+                    }
+
+                // Assignment with concatenation and nested block: g = g ++ (block)
+                case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TBlock(blockStmts)})}):
+                    var nested2: Null<Array<ElixirAST>> = null;
+                    if (looksLikeListBuildingBlock(blockStmts)) {
+                        var nestedValues2 = extractListElements(blockStmts);
+                        if (nestedValues2 != null) {
+                            var built2 = nestedValues2.map(v -> build(v));
+                            nested2 = built2;
+                        }
+                    }
+                    if (nested2 == null) {
+                        nested2 = extractListElementsLoose(blockStmts, context);
+                    }
+                    if (nested2 != null && nested2.length > 0) {
+                        out.push(makeAST(EList(nested2)));
+                    } else {
+                        out.push(makeAST(EBlock(blockStmts.map(e -> build(e)))));
+                    }
+
+                // Recurse into nested blocks if present as standalone statements
+                case TBlock(blockStmts):
+                    var nested3 = extractListElementsLoose(blockStmts, context);
+                    if (nested3 != null && nested3.length > 0) {
+                        out.push(makeAST(EList(nested3)));
+                    }
+
+                default:
+            }
+        }
+
+        return out.length > 0 ? out : null;
+    }
     
     // ================================================================
     // Helper Functions
