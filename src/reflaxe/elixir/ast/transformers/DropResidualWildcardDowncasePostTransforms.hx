@@ -16,6 +16,17 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Some late passes may reintroduce or demote binders to wildcard; this removes
  *   redundant pure assignments to keep output clean and idiomatic.
+ *
+ * HOW
+ * - Scan block statements and remember when a `query = String.downcase(...)` binder
+ *   has been encountered; drop any subsequent wildcard downcase statements.
+ *
+ * EXAMPLES
+ * Before:
+ *   query = String.downcase(search_query)
+ *   _ = String.downcase(search_query)
+ * After:
+ *   query = String.downcase(search_query)
  */
 class DropResidualWildcardDowncasePostTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

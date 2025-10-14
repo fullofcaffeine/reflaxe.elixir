@@ -14,10 +14,22 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Repairs query binder names after early hygiene when later filter predicates
  *   (including ERaw) use `query` but binder was underscored to `_query` or wildcard.
  *
+ * WHY
+ * - Hygiene passes may demote intentional binders to underscore or wildcard
+ *   causing later predicate bodies to reference an undefined `query`.
+ *
  * HOW
  * - For each EBlock/EDo list, if we see `_query = String.downcase(search_query)` (or
  *   `_ = String.downcase(search_query)`), and later a filter appears that references
  *   `query` (EFn body or ERaw), rewrite binder to `query = String.downcase(search_query)`.
+ *
+ * EXAMPLES
+ * Before:
+ *   _query = String.downcase(search_query)
+ *   Enum.filter(list, fn t -> String.contains?(t.title, query) end)
+ * After:
+ *   query = String.downcase(search_query)
+ *   Enum.filter(list, fn t -> String.contains?(t.title, query) end)
  */
 class QueryBinderRescueTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -111,4 +123,3 @@ class QueryBinderRescueTransforms {
 }
 
 #end
-

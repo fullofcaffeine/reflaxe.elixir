@@ -18,13 +18,24 @@ pattern_has_hxdoc() {
   return 1
 }
 
-while IFS= read -r -d '' f; do
-  # Only check actual transformer modules (skip AGENTS/docs)
-  if [[ "$f" == *"AGENTS.md"* ]]; then continue; fi
-  if ! pattern_has_hxdoc "$f"; then
-    missing+=("$f")
-  fi
-done < <(find "$ROOT_DIR/src/reflaxe/elixir/ast/transformers" -type f -name "*.hx" -print0)
+# Optional scope narrowing: if HXDOC_ONLY is provided, check only those space-separated files.
+if [[ -n "${HXDOC_ONLY:-}" ]]; then
+  for f in $HXDOC_ONLY; do
+    # Normalize to absolute
+    file="$ROOT_DIR/${f#./}"
+    if [[ -f "$file" ]]; then
+      if ! pattern_has_hxdoc "$file"; then missing+=("$file"); fi
+    fi
+  done
+else
+  while IFS= read -r -d '' f; do
+    # Only check actual transformer modules (skip AGENTS/docs)
+    if [[ "$f" == *"AGENTS.md"* ]]; then continue; fi
+    if ! pattern_has_hxdoc "$f"; then
+      missing+=("$f")
+    fi
+  done < <(find "$ROOT_DIR/src/reflaxe/elixir/ast/transformers" -type f -name "*.hx" -print0)
+fi
 
 if ((${#missing[@]})); then
   echo "Missing hxdoc (WHAT/WHY/HOW/EXAMPLES) in transformer files:" >&2
