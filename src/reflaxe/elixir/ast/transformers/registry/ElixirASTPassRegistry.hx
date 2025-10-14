@@ -2184,11 +2184,25 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnScopedUnderscoreRefCleanup.cleanupPass
         });
+        // Align single-arg anonymous fn bodies to their binder when exactly one undefined var exists
+        passes.push({
+            name: "EFnSingleArgUndefinedAlign(Final)",
+            description: "Rewrite single free var in 1-arg EFn body to binder (shape-based, no coupling)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
+        });
         passes.push({
             name: "EFnNumericSentinelCleanup(Final)",
             description: "Drop EInteger(0|1) and EFloat(0.0) statements in EFn bodies",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnNumericSentinelCleanupTransforms.cleanupPass
+        });
+        // Underscore unused anonymous fn args for Enum.each/map/reduce patterns
+        passes.push({
+            name: "EFnUnusedArgUnderscore(Final2)",
+            description: "Prefix unused EFn binders with underscore to avoid warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnUnusedArgUnderscoreTransforms.transformPass
         });
         passes.push({
             name: "EFnLocalAssignDiscard(Final)",

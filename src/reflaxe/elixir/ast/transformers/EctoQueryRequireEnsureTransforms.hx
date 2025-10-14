@@ -32,6 +32,8 @@ class EctoQueryRequireEnsureTransforms {
                 case ERemoteCall(mod, _, args):
                     switch (mod.def) { case EVar(m) if (m == "Ecto.Query"): res.needs = true; default: }
                     if (args != null) for (a in args) scan(a);
+                case ERaw(code):
+                    if (code != null && code.indexOf("Ecto.Query.") != -1) res.needs = true;
                 case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
                 case EBlock(es): for (e in es) scan(e);
                 case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
@@ -54,7 +56,13 @@ class EctoQueryRequireEnsureTransforms {
                     switch (doBlock.def) {
                         case EBlock(stmts):
                             var status = moduleNeedsRequire(doBlock);
+                            #if debug_ecto_query_require
+                            trace('[EctoQueryRequireEnsure] Defmodule ' + name + ' needs=' + status.needs + ' has=' + status.has);
+                            #end
                             if (status.needs && !status.has) {
+                                #if debug_ecto_query_require
+                                trace('[EctoQueryRequireEnsure] Injecting require into defmodule ' + name);
+                                #end
                                 var req = makeAST(ERequire("Ecto.Query", null));
                                 var newDo = makeASTWithMeta(EBlock([req].concat(stmts)), doBlock.metadata, doBlock.pos);
                                 makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
@@ -64,7 +72,13 @@ class EctoQueryRequireEnsureTransforms {
                 case EModule(name, attrs, body):
                     var composed = makeAST(EBlock(body));
                     var status2 = moduleNeedsRequire(composed);
+                    #if debug_ecto_query_require
+                    trace('[EctoQueryRequireEnsure] Module ' + name + ' needs=' + status2.needs + ' has=' + status2.has);
+                    #end
                     if (status2.needs && !status2.has) {
+                        #if debug_ecto_query_require
+                        trace('[EctoQueryRequireEnsure] Injecting require into module ' + name);
+                        #end
                         var req2 = makeAST(ERequire("Ecto.Query", null));
                         makeASTWithMeta(EModule(name, attrs, [req2].concat(body)), n.metadata, n.pos);
                     } else n;
@@ -76,4 +90,3 @@ class EctoQueryRequireEnsureTransforms {
 }
 
 #end
-

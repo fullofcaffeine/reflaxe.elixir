@@ -1712,6 +1712,9 @@ class ElixirASTTransformer {
                         default:
                     }
                     if (args != null) for (a in args) scanForEctoCalls(a, found);
+                case ERaw(code):
+                    // Detect remote macro usage in raw injections
+                    if (code != null && code.indexOf("Ecto.Query.") != -1) found.needs = true;
                 case ECall(target, _, args):
                     if (target != null) scanForEctoCalls(target, found);
                     if (args != null) for (a in args) scanForEctoCalls(a, found);
@@ -1734,11 +1737,18 @@ class ElixirASTTransformer {
                             var found = {needs:false, has:false};
                             for (s in statements) scanForEctoCalls(s, found);
                             if (found.needs && !found.has) {
+                                #if debug_ecto_query_require
+                                trace('[EctoQueryRequire] Injecting require into defmodule ' + name);
+                                #end
                                 var requireStmt = makeAST(ERequire("Ecto.Query", null));
                                 var newStatements = [requireStmt].concat(statements);
                                 var newDo = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
                                 return makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                             }
+                            #if debug_ecto_query_require
+                            if (found.needs && found.has) trace('[EctoQueryRequire] Already has require in defmodule ' + name);
+                            if (!found.needs) trace('[EctoQueryRequire] No Ecto.Query usage detected in defmodule ' + name);
+                            #end
                             return n;
                         default:
                             return n;
@@ -1747,10 +1757,17 @@ class ElixirASTTransformer {
                     var found2 = {needs:false, has:false};
                     for (b in body) scanForEctoCalls(b, found2);
                     if (found2.needs && !found2.has) {
+                        #if debug_ecto_query_require
+                        trace('[EctoQueryRequire] Injecting require into module ' + name);
+                        #end
                         var requireStmt2 = makeAST(ERequire("Ecto.Query", null));
                         var newBody = [requireStmt2].concat(body);
                         return makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                     }
+                    #if debug_ecto_query_require
+                    if (found2.needs && found2.has) trace('[EctoQueryRequire] Already has require in module ' + name);
+                    if (!found2.needs) trace('[EctoQueryRequire] No Ecto.Query usage detected in module ' + name);
+                    #end
                     return n;
                 default:
                     return n;
