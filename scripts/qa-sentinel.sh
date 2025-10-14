@@ -32,47 +32,52 @@ PHX_PID=$!
 trap 'kill $PHX_PID >/dev/null 2>&1 || true' EXIT
 
 echo "[QA] Waiting for server..."
-for i in {1..30}; do
-  if curl -sS "http://localhost:$PORT" >/dev/null 2>&1; then
+READY=0
+for i in $(seq 1 60); do
+  if curl -fsS "http://localhost:$PORT" >/dev/null 2>&1; then
     READY=1; break
   fi
-  sleep 0.3
+  # If not ready, see if endpoint reported a different port
+  DETECTED_PORT=$(grep -Eo 'http://localhost:[0-9]+' /tmp/qa-phx.log 2>/dev/null | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
+  if [[ -z "$DETECTED_PORT" ]]; then
+    DETECTED_PORT=$(grep -Eo '127\.0\.0\.1:[0-9]+' /tmp/qa-phx.log 2>/dev/null | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
+  fi
+  if [[ -n "$DETECTED_PORT" ]] && curl -fsS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
+    PORT="$DETECTED_PORT"; READY=1; break
+  fi
+  sleep 0.5
 done
 
-if [[ "${READY:-0}" -ne 1 ]]; then
-  echo "[QA] Server not responding on port $PORT; attempting fallback detection from logs..."
+if [[ "$READY" -ne 1 ]]; then
+  echo "[QA] ❌ Server did not become ready"
   tail -n 100 /tmp/qa-phx.log || true
-  # Try to detect from "Access ... http://localhost:PORT" first, else from "at 127.0.0.1:PORT"
-  DETECTED_PORT=$(grep -Eo 'http://localhost:[0-9]+' /tmp/qa-phx.log | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
-  if [[ -z "$DETECTED_PORT" ]]; then
-    DETECTED_PORT=$(grep -Eo '127\.0\.0\.1:[0-9]+' /tmp/qa-phx.log | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
-  fi
-  if [[ -n "$DETECTED_PORT" ]]; then
-    echo "[QA] Detected endpoint port: $DETECTED_PORT. Waiting for readiness..."
-    for i in {1..30}; do
-      # Relaxed check: tolerate non-2xx as long as body is non-empty
-      curl -sS "http://localhost:$DETECTED_PORT" -o /tmp/qa-index.html 2>/dev/null || true
-      if [[ -s /tmp/qa-index.html ]]; then
-        echo "[QA] GET / on detected port $DETECTED_PORT returned body (relaxed)"
-        echo "[QA] OK: build + runtime smoke passed (fallback port)"
-        rm -f /tmp/qa-index.html
-        popd >/dev/null
-        exit 0
-      fi
-      sleep 0.3
-    done
-  fi
-  echo "[QA] Fallback failed."
   exit 1
 fi
 
-echo "[QA] GET / (relaxed)"
-curl -sS "http://localhost:$PORT" -o /tmp/qa-index.html 2>/dev/null || true
-if [[ ! -s /tmp/qa-index.html ]]; then
-  echo "[QA] ❌ Empty response body from GET / on :$PORT"
+echo "[QA] GET / (strict 2xx)"
+if ! curl -fsS "http://localhost:$PORT/" >/tmp/qa-index.html 2>/dev/null; then
+  echo "[QA] ❌ GET / did not return 2xx"
+  tail -n 100 /tmp/qa-phx.log || true
   exit 1
 fi
-rm -f /tmp/qa-index.html
+
+# Optional: probe /todos if route exists
+curl -fsS "http://localhost:$PORT/todos" >/dev/null 2>&1 || true
+
+# Scan logs for runtime errors
+if command -v rg >/dev/null 2>&1; then
+  if rg -n "(CompileError|UndefinedFunctionError|ArgumentError|FunctionClauseError|KeyError|RuntimeError|\(EXIT\)|\bError\b)" /tmp/qa-phx.log >/dev/null 2>&1; then
+    echo "[QA] ❌ Runtime errors detected in logs"
+    rg -n "(CompileError|UndefinedFunctionError|ArgumentError|FunctionClauseError|KeyError|RuntimeError|\(EXIT\)|\bError\b)" /tmp/qa-phx.log | tail -n 50
+    exit 1
+  fi
+else
+  if grep -E "CompileError|UndefinedFunctionError|ArgumentError|FunctionClauseError|KeyError|RuntimeError|\(EXIT\)|\bError\b" /tmp/qa-phx.log >/dev/null 2>&1; then
+    echo "[QA] ❌ Runtime errors detected in logs"
+    tail -n 50 /tmp/qa-phx.log
+    exit 1
+  fi
+fi
 
 echo "[QA] OK: build + runtime smoke passed with zero warnings (WAE)"
 popd >/dev/null

@@ -94,16 +94,7 @@ class EctoEqPinnedNilGuardTransforms {
         }
         if (pinned == null || field == null) return null;
 
-        // Only inject guard for NotEqual (!=) to match snapshot semantics
-        // Equal (==) cases remain as-is; literal-nil comparisons are normalized elsewhere.
-        switch (op) {
-            case NotEqual:
-            case _:
-                // For other ops, do not guard
-                if (op != NotEqual) return null;
-        }
-
-        // Build branch selection outside of the query macro: if is_nil(^var) do where(..., is_nil(field)) else where(..., original) end
+        // Build branch selection outside of the query macro: if is_nil(^var) do <thenCond> else <original>
         // We return a special sentinel EIf body here; the caller will stitch in the correct args around it.
         // Outside the query macro (in the surrounding if), we must not use the pin operator.
         var isNilPinned = makeIsNil(pinned);
@@ -111,7 +102,11 @@ class EctoEqPinnedNilGuardTransforms {
         isNilPinned = makeASTWithMeta(isNilPinned.def, { ectoPinnedNilGuard: true }, isNilPinned.pos);
         // In Ecto DSL conditions, prefer unqualified is_nil(field)
         var isNilField  = makeAST(ECall(null, "is_nil", [field]));
-        var thenBody: ElixirAST = makeAST(EUnary(Not, isNilField));
+        var thenBody: ElixirAST = switch (op) {
+            case Equal: isNilField;
+            case NotEqual: makeAST(EUnary(Not, isNilField));
+            default: return null;
+        };
         // Use EIf with placeholder bodies; the caller will replace with full where calls
         return makeAST(EIf(isNilPinned, thenBody, makeAST(EBinary(op, left, right))));
     }
