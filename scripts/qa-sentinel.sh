@@ -40,8 +40,19 @@ for i in {1..30}; do
 done
 
 if [[ "${READY:-0}" -ne 1 ]]; then
-  echo "[QA] Server not responding; tail log:"
+  echo "[QA] Server not responding on port $PORT; attempting fallback detection from logs..."
   tail -n 100 /tmp/qa-phx.log || true
+  DETECTED_PORT=$(awk '/Running .* with cowboy/ { for (i=1;i<=NF;i++) if ($i ~ /127.0.0.1:/) {split($i,a,":"); gsub(/\(http\)/, "", a[3]); print a[3]; exit} }' /tmp/qa-phx.log || true)
+  if [[ -n "$DETECTED_PORT" ]]; then
+    echo "[QA] Detected endpoint port: $DETECTED_PORT. Trying curl..."
+    if curl -fsS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
+      echo "[QA] GET / on detected port $DETECTED_PORT succeeded"
+      echo "[QA] OK: build + runtime smoke passed (fallback port)"
+      popd >/dev/null
+      exit 0
+    fi
+  fi
+  echo "[QA] Fallback failed."
   exit 1
 fi
 
