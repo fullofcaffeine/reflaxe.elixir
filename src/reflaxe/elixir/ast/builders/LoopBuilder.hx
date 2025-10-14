@@ -415,16 +415,34 @@ class LoopBuilder {
                 }
                 bodyAst.metadata.isWithinLoop = true;
 
+                // SPECIAL CASE: Reflect.fields(collection) → hoist and iterate keys
+                switch (collectionAst.def) {
+                    case ERemoteCall({def: EVar(mn)}, func, args) if (mn == "Reflect" && func == "fields" && args != null && args.length == 1):
+                        var fieldsVar = "fields";
+                        var binder = "field";
+                        var adjustedBody = (function(b:ElixirAST):ElixirAST {
+                            return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(b, function(n:ElixirAST):ElixirAST {
+                                return switch (n.def) {
+                                    case EVar(v) if (v == snakeVar): makeASTWithMeta(EVar(binder), n.metadata, n.pos);
+                                    default: n;
+                                }
+                            });
+                        })(bodyAst);
+                        var keysAssign = makeAST(EBinary(Match, makeAST(EVar(fieldsVar)), makeAST(ERemoteCall(makeAST(EVar("Map")), "keys", [args[0]]))));
+                        var loopAst = makeAST(ERemoteCall(
+                            makeAST(EVar("Enum")),
+                            "each",
+                            [ makeAST(EVar(fieldsVar)), makeAST(EFn([{ args: [PVar(binder)], body: adjustedBody }])) ]
+                        ));
+                        var block = makeAST(EBlock([keysAssign, loopAst]));
+                        block.metadata = metadata;
+                        return wrapWithInitializations(block, initializations, toSnakeCase);
+                    default:
+                }
                 var loopAst = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
                     "each",
-                    [
-                        collectionAst,
-                        makeAST(EFn([{
-                            args: [PVar(snakeVar)],
-                            body: bodyAst
-                        }]))
-                    ]
+                    [ collectionAst, makeAST(EFn([{ args: [PVar(snakeVar)], body: bodyAst }])) ]
                 ));
                 
                 loopAst.metadata = metadata;
@@ -450,6 +468,16 @@ class LoopBuilder {
                     var loose = tryLooseListFromBlock(body);
                     return loose != null ? loose : buildExpr(body);
                 })();
+                // SPECIAL CASE: Reflect.fields(collection)
+                // Hoist keys = Map.keys(collection) and iterate keys to align with intended stdlib shapes
+                switch (iteratorExpr.def) {
+                    case ERemoteCall({def: EVar(mn)}, func, args) if (mn == "Reflect" && func == "fields" && args != null && args.length == 1):
+                        var fieldsVar = "fields";
+                        var keysAssign = makeAST(EBinary(Match, makeAST(EVar(fieldsVar)), makeAST(ERemoteCall(makeAST(EVar("Map")), "keys", [args[0]]))));
+                        var iterOverKeys = makeAST(EFor([{pattern: pattern, expr: makeAST(EVar(fieldsVar))}], [], bodyExpr, null, false));
+                        return makeAST(EBlock([keysAssign, iterOverKeys]));
+                    default:
+                }
                 return makeAST(EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false));
         }
     }
