@@ -19,6 +19,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Avoid undefined-variable errors without introducing new binders. Keeps the
  *   predicate self-contained and shape-based.
+ *
+ * HOW
+ * - Scan adjacent statement pairs for `_ = String.downcase(_)` followed by an
+ *   Enum.filter(..., fn ...) where the predicate body references `query` and no
+ *   prior `query` binding exists. Inline the downcase expression into those
+ *   references within the predicate body.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   _ = String.downcase(term)
+ *   Enum.filter(list, fn -> String.contains?(query, term) end)
+ * Elixir (after):
+ *   _ = String.downcase(term)
+ *   Enum.filter(list, fn -> String.contains?(String.downcase(term), term) end)
  */
 class InlineQueryFromPreviousDowncaseTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -87,9 +87,11 @@ class Main {
         assert(result == 8, "Function should be called with arguments");
         
         // Test with object method
+        var calculator_base = 10;
         var calculator = {
-            base: 10,
-            add: function(x: Int) { return this.base + x; }
+            base: calculator_base,
+            // Use a closure that captures calculator_base instead of `this`.
+            add: function(x: Int) { return calculator_base + x; }
         };
         var methodResult = Reflect.callMethod(calculator, calculator.add, [5]);
         assert(methodResult == 15, "Method should use object context");

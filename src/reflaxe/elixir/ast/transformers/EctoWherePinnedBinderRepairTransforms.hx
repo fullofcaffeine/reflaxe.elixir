@@ -28,6 +28,17 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - On encountering a where/2 whose condition contains EPin(EVar(name)), and when
  *   `name` is not declared yet and a prior wildcard-literal exists, rewrite that
  *   earlier wildcard to bind `name` instead.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   var limit = 10;
+ *   users = Ecto.Query.where(users, function(t) return t.age > ^(limit));
+ * Elixir (before):
+ *   _ = 10
+ *   where(users, [t], t.age > ^(limit))
+ * Elixir (after):
+ *   limit = 10
+ *   Ecto.Query.where(users, [t], t.age > ^(limit))
  */
 class EctoWherePinnedBinderRepairTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

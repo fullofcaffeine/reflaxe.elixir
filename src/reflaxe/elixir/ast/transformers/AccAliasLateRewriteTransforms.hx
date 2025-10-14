@@ -32,6 +32,18 @@ import reflaxe.elixir.ast.ASTUtils;
  *   `Enum.concat/2`, `concat/2`, or `++`, rewrite the assignment to target the acc parameter instead
  *   and normalize the RHS to `Enum.concat(acc, list)`.
  * - This is name-agnostic and strictly shape-based; it does not introduce new variables.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   fn item, acc ->
+ *     list = [item]
+ *     alias = Enum.concat(alias, list)
+ *   end
+ * Elixir (after):
+ *   fn item, acc ->
+ *     list = [item]
+ *     acc = Enum.concat(acc, list)
+ *   end
  */
 class AccAliasLateRewriteTransforms {
     static function isSelfAppend(rhs: ElixirAST, lhs: String): Bool {
@@ -99,4 +111,3 @@ class AccAliasLateRewriteTransforms {
 }
 
 #end
-
