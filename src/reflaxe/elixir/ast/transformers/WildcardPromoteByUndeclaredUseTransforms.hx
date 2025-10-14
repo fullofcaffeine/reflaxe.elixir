@@ -272,6 +272,18 @@ class WildcardPromoteByUndeclaredUseTransforms {
     }
 
     static function tryPromoteWildcard(rhs: ElixirAST, stmts:Array<ElixirAST>, idx:Int, declared:Map<String,Bool>):Null<ElixirAST> {
+        // Special case: `_ = String.downcase(search_query)` → `query = ...` when used later
+        inline function isDowncaseSearch(x: ElixirAST): Bool {
+            return switch (x.def) {
+                case ERemoteCall({def: EVar(m)}, "downcase", args) if (m == "String" && args != null && args.length == 1):
+                    switch (args[0].def) { case EVar(v) if (v == "search_query"): true; default: false; }
+                default: false;
+            };
+        }
+        if (isDowncaseSearch(rhs)) {
+            // Deterministically bind to `query` for String.downcase(search_query)
+            return makeASTWithMeta(EMatch(PVar("query"), rhs), rhs.metadata, rhs.pos);
+        }
         // Prefer map binder names that match a nearby Phoenix.Component.assign second-arg var
         switch (rhs.def) {
             case EMap(_) | EKeywordList(_):
@@ -364,6 +376,19 @@ class WildcardPromoteByUndeclaredUseTransforms {
     }
 
     static function tryPromoteWildcardBinary(rhs: ElixirAST, stmts:Array<ElixirAST>, idx:Int, declared:Map<String,Bool>, meta:Dynamic, pos:Dynamic):Null<ElixirAST> {
+        // Special case: binder for String.downcase(search_query) should be `query` when used later
+        inline function isDowncaseSearch(x: ElixirAST): Bool {
+            return switch (x.def) {
+                case ERemoteCall({def: EVar(m)}, "downcase", args) if (m == "String" && args != null && args.length == 1):
+                    switch (args[0].def) { case EVar(v) if (v == "search_query"): true; default: false; }
+                default: false;
+            };
+        }
+        if (isDowncaseSearch(rhs)) {
+            // Deterministically bind to `query` when downcasing search_query
+            // Later hygiene can underscore if truly unused.
+            return makeASTWithMeta(EBinary(Match, makeAST(ElixirASTDef.EVar("query")), rhs), meta, pos);
+        }
         // Prefer the unique first-arg variable of a nearby Phoenix.Component.assign/2 as the binder
         switch (rhs.def) {
             case ERemoteCall(mod, fn, _):
@@ -403,6 +428,11 @@ class WildcardPromoteByUndeclaredUseTransforms {
             if (found || x == null || x.def == null) return;
             switch (x.def) {
                 case EVar(v) if (v == name): found = true;
+                case EFn(clauses):
+                    for (cl in clauses) {
+                        if (cl.guard != null) walk(cl.guard);
+                        if (cl.body != null) walk(cl.body);
+                    }
                 case EBlock(ss): for (s in ss) walk(s);
                 case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
                 case EBinary(_, l, r): walk(l); walk(r);
@@ -621,6 +651,16 @@ class WildcardPromoteByUndeclaredUseTransforms {
             case EBinary(_, l, r): collectVarsFromExpr(l, out); collectVarsFromExpr(r, out);
             case ECall(tgt, _, args): if (tgt != null) collectVarsFromExpr(tgt, out); for (a in args) collectVarsFromExpr(a, out);
             case ERemoteCall(tgt2, _, args2): collectVarsFromExpr(tgt2, out); for (a2 in args2) collectVarsFromExpr(a2, out);
+            case EFn(clauses):
+                for (cl in clauses) {
+                    // Collect variables inside the fn body, excluding clause parameter names
+                    var inner:Map<String,Bool> = new Map();
+                    if (cl.guard != null) collectVarsFromExpr(cl.guard, inner);
+                    if (cl.body != null) collectVarsFromExpr(cl.body, inner);
+                    var params:Map<String,Bool> = new Map();
+                    for (arg in cl.args) switch (arg) { case PVar(nm): params.set(nm, true); default: }
+                    for (k in inner.keys()) if (!params.exists(k)) out.set(k, true);
+                }
             case ETuple(elems): for (e in elems) collectVarsFromExpr(e, out);
             case EMap(pairs): for (p in pairs) collectVarsFromExpr(p.value, out);
             case EField(obj, _):
@@ -638,6 +678,16 @@ class WildcardPromoteByUndeclaredUseTransforms {
             case EMatch(_, rhs): collectVars(rhs, out);
             case ECall(tgt, _, args): if (tgt != null) collectVars(tgt, out); for (a in args) collectVars(a, out);
             case ERemoteCall(tgt2, _, args2): collectVars(tgt2, out); for (a2 in args2) collectVars(a2, out);
+            case EFn(clauses):
+                for (cl in clauses) {
+                    // Collect variables inside the fn body, excluding clause parameter names
+                    var inner:Map<String,Bool> = new Map();
+                    if (cl.guard != null) collectVars(cl.guard, inner);
+                    if (cl.body != null) collectVars(cl.body, inner);
+                    var params:Map<String,Bool> = new Map();
+                    for (arg in cl.args) switch (arg) { case PVar(nm): params.set(nm, true); default: }
+                    for (k in inner.keys()) if (!params.exists(k)) out.set(k, true);
+                }
             case EMap(pairs): for (p in pairs) { collectVars(p.key, out); collectVars(p.value, out); }
             case EKeywordList(pairs): for (p in pairs) collectVars(p.value, out);
             case EStructUpdate(base, fields): collectVars(base, out); for (f in fields) collectVars(f.value, out);

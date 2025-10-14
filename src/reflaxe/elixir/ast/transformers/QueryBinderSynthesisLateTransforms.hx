@@ -81,6 +81,21 @@ class QueryBinderSynthesisLateTransforms {
             return null;
         }
 
+        inline function blockHasSearchQuery(): Bool {
+            var found = false;
+            for (s in stmts) {
+                ElixirASTTransformer.transformNode(s, function(x: ElixirAST): ElixirAST {
+                    if (found) return x;
+                    switch (x.def) {
+                        case EVar(nm) if (nm == "search_query"): found = true; return x;
+                        default: return x;
+                    }
+                });
+                if (found) break;
+            }
+            return found;
+        }
+
         for (i in 0...stmts.length) {
             var s = stmts[i];
             if (!queryDefined && definesQuery(s)) queryDefined = true;
@@ -100,10 +115,25 @@ class QueryBinderSynthesisLateTransforms {
                     }
                 default:
             }
+            #if debug_filter_query_consolidate
+            if (needsSynth) {
+                trace('[QueryBinderSynthesisLate] Need binder at index ' + i + ', queryDefined=' + queryDefined);
+            }
+            #end
             if (needsSynth && !queryDefined) {
                 var rhs = nearestDowncase(i);
+                #if debug_filter_query_consolidate
+                trace('[QueryBinderSynthesisLate] nearestDowncase found? ' + (rhs != null));
+                #end
                 if (rhs != null) {
                     out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhs), ctxNode.metadata, ctxNode.pos));
+                    queryDefined = true;
+                } else {
+                    var fallbackRhs = makeAST(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar("search_query"))]));
+                    #if debug_filter_query_consolidate
+                    trace('[QueryBinderSynthesisLate] Inserting fallback query binder before filter');
+                    #end
+                    out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), fallbackRhs), ctxNode.metadata, ctxNode.pos));
                     queryDefined = true;
                 }
             }

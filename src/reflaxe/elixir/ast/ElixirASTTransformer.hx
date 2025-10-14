@@ -193,6 +193,33 @@ class ElixirASTTransformer {
             trace('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #end
 
+            /**
+             * PassMetrics (debug_pass_metrics)
+             *
+             * WHAT
+             * - Optional, flag‑gated per‑pass change detector that reports when a pass
+             *   modifies the AST during the main transformation loop.
+             *
+             * WHY
+             * - Speeds up diagnosis of "which pass changed this?" without heavy logging
+             *   or snapshotting. Helps avoid circular debugging by pinpointing impact.
+             *
+             * HOW
+             * - Before running a pass, render the current AST to a string using the printer.
+             * - After the pass, render again and compare. If different, emit a concise
+             *   line: `#[PassMetrics] Changed by: <passName>`.
+             * - Guarded by `-D debug_pass_metrics`; zero cost and zero output otherwise.
+             *
+             * EXAMPLES
+             * - Build with: `-D debug_pass_metrics` to get a per‑pass change trace.
+             * - Typical output:
+             *   `#[PassMetrics] Changed by: FilterQueryConsolidate`
+             */
+            #if debug_pass_metrics
+            var __beforePrint: String = null;
+            try __beforePrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0) catch (e: Dynamic) {}
+            #end
+
             // CONTEXTUAL PASS SELECTION LOGIC
             // WHY: Enable passes to access compilation context when needed
             // WHAT: Check for contextualPass variant first, fall back to regular pass
@@ -223,12 +250,70 @@ class ElixirASTTransformer {
 
                 result = passConfig.pass(result);
             }
+
+            #if debug_pass_metrics
+            var __afterPrint: String = null;
+            var __changed: Bool = false;
+            try {
+                __afterPrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0);
+                __changed = (__beforePrint != __afterPrint);
+            } catch (e: Dynamic) {}
+            if (__changed) {
+                #if sys Sys.println('#[PassMetrics] Changed by: ' + passConfig.name); #else trace('#[PassMetrics] Changed by: ' + passConfig.name); #end
+            }
+            #end
         }
         
         #if debug_ast_transformer
         trace('[XRay AST Transformer] Transformation complete');
         #end
-        
+
+        // ------------------------------------------------------------------
+        // AbsoluteFinal Snapshot (debug_ast_snapshots)
+        //
+        // WHAT
+        // - Optional, flag‑gated AST snapshot immediately before printing.
+        // - Captures only the then‑branch of the main guard `if` inside
+        //   filter_todos/3 for the todo‑app to minimize noise.
+        //
+        // WHY
+        // - We need to confirm the final shape of the filter branch:
+        //   either a named binder `query = String.downcase(search_query)`
+        //   precedes Enum.filter, or the downcased query is inlined within
+        //   the filter predicate (EFn/ERaw). Pass ordering and rescue/final
+        //   rewrites make late shape shifts hard to reason about via logs.
+        //
+        // HOW
+        // - When `-D debug_ast_snapshots` is set, traverse the transformed
+        //   AST, find `filter_todos/3` (EDef/EDefp name "filter_todos" with
+        //   arity 3), locate the first top‑level EIf within its body, and
+        //   print its thenBranch to `tmp/ast_flow/AbsoluteFinal_filter_todos_then_branch.ex`.
+        // - Optional defines (if provided) allow function‑level selection:
+        //   `-D debug_ast_snapshots_func=filter_todos/3`
+        //   `-D debug_ast_snapshots_module=TodoAppWeb.TodoLive`
+        //   These are best‑effort; default targets filter_todos/3 globally.
+        //
+        // EXAMPLES
+        // Haxe (goal):
+        //   if (searchQuery != "") {
+        //     final query = String.downcase(searchQuery);
+        //     return Enum.filter(todos, (t) -> String.contains(String.downcase(t.title), query));
+        //   } else {
+        //     todos;
+        //   }
+        // Elixir snapshot (then‑branch):
+        //   query = String.downcase(search_query)
+        //   Enum.filter(todos, fn t -> String.contains?(String.downcase(t.title), query) end)
+        //   # or inline: Enum.filter(..., fn t -> String.contains?(String.downcase(t.title), String.downcase(search_query)) end)
+        // ------------------------------------------------------------------
+        #if debug_ast_snapshots
+        try {
+            AbsoluteFinalSnapshot.emitFilterTodosThenBranch(result);
+        } catch (e: Dynamic) {
+            #if sys Sys.println('[AST Snapshot] Failed: ' + Std.string(e)); #else trace('[AST Snapshot] Failed: ' + Std.string(e)); #end
+        }
+        #end
+
         return result;
     }
     
@@ -238,6 +323,8 @@ class ElixirASTTransformer {
     static function getEnabledPasses(): Array<PassConfig> {
         return reflaxe.elixir.ast.transformers.registry.ElixirASTPassRegistry.getEnabledPasses();
     }
+
+    // (debug_ast_snapshots helper moved to a top-level private class below)
 
 
     /**
@@ -4169,6 +4256,32 @@ class ElixirASTTransformer {
         return {array: result, changed: changed};
     }
 
+    /**
+     * transformNode
+     *
+     * WHAT
+     * - Recursively traverses and rebuilds the Elixir AST while applying a node-local transformer.
+     * - Includes full recursion into EDo (do/end) bodies to ensure inner statements participate in passes.
+     *
+     * WHY
+     * - Several shape-based passes (e.g., filter query consolidation) must operate on statements
+     *   placed inside if/with/do blocks. Missing recursion into EDo caused late guards to miss
+     *   legitimate targets, producing undefined variable issues.
+     *
+     * HOW
+     * - Mirrors EBlock recursion for EDo: transforms each expression, then rebuilds the enclosing node.
+     * - All other nodes retain prior recursion semantics; ERaw remains non-transformable by design.
+     *
+     * EXAMPLES
+     * Before (no EDo recursion):
+     *   if cond do
+     *     Enum.filter(list, fn t -> uses_query end)
+     *   end
+     *   # Passes did not see the inner filter call.
+     *
+     * After (with EDo recursion):
+     *   Same input; passes visit and may promote/bind/inline query deterministically.
+     */
     public static function transformNode(ast: ElixirAST, transformer: (ElixirAST) -> ElixirAST): ElixirAST {
         // Handle null AST nodes or nodes with null def
         if (ast == null || ast.def == null) {
@@ -4239,6 +4352,7 @@ class ElixirASTTransformer {
                     ast.pos
                 );
                 
+            // Blocks
             case EBlock(expressions):
                 var expResult = transformArray(expressions, transformer);
                 if (expResult.changed) {
@@ -4249,6 +4363,19 @@ class ElixirASTTransformer {
                     );
                 } else {
                     ast;  // Return original if nothing changed
+                }
+
+            // Transform do-end blocks by visiting each expression
+            case EDo(body):
+                var doResult = transformArray(body, transformer);
+                if (doResult.changed) {
+                    makeASTWithMeta(
+                        EDo(doResult.array),
+                        ast.metadata,
+                        ast.pos
+                    );
+                } else {
+                    ast;
                 }
                 
             case EIf(condition, thenBranch, elseBranch):
@@ -7040,5 +7167,130 @@ class SupervisorOptionsTransformPass {
         return analyzeAndTransform(ast);
     }
 }
+
+#if debug_ast_snapshots
+private class AbsoluteFinalSnapshot {
+    public static function emitFilterTodosThenBranch(ast: ElixirAST): Void {
+        // Optional narrowing: module and func can be provided via defines.
+        var wantFunc = getDefineString('debug_ast_snapshots_func');
+        var wantModule = getDefineString('debug_ast_snapshots_module');
+
+        // Default target if none provided
+        if (wantFunc == null || wantFunc == '') wantFunc = 'filter_todos/3';
+
+        var targetName = extractFuncName(wantFunc);
+        var targetArity = extractArity(wantFunc);
+
+        var thenBranch: ElixirAST = null;
+        var seenFuncs: Array<String> = [];
+
+        traverse(ast, function(node) {
+            // Attempt capture from any function node we see
+            tryCaptureFromDef(node, targetName, targetArity, function(b) thenBranch = b);
+            if (thenBranch != null) return; // short‑circuit
+            // Optional module narrowing: no‑op unless set
+            switch (node.def) {
+                case EModule(modName, _, _):
+                    #if sys Sys.println('[AST Snapshot] In module: ' + modName); #end
+                    if (wantModule != null && wantModule != '' && modName != wantModule) {
+                        // Note: we don't prune traversal here to avoid skipping nested defs
+                    }
+                case EDef(name, args, _, _) | EDefp(name, args, _, _):
+                    if (seenFuncs.indexOf(name + '/' + (args != null ? args.length : 0)) == -1)
+                        seenFuncs.push(name + '/' + (args != null ? args.length : 0));
+                default:
+            }
+        });
+
+        if (thenBranch != null) {
+            var code = safePrint(thenBranch);
+            writeSnapshot('tmp/ast_flow', 'AbsoluteFinal_filter_todos_then_branch.ex', code);
+            #if sys Sys.println('[AST Snapshot] Wrote then‑branch to tmp/ast_flow/AbsoluteFinal_filter_todos_then_branch.ex'); #else trace('[AST Snapshot] Wrote then‑branch'); #end
+            // If module name filter is set, dump observed functions for debugging
+            if (wantModule != null && wantModule != '') {
+                var fnDump = seenFuncs.join("\n");
+                writeSnapshot('tmp/ast_flow', 'AbsoluteFinal_' + targetName + '_observed_functions.txt', fnDump);
+            }
+        } else {
+            #if sys Sys.println('[AST Snapshot] filter_todos/3 then‑branch not found'); #else trace('[AST Snapshot] then‑branch not found'); #end
+        }
+    }
+
+    static function tryCaptureFromDef(node: ElixirAST, targetName: String, targetArity: Int, onFound: ElixirAST -> Void): Void {
+        switch (node.def) {
+            case EDef(name, args, _, body) | EDefp(name, args, _, body):
+                #if sys Sys.println('[AST Snapshot] Saw def ' + name + '/' + (args != null ? args.length : 0)); #end
+                if (name == targetName && args != null && args.length == targetArity) {
+                    var firstIf = findFirstIf(body);
+                    if (firstIf != null) onFound(firstIf.thenBranch);
+                }
+            default:
+        }
+    }
+
+    static function findFirstIf(node: ElixirAST): { condition: ElixirAST, thenBranch: ElixirAST, elseBranch: Null<ElixirAST> } {
+        var found: { condition: ElixirAST, thenBranch: ElixirAST, elseBranch: Null<ElixirAST> } = null;
+        traverse(node, function(n) {
+            if (found != null) return; // short‑circuit
+            switch (n.def) {
+                case EIf(cond, thenB, elseB):
+                    found = { condition: cond, thenBranch: thenB, elseBranch: elseB };
+                default:
+            }
+        });
+        return found;
+    }
+
+    static function traverse(node: ElixirAST, f: ElixirAST -> Void): Void {
+        if (node == null) return;
+        function visitor(n: ElixirAST): Void {
+            if (n == null) return;
+            f(n);
+            // Recursively visit child nodes via transformAST with identity
+            ElixirASTTransformer.transformAST(n, function(child) {
+                visitor(child);
+                return child;
+            });
+        }
+        visitor(node);
+    }
+
+    static function safePrint(node: ElixirAST): String {
+        try {
+            return reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0);
+        } catch (e: Dynamic) {
+            return '// <printer error> ' + Std.string(e);
+        }
+    }
+
+    static function extractFuncName(spec: String): String {
+        var idx = spec.lastIndexOf('/');
+        return idx >= 0 ? spec.substr(0, idx) : spec;
+    }
+
+    static function extractArity(spec: String): Int {
+        var idx = spec.lastIndexOf('/');
+        if (idx < 0) return 0;
+        var s = spec.substr(idx + 1);
+        return Std.parseInt(s);
+    }
+
+    static function getDefineString(name: String): Null<String> {
+        #if macro
+        try return haxe.macro.Context.definedValue(name) catch (_:Dynamic) return null;
+        #else
+        return null;
+        #end
+    }
+
+    static function writeSnapshot(dir: String, file: String, content: String): Void {
+        #if sys
+        if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir);
+        var full = dir + '/' + file;
+        sys.io.File.saveContent(full, content);
+        #end
+    }
+}
+#end // debug_ast_snapshots
 
 #end // (macro || reflaxe_runtime)
