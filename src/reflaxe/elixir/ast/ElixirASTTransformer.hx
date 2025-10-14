@@ -6963,17 +6963,34 @@ class SupervisorOptionsTransformPass {
                     trace("[XRay SupervisorOptions] Converting map to keyword list for supervisor options");
                     #end
                     
-                    // Convert EMapPair to EKeywordPair
+                    // Convert EMapPair to EKeywordPair with normalization for strategy atom
                     var keywordPairs: Array<EKeywordPair> = [];
                     for (pair in pairs) {
                         var key = switch(pair.key.def) {
                             case EAtom(name): name;
                             case _: continue; // Skip non-atom keys
                         };
+                        var value = pair.value;
+                        // Normalize strategy value to a clean atom without a leading colon
+                        if (key == "strategy") {
+                            switch (value.def) {
+                                case EAtom(a):
+                                    if (a != null && a.length > 0 && a.charAt(0) == ':') {
+                                        var trimmed = a.substr(1);
+                                        value = makeAST(EAtom(ElixirAtom.raw(trimmed)));
+                                    }
+                                case EString(s):
+                                    if (s != null && s.length > 0 && s.charAt(0) == ':') {
+                                        var trimmed2 = s.substr(1);
+                                        value = makeAST(EAtom(ElixirAtom.raw(trimmed2)));
+                                    }
+                                default:
+                            }
+                        }
                         
                         // Note: Snake_case conversion for atoms is handled systematically
                         // in ElixirASTBuilder.toElixirAtomName(), not here
-                        keywordPairs.push({key: key, value: pair.value});
+                        keywordPairs.push({key: key, value: value});
                     }
                     
                     return makeASTWithMeta(
