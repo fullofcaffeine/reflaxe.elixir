@@ -26,6 +26,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - If then is EBlock/EDo, scan statements; if a `_ = String.downcase(search_query)`
  *   appears before any Enum.filter(...) statement, replace that underscore assign with
  *   `query = String.downcase(search_query)`.
+ *
+ * EXAMPLES
+ * Before:
+ *   if search_query != "" and not is_nil(search_query) do
+ *     _ = String.downcase(search_query)
+ *     Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
+ *   end
+ * After:
+ *   if search_query != "" and not is_nil(search_query) do
+ *     query = String.downcase(search_query)
+ *     Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
+ *   end
  */
 class QueryBinderFinalizationTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

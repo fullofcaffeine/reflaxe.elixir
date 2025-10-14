@@ -17,6 +17,17 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Ensures only one downcase assignment remains when late passes produce
  *   duplicative lines. Keeps final output idiomatic and minimal.
+ *
+ * HOW
+ * - Iterate statement pairs and when a `query` downcase binder is immediately
+ *   followed by a wildcard downcase, keep only the binder and skip the wildcard.
+ *
+ * EXAMPLES
+ * Before:
+ *   query = String.downcase(search_query)
+ *   _ = String.downcase(search_query)
+ * After:
+ *   query = String.downcase(search_query)
  */
 class RemoveDuplicateDowncaseAfterQueryPostTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

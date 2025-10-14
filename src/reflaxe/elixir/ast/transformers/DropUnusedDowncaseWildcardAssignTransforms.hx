@@ -12,6 +12,25 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Drops `_ = String.downcase(search_query)` statements in block-like contexts,
  *   as they are pure and unused when left-hand side is wildcard.
+ *
+ * WHY
+ * - Removes redundant, side‑effect‑free statements that cause noise or warnings,
+ *   especially after binder promotion has already established `query`.
+ *
+ * HOW
+ * - Walks EBlock/EDo statement lists; if a wildcard downcase is found:
+ *   - If a `query = String.downcase(search_query)` binder was seen earlier in the
+ *     same block, drop the wildcard statement.
+ *   - Otherwise promote the wildcard to a stable `query` binder to support
+ *     downstream shape‑based rewrites.
+ *
+ * EXAMPLES
+ * Before:
+ *   _ = String.downcase(search_query)
+ *   Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
+ * After (promotion):
+ *   query = String.downcase(search_query)
+ *   Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
  */
 class DropUnusedDowncaseWildcardAssignTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
