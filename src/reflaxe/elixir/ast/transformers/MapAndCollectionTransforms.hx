@@ -501,13 +501,22 @@ class MapAndCollectionTransforms {
                                 ? rewritten[0]
                                 : makeAST(EBlock(rewritten));
                             // Choose wildcard binder if unused to avoid warnings
-                            var finalBinder: EPattern = bodyUsesVar(newBody, safeBinder(binderName)) ? PVar(safeBinder(binderName)) : PWildcard;
+                            var finalBinderName = safeBinder(binderName);
+                            var finalBinder: EPattern = bodyUsesVar(newBody, finalBinderName) ? PVar(finalBinderName) : PWildcard;
                             var newFn = makeAST(EFn([{ args: [finalBinder], guard: clause.guard, body: newBody }]));
-                            // If we detected Reflect.fields(listExpr)[0] aliasing, promote the each source
-                            var eachList = promoteFieldsList
-                                ? makeAST(ERemoteCall(makeAST(EVar("Reflect")), "fields", [listExpr]))
-                                : listExpr;
-                            makeASTWithMeta(ERemoteCall(mod, func, [eachList, newFn]), node.metadata, node.pos);
+                            if (promoteFieldsList) {
+                                // Hoist fields = Map.keys(listExpr) and iterate Enum.each(fields, fn field -> ...)
+                                var fieldsVar = "fields";
+                                var fieldBinder = "field";
+                                var assign = makeAST(EBinary(Match, makeAST(EVar(fieldsVar)), makeAST(ERemoteCall(makeAST(EVar("Map")), "keys", [listExpr]))));
+                                var fn2 = makeAST(EFn([{ args: [PVar(fieldBinder)], guard: clause.guard, body: replaceVarInExpr(newBody, finalBinderName, fieldBinder) }]));
+                                var eachCall = makeAST(ERemoteCall(mod, func, [makeAST(EVar(fieldsVar)), fn2]));
+                                makeASTWithMeta(EBlock([assign, eachCall]), node.metadata, node.pos);
+                            } else {
+                                // If we detected Reflect.fields(listExpr)[0] aliasing, promote the each source minimally
+                                var eachList = listExpr;
+                                makeASTWithMeta(ERemoteCall(mod, func, [eachList, newFn]), node.metadata, node.pos);
+                            }
                         default:
                             node;
                     }
