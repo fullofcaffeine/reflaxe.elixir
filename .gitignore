@@ -94,6 +94,10 @@ compilation_output*.txt
 examples/*/test_*.hx
 examples/*/test_*.exs
 examples/*/*.test.exs
+examples/*/build_debug*.out
+examples/*/build_debug_snapshots*.out
+examples/*/mix_*.out
+examples/*/tmp/
 
 # Deprecated templates (no longer used)
 /templates/test/test-results.tmp
