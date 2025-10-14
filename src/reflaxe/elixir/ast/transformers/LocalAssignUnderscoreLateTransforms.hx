@@ -33,6 +33,14 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
  * - For EBlock/EDo/EFn bodies, scan each statement, detect nested matches, and either
  *   collapse or underscore unused binders. Variable usage checks look through common
  *   constructs to avoid false positives/negatives.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   g = compute()
+ *   :ok
+ * Elixir (after):
+ *   _g = compute()
+ *   :ok
  */
 class LocalAssignUnderscoreLateTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

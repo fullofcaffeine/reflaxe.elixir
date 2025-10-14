@@ -22,6 +22,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For each EFn clause, collect simple PVar/PAlias binders and normalize the body.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   arr.map(function(_t) return _t.id);
+ * Elixir (before):
+ *   Enum.map(arr, fn _t -> _t.id end)
+ * Elixir (after):
+ *   Enum.map(arr, fn t -> t.id end)
  */
 class EFnArgCleanupTransforms {
     public static function cleanupPass(ast: ElixirAST): ElixirAST {

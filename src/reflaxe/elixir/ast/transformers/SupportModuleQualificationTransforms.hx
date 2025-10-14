@@ -25,6 +25,12 @@ import reflaxe.elixir.ast.StdModuleWhitelist;
  * - For modules that reference Repo.* OR define Ecto DSL shims (defp from/where) OR reference Ecto.Query,
  *   rewrite ERemoteCall/ECall targets whose module is a single-segment CamelCase identifier and exists
  *   in the defined module set, and is not std/framework whitelisted, to <App>.<Module>.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   def list(), do: Repo.all(UserChangeset.query())
+ * Elixir (after):
+ *   def list(), do: App.UserChangeset.query() |> App.Repo.all()
  */
 class SupportModuleQualificationTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

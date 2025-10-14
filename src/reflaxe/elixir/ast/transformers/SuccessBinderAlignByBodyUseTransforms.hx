@@ -39,6 +39,24 @@ import reflaxe.elixir.ast.ASTUtils;
  *   4) If `undefined.length == 1`, rename the binder in the pattern to that undefined name and
  *      rename any occurrences of the old binder in the clause body to the new name.
  * - Runs very late (absolute) to avoid being undone by subsequent hygiene.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   switch (Repo.update(changeset)) {
+ *     case Ok(updatedTodo):
+ *       broadcast(updatedTodo);
+ *     case Error(e):
+ *   }
+ * Elixir (before):
+ *   case Repo.update(changeset) do
+ *     {:ok, _updated_todo} -> broadcast(updated_todo)
+ *     {:error, e} -> :error
+ *   end
+ * Elixir (after):
+ *   case Repo.update(changeset) do
+ *     {:ok, updated_todo} -> broadcast(updated_todo)
+ *     {:error, e} -> :error
+ *   end
  */
 class SuccessBinderAlignByBodyUseTransforms {
     public static function alignPass(ast: ElixirAST): ElixirAST {

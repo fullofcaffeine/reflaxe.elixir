@@ -13,10 +13,25 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Overrides StringBuf with a minimal, valid Elixir implementation backed by a parts list.
  *
+ * WHY
+ * - Haxe's StringBuf semantics need a native, idiomatic Elixir representation to
+ *   avoid heavy transforms. A tiny struct with append functions preserves behavior
+ *   and keeps code generation simple and readable.
+ *
  * HOW
  * - Detects module StringBuf and replaces its body with ERaw functions:
  *   defstruct parts: []
  *   add/2, add_sub/4, to_string/1
+ *
+ * EXAMPLES
+ * Haxe:
+ *   var b = new StringBuf();
+ *   b.add("hi");
+ *   b.toString();
+ * Elixir (after override):
+ *   defstruct parts: []
+ *   def add(struct, x), do: %{struct | parts: struct.parts ++ [inspect(x)]}
+ *   def to_string(struct), do: IO.iodata_to_binary(struct.parts)
  */
 class StdStringBufOverrideTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
