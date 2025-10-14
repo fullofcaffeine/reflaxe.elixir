@@ -1000,10 +1000,29 @@ class ElixirCompiler extends GenericCompiler<
         var binding = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EList([
             reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("t"))
         ]));
-        // Build condition as ERaw to avoid enum type linkage complexity here
-        var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(rhsAst);
+        // Build condition as structured AST to enable downstream analysis (no ERaw)
+        var lhsField = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.EField(
+                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("t")),
+                fieldName
+            )
+        );
+        inline function toOp(op:String): reflaxe.elixir.ast.ElixirAST.EBinaryOp {
+            return switch (op) {
+                case "==": reflaxe.elixir.ast.ElixirAST.EBinaryOp.Equal;
+                case "!=": reflaxe.elixir.ast.ElixirAST.EBinaryOp.NotEqual;
+                case "<":  reflaxe.elixir.ast.ElixirAST.EBinaryOp.Less;
+                case "<=": reflaxe.elixir.ast.ElixirAST.EBinaryOp.LessEqual;
+                case ">":  reflaxe.elixir.ast.ElixirAST.EBinaryOp.Greater;
+                case ">=": reflaxe.elixir.ast.ElixirAST.EBinaryOp.GreaterEqual;
+                default: reflaxe.elixir.ast.ElixirAST.EBinaryOp.Equal; // conservative fallback
+            };
+        }
+        var pinnedRhs = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.EPin(rhsAst)
+        );
         var condition = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.ERaw('t.' + fieldName + ' ' + opStr + ' ^(' + rhsStr + ')')
+            reflaxe.elixir.ast.ElixirASTDef.EBinary(toOp(opStr), lhsField, pinnedRhs)
         );
         var whereCall = reflaxe.elixir.ast.ElixirAST.makeAST(
             reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(

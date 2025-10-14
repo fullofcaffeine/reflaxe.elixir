@@ -41,6 +41,38 @@ class VarUseAnalyzer {
             var ch = c.charCodeAt(0);
             return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_" || c == ".";
         }
+        inline function snakeCase(s:String):String {
+            if (s == null || s.length == 0) return s;
+            var out = new StringBuf();
+            for (i in 0...s.length) {
+                var ch = s.charAt(i);
+                var isUpper = (ch.toUpperCase() == ch && ch.toLowerCase() != ch);
+                if (isUpper && i > 0) out.add("_");
+                out.add(ch.toLowerCase());
+            }
+            return out.toString();
+        }
+        inline function camelCase(s:String):String {
+            if (s == null || s.length == 0) return s;
+            var parts = s.split("_");
+            if (parts.length == 1) return s;
+            var out = new StringBuf();
+            for (i in 0...parts.length) {
+                var p = parts[i];
+                if (p.length == 0) continue;
+                if (i == 0) out.add(p);
+                else out.add(p.charAt(0).toUpperCase() + p.substr(1));
+            }
+            return out.toString();
+        }
+        var candidates = new Array<String>();
+        if (name != null && name.length > 0) {
+            candidates.push(name);
+            var sn = snakeCase(name);
+            if (sn != name) candidates.push(sn);
+            var cc = camelCase(name);
+            if (cc != name && cc != sn) candidates.push(cc);
+        }
         function scanStringInterpolation(str:String):Void {
             var i = 0;
             while (!found && str != null && i < str.length) {
@@ -56,26 +88,38 @@ class VarUseAnalyzer {
         function walk(x:ElixirAST, inPattern:Bool):Void {
             if (x == null || found) return;
             switch (x.def) {
-                case EVar(v) if (!inPattern && v == name):
-                    found = true;
+                case EVar(v) if (!inPattern):
+                    for (c in candidates) if (v == c) { found = true; break; }
+                case EPin(inner):
+                    // Pin operator holds an expression; traverse to detect variable usage
+                    walk(inner, false);
                 case ERaw(code):
                     if (name != null && name.length > 0 && name.charAt(0) != '_' && code != null) {
                         var start = 0;
                         while (!found) {
-                            var i = code.indexOf(name, start);
-                            if (i == -1) break;
-                            var before = i > 0 ? code.substr(i - 1, 1) : null;
-                            var afterIdx = i + name.length;
+                            var chosen:String = null;
+                            var pos = -1;
+                            for (c in candidates) {
+                                var idx = code.indexOf(c, start);
+                                if (idx != -1 && (pos == -1 || idx < pos)) { pos = idx; chosen = c; }
+                            }
+                            if (pos == -1 || chosen == null) break;
+                            var before = pos > 0 ? code.substr(pos - 1, 1) : null;
+                            var afterIdx = pos + chosen.length;
                             var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
                             if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                            start = i + name.length;
+                            start = pos + chosen.length;
                         }
                     }
                 case EString(str):
                     scanStringInterpolation(str);
                 case EBinary(Match, left, rhs):
-                    // Only RHS can reference the name in expression position
+                    // Only RHS can reference the name in expression position for pattern match
                     walk(rhs, false);
+                case EBinary(_, leftAny, rightAny):
+                    // For non-match binary operators, both sides are expressions
+                    walk(leftAny, false);
+                    walk(rightAny, false);
                 case EMatch(pat, rhs2):
                     // Only RHS can reference the name in expression position
                     walk(rhs2, false);
@@ -125,4 +169,3 @@ class VarUseAnalyzer {
 }
 
 #end
-
