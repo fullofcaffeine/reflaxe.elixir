@@ -278,18 +278,34 @@ run_tests() {
                 exit 1
             fi
         else
-            # Non-aggregated targets (pattern/changed/failed): decide based on result files
-            make -f Makefile $make_args $make_target || true
+            # Non-aggregated targets (pattern/changed/failed): decide based on result files and make status
+            set +e
+            make -f Makefile $make_args $make_target
+            make_status=$?
+            set -e
+
+            # If no result files were produced, treat as failure and surface make status
+            if ! ls test-results*.tmp >/dev/null 2>&1; then
+                echo -e "${RED}Test runner error: no results collected (exit ${make_status}) ❌${RESET}"
+                exit ${make_status:-1}
+            fi
+
             if grep -q "❌" test-results*.tmp 2>/dev/null; then
                 echo -e "${RED}Some tests failed ❌${RESET}"
                 grep "❌" test-results*.tmp | sed 's/^/  /' || true
                 echo -e "${YELLOW}Run with --failed to re-run only failed tests${RESET}"
                 echo -e "${YELLOW}Run with --update to update intended outputs${RESET}"
                 exit 1
-            else
-                echo -e "${GREEN}All tests passed! ✅${RESET}"
-                exit 0
             fi
+
+            # If no explicit failures in result files but make exited non‑zero, propagate failure
+            if [ ${make_status} -ne 0 ]; then
+                echo -e "${RED}Some tests failed (non-zero exit) ❌${RESET}"
+                exit 1
+            fi
+
+            echo -e "${GREEN}All tests passed! ✅${RESET}"
+            exit 0
         fi
     fi
 }

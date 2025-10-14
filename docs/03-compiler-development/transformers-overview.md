@@ -42,6 +42,15 @@ Small, shape‑based passes are easier to reason about, test, and order. Late �
 - `CaseBinderRebindUnderscoreTransforms` (UltraFinal): underscore case binders immediately rebound before first use.
 - Enum/EFn numeric sentinel cleaners: multiple runs ensure stray `1/0/0.0` disappear after late rewrites.
 
+### Filter Predicate Normalization and Query Handling
+- `FilterPredicateNormalizeTransforms`: enforces `EFn` predicate for all `Enum.filter/2` call shapes (remote/method/RHS match). Avoids ERaw in predicate content and wraps captures/vars as `fn elem -> f.(elem) end`.
+- `FilterQueryConsolidateTransforms`: single, shape‑based pass that guarantees `query` availability in `Enum.filter` predicates:
+  - Prefer promotion of `_ = String.downcase(search_query)` → `query = String.downcase(search_query)` when adjacent
+  - Otherwise insert `query = String.downcase(search_query)` from the nearest prior downcase
+  - Otherwise inline `String.downcase(search_query)` into the predicate body when `search_query` is in scope
+
+These two passes replace multiple late “UltraFinal” guards and make filter predicate handling deterministic. Place them before late hygiene and after early Enum/loop normalizations.
+
 ### Ecto/Phoenix Idioms
 - `ChangesetEnsureReturnTransforms` (UltraFinal): ensure functions that build/modify changesets return the last assigned changeset variable.
 - Presence/LiveView passes (documented in PHOENIX_* docs) keep output idiomatic without name heuristics.
