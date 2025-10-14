@@ -17,12 +17,38 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  */
 class DefParamUnusedUnderscoreSafeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
+        // Gate safe underscore to Phoenix contexts (Web/Live/Presence), to avoid touching stdlib and app logic
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EModule(name, attrs, body):
+                    var isPhoenixCtx = (n.metadata?.isPhoenixWeb == true)
+                        || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
+                    if (!isPhoenixCtx) return n;
+                    var newBody = [];
+                    for (b in body) newBody.push(applyToDefs(b));
+                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+                case EDefmodule(name, doBlock):
+                    var isPhoenixCtx2 = (n.metadata?.isPhoenixWeb == true)
+                        || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
+                    if (!isPhoenixCtx2) return n;
+                    makeASTWithMeta(EDefmodule(name, applyToDefs(doBlock)), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        });
+    }
+
+    static function applyToDefs(node: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
                     var newArgs:Array<EPattern> = [];
                     for (a in args) newArgs.push(underscoreIfUnused(a, body));
                     makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
+                case EDefp(name, args2, guards2, body2):
+                    var newArgs2:Array<EPattern> = [];
+                    for (a in args2) newArgs2.push(underscoreIfUnused(a, body2));
+                    makeASTWithMeta(EDefp(name, newArgs2, guards2, body2), n.metadata, n.pos);
                 default:
                     n;
             }

@@ -1819,7 +1819,16 @@ class ElixirASTBuilder {
                         if (shouldSkipAssign) {
                             null;
                         } else {
-                            EMatch(pattern, rightAST);
+                            // Build a match node so we can attach metadata (varId) for binder retention
+                            var matchNode = makeAST(EMatch(pattern, rightAST));
+                            // Attach varId when left is a local variable
+                            switch (e1.expr) {
+                                case TLocal(v):
+                                    if (matchNode.metadata == null) matchNode.metadata = {};
+                                    matchNode.metadata.varId = v.id;
+                                default:
+                            }
+                            matchNode.def;
                         }
 
                     case OpAssignOp(innerOp):

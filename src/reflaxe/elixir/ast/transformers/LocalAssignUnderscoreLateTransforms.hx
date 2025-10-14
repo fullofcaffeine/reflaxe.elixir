@@ -90,7 +90,7 @@ class LocalAssignUnderscoreLateTransforms {
                     var newLeft = left;
                     if (leftName != null && leftName == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                         // keep as named binder
-                    } else if (leftName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName)) {
+                    } else if (leftName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName) && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, leftName)) {
                         newLeft = makeASTWithMeta(EVar('_' + leftName), left.metadata, left.pos);
                     }
                     if (collapse && collapsedExpr != null) {
@@ -121,7 +121,7 @@ class LocalAssignUnderscoreLateTransforms {
                     var newPat = pat;
                     if (leftName2 != null && leftName2 == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                         // keep as named binder
-                    } else if (leftName2 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName2) && leftName2.charAt(0) != '_') {
+                    } else if (leftName2 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName2) && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName2, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, leftName2) && leftName2.charAt(0) != '_') {
                         newPat = PVar('_' + leftName2);
                     }
                     if (collapse2 && collapsedExpr2 != null) {
@@ -137,6 +137,147 @@ class LocalAssignUnderscoreLateTransforms {
     }
 
     // usage analysis delegated to VarUseAnalyzer
+
+    static function hasPinnedVarInBlock(stmts: Array<ElixirAST>, startIdx: Int, name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        var found = false;
+        inline function snakeCase(n:String):String {
+            if (n == null || n.length == 0) return n;
+            var out = new StringBuf();
+            for (i in 0...n.length) {
+                var ch = n.charAt(i);
+                var isUpper = (ch.toUpperCase() == ch && ch.toLowerCase() != ch);
+                if (isUpper && i > 0) out.add("_");
+                out.add(ch.toLowerCase());
+            }
+            return out.toString();
+        }
+        inline function camelCase(s:String):String {
+            if (s == null || s.length == 0) return s;
+            var parts = s.split("_");
+            if (parts.length == 1) return s;
+            var out = new StringBuf();
+            for (i in 0...parts.length) {
+                var p = parts[i];
+                if (p.length == 0) continue;
+                if (i == 0) out.add(p); else out.add(p.charAt(0).toUpperCase() + p.substr(1));
+            }
+            return out.toString();
+        }
+        var candidates = [name];
+        var sn = snakeCase(name);
+        if (sn != null && sn != name) candidates.push(sn);
+        var cc = camelCase(name);
+        if (cc != null && cc != name && cc != sn) candidates.push(cc);
+        function scan(n: ElixirAST): Void {
+            if (n == null || n.def == null || found) return;
+            switch (n.def) {
+                case EPin(inner):
+                    switch (inner.def) {
+                        case EVar(v):
+                            for (c in candidates) if (v == c) { found = true; return; }
+                        default:
+                    }
+                case EBlock(ss): for (s in ss) scan(s);
+                case EDo(ss2): for (s in ss2) scan(s);
+                case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                case EBinary(_, l, r): scan(l); scan(r);
+                case EMatch(_, rhs): scan(rhs);
+                case ECall(tgt, _, args2): if (tgt != null) scan(tgt); for (a in args2) scan(a);
+                case ERemoteCall(tgt2, _, args3): scan(tgt2); for (a in args3) scan(a);
+                case ECase(expr, cs): scan(expr); for (c in cs) scan(c.body);
+                case ERaw(code) if (code != null):
+                    for (c in candidates) {
+                        var needle = '^(' + c + ')';
+                        if (code.indexOf(needle) != -1) { found = true; break; }
+                    }
+                default:
+            }
+        }
+        for (j in startIdx...stmts.length) { scan(stmts[j]); if (found) return true; }
+        return false;
+    }
+
+    static function hasPinnedVarInEctoWhere(stmts: Array<ElixirAST>, startIdx: Int, name: String, ?assignVarId: Null<Int>): Bool {
+        if (name == null || name.length == 0) return false;
+        var found = false;
+        inline function snakeCase(n:String):String {
+            if (n == null || n.length == 0) return n;
+            var out = new StringBuf();
+            for (i in 0...n.length) {
+                var ch = n.charAt(i);
+                var isUpper = (ch.toUpperCase() == ch && ch.toLowerCase() != ch);
+                if (isUpper && i > 0) out.add("_");
+                out.add(ch.toLowerCase());
+            }
+            return out.toString();
+        }
+        inline function camelCase(s:String):String {
+            if (s == null || s.length == 0) return s;
+            var parts = s.split("_");
+            if (parts.length == 1) return s;
+            var out = new StringBuf();
+            for (i in 0...parts.length) {
+                var p = parts[i];
+                if (p.length == 0) continue;
+                if (i == 0) out.add(p); else out.add(p.charAt(0).toUpperCase() + p.substr(1));
+            }
+            return out.toString();
+        }
+        var candidates = [name];
+        var sn = snakeCase(name);
+        if (sn != null && sn != name) candidates.push(sn);
+        var cc = camelCase(name);
+        if (cc != null && cc != name && cc != sn) candidates.push(cc);
+        function scan(n: ElixirAST): Void {
+            if (n == null || n.def == null || found) return;
+            switch (n.def) {
+                case ERemoteCall(mod, func, args) if (func == "where" && args != null && args.length >= 2):
+                    var cond = args[args.length - 1];
+                    var innerFound = false;
+                    ElixirASTTransformer.transformNode(cond, function(x: ElixirAST): ElixirAST {
+                        if (innerFound) return x;
+                        switch (x.def) {
+                            case EPin(inner):
+                                var u = switch (inner.def) { case EParen(p): p; default: inner; };
+                                switch (u.def) {
+                                    case EVar(v):
+                                        for (c in candidates) if (v == c) { innerFound = true; break; }
+                                        if (!innerFound && assignVarId != null && u.metadata != null && u.metadata.sourceVarId != null) {
+                                            if (u.metadata.sourceVarId == assignVarId) innerFound = true;
+                                        }
+                                        return x;
+                                    default: return x;
+                                }
+                            default: return x;
+                        }
+                    });
+                    if (innerFound) found = true;
+                case ERaw(code) if (code != null):
+                    var containsWhere = (code.indexOf("where(") != -1) || (code.indexOf("Ecto.Query.where(") != -1);
+                    if (containsWhere) {
+                        for (c in candidates) {
+                            var needle = '^(' + c + ')';
+                            if (code.indexOf(needle) != -1) { found = true; break; }
+                        }
+                    }
+                case EBlock(ss): for (s in ss) scan(s);
+                case EDo(ss2): for (s in ss2) scan(s);
+                case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                case EBinary(_, l, r): scan(l); scan(r);
+                case EMatch(_, rhs): scan(rhs);
+                case ECall(tgt, _, args2): if (tgt != null) scan(tgt); for (a in args2) scan(a);
+                case ERemoteCall(tgt2, _, args3): scan(tgt2); for (a in args3) scan(a);
+                case ECase(expr, cs): scan(expr); for (c in cs) scan(c.body);
+                default:
+            }
+        }
+        for (j in startIdx...stmts.length) {
+            scan(stmts[j]);
+            if (found) return true;
+        }
+        return false;
+    }
 
     static function filterPredicateUsesQueryLater(stmts: Array<ElixirAST>, startIdx: Int): Bool {
         var found = false;

@@ -725,6 +725,9 @@ typedef ElixirMetadata = {
     ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.
     ?ectoContext: EctoContext,        // Schema, Query, etc.
     
+    // Ecto-specific hints
+    ?ectoPinnedNilGuard: Bool,     // Marks Kernel.is_nil(^var) guard injected for Ecto != semantics
+    
     // Annotation-based Module Types
     ?isEndpoint: Bool,            // @:endpoint Phoenix.Endpoint
     ?isLiveView: Bool,            // @:liveview Phoenix.LiveView

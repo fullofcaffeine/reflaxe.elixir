@@ -1716,6 +1716,20 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoValidateAtomNormalizePass
         });
+        // Inject @compile nowarn for local Ecto DSL shims (from/3, where/3)
+        passes.push({
+            name: "EctoLocalShimNowarn(Final)",
+            description: "Inject @compile {:nowarn_unused_function, [from: 3, where: 3]} when local DSL shims are present",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoLocalShimNowarnTransforms.transformPass
+        });
+        // Qualify StringBuf usage to <App>.StringBuf inside Ecto DSL shim modules
+        passes.push({
+            name: "EctoStringBufQualification(Final)",
+            description: "Qualify bare StringBuf.* to <App>.StringBuf.* in modules with Ecto DSL shims",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoStringBufQualificationTransforms.transformPass
+        });
         // Normalize ERaw opts.* access in keyword lists to Map.get to avoid typing warnings
         passes.push({
             name: "ERawEctoOptsAccessNormalize(Final)",
@@ -1818,6 +1832,15 @@ class ElixirASTPassRegistry {
             description: "Inject alias <App>.Repo as Repo in any module referencing Repo.*",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionGlobalPass
+        });
+
+        // Qualify project-local support modules (e.g., UserChangeset) to <App>.<Name>
+        // in repository/query contexts without adding aliases
+        passes.push({
+            name: "SupportModuleQualification(Final)",
+            description: "Qualify single-segment CamelCase modules to <App>.<Name> when module is project-local and context uses Repo or Ecto DSL",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SupportModuleQualificationTransforms.transformPass
         });
 
         // Late alias injection to ensure Repo alias exists when used
@@ -2519,6 +2542,20 @@ class ElixirASTPassRegistry {
             description: "Final promotion of `_ = rhs` to binder by targeted usage (length/assign/DateTime)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.WildcardPromoteByUndeclaredUseTransforms.pass
+        });
+        // Global: promote wildcard literal assignment when a unique pinned var is used later in the block
+        passes.push({
+            name: "PinnedVarBinderPromote(AbsoluteFinal)",
+            description: "Promote `_ = <literal>` to `<name> = <literal>` when a unique ^(name) is used later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PinnedVarBinderPromoteTransforms.pass
+        });
+        // Targeted repair: bind wildcard literal to pinned var name preceding where/2
+        passes.push({
+            name: "EctoWherePinnedBinderRepair(AbsoluteFinal)",
+            description: "Repair wildcard literal binder before where/2 that pins its value later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoWherePinnedBinderRepairTransforms.pass
         });
 
         // Post-absolute finalization: enforce `query` binder for downcase(search_query)
