@@ -70,7 +70,28 @@ class ElixirOutputIterator {
         this.compiler = compiler;
         this.context = compiler.createCompilationContext();
         index = 0;
-        
+
+        // Ensure extern framework modules (e.g., @:repo) that may not be referenced
+        // are still emitted as outputs for runtime correctness
+        try {
+            compiler.ensureExternRepoOutputs();
+            // Also push as extra DataAndFileInfo so file-per-module pipeline writes it
+            var repo = compiler.buildRepoModuleStringIfMissing();
+            if (repo != null) {
+                // Use any existing baseType for metadata; override filename/path below
+                var base = (compiler.classes.length > 0) ? compiler.classes[0].baseType : null;
+                if (base != null) {
+                    var out = new DataAndFileInfo(StringOrBytes.fromString(repo.content), base, "repo", repo.path.indexOf("/") > -1 ? repo.path.split("/")[0] : null);
+                    // If path includes nested dirs like "todo_app/repo.ex", split into dir and file
+                    if (repo.path.indexOf("/") > -1) {
+                        var parts = repo.path.split("/");
+                        out = new DataAndFileInfo(StringOrBytes.fromString(repo.content), base, parts[parts.length - 1].split(".")[0], parts.slice(0, parts.length - 1).join("/"));
+                    }
+                    extraOutputs.push(out);
+                }
+            }
+        } catch (e: Dynamic) {}
+
         // Calculate total items (classes + enums + typedefs + abstracts)
         maxIndex = compiler.classes.length + 
                    compiler.enums.length + 

@@ -265,6 +265,83 @@ class ElixirCompiler extends GenericCompiler<
         // The configuration was moved because options passed to ReflectCompiler.AddCompiler
         // override anything set in the constructor
     }
+
+    /**
+     * Ensure annotated extern modules that may not be referenced are still emitted.
+     * See: examples/todo-app @:repo extern; ModuleRef("<App>.Repo") does not create a type reference.
+     */
+    public function ensureExternRepoOutputs(): Void {
+        // Derive app module name; if unavailable, skip
+        var app:Null<String> = null;
+        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+        if (app == null || app.length == 0) return;
+        var moduleName = app + ".Repo";
+        // If repo already scheduled, nothing to do
+        if (moduleOutputPaths.exists(moduleName)) return;
+
+        // Build AST for minimal Repo module
+        var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(app);
+        var kv:Array<reflaxe.elixir.ast.ElixirAST.EKeywordPair> = [];
+        kv.push({key: "otp_app", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw(appAtom)))});
+        kv.push({key: "adapter", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Adapters.Postgres"))});
+        var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.EUse("Ecto.Repo", [
+                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EKeywordList(kv))
+            ])
+        );
+        var body = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EBlock([useStmt]));
+        var repoModule:reflaxe.elixir.ast.ElixirAST = {
+            def: reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, body),
+            metadata: { isRepo: true },
+            pos: null
+        };
+
+        // Transform and print via AST pipeline
+        var ctx = createCompilationContext();
+        var transformed = reflaxe.elixir.ast.ElixirASTTransformer.transform(repoModule, ctx);
+        var output = reflaxe.elixir.ast.ElixirASTPrinter.printAST(transformed, ctx);
+
+        // Output path: <app>/repo.ex
+        var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase("Repo");
+        var pack = [reflaxe.elixir.ast.NameUtils.toSnakeCase(app)];
+        var outPath = pack.join("/") + "/" + fileName + ".ex";
+        #if debug_repo
+        Sys.println('[RepoEmit] Emitting ' + moduleName + ' -> ' + outPath);
+        #end
+        setExtraFile(outPath, output);
+    }
+
+    /**
+     * Build Repo module content and output path if missing.
+     * Returns null if app name cannot be derived.
+     */
+    public function buildRepoModuleStringIfMissing(): Null<{path:String, content:String}> {
+        var app:Null<String> = null;
+        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+        if (app == null || app.length == 0) return null;
+        var moduleName = app + ".Repo";
+        // Derive path and content regardless of current scheduling state
+        var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(app);
+        var kv:Array<reflaxe.elixir.ast.ElixirAST.EKeywordPair> = [];
+        kv.push({key: "otp_app", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw(appAtom)))});
+        kv.push({key: "adapter", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Adapters.Postgres"))});
+        var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.EUse("Ecto.Repo", [
+                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EKeywordList(kv))
+            ])
+        );
+        var body = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EBlock([useStmt]));
+        var repoModule:reflaxe.elixir.ast.ElixirAST = {
+            def: reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, body),
+            metadata: { isRepo: true },
+            pos: null
+        };
+        var ctx = createCompilationContext();
+        var transformed = reflaxe.elixir.ast.ElixirASTTransformer.transform(repoModule, ctx);
+        var output = reflaxe.elixir.ast.ElixirASTPrinter.printAST(transformed, ctx);
+        var outPath = reflaxe.elixir.ast.NameUtils.toSnakeCase(app) + "/repo.ex";
+        return {path: outPath, content: output};
+    }
     
     /**
      * Override shouldGenerateClass to enforce strict std emission policy
