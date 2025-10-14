@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * LocalUnderscoreReferenceFallbackTransforms
@@ -50,9 +51,9 @@ class LocalUnderscoreReferenceFallbackTransforms {
     static function normalize(body: ElixirAST): ElixirAST {
         // Collect declared names in this function body (both plain and underscored)
         var declared = new Map<String, Bool>();
-        var referenced = new Map<String, Bool>();
+        var referenced = VariableUsageCollector.referencedInFunctionScope(body);
 
-        // Collect from match patterns and simple lhs matches
+        // Collect from match patterns, simple lhs matches, and EFn clause arguments
         ASTUtils.walk(body, function(n: ElixirAST) {
             if (n == null || n.def == null) return;
             switch (n.def) {
@@ -61,8 +62,9 @@ class LocalUnderscoreReferenceFallbackTransforms {
                 case EBinary(Match, left, _):
                     // Collect all vars on the left side, including nested chains a = b = c
                     collectLhsDecls(left, declared);
-                case EVar(name):
-                    referenced.set(name, true);
+                case EFn(clauses):
+                    // Treat anonymous function binders as local declarations
+                    for (cl in clauses) for (a in cl.args) collectPattern(a, declared);
                 case ERaw(code):
                     // Heuristic: mark base names referenced when they appear in raw code
                     // Scan only for declared bases to avoid false positives

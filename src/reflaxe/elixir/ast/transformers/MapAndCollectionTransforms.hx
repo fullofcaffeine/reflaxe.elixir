@@ -317,6 +317,14 @@ class MapAndCollectionTransforms {
                                     // Body may still reference _name from earlier passes; normalize to name
                                     var underscore = "_" + name;
                                     var fixed = replaceVarInExpr(body, underscore, name);
+                                    // Also normalize any occurrences in the presence of a second accumulator arg
+                                    if (args.length >= 2) {
+                                        switch (args[1]) {
+                                            case PVar(accName) if (accName != null && accName.length > 0 && accName.charAt(0) != '_'):
+                                                fixed = replaceVarInExpr(fixed, "_" + accName, accName);
+                                            default:
+                                        }
+                                    }
                                     newClauses.push({args: args, guard: cl.guard, body: fixed});
                                 case PVar(name) if (name != null && name.length > 1 && name.charAt(0) == '_'):
                                     // If underscored binder is actually referenced, rename binder to trimmed and rewrite body references
@@ -329,6 +337,17 @@ class MapAndCollectionTransforms {
                                     }
                                 default:
                                     newClauses.push(cl);
+                            }
+                            // If we have two-arg reduce form, also ensure body references align to provided arg names
+                            if (args.length >= 2) {
+                                var a0 = switch (args[0]) { case PVar(nm): nm; default: null; };
+                                var a1 = switch (args[1]) { case PVar(nm2): nm2; default: null; };
+                                if (a0 != null && a0.length > 0) {
+                                    var body2 = replaceVarInExpr(newClauses[newClauses.length - 1].body, "_" + a0, a0);
+                                    if (a1 != null && a1.length > 0) body2 = replaceVarInExpr(body2, "_" + a1, a1);
+                                    var last = newClauses.pop();
+                                    newClauses.push({args: last.args, guard: last.guard, body: body2});
+                                }
                             }
                         } else {
                             newClauses.push(cl);
