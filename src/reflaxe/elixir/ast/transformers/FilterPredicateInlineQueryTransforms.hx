@@ -18,6 +18,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Ensures no runtime undefined `query` in predicates even if binder was removed
  *   by hygiene or reordering.
+ *
+ * HOW
+ * - Walk structured `EFn` predicate bodies and replace `EVar("query")` with
+ *   `String.downcase(search_query)`.
+ * - For `ERaw` containing `Enum.filter(` and a token-bounded `query`, perform a
+ *   safe token-aware string substitution. Avoids accidental substring matches.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   todos.filter(t -> String.contains(t.title, query))
+ * Elixir (before):
+ *   Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
+ * Elixir (after):
+ *   Enum.filter(todos, fn t -> String.contains?(t.title, String.downcase(search_query)) end)
  */
 class FilterPredicateInlineQueryTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

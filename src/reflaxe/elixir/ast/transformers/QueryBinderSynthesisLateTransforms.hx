@@ -25,6 +25,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - For any statement that calls Enum.filter(list, fn ... -> ... end) and the EFn
  *     body contains EVar("query"), if `query` has not yet been defined, insert a
  *     binding `query = String.downcase(search_query)` right before the statement.
+ *
+ * EXAMPLES
+ * Before:
+ *   # no prior query binder in block
+ *   Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
+ * After:
+ *   query = String.downcase(search_query)
+ *   Enum.filter(todos, fn t -> String.contains?(t.title, query) end)
  */
 class QueryBinderSynthesisLateTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
