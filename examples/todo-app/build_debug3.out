@@ -1,0 +1,11 @@
+haxe_libraries/reflaxe.hxml:2: [Warning] Using dev version of library reflaxe
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:72: characters 17-94 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:95: characters 17-95 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/SafePubSubAliasInjectTransforms.hx:96: characters 17-107 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/MapAndCollectionTransforms.hx:799: lines 799-837 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/FilterQueryConsolidateTransforms.hx:260: characters 35-40 : Unknown identifier : body2
+../../src/reflaxe/elixir/ast/transformers/FilterQueryConsolidateTransforms.hx:260: characters 35-40 : ... For function argument 'x'
+../../src/reflaxe/elixir/ast/transformers/FilterQueryConsolidateTransforms.hx:263: characters 29-42 : Unknown identifier : needsBinderP2
+../../src/reflaxe/elixir/ast/transformers/FilterQueryConsolidateTransforms.hx:202: lines 202-277 : Warning : (WUnusedPattern) This case is unused
+../../src/reflaxe/elixir/ast/transformers/ChangesetEnsureReturnTransforms.hx:58: characters 17-91 : Warning : (WUnusedPattern) This case is unused
+src_haxe/server/migrations/CreateTodos.hx:13: character 1 : Build failure

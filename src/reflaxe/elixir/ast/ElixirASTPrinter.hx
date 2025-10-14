@@ -99,9 +99,7 @@ class ElixirASTPrinter {
                         }
                     default:
                 }
-                if (nowarnList.length > 0) {
-                    moduleContent += indentStr(indent + 1) + '@compile {:nowarn_unused_function, [' + nowarnList.join(', ') + ']}\n\n';
-                }
+                // Printer de-semanticization: do not inject @compile here; handled by transforms if needed
 
                 // Preserve and set current module context
                 var prevModule = currentModuleName;
@@ -148,16 +146,7 @@ class ElixirASTPrinter {
                     }
                     return (hasBare && !hasAlias);
                 }
-                // Inject alias before printing block when needed and not a Web module
-                if (name.indexOf("Web") == -1 && needsRepoAliasInBlock(doBlock)) {
-                    var app3: Null<String> = null;
-                    if (observedAppPrefix != null) app3 = observedAppPrefix; else {
-                        try app3 = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
-                    }
-                    if (app3 != null && app3.length > 0) {
-                        moduleContent += indentStr(indent + 1) + 'alias ' + app3 + '.Repo, as: Repo\n\n';
-                    }
-                }
+                // Printer de-semanticization: do not inject Repo alias here
 
                 // Ensure alias Phoenix.SafePubSub as SafePubSub when bare SafePubSub references exist
                 inline function needsSafePubSubAliasInBlock(block: ElixirAST): Bool {
@@ -192,15 +181,11 @@ class ElixirASTPrinter {
                     }
                     return needs && !hasAlias;
                 }
-                if (needsSafePubSubAliasInBlock(doBlock)) {
-                    moduleContent += indentStr(indent + 1) + 'alias Phoenix.SafePubSub, as: SafePubSub\n\n';
-                }
+                // Printer de-semanticization: SafePubSub alias handled by transforms
 
                 // Ensure `require Ecto.Query` in Web modules (LiveView/Controller often use Ecto DSL)
                 // This avoids macro-availability errors; harmless if unused
-                if (name.indexOf("Web.") > 0) {
-                    moduleContent += indentStr(indent + 1) + 'require Ecto.Query\n\n';
-                }
+                // Printer de-semanticization: Ecto.Query require handled by transforms
 
                 // Ensure `require Ecto.Query` when Ecto.Query macros are used in the module body
                 inline function needsEctoRequireInBlock(block: ElixirAST): Bool {
@@ -232,9 +217,7 @@ class ElixirASTPrinter {
                     }
                     return needs && !has;
                 }
-                if (needsEctoRequireInBlock(doBlock)) {
-                    moduleContent += indentStr(indent + 1) + 'require Ecto.Query\n\n';
-                }
+                // Printer de-semanticization: Ecto.Query require handled by transforms
 
                 moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
 
@@ -278,15 +261,7 @@ class ElixirASTPrinter {
                 } else {
                     // Regular module
                     var result = 'defmodule ${name} do\n';
-                    // Inject @compile nowarn_unused_function for defp in simple module form
-                    var nowarnList2: Array<String> = [];
-                    for (expr in body) switch (expr.def) {
-                        case EDefp(fnName2, fnArgs2, _, _): nowarnList2.push(fnName2 + ': ' + fnArgs2.length);
-                        default:
-                    }
-                    if (nowarnList2.length > 0) {
-                        result += indentStr(indent + 1) + '@compile {:nowarn_unused_function, [' + nowarnList2.join(', ') + ']}\n\n';
-                    }
+                    // Printer de-semanticization: do not inject @compile here; handled by transforms if needed
                     // Preserve and set current module context for body printing
                     var prevModuleCtx = currentModuleName;
                     currentModuleName = name;
@@ -320,9 +295,7 @@ class ElixirASTPrinter {
                         for (s in stmts) scan(s);
                         return needs && !hasAlias;
                     }
-                    if (name != 'Phoenix.SafePubSub' && !StringTools.endsWith(name, '.SafePubSub') && moduleNeedsSafePubSubAlias(body)) {
-                        result += indentStr(indent + 1) + 'alias Phoenix.SafePubSub, as: SafePubSub\n\n';
-                    }
+                    // Printer de-semanticization: SafePubSub alias handled by transforms
                     
                     // Print attributes
                     for (attr in attributes) {
@@ -341,9 +314,7 @@ class ElixirASTPrinter {
                         if (idxWeb2 > 0) observedAppPrefix = name.substring(0, idxWeb2);
                     }
                     // In Web modules, proactively require Ecto.Query for macro usage
-                    if (name.indexOf("Web.") > 0) {
-                        result += indentStr(indent + 1) + 'require Ecto.Query\n\n';
-                    }
+                    // Printer de-semanticization: Ecto.Query require handled by transforms
                     // Print body
                     for (expr in body) {
                         result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
@@ -429,15 +400,7 @@ class ElixirASTPrinter {
                     for (s in stmts) scan(s);
                     return (hasBare && !hasAlias);
                 }
-                if ((name.indexOf("Web") == -1) && body.length > 0 && needsRepoAlias(body)) {
-                    var app: Null<String> = null;
-                    if (observedAppPrefix != null) app = observedAppPrefix; else {
-                        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
-                    }
-                    if (app != null && app.length > 0) {
-                        result += indentStr(indent + 1) + 'alias ' + app + '.Repo, as: Repo\n\n';
-                    }
-                }
+                // Printer de-semanticization: Repo alias handled by transforms
 
                 // Print body
                 for (expr in body) {
