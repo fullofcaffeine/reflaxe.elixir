@@ -51,6 +51,20 @@ Small, shape‑based passes are easier to reason about, test, and order. Late �
 
 These two passes replace multiple late “UltraFinal” guards and make filter predicate handling deterministic. Place them before late hygiene and after early Enum/loop normalizations.
 
+### Enum.each Hygiene and Binder Integrity
+- `MapAndCollectionTransforms.enumEachHeadExtractionPass`: replaces `list[0]` head extraction aliases with the closure binder and drops stray numeric sentinels in bodies.
+- `MapAndCollectionTransforms.enumEachBinderIntegrityPass`: promotes wildcard binders to named binders when the element is referenced (including ERaw-aware token checks) and normalizes body references.
+- `MapAndCollectionTransforms.enumEachSentinelCleanupPass`: late sweep removing bare `1/0/0.0` statements in `Enum.each` anonymous functions.
+
+Place these after loop normalization and before late hygiene passes to avoid reintroduction of unused binders or literals.
+
+### Printer De‑Semanticization (Policy)
+The printer (`ElixirASTPrinter`) is now strictly a pretty‑printer. It no longer injects runtime semantics such as `alias ... Repo`, `alias Phoenix.SafePubSub`, `require Ecto.Query`, or `@compile` attributes. All such semantics are handled by dedicated transforms. This preserves the single‑responsibility of the printer and keeps semantics testable in passes.
+
+### Debugging Aids
+- `-D debug_pass_metrics`: emits concise per‑pass mutation markers during transformation (`#[PassMetrics] Changed by: <pass>`).
+- `-D debug_ast_snapshots`: writes focused snapshots for selected nodes (e.g., `filter_todos/3` then‑branch) under `tmp/ast_flow/`, enabling verification of AbsoluteFinal shapes.
+
 ### Ecto/Phoenix Idioms
 - `ChangesetEnsureReturnTransforms` (UltraFinal): ensure functions that build/modify changesets return the last assigned changeset variable.
 - Presence/LiveView passes (documented in PHOENIX_* docs) keep output idiomatic without name heuristics.
@@ -77,3 +91,4 @@ Use this checklist for new/modified passes:
 
 - See docs/05-architecture/AST_PIPELINE_MIGRATION.md for AST pipeline details.
 - See docs/06-guides/troubleshooting.md for common issues.
+ - See AGENTS.md for the “NEVER EDIT GENERATED FILES” policy and `npm run clean:generated` workflow.
