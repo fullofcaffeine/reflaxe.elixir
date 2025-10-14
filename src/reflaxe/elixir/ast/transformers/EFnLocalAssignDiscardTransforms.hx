@@ -87,7 +87,14 @@ class EFnLocalAssignDiscardTransforms {
                 case EBinary(Match, left, rhs):
                     switch (left.def) {
                         case EVar(name) if (dead.exists(name)):
-                            makeASTWithMeta(EMatch(PWildcard, rhs), x.metadata, x.pos);
+                            // SAFETY: Do not discard accumulator initializations (e.g., g = [])
+                            // These are often used by subsequent concatenations in nested list-building
+                            // patterns and turning them into `_ = []` yields invalid code later.
+                            switch (rhs.def) {
+                                case EList(_): x; // keep as-is
+                                default:
+                                    makeASTWithMeta(EMatch(PWildcard, rhs), x.metadata, x.pos);
+                            }
                         default: x;
                     }
                 default: x;
@@ -108,8 +115,13 @@ class EFnLocalAssignDiscardTransforms {
                                 switch (left.def) {
                                     case EVar(name):
                                         if (!nameUsedLater(stmts, i+1, name)) {
-                                            out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
-                                            replaced = true;
+                                            // SAFETY: Preserve accumulator initializations (rhs list literals)
+                                            switch (rhs.def) {
+                                                case EList(_): // keep as-is
+                                                default:
+                                                    out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
+                                                    replaced = true;
+                                            }
                                         }
                                     default:
                                 }
