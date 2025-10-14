@@ -62,6 +62,7 @@
     "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh",
     "guard:names": "bash scripts/lint/name_heuristics_guard.sh",
     "ci:guards": "npm run guard:names && echo 'Name heuristics guard passed'",
+    "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "hooks:install": "bash scripts/install-git-hooks.sh"
   },
   "engines": {
