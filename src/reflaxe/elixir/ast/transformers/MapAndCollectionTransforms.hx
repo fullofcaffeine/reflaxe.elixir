@@ -113,6 +113,7 @@ class MapAndCollectionTransforms {
                             }
 
                             var newStmts: Array<ElixirAST> = [];
+                            var promoteFieldsList: Bool = false; // when alias is Reflect.fields(listExpr)[0]
                             var droppedAlias: Null<String> = null;
                             for (s in stmts) {
                                 // Drop bare numeric sentinels
@@ -398,6 +399,7 @@ class MapAndCollectionTransforms {
                             // We'll detect alias below; if binderName is null, we can default to "elem"
                             var newStmts: Array<ElixirAST> = [];
                             var removedAlias: Null<String> = null;
+                            var promoteFieldsList: Bool = false;
                             var stmts: Array<ElixirAST> = switch (clause.body.def) {
                                 case EBlock(ss): ss;
                                 default: [clause.body];
@@ -410,6 +412,12 @@ class MapAndCollectionTransforms {
                                             case EVar(aliasVar):
                                                 if (isHeadAccessOf(right, listExpr)) {
                                                     removedAlias = aliasVar; matched = true;
+                                                    // If right is Reflect.fields(listExpr)[0], mark to promote listExpr
+                                                    switch (right.def) {
+                                                        case EAccess(tgt, key) if (switch (tgt.def) { case ERemoteCall({def: EVar(mod)}, fn, args) if (mod == "Reflect" && fn == "fields" && args != null && args.length == 1 && astEquals(args[0], listExpr)): true; default: false; }):
+                                                            promoteFieldsList = true;
+                                                        default:
+                                                    }
                                                 }
                                             default:
                                         }
@@ -419,6 +427,12 @@ class MapAndCollectionTransforms {
                                             case PVar(aliasVar2):
                                                 if (isHeadAccessOf(right2, listExpr)) {
                                                     removedAlias = aliasVar2; matched = true;
+                                                    // Detect Reflect.fields(listExpr)[0] on RHS
+                                                    switch (right2.def) {
+                                                        case EAccess(tgt2, key2) if (switch (tgt2.def) { case ERemoteCall({def: EVar(mod2)}, fn2, args2) if (mod2 == "Reflect" && fn2 == "fields" && args2 != null && args2.length == 1 && astEquals(args2[0], listExpr)): true; default: false; }):
+                                                            promoteFieldsList = true;
+                                                        default:
+                                                    }
                                                 }
                                             default:
                                         }
@@ -489,7 +503,11 @@ class MapAndCollectionTransforms {
                             // Choose wildcard binder if unused to avoid warnings
                             var finalBinder: EPattern = bodyUsesVar(newBody, safeBinder(binderName)) ? PVar(safeBinder(binderName)) : PWildcard;
                             var newFn = makeAST(EFn([{ args: [finalBinder], guard: clause.guard, body: newBody }]));
-                            makeASTWithMeta(ERemoteCall(mod, func, [listExpr, newFn]), node.metadata, node.pos);
+                            // If we detected Reflect.fields(listExpr)[0] aliasing, promote the each source
+                            var eachList = promoteFieldsList
+                                ? makeAST(ERemoteCall(makeAST(EVar("Reflect")), "fields", [listExpr]))
+                                : listExpr;
+                            makeASTWithMeta(ERemoteCall(mod, func, [eachList, newFn]), node.metadata, node.pos);
                         default:
                             node;
                     }
