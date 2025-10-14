@@ -610,6 +610,75 @@ class EctoERawTransforms {
             }
         });
     }
+
+    /**
+     * FromInModuleQualification
+     *
+     * WHAT
+     * - Rewrites Ecto.Query.from arguments of the shape `t in Module` where
+     *   `Module` is a single-segment CamelCase identifier (e.g., `User`) to a
+     *   fully-qualified `<App>.Module` (e.g., `TodoApp.User`).
+     *
+     * WHY
+     * - Generated code may reference schema modules without app prefix inside
+     *   Ecto DSL: `from t in User`. Ecto expects proper module names; app-qualifying
+     *   keeps output idiomatic and consistent with repository/query snapshots.
+     *
+     * HOW
+     * - Detect ERemoteCall(EVar("Ecto.Query"), "from", [EBinary(In, left, right), ...]).
+     * - If `right` is EVar(name) with no dot and starts uppercase, replace with
+     *   EVar(app <> "." <> name). App prefix is derived from app_name define or
+     *   PhoenixMapper.getAppModuleName().
+     */
+    public static function fromInModuleQualificationPass(ast: ElixirAST): ElixirAST {
+        inline function isSingleSegmentModule(name:String):Bool {
+            return name != null && name.indexOf(".") == -1 && name.length > 0;
+        }
+        inline function isUpperCamel(name:String):Bool {
+            if (name == null || name.length == 0) return false;
+            var c = name.charAt(0);
+            return c.toUpperCase() == c && c.toLowerCase() != c;
+        }
+        var app = (function() {
+            #if macro
+            try {
+                var d = haxe.macro.Compiler.getDefine("app_name");
+                if (d != null && d.length > 0) return d;
+            } catch (e:Dynamic) {}
+            #end
+            return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+        })();
+        if (app == null || app.length == 0) return ast;
+
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case ERemoteCall(mod, fn, args) if (fn == "from" && args != null && args.length >= 1):
+                    var modStr = switch (mod.def) {
+                        case EVar(rn): rn;
+                        default: reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);
+                    };
+                    if (modStr != "Ecto.Query") return n;
+                    var a0 = args[0];
+                    switch (a0.def) {
+                        case EBinary(In, left, right):
+                            switch (right.def) {
+                                case EVar(name) if (isSingleSegmentModule(name) && isUpperCamel(name)):
+                                    var newRight = makeAST(EVar(app + "." + name));
+                                    var newA0 = makeAST(EBinary(In, left, newRight));
+                                    var newArgs = args.copy();
+                                    newArgs[0] = newA0;
+                                    makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);
+                                default:
+                                    n;
+                            }
+                        default:
+                            n;
+                    }
+                default:
+                    n;
+            }
+        });
+    }
 }
 
 #end

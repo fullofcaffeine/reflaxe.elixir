@@ -765,6 +765,16 @@ This file must stay under 40k characters for optimal performance.
 - Reference docs instead of duplicating content
 - Review size after major updates: `wc -c AGENTS.md`
 
+## Style Discipline: Eliminate Per-Branch Duplication
+
+- Prefer a single helper + single local variable across symmetric switch branches.
+  - Anti‑pattern: `used` and `used2`, `newName` and `newName2` in `PVar` vs `PAlias` arms doing the same logic.
+  - Pattern: extract a small inline helper (e.g., `isUsed(name)`, `normalizedBinder(name)`) and use one local (e.g., `nn`) in both branches.
+  - Rationale: reduces cognitive load, avoids divergence/bugs when one branch is updated, keeps transforms maintainable and deterministic.
+  - Constraint: keep logic shape-/usage-based; never couple to app/domain names. No special cases like `todo`, `id`, etc.
+  - Scope: applies to all transformers, analyzers, and builders.
+
+
 ## Transformer Scope Discipline
 
 - Prefer shape- and usage-based transforms. Do not gate transforms by module/app names (e.g., "Web.", ".Live", ".Presence") unless:

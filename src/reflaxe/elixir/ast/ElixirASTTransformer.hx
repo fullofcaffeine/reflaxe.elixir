@@ -1715,6 +1715,9 @@ class ElixirASTTransformer {
                 case ERaw(code):
                     // Detect remote macro usage in raw injections
                     if (code != null && code.indexOf("Ecto.Query.") != -1) found.needs = true;
+                case EPin(_):
+                    // Any pin operator likely belongs to Ecto DSL context; require Ecto.Query
+                    found.needs = true;
                 case ECall(target, _, args):
                     if (target != null) scanForEctoCalls(target, found);
                     if (args != null) for (a in args) scanForEctoCalls(a, found);
@@ -1733,7 +1736,7 @@ class ElixirASTTransformer {
             switch (n.def) {
                 case EDefmodule(name, doBlock):
                     switch (doBlock.def) {
-                        case EBlock(statements):
+                        case EBlock(statements) | EDo(statements):
                             var found = {needs:false, has:false};
                             for (s in statements) scanForEctoCalls(s, found);
                             if (found.needs && !found.has) {
@@ -1742,7 +1745,11 @@ class ElixirASTTransformer {
                                 #end
                                 var requireStmt = makeAST(ERequire("Ecto.Query", null));
                                 var newStatements = [requireStmt].concat(statements);
-                                var newDo = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+                                var newDo: ElixirAST = switch (doBlock.def) {
+                                    case EBlock(_): makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+                                    case EDo(_): makeASTWithMeta(EDo(newStatements), doBlock.metadata, doBlock.pos);
+                                    default: doBlock;
+                                };
                                 return makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                             }
                             #if debug_ecto_query_require

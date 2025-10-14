@@ -17,7 +17,7 @@ class GettextErrorMessages {
      * @return Translated error message for required fields
      */
     public static function required_field(): String {
-        return Gettext.dgettext("errors", "can't be blank");
+        return WebGettext.dgettext("errors", "can't be blank");
     }
     
     /**
@@ -25,7 +25,7 @@ class GettextErrorMessages {
      * @return Translated error message for invalid format
      */
     public static function invalid_format(): String {
-        return Gettext.dgettext("errors", "has invalid format");
+        return WebGettext.dgettext("errors", "has invalid format");
     }
     
     /**
@@ -36,7 +36,7 @@ class GettextErrorMessages {
     public static function too_short(min: Int): String {
         var bindings = TranslationBindings.create()
             .setInt("count", min);
-        return Gettext.dgettext("errors", "should be at least %{count} character(s)", bindings);
+        return WebGettext.dgettext("errors", "should be at least %{count} character(s)", bindings);
     }
     
     /**
@@ -47,7 +47,7 @@ class GettextErrorMessages {
     public static function too_long(max: Int): String {
         var bindings = TranslationBindings.create()
             .setInt("count", max);
-        return Gettext.dgettext("errors", "should be at most %{count} character(s)", bindings);
+        return WebGettext.dgettext("errors", "should be at most %{count} character(s)", bindings);
     }
     
     /**
@@ -55,7 +55,7 @@ class GettextErrorMessages {
      * @return Translated error message for not found resources
      */
     public static function not_found(): String {
-        return Gettext.dgettext("errors", "not found");
+        return WebGettext.dgettext("errors", "not found");
     }
     
     /**
@@ -63,6 +63,6 @@ class GettextErrorMessages {
      * @return Translated error message for unauthorized access
      */
     public static function unauthorized(): String {
-        return Gettext.dgettext("errors", "unauthorized");
+        return WebGettext.dgettext("errors", "unauthorized");
     }
 }

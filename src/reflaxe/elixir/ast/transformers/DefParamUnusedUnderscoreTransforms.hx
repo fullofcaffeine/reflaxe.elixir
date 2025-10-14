@@ -51,14 +51,15 @@ class DefParamUnusedUnderscoreTransforms {
                     // Gate to Phoenix contexts only (shape-based + metadata)
                     var isPhoenixCtx = (n.metadata?.isPhoenixWeb == true)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
-                    if (!isPhoenixCtx) return n;
+                    // Do not alter Gettext modules to avoid breaking ngettext/dngettext count param
+                    if (!isPhoenixCtx || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     var newBody = [];
                     for (b in body) newBody.push(rewriteDefs(b));
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var isPhoenixCtx2 = (n.metadata?.isPhoenixWeb == true)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
-                    if (!isPhoenixCtx2) return n;
+                    if (!isPhoenixCtx2 || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     makeASTWithMeta(EDefmodule(name, rewriteDefs(doBlock)), n.metadata, n.pos);
                 default:
                     n;
@@ -110,9 +111,9 @@ class DefParamUnusedUnderscoreTransforms {
 
     static function underscorePattern(p: EPattern, used: Map<String, Bool>): EPattern {
         return switch (p) {
-            case PVar(name):
+                case PVar(name):
                 // Never underscore Phoenix-idiomatic parameter names that are commonly used indirectly
-                var preserve = (name == "assigns" || name == "opts" || name == "args");
+                var preserve = (name == "assigns" || name == "opts" || name == "args" || name == "conn");
                 if (!preserve && name != null && name.length > 0 && name.charAt(0) != '_' && !used.exists(name)) PVar("_" + name) else p;
             case PTuple(es): PTuple([for (e in es) underscorePattern(e, used)]);
             case PList(es): PList([for (e in es) underscorePattern(e, used)]);
