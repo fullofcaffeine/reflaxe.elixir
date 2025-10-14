@@ -33,7 +33,7 @@ trap 'kill $PHX_PID >/dev/null 2>&1 || true' EXIT
 
 echo "[QA] Waiting for server..."
 for i in {1..30}; do
-  if curl -fsS "http://localhost:$PORT" >/dev/null 2>&1; then
+  if curl -sS "http://localhost:$PORT" >/dev/null 2>&1; then
     READY=1; break
   fi
   sleep 0.3
@@ -50,7 +50,7 @@ if [[ "${READY:-0}" -ne 1 ]]; then
   if [[ -n "$DETECTED_PORT" ]]; then
     echo "[QA] Detected endpoint port: $DETECTED_PORT. Waiting for readiness..."
     for i in {1..30}; do
-      if curl -fsS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
+      if curl -sS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
         echo "[QA] GET / on detected port $DETECTED_PORT succeeded"
         echo "[QA] OK: build + runtime smoke passed (fallback port)"
         popd >/dev/null
