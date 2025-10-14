@@ -23,6 +23,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * RefDeclAlignmentTransforms
@@ -76,23 +77,20 @@ class RefDeclAlignmentTransforms {
             for (p in params) collectPatternDecls(p, declared);
         }
 
-        // Collect declarations
+        // Collect declarations (including EFn clause args)
         ASTUtils.walk(body, function(n: ElixirAST) {
             if (n == null || n.def == null) return;
             switch (n.def) {
                 case EMatch(p, _): collectPatternDecls(p, declared);
                 case EBinary(Match, left, _): collectLhsDecls(left, declared);
+                case EFn(clauses):
+                    for (cl in clauses) for (a in cl.args) collectPatternDecls(a, declared);
                 default:
             }
         });
 
-        // Collect references
-        ASTUtils.walk(body, function(n: ElixirAST) {
-            switch (n.def) {
-                case EVar(v): referenced.set(v, true);
-                default:
-            }
-        });
+        // Collect references (closure-aware)
+        referenced = VariableUsageCollector.referencedInFunctionScope(body);
 
         // Build groups by base name: base -> [declared variants]
         var groups = new Map<String, Array<String>>();

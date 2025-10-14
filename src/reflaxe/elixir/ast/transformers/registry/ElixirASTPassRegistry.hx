@@ -1055,6 +1055,20 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.StringToolsNativeRewrite.rewriteTrimPass
         });
+        passes.push({
+            name: "StringToolsFix(Final)",
+            description: "Ensure StringTools.is_space/2 uses binders s,pos (late enforcement)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StringToolsFixTransforms.transformPass
+        });
+
+        // Stdlib overrides for Haxe runtime modules (binder-consistent, native Elixir)
+        passes.push({
+            name: "StdHaxeRuntimeOverride",
+            description: "Override ArrayIterator/PosException with binder-consistent native implementations",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StdHaxeRuntimeOverrideTransforms.transformPass
+        });
 
         // Wrap parse_* helpers to return {:some, v} | :none to match caller patterns
         passes.push({
@@ -1126,6 +1140,21 @@ class ElixirASTPassRegistry {
             description: "Guard Ecto where comparisons with pinned vars that may be nil",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.transformPass
+        });
+        // Ensure schema changeset/2 binders align with body usage (underscore → base)
+        passes.push({
+            name: "EctoSchemaBinderFix(Final)",
+            description: "Normalize changeset/2 binder names by dropping underscores when body uses base names",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoSchemaBinderFixTransforms.transformPass
+        });
+
+        // Normalize Ecto where query arg by inlining IIFE wrappers around from/2
+        passes.push({
+            name: "EctoQueryIIFEInline(Late)",
+            description: "Inline (fn -> ... from(...) ... end).() used as where/2 query arg",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.transformPass
         });
 
         // Final EqNilToIsNil to catch any newly introduced comparisons
@@ -1607,6 +1636,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SafePubSubAliasFixTransforms.fixPass
         });
+        passes.push({
+            name: "SafePubSubFix",
+            description: "Fix binder mismatch in Phoenix.SafePubSub.is_valid_message/1",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubFixTransforms.transformPass
+        });
         // Fix Telemetry.start_link children var name mismatch
         passes.push({
             name: "TelemetryChildrenArgFix",
@@ -1710,6 +1745,13 @@ class ElixirASTPassRegistry {
             description: "Absolute final alignment of local names to canonical spelling",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
+        });
+        // Align def/defp parameters with body usage before fixing underscored refs
+        passes.push({
+            name: "DefParamBinderAlignByBodyUse(Final)",
+            description: "Promote underscored def params to base names when body uses base; rewrite body refs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamBinderAlignByBodyUseTransforms.alignPass
         });
         // Final safety: fix references to underscored variants of function params
         passes.push({
@@ -2154,6 +2196,20 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnLocalAssignDiscardTransforms.discardPass
         });
+        // Final binder/reference alignment in EFn to prevent _arg vs arg mismatches
+        passes.push({
+            name: "EFnBinderReferenceAlign(Final2)",
+            description: "Align EFn binders with body references: _name -> name when binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnBinderReferenceAlignTransforms.fixPass
+        });
+        // Run def/defp binder alignment late to catch newly synthesized modules/functions
+        passes.push({
+            name: "DefParamBinderAlignByBodyUse(UltraFinal)",
+            description: "Late promotion of underscored def params to base names when body uses base",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamBinderAlignByBodyUseTransforms.alignPass
+        });
         // Repair `query` binder name after early hygiene when later filter uses it
         passes.push({
             name: "QueryBinderRescue(Late)",
@@ -2221,6 +2277,13 @@ class ElixirASTPassRegistry {
             description: "Final sweep to inject `require Ecto.Query` in modules using Ecto.Query macros",
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass
+        });
+        // Absolute-final ensure for Ecto.Query require after any late rewrites
+        passes.push({
+            name: "EctoQueryRequireEnsure(AbsoluteFinal2)",
+            description: "Ensure `require Ecto.Query` when Ecto.Query remote macros are present",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoQueryRequireEnsureTransforms.transformPass
         });
 
         // Absolute success-case alignment: must run as the very last shape-affecting passes
@@ -2466,6 +2529,14 @@ class ElixirASTPassRegistry {
             description: "If `query = downcase(...)` is immediately followed by `_ = downcase(...)`, drop the wildcard line",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.RemoveDuplicateDowncaseAfterQueryPostTransforms.transformPass
+        });
+
+        // UltraFinal2: As a last step, ensure changeset/2 binders match Ecto.Changeset usages
+        passes.push({
+            name: "EctoSchemaBinderFix(UltraFinal2)",
+            description: "Infer changeset/2 parameter names from Ecto.Changeset.change/cast shapes and drop underscores",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoSchemaBinderFixTransforms.transformPass
         });
 
         // Return only enabled passes
