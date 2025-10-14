@@ -19,6 +19,7 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
+import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
 using StringTools;
 // Temporarily disabled for debugging
 // import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer;
@@ -210,6 +211,43 @@ class LoopBuilder {
         buildExpr: TypedExpr -> ElixirAST,
         toSnakeCase: String -> String
     ): ElixirAST {
+        // Local helper: attempt lenient list extraction for TBlock bodies to
+        // reconstruct list literals instead of emitting invalid concatenations.
+        function tryLooseListFromBlock(body: TypedExpr): Null<ElixirAST> {
+            // Local unwrap for TMeta(:mergeBlock|:implicitReturn) and TParenthesis
+            function unwrap(e: TypedExpr): TypedExpr {
+                return switch (e.expr) {
+                    case TMeta({name: ":mergeBlock" | ":implicitReturn"}, inner) | TParenthesis(inner): unwrap(inner);
+                    default: e;
+                }
+            }
+            return switch (body.expr) {
+                case TBlock(stmts):
+                    var out: Array<ElixirAST> = [];
+                    for (s in stmts) {
+                        var ss = unwrap(s);
+                        switch (ss.expr) {
+                            case TBinop(OpAdd, _, {expr: TArrayDecl([value])}):
+                                out.push(buildExpr(value));
+                            case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}):
+                                out.push(buildExpr(value));
+                            case TBinop(OpAdd, _, {expr: TBlock(inner)}):
+                                var nested = tryLooseListFromBlock({expr: TBlock(inner), pos: ss.pos, t: ss.t});
+                                if (nested != null) out.push(nested); 
+                            case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TBlock(inner)})}):
+                                var nested2 = tryLooseListFromBlock({expr: TBlock(inner), pos: ss.pos, t: ss.t});
+                                if (nested2 != null) out.push(nested2);
+                            case TBlock(inner):
+                                var nested3 = tryLooseListFromBlock({expr: TBlock(inner), pos: ss.pos, t: ss.t});
+                                if (nested3 != null) out.push(nested3);
+                            default:
+                        }
+                    }
+                    out.length > 0 ? makeAST(EList(out)) : null;
+                default:
+                    null;
+            }
+        }
         switch(transform) {
             case EnumEachRange(varName, startExpr, endExpr, body):
                 // Analyze variable scopes comprehensively
@@ -408,7 +446,10 @@ class LoopBuilder {
                 var varName = toSnakeCase(v.name);
                 var pattern = PVar(varName);
                 var iteratorExpr = buildExpr(iterator);
-                var bodyExpr = buildExpr(body);
+                var bodyExpr = (function() {
+                    var loose = tryLooseListFromBlock(body);
+                    return loose != null ? loose : buildExpr(body);
+                })();
                 return makeAST(EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false));
         }
     }
