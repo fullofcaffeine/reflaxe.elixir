@@ -1880,6 +1880,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });
+        // Absolute-final: ensure query binder promotion inside search-guarded EIf branches
+        passes.push({
+            name: "QueryBinderFinalization(AbsoluteFinal)",
+            description: "Promote `_ = String.downcase(search_query)` to `query = ...` in guarded then-branches when Enum.filter appears later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.QueryBinderFinalizationTransforms.transformPass
+        });
         // Discard unused assignments inside closures (EFn clause bodies)
         passes.push({
             name: "ClosureUnusedAssignmentDiscard(Final)",
@@ -2012,6 +2019,15 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms.transformPass
         });
+        // Normalize Enum.filter predicates to structured EFn for deterministic downstream passes
+        passes.push({
+            name: "FilterPredicateNormalize",
+            description: "Ensure Enum.filter/2 uses EFn(predicate) across call shapes; wrap captures/expressions",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FilterPredicateNormalizeTransforms.pass
+        });
+
+
         // New: Clean up Enum.each bodies and rewrite common idioms
         passes.push({
             name: "EnumEachHeadExtraction",
@@ -2114,13 +2130,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.fnArgBodyRefNormalizePass
         });
-        // Synthesize `query` binding when predicate references it and no prior binding exists
-        passes.push({
-            name: "FilterQueryBinderSynthesis",
-            description: "Insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query`",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FilterQueryBinderTransforms.synthesizeQueryBindingPass
-        });
         passes.push({
             name: "EFnArgCleanup(Final)",
             description: "Final cleanup of EFn arg/body underscore mismatches",
@@ -2145,18 +2154,26 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnLocalAssignDiscardTransforms.discardPass
         });
-        // Promote `_ = String.downcase(x)` to `query = String.downcase(x)` when next Enum.filter uses `query`
+        // Repair `query` binder name after early hygiene when later filter uses it
         passes.push({
-            name: "PromoteQueryFromWildcard(Final)",
-            description: "Promote wildcard downcase assignment to query when immediately used by filter predicate",
+            name: "QueryBinderRescue(Late)",
+            description: "Rename _query/_ = downcase to query = downcase when later Enum.filter uses query",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.QueryBinderRescueTransforms.transformPass
+        });
+        // Promote `_ = String.downcase(search_query)` preceding Enum.filter(...) that uses `query` to a named binder
+        passes.push({
+            name: "PromoteQueryFromWildcard",
+            description: "Promote wildcard downcase to `query = String.downcase(search_query)` when next filter uses `query`",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.pass
         });
+        // Consolidate query handling after EFn arg/body normalizations so predicate shapes are stable
         passes.push({
-            name: "InlineQueryFromPreviousDowncase(Final)",
-            description: "Inline query in Enum.filter predicate from preceding `_ = String.downcase(x)` when query is unbound",
+            name: "FilterQueryConsolidate",
+            description: "Ensure `query` availability: promote `_ = String.downcase(search_query)` or bind/inline deterministically",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InlineQueryFromPreviousDowncaseTransforms.pass
+            pass: reflaxe.elixir.ast.transformers.FilterQueryConsolidateTransforms.pass
         });
         // Normalize Phoenix assign/2 map argument by inlining preceding literal map
         // Removed to avoid app-specific coupling; rely on hygiene hardening instead
@@ -2327,32 +2344,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnderscoreLateTransforms.pass
         });
-        // Ultra-final: synthesize `query` binder for Enum.filter predicates referencing it when missing
-        passes.push({
-            name: "QueryBinderSynthesis(UltraFinal)",
-            description: "Insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query` and no prior binding exists",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.QueryBinderSynthesisLateTransforms.transformPass
-        });
-        // Ultra-final: promote and inline query directly before filter predicates as last-ditch fix
-        passes.push({
-            name: "PromoteQueryFromWildcard(UltraFinal2)",
-            description: "Promote `_ = String.downcase(x)` to `query = ...` when next filter predicate uses query",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.pass
-        });
-        passes.push({
-            name: "InlineQueryFromPreviousDowncase(UltraFinal2)",
-            description: "Inline query in filter predicate from previous downcase when no query binder exists",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InlineQueryFromPreviousDowncaseTransforms.pass
-        });
-        passes.push({
-            name: "FilterPredicateQueryInline(UltraFinal3)",
-            description: "Inline `query` in Enum.filter predicate to String.downcase(search_query) when no binder and search_query present in block",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FilterPredicateQueryInlineUltraFinalTransforms.pass
-        });
+        // Consolidation removed legacy query guards; see FilterQueryConsolidate
         passes.push({
             name: "EFnTempChainSimplify(UltraFinal)",
             description: "Inside EFn, rewrite var=nil; var=expr; var → expr",
@@ -2389,11 +2381,33 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.pass
         });
+        // Ultra-late: synthesize missing `query` binder before Enum.filter when predicate uses `query`
+        // and earlier promotion/insertion did not occur due to block segmentation or ERaw
+        passes.push({
+            name: "QueryBinderSynthesisLate(UltraFinal)",
+            description: "Insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query` and no prior binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.QueryBinderSynthesisLateTransforms.transformPass
+        });
+        // Inline query inside filter predicates (absolute final fallback)
+        passes.push({
+            name: "FilterPredicateInlineQuery(AbsoluteFinal)",
+            description: "Inline `query` to `String.downcase(search_query)` inside Enum.filter predicates",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FilterPredicateInlineQueryTransforms.transformPass
+        });
         passes.push({
             name: "BlockUnusedAssignmentDiscard(UltraFinal)",
             description: "Rewrite var = expr to _ = expr in function bodies when var unused later",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BlockUnusedAssignmentDiscardTransforms.pass
+        });
+        // Drop stray `_ = String.downcase(search_query)`
+        passes.push({
+            name: "DropUnusedDowncaseWildcardAssign(AbsoluteFinal)",
+            description: "Drop `_ = String.downcase(search_query)` in blocks (pure, unused)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropUnusedDowncaseWildcardAssignTransforms.transformPass
         });
         passes.push({
             name: "ChangesetEnsureReturn(UltraFinal)",
@@ -2428,6 +2442,30 @@ class ElixirASTPassRegistry {
             description: "Final promotion of `_ = rhs` to binder by targeted usage (length/assign/DateTime)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.WildcardPromoteByUndeclaredUseTransforms.pass
+        });
+
+        // Post-absolute finalization: enforce `query` binder for downcase(search_query)
+        // after all promotions to avoid late wildcard promotions picking the wrong name.
+        passes.push({
+            name: "QueryBinderFinalization(Post)",
+            description: "Enforce `query = String.downcase(search_query)` at the very end when a different binder name slipped through",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.QueryBinderFinalizationTransforms.transformPass
+        });
+
+        passes.push({
+            name: "DropResidualWildcardDowncase(Post2)",
+            description: "Drop stray `_ = String.downcase(search_query)` after establishing `query` binder (post-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.transformPass
+        });
+
+        // Post3: remove immediate duplicate downcase after query binder
+        passes.push({
+            name: "RemoveDuplicateDowncaseAfterQuery(Post3)",
+            description: "If `query = downcase(...)` is immediately followed by `_ = downcase(...)`, drop the wildcard line",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RemoveDuplicateDowncaseAfterQueryPostTransforms.transformPass
         });
 
         // Return only enabled passes

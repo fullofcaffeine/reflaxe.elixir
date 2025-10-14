@@ -2796,3 +2796,36 @@ CI/QA Sentinel expectations:
 
 - QA checks must fail if any modified file under `src/reflaxe/elixir/ast/transformers/*.hx` lacks an hxdoc block describing the change per the above format.
 - Shrimp tasks must reference the files touched and the snapshots that verify the behavior.
+## Synthesis Update: Paradigm & Flow Debugging (2025-10-13)
+
+This section synthesizes the current mission and adds concrete debugging guidance to avoid circular efforts during transformer work.
+
+- Mission, restated succinctly
+  - Generate idiomatic Elixir from Haxe that passes human review as natural Elixir, not machine‑generated.
+  - When Haxe is imperative, preserve behavior but emit functional Elixir (Enum/Stream/case) with equivalent outcomes.
+  - Encourage writing Haxe close to the Elixir paradigm (pattern matching, pure transforms, immutable data). This improves generated code quality and reduces required rewrites.
+  - Compile any Haxe to Elixir and deeply integrate with Phoenix/Ecto/OTP, adding value via Haxe typing, macros, and cross‑target reuse — never invent fake framework APIs.
+
+- Where we are
+  - Core invariant in place: Enum.filter predicates normalized to EFn closures (deterministic downstream transforms).
+  - Query handling consolidated: one pass (shape‑based) ensures `query` availability (promotion → binder insertion → inline), replacing late guards.
+  - Next: Enum.each hygiene (unused elem, stray literal 1) and closure binder integrity in loops; then printer de‑semanticization (move method→Enum to transforms).
+
+- Flow debugging toolkit (use sparingly, only when needed)
+  - Pass flow trace (enabled by default): the transformer logs “Applying pass: <name>”. Combine with one or more flags below for focus.
+  - AST pipeline flags (combine as needed):
+    - `-D debug_ast_transformer`: prints node types at key points and pass application.
+    - `-D debug_filter_predicate`: logs when non‑EFn filter predicates are wrapped.
+    - `-D debug_filter_query_consolidate`: logs when `query` is promoted/bound/inlined.
+  - Suggested workflow
+    1) Build the example or test: `npx haxe build.hxml -D debug_filter_query_consolidate`
+    2) Inspect the generated Elixir around the failing function and compare to the logs.
+    3) Adjust a single pass (shape‑based), re‑run, and snapshot the result.
+
+- Design guardrails to avoid “walking in circles”
+  - Prefer invariants at the source: when a shape is universally required (e.g., EFn predicates), enforce it once.
+  - Aggregate adjacent micro‑passes into one shape‑based pass once stable (done for filter query handling).
+  - Keep the printer free of semantic rewrites; transforms should prepare AST so the printer only renders.
+  - No app‑name heuristics; match shapes and real APIs only.
+
+See also: docs/03-compiler-development/transformers-overview.md (updated with the two filter passes and ordering notes), docs/05-architecture/AST_PIPELINE_MIGRATION.md for the AST‑only architecture, and docs/06-guides/troubleshooting.md for broader guidance.

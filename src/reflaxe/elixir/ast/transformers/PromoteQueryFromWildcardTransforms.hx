@@ -71,6 +71,12 @@ class PromoteQueryFromWildcardTransforms {
                         case ERemoteCall({def: EVar(m)}, "downcase", _ ) if (m == "String"): true;
                         default: false;
                     }
+                    case EBinary(Match, leftWild, rhs2):
+                        var isWild = switch (leftWild.def) { case EVar(nm) if (nm == "_"): true; default: false; };
+                        if (!isWild) false else switch (rhs2.def) {
+                            case ERemoteCall({def: EVar(m2)}, "downcase", _ ) if (m2 == "String"): true;
+                            default: false;
+                        }
                     default: false;
                 };
                 var nextUsesQueryInFilter = switch (next.def) {
@@ -93,6 +99,10 @@ class PromoteQueryFromWildcardTransforms {
                     switch (s.def) {
                         case EMatch(PWildcard, rhsPromote):
                             out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhsPromote), ctx.metadata, ctx.pos));
+                            i++;
+                            continue;
+                        case EBinary(Match, _, rhsPromote2):
+                            out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhsPromote2), ctx.metadata, ctx.pos));
                             i++;
                             continue;
                         default:

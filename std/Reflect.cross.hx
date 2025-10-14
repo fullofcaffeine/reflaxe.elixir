@@ -398,12 +398,11 @@ class Reflect {
      * @return -1 if a < b, 0 if a == b, 1 if a > b
      */
     public static function compare<T>(a: T, b: T): Int {
-        // Use string comparison as a generic fallback
-        // The Reflaxe compiler will optimize this to native Elixir comparison
-        var sa = Std.string(a);
-        var sb = Std.string(b);
-        if (sa < sb) return -1;
-        if (sa > sb) return 1;
+        // Use string comparison as a generic fallback without introducing
+        // intermediate variables that later hygiene passes might demote.
+        // This avoids false-positive "unused" rewrites in ultra-late passes.
+        if (Std.string(a) < Std.string(b)) return -1;
+        if (Std.string(a) > Std.string(b)) return 1;
         return 0;
     }
     

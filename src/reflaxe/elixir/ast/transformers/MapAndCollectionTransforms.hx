@@ -264,6 +264,18 @@ class MapAndCollectionTransforms {
                                                 default: out.push(s);
                                             }
                                             makeASTWithMeta(EBlock(out), cl.body.metadata, cl.body.pos);
+                                        /**
+                                         * EDo support
+                                         * - Handle do/end bodies by filtering out numeric sentinel-only statements.
+                                         */
+                                        case EDo(stmts2):
+                                            var out2: Array<ElixirAST> = [];
+                                            for (s in stmts2) switch (s.def) {
+                                                case EInteger(v2) if (v2 == 0 || v2 == 1):
+                                                case EFloat(f2) if (f2 == 0.0):
+                                                default: out2.push(s);
+                                            }
+                                            makeASTWithMeta(EDo(out2), cl.body.metadata, cl.body.pos);
                                         default:
                                             cl.body;
                                     };
@@ -298,8 +310,8 @@ class MapAndCollectionTransforms {
                     for (cl in clauses) {
                         var body = cl.body;
                         var args = cl.args;
-                        // For single-arg patterns only (safe and enough for our rewrites)
-                        if (args.length == 1) {
+                        // Operate on first binder when present (works for single-arg and reduce two-arg forms)
+                        if (args.length >= 1) {
                             switch (args[0]) {
                                 case PVar(name) if (name != null && name.length > 0 && name.charAt(0) != '_'):
                                     // Body may still reference _name from earlier passes; normalize to name
@@ -410,6 +422,47 @@ class MapAndCollectionTransforms {
                                     replaceVarInExpr(s, removedAlias, binderName)
                                 else s;
                                 rewritten.push(s2);
+                            }
+                            /**
+                             * Fallback Binder Rewrite (Head Extraction)
+                             *
+                             * WHAT
+                             * - When no head alias was found, but the body references exactly one
+                             *   lowercase local variable, rewrite that variable to the element binder.
+                             *
+                             * WHY
+                             * - Alias pruning can leave a single local (e.g., `todo`) in closures, which
+                             *   later passes expect to be the binder; rewriting prevents undefined locals.
+                             *
+                             * HOW
+                             * - Collect lowercase-started local names (exclude binder/_binder/id).
+                             * - If exactly one candidate remains, replace all occurrences with the binder.
+                             */
+                            // If we did not have a head alias but the body uses local names other
+                            // than declared ones, rewrite those free lowercase locals to the binder.
+                            if (removedAlias == null && binderName != null) {
+                                var bodyForVars = (rewritten.length == 1) ? rewritten[0] : makeAST(EBlock(rewritten));
+                                var varsUsed = collectVars(bodyForVars);
+                                varsUsed.remove(binderName);
+                                if (varsUsed.exists("_" + binderName)) varsUsed.remove("_" + binderName);
+                                if (varsUsed.exists("id")) varsUsed.remove("id");
+                                // Collect locally declared names (lhs of assignments) to avoid rewriting them
+                                var declared = new Map<String, Bool>();
+                                for (s in newStmts) switch (s.def) {
+                                    case EBinary(Match, left, _): switch (left.def) { case EVar(n): declared.set(n, true); default: }
+                                    case EMatch(pat, _): switch (pat) { case PVar(n2): declared.set(n2, true); default: }
+                                    default:
+                                }
+                                // Rewrite any used lowercase local that is not declared to the binder
+                                var tmp: Array<ElixirAST> = [];
+                                for (s in rewritten) {
+                                    var s2 = s;
+                                    for (k in varsUsed.keys()) {
+                                        if (!declared.exists(k)) s2 = replaceVarInExpr(s2, k, binderName);
+                                    }
+                                    tmp.push(s2);
+                                }
+                                rewritten = tmp;
                             }
                             var newBody = (rewritten.length == 1)
                                 ? rewritten[0]
@@ -1415,7 +1468,11 @@ class MapAndCollectionTransforms {
         function visit(n: ElixirAST): Void {
             if (n == null || n.def == null) return;
             switch (n.def) {
-                case EVar(name): used.set(name, true);
+                case EVar(name):
+                    if (name != null && name.length > 0) {
+                        var c = name.charAt(0);
+                        if (c == c.toLowerCase()) used.set(name, true);
+                    }
                 case EField(target, _): visit(target);
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EUnary(_, e): visit(e);
