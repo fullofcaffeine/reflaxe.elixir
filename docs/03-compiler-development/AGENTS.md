@@ -197,6 +197,35 @@ function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
 
 ## 🐛 Debugging Methodology
 
+### Debug Flags (Pass Metrics + AST Snapshots)
+
+Use these two flags to accelerate pass ordering and shape verification:
+
+```bash
+# Per‑pass delta printing (zero cost when disabled)
+npx haxe build.hxml -D debug_pass_metrics
+
+# Focused AST snapshots (opt‑in)
+npx haxe build.hxml -D debug_ast_snapshots
+```
+
+- `debug_pass_metrics`: Emits a concise marker when a pass changes the AST: `#[PassMetrics] Changed by: <passName>`.
+- `debug_ast_snapshots`: Writes focused snapshots to `tmp/ast_flow/` (e.g., the then‑branch of `filter_todos/3`) to verify AbsoluteFinal shapes.
+
+Recommended flow:
+- Enable `debug_pass_metrics` when investigating “who changed this?” issues.
+- Enable `debug_ast_snapshots` when validating late‑stage shapes (e.g., binder placement before Enum.filter predicates).
+
+### Printer De‑Semanticization
+
+The printer is a pure pretty‑printer. It does not inject:
+- `alias <App>.Repo, as: Repo`
+- `alias Phoenix.SafePubSub, as: SafePubSub`
+- `require Ecto.Query`
+- `@compile {:nowarn_unused_function, ...}`
+
+Such semantics must be inserted by transformation passes. This preserves a single responsibility boundary and keeps behavior testable.
+
 ### XRay Debugging Infrastructure
 Use the professional debug infrastructure instead of ad-hoc trace statements:
 
