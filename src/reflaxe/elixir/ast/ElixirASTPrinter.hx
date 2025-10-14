@@ -1303,6 +1303,10 @@ class ElixirASTPrinter {
                 // Examples needing quotes: :"TodoApp.PubSub", :"my-atom", :"123start"
                 // Examples NOT needing quotes: :title, :ok, :valid?, :save!
                 var atomStr: String = value; // ElixirAtom has implicit to String conversion
+                // Defensive normalization: strip an accidental leading ':' if present in the atom payload
+                if (atomStr != null && atomStr.length > 0 && atomStr.charAt(0) == ':') {
+                    atomStr = atomStr.substr(1);
+                }
                 
                 // Check if atom needs quotes using Elixir's rules:
                 // Valid without quotes: starts with letter or underscore, contains only
