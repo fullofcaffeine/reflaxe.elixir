@@ -5,6 +5,8 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * DefParamUnusedUnderscoreSafeTransforms
@@ -32,44 +34,36 @@ class DefParamUnusedUnderscoreSafeTransforms {
      *
      * WHAT
      * - For function parameters, convert `name` → `_name` when that name is not used
-     *   in the function body.
+     *   in the function body or as a free variable inside nested closures.
      *
      * HOW
-     * - Uses bodyUsesVar() which scans expressions, field/access targets, and ERaw
-     *   snippets to avoid false “unused” detection.
+     * - Uses VariableUsageCollector to perform closure-aware usage detection so
+     *   that inner anonymous function binders like `fn name -> ... end` do not
+     *   count as a use of the outer parameter.
      */
     static function underscoreIfUnused(p:EPattern, body:ElixirAST):EPattern {
         return switch (p) {
-            case PVar(nm) if (!bodyUsesVar(body, nm) && (nm.length > 0 && nm.charAt(0) != '_')): PVar('_' + nm);
+            case PVar(nm) if (!usedInBodyOrRaw(body, nm) && (nm.length > 0 && nm.charAt(0) != '_')): PVar('_' + nm);
             default: p;
         }
     }
 
-    /**
-     * bodyUsesVar
-     *
-     * WHAT
-     * - Detects usage of a parameter name anywhere in the body, including nested
-     *   structures and raw/injected Elixir code.
-     *
-     * WHY
-     * - Prevent prefixing parameters with underscore when they are referenced via
-     *   `obj.field`, `obj[key]`, or inside ERaw/strings. This keeps code correct and
-     *   prevents undefined-variable errors.
-     */
-    static function bodyUsesVar(b:ElixirAST, name:String):Bool {
+    // Closure-aware + ERaw-aware usage check
+    static function usedInBodyOrRaw(b: ElixirAST, name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        if (VariableUsageCollector.usedInFunctionScope(b, name)) return true;
+        // Scan ERaw with token boundaries and metadata rawVarRefs
         var found = false;
         inline function isIdentChar(c: String): Bool {
             if (c == null || c.length == 0) return false;
             var ch = c.charCodeAt(0);
-            return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+            return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
         }
-        function visit(x:ElixirAST):Void {
-            if (found || x == null || x.def == null) return;
-            switch (x.def) {
-                case EVar(v): if (v == name) { found = true; return; }
+        function walk(n: ElixirAST): Void {
+            if (n == null || n.def == null || found) return;
+            switch (n.def) {
                 case ERaw(code):
-                    if (name != null && name.length > 0 && name.charAt(0) != '_' && code != null) {
+                    if (code != null && name.charAt(0) != '_') {
                         var start = 0;
                         while (!found) {
                             var i = code.indexOf(name, start);
@@ -77,31 +71,32 @@ class DefParamUnusedUnderscoreSafeTransforms {
                             var before = i > 0 ? code.substr(i - 1, 1) : null;
                             var afterIdx = i + name.length;
                             var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                            var beforeIsIdent = isIdentChar(before);
-                            var afterIsIdent = isIdentChar(after);
-                            if (!beforeIsIdent && !afterIsIdent) { found = true; break; }
+                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
                             start = i + name.length;
                         }
                     }
-                case EBlock(ss): for (s in ss) visit(s);
-                case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
-                case ECase(expr, cs): visit(expr); for (c in cs) visit(c.body);
-                case EBinary(_, l, r): visit(l); visit(r);
-                case EMatch(_, rhs): visit(rhs);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
-                case EList(els): for (el in els) visit(el);
-                case ETuple(els): for (el in els) visit(el);
-                case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }
-                case EKeywordList(pairs): for (p in pairs) visit(p.value);
-                case EStructUpdate(base, fields): visit(base); for (f in fields) visit(f.value);
-                case EField(obj, _): visit(obj);
-                case EAccess(tgt3, key): visit(tgt3); visit(key);
-                case EFn(clauses): for (cl in clauses) visit(cl.body);
-                default: // literals and others: ignore
+                    if (!found && n.metadata != null) {
+                        var provided:Array<String> = cast Reflect.field(n.metadata, "rawVarRefs");
+                        if (provided != null) for (v in provided) if (v == name) { found = true; break; }
+                    }
+                case EBlock(ss): for (s in ss) walk(s);
+                case EDo(ss2): for (s in ss2) walk(s);
+                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
+                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
+                case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
+                case ERemoteCall(t2,_,as2): walk(t2); for (a2 in as2) walk(a2);
+                case EField(obj,_): walk(obj);
+                case EAccess(obj2,key): walk(obj2); walk(key);
+                case EKeywordList(pairs): for (p in pairs) walk(p.value);
+                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
+                case EStructUpdate(base,fs): walk(base); for (f in fs) walk(f.value);
+                case ETuple(es) | EList(es): for (e in es) walk(e);
+                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
+                default:
             }
         }
-        visit(b);
+        walk(b);
         return found;
     }
 }

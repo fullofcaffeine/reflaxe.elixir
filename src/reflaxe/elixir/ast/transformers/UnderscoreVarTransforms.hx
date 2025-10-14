@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * UnderscoreVarTransforms
@@ -57,7 +58,7 @@ class UnderscoreVarTransforms {
         var declared = new Map<String, Bool>();
         var referenced = new Map<String, Bool>();
 
-        // Collect declared
+        // Collect declared (including EFn clause arguments)
         ASTUtils.walk(body, function(n: ElixirAST) {
             if (n == null || n.def == null) return;
             switch (n.def) {
@@ -65,17 +66,16 @@ class UnderscoreVarTransforms {
                 case EBinary(Match, left, _):
                     // Collect all vars on the left side, including nested chains a = b = c
                     collectLhsDecls(left, declared);
+                case EFn(clauses):
+                    for (cl in clauses) for (a in cl.args) collectPatternDecls(a, declared);
                 default:
             }
         });
 
-        // Collect referenced
-        ASTUtils.walk(body, function(n: ElixirAST) {
-            switch (n.def) {
-                case EVar(v): referenced.set(v, true);
-                default:
-            }
-        });
+        // Collect referenced (closure-aware): only references belonging to this
+        // function scope, counting free uses in nested closures and excluding
+        // names shadowed by EFn binders / pattern bindings.
+        referenced = VariableUsageCollector.referencedInFunctionScope(body);
 
         // Build rename map: _name -> name when name is referenced OR _name is referenced, and name is not declared
         var rename = new Map<String, String>();
