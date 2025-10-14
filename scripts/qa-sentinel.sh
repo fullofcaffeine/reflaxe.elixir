@@ -42,7 +42,11 @@ done
 if [[ "${READY:-0}" -ne 1 ]]; then
   echo "[QA] Server not responding on port $PORT; attempting fallback detection from logs..."
   tail -n 100 /tmp/qa-phx.log || true
-  DETECTED_PORT=$(awk '/Running .* with cowboy/ { for (i=1;i<=NF;i++) if ($i ~ /127.0.0.1:/) {split($i,a,":"); gsub(/\(http\)/, "", a[3]); print a[3]; exit} }' /tmp/qa-phx.log || true)
+  # Try to detect from "Access ... http://localhost:PORT" first, else from "at 127.0.0.1:PORT"
+  DETECTED_PORT=$(grep -Eo 'http://localhost:[0-9]+' /tmp/qa-phx.log | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
+  if [[ -z "$DETECTED_PORT" ]]; then
+    DETECTED_PORT=$(grep -Eo '127\.0\.0\.1:[0-9]+' /tmp/qa-phx.log | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
+  fi
   if [[ -n "$DETECTED_PORT" ]]; then
     echo "[QA] Detected endpoint port: $DETECTED_PORT. Trying curl..."
     if curl -fsS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
