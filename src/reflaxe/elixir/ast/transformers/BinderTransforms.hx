@@ -1260,6 +1260,8 @@ class BinderTransforms {
         inline function rewriteIsNilIfProvablyFalse(expr: ElixirAST, nonNil: Map<String, Bool>): ElixirAST {
             return switch (expr.def) {
                 case ERemoteCall(mod, func, args) if (func == "is_nil" && args != null && args.length == 1):
+                    // Preserve guards injected by EctoEqPinnedNilGuardTransforms
+                    if (expr.metadata != null && expr.metadata.ectoPinnedNilGuard == true) return expr;
                     switch (mod.def) {
                         case EVar(m) if (m == "Kernel"):
                             switch (args[0].def) {
@@ -1270,6 +1272,7 @@ class BinderTransforms {
                         default: expr;
                     }
                 case ECall(target, func, args) if (target == null && func == "is_nil" && args != null && args.length == 1):
+                    if (expr.metadata != null && expr.metadata.ectoPinnedNilGuard == true) return expr;
                     switch (args[0].def) {
                         case EVar(v) if (nonNil.exists(v)):
                             makeASTWithMeta(EBoolean(false), expr.metadata, expr.pos);
@@ -1289,6 +1292,11 @@ class BinderTransforms {
                     var out: Array<ElixirAST> = [];
                     for (stmt in stmts) {
                         var s = stmt;
+                        // Generic deep rewrite first: fold Kernel.is_nil(var) anywhere it appears
+                        // when `var` is provably a non-nil literal in current flow context.
+                        s = ElixirASTTransformer.transformNode(s, function(n: ElixirAST): ElixirAST {
+                            return rewriteIsNilIfProvablyFalse(n, nonNil);
+                        });
                         // Attempt rewrite in conditions
                         switch (s.def) {
                             case EIf(cond, thenB, elseB):

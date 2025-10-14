@@ -28,7 +28,7 @@ class StdDsOverrideTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDefmodule(name, _):
-                    if (name == "BalancedTree") balancedTreeDef(n) else if (name == "EnumValueMap") enumValueMapDef(n) else n;
+                    if (name == "BalancedTree") balancedTreeDef(n) else if (name == "EnumValueMap") enumValueMapDef(n) else if (name == "TreeNode") treeNodeDef(n) else n;
                 case EModule(name, attrs, _):
                     if (name == "BalancedTree") {
                         var blk = balancedTreeBlock(n.metadata, n.pos);
@@ -36,6 +36,9 @@ class StdDsOverrideTransforms {
                     } else if (name == "EnumValueMap") {
                         var blk2 = enumValueMapBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk2]), n.metadata, n.pos);
+                    } else if (name == "TreeNode") {
+                        var blk3 = treeNodeBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [blk3]), n.metadata, n.pos);
                     } else n;
                 default:
                     n;
@@ -74,7 +77,17 @@ class StdDsOverrideTransforms {
         ));
         return makeASTWithMeta(EBlock([raw]), meta, pos);
     }
+
+    static inline function treeNodeDef(orig: ElixirAST): ElixirAST {
+        return makeASTWithMeta(EDefmodule("TreeNode", treeNodeBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
+    }
+    static inline function treeNodeBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+        var raw = makeAST(ERaw(
+            "  def get_height(struct), do: Map.get(struct, :_height)\n" +
+            "  def to_string(struct), do: inspect(struct)\n"
+        ));
+        return makeASTWithMeta(EBlock([raw]), meta, pos);
+    }
 }
 
 #end
-

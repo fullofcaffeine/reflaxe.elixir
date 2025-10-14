@@ -34,18 +34,28 @@ class StdStringBufOverrideTransforms {
     }
 
     static inline function bodyBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
-        var raw = makeAST(ERaw(
-            "  defstruct parts: []\n" +
-            "  def add(struct, s), do: %{struct | parts: struct.parts ++ [s]}\n" +
-            "  def add_sub(struct, s, pos, len) do\n" +
-            "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" +
-            "    %{struct | parts: struct.parts ++ [substr]}\n" +
-            "  end\n" +
-            "  def to_string(struct), do: Enum.join(struct.parts, \"\")\n"
-        ));
+        // Clean, warning-free variant
+        var code = (
+        "  defstruct parts: []\n" +
+        "  def add(struct, x) do\n" +
+        "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" +
+        "    %{struct | parts: struct.parts ++ [str]}\n" +
+        "  end\n" +
+        "  def add_char(struct, c) do\n" +
+        "    %{struct | parts: struct.parts ++ [<<c::utf8>>]}\n" +
+        "  end\n" +
+        "  def add_sub(struct, s, pos, len) do\n" +
+        "    if Kernel.is_nil(s), do: nil\n" +
+        "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" +
+        "    %{struct | parts: struct.parts ++ [substr]}\n" +
+        "  end\n" +
+        "  def to_string(struct) do\n" +
+        "    IO.iodata_to_binary(struct.parts)\n" +
+        "  end\n"
+        );
+        var raw = makeAST(ERaw(code));
         return makeASTWithMeta(EBlock([raw]), meta, pos);
     }
 }
 
 #end
-

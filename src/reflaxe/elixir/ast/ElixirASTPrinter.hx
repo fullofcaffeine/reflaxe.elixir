@@ -89,7 +89,9 @@ class ElixirASTPrinter {
                 // Add @compile directive to silence unused private functions (late sweep)
                 // Compute defp names/arity directly from doBlock
                 var nowarnList: Array<String> = [];
-                switch (doBlock.def) {
+                // Unwrap parentheses around the module do-block to avoid stray parentheses lines
+                var doBlockUnwrapped = switch (doBlock.def) { case EParen(inner): inner; default: doBlock; };
+                switch (doBlockUnwrapped.def) {
                     case EBlock(stmts):
                         for (s in stmts) switch (s.def) {
                             case EDefp(fnName, fnArgs, _, _):
@@ -219,7 +221,21 @@ class ElixirASTPrinter {
                 }
                 // Printer de-semanticization: Ecto.Query require handled by transforms
 
-                moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
+                // Special-case: if the do-block is a raw block (EBlock with single ERaw),
+                // print its contents directly without extra parentheses or indentation.
+                moduleContent += (switch (doBlockUnwrapped.def) {
+                    case EBlock(stmts) if (stmts.length == 1):
+                        switch (stmts[0].def) {
+                            case ERaw(code):
+                                var c = code;
+                                if (!StringTools.endsWith(c, "\n")) c += "\n";
+                                c;
+                            default:
+                                indentStr(indent + 1) + print(doBlockUnwrapped, indent + 1);
+                        }
+                    default:
+                        indentStr(indent + 1) + print(doBlockUnwrapped, indent + 1);
+                });
 
                 // Restore context
                 currentModuleName = prevModule;
@@ -317,7 +333,20 @@ class ElixirASTPrinter {
                     // Printer de-semanticization: Ecto.Query require handled by transforms
                     // Print body
                     for (expr in body) {
-                        result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
+                        // Unwrap raw EBlock([ERaw(...)]) bodies to avoid stray parentheses and double indentation
+                        switch (expr.def) {
+                            case EBlock(stmts) if (stmts.length == 1):
+                                switch (stmts[0].def) {
+                                    case ERaw(code):
+                                        var c = code;
+                                        if (!StringTools.endsWith(c, "\n")) c += "\n";
+                                        result += c; // code already contains its own indentation
+                                    default:
+                                        result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
+                                }
+                            default:
+                                result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
+                        }
                     }
                     // Restore printer module context
                     currentModuleName = prevModuleCtx;
@@ -402,9 +431,10 @@ class ElixirASTPrinter {
                 }
                 // Printer de-semanticization: Repo alias handled by transforms
 
-                // Print body
+                // Print body, unwrapping any top-level parentheses
                 for (expr in body) {
-                    result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
+                    var e2 = switch (expr.def) { case EParen(inner): inner; default: expr; };
+                    result += indentStr(indent + 1) + print(e2, indent + 1) + '\n';
                 }
                 
                 // Restore module context
@@ -1006,8 +1036,9 @@ class ElixirASTPrinter {
                 // Macro calls with do-blocks don't use parentheses
                 // e.g., "schema 'users' do ... end"
                 var argStr = [for (a in args) print(a, 0)].join(', ');
+                var unwrappedDo = switch (doBlock.def) { case EParen(inner): inner; default: doBlock; };
                 macroName + (args.length > 0 ? ' ' + argStr : '') + ' do\n' +
-                indentStr(indent + 1) + print(doBlock, indent + 1) + '\n' +
+                indentStr(indent + 1) + print(unwrappedDo, indent + 1) + '\n' +
                 indentStr(indent) + 'end';
                 
             case ERemoteCall(module, funcName, args):
