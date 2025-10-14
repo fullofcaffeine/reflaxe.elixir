@@ -15,6 +15,21 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Loop-lowering leaves numeric sentinels inside anonymous function bodies. They cause
  *   warnings and have no semantic effect.
+ *
+ * HOW
+ * - For each anonymous function (EFn) clause body, filter EBlock/EDo statements and
+ *   drop bare EInteger(0|1) and EFloat(0.0) statements.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   arr.each(function(x) {
+ *     1; // sentinel
+ *     doWork(x);
+ *   });
+ * Elixir (before):
+ *   Enum.each(arr, fn x -> 1; do_work(x) end)
+ * Elixir (after):
+ *   Enum.each(arr, fn x -> do_work(x) end)
  */
 class EFnNumericSentinelCleanupTransforms {
     public static function cleanupPass(ast: ElixirAST): ElixirAST {

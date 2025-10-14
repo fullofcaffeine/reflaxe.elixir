@@ -23,7 +23,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Detect EIf nodes whose then-branch is either EMatch(PWildcard, expr) or
  *   EBinary(Match, EUnderscore/_ var, expr) and where expr is an ERemoteCall to
  *   Ecto.Query.where. Replace then-branch with expr.
- */
+ *
+ * EXAMPLES
+ * Haxe:
+ *   if (apply) query = Ecto.Query.where(query, function(t) return t.active);
+ * Elixir (before):
+ *   if apply do
+ *     _ = Ecto.Query.where(query, [t], t.active)
+ *   else
+ *     query
+ *   end
+ * Elixir (after):
+ *   if apply do
+ *     Ecto.Query.where(query, [t], t.active)
+ *   else
+ *     query
+ *   end
+  */
 class EctoWhereWildcardAssignCleanupTransforms {
     static inline function isEctoWhereCall(e: ElixirAST): Bool {
         return switch (e.def) {
@@ -63,4 +79,3 @@ class EctoWhereWildcardAssignCleanupTransforms {
 }
 
 #end
-

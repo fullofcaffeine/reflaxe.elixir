@@ -17,6 +17,19 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Eliminates throwaway temps like `g` that only serve as intermediate binders.
+ *
+ * HOW
+ * - For binary match nodes `left = rhs`, if rhs is a nested match expression,
+ *   replace with `left = expr` where `expr` is the inner RHS expression, unwrapping
+ *   `EParen` one level to catch `(inner = expr)`.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   var g = compute(); var x = g;
+ * Elixir (before):
+ *   x = (g = compute())
+ * Elixir (after):
+ *   x = compute()
  */
 class NestedAssignCollapseGlobalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

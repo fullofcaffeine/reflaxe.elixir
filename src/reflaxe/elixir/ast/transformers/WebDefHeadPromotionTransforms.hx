@@ -23,6 +23,12 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   - If a parameter PVar("_name") exists and the body uses "name" (closure-aware) or pins ^name
  *     or contains token-bounded name in ERaw, rename PVar("_name") -> PVar("name") and rewrite
  *     body references to the new binder where needed.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   def find(_id, todos), do: Enum.find(todos, fn t -> t.id == id end)
+ * Elixir (after):
+ *   def find(id, todos), do: Enum.find(todos, fn t -> t.id == id end)
  */
 class WebDefHeadPromotionTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

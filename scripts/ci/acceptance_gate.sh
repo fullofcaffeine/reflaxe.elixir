@@ -7,7 +7,7 @@ PROJECT_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 pass_count=0
 gate_count=5
 
-msg() { echo -e "\n[Acceptance] $*"; }
+msg() { printf "\n[Acceptance] %s\n" "$*"; }
 fail() { echo "[Acceptance] ❌ $*" >&2; exit 1; }
 
 # 1) Hxdoc coverage gate
@@ -36,7 +36,8 @@ find_elixir_hxml() {
 msg "Guard: verify no -D analyzer-optimize in Elixir HXML"
 violations=()
 while IFS= read -r f; do
-  if grep -q "-D[[:space:]]\+analyzer-optimize" "$f"; then
+  # Ignore comments and only match actual flags
+  if awk '!/^[[:space:]]*#/' "$f" | grep -Eq -- "\\-D[[:space:]]+analyzer-optimize"; then
     violations+=("$f")
   fi
 done < <(find_elixir_hxml)
@@ -53,7 +54,7 @@ fi
 msg "Guard: verify no -D use_legacy_string_pipeline in Elixir HXML"
 legacy_violations=()
 while IFS= read -r f; do
-  if grep -q "-D[[:space:]]\+use_legacy_string_pipeline" "$f"; then
+  if awk '!/^[[:space:]]*#/' "$f" | grep -Eq -- "\\-D[[:space:]]+use_legacy_string_pipeline"; then
     legacy_violations+=("$f")
   fi
 done < <(find_elixir_hxml)
@@ -74,7 +75,14 @@ run_smoke_for_category() {
   local limit="${2:-2}"
   local test_root="$PROJECT_ROOT/test/snapshot/$cat"
   if [ ! -d "$test_root" ]; then return 0; fi
-  mapfile -t tests < <(find "$test_root" -name compile.hxml -print0 | xargs -0 -n1 dirname | sed "s|$PROJECT_ROOT/test/snapshot/||" | head -n "$limit")
+  # Portable collection of a limited set of tests without relying on bash 4 mapfile
+  tests=()
+  while IFS= read -r line; do
+    tests+=("$line")
+  done < <(find "$test_root" -name compile.hxml -print0 | \
+            xargs -0 -n1 dirname | \
+            sed "s|$PROJECT_ROOT/test/snapshot/||" | \
+            head -n "$limit")
   for t in "${tests[@]:-}"; do
     [ -n "$t" ] || continue
     local target="test-$(echo "$t" | sed 's|/|__|g')"
@@ -111,10 +119,10 @@ else
   echo "Smoke subsets had failures" >&2
 fi
 
-# 5) Todo‑app runtime smoke
+# 5) Todo‑app runtime smoke (via QA sentinel)
 msg "Todo‑app runtime smoke"
 set +e
-bash "$PROJECT_ROOT/scripts/todo_app_runtime_gate.sh"
+bash "$PROJECT_ROOT/scripts/qa-sentinel.sh" --app "$PROJECT_ROOT/examples/todo-app" --port 4000
 runtime_rc=$?
 set -e
 if [ $runtime_rc -eq 0 ]; then

@@ -24,6 +24,16 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   metadata isPhoenixWeb == true and contain Plug/Phoenix controller calls,
  *   rewrite function definitions so that `conn` is prepended to the parameter list
  *   when the body references `conn` and no existing parameter is named `conn`.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   @:controller class UserController {
+ *     static function index() { return Phoenix.Controller.text(conn, "ok"); }
+ *   }
+ * Elixir (before):
+ *   def index() do text(conn, "ok") end
+ * Elixir (after):
+ *   def index(conn) do text(conn, "ok") end
  */
 class ControllerEnsureConnParamTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

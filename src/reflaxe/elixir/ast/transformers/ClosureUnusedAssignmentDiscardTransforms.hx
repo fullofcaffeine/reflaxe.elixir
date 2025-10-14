@@ -14,11 +14,26 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   `var = expr` with `_ = expr` when `var` is not referenced later in the same
  *   clause body. Prevents unused-variable warnings inside closures (reduce/concat).
  *
+ * WHY
+ * - Prevents unused-variable warnings in closure bodies after normalization
+ *   while preserving side effects from the right-hand expression.
+ *
  * HOW
  * - For each EFn/clauses, when body is an EBlock, scan statements; for a
  *   statement EBinary(Match, EVar(name), rhs), check future usage in the rest
  *   of the statements (EVar occurrences or ERaw identifier tokens). If none,
  *   rewrite to EMatch(PWildcard, rhs).
+ *
+ * EXAMPLES
+ * Haxe:
+ *   arr.map(function(x) {
+ *     var tmp = compute(x); // not used later
+ *     return x;
+ *   });
+ * Elixir (before):
+ *   Enum.map(arr, fn x -> tmp = compute(x); x end)
+ * Elixir (after):
+ *   Enum.map(arr, fn x -> _ = compute(x); x end)
  */
 class ClosureUnusedAssignmentDiscardTransforms {
     public static function discardPass(ast: ElixirAST): ElixirAST {
@@ -121,4 +136,3 @@ class ClosureUnusedAssignmentDiscardTransforms {
 }
 
 #end
-

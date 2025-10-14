@@ -18,6 +18,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For module StringTools, rename EDef is_space params to PVar("s"), PVar("pos").
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   def is_space(_s, _pos), do: ...
+ * Elixir (after):
+ *   def is_space(s, pos), do: ...
  */
 class StringToolsFixTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -46,4 +52,3 @@ class StringToolsFixTransforms {
 }
 
 #end
-

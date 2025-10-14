@@ -31,6 +31,17 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  *      literal (allow optional parentheses).
  *   2) Locate ESigil("H", s, _) where s contains "Phoenix.HTML.raw(content)".
  *   3) Replace ESigil content with the literal html and remove the assignment.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   content = "<b>Hi</b>"
+ *   ~H"""
+ *   <%= Phoenix.HTML.raw(content) %>
+ *   """
+ * Elixir (after):
+ *   ~H"""
+ *   <%= Phoenix.HTML.raw(@content) %>
+ *   """
  */
 class HeexAssignsCaptureTransforms {
     static function extractStringLiteral(e: ElixirAST): Null<String> {

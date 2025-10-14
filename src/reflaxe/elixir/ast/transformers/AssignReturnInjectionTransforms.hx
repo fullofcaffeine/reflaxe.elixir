@@ -24,6 +24,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For EDef/EDefp bodies: if body is EBinary(Match,EVar(n),_) wrap as
  *   EBlock([body, EVar(n)]). If body is EBlock and last statement is an
  *   assignment to a variable, append EVar(var) as the last statement.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   def build(cs) do
+ *     cs = case ok do
+ *       true -> change(cs)
+ *       false -> cs
+ *     end
+ *   end
+ * Elixir (after):
+ *   def build(cs) do
+ *     cs = case ok do
+ *       true -> change(cs)
+ *       false -> cs
+ *     end
+ *     cs
+ *   end
  */
 class AssignReturnInjectionTransforms {
     public static function injectPass(ast: ElixirAST): ElixirAST {
@@ -70,4 +87,3 @@ class AssignReturnInjectionTransforms {
 }
 
 #end
-

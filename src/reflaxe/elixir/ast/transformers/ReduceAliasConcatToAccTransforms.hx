@@ -25,6 +25,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - In the reducer body, replace any `EBinary(Match, EVar(lhs), ERemoteCall(_, "concat", [EVar(lhs), rhs]))`
  *   with `EBinary(Match, EVar(acc), ERemoteCall(EVar("Enum"), "concat", [EVar(acc), rhs]))`.
  * - Also supports `EMatch(PVar(lhs), ERemoteCall(...))` shape.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   Enum.reduce(list, [], fn x, a -> alias = Enum.concat(alias, [x]) end)
+ * Elixir (after):
+ *   Enum.reduce(list, [], fn x, acc -> acc = Enum.concat(acc, [x]) end)
  */
 class ReduceAliasConcatToAccTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

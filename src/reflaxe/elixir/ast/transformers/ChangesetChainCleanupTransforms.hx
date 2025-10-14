@@ -14,9 +14,21 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     cs = thisN = Ecto.Changeset.change(...)          → cs = Ecto.Changeset.change(...)
  *     thisN = cs = Ecto.Changeset.validate_*(cs, ...)  → cs = Ecto.Changeset.validate_*(cs, ...)
  *
+ * WHY
+ * - Avoids redundant temps and restores idiomatic pipeline-like shapes inside
+ *   changeset functions, preventing warnings and improving readability.
+ *
  * HOW
  * - Within any function named `changeset`, collapse nested assignments where the inner or outer
  *   assigns to `cs` or a `thisN` temp.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   cs = this1 = Ecto.Changeset.change(user, attrs)
+ *   this2 = cs = Ecto.Changeset.validate_required(cs, [:name])
+ * Elixir (after):
+ *   cs = Ecto.Changeset.change(user, attrs)
+ *   cs = Ecto.Changeset.validate_required(cs, [:name])
  */
 class ChangesetChainCleanupTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

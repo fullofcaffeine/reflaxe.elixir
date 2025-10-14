@@ -23,6 +23,22 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Find first index of a top-level assignment `b = ...`
  *   - Find first index of a top-level expression that uses `b` in expression position
  *   - If rebindIndex >= 0 and (useIndex == -1 or rebindIndex < useIndex), rewrite PVar(b) to PVar("_"+b)
+ *
+ * EXAMPLES
+ * Haxe:
+ *   switch doUpdate() {
+ *     case Ok(v):
+ *       v = compute(v); // immediate rebind, no usage of original pattern value
+ *       trace(v)
+ *   }
+ * Elixir (before):
+ *   case do_update() do
+ *     {:ok, v} -> v = compute(v); IO.inspect(v)
+ *   end
+ * Elixir (after):
+ *   case do_update() do
+ *     {:ok, _v} -> v = compute(v); IO.inspect(v)
+ *   end
  */
 class CaseBinderRebindUnderscoreTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

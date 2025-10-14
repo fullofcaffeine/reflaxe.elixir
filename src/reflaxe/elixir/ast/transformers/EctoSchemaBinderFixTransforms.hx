@@ -22,6 +22,12 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  * HOW
  * - For any module, when encountering def/defp named `changeset` with 2 params, rename
  *   parameters from `_todo/_params` to `todo/params` when the body references those base names.
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   def changeset(_todo, _params), do: change(todo, params)
+ * Elixir (after):
+ *   def changeset(todo, params), do: change(todo, params)
  */
 class EctoSchemaBinderFixTransforms {
     /**

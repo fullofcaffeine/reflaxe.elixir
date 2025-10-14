@@ -17,6 +17,19 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Late passes may introduce sentinel literals in conditions; removing them yields
  *   clearer and warning-free output.
+ *
+ * HOW
+ * - For EIf nodes, if the condition is a recognized truthy literal (true, :true, 1),
+ *   replace the whole if with the then-branch; if falsey (false, :false, 0),
+ *   replace with else-branch or nil when else is missing.
+ *
+ * EXAMPLES
+ * Haxe:
+ *   if (true) trace(1) else trace(0);
+ * Elixir (before):
+ *   if true do 1 else 0 end
+ * Elixir (after):
+ *   1
  */
 class IfConstSimplifyTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -52,4 +65,3 @@ class IfConstSimplifyTransforms {
 }
 
 #end
-

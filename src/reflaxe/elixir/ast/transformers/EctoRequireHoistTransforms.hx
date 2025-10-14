@@ -7,10 +7,10 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
-/**
- * EctoRequireHoistTransforms
- *
- * WHAT
+ /**
+  * EctoRequireHoistTransforms
+  *
+  * WHAT
  * - Hoists any `require Ecto.Query` statements found inside function bodies
  *   to the module top and removes the in-body duplicates. Ensures a single,
  *   idiomatic `require Ecto.Query` per module.
@@ -19,11 +19,29 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Local insertion may be introduced by late safety passes; tests and idiomatic
  *   Elixir often prefer module-level require.
  *
- * HOW
- * - For EModule/EDefmodule: detect presence of in-body require statements.
- *   If found and module-level require missing, insert at top; remove all in-body
- *   require occurrences.
- */
+  * HOW
+  * - For EModule/EDefmodule: detect presence of in-body require statements.
+  *   If found and module-level require missing, insert at top; remove all in-body
+  *   require occurrences.
+  *
+  * EXAMPLES
+  * Haxe:
+  *   Ecto.Query.where(users, function(t) return t.age > 10);
+  * Elixir (before):
+  *   defmodule App.Users do
+  *     def list(users) do
+  *       require Ecto.Query
+  *       Ecto.Query.where(users, [t], t.age > 10)
+  *     end
+  *   end
+  * Elixir (after):
+  *   defmodule App.Users do
+  *     require Ecto.Query
+  *     def list(users) do
+  *       Ecto.Query.where(users, [t], t.age > 10)
+  *     end
+  *   end
+  */
 class EctoRequireHoistTransforms {
     static function stripInBodyRequires(body:Array<ElixirAST>):Array<ElixirAST> {
         var out:Array<ElixirAST> = [];
@@ -97,4 +115,3 @@ class EctoRequireHoistTransforms {
 }
 
 #end
-

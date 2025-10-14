@@ -28,6 +28,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - s[i+1] is Enum.filter(..., EFn(clauses)) and predicate body references `query`
  *   - No prior binding for `query` appears in statements 0..i-1
  *   → Replace s[i] with `query = String.downcase(arg)`
+ *
+ * EXAMPLES
+ * Elixir (before):
+ *   _ = String.downcase(term)
+ *   Enum.filter(list, fn -> String.contains?(query, term) end)
+ * Elixir (after):
+ *   query = String.downcase(term)
+ *   Enum.filter(list, fn -> String.contains?(query, term) end)
  */
 class PromoteQueryFromWildcardTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
