@@ -48,13 +48,16 @@ if [[ "${READY:-0}" -ne 1 ]]; then
     DETECTED_PORT=$(grep -Eo '127\.0\.0\.1:[0-9]+' /tmp/qa-phx.log | tail -n1 | sed -E 's/.*:([0-9]+)/\1/' || true)
   fi
   if [[ -n "$DETECTED_PORT" ]]; then
-    echo "[QA] Detected endpoint port: $DETECTED_PORT. Trying curl..."
-    if curl -fsS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
-      echo "[QA] GET / on detected port $DETECTED_PORT succeeded"
-      echo "[QA] OK: build + runtime smoke passed (fallback port)"
-      popd >/dev/null
-      exit 0
-    fi
+    echo "[QA] Detected endpoint port: $DETECTED_PORT. Waiting for readiness..."
+    for i in {1..30}; do
+      if curl -fsS "http://localhost:$DETECTED_PORT" >/dev/null 2>&1; then
+        echo "[QA] GET / on detected port $DETECTED_PORT succeeded"
+        echo "[QA] OK: build + runtime smoke passed (fallback port)"
+        popd >/dev/null
+        exit 0
+      fi
+      sleep 0.3
+    done
   fi
   echo "[QA] Fallback failed."
   exit 1
