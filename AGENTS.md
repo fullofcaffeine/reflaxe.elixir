@@ -2829,3 +2829,14 @@ This section synthesizes the current mission and adds concrete debugging guidanc
   - No app‑name heuristics; match shapes and real APIs only.
 
 See also: docs/03-compiler-development/transformers-overview.md (updated with the two filter passes and ordering notes), docs/05-architecture/AST_PIPELINE_MIGRATION.md for the AST‑only architecture, and docs/06-guides/troubleshooting.md for broader guidance.
+
+## Critical Directive: No Unblockers Over Proper Solutions
+
+- Do not land a temporary “unblocker” if the correct long‑term solution is known and in scope. Implement the proper solution even if it takes longer.
+- Prefer earliest, architectural fixes over late compensating passes:
+  - stdlib behavior/shape → use `.cross.hx` overrides with typed externs and `__elixir__()`; avoid transformer overrides for stdlib.
+  - Code generation issues → fix in Builder/AST generation rather than printer or post‑hoc transformer hacks.
+  - Classpath/availability → use target‑conditional classpath gating (CompilerInit.Start), never global inclusion.
+- Exception: short‑lived debug instrumentation (behind `-D debug_*` flags) solely to investigate an issue and removed in the same PR as the permanent fix. No “temporary” hacks are allowed to merge into main.
+- Review gate: PRs proposing stopgaps must include the proper fix in the same PR. Otherwise, reject the PR.
+- Example: Implement Reflect.* and Type.* via `std/Reflect.cross.hx` and `std/Type.cross.hx` rather than overriding them in `StdHaxeRuntimeOverrideTransforms`.
