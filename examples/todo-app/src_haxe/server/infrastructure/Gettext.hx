@@ -10,12 +10,12 @@ import server.infrastructure.TranslationBindings;
  * to provide compile-time type safety for translations.
  */
 @:native("TodoAppWeb.Gettext")
-class Gettext {
+extern class Gettext {
     
     /**
      * Default locale for the application.
      */
-    public static final DEFAULT_LOCALE: String = "en";
+    public static var DEFAULT_LOCALE: String;
     
     /**
      * Translates a message in the default domain.
@@ -24,10 +24,7 @@ class Gettext {
      * @param bindings Optional variable bindings for interpolation
      * @return The translated string
      */
-    public static function gettext(msgid: String, ?bindings: TranslationBindings): String {
-        // This will be handled by Phoenix's Gettext at runtime
-        return msgid;
-    }
+    public static function gettext(msgid: String, ?bindings: TranslationBindings): String;
     
     /**
      * Translates a message in a specific domain.
@@ -37,10 +34,7 @@ class Gettext {
      * @param bindings Optional variable bindings for interpolation
      * @return The translated string
      */
-    public static function dgettext(domain: String, msgid: String, ?bindings: TranslationBindings): String {
-        // Domain-specific translation
-        return msgid;
-    }
+    public static function dgettext(domain: String, msgid: String, ?bindings: TranslationBindings): String;
     
     /**
      * Translates a plural message based on count.
@@ -51,10 +45,7 @@ class Gettext {
      * @param bindings Optional variable bindings for interpolation
      * @return The translated string
      */
-    public static function ngettext(msgid: String, msgid_plural: String, count: Int, ?bindings: TranslationBindings): String {
-        // Plural translation based on count
-        return count == 1 ? msgid : msgid_plural;
-    }
+    public static function ngettext(msgid: String, msgid_plural: String, count: Int, ?bindings: TranslationBindings): String;
     
     /**
      * Translates a plural message in a specific domain.
@@ -66,36 +57,36 @@ class Gettext {
      * @param bindings Optional variable bindings for interpolation
      * @return The translated string
      */
-    public static function dngettext(domain: String, msgid: String, msgid_plural: String, count: Int, ?bindings: TranslationBindings): String {
-        // Domain-specific plural translation
-        return count == 1 ? msgid : msgid_plural;
-    }
+    public static function dngettext(domain: String, msgid: String, msgid_plural: String, count: Int, ?bindings: TranslationBindings): String;
     
     /**
      * Gets the current locale.
      * 
      * @return The current locale string (e.g., "en", "es", "fr")
      */
-    public static function get_locale(): String {
-        return "en";
-    }
+    public static function get_locale(): String;
     
     /**
      * Sets the current locale for translations.
      * 
      * @param locale The locale to set (e.g., "en", "es", "fr")
      */
-    public static function put_locale(locale: String): Void {
-        // This will be handled by Phoenix's Gettext
-    }
+    public static function put_locale(locale: String): Void;
     
     /**
      * Returns all available locales for the application.
      * 
      * @return Array of available locale codes
      */
-    public static function known_locales(): Array<String> {
-        return ["en", "es", "fr", "de", "pt", "ja", "zh"];
-    }
-    
+    public static function known_locales(): Array<String>;
+
+}
+
+// Explicit alias to ensure fully-qualified module printing for calls
+@:native("TodoAppWeb.Gettext")
+extern class WebGettext {
+    public static function gettext(msgid: String, ?bindings: TranslationBindings): String;
+    public static function dgettext(domain: String, msgid: String, ?bindings: TranslationBindings): String;
+    public static function ngettext(msgid: String, msgid_plural: String, count: Int, ?bindings: TranslationBindings): String;
+    public static function dngettext(domain: String, msgid: String, msgid_plural: String, count: Int, ?bindings: TranslationBindings): String;
 }

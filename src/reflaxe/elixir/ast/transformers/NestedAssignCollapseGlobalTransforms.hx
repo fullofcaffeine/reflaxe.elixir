@@ -23,7 +23,9 @@ class NestedAssignCollapseGlobalTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EBinary(Match, left, rhs):
-                    switch (rhs.def) {
+                    // Unwrap a single level of parentheses to catch shapes like outer = (_ = expr)
+                    var r = switch (rhs.def) { case EParen(inner): inner; default: rhs; };
+                    switch (r.def) {
                         case EBinary(Match, _, expr):
                             #if debug_hygiene
                             Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(inner=expr)');

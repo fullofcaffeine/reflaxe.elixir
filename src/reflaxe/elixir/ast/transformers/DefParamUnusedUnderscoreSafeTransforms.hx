@@ -23,14 +23,14 @@ class DefParamUnusedUnderscoreSafeTransforms {
                 case EModule(name, attrs, body):
                     var isPhoenixCtx = (n.metadata?.isPhoenixWeb == true)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
-                    if (!isPhoenixCtx) return n;
+                    if (!isPhoenixCtx || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     var newBody = [];
                     for (b in body) newBody.push(applyToDefs(b));
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var isPhoenixCtx2 = (n.metadata?.isPhoenixWeb == true)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
-                    if (!isPhoenixCtx2) return n;
+                    if (!isPhoenixCtx2 || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     makeASTWithMeta(EDefmodule(name, applyToDefs(doBlock)), n.metadata, n.pos);
                 default:
                     n;

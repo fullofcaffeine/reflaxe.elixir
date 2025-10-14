@@ -39,16 +39,29 @@ class EFnUnusedArgUnderscoreTransforms {
                     for (cl in clauses) {
                         var newArgs:Array<EPattern> = [];
                         var i = 0;
+                        inline function isUsed(name:String):Bool {
+                            if (name == null) return false;
+                            var underscored = '_' + name;
+                            return VariableUsageCollector.usedInFunctionScope(cl.body, name)
+                                || VariableUsageCollector.usedInFunctionScope(cl.body, underscored)
+                                || erawUsesName(cl.body, name)
+                                || erawUsesName(cl.body, underscored)
+                                || containsVarName(cl.body, name)
+                                || containsVarName(cl.body, underscored);
+                        }
+                        inline function normalizedBinder(name:String):String {
+                            if (name == null) return name;
+                            var needsUnderscore = !isUsed(name) && (name.length == 0 || name.charAt(0) != '_');
+                            return needsUnderscore ? ('_' + name) : name;
+                        }
                         for (a in cl.args) {
                             switch (a) {
                                 case PVar(name):
-                                    var used = VariableUsageCollector.usedInFunctionScope(cl.body, name);
-                                    var newName = (!used && name != null && (name.length == 0 || name.charAt(0) != '_')) ? ('_' + name) : name;
-                                    newArgs.push(PVar(newName));
+                                    var nn = normalizedBinder(name);
+                                    newArgs.push(PVar(nn));
                                 case PAlias(name, pat):
-                                    var used2 = VariableUsageCollector.usedInFunctionScope(cl.body, name);
-                                    var newName2 = (!used2 && name != null && (name.length == 0 || name.charAt(0) != '_')) ? ('_' + name) : name;
-                                    newArgs.push(PAlias(newName2, pat));
+                                    var nn = normalizedBinder(name);
+                                    newArgs.push(PAlias(nn, pat));
                                 default:
                                     newArgs.push(a);
                             }
@@ -62,7 +75,87 @@ class EFnUnusedArgUnderscoreTransforms {
             }
         });
     }
+
+    // ERaw token-bound scan for name usage
+    static function erawUsesName(body: ElixirAST, name: String): Bool {
+        var found = false;
+        inline function isIdentChar(c: String): Bool {
+            if (c == null || c.length == 0) return false;
+            var ch = c.charCodeAt(0);
+            return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
+        }
+        function walk(n: ElixirAST): Void {
+            if (n == null || n.def == null || found) return;
+            switch (n.def) {
+                case ERaw(code):
+                    if (code != null && name != null && name.length > 0 && name.charAt(0) != '_') {
+                        var start = 0;
+                        while (!found) {
+                            var i = code.indexOf(name, start);
+                            if (i == -1) break;
+                            var before = i > 0 ? code.substr(i - 1, 1) : null;
+                            var afterIdx = i + name.length;
+                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                            start = i + name.length;
+                        }
+                    }
+                case EBlock(ss): for (s in ss) walk(s);
+                case EDo(ss2): for (s in ss2) walk(s);
+                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
+                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
+                case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
+                case ERemoteCall(t2,_,as2): walk(t2); for (a2 in as2) walk(a2);
+                case EField(obj,_): walk(obj);
+                case EAccess(obj2,key): walk(obj2); walk(key);
+                case EKeywordList(pairs): for (p in pairs) walk(p.value);
+                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
+                case EStructUpdate(base,fs): walk(base); for (f in fs) walk(f.value);
+                case ETuple(es) | EList(es): for (e in es) walk(e);
+                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
+                default:
+            }
+        }
+        walk(body);
+        return found;
+    }
+
+    static function containsVarName(body: ElixirAST, name: String): Bool {
+        var found = false;
+        function walk(n: ElixirAST): Void {
+            if (n == null || n.def == null || found) return;
+            switch (n.def) {
+                case EVar(v) if (v == name):
+                    found = true;
+                case EPin(inner):
+                    walk(inner);
+                case EParen(e):
+                    walk(e);
+                case EBinary(_, l, r):
+                    walk(l); walk(r);
+                case EMatch(_, rhs):
+                    walk(rhs);
+                case EBlock(ss): for (s in ss) walk(s);
+                case EDo(ss2): for (s in ss2) walk(s);
+                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
+                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
+                case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
+                case ERemoteCall(t2,_,as2): walk(t2); for (a2 in as2) walk(a2);
+                case EField(obj,_): walk(obj);
+                case EAccess(obj2,key): walk(obj2); walk(key);
+                case EKeywordList(pairs): for (p in pairs) walk(p.value);
+                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
+                case EStructUpdate(base,fs): walk(base); for (f in fs) walk(f.value);
+                case ETuple(es) | EList(es): for (e in es) walk(e);
+                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
+                default:
+            }
+        }
+        walk(body);
+        return found;
+    }
 }
 
 #end
-

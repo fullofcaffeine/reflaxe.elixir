@@ -43,17 +43,25 @@ class EctoLocalShimNowarnTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
-                    var updated = injectNowarn(attrs, body);
-                    if (updated != null) makeASTWithMeta(EModule(name, attrs, updated), n.metadata, n.pos) else n;
+                    var injected = buildNowarnAttr(body);
+                    if (injected != null) {
+                        var newAttrs = attrs.copy();
+                        // Avoid duplicate compile entries
+                        var hasCompile = false;
+                        for (a in newAttrs) if (a.name == "compile") hasCompile = true;
+                        if (!hasCompile) newAttrs.unshift(injected);
+                        makeASTWithMeta(EModule(name, newAttrs, body), n.metadata, n.pos);
+                    } else n;
                 case EDefmodule(name, doBlock):
                     var stmts: Array<ElixirAST> = switch (doBlock.def) {
                         case EBlock(ss): ss;
                         case EDo(ss): ss;
                         default: [doBlock];
                     };
-                    var updated2 = injectNowarn([], stmts);
-                    if (updated2 != null) {
-                        makeASTWithMeta(EDefmodule(name, makeAST(EBlock(updated2))), n.metadata, n.pos);
+                    var injected2 = buildNowarnAttr(stmts);
+                    if (injected2 != null) {
+                        // Convert to EModule with attribute in attrs for proper blank line printing
+                        return makeASTWithMeta(EModule(name, [injected2], stmts), n.metadata, n.pos);
                     } else n;
                 default:
                     n;
@@ -61,7 +69,7 @@ class EctoLocalShimNowarnTransforms {
         });
     }
 
-    static function injectNowarn(attrs: Array<EAttribute>, body: Array<ElixirAST>): Null<Array<ElixirAST>> {
+    static function buildNowarnAttr(body: Array<ElixirAST>): Null<EAttribute> {
         // Collect arities of local defp from/where
         var arities = new Map<String, Int>();
         for (b in body) switch (b.def) {
@@ -83,25 +91,7 @@ class EctoLocalShimNowarnTransforms {
             makeAST(EKeywordList(pairs))
         ]));
 
-        // If an existing @compile {:nowarn_unused_function, ...} exists, do not duplicate
-        var hasNowarn = false;
-        for (b in body) switch (b.def) {
-            case EModuleAttribute(an, v) if (an == "compile"):
-                switch (v.def) {
-                    case ETuple(es) if (es.length == 2):
-                        switch (es[0].def) {
-                            case EAtom(a) if (a == "nowarn_unused_function"): hasNowarn = true;
-                            default:
-                        }
-                    default:
-                }
-            default:
-        }
-
-        var newBody: Array<ElixirAST> = [];
-        if (!hasNowarn) newBody.push(makeAST(EModuleAttribute("compile", value)));
-        for (b in body) newBody.push(b);
-        return newBody;
+        return { name: "compile", value: value };
     }
 }
 

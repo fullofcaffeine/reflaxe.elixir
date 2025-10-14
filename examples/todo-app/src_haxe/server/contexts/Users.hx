@@ -64,6 +64,7 @@ class UserChangeset {
     }
 }
 
+@:native("TodoApp.Users")
 class Users {
     /**
      * Get all users with optional filtering
@@ -72,7 +73,7 @@ class Users {
         // Use typed Repo extern for type-safe database access
         if (filter != null) {
             // Apply filtering based on the provided criteria
-            var query = TypedQuery.from(server.schemas.User);
+            var query = TypedQuery.from(contexts.User);
             
             if (filter.name != null) {
                 query = query.where(u -> u.name == '%${filter.name}%');
@@ -87,7 +88,7 @@ class Users {
             return Repo.all(query);
         }
         
-        return Repo.all(server.schemas.User);
+        return Repo.all(contexts.User);
     }
     
     /**

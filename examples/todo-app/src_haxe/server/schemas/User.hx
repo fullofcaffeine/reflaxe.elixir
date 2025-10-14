@@ -35,14 +35,15 @@ class User {
     @:changeset
     @:keep
     public static function registrationChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(user, params, [
+        var changeset = phoenix.Ecto.EctoChangeset.castChangeset(user, params, [
             "name", "email", "password", "passwordConfirmation"
         ]);
         
         // Basic validations
         changeset = phoenix.Ecto.EctoChangeset.validate_required(changeset, ["name", "email", "password"]);
         changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "name", {min: 2, max: 100});
-        changeset = phoenix.Ecto.EctoChangeset.validate_format(changeset, "email", {pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"});
+        var emailPattern = ~/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        changeset = phoenix.Ecto.EctoChangeset.validate_format(changeset, "email", emailPattern);
         changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "password", {min: 8, max: 128});
         changeset = phoenix.Ecto.EctoChangeset.validate_confirmation(changeset, "password");
         changeset = phoenix.Ecto.EctoChangeset.unique_constraint(changeset, "email");
@@ -62,7 +63,7 @@ class User {
     @:changeset
     @:keep
     public static function changeset(user: Dynamic, params: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(user, params, [
+        var changeset = phoenix.Ecto.EctoChangeset.castChangeset(user, params, [
             "name", "email", "active"
         ]);
         
@@ -79,7 +80,7 @@ class User {
      */
     @:changeset
     public static function passwordChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(user, params, [
+        var changeset = phoenix.Ecto.EctoChangeset.castChangeset(user, params, [
             "password", "passwordConfirmation"
         ]);
         
