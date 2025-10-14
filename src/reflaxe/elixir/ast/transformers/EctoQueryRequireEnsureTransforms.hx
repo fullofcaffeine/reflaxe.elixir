@@ -36,6 +36,8 @@ class EctoQueryRequireEnsureTransforms {
                     if (code != null && code.indexOf("Ecto.Query.") != -1) res.needs = true;
                 case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
                 case EBlock(es): for (e in es) scan(e);
+                case EDo(es2): for (e in es2) scan(e);
+                case EPin(_): res.needs = true;
                 case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
                 case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case EBinary(_, l, r): scan(l); scan(r);
@@ -54,18 +56,22 @@ class EctoQueryRequireEnsureTransforms {
             return switch (n.def) {
                 case EDefmodule(name, doBlock):
                     switch (doBlock.def) {
-                        case EBlock(stmts):
+                        case EBlock(stmts) | EDo(stmts):
                             var status = moduleNeedsRequire(doBlock);
                             #if debug_ecto_query_require
                             trace('[EctoQueryRequireEnsure] Defmodule ' + name + ' needs=' + status.needs + ' has=' + status.has);
                             #end
                             if (status.needs && !status.has) {
-                                #if debug_ecto_query_require
-                                trace('[EctoQueryRequireEnsure] Injecting require into defmodule ' + name);
-                                #end
+                            #if debug_ecto_query_require
+                            trace('[EctoQueryRequireEnsure] Injecting require into defmodule ' + name);
+                            #end
                                 var req = makeAST(ERequire("Ecto.Query", null));
-                                var newDo = makeASTWithMeta(EBlock([req].concat(stmts)), doBlock.metadata, doBlock.pos);
-                                makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+                                var newDo: ElixirAST = switch (doBlock.def) {
+                                    case EBlock(_): makeASTWithMeta(EBlock([req].concat(stmts)), doBlock.metadata, doBlock.pos);
+                                    case EDo(_): makeASTWithMeta(EDo([req].concat(stmts)), doBlock.metadata, doBlock.pos);
+                                    default: doBlock;
+                                };
+                                return makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                             } else n;
                         default: n;
                     }
@@ -80,7 +86,7 @@ class EctoQueryRequireEnsureTransforms {
                         trace('[EctoQueryRequireEnsure] Injecting require into module ' + name);
                         #end
                         var req2 = makeAST(ERequire("Ecto.Query", null));
-                        makeASTWithMeta(EModule(name, attrs, [req2].concat(body)), n.metadata, n.pos);
+                        return makeASTWithMeta(EModule(name, attrs, [req2].concat(body)), n.metadata, n.pos);
                     } else n;
                 default:
                     n;

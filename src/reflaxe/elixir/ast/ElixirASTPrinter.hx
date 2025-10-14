@@ -561,6 +561,34 @@ class ElixirASTPrinter {
                     default:
                 }
 
+                // Collapse self-assignment chains in RHS: pattern = (pattern = expr) or pattern = pattern = expr
+                // String-level and AST-level guards
+                switch (pattern) {
+                    case PVar(name):
+                        if (expr != null) {
+                            switch (expr.def) {
+                                case EBinary(Match, left2, exprRhs):
+                                    var left2Str = print(left2, 0);
+                                    if (left2Str == name) {
+                                        return name + ' = ' + print(exprRhs, indent);
+                                    }
+                                case EMatch(patInner2, exprRhs2):
+                                    switch (patInner2) { case PVar(nm2) if (nm2 == name): return name + ' = ' + print(exprRhs2, indent); default: }
+                                default:
+                            }
+                            var rhsPrinted = print(expr, indent);
+                            if (rhsPrinted != null) {
+                                var trimmed = StringTools.trim(rhsPrinted);
+                                var prefix = name + ' = ';
+                                if (StringTools.startsWith(trimmed, prefix)) {
+                                    var rest = StringTools.trim(trimmed.substr(prefix.length));
+                                    return name + ' = ' + rest;
+                                }
+                            }
+                        }
+                    default:
+                }
+
                 if (keepInline) {
                     // Force inline format for the expression
                     // This ensures null coalescing stays on one line to avoid syntax errors
@@ -1166,6 +1194,33 @@ class ElixirASTPrinter {
                     var rightStr = print(right, 0);
                     'Bitwise.' + funcName + '(' + leftStr + ', ' + rightStr + ')';
                 } else {
+                    // De-duplication: collapse x = (x = expr) and x = x = expr
+                    if (op == Match) {
+                        var leftStr0 = print(left, 0);
+                        switch (right.def) {
+                            case EBinary(Match, left2, exprR):
+                                var left2Str = print(left2, 0);
+                                if (left2Str == leftStr0) {
+                                    return leftStr0 + ' = ' + print(exprR, 0);
+                                }
+                            case EMatch(patInner, exprR2):
+                                var lhsName: Null<String> = switch (patInner) { case PVar(nm): nm; default: null; };
+                                if (lhsName != null && lhsName == leftStr0) {
+                                    return leftStr0 + ' = ' + print(exprR2, 0);
+                                }
+                            default:
+                        }
+                        // String-level guard: collapse when RHS starts with redundant "<lhs> ="
+                        var rightPrinted0 = print(right, 0);
+                        if (rightPrinted0 != null) {
+                            var trimmed = StringTools.trim(rightPrinted0);
+                            var prefix = leftStr0 + ' = ';
+                            if (StringTools.startsWith(trimmed, prefix)) {
+                                var rest = StringTools.trim(trimmed.substr(prefix.length));
+                                return leftStr0 + ' = ' + rest;
+                            }
+                        }
+                    }
                     // Constant folding for simple arithmetic to avoid no-op operator warnings
                     if (op == Add) {
                         switch (left.def) {
@@ -1407,6 +1462,19 @@ class ElixirASTPrinter {
 
                     // Check if body is complex and needs multi-line formatting
                     var bodyStr = print(clause.body, indent + 1);
+                    // Remove bare numeric sentinel lines within anonymous function bodies
+                    inline function stripBareNumericLines(s: String): String {
+                        if (s == null || s.length == 0) return s;
+                        var lines = s.split('\n');
+                        var cleaned: Array<String> = [];
+                        for (ln in lines) {
+                            var t = StringTools.trim(ln);
+                            if (t == '1' || t == '0') continue;
+                            cleaned.push(ln);
+                        }
+                        return cleaned.join('\n');
+                    }
+                    bodyStr = stripBareNumericLines(bodyStr);
 
                     #if debug_loop_builder
                     trace('[XRay Printer]   Printed body string (first 200 chars): ${bodyStr.substring(0, bodyStr.length > 200 ? 200 : bodyStr.length)}');
@@ -1540,17 +1608,27 @@ class ElixirASTPrinter {
             // Blocks and Grouping
             // ================================================================
             case EBlock(expressions):
-                if (expressions.length == 0) {
+                // Drop standalone numeric sentinels (1/0/0.0) in statement position
+                inline function isBareNumericSentinel(e: ElixirAST): Bool {
+                    return switch (e.def) {
+                        case EInteger(v) if (v == 0 || v == 1): true;
+                        case EFloat(f) if (f == 0.0): true;
+                        case ERaw(code) if (code != null && (StringTools.trim(code) == '1' || StringTools.trim(code) == '0')): true;
+                        default: false;
+                    }
+                }
+                var statements = [for (e in expressions) if (!isBareNumericSentinel(e)) e];
+                if (statements.length == 0) {
                     // Empty blocks generate empty string (no code)
                     // This aligns with TypedExprPreprocessor's semantics where TBlock([])
                     // represents "generate nothing" (e.g., eliminated infrastructure variables)
                     '';
-                } else if (expressions.length == 1) {
-                    print(expressions[0], indent);
+                } else if (statements.length == 1) {
+                    print(statements[0], indent);
                 } else {
                     var parts = [];
                     var printed: Array<String> = [];
-                    for (expr in expressions) {
+                    for (expr in statements) {
                         var str = print(expr, indent);
                         if (str != null && str.trim().length > 0) {
                             printed.push(str);
@@ -1569,8 +1647,17 @@ class ElixirASTPrinter {
                 '(' + print(expr, 0) + ')';
                 
             case EDo(body):
+                inline function isBareNumericSentinel2(e: ElixirAST): Bool {
+                    return switch (e.def) {
+                        case EInteger(v) if (v == 0 || v == 1): true;
+                        case EFloat(f) if (f == 0.0): true;
+                        case ERaw(code) if (code != null && (StringTools.trim(code) == '1' || StringTools.trim(code) == '0')): true;
+                        default: false;
+                    }
+                }
+                var bodyStmts = [for (e in body) if (!isBareNumericSentinel2(e)) e];
                 'do\n' +
-                [for (expr in body)
+                [for (expr in bodyStmts)
                     indentStr(indent + 1) + print(expr, indent + 1)
                 ].join('\n') + '\n' +
                 indentStr(indent) + 'end';

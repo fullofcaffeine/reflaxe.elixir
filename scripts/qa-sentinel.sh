@@ -18,8 +18,8 @@ done
 echo "[QA] Building Haxe → Elixir in $APP_DIR"
 pushd "$APP_DIR" >/dev/null
 
-# Generate .ex files
-haxe test-app.hxml
+# Generate .ex files (full server build to ensure all modules are regenerated)
+npx -y haxe build-server.hxml
 
 echo "[QA] Fetching deps and compiling with WAE"
 MIX_ENV=dev mix deps.get
@@ -50,4 +50,3 @@ curl -fsS "http://localhost:$PORT" >/dev/null
 
 echo "[QA] OK: build + runtime smoke passed with zero warnings (WAE)"
 popd >/dev/null
-

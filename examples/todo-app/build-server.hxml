@@ -71,8 +71,6 @@ server.infrastructure.Telemetry
 server.infrastructure.Endpoint
 server.infrastructure.TodoAppWeb
 server.components.CoreComponents
-server.infrastructure.Gettext
-server.infrastructure.TranslationBindings
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 # PostgrexTypes is now auto-generated from Repo, not a separate class

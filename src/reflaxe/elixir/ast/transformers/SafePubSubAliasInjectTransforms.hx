@@ -34,10 +34,14 @@ class SafePubSubAliasInjectTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
+                    // Do not inject alias inside the Phoenix.SafePubSub module itself
+                    if (name == "Phoenix.SafePubSub") return n;
                     if (!(moduleUsesSafePubSub(body) || moduleQualifiedUsed(body, "Phoenix.SafePubSub"))) return n;
                     var newBody = insertAlias(body);
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
+                    // Do not inject alias inside the Phoenix.SafePubSub module itself
+                    if (name == "Phoenix.SafePubSub") return n;
                     // Flatten doBlock statements, prepend alias, and rebuild as EBlock
                     var stmts: Array<ElixirAST> = switch (doBlock.def) {
                         case EBlock(ss): ss;
@@ -64,6 +68,8 @@ class SafePubSubAliasInjectTransforms {
                 case ECall(tgt, _, _):
                     if (tgt != null) switch (tgt.def) { case EVar(m) if (m == "SafePubSub"): found = true; default: }
                 case ERaw(code): if (code != null && code.indexOf("SafePubSub.") != -1) found = true;
+                case EDef(_, _, _, b): scan(b);
+                case EDefp(_, _, _, b2): scan(b2);
                 case EBlock(stmts): for (s in stmts) scan(s);
                 case EIf(c,t,el): scan(c); scan(t); if (el != null) scan(el);
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
@@ -87,6 +93,8 @@ class SafePubSubAliasInjectTransforms {
                     switch (mod.def) { case EVar(m) if (m == moduleName): used = true; default: }
                 case ECall(tgt, _, _): if (tgt != null) switch (tgt.def) { case EVar(m2) if (m2 == moduleName): used = true; default: }
                 case ERaw(code): if (code != null && code.indexOf(moduleName + ".") != -1) used = true;
+                case EDef(_, _, _, b): scan(b);
+                case EDefp(_, _, _, b2): scan(b2);
                 case EBlock(stmts): for (s in stmts) scan(s);
                 case EIf(c,t,el): scan(c); scan(t); if (el != null) scan(el);
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }

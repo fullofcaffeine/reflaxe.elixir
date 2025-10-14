@@ -1198,10 +1198,55 @@ class BinderTransforms {
             return switch (n.def) {
                 case EMatch(PVar(v1), {def: EMatch(PVar(v2), expr)}) if (v1 == v2):
                     makeASTWithMeta(EMatch(PVar(v1), expr), n.metadata, n.pos);
+                // x = (x = expr) where inner is Binary(Match)
+                case EMatch(PVar(v1), {def: EBinary(Match, {def: EVar(v2)}, expr)}) if (v1 == v2):
+                    makeASTWithMeta(EMatch(PVar(v1), expr), n.metadata, n.pos);
+                // Paren-wrapped inner assignment: x = (x = expr)
+                case EMatch(PVar(v1), {def: EParen({def: EMatch(PVar(v2), expr2)})}) if (v1 == v2):
+                    makeASTWithMeta(EMatch(PVar(v1), expr2), n.metadata, n.pos);
+                // Paren-wrapped inner assignment where inner is Binary(Match): x = (x = expr)
+                case EMatch(PVar(v1), {def: EParen({def: EBinary(Match, {def: EVar(v2p)}, expr2p)})}) if (v1 == v2p):
+                    makeASTWithMeta(EMatch(PVar(v1), expr2p), n.metadata, n.pos);
+                // Block-wrapped single inner assignment: x = (begin; x = expr end)
+                case EMatch(PVar(v1), {def: EBlock(es)}) if (es.length == 1):
+                    switch (es[0].def) {
+                        case EMatch(PVar(v2), expr3) if (v1 == v2):
+                            makeASTWithMeta(EMatch(PVar(v1), expr3), n.metadata, n.pos);
+                        default:
+                            n;
+                    }
+                // Block-wrapped single inner assignment where inner is Binary(Match)
+                case EMatch(PVar(v1), {def: EBlock(esb)}) if (esb.length == 1):
+                    switch (esb[0].def) {
+                        case EBinary(Match, {def: EVar(v2b)}, expr3b) if (v1 == v2b):
+                            makeASTWithMeta(EMatch(PVar(v1), expr3b), n.metadata, n.pos);
+                        default:
+                            n;
+                    }
                 case EBinary(Match, left, {def: EBinary(Match, left2, expr2)}):
                     var l1 = switch (left.def) { case EVar(nm): nm; default: null; };
                     var l2 = switch (left2.def) { case EVar(nm2): nm2; default: null; };
                     if (l1 != null && l1 == l2) makeASTWithMeta(EBinary(Match, left, expr2), n.metadata, n.pos) else n;
+                // Outer binary match with inner EMatch on RHS: x = (x = expr)
+                case EBinary(Match, {def: EVar(vOut)}, {def: EMatch(PVar(vIn), exprR)}) if (vOut == vIn):
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar(vOut)), exprR), n.metadata, n.pos);
+                // Paren-wrapped inner assignment on RHS: x = (x = expr)
+                case EBinary(Match, left, {def: EParen({def: EBinary(Match, left2b, expr2b)})}):
+                    var l1b = switch (left.def) { case EVar(nm): nm; default: null; };
+                    var l2b = switch (left2b.def) { case EVar(nm2): nm2; default: null; };
+                    if (l1b != null && l1b == l2b) makeASTWithMeta(EBinary(Match, left, expr2b), n.metadata, n.pos) else n;
+                // Block-wrapped single inner assignment on RHS: x = (begin; x = expr end)
+                case EBinary(Match, left, {def: EBlock(es2)}) if (es2.length == 1):
+                    var lhsName = switch (left.def) { case EVar(nm): nm; default: null; };
+                    if (lhsName != null) {
+                        switch (es2[0].def) {
+                            case EBinary(Match, leftInner, exprInner):
+                                var lInner = switch (leftInner.def) { case EVar(nm3): nm3; default: null; };
+                                if (lInner != null && lInner == lhsName) makeASTWithMeta(EBinary(Match, left, exprInner), n.metadata, n.pos) else n;
+                            default:
+                                n;
+                        }
+                    } else n;
                 default:
                     n;
             }

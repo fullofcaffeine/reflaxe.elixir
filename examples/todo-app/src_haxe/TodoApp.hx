@@ -39,9 +39,8 @@ class TodoApp {
             TypeSafeChildSpec.endpoint("TodoAppWeb.Endpoint")
         ];
 
-        // Start supervisor with children
-        // Start supervisor using inline keyword options to ensure clean output
-        return untyped __elixir__('Supervisor.start_link({0}, [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])', children);
+        // Start supervisor with children using type-safe SupervisorExtern + options builder
+        return SupervisorExtern.startLink(children, SupervisorOptionsBuilder.defaults());
     }
 
     /**

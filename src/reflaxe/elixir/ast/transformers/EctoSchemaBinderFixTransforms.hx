@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * EctoSchemaBinderFixTransforms
@@ -67,16 +68,26 @@ class EctoSchemaBinderFixTransforms {
                         }
                     }
                     scanForDesired(body);
-                    // Fallback: drop leading underscores if no shape-derived names were found
-                    inline function baseName(n: String): String return (n != null && n.length > 0 && n.charAt(0) == '_') ? n.substr(1) : n;
-                    if (desired0 == null) desired0 = baseName(p0);
-                    if (desired1 == null) desired1 = baseName(p1);
-                    var newArgs: Array<EPattern> = [PVar(desired0 != null ? desired0 : p0), PVar(desired1 != null ? desired1 : p1)];
+                    // Only drop leading underscores when either:
+                    // 1) shape-derived desired names were found from Ecto.Changeset.* calls, or
+                    // 2) the function body references the base (non-underscore) names.
+                    var base0 = baseName(p0);
+                    var base1 = baseName(p1);
+                    var bodyUsesBase0 = base0 != null && VariableUsageCollector.usedInFunctionScope(body, base0);
+                    var bodyUsesBase1 = base1 != null && VariableUsageCollector.usedInFunctionScope(body, base1);
+                    var rename0 = (desired0 != null) || bodyUsesBase0;
+                    var rename1 = (desired1 != null) || bodyUsesBase1;
+                    if (desired0 == null && rename0) desired0 = base0; // when renaming by usage, use base
+                    if (desired1 == null && rename1) desired1 = base1;
+                    var newArgs: Array<EPattern> = [
+                        PVar(rename0 && desired0 != null ? desired0 : p0),
+                        PVar(rename1 && desired1 != null ? desired1 : p1)
+                    ];
                     var newBody = ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
                         return switch (x.def) {
-                            // Rewrite underscore form to base
-                            case EVar(v) if (p0 != null && v == p0): makeASTWithMeta(EVar(desired0), x.metadata, x.pos);
-                            case EVar(v2) if (p1 != null && v2 == p1): makeASTWithMeta(EVar(desired1), x.metadata, x.pos);
+                            // Rewrite underscore form to base ONLY when we actually renamed the parameter
+                            case EVar(v) if (rename0 && p0 != null && v == p0 && desired0 != null): makeASTWithMeta(EVar(desired0), x.metadata, x.pos);
+                            case EVar(v2) if (rename1 && p1 != null && v2 == p1 && desired1 != null): makeASTWithMeta(EVar(desired1), x.metadata, x.pos);
                             default: x;
                         }
                     });
@@ -106,13 +117,22 @@ class EctoSchemaBinderFixTransforms {
                     }
                     scanDesired2(body2);
                     inline function baseName2(n: String): String return (n != null && n.length > 0 && n.charAt(0) == '_') ? n.substr(1) : n;
-                    if (d0 == null) d0 = baseName2(q0);
-                    if (d1 == null) d1 = baseName2(q1);
-                    var newArgs2: Array<EPattern> = [PVar(d0 != null ? d0 : q0), PVar(d1 != null ? d1 : q1)];
+                    var baseQ0 = baseName2(q0);
+                    var baseQ1 = baseName2(q1);
+                    var bodyUsesBaseQ0 = baseQ0 != null && VariableUsageCollector.usedInFunctionScope(body2, baseQ0);
+                    var bodyUsesBaseQ1 = baseQ1 != null && VariableUsageCollector.usedInFunctionScope(body2, baseQ1);
+                    var renameQ0 = (d0 != null) || bodyUsesBaseQ0;
+                    var renameQ1 = (d1 != null) || bodyUsesBaseQ1;
+                    if (d0 == null && renameQ0) d0 = baseQ0;
+                    if (d1 == null && renameQ1) d1 = baseQ1;
+                    var newArgs2: Array<EPattern> = [
+                        PVar(renameQ0 && d0 != null ? d0 : q0),
+                        PVar(renameQ1 && d1 != null ? d1 : q1)
+                    ];
                     var newBody2 = ElixirASTTransformer.transformNode(body2, function(x: ElixirAST): ElixirAST {
                         return switch (x.def) {
-                            case EVar(v) if (q0 != null && v == q0): makeASTWithMeta(EVar(d0), x.metadata, x.pos);
-                            case EVar(v2) if (q1 != null && v2 == q1): makeASTWithMeta(EVar(d1), x.metadata, x.pos);
+                            case EVar(v) if (renameQ0 && q0 != null && v == q0 && d0 != null): makeASTWithMeta(EVar(d0), x.metadata, x.pos);
+                            case EVar(v2) if (renameQ1 && q1 != null && v2 == q1 && d1 != null): makeASTWithMeta(EVar(d1), x.metadata, x.pos);
                             default: x;
                         }
                     });

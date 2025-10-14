@@ -20,7 +20,7 @@ class GettextUIMessages {
     public static function welcome(name: String): String {
         var bindings = TranslationBindings.create()
             .set("name", name);
-        return Gettext.gettext("Welcome %{name}!", bindings);
+        return WebGettext.gettext("Welcome %{name}!", bindings);
     }
     
     /**
@@ -28,7 +28,7 @@ class GettextUIMessages {
      * @return Translated success message
      */
     public static function success(): String {
-        return Gettext.gettext("Operation completed successfully");
+        return WebGettext.gettext("Operation completed successfully");
     }
     
     /**
@@ -36,7 +36,7 @@ class GettextUIMessages {
      * @return Translated loading message
      */
     public static function loading(): String {
-        return Gettext.gettext("Loading...");
+        return WebGettext.gettext("Loading...");
     }
     
     /**
@@ -44,7 +44,7 @@ class GettextUIMessages {
      * @return Translated save label
      */
     public static function save(): String {
-        return Gettext.gettext("Save");
+        return WebGettext.gettext("Save");
     }
     
     /**
@@ -52,7 +52,7 @@ class GettextUIMessages {
      * @return Translated cancel label
      */
     public static function cancel(): String {
-        return Gettext.gettext("Cancel");
+        return WebGettext.gettext("Cancel");
     }
     
     /**
@@ -60,7 +60,7 @@ class GettextUIMessages {
      * @return Translated delete label
      */
     public static function delete(): String {
-        return Gettext.gettext("Delete");
+        return WebGettext.gettext("Delete");
     }
     
     /**
@@ -68,7 +68,7 @@ class GettextUIMessages {
      * @return Translated edit label
      */
     public static function edit(): String {
-        return Gettext.gettext("Edit");
+        return WebGettext.gettext("Edit");
     }
     
     /**
@@ -76,6 +76,6 @@ class GettextUIMessages {
      * @return Translated delete confirmation message
      */
     public static function confirm_delete(): String {
-        return Gettext.gettext("Are you sure you want to delete this item?");
+        return WebGettext.gettext("Are you sure you want to delete this item?");
     }
 }

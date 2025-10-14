@@ -1,0 +1,3 @@
+Let's summarize/learn from what we've done in this session to the minimum detail, what is left to do (the delta between where we're at and the final goals in the shrim plan) and update the shrimp tasks (complete what's done, if its partially done, then update the task to reflect that, if the
+plan changed in the session, then let's .claude/commands/replan.md, but only if it changed significantly, if not, just update surgically) to prepare for a new session with a fresh context. Give me the prompt for me to paste in the new session in order to continue without friction from where we
+stopped here. If there are inprogress tasks in shrimp, you should update them with the current progress so we can continue where we left off.

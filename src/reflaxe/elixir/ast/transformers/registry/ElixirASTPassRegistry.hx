@@ -692,6 +692,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
         });
 
+        // If body references the underscored binder itself, promote binder and body refs to base name
+        passes.push({
+            name: "ClauseUnderscoreUsedPromote(Final)",
+            description: "When clause body uses underscored binder (_val), rename binder and refs to base (val)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUnderscoreUsedPromoteTransforms.transformPass
+        });
+
         /**
          * BinderRenameByTag
          *
@@ -856,6 +864,29 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerPhoenixJsonAliasInjectionPass
         });
+        // Ensure controller actions have conn parameter when body references it
+        passes.push({
+            name: "ControllerEnsureConnParam",
+            description: "Add `conn` param to controller action defs when body uses conn and param is missing",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms.pass
+        });
+        // (Removed) WebParamBinderAlign(UltraFinal) merged into WebParamFinalFix
+        // Re-run controller conn param normalization at the very end to avoid re-underscore by earlier passes
+        passes.push({
+            name: "ControllerEnsureConnParam(UltraFinal2)",
+            description: "Normalize _conn -> conn in controller action heads (ultra final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms.pass
+        });
+
+        // Promote underscored def/defp params in Web/Live modules based on body usage (pins/ERaw aware)
+        passes.push({
+            name: "WebDefHeadPromotion(AbsoluteFinal11)",
+            description: "Promote _id/_user_id/_editing_todo -> id/user_id/editing_todo in Web/Live defs when body uses base",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WebDefHeadPromotionTransforms.pass
+        });
 
         // Late safety net for error reason aliasing in any context
         passes.push({
@@ -949,6 +980,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.fromInAtomQualificationPass
         });
+        passes.push({
+            name: "EctoFromInModuleQualification",
+            description: "Rewrite Ecto.Query.from(t in Module, ...) to t in <App>.Module where Module is single-segment CamelCase",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.fromInModuleQualificationPass
+        });
 
         // Insert alias <App>.Repo as Repo in Web modules that reference Repo.*
         passes.push({
@@ -971,6 +1008,15 @@ class ElixirASTPassRegistry {
             description: "Rewrite Ecto.Queryable.to_query(:table) to schema module <App>.<Camel>",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoTransforms.ectoQueryableAtomToSchemaPass
+        });
+
+        // Rewrite Repo.* calls that take an atom queryable to use the schema module
+        // Ensures idiomatic Ecto usage across repository APIs without relying on atoms
+        passes.push({
+            name: "RepoAtomToSchema",
+            description: "Rewrite Repo.all/one/get/get!/aggregate(:table, ...) to <App>.<Camel>",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RepoAtomToSchemaTransforms.transformPass
         });
 
         // Unify case success vars in {:ok, v} branches to eliminate undefined placeholders
@@ -1149,12 +1195,35 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.EctoSchemaBinderFixTransforms.transformPass
         });
 
+        // Ensure `require Ecto.Query` before late rewrites that might depend on macro availability
+        passes.push({
+            name: "EctoQueryRequireEnsure(Late)",
+            description: "Ensure `require Ecto.Query` when Ecto.Query remote macros are present (pre-late)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.EctoQueryRequireEnsureTransforms.transformPass
+        });
+
         // Normalize Ecto where query arg by inlining IIFE wrappers around from/2
         passes.push({
             name: "EctoQueryIIFEInline(Late)",
             description: "Inline (fn -> ... from(...) ... end).() used as where/2 query arg",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.transformPass
+        });
+
+        // Clean up wildcard assignments in Ecto where branches to restore idiomatic shape
+        passes.push({
+            name: "EctoWhereWildcardAssignCleanup(Late)",
+            description: "Rewrite if-branch `_ = Ecto.Query.where(...)` to pure where(...) in expression context",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoWhereWildcardAssignCleanupTransforms.transformPass
+        });
+        // Inline local require before first Ecto.Query macro usage within function bodies
+        passes.push({
+            name: "EctoLocalRequireInline(Late)",
+            description: "Insert `require Ecto.Query` before first from/where usage in function bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.transformPass
         });
 
         // Final EqNilToIsNil to catch any newly introduced comparisons
@@ -1529,6 +1598,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.InlineIfAssignmentDiscardTransforms.fixPass
         });
+        // Inject @compile nowarn for defp main/0 so it's preserved by prune passes
+        passes.push({
+            name: "MainNowarnAndPreserve",
+            description: "Ensure defp main/0 is annotated with @compile nowarn [main: 0]",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms.transformPass
+        });
+
         // Prune unused defp helpers at the very end
         passes.push({
             name: "UnusedDefpPrune(Final)",
@@ -1723,6 +1800,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoLocalShimNowarnTransforms.transformPass
         });
+        // Migration: inject nowarn + stubs for migration DSL helpers when referenced
+        passes.push({
+            name: "EctoMigrationNowarnAndStubs(Final)",
+            description: "Inject @compile nowarn and defp stubs for migration helpers (create_table/add_column/...) when called",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.transformPass
+        });
         // Qualify StringBuf usage to <App>.StringBuf inside Ecto DSL shim modules
         passes.push({
             name: "EctoStringBufQualification(Final)",
@@ -1841,6 +1925,14 @@ class ElixirASTPassRegistry {
             description: "Qualify single-segment CamelCase modules to <App>.<Name> when module is project-local and context uses Repo or Ecto DSL",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SupportModuleQualificationTransforms.transformPass
+        });
+
+        // Global, project-local call-site module qualification to align with expected app-qualified names
+        passes.push({
+            name: "ProjectLocalModuleQualification(Final)",
+            description: "Qualify call-sites of single-segment project-local modules to <App>.<Name>",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ProjectLocalModuleQualificationTransforms.transformPass
         });
 
         // Late alias injection to ensure Repo alias exists when used
@@ -2240,6 +2332,68 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnBinderReferenceAlignTransforms.fixPass
         });
+
+        // Safety replay: ensure any late-emitted underscored refs are normalized
+        passes.push({
+            name: "EFnScopedUnderscoreRefCleanup(Final2)",
+            description: "Replay _name -> name rewrite in EFn bodies based on binders (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnScopedUnderscoreRefCleanup.cleanupPass
+        });
+
+        // Replay compression of x = x = expr at the very end to catch late-emitted chains
+        passes.push({
+            name: "SelfAssignCompression(Final2)",
+            description: "Final replay: compress duplicated self-assignments x = x = expr to x = expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
+        });
+
+        // Replay numeric sentinel cleanup inside EFn bodies (drop bare 1/0 literals)
+        passes.push({
+            name: "EFnNumericSentinelCleanup(Final2)",
+            description: "Replay: drop numeric sentinel literals in EFn bodies (1,0,0.0)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnNumericSentinelCleanupTransforms.cleanupPass
+        });
+
+        // Absolute last safety replays for EFn alignment and binder/body agreement
+        passes.push({
+            name: "EFnBinderReferenceAlign(Final3)",
+            description: "Absolute last: align EFn binders with body refs (_name -> name)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnBinderReferenceAlignTransforms.fixPass
+        });
+        passes.push({
+            name: "EFnScopedUnderscoreRefCleanup(Final3)",
+            description: "Absolute last: rewrite _name -> name in EFn bodies when binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnScopedUnderscoreRefCleanup.cleanupPass
+        });
+        passes.push({
+            name: "EFnSingleArgUndefinedAlign(Final3)",
+            description: "Absolute last: rewrite single free var in 1-arg EFn body to binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
+        });
+        passes.push({
+            name: "EFnLastChanceFix(Final4)",
+            description: "Absolute last-chance EFn binder/body fix: _binder -> binder, single free var -> binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnLastChanceFixTransforms.pass
+        });
+        passes.push({
+            name: "EFnEnumClosureAlign(Final4)",
+            description: "Final alignment of Enum.* anonymous function closures (primary binder repairs)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnEnumClosureAlignTransforms.pass
+        });
+        passes.push({
+            name: "EFnNumericSentinelCleanup(Final4)",
+            description: "Absolute last: drop numeric sentinel literals (0,1,0.0) inside EFn bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnNumericSentinelCleanupTransforms.cleanupPass
+        });
         // Run def/defp binder alignment late to catch newly synthesized modules/functions
         passes.push({
             name: "DefParamBinderAlignByBodyUse(UltraFinal)",
@@ -2291,6 +2445,20 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.FunctionHygieneTransforms.functionTopLevelSentinelCleanupPass
         });
+        // Rewrite %{struct | field: struct.field ++ rhs} → field = field ++ rhs
+        passes.push({
+            name: "StructUpdateListAppendRewrite(Final)",
+            description: "Rewrite struct update list append into local list append assignment",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StructUpdateListAppendRewriteTransforms.transformPass
+        });
+        // Drop stray non-final struct update statements that would cause invalid code
+        passes.push({
+            name: "StructUpdateStandaloneDiscard(Final)",
+            description: "Discard standalone %{struct | ...} when not final in a block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StructUpdateStandaloneDiscardTransforms.transformPass
+        });
         passes.push({
             name: "TupleLhsDiscard(Final)",
             description: "Discard {x} = expr (arity-1 tuple LHS) and keep expr",
@@ -2312,15 +2480,45 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EctoQueryRequireInjection(Final)",
             description: "Final sweep to inject `require Ecto.Query` in modules using Ecto.Query macros",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass
         });
         // Absolute-final ensure for Ecto.Query require after any late rewrites
         passes.push({
             name: "EctoQueryRequireEnsure(AbsoluteFinal2)",
             description: "Ensure `require Ecto.Query` when Ecto.Query remote macros are present",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EctoQueryRequireEnsureTransforms.transformPass
+        });
+        // Absolute Final 3: if pin operator exists anywhere in the module and require is missing, inject it
+        passes.push({
+            name: "PinnedVarRequireEctoQuery(AbsoluteFinal3)",
+            description: "Inject `require Ecto.Query` based on EPin presence as a deterministic safeguard",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PinnedVarRequireEctoQueryTransforms.transformPass
+        });
+        // Post-process: hoist any in-body requires to module top and deduplicate
+        passes.push({
+            name: "EctoRequireHoist(PostFinal)",
+            description: "Hoist local `require Ecto.Query` to module top and remove duplicates",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoRequireHoistTransforms.transformPass
+        });
+
+        // PostFinal: Repair Gettext module params/arity to match Phoenix idioms
+        passes.push({
+            name: "GettextArityAndParamRepair(PostFinal)",
+            description: "In *.Gettext modules, add arity shims and de-underscore used params like count",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.GettextArityAndParamRepairTransforms.transformPass
+        });
+
+        // PostFinal: underscore unused params in changeset/2 helpers for repository tests (moved later)
+        passes.push({
+            name: "ChangesetParamUnderscore(PostFinal)",
+            description: "(Disabled here; moved to AbsoluteFinal8 after Ecto.Changeset injection)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.ChangesetParamUnderscoreTransforms.pass
         });
 
         // Absolute success-case alignment: must run as the very last shape-affecting passes
@@ -2527,6 +2725,41 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass
         });
+        // Global safe underscore (very last) for simple modules (e.g., changeset helpers)
+        passes.push({
+            name: "DefParamUnusedUnderscoreGlobalSafe(AbsoluteFinal4)",
+            description: "Globally underscore unused function params when provably unused (disabled)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass
+        });
+        // Final repair: remove underscore from params when body uses the base name
+        passes.push({
+            name: "ParamUnderscoreUsedRepair(AbsoluteFinal5)",
+            description: "Rename `_name` to `name` for parameters used in function body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreUsedRepairTransforms.pass
+        });
+        // Targeted: changeset/2 binder repair (ensure base names when body uses them)
+        passes.push({
+            name: "ChangesetParamUsedRepair(AbsoluteFinal6)",
+            description: "In changeset/2, rename underscored params to base names when body uses base",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetParamUsedRepairTransforms.pass
+        });
+        // Final guard: align body references to declared underscored params in changeset/2
+        passes.push({
+            name: "ChangesetBodyAlignToParam(AbsoluteFinal7)",
+            description: "Rewrite body vars user/attrs to _user/_attrs when params are underscored",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetBodyAlignToParamTransforms.pass
+        });
+        // After all changeset shape injections, underscore unused params if still unused
+        passes.push({
+            name: "ChangesetParamUnderscore(AbsoluteFinal8)",
+            description: "Prefix unused params with underscore in changeset functions (final order)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.ChangesetParamUnderscoreTransforms.pass
+        });
         passes.push({
             name: "ApplicationEnsureStartLink(UltraFinal)",
             description: "Ensure Application.start/2 appends Supervisor.start_link(children, opts) (ultra final)",
@@ -2573,6 +2806,37 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.transformPass
         });
+        // Absolute ultimate: drop numeric sentinels in EFns one last time
+        passes.push({
+            name: "EFnNumericSentinelCleanup(Ultimate)",
+            description: "Ultimate pass to remove 0/1/0.0 numeric sentinel statements inside EFns",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnNumericSentinelCleanupTransforms.cleanupPass
+        });
+        passes.push({
+            name: "SelfAssignCompression(Ultimate2)",
+            description: "Ultimate replay: compress duplicated self-assignments x = x = expr to x = expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
+        });
+        passes.push({
+            name: "SafePubSubAliasInject(Ultimate)",
+            description: "Ultimate alias injection for Phoenix.SafePubSub as SafePubSub",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.injectPass
+        });
+        passes.push({
+            name: "SafePubSubModuleRewrite(Ultimate2)",
+            description: "Rewrite SafePubSub.* to Phoenix.SafePubSub.* (ultimate fallback)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubModuleRewriteTransforms.rewritePass
+        });
+        passes.push({
+            name: "GlobalNumericSentinelCleanup(Ultimate3)",
+            description: "Global sweep to drop standalone numeric sentinel literals (0,1,0.0) in any block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.GlobalNumericSentinelCleanupTransforms.cleanupPass
+        });
 
         // Post3: remove immediate duplicate downcase after query binder
         passes.push({
@@ -2588,6 +2852,61 @@ class ElixirASTPassRegistry {
             description: "Infer changeset/2 parameter names from Ecto.Changeset.change/cast shapes and drop underscores",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoSchemaBinderFixTransforms.transformPass
+        });
+        // Migration: inject nowarn + stubs (absolute final to see final call shapes)
+        passes.push({
+            name: "EctoMigrationNowarnAndStubs(AbsoluteFinal9)",
+            description: "Inject @compile nowarn and defp stubs for migration helpers (absolute final)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.transformPass
+        });
+        // Absolute last controller normalization to ensure conn is present and not underscored
+        passes.push({
+            name: "ControllerEnsureConnParam(AbsoluteFinal10)",
+            description: "Ensure controller action heads use conn (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms.pass
+        });
+        // (Removed) WebParamBinderAlign(AbsoluteFinal11) merged into WebParamFinalFix
+
+        // Absolute-final safety net for Web/Live binder/param alignment and anon fn args
+        passes.push({
+            name: "WebParamFinalFix(AbsoluteFinal12)",
+            description: "Guarantee def-head and anon-fn binder/body agreement in Web/Live modules (pins-aware)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WebParamFinalFixTransforms.transformPass
+        });
+
+        // Absolute-final: promote underscored case binders when body references them (controller/result cases)
+        passes.push({
+            name: "ClauseUnderscoreUsedPromote(AbsoluteFinal13)",
+            description: "If clause body uses underscored binder (_v), rename pattern binder and body refs to base (v)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUnderscoreUsedPromoteTransforms.transformPass
+        });
+
+        // Absolutely final: ensure no stray numeric sentinels remain anywhere
+        passes.push({
+            name: "GlobalNumericSentinelCleanup(AbsoluteFinal14)",
+            description: "Run a last global sweep to drop standalone 0/1/0.0 literals in any block/do",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.GlobalNumericSentinelCleanupTransforms.cleanupPass
+        });
+
+        // As the very last guard, drop any remaining standalone literal 1/0 occurrences
+        passes.push({
+            name: "DropStandaloneLiteralOne(AbsoluteFinal15)",
+            description: "Drop any last bare numeric literals (1/0/0.0) in blocks, do, EFn, if/case bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+        });
+
+        // Very last replay to collapse duplicate self-assignments that might be reintroduced late
+        passes.push({
+            name: "SelfAssignCompression(AbsoluteFinal16)",
+            description: "Collapse x = x = expr (paren/block-wrapped, EMatch/EBinary combos) at the very end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
         });
 
         // Return only enabled passes

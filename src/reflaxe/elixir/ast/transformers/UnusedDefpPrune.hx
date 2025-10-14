@@ -45,7 +45,7 @@ class UnusedDefpPrune {
                     // Skip pruning in Phoenix Web macro modules; macro quoting confuses usage detection
                     var isPhoenixWeb = (n.metadata?.isPhoenixWeb == true) || (name != null && StringTools.endsWith(name, "Web") && name.indexOf(".") == -1);
                     if (isPhoenixWeb) return n;
-                    var pruned = pruneModuleBody(body);
+                    var pruned = pruneModuleBody(body, attrs);
                     makeASTWithMeta(EModule(name, attrs, pruned), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var isPhoenixWeb2 = (n.metadata?.isPhoenixWeb == true) || (name != null && StringTools.endsWith(name, "Web") && name.indexOf(".") == -1);
@@ -55,7 +55,7 @@ class UnusedDefpPrune {
                         case EDo(ss): ss;
                         default: [doBlock];
                     };
-                    var pruned = pruneModuleBody(stmts);
+                    var pruned = pruneModuleBody(stmts, []);
                     var newDo = makeAST(EBlock(pruned));
                     makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                 default:
@@ -64,7 +64,7 @@ class UnusedDefpPrune {
         });
     }
 
-    static function pruneModuleBody(stmts: Array<ElixirAST>): Array<ElixirAST> {
+    static function pruneModuleBody(stmts: Array<ElixirAST>, attrs: Array<EAttribute>): Array<ElixirAST> {
         var defpNames = new StringMap<Bool>();
         for (s in stmts) switch (s.def) {
             case EDefp(name, _, _, _): defpNames.set(name, true);
@@ -73,6 +73,9 @@ class UnusedDefpPrune {
         if (defpNames.keys().hasNext() == false) return stmts; // nothing to prune
 
         var used = new StringMap<Bool>();
+        // Respect compile nowarn list for defp names
+        var nowarn = collectNowarnNames(attrs);
+        if (nowarn != null) for (k in nowarn.keys()) used.set(k, true);
         // Prepare name candidates for robust matching (snake/camel variants)
         function toSnake(n:String):String {
             var b = new StringBuf();
@@ -172,6 +175,25 @@ class UnusedDefpPrune {
                 // drop unused defp
             default:
                 out.push(s);
+        }
+        return out;
+    }
+
+    static function collectNowarnNames(attrs: Array<EAttribute>): StringMap<Bool> {
+        if (attrs == null) return null;
+        var out = new StringMap<Bool>();
+        for (a in attrs) if (a != null && a.name == "compile") {
+            switch (a.value.def) {
+                case ETuple([kind, kws]):
+                    var isNowarn = switch (kind.def) { case EAtom(atom) if (atom == "nowarn_unused_function"): true; default: false; };
+                    if (!isNowarn) break;
+                    switch (kws.def) {
+                        case EKeywordList(pairs):
+                            for (p in pairs) out.set(p.key, true);
+                        default:
+                    }
+                default:
+            }
         }
         return out;
     }

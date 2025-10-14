@@ -33,6 +33,7 @@ using StringTools;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
+using reflaxe.helpers.ModuleTypeHelper;
 
 /**
  * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
@@ -267,81 +268,77 @@ class ElixirCompiler extends GenericCompiler<
     }
 
     /**
-     * Ensure annotated extern modules that may not be referenced are still emitted.
-     * See: examples/todo-app @:repo extern; ModuleRef("<App>.Repo") does not create a type reference.
+     * Macro-phase type filter: ensure @:repo externs are scheduled for normal compilation.
+     *
+     * WHAT
+     * - Override BaseCompiler.filterTypes to guarantee extern classes annotated with @:repo
+     *   (and related @:postgrexTypes/@:dbTypes) are included in the module list regardless of
+     *   usage-driven reachability.
+     *
+     * WHY
+     * - Repo modules must exist at runtime even if not directly referenced by user code.
+     *   Emitting them via extra-file helpers creates drift; scheduling for normal compilation
+     *   preserves the AST pipeline (repoTransformPass) and deterministic file paths.
+     *
+     * HOW
+     * - Start from the Haxe-provided moduleTypes, append any additional modules discovered
+     *   via Context.getTypes() whose classes carry @:repo/@:postgrexTypes/@:dbTypes metadata
+     *   but were omitted (e.g., due to DCE). Deduplicate by ModuleType.getPath().
      */
-    public function ensureExternRepoOutputs(): Void {
-        // Derive app module name; if unavailable, skip
-        var app:Null<String> = null;
-        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
-        if (app == null || app.length == 0) return;
-        var moduleName = app + ".Repo";
-        // If repo already scheduled, nothing to do
-        if (moduleOutputPaths.exists(moduleName)) return;
+    public override function filterTypes(moduleTypes: Array<haxe.macro.Type.ModuleType>): Array<haxe.macro.Type.ModuleType> {
+        #if eval
+        var result = moduleTypes != null ? moduleTypes.copy() : [];
+        var seen = new Map<String, Bool>();
+        for (mt in result) {
+            var p = mt.getPath();
+            if (p != null) seen.set(p, true);
+        }
 
-        // Build AST for minimal Repo module
-        var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(app);
-        var kv:Array<reflaxe.elixir.ast.ElixirAST.EKeywordPair> = [];
-        kv.push({key: "otp_app", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw(appAtom)))});
-        kv.push({key: "adapter", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Adapters.Postgres"))});
-        var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EUse("Ecto.Repo", [
-                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EKeywordList(kv))
-            ])
-        );
-        var body = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EBlock([useStmt]));
-        var repoModule:reflaxe.elixir.ast.ElixirAST = {
-            def: reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, body),
-            metadata: { isRepo: true },
-            pos: null
-        };
+        // Debug: detect any @:repo classes already present
+        try {
+            for (mt in result) {
+                switch (mt) {
+                    case TClassDecl(clsRef):
+                        var cls = clsRef.get();
+                        if (cls.meta != null && cls.meta.has(":repo")) {
+                            #if debug_repo
+                            Sys.println('[RepoEnumerator/filterTypes] found @:repo class in moduleTypes: ' + cls.module + '.' + cls.name);
+                            #end
+                        }
+                    case _:
+                }
+            }
+        } catch (_:Dynamic) {}
 
-        // Transform and print via AST pipeline
-        var ctx = createCompilationContext();
-        var transformed = reflaxe.elixir.ast.ElixirASTTransformer.transform(repoModule, ctx);
-        var output = reflaxe.elixir.ast.ElixirASTPrinter.printAST(transformed, ctx);
+        // Append force-typed repos discovered in macro phase
+        try {
+            var mods = reflaxe.elixir.macros.RepoDiscovery.getDiscovered();
+            if (mods != null) {
+                for (mod in mods) {
+                    try {
+                        var t = haxe.macro.Context.getType(mod);
+                        if (t != null) {
+                            var mt = t.toModuleType();
+                            if (mt != null) {
+                                var pth = mt.getPath();
+                                if (pth != null && !seen.exists(pth)) {
+                                    result.push(mt);
+                                    seen.set(pth, true);
+                                }
+                            }
+                        }
+                    } catch (_:Dynamic) {}
+                }
+            }
+        } catch (_:Dynamic) {}
 
-        // Output path: <app>/repo.ex
-        var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase("Repo");
-        var pack = [reflaxe.elixir.ast.NameUtils.toSnakeCase(app)];
-        var outPath = pack.join("/") + "/" + fileName + ".ex";
-        #if debug_repo
-        Sys.println('[RepoEmit] Emitting ' + moduleName + ' -> ' + outPath);
+        return result;
+        #else
+        return moduleTypes;
         #end
-        setExtraFile(outPath, output);
     }
 
-    /**
-     * Build Repo module content and output path if missing.
-     * Returns null if app name cannot be derived.
-     */
-    public function buildRepoModuleStringIfMissing(): Null<{path:String, content:String}> {
-        var app:Null<String> = null;
-        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
-        if (app == null || app.length == 0) return null;
-        var moduleName = app + ".Repo";
-        // Derive path and content regardless of current scheduling state
-        var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(app);
-        var kv:Array<reflaxe.elixir.ast.ElixirAST.EKeywordPair> = [];
-        kv.push({key: "otp_app", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw(appAtom)))});
-        kv.push({key: "adapter", value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Adapters.Postgres"))});
-        var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EUse("Ecto.Repo", [
-                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EKeywordList(kv))
-            ])
-        );
-        var body = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EBlock([useStmt]));
-        var repoModule:reflaxe.elixir.ast.ElixirAST = {
-            def: reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, body),
-            metadata: { isRepo: true },
-            pos: null
-        };
-        var ctx = createCompilationContext();
-        var transformed = reflaxe.elixir.ast.ElixirASTTransformer.transform(repoModule, ctx);
-        var output = reflaxe.elixir.ast.ElixirASTPrinter.printAST(transformed, ctx);
-        var outPath = reflaxe.elixir.ast.NameUtils.toSnakeCase(app) + "/repo.ex";
-        return {path: outPath, content: output};
-    }
+    // Note: Directory scanning moved to RepoDiscovery (macro phase)
     
     /**
      * Override shouldGenerateClass to enforce strict std emission policy

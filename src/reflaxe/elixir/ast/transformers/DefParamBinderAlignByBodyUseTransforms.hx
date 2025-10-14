@@ -90,13 +90,45 @@ class DefParamBinderAlignByBodyUseTransforms {
         if (params != null) for (p in params) switch (p) {
             case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
                 var base = n.substr(1);
-                var used = VariableUsageCollector.usedInFunctionScope(body, base) || erawUsesName(body, base);
+                var used = VariableUsageCollector.usedInFunctionScope(body, base) || erawUsesName(body, base) || pinUsesName(body, base);
                 if (!have.exists(base) && used) {
                     rename.set(n, base);
                 }
             default:
         }
         return rename;
+    }
+
+    static function pinUsesName(body: ElixirAST, name: String): Bool {
+        var found = false;
+        function walk(n: ElixirAST): Void {
+            if (n == null || n.def == null || found) return;
+            switch (n.def) {
+                case EPin(inner):
+                    // Walk inner to handle parentheses or nested nodes
+                    switch (inner.def) {
+                        case EVar(v) if (v == name): found = true;
+                        default: walk(inner);
+                    }
+                case EBlock(ss): for (s in ss) walk(s);
+                case EDo(ss2): for (s in ss2) walk(s);
+                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
+                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
+                case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
+                case ERemoteCall(t2,_,as2): walk(t2); if (as2 != null) for (a2 in as2) walk(a2);
+                case EField(obj,_): walk(obj);
+                case EAccess(obj2,key): walk(obj2); walk(key);
+                case EKeywordList(pairs): for (p in pairs) walk(p.value);
+                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
+                case EStructUpdate(base, fs): walk(base); for (f in fs) walk(f.value);
+                case ETuple(es) | EList(es): for (e in es) walk(e);
+                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
+                default:
+            }
+        }
+        walk(body);
+        return found;
     }
 
     static function renameParams(params: Array<EPattern>, rename: Map<String, String>): Array<EPattern> {

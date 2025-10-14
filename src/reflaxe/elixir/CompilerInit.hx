@@ -40,6 +40,37 @@ class CompilerInit {
         // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
         LiveViewPreserver.init();
 
+        // Ensure @:repo externs are kept by DCE so they can be scheduled normally
+        // for compilation via the AST pipeline (repoTransformPass).
+        //
+        // WHAT are @:repo externs?
+        // - They are Haxe extern classes (no Haxe implementation/body) annotated with @:repo
+        //   that describe your Phoenix/Ecto repository module (e.g., TodoApp.Repo).
+        // - Example (project code):
+        //     @:native("TodoApp.Repo")
+        //     @:repo({ adapter: Postgres, json: Jason, extensions: [], poolSize: 10 })
+        //     extern class Repo {}
+        //
+        // WHY must we keep them?
+        // - Because externs don’t necessarily create typed references at usage sites, Haxe DCE
+        //   may drop them if they appear “unused”, even though the Repo module must exist at runtime
+        //   (e.g., in the supervision tree).
+        // - Marking them @:keep (and @:used) guarantees they survive DCE and reach our compiler.
+        //
+        // HOW does compilation proceed?
+        // - Our filterTypes() schedules these externs for normal compilation.
+        // - The repoTransformPass (in AnnotationTransforms) then converts the extern into an
+        //   idiomatic Elixir module that calls `use Ecto.Repo, otp_app: :<app>, adapter: ...` and
+        //   writes it to `lib/<app_snake>/repo.ex`.
+        try {
+            Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.RepoEnumerator.ensureRepoKept())");
+        } catch (e:Dynamic) {}
+
+        // Macro-phase discovery: force-type @:repo externs so they join normal compilation
+        try {
+            reflaxe.elixir.macros.RepoDiscovery.run();
+        } catch (e:Dynamic) {}
+
         // Target-conditional classpath gating for staged overrides in std/_std
         // Only add Elixir-specific staged stdlib when compiling to Elixir target.
         // This prevents __elixir__ usage from leaking into macro/other targets.
@@ -69,6 +100,8 @@ class CompilerInit {
             ignoreTypes: [],
             targetCodeInjectionName: "__elixir__",
             ignoreBodilessFunctions: false,
+            // Keep ignoring externs by default; @:repo externs are scheduled via RepoEnumerator + filterTypes
+            ignoreExterns: true,
             
             // Configure Reflaxe 4.0 preprocessors for optimized code generation
             // These preprocessors clean up the AST before we compile it to Elixir

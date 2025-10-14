@@ -132,6 +132,10 @@ class VariableUsageCollector {
                 if (body != null) walk(body, accum, refs);
                 if (into != null) walk(into, shadowed, refs);
 
+            // Pin operator: inner can reference vars
+            case EPin(inner):
+                walk(inner, shadowed, refs);
+
             // Calls / data structures
             case ECall(tgt, _, args):
                 if (tgt != null) walk(tgt, shadowed, refs);
@@ -205,10 +209,10 @@ class VariableUsageCollector {
         var m = new Map<String, Bool>();
         function add(nm: String): Void {
             if (nm == null) return;
+            // Shadow exactly the bound name; do not map underscore/base variants.
+            // In Elixir, `name` and `_name` are distinct variables; referencing `name`
+            // when `_name` is bound should be considered a free use of `name`.
             m.set(nm, true);
-            // Also consider leading-underscore variant as shadowing the base
-            if (nm.length > 0 && nm.charAt(0) != '_') m.set("_" + nm, true);
-            if (nm.length > 0 && nm.charAt(0) == '_') m.set(nm.substr(1), true);
         }
         function visit(pp: EPattern): Void {
             switch (pp) {
