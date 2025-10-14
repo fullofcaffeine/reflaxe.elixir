@@ -40,7 +40,7 @@ class TodoApp {
         ];
 
         // Start supervisor with children using type-safe SupervisorExtern + options builder
-        return SupervisorExtern.startLink(children, SupervisorOptionsBuilder.defaults());
+        return SupervisorExtern.startLink(children, elixir.otp.Supervisor.SupervisorOptionsBuilder.defaults());
     }
 
     /**
