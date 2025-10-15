@@ -477,7 +477,14 @@ class AnnotationTransforms {
     live "/todos/:id/edit", TodoLive, :edit
   end
 
-  # API routes omitted by default; add explicit routes in Haxe when needed
+  scope "/api", ${StringTools.replace(moduleName, ".Router", "")} do
+    pipe_through :api
+
+    get "/users", UserController, :index
+    post "/users", UserController, :create
+    put "/users/:id", UserController, :update
+    delete "/users/:id", UserController, :delete
+  end
 
   if Mix.env() in [:dev, :test] do
     import Phoenix.LiveDashboard.Router
@@ -1116,19 +1123,29 @@ class AnnotationTransforms {
         // Check the top-level node first for PhoenixWeb modules
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isPhoenixWeb == true || (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
-                #if debug_annotation_transforms
-                #end
-                
                 var phoenixWebBody = buildPhoenixWebBody(name, body);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, phoenixWebBody),
-                    ast.metadata,
-                    ast.pos
-                );
+                // Extract statements from EBlock
+                var stmts:Array<ElixirAST> = switch (phoenixWebBody.def) { case EBlock(es): es; default: [phoenixWebBody]; };
+                // Inject @compile {:nowarn_unused_function, [html_helpers: 0]}
+                var compileAttr:EAttribute = {
+                    name: "compile",
+                    value: makeAST(ETuple([
+                        makeAST(EAtom("nowarn_unused_function")),
+                        makeAST(EKeywordList([{key: "html_helpers", value: makeAST(EInteger(0))}]))
+                    ]))
+                };
+                return makeASTWithMeta(EModule(name, [compileAttr], stmts), ast.metadata, ast.pos);
             case EModule(name, attrs, exprs) if (ast.metadata?.isPhoenixWeb == true || (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
                 var phoenixWebBody2 = buildPhoenixWebBody(name, makeAST(EBlock(exprs)));
-                return makeASTWithMeta(EDefmodule(name, phoenixWebBody2), ast.metadata, ast.pos);
+                var stmts2:Array<ElixirAST> = switch (phoenixWebBody2.def) { case EBlock(es): es; default: [phoenixWebBody2]; };
+                var compileAttr2:EAttribute = {
+                    name: "compile",
+                    value: makeAST(ETuple([
+                        makeAST(EAtom("nowarn_unused_function")),
+                        makeAST(EKeywordList([{key: "html_helpers", value: makeAST(EInteger(0))}]))
+                    ]))
+                };
+                return makeASTWithMeta(EModule(name, [compileAttr2], stmts2), ast.metadata, ast.pos);
             default:
                 // Not a PhoenixWeb module, just pass through
                 return ast;
@@ -1271,7 +1288,6 @@ class AnnotationTransforms {
         var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EImport("Phoenix.HTML", null, null)),
             makeAST(EImport("Phoenix.HTML.Form", null, null)),
-            makeAST(EImport("Phoenix.Controller", null, null)),
             makeAST(EAlias("Phoenix.HTML.Form", "Form"))
         ]))));
         

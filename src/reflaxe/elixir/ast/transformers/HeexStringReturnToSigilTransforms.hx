@@ -141,6 +141,9 @@ class HeexStringReturnToSigilTransforms {
                         case PVar(p) if (p == "_assigns"): hasUnderscoredAssigns = true;
                         default:
                     }
+                    // Only convert helpers that already take assigns/_assigns.
+                    // Functions without assigns remain as strings and will be handled by
+                    // the HEEx wrapper/inliner passes at call sites.
                     if (!hasAssignsParam && !hasUnderscoredAssigns) return n;
                     var newBody = transformBody(body, false);
                     if (newBody != body) {

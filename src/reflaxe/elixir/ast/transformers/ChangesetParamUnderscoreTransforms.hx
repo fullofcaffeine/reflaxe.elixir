@@ -33,12 +33,12 @@ class ChangesetParamUnderscoreTransforms {
                     trace('[ChangesetParamUnderscore] args before=' + before + ' after=' + after);
                     #end
                     makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
-                case EDefp(name2, args2, guards2, body2) if (name2 == "changeset"):
+                case EDefp(functionName, functionArgs, functionGuards, functionBody) if (functionName == "changeset"):
                     #if debug_changeset_underscore
-                    trace('[ChangesetParamUnderscore] EDefp changeset/ ' + (args2 != null ? args2.length : 0) + ' args');
+                    trace('[ChangesetParamUnderscore] EDefp changeset/ ' + (functionArgs != null ? functionArgs.length : 0) + ' args');
                     #end
-                    var newArgs2 = underscoreUnused(args2, body2);
-                    makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos);
+                    var newArgs = underscoreUnused(functionArgs, functionBody);
+                    makeASTWithMeta(EDefp(functionName, newArgs, functionGuards, functionBody), n.metadata, n.pos);
                 default:
                     n;
             }

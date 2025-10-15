@@ -33,6 +33,13 @@ import reflaxe.elixir.ast.StdModuleWhitelist;
  *   def list(), do: App.UserChangeset.query() |> App.Repo.all()
  */
 class SupportModuleQualificationTransforms {
+    /**
+     * Return the application-qualified module name.
+     * Presence is a Phoenix special-case that lives under <App>Web.Presence.
+     */
+    static inline function qualifyAppLocalModule(moduleName: String, appPrefix: String): String {
+        return (moduleName == "Presence") ? (appPrefix + "Web.Presence") : (appPrefix + "." + moduleName);
+    }
     public static function transformPass(ast: ElixirAST): ElixirAST {
         // Collect defined modules
         var defined = new Map<String, Bool>();
@@ -93,10 +100,18 @@ class SupportModuleQualificationTransforms {
         function rewriteIn(node: ElixirAST, app: String): ElixirAST {
             return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
                 return switch (n.def) {
-                    case ERemoteCall({def: EVar(m)}, func, args) if (isSingleSegmentModule(m) && isUpperCamel(m) && !StdModuleWhitelist.isWhitelistedRoot(m)):
-                        makeASTWithMeta(ERemoteCall(makeAST(EVar(app + "." + m)), func, args), n.metadata, n.pos);
-                    case ECall({def: EVar(m2)}, func2, args2) if (isSingleSegmentModule(m2) && isUpperCamel(m2) && !StdModuleWhitelist.isWhitelistedRoot(m2)):
-                        makeASTWithMeta(ERemoteCall(makeAST(EVar(app + "." + m2)), func2, args2), n.metadata, n.pos);
+                    // Rewrite remote calls: Module.func(args) → <App>.<Module>.func(args)
+                    case ERemoteCall({def: EVar(moduleName)}, functionName, argumentList)
+                        if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+                        var qualifiedModule = qualifyAppLocalModule(moduleName, app);
+                        makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);
+
+                    // Rewrite call form: Module.func(args) → <App>.<Module>.func(args)
+                    case ECall({def: EVar(moduleName)}, functionName, argumentList)
+                        if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+                        var qualifiedModule = qualifyAppLocalModule(moduleName, app);
+                        makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);
+
                     default:
                         n;
                 }
