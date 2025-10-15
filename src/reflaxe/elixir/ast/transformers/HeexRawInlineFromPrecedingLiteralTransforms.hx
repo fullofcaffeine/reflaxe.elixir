@@ -81,8 +81,9 @@ class HeexRawInlineFromPrecedingLiteralTransforms {
                                         var hit = false;
                                         switch (target.def) {
                                             case ESigil(type, content, mods) if (type == "H"):
-                                                var containsRaw = (content != null) && (content.indexOf("Phoenix.HTML.raw(content)") != -1 || content.indexOf("Phoenix.HTML.raw(@content)") != -1);
-                                                if (containsRaw) hit = true;
+                                                var usesRawCall = (content != null) && (content.indexOf("Phoenix.HTML.raw(content)") != -1 || content.indexOf("Phoenix.HTML.raw(@content)") != -1);
+                                                var usesVarDirect = (content != null) && (content.indexOf("<%= content %>") != -1 || content.indexOf("<%= @content %>") != -1);
+                                                if (usesRawCall || usesVarDirect) hit = true;
                                             default:
                                         }
                                         if (hit) { foundIdx = j; break; }

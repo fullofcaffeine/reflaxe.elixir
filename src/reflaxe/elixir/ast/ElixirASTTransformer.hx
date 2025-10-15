@@ -1707,9 +1707,9 @@ class ElixirASTTransformer {
                                         trace('[XRay PhoenixComponentImport] Adding use ' + webModule + ', :html for Layouts module');
                                         #end
                                         var htmlUse = makeAST(EUse(webModule, [ makeAST(EAtom("html")) ]));
-                                        var newStatements2 = [htmlUse].concat(statements);
-                                        var newDoBlock2 = makeASTWithMeta(EBlock(newStatements2), doBlock.metadata, doBlock.pos);
-                                        return makeASTWithMeta(EDefmodule(name, newDoBlock2), node.metadata, node.pos);
+                                        var newStatements = [htmlUse].concat(statements);
+                                        var newDoBlock = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+                                        return makeASTWithMeta(EDefmodule(name, newDoBlock), node.metadata, node.pos);
                                     }
                                 }
                             } else if (!hasImport) {
