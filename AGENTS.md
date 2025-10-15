@@ -775,6 +775,20 @@ This file must stay under 40k characters for optimal performance.
   - Scope: applies to all transformers, analyzers, and builders.
 
 
+## Naming Rule: Ban Ambiguous Numeric Suffixes
+
+- Never name identifiers with bare numeric suffixes to signal variants or arity (e.g., `parseX2`, `scan2`, `helper3`).
+  - Rationale: Numeric suffixes hide intent, confuse maintenance, and accumulate silently across passes.
+  - Scope: Functions, methods, classes, modules, fields, and local helper functions in production compiler code.
+- Use explicit, intention-revealing names instead:
+  - Arity: prefer `ArityTwo`, `ArityThree` as a middle token (e.g., `parseHandleEventArityTwoCaseDispatch`).
+  - Variant/role: prefer semantic tokens like `InDo`, `ForKeyword`, `PredicateBody`, `ScanBlock`, `Debug`.
+- Exceptions (allowed):
+  - External API names where numbers are part of the official API (e.g., `atan2`, `log10`, `to_iso8601`).
+  - Test-only, throwaway debug snippets guarded by defines and removed prior to release.
+- Hygiene gate: PRs adding identifiers that match `/[A-Za-z_]\w*\d+$/` must refactor to descriptive names or justify under the exceptions.
+
+
 ## Transformer Scope Discipline
 
 - Prefer shape- and usage-based transforms. Do not gate transforms by module/app names (e.g., "Web.", ".Live", ".Presence") unless:

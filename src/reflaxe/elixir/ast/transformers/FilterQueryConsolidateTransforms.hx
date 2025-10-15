@@ -158,12 +158,12 @@ class FilterQueryConsolidateTransforms {
                         var needsBinder2 = (function():Bool {
                             var hasFilterQuery = false;
                             var hasQueryBinder = false;
-                            function fnBodyUsesQuery2(e: ElixirAST): Bool {
+                            function fnBodyUsesQuery(e: ElixirAST): Bool {
                                 var used = false;
                                 ElixirASTTransformer.transformNode(e, function(x: ElixirAST): ElixirAST { if (used) return x; switch (x.def) { case EVar(nm) if (nm == "query"): used = true; return x; default: return x; }});
                                 return used;
                             }
-                            function rawContainsIdentLocal2(code:String, ident:String): Bool {
+                            function rawContainsIdentLocal(code:String, ident:String): Bool {
                                 if (code == null || ident == null || ident.length == 0) return false;
                                 var start = 0; var len = ident.length;
                                 inline function isIdentChar(c:String):Bool {
@@ -182,37 +182,37 @@ class FilterQueryConsolidateTransforms {
                                 }
                                 return false;
                             }
-                            function scan2(x: ElixirAST): Void {
+                            function scanBlock(x: ElixirAST): Void {
                                 if (x == null || x.def == null) return;
                                 if (hasFilterQuery && hasQueryBinder) return;
                                 switch (x.def) {
                                     case EBinary(Match, left, right):
                                         switch (left.def) { case EVar(nm) if (nm == "query"): hasQueryBinder = true; default: }
                                         // Recurse into RHS to find nested Enum.filter calls
-                                        scan2(right);
+                                        scanBlock(right);
                                     case EMatch(pat, expr):
                                         switch (pat) { case PVar(nm2) if (nm2 == "query"): hasQueryBinder = true; default: }
                                         // Recurse into RHS expression
-                                        scan2(expr);
+                                        scanBlock(expr);
                                     case EVar(nm3) if (nm3 == "query"):
                                         // Broaden: any query reference in function body
                                         hasFilterQuery = true;
                                     case ERemoteCall({def: EVar(m)}, "filter", a) if (m == "Enum" && a != null && a.length == 2):
-                                        switch (a[1].def) { case EFn(cs) if (cs.length == 1): if (fnBodyUsesQuery2(cs[0].body)) hasFilterQuery = true; default: }
+                                        switch (a[1].def) { case EFn(cs) if (cs.length == 1): if (fnBodyUsesQuery(cs[0].body)) hasFilterQuery = true; default: }
                                     case ECall(_, "filter", a2) if (a2 != null && a2.length == 2):
-                                        switch (a2[1].def) { case EFn(cs2) if (cs2.length == 1): if (fnBodyUsesQuery2(cs2[0].body)) hasFilterQuery = true; default: }
+                                        switch (a2[1].def) { case EFn(cs2) if (cs2.length == 1): if (fnBodyUsesQuery(cs2[0].body)) hasFilterQuery = true; default: }
                                     case ERaw(code):
-                                        if (code != null && code.indexOf('Enum.filter(') != -1 && rawContainsIdentLocal2(code, 'query')) hasFilterQuery = true;
-                                    case EBlock(es): for (e in es) scan2(e);
-                                    case EDo(es2): for (e in es2) scan2(e);
-                                    case EIf(c,t,e): scan2(c); scan2(t); if (e != null) scan2(e);
-                                    case ECase(e2, cs): scan2(e2); for (c2 in cs) { if (c2.guard != null) scan2(c2.guard); scan2(c2.body); }
-                                    case ERemoteCall(m2,_,as2): scan2(m2); for (aa in as2) scan2(aa);
-                                    case ECall(t2,_,as3): if (t2 != null) scan2(t2); for (aa2 in as3) scan2(aa2);
+                                        if (code != null && code.indexOf('Enum.filter(') != -1 && rawContainsIdentLocal(code, 'query')) hasFilterQuery = true;
+                                    case EBlock(es): for (e in es) scanBlock(e);
+                                    case EDo(es2): for (e in es2) scanBlock(e);
+                                    case EIf(c,t,e): scanBlock(c); scanBlock(t); if (e != null) scanBlock(e);
+                                    case ECase(e2, cs): scanBlock(e2); for (c2 in cs) { if (c2.guard != null) scanBlock(c2.guard); scanBlock(c2.body); }
+                                    case ERemoteCall(m2,_,as2): scanBlock(m2); for (aa in as2) scanBlock(aa);
+                                    case ECall(t2,_,as3): if (t2 != null) scanBlock(t2); for (aa2 in as3) scanBlock(aa2);
                                     default:
                                 }
                             }
-                            scan2(body2);
+                            scanBlock(body2);
                             return hasFilterQuery && !hasQueryBinder;
                         })();
                         if (needsBinder2) {

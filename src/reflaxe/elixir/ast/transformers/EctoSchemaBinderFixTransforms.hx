@@ -104,7 +104,7 @@ class EctoSchemaBinderFixTransforms {
                     // Repeat for defp version
                     var d0: String = null;
                     var d1: String = null;
-                    function scanDesired2(n: ElixirAST): Void {
+                    function scanDesiredInBody(n: ElixirAST): Void {
                         if (d0 != null && d1 != null) return;
                         switch (n.def) {
                             case ERemoteCall(mod, fn, args) if (args != null && args.length >= 2):
@@ -113,36 +113,36 @@ class EctoSchemaBinderFixTransforms {
                                     switch (args[0].def) { case EVar(v): d0 = v; default: }
                                     switch (args[1].def) { case EVar(v2): d1 = v2; default: }
                                 }
-                            case EBlock(es): for (e in es) scanDesired2(e);
-                            case EIf(c,t,e): scanDesired2(c); scanDesired2(t); if (e != null) scanDesired2(e);
-                            case ECase(e, cs): scanDesired2(e); for (c in cs) { if (c.guard != null) scanDesired2(c.guard); scanDesired2(c.body); }
-                            case ECall(t,_,as): if (t != null) scanDesired2(t); if (as != null) for (a in as) scanDesired2(a);
-                            case ERemoteCall(m2,_,as2): scanDesired2(m2); if (as2 != null) for (a in as2) scanDesired2(a);
+                            case EBlock(es): for (e in es) scanDesiredInBody(e);
+                            case EIf(c,t,e): scanDesiredInBody(c); scanDesiredInBody(t); if (e != null) scanDesiredInBody(e);
+                            case ECase(e, cs): scanDesiredInBody(e); for (c in cs) { if (c.guard != null) scanDesiredInBody(c.guard); scanDesiredInBody(c.body); }
+                            case ECall(t,_,as): if (t != null) scanDesiredInBody(t); if (as != null) for (a in as) scanDesiredInBody(a);
+                            case ERemoteCall(m2,_,as2): scanDesiredInBody(m2); if (as2 != null) for (a in as2) scanDesiredInBody(a);
                             default:
                         }
                     }
-                    scanDesired2(body2);
-                    inline function baseName2(n: String): String return (n != null && n.length > 0 && n.charAt(0) == '_') ? n.substr(1) : n;
-                    var baseQ0 = baseName2(q0);
-                    var baseQ1 = baseName2(q1);
+                    scanDesiredInBody(body2);
+                    inline function baseNameNoUnderscore(n: String): String return (n != null && n.length > 0 && n.charAt(0) == '_') ? n.substr(1) : n;
+                    var baseQ0 = baseNameNoUnderscore(q0);
+                    var baseQ1 = baseNameNoUnderscore(q1);
                     var bodyUsesBaseQ0 = baseQ0 != null && VariableUsageCollector.usedInFunctionScope(body2, baseQ0);
                     var bodyUsesBaseQ1 = baseQ1 != null && VariableUsageCollector.usedInFunctionScope(body2, baseQ1);
                     var renameQ0 = (d0 != null) || bodyUsesBaseQ0;
                     var renameQ1 = (d1 != null) || bodyUsesBaseQ1;
                     if (d0 == null && renameQ0) d0 = baseQ0;
                     if (d1 == null && renameQ1) d1 = baseQ1;
-                    var newArgs2: Array<EPattern> = [
+                    var newArgsDefp: Array<EPattern> = [
                         PVar(renameQ0 && d0 != null ? d0 : q0),
                         PVar(renameQ1 && d1 != null ? d1 : q1)
                     ];
-                    var newBody2 = ElixirASTTransformer.transformNode(body2, function(x: ElixirAST): ElixirAST {
+                    var newBodyDefp = ElixirASTTransformer.transformNode(body2, function(x: ElixirAST): ElixirAST {
                         return switch (x.def) {
                             case EVar(v) if (renameQ0 && q0 != null && v == q0 && d0 != null): makeASTWithMeta(EVar(d0), x.metadata, x.pos);
                             case EVar(v2) if (renameQ1 && q1 != null && v2 == q1 && d1 != null): makeASTWithMeta(EVar(d1), x.metadata, x.pos);
                             default: x;
                         }
                     });
-                    makeASTWithMeta(EDefp(fname2, newArgs2, guards2, newBody2), n.metadata, n.pos);
+                    makeASTWithMeta(EDefp(fname2, newArgsDefp, guards2, newBodyDefp), n.metadata, n.pos);
                 default:
                     n;
             }

@@ -69,8 +69,8 @@ class GuardSanitizationTransforms {
                 var l = sanitizeGuardExprRecursive(left);
                 var r = sanitizeGuardExprRecursive(right);
 
-                var leftGet = extractMapGet2(l);
-                var rightGet = extractMapGet2(r);
+                var leftGet = extractMapGetCall(l);
+                var rightGet = extractMapGetCall(r);
                 var isNilLeft = isNil(l);
                 var isNilRight = isNil(r);
 
@@ -129,7 +129,7 @@ class GuardSanitizationTransforms {
         }
     }
 
-    static function extractMapGet2(expr: ElixirAST): Null<{mapExpr: ElixirAST, keyExpr: ElixirAST}> {
+    static function extractMapGetCall(expr: ElixirAST): Null<{mapExpr: ElixirAST, keyExpr: ElixirAST}> {
         return switch(expr.def) {
             case ERemoteCall(module, funcName, args):
                 switch(module.def) {
