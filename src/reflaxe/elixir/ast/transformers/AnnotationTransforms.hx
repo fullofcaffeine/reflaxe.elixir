@@ -1271,6 +1271,7 @@ class AnnotationTransforms {
         var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EImport("Phoenix.HTML", null, null)),
             makeAST(EImport("Phoenix.HTML.Form", null, null)),
+            makeAST(EImport("Phoenix.Controller", null, null)),
             makeAST(EAlias("Phoenix.HTML.Form", "Form"))
         ]))));
         
