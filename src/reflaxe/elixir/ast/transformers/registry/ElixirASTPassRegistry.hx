@@ -1758,9 +1758,9 @@ class ElixirASTPassRegistry {
                                     n;
                             }
                         case EModule(name, attrs, body) if (name != null && StringTools.endsWith(name, ".Layouts")):
-                            var webModule2 = deriveWebModule(name);
-                            if (webModule2 != null && !hasHtmlUse(body, webModule2)) {
-                                makeASTWithMeta(EModule(name, attrs, [ makeAST(EUse(webModule2, [ makeAST(EAtom("html")) ])) ].concat(body)), n.metadata, n.pos);
+                            var webModule = deriveWebModule(name);
+                            if (webModule != null && !hasHtmlUse(body, webModule)) {
+                                makeASTWithMeta(EModule(name, attrs, [ makeAST(EUse(webModule, [ makeAST(EAtom("html")) ])) ].concat(body)), n.metadata, n.pos);
                             } else {
                                 n;
                             }
@@ -1777,6 +1777,14 @@ class ElixirASTPassRegistry {
             description: "Rewrite Phoenix.Presence.track/update/list/untrack to <App>Web.Presence.*",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.presenceApiModuleRewritePass
+        });
+
+        // Rewrite <App>.Presence.* to <App>Web.Presence.* (qualified module form)
+        passes.push({
+            name: "PresenceQualifiedModuleRewrite",
+            description: "Rewrite <App>.Presence.* calls to <App>Web.Presence.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceQualifiedModuleRewriteTransforms.transformPass
         });
         // Inject alias for SafePubSub if bare module is referenced
         passes.push({
@@ -2123,8 +2131,9 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixComponentImportPass
         });
 
-        // Transitional safety: wrap helper calls inside ~H so they are not escaped while
-        // helpers are being migrated to return ~H themselves.
+        // Transitional safety: wrap helper calls inside ~H so they render unescaped while
+        // we migrate remaining helpers to return ~H. This pass targets only render_* calls
+        // and will be removed once all helpers are ~H (tracked in tasks).
         passes.push({
             name: "HeexRenderHelperCallWrap",
             description: "Wrap <%= render_* %> calls inside ~H with Phoenix.HTML.raw(...) (transitional safety)",

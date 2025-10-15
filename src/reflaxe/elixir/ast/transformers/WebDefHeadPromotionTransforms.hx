@@ -58,11 +58,11 @@ class WebDefHeadPromotionTransforms {
                     var newArgs = renameParams(args, rename);
                     var newBody = renameBody(body, rename);
                     makeASTWithMeta(EDef(fname, newArgs, guards, newBody), x.metadata, x.pos);
-                case EDefp(fname2, args2, guards2, body2):
-                    var rename2 = compute(args2, body2);
-                    var newArgs2 = renameParams(args2, rename2);
-                    var newBody2 = renameBody(body2, rename2);
-                    makeASTWithMeta(EDefp(fname2, newArgs2, guards2, newBody2), x.metadata, x.pos);
+                case EDefp(functionName, functionArgs, functionGuards, functionBody):
+                    var renameMap = compute(functionArgs, functionBody);
+                    var newArgs = renameParams(functionArgs, renameMap);
+                    var newBody = renameBody(functionBody, renameMap);
+                    makeASTWithMeta(EDefp(functionName, newArgs, functionGuards, newBody), x.metadata, x.pos);
                 default:
                     x;
             }

@@ -47,6 +47,31 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
   - External APIs that are inherently dynamic (e.g., Map-like payloads) may use `Dynamic` locally, but public surfaces should remain typed.
   - Transitional refactors require an issue and a TODO linked to the proper fix — not allowed for 1.0 scope.
 
+## Code Style and Conventions
+
+- Prefer clear, descriptive names over abbreviations.
+- Keep functions short and focused; extract helpers when a block grows complex.
+- Avoid magic numbers and stringly-typed logic; prefer enums/typedefs and small helpers.
+- Do not leak target-specific runtime details into the Haxe types unless strictly required by shape.
+
+### Variable Naming (Hard Rules)
+
+- Use descriptive variable names. Avoid cryptic abbreviations (e.g., `fq`, `fn`, `args`) unless they are canonical API terms.
+- Never introduce numeric suffixes to disambiguate variables (e.g., `moduleName2`, `qualifiedModule2`, `func2`, `args2`).
+  - Pattern-matching cases have their own scopes — reuse the same descriptive names in each case.
+  - If distinct names improve clarity, pick different descriptive names (e.g., `callModule`, `captureModule`).
+- Prefer small helpers over ad‑hoc inline conditionals when logic repeats.
+
+Examples
+
+- Bad
+  - `var qualifiedModule2 = (moduleName2 == "Presence") ? (app + "Web.Presence") : (app + "." + moduleName2);`
+  - `case ECall({def: EVar(moduleName2)}, functionName2, argumentList2) …`
+
+- Good
+  - `var qualifiedModule = qualifyAppLocalModule(moduleName, appPrefix);`
+  - `case ECall({def: EVar(moduleName)}, functionName, argumentList) …`
+
 ## 📚 Complete Documentation Index
 
 **All documentation is organized in [`docs/`](docs/) - Always check here first for comprehensive information.**
