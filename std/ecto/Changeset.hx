@@ -71,7 +71,23 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param params The typed parameters
      */
     extern inline public function new(data: T, params: P) {
-        this = untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
+        // Cast with snake_case atom keys derived from incoming params.
+        // Accepts camelCase or string keys (e.g., "dueDate") and converts them
+        // to snake_case atoms (e.g., :due_date) before casting. Permitted fields
+        // are computed from the transformed map keys.
+        this = untyped __elixir__('
+          (fn data, params ->
+             sp = for {k, v} <- Map.to_list(params), into: %{} do
+               key =
+                 cond do
+                   is_atom(k) -> k
+                   true -> String.to_atom(Macro.underscore(to_string(k)))
+                 end
+               {key, v}
+             end
+             Ecto.Changeset.cast(data, sp, Map.keys(sp))
+           end).({0}, {1})
+        ', data, params);
     }
     
     /**

@@ -822,8 +822,8 @@ static function getUserFromSession(session: Dynamic): User {
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 											Due Date
 										</label>
-										<input type="date" name="dueDate"
-											class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
+                            <input type="date" name="due_date"
+                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 									</div>
 								</div>
 								
@@ -849,7 +849,7 @@ static function getUserFromSession(session: Dynamic): User {
 						<div class="flex flex-wrap gap-4">
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
-								<form phx-change="SearchTodos" class="relative">
+                            <form phx-change="search_todos" class="relative">
 									<input type="search" name="query" value={@search_query}
 										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Search todos..." />
@@ -859,15 +859,15 @@ static function getUserFromSession(session: Dynamic): User {
 							
 							<!-- Filter Buttons -->
 							<div class="flex space-x-2">
-								<button phx-click="FilterTodos" phx-value-filter="all"
+                        <button phx-click="filter_todos" phx-value-filter="all"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									All
 								</button>
-								<button phx-click="FilterTodos" phx-value-filter="active"
+                        <button phx-click="filter_todos" phx-value-filter="active"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									Active
 								</button>
-								<button phx-click="FilterTodos" phx-value-filter="completed"
+                        <button phx-click="filter_todos" phx-value-filter="completed"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									Completed
 								</button>
@@ -875,11 +875,11 @@ static function getUserFromSession(session: Dynamic): User {
 							
 							<!-- Sort Dropdown -->
 							<div>
-								<select phx-change="sort_todos" name="sortBy"
-									class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                            <select phx-change="sort_todos" name="sort_by"
+                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
 									<option value="created" selected={@sort_by == "created"}>Sort by Date</option>
 									<option value="priority" selected={@sort_by == "priority"}>Sort by Priority</option>
-									<option value="dueDate" selected={@sort_by == "dueDate"}>Sort by Due Date</option>
+                                <option value="due_date" selected={@sort_by == "due_date"}>Sort by Due Date</option>
 								</select>
 							</div>
 						</div>

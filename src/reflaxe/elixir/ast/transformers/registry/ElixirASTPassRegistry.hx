@@ -1705,23 +1705,51 @@ class ElixirASTPassRegistry {
             }
         });
 
-        // Ensure Phoenix.Component is used in Layouts modules so ~H is available.
+        /**
+         * EnsureAppWebHtmlUseInLayouts
+         *
+         * WHAT
+         * - Injects `use <App>Web, :html` at the top of `<App>Web.Layouts` modules.
+         *
+         * WHY
+         * - Layouts return ~H templates and need the full Phoenix 1.7 HTML context (HTML, VerifiedRoutes,
+         *   controller helpers) without manual imports. Using the app’s `:html` macro is the idiomatic way.
+         *
+         * HOW
+         * - Detect modules whose name ends with ".Layouts", derive `<App>Web` from the prefix before "Web",
+         *   and prepend `use <App>Web, :html` when missing. Safe, shape-based; no app-specific heuristics.
+         *
+         * EXAMPLES
+         *   Before: defmodule MyAppWeb.Layouts do; def root(assigns), do: ~H"..."; end
+         *   After:  defmodule MyAppWeb.Layouts do; use MyAppWeb, :html; def root(assigns), do: ~H"..."; end
+         */
+        // Ensure `use <App>Web, :html` in Layouts modules so ~H helpers are available.
         passes.push({
-            name: "EnsurePhoenixComponentUseInLayouts",
-            description: "Inject `use Phoenix.Component` into <App>Web.Layouts modules",
+            name: "EnsureAppWebHtmlUseInLayouts",
+            description: "Inject `use <App>Web, :html` into <App>Web.Layouts modules",
             enabled: true,
             pass: function(ast: ElixirAST): ElixirAST {
                 return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-                    function hasUseStmt(stmts:Array<ElixirAST>):Bool {
-                        for (s in stmts) switch (s.def) { case EUse(module, _) if (module == "Phoenix.Component"): return true; default: }
+                    function deriveWebModule(moduleName:String):Null<String> {
+                        if (moduleName == null) return null;
+                        var idx = moduleName.indexOf("Web");
+                        return idx > 0 ? moduleName.substr(0, idx) + "Web" : null;
+                    }
+                    function hasHtmlUse(stmts:Array<ElixirAST>, webModule:String):Bool {
+                        for (s in stmts) switch (s.def) {
+                            case EUse(module, opts) if (module == webModule):
+                                if (opts != null) for (o in opts) switch (o.def) { case EAtom(a) if (a == "html"): return true; default: }
+                            default:
+                        }
                         return false;
                     }
                     return switch (n.def) {
                         case EDefmodule(name, doBlock) if (name != null && StringTools.endsWith(name, ".Layouts")):
+                            var webModule = deriveWebModule(name);
                             switch (doBlock.def) {
-                                case EBlock(stmts) | EDo(stmts):
-                                    if (!hasUseStmt(stmts)) {
-                                        var newDo = makeAST(EBlock([ makeAST(EUse("Phoenix.Component", [])) ].concat(stmts)));
+                                case EBlock(stmts) | EDo(stmts) if (webModule != null):
+                                    if (!hasHtmlUse(stmts, webModule)) {
+                                        var newDo = makeAST(EBlock([ makeAST(EUse(webModule, [ makeAST(EAtom("html")) ])) ].concat(stmts)));
                                         makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                                     } else {
                                         n;
@@ -1730,8 +1758,9 @@ class ElixirASTPassRegistry {
                                     n;
                             }
                         case EModule(name, attrs, body) if (name != null && StringTools.endsWith(name, ".Layouts")):
-                            if (!hasUseStmt(body)) {
-                                makeASTWithMeta(EModule(name, attrs, [ makeAST(EUse("Phoenix.Component", [])) ].concat(body)), n.metadata, n.pos);
+                            var webModule2 = deriveWebModule(name);
+                            if (webModule2 != null && !hasHtmlUse(body, webModule2)) {
+                                makeASTWithMeta(EModule(name, attrs, [ makeAST(EUse(webModule2, [ makeAST(EAtom("html")) ])) ].concat(body)), n.metadata, n.pos);
                             } else {
                                 n;
                             }
