@@ -503,6 +503,14 @@ typedef JoinClause = {
 /**
  * Join type enumeration
  */
+/**
+ * Join type for Ecto.Query
+ *
+ * WHAT
+ * - Marked with @:elixirIdiomatic so tags compile to :inner/:left/:right/:full/:cross,
+ *   matching Ecto's expected atoms in macro DSL.
+ */
+@:elixirIdiomatic
 enum JoinType {
     Inner;
     Left;
@@ -554,6 +562,13 @@ enum SortDirection {
 /**
  * Nulls position in ordering
  */
+/**
+ * NULLS FIRST/LAST handling
+ *
+ * WHAT
+ * - Compile to :first/:last/:default atoms to align with Ecto ordering options.
+ */
+@:elixirIdiomatic
 enum NullsPosition {
     First;
     Last;
@@ -642,6 +657,13 @@ enum RepoOption {
 /**
  * Log levels for repository operations
  */
+/**
+ * Log level
+ *
+ * WHAT
+ * - Compile to :debug/:info/:warning/:error atoms used in logging.
+ */
+@:elixirIdiomatic
 enum LogLevel {
     Debug;
     Info;  
@@ -666,6 +688,13 @@ typedef Changeset<T> = {
 /**
  * Changeset actions
  */
+/**
+ * Changeset action
+ *
+ * WHAT
+ * - Compile to :insert/:update/:delete/:replace/:ignore atoms to match Ecto semantics.
+ */
+@:elixirIdiomatic
 enum ChangesetAction {
     Insert;
     Update;
@@ -696,6 +725,8 @@ typedef SchemaField = {
 /**
  * Ecto field types
  */
+// Keep FieldType non-idiomatic: we convert to Ecto atoms at call sites; this enum is
+// used in type-safe builder APIs spanning multiple targets.
 enum FieldType {
     Id;
     Binary_id;
@@ -777,6 +808,13 @@ enum EmbedStrategy {
 /**
  * On delete actions
  */
+/**
+ * On delete actions for foreign keys
+ *
+ * WHAT
+ * - Compile to :nothing/:restrict/:delete_all/:nilify_all atoms expected by Ecto.
+ */
+@:elixirIdiomatic
 enum OnDeleteAction {
     Nothing;
     Restrict;
@@ -787,6 +825,13 @@ enum OnDeleteAction {
 /**
  * On replace actions
  */
+/**
+ * On replace actions for embeds/associations
+ *
+ * WHAT
+ * - Compile to :raise/:mark_as_invalid/:nilify/:delete/:update atoms expected by Ecto.
+ */
+@:elixirIdiomatic
 enum OnReplaceAction {
     Raise;
     Mark_as_invalid;
@@ -926,6 +971,13 @@ enum QueryValue {
 /**
  * Order by directions
  */
+/**
+ * Sort order direction
+ *
+ * WHAT
+ * - Compile to :asc/:desc atoms used in order_by DSL.
+ */
+@:elixirIdiomatic
 enum OrderDirection {
     ASC;
     DESC;

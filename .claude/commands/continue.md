@@ -48,4 +48,4 @@ DO NOT EDIT ex files directly!! We're working on a compiler so editing ex files 
 
 When debugging the phoenix app when it starts, you should start it in the background and use curl to check the html output. You should also pay attention to the shell output of phx.server. We shall not tolarate any warnings or errors there, either, they should all be tackled following the principles here.
 
-Execution mode: if the task is a good plan go work on it, unless it nees to be updated (instructions above), then update and go back to working on it. Let's do it and bring us closer to the goal!
+Execution mode: if the task is a good plan go work on it, unless it nees to be updated (instructions above), then update and go back to working on it. Let's do it and bring us closer to the goal! Let the user knwow. If you're ready to execute, then start check the right task on shrimp and start executing it.
