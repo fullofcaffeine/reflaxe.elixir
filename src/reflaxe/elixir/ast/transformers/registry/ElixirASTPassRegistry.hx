@@ -1377,6 +1377,26 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.VarNameNormalizationTransforms.varNameNormalizationPass
         });
 
+        // List helpers normalization (contains/member?, conditional removal, inline filter returns)
+        passes.push({
+            name: "ContainsToEnumMember",
+            description: "Rewrite arr.contains(v) to Enum.member?(arr, v)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.containsToEnumMemberPass
+        });
+        passes.push({
+            name: "MemberFilterRemovalFix",
+            description: "When cond uses Enum.member?(list, v), rewrite filter(list, fn x -> x != x end) to compare x != v",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.memberFilterRemovalFixPass
+        });
+        passes.push({
+            name: "FilterReturnInlineFix",
+            description: "Inline filter result into return when function otherwise returns original list",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
+        });
+
         // Fix list update/remove logic in structural map/filter shapes (generic, non app-specific)
         passes.push({
             name: "ListMapReplaceFix",
@@ -3027,6 +3047,14 @@ class ElixirASTPassRegistry {
             description: "Guarantee def-head and anon-fn binder/body agreement in Web/Live modules (pins-aware)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.WebParamFinalFixTransforms.transformPass
+        });
+
+        // Final LiveView message arg normalization for list helpers in {:tag, id} tuples
+        passes.push({
+            name: "HandleInfoTupleArgToSecondElem",
+            description: "In case msg of {:tag, v}, pass v instead of msg to *_from_list/*_in_list helpers",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
         });
 
         // Absolute final: fix list update/remove logic shapes (run after WebParamFinalFix)
