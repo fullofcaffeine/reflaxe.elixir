@@ -1060,6 +1060,7 @@ class MapAndCollectionTransforms {
                     var localEntryAlias: Null<String> = null;
                     var cleanedStmts: Array<ElixirAST> = [];
                     var presenceShape = false;
+                    var presenceUsesMetas = false; // guard to ensure we only treat true Presence entries
                     for (bs in bodyStmts) {
                         var drop = false;
                         switch (bs.def) {
@@ -1084,6 +1085,15 @@ class MapAndCollectionTransforms {
                                         }
                                     default:
                                 }
+                                // Detect typical Presence entry usage: <entry>.metas or <binder>.metas
+                                switch (right.def) {
+                                    case EAccess(arrX, _):
+                                        switch (arrX.def) {
+                                            case EField(_, fieldX) if (fieldX == "metas"): presenceUsesMetas = true;
+                                            default:
+                                        }
+                                    default:
+                                }
                             case EMatch(pat, right2):
                                 switch (right2.def) {
                                     case EAccess(tgt2, _):
@@ -1103,13 +1113,23 @@ class MapAndCollectionTransforms {
                                         }
                                     default:
                                 }
+                                // Detect <entry>.metas or binder.metas in pattern match contexts as well
+                                switch (right2.def) {
+                                    case EAccess(arrY, _):
+                                        switch (arrY.def) {
+                                            case EField(_, fieldY) if (fieldY == "metas"): presenceUsesMetas = true;
+                                            default:
+                                        }
+                                    default:
+                                }
                             default:
                         }
                         if (!drop) cleanedStmts.push(bs);
                     }
 
-                    // If presence-like shape detected, synthesize a presence-friendly reduce(Map.values(...))
-                    if (presenceShape) {
+                    // If presence-like shape detected AND presence metas are referenced,
+                    // synthesize a presence-friendly reduce(Map.values(...))
+                    if (presenceShape && presenceUsesMetas) {
                         var binderSafe = safeBinder(binder);
                         // Build meta expr and extract condition from branch that appends temp
                         var metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binderSafe)), "metas")), makeAST(EInteger(0))));
@@ -1293,8 +1313,10 @@ class MapAndCollectionTransforms {
                     if (localEntryAlias != null) reducerBody = replaceVarInExpr(reducerBody, localEntryAlias, binder);
 
                     var reducer = makeAST(EFn([{ args: [PVar(safeBinder(binder)), PVar("acc")], guard: clause.guard, body: reducerBody }]));
-                    // If presence shape detected, prefer Map.values(listExpr)
-                    var reduceInput = presenceShape ? makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [listExpr])) : listExpr;
+                    // If presence shape detected (with metas), prefer Map.values(listExpr)
+                    var reduceInput = (presenceShape && presenceUsesMetas)
+                        ? makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [listExpr]))
+                        : listExpr;
                     var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [reduceInput, makeAST(EList([])), reducer]));
 
                     // Emit new block: replace init with reduceCall; drop each and final temp
