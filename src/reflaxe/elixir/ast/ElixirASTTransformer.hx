@@ -1717,11 +1717,9 @@ class ElixirASTTransformer {
                     }
                     if (args != null) for (a in args) scanForEctoCalls(a, found);
                 case ERaw(code):
-                    // Detect remote macro usage in raw injections
+                    // Detect remote macro usage in raw injections only when explicitly remote
                     if (code != null && code.indexOf("Ecto.Query.") != -1) found.needs = true;
-                case EPin(_):
-                    // Any pin operator likely belongs to Ecto DSL context; require Ecto.Query
-                    found.needs = true;
+                // Remote-only gating: do NOT infer from pin operator alone
                 case ECall(target, _, args):
                     if (target != null) scanForEctoCalls(target, found);
                     if (args != null) for (a in args) scanForEctoCalls(a, found);

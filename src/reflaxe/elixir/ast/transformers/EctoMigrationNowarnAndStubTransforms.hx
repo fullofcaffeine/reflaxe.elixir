@@ -61,6 +61,8 @@ class EctoMigrationNowarnAndStubTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
+                    // Gate strictly to migration modules to avoid false positives
+                    if (!isMigrationModule(n.metadata, attrs, body)) return n;
                     #if debug_migration_nowarn
                     trace('[EctoMigrationNowarn] Inspect module ' + name);
                     #end
@@ -78,6 +80,7 @@ class EctoMigrationNowarnAndStubTransforms {
                     for (key in order) newBody.push(makeStub(key, needed.names.get(key)));
                     makeASTWithMeta(EModule(name, newAttrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name2, doBlock):
+                    if (!isMigrationDoBlock(doBlock)) return n;
                     #if debug_migration_nowarn
                     trace('[EctoMigrationNowarn] Inspect defmodule ' + name2);
                     #end
@@ -102,6 +105,40 @@ class EctoMigrationNowarnAndStubTransforms {
                     n;
             }
         });
+    }
+
+    static function isMigrationModule(meta: ElixirMetadata, attrs:Array<EAttribute>, body:Array<ElixirAST>): Bool {
+        // Prefer explicit metadata when available
+        if (meta != null && meta.ectoContext != null) switch (meta.ectoContext) { case Migration: return true; default: }
+        // Else detect via `use Ecto.Migration` in attributes/body
+        for (a in attrs) switch (a.value.def) {
+            case EVar(v) if (v == "Ecto.Migration"): return true;
+            case _: // attributes are usually module attributes, skip
+        }
+        for (b in body) switch (b.def) {
+            case EUse(mod, _): if (mod == "Ecto.Migration") return true;
+            default:
+        }
+        // Or presence of canonical migration callbacks
+        var hasUpDown = false;
+        for (b in body) switch (b.def) {
+            case EDef("up", _, _, _) | EDef("down", _, _, _): hasUpDown = true;
+            default:
+        }
+        return hasUpDown;
+    }
+
+    static function isMigrationDoBlock(doBlock: ElixirAST): Bool {
+        var stmts:Array<ElixirAST> = switch (doBlock.def) { case EBlock(ss): ss; case EDo(ss2): ss2; default: [doBlock]; };
+        for (s in stmts) switch (s.def) {
+            case EUse(mod, _): if (mod == "Ecto.Migration") return true;
+            default:
+        }
+        for (s in stmts) switch (s.def) {
+            case EDef("up", _, _, _) | EDef("down", _, _, _): return true;
+            default:
+        }
+        return false;
     }
 
     static function hasStandardHelpers(names: Map<String,Int>): Bool {
