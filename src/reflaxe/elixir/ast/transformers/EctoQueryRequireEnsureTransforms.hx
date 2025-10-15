@@ -37,7 +37,7 @@ class EctoQueryRequireEnsureTransforms {
                 case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
                 case EBlock(es): for (e in es) scan(e);
                 case EDo(es2): for (e in es2) scan(e);
-                case EPin(_): res.needs = true;
+                // Remote-only gating: do NOT infer from pin operator alone
                 case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
                 case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case EBinary(_, l, r): scan(l); scan(r);

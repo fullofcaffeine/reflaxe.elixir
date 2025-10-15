@@ -1199,8 +1199,8 @@ class ElixirASTPassRegistry {
         // Ensure `require Ecto.Query` before late rewrites that might depend on macro availability
         passes.push({
             name: "EctoQueryRequireEnsure",
-            description: "Ensure `require Ecto.Query` when Ecto.Query remote macros are present (pre-late)",
-            enabled: false,
+            description: "Ensure `require Ecto.Query` when Ecto.Query remote macros are present (pre-late; remote-only gating)",
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoQueryRequireEnsureTransforms.transformPass
         });
 
@@ -1222,7 +1222,7 @@ class ElixirASTPassRegistry {
         // Inline local require before first Ecto.Query macro usage within function bodies
         passes.push({
             name: "EctoLocalRequireInline",
-            description: "Insert `require Ecto.Query` before first from/where usage in function bodies",
+            description: "Insert `require Ecto.Query` before first from/where usage in function bodies (safety net)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.transformPass
         });
@@ -1375,6 +1375,20 @@ class ElixirASTPassRegistry {
             description: "Normalize camelCase references to snake_case when a binding exists",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.VarNameNormalizationTransforms.varNameNormalizationPass
+        });
+
+        // Fix list update/remove logic in structural map/filter shapes (generic, non app-specific)
+        passes.push({
+            name: "ListMapReplaceFix",
+            description: "Fix Enum.map replacement no-op where both branches return the mapping var (use other var from id equality)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.mapReplaceFixPass
+        });
+        passes.push({
+            name: "ListFilterRemoveFix",
+            description: "Fix Enum.filter self-compare v.id != v by replacing with enclosing id/_id parameter",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.filterRemoveFixPass
         });
         
         // Pattern exhaustiveness check pass
@@ -2064,10 +2078,11 @@ class ElixirASTPassRegistry {
         // helpers are being migrated to return ~H themselves.
         passes.push({
             name: "HeexRenderHelperCallWrap",
-            description: "Wrap <%= render_* %> calls inside ~H with Phoenix.HTML.raw(...)",
+            description: "Wrap <%= render_* %> calls inside ~H with Phoenix.HTML.raw(...) (transitional safety)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms.transformPass
         });
+
 
         // Phoenix-scoped hygiene: underscore unused def/defp parameters in Web/Live/Presence modules
         passes.push({
@@ -3006,14 +3021,20 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms.pass
         });
-        // (Removed) WebParamBinderAlign(AbsoluteFinal11) merged into WebParamFinalFix
-
         // Absolute-final safety net for Web/Live binder/param alignment and anon fn args
         passes.push({
             name: "WebParamFinalFix",
             description: "Guarantee def-head and anon-fn binder/body agreement in Web/Live modules (pins-aware)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.WebParamFinalFixTransforms.transformPass
+        });
+
+        // Absolute final: fix list update/remove logic shapes (run after WebParamFinalFix)
+        passes.push({
+            name: "ListUpdateAndFilterFix",
+            description: "Repair map-then-replace and filter-remove-by-id logic patterns (absolute final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.transformPass
         });
 
         // Absolute-final: promote underscored case binders when body references them (controller/result cases)

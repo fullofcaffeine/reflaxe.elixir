@@ -194,7 +194,7 @@ class ElixirASTPrinter {
                     var needs = false;
                     var has = false;
                     switch (block.def) {
-                        case EBlock(stmts):
+                        case EBlock(stmts) | EDo(stmts):
                             for (s in stmts) switch (s.def) {
                                 case ERequire(mod, _): if (mod == "Ecto.Query") has = true;
                                 default:
@@ -220,6 +220,11 @@ class ElixirASTPrinter {
                     return needs && !has;
                 }
                 // Printer de-semanticization: Ecto.Query require handled by transforms
+
+                // Inject `require Ecto.Query` when remote Ecto.Query macros are present in the body
+                if (needsEctoRequireInBlock(doBlockUnwrapped)) {
+                    moduleContent += indentStr(indent + 1) + 'require Ecto.Query\n';
+                }
 
                 // Special-case: if the do-block is a raw block (EBlock with single ERaw),
                 // print its contents directly without extra parentheses or indentation.
@@ -331,6 +336,40 @@ class ElixirASTPrinter {
                     }
                     // In Web modules, proactively require Ecto.Query for macro usage
                     // Printer de-semanticization: Ecto.Query require handled by transforms
+                    // Inject `require Ecto.Query` when remote Ecto.Query macros are present in the body
+                    var needsEcto = (function():Bool {
+                        // Local helper for EModule body
+                        inline function bodyHasEctoRemote(stmts:Array<ElixirAST>): Bool {
+                            var found = false;
+                            function scan(n: ElixirAST): Void {
+                                if (found || n == null || n.def == null) return;
+                                switch (n.def) {
+                                    case ERequire(mod, _): // ignore existing requires for detection
+                                    case ERemoteCall(mod, _, args):
+                                        switch (mod.def) { case EVar(m) if (m == 'Ecto.Query'): found = true; default: }
+                                        if (args != null) for (a in args) scan(a);
+                                    case ERaw(code): if (code != null && code.indexOf('Ecto.Query.') != -1) found = true;
+                                    case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                                    case EBlock(es): for (e in es) scan(e);
+                                    case EDo(es2): for (e in es2) scan(e);
+                                    case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                                    case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
+                                    case EBinary(_, l, r): scan(l); scan(r);
+                                    case EFn(cs): for (cl in cs) scan(cl.body);
+                                    case EDef(_,_,_,b): scan(b);
+                                    case EDefp(_,_,_,b2): scan(b2);
+                                    default:
+                                }
+                            }
+                            for (s in stmts) scan(s);
+                            return found;
+                        }
+                        return bodyHasEctoRemote(body);
+                    })();
+                    if (needsEcto) {
+                        result += indentStr(indent + 1) + 'require Ecto.Query\n';
+                    }
+
                     // Print body
                     for (expr in body) {
                         // Unwrap raw EBlock([ERaw(...)]) bodies to avoid stray parentheses and double indentation
