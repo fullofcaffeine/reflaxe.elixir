@@ -112,7 +112,7 @@ class QueryBinderSynthesisLateTransforms {
                 case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
                     switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): if (bodyUsesQuery(clauses[0].body)) needsSynth = true; default: }
                 case ECall(_, "filter", args2) if (args2 != null && args2.length == 2):
-                    switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): if (bodyUsesQuery(clauses2[0].body)) needsSynth = true; default: }
+                    switch (args2[1].def) { case EFn(clauses) if (clauses.length == 1): if (bodyUsesQuery(clauses[0].body)) needsSynth = true; default: }
                 case EMatch(_, rhs):
                     switch (rhs.def) {
                         case ERemoteCall({def: EVar(m3)}, "filter", a3) if (m3 == "Enum" && a3 != null && a3.length == 2):

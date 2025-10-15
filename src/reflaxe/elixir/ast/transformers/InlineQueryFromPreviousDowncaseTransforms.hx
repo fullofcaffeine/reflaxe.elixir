@@ -95,8 +95,8 @@ class InlineQueryFromPreviousDowncaseTransforms {
                             }
                         case ECall(target, "filter", args2) if (args2.length == 2):
                             switch (args2[1].def) {
-                                case EFn(clauses2) if (clauses2.length == 1):
-                                    var cl2 = clauses2[0];
+                                case EFn(clauses) if (clauses.length == 1):
+                                    var cl2 = clauses[0];
                                     var nb = inlineQuery(cl2.body, rhs);
                                     var newFn2 = makeAST(EFn([{ args: cl2.args, guard: cl2.guard, body: nb }]));
                                     var newDef2 = ECall(target, "filter", [args2[0], newFn2]);

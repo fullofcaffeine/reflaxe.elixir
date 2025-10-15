@@ -21,8 +21,15 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *      pass `v` instead of `msg` for list helper calls (remove_*_from_list / update_*_in_list).
  *
  * WHY
- * - These patterns are target-idiomatic and arise from neutral lowering; the fixes make the behavior
- *   correct without app-specific names.
+ * - These are structural bugs that emerge from neutral lowering and later hygiene/rename passes
+ *   (not domain-specific logic). Fixing them at the AST-transform layer is the correct, scalable
+ *   place because:
+ *   - The shapes are generic (Enum.map/filter + simple equality/inequality) and independent of app names.
+ *   - The intended semantics are target-idiomatic Elixir (replace-on-id, remove-by-id, remove-by-value),
+ *     so the transform enforces idiomatic output without inventing APIs.
+ *   - Fixing at the AST level prevents post-processing hacks and avoids widening types to Dynamic.
+ *   - Snapshot coverage can assert the exact Elixir shapes, keeping behavior deterministic.
+ *
  */
 class ListHelpersFixTransforms {
     // 1) arr.contains(v) -> Enum.member?(arr, v)
@@ -58,9 +65,25 @@ class ListHelpersFixTransforms {
                                         var cl = clauses[0];
                                         var binder: Null<String> = switch (cl.args.length == 1 ? cl.args[0] : null) { case PVar(nm): nm; default: null; };
                                         if (binder == null) return x;
-                                        switch (cl.body.def) {
+                                        // unwrap one or two levels to reach the predicate expression
+                                        var bodyExpr = (function recur(e: ElixirAST): ElixirAST {
+                                            return switch (e.def) {
+                                                case EParen(inner): recur(inner);
+                                                case EDo(body) if (body != null && body.length == 1): recur(body[0]);
+                                                case EBlock(exprs) if (exprs != null && exprs.length == 1): recur(exprs[0]);
+                                                default: e;
+                                            }
+                                        })(cl.body);
+                                        switch (bodyExpr.def) {
                                             case EBinary(NotEqual | StrictNotEqual, l3, r3):
-                                                inline function isBinder(e: ElixirAST): Bool return switch (e.def) { case EVar(nm) if (nm == binder): true; default: false; };
+                                                function isBinder(e: ElixirAST): Bool {
+                                                    return switch (e.def) {
+                                                        case EVar(nm) if (nm == binder): true;
+                                                        case EParen(inner): isBinder(inner);
+                                                        case EDo(body) if (body != null && body.length == 1): isBinder(body[0]);
+                                                        default: false;
+                                                    };
+                                                }
                                                 if (isBinder(l3) && isBinder(r3)) {
                                                     var newBody = makeAST(EBinary(NotEqual, l3, valExpr));
                                                     var newFn = makeAST(EFn([{ args: cl.args, guard: cl.guard, body: newBody }]));
@@ -92,26 +115,36 @@ class ListHelpersFixTransforms {
                             var last = stmts[stmts.length - 1];
                             var retVar: Null<String> = switch (last.def) { case EVar(v): v; default: null; };
                             if (retVar == null) return n;
-                            // Look for trailing if that computes filter on same retVar but discards result
-                            for (i in 0...stmts.length - 1) {
-                                switch (stmts[i].def) {
-                                    case EIf(cond, thenB, els):
-                                        // Collect the first Enum.filter on the return var inside the then block
-                                        var filterExpr: ElixirAST = null;
-                                        ElixirASTTransformer.transformNode(thenB, function(z: ElixirAST): ElixirAST {
-                                            switch (z.def) {
-                                                case ERemoteCall({def: EVar("Enum")}, "filter", [lX, _]) if (switch (lX.def) { case EVar(vx) if (vx == retVar): true; default: false; }):
-                                                    if (filterExpr == null) filterExpr = z;
+                    // Look for trailing if that computes filter on same retVar but discards result
+                    for (i in 0...stmts.length - 1) {
+                        switch (stmts[i].def) {
+                            case EIf(cond, thenB, els):
+                                // Collect the first Enum.filter on the return var inside the then block
+                                var filterExpr: ElixirAST = null;
+                                ElixirASTTransformer.transformNode(thenB, function(z: ElixirAST): ElixirAST {
+                                    switch (z.def) {
+                                        case ERemoteCall({def: EVar("Enum")}, "filter", [lX, _]) if (switch (lX.def) { case EVar(vx) if (vx == retVar): true; default: false; }):
+                                            if (filterExpr == null) filterExpr = z;
+                                            return z;
+                                        case EMatch(_, rhs):
+                                            // Match `_ = Enum.filter(retVar, ...)` (ignore LHS shape)
+                                            switch (rhs.def) {
+                                                case ERemoteCall({def: EVar("Enum")}, "filter", [lY, _]) if (switch (lY.def) { case EVar(vy) if (vy == retVar): true; default: false; }):
+                                                    if (filterExpr == null) filterExpr = rhs;
                                                     return z;
-                                                default: return z;
+                                                default:
+                                                    return z;
                                             }
-                                        });
-                                        if (filterExpr == null) continue;
-                                        // Replace the last return with inline if
-                                        var out:Array<ElixirAST> = [];
-                                        for (j in 0...stmts.length - 1) if (j != i) out.push(stmts[j]);
-                                        out.push(makeAST(EIf(cond, filterExpr, makeAST(EVar(retVar)))));
-                                        newBody = makeAST(EBlock(out));
+                                        default:
+                                            return z;
+                                    }
+                                });
+                                if (filterExpr == null) continue;
+                                // Replace the last return with inline if
+                                var out:Array<ElixirAST> = [];
+                                for (j in 0...stmts.length - 1) if (j != i) out.push(stmts[j]);
+                                out.push(makeAST(EIf(cond, filterExpr, makeAST(EVar(retVar)))));
+                                newBody = makeAST(EBlock(out));
                                     default:
                                 }
                             }

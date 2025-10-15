@@ -218,6 +218,60 @@ If you find `${@field}` patterns in the codebase:
 2. **For text content**: Change `${@field}` → `<%= @field %>`
 3. **For complex expressions**: Use Phoenix conditional syntax
 
+## 🧰 Build & Run (Mix Integration)
+
+We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→JS) via the Phoenix assets pipeline and watchers.
+
+- Server compiler: `Mix.Tasks.Compile.Haxe` (lib/mix/tasks/compile.haxe.ex)
+  - Enabled in mix.exs: `compilers: [:haxe] ++ Mix.compilers()`
+  - Uses `build.hxml` to generate idiomatic Elixir under `lib/`
+
+- Client compilation: handled by assets watchers/aliases
+  - Dev: `haxe_client` watcher runs `haxe build-client.hxml --wait` and esbuild bundles `assets/js/phoenix_app.js` (see config/dev.exs)
+  - Build: `mix assets.build` (Haxe client + tailwind + esbuild)
+  - Deploy: `mix assets.deploy` (Haxe client + tailwind + esbuild + digest)
+
+Quick commands
+- One‑liner with watchers (recommended): `mix dev`  
+  (alias for `mix setup && mix phx.server` — compiles client+server and starts Phoenix with all watchers)
+- Manual one‑off build: `mix assets.build && mix compile`
+- Start server only (watchers also run): `mix phx.server`
+
+CI suggestions
+- `mix compile --force && mix assets.build`
+
+## 🔌 Phoenix JS Bootstrap (phoenix_app.js)
+
+We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry and generate client logic (Hooks, utils, shared DTOs) from Haxe.
+
+- File: `assets/js/phoenix_app.js` (bundled to `priv/static/assets/phoenix_app.js` via esbuild)
+- Responsibilities:
+  - Import `phoenix_html`, `phoenix`, `phoenix_live_view`.
+  - Read CSRF meta token and pass it to `LiveSocket`.
+  - Pull Hooks from `window.Hooks` (populated by the Haxe bundle) and connect.
+  - Expose `window.liveSocket` for debugging.
+- Haxe integration:
+  - Haxe client compiles to `assets/js/app.js` and publishes `window.Hooks`.
+  - `phoenix_app.js` imports `./app.js` to register Hooks.
+- Rationale (1.0 scope):
+  - Matches Phoenix’s idiomatic setup and minimizes friction on upgrades.
+  - Keeps the bootstrap minimal while concentrating typed logic in Haxe.
+  - Avoids re‑implementing client library externs for a file that has no meaningful state.
+
+Watchers
+- Dev watcher uses npm to run the Haxe client watcher when available:
+  - `npm --prefix assets run watch:haxe` (internally: `haxe build-client.hxml --wait 6001`)
+- Configured in `config/dev.exs`; omitted automatically if `npm` is not on PATH.
+
+CSRF meta
+- The layout emits a standard Plug CSRF meta tag; LiveSocket consumes it:
+  - `<meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>`
+
+Constraints (project-wide)
+- No `-D analyzer-optimize` in any HXML; it destroys functional patterns for Elixir and JS
+- No Dynamic on public surfaces; JS hooks are typed (`typedef Hooks`) and use js interop only at the boundary
+- Phoenix idioms: LiveSocket bootstrap in `assets/js/phoenix_app.js` with `hooks` param and CSRF meta
+
 #### Before (Broken):
 ```haxe
 return HXX.hxx('<button type="${@type || "button"}" class="${@className}" ${@disabled ? "disabled" : ""}>

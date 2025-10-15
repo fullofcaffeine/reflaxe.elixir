@@ -29,10 +29,12 @@ class Layouts {
                     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                     <title>Todo App</title>
+                    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>
                     
                     <!-- Static assets (served by Phoenix Endpoint) -->
                     <link phx-track-static rel="stylesheet" href="/assets/app.css"/>
-                    <script defer phx-track-static type="text/javascript" src="/assets/app.js"></script>
+                    <!-- Bundle that bootstraps LiveSocket and loads Haxe hooks -->
+                    <script defer phx-track-static type="text/javascript" src="/assets/phoenix_app.js"></script>
                 </head>
                 <body class="h-full bg-gray-50 dark:bg-gray-900 font-inter antialiased">
                     <main id="main-content" class="h-full">
