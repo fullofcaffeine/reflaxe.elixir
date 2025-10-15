@@ -1,1 +1,1 @@
-Let's take a step back and replan based on what we did so far. It seems we need to refocus a bit and also take care of runtime errors in the app. Let's follow the instructions in .claude/commands/replan-master.md then .claude/commands/continue.md.
+Let's take a step back and replan based on what we did so far. It seems we need to refocus a bit and also take care of the latest issues. Let's follow the instructions in .claude/commands/replan-master.md then .claude/commands/continue.md.

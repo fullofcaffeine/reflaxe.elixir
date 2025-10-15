@@ -69,7 +69,22 @@ typedef ChildSpec = {
 
 /**
  * Child restart strategy
+ *
+ * WHAT
+ * - Marked with @:elixirIdiomatic to compile variants to OTP atoms
+ *   (:permanent, :temporary, :transient).
+ *
+ * WHY
+ * - Supervisor specs and options expect atoms for restart strategies.
+ *   Numeric tuple tags are non-idiomatic and break pattern matching.
+ *
+ * HOW
+ * - @:elixirIdiomatic triggers atom tag emission during enum generation.
+ *
+ * EXAMPLES
+ * Haxe: RestartType.Permanent → Elixir: {:permanent}
  */
+@:elixirIdiomatic
 enum RestartType {
     Permanent;    // Always restart
     Temporary;    // Never restart
@@ -78,7 +93,19 @@ enum RestartType {
 
 /**
  * Child shutdown strategy
+ *
+ * WHAT
+ * - Marked with @:elixirIdiomatic so constructors compile to
+ *   {:brutal}, {:timeout, ms}, {:infinity} as OTP expects.
+ *
+ * WHY
+ * - Supervisor shutdown semantics are conveyed via atoms/tuples. Numeric tags
+ *   reduce readability and hinder matching in downstream code.
+ *
+ * HOW
+ * - Atom tag emission activated by @:elixirIdiomatic.
  */
+@:elixirIdiomatic
 enum ShutdownType {
     Brutal;       // Kill immediately
     Timeout(ms: Int);  // Wait up to N milliseconds
@@ -87,7 +114,17 @@ enum ShutdownType {
 
 /**
  * Child type
+ *
+ * WHAT
+ * - Marked with @:elixirIdiomatic so types compile to {:worker} / {:supervisor}.
+ *
+ * WHY
+ * - Aligns with OTP child spec conventions and improves pattern readability.
+ *
+ * HOW
+ * - Atom tag emission via @:elixirIdiomatic.
  */
+@:elixirIdiomatic
 enum ChildType {
     Worker;
     Supervisor;
