@@ -492,19 +492,16 @@ class Async {
         var promiseType = Context.typeof(promise);
         var unwrappedType = extractPromiseType(promiseType, promise.pos);
         
-        // Generate native JavaScript await expression with type hint
-        var awaitExpr = macro @:pos(promise.pos) {
-            js.Syntax.code("await {0}", $promise);
-        };
-        
-        // Add type annotation for better type checking
-        if (unwrappedType != null) {
-            awaitExpr = macro @:pos(promise.pos) {
-                (js.Syntax.code("await {0}", $promise) : $unwrappedType);
-            };
+        // Generate native JavaScript await expression with proper typing.
+        // If unwrappedType is known and not Dynamic, cast to it; otherwise cast to Void
+        return switch (unwrappedType) {
+            case null:
+                macro @:pos(promise.pos) { (js.Syntax.code("await {0}", $promise) : Void); };
+            case TDynamic(_):
+                macro @:pos(promise.pos) { (js.Syntax.code("await {0}", $promise) : Void); };
+            case t:
+                macro @:pos(promise.pos) { (js.Syntax.code("await {0}", $promise) : $t); };
         }
-        
-        return awaitExpr;
         #else
         return null;
         #end
