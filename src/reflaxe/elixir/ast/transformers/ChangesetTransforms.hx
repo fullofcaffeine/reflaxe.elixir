@@ -154,29 +154,29 @@ class ChangesetTransforms {
                     }
                     scanDefBlock(doBlock);
                     if (!usesChangeset2) node else {
-                        var declared2 = new Map<String,Bool>();
+                        var declaredVars = new Map<String,Bool>();
                         reflaxe.elixir.ast.ASTUtils.walk(doBlock, function(n) {
                             switch (n.def) {
-                                case EMatch(PVar(v), _): declared2.set(v, true);
+                                case EMatch(PVar(v), _): declaredVars.set(v, true);
                                 case EBinary(Match, left, _):
-                                    function collect2(lhs: ElixirAST) {
+                                    function collectVarsFromLhs(lhs: ElixirAST) {
                                         switch (lhs.def) {
-                                            case EVar(v): declared2.set(v, true);
-                                            case EBinary(Match, l2, r2): collect2(l2); collect2(r2);
+                                            case EVar(v): declaredVars.set(v, true);
+                                            case EBinary(Match, l2, r2): collectVarsFromLhs(l2); collectVarsFromLhs(r2);
                                             default:
                                         }
                                     }
-                                    collect2(left);
+                                    collectVarsFromLhs(left);
                                 default:
                             }
                         });
-                        var binder2 = if (declared2.exists("cs")) "cs" else if (declared2.exists("_this2")) "_this2" else if (declared2.exists("_this1")) "_this1" else if (declared2.exists("this2")) "this2" else if (declared2.exists("this1")) "this1" else "cs";
-                        function tx2(n: ElixirAST): ElixirAST {
+                        var changesetBinder = if (declaredVars.exists("cs")) "cs" else if (declaredVars.exists("_this2")) "_this2" else if (declaredVars.exists("_this1")) "_this1" else if (declaredVars.exists("this2")) "this2" else if (declaredVars.exists("this1")) "this1" else "cs";
+                        function rewriteThisRefsToChangesetBinder(n: ElixirAST): ElixirAST {
                             return switch (n.def) {
                                 case EVar(v) if (isThisLike(v)):
-                                    makeASTWithMeta(EVar(binder2), n.metadata, n.pos);
-                                case EVar(v) if (v == "cs" && binder2 != "cs"):
-                                    makeASTWithMeta(EVar(binder2), n.metadata, n.pos);
+                                    makeASTWithMeta(EVar(changesetBinder), n.metadata, n.pos);
+                                case EVar(v) if (v == "cs" && changesetBinder != "cs"):
+                                    makeASTWithMeta(EVar(changesetBinder), n.metadata, n.pos);
                                 case EDef(name, params, guards, body):
                                     var newB = normalizeBody(body);
                                     makeASTWithMeta(EDef(name, params, guards, newB), n.metadata, n.pos);
@@ -187,7 +187,7 @@ class ChangesetTransforms {
                                     n;
                             }
                         }
-                        var newDo = ElixirASTTransformer.transformNode(doBlock, tx2);
+                        var newDo = ElixirASTTransformer.transformNode(doBlock, rewriteThisRefsToChangesetBinder);
                         makeASTWithMeta(EDefmodule(modName, newDo), node.metadata, node.pos);
                     }
 
@@ -688,7 +688,7 @@ class ChangesetTransforms {
                     // Rebuild call and normalize opts.* access inside keyword list (third arg)
                     var rebuilt = makeAST(ERemoteCall(mod, fn, a));
                     // Local normalizer for opts.* access
-                    function rewriteOptsAccessLocal3(n: ElixirAST): ElixirAST {
+                    function rewriteOptsAccessInKeyword(n: ElixirAST): ElixirAST {
                         return switch (n.def) {
                             case EAccess({def: EVar(v)}, key) if (v == "opts"):
                                 var keyAtom = switch (key.def) { case EAtom(a): a; default: null; };
@@ -700,7 +700,7 @@ class ChangesetTransforms {
                             default: n;
                         }
                     }
-                    newBody = ElixirASTTransformer.transformNode(rebuilt, rewriteOptsAccessLocal3);
+                    newBody = ElixirASTTransformer.transformNode(rebuilt, rewriteOptsAccessInKeyword);
                 default:
             }
             // Re-normalize conditions to Map.get/Kernel.is_nil to guarantee correctness
@@ -718,7 +718,7 @@ class ChangesetTransforms {
                         default: n;
                     }
                 }
-                function rewriteNilComparisonsLocal2(n: ElixirAST): ElixirAST {
+                function rewriteNilComparisonForOpts(n: ElixirAST): ElixirAST {
                     inline function isOptsField(e: ElixirAST): Null<String> {
                         return switch (e.def) {
                             case EField({def: EVar(v)}, fld) if (v == "opts"): fld;
@@ -756,7 +756,7 @@ class ChangesetTransforms {
                     }
                 }
                 var stepA = ElixirASTTransformer.transformNode(condIn, rewriteOptsAccessLocal);
-                var stepB = ElixirASTTransformer.transformNode(stepA, rewriteNilComparisonsLocal2);
+                var stepB = ElixirASTTransformer.transformNode(stepA, rewriteNilComparisonForOpts);
                 return stepB;
             })(c.condition);
             out.push({condition: normalizedCond, body: newBody});

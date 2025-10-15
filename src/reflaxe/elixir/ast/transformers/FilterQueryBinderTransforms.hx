@@ -133,15 +133,15 @@ class FilterQueryBinderTransforms {
                     makeASTWithMeta(EBlock(out), node.metadata, node.pos);
                 case EDo(stmts2) if (stmts2.length > 0):
                     var out2:Array<ElixirAST> = [];
-                    var seenQueryBind2 = false;
-                    function stmtDefinesQuery2(s: ElixirAST): Bool {
+                    var seenQueryBinding = false;
+                    function stmtDefinesQueryBinding(s: ElixirAST): Bool {
                         return switch (s.def) {
                             case EBinary(Match, l, _): switch (l.def) { case EVar(nm) if (nm == "query"): true; default: false; }
                             case EMatch(pat, _): switch (pat) { case PVar(n) if (n == "query"): true; default: false; }
                             default: false;
                         };
                     }
-                    function bodyUsesQuery2(e: ElixirAST): Bool {
+                    function predicateBodyUsesQuery(e: ElixirAST): Bool {
                         var found = false;
                         ElixirASTTransformer.transformNode(e, function(x: ElixirAST): ElixirAST {
                             if (found) return x;
@@ -166,26 +166,26 @@ class FilterQueryBinderTransforms {
                     }
                     for (i in 0...stmts2.length) {
                         var s = stmts2[i];
-                        if (!seenQueryBind2 && stmtDefinesQuery2(s)) seenQueryBind2 = true;
-                        var needsRewrite2 = false;
-                        var predRef2: Null<{ cl: { args:Array<EPattern>, guard:ElixirAST, body:ElixirAST }, idx:Int, isRemote:Bool } > = null;
+                        if (!seenQueryBinding && stmtDefinesQueryBinding(s)) seenQueryBinding = true;
+                        var needsPredicateRewrite = false;
+                        var predicateRef: Null<{ cl: { args:Array<EPattern>, guard:ElixirAST, body:ElixirAST }, idx:Int, isRemote:Bool } > = null;
                         switch (s.def) {
                             case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
-                                switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): if (bodyUsesQuery2(clauses[0].body)) { needsRewrite2 = true; predRef2 = { cl: clauses[0], idx: i, isRemote: true }; } default: }
+                                switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): if (predicateBodyUsesQuery(clauses[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses[0], idx: i, isRemote: true }; } default: }
                             case ECall(_, "filter", args2) if (args2 != null && args2.length == 2):
-                                switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): if (bodyUsesQuery2(clauses2[0].body)) { needsRewrite2 = true; predRef2 = { cl: clauses2[0], idx: i, isRemote: false }; } default: }
+                                switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): if (predicateBodyUsesQuery(clauses2[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses2[0], idx: i, isRemote: false }; } default: }
                             case EMatch(lhsPat3, rhsExpr3):
                                 switch (rhsExpr3.def) {
                                     case ERemoteCall({def: EVar(m5)}, "filter", a6) if (m5 == "Enum" && a6.length == 2):
-                                        switch (a6[1].def) { case EFn(clauses5) if (clauses5.length == 1): if (bodyUsesQuery2(clauses5[0].body)) { needsRewrite2 = true; predRef2 = { cl: clauses5[0], idx: i, isRemote: true }; } default: }
+                                        switch (a6[1].def) { case EFn(clauses5) if (clauses5.length == 1): if (predicateBodyUsesQuery(clauses5[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses5[0], idx: i, isRemote: true }; } default: }
                                     case ECall(_, "filter", a7) if (a7.length == 2):
-                                        switch (a7[1].def) { case EFn(clauses6) if (clauses6.length == 1): if (bodyUsesQuery2(clauses6[0].body)) { needsRewrite2 = true; predRef2 = { cl: clauses6[0], idx: i, isRemote: false }; } default: }
+                                        switch (a7[1].def) { case EFn(clauses6) if (clauses6.length == 1): if (predicateBodyUsesQuery(clauses6[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses6[0], idx: i, isRemote: false }; } default: }
                                     default:
                                 }
                             default:
                         }
-                        if (needsRewrite2 && !seenQueryBind2 && predRef2 != null) {
-                            var cl2 = predRef2.cl;
+                        if (needsPredicateRewrite && !seenQueryBinding && predicateRef != null) {
+                            var cl2 = predicateRef.cl;
                             var newBody2 = ElixirASTTransformer.transformNode(cl2.body, function(xx: ElixirAST): ElixirAST {
                                 return switch (xx.def) {
                                     case EVar(nm) if (nm == "query"): makeAST(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar("search_query"))]));
@@ -193,16 +193,16 @@ class FilterQueryBinderTransforms {
                                 }
                             });
                             switch (s.def) {
-                                case ERemoteCall(mod2, "filter", args3) if (predRef2.isRemote):
+                                case ERemoteCall(mod2, "filter", args3) if (predicateRef.isRemote):
                                     out2.push(makeAST(ERemoteCall(mod2, "filter", [args3[0], makeAST(EFn([{ args: cl2.args, guard: cl2.guard, body: newBody2 }]))])));
-                                case ECall(target2, "filter", args4) if (!predRef2.isRemote):
+                                case ECall(target2, "filter", args4) if (!predicateRef.isRemote):
                                     out2.push(makeAST(ECall(target2, "filter", [args4[0], makeAST(EFn([{ args: cl2.args, guard: cl2.guard, body: newBody2 }]))])));
                                 case EMatch(lhsPat4, rhsExpr4):
                                     switch (rhsExpr4.def) {
-                                        case ERemoteCall(mod6, "filter", a8) if (predRef2.isRemote):
+                                        case ERemoteCall(mod6, "filter", a8) if (predicateRef.isRemote):
                                             var repl3 = makeAST(ERemoteCall(mod6, "filter", [a8[0], makeAST(EFn([{ args: cl2.args, guard: cl2.guard, body: newBody2 }]))]));
                                             out2.push(makeAST(EMatch(lhsPat4, repl3)));
-                                        case ECall(target5, "filter", a9) if (!predRef2.isRemote):
+                                        case ECall(target5, "filter", a9) if (!predicateRef.isRemote):
                                             var repl4 = makeAST(ECall(target5, "filter", [a9[0], makeAST(EFn([{ args: cl2.args, guard: cl2.guard, body: newBody2 }]))]));
                                             out2.push(makeAST(EMatch(lhsPat4, repl4)));
                                         default:

@@ -1651,7 +1651,7 @@ class ElixirASTPrinter {
                 '(' + print(expr, 0) + ')';
                 
             case EDo(body):
-                inline function isBareNumericSentinel2(e: ElixirAST): Bool {
+                inline function isBareNumericSentinelInDo(e: ElixirAST): Bool {
                     return switch (e.def) {
                         case EInteger(v) if (v == 0 || v == 1): true;
                         case EFloat(f) if (f == 0.0): true;
@@ -1659,7 +1659,7 @@ class ElixirASTPrinter {
                         default: false;
                     }
                 }
-                var bodyStmts = [for (e in body) if (!isBareNumericSentinel2(e)) e];
+                var bodyStmts = [for (e in body) if (!isBareNumericSentinelInDo(e)) e];
                 'do\n' +
                 [for (expr in bodyStmts)
                     indentStr(indent + 1) + print(expr, indent + 1)

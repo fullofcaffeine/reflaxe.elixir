@@ -83,11 +83,11 @@ class WebParamFinalFixTransforms {
                     var newBody2 = renameBody(body2, rename2);
                     #if debug_web_binder
                     if (Lambda.count(rename2) > 0) {
-                        inline function patList2(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        trace('[WebParamFinalFix] defp ' + fname2 + '(' + patList2(args2) + ') -> (' + patList2(newArgs2) + ')');
+                        inline function patListArgs(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
+                        trace('[WebParamFinalFix] defp ' + fname2 + '(' + patListArgs(args2) + ') -> (' + patListArgs(newArgs2) + ')');
                     } else {
-                        inline function patList3(cs3:Array<EPattern>):String return [for (p in cs3) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        trace('[WebParamFinalFix] defp ' + fname2 + ' (no rename) args=(' + patList3(args2) + ')');
+                        inline function patListArgsDbg(cs3:Array<EPattern>):String return [for (p in cs3) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
+                        trace('[WebParamFinalFix] defp ' + fname2 + ' (no rename) args=(' + patListArgsDbg(args2) + ')');
                     }
                     #end
                     makeASTWithMeta(EDefp(fname2, newArgs2, guards2, newBody2), x.metadata, x.pos);

@@ -41,7 +41,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   String.to_integer conversion) into the helper call preserving order.
  */
 class LiveEventCaseToCallbacksTransforms {
-    static inline function isHandleEvent2(name:String, args:Array<EPattern>):Bool {
+    static inline function isHandleEventArityTwo(name:String, args:Array<EPattern>):Bool {
         return name == "handle_event" && args != null && args.length == 2;
     }
 
@@ -140,9 +140,9 @@ class LiveEventCaseToCallbacksTransforms {
                     var replacedAny = false;
                     for (stmt in body) {
                         switch (stmt.def) {
-                            case EDef(fname, args, _, _ ) if (isHandleEvent2(fname, args)):
+                            case EDef(fname, args, _, _ ) if (isHandleEventArityTwo(fname, args)):
                                 // try to parse case dispatch
-                                var callbacks:Array<{event:String, def:ElixirAST}> = parseHandleEventArity2CaseDispatch(stmt, n.metadata, n.pos);
+                                var callbacks:Array<{event:String, def:ElixirAST}> = parseHandleEventArityTwoCaseDispatch(stmt, n.metadata, n.pos);
                                 if (callbacks != null && callbacks.length > 0) {
                                     for (c in callbacks) {
                                         if (!existing.exists(c.event)) {
@@ -226,7 +226,7 @@ class LiveEventCaseToCallbacksTransforms {
      * Naming: "Arity2" to denote we specifically parse the two-argument form
      * (event, socket) to synthesize the proper arity-3 callbacks.
      */
-    static function parseHandleEventArity2CaseDispatch(defNode:ElixirAST, meta:ElixirMetadata, pos:haxe.macro.Expr.Position):Array<{event:String, def:ElixirAST}> {
+    static function parseHandleEventArityTwoCaseDispatch(defNode:ElixirAST, meta:ElixirMetadata, pos:haxe.macro.Expr.Position):Array<{event:String, def:ElixirAST}> {
         // Expect body: result_socket = case event do ... end ; {:noreply, result_socket}
         switch (defNode.def) {
             case EDef(_, args, _, body) if (args.length == 2):
