@@ -16,7 +16,8 @@ defmodule TodoApp.MixProject do
         hxml_file: "build.hxml",
         source_dir: "src_haxe",
         target_dir: "lib",
-        watch: false,  # Disable watcher to avoid process conflicts
+        # Keep watcher disabled here; we start a watcher via Endpoint watchers (dev.exs)
+        watch: false,
         verbose: false
       ]
     ]
@@ -55,7 +56,7 @@ defmodule TodoApp.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:file_system, "~> 0.2", only: [:dev, :test]}
+      {:file_system, "~> 1.1", only: [:dev, :test]}
     ]
   end
 

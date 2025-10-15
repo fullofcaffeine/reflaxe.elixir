@@ -91,7 +91,7 @@ class PromoteQueryFromWildcardTransforms {
                     case ERemoteCall({def: EVar(m2)}, "filter", args) if (m2 == "Enum" && args.length == 2):
                         switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): bodyUsesQuery(clauses[0].body); default: false; }
                     case ECall(_, "filter", args2) if (args2.length == 2):
-                        switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): bodyUsesQuery(clauses2[0].body); default: false; }
+                        switch (args2[1].def) { case EFn(clauses) if (clauses.length == 1): bodyUsesQuery(clauses[0].body); default: false; }
                     case EMatch(_, rhsNext):
                         switch (rhsNext.def) {
                             case ERemoteCall({def: EVar(m3)}, "filter", a3) if (m3 == "Enum" && a3.length == 2):

@@ -76,8 +76,10 @@ class WebDefHeadPromotionTransforms {
         if (args != null) for (a in args) switch (a) {
             case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
                 var base = n.substr(1);
-                var used = VariableUsageCollector.usedInFunctionScope(body, base) || pinUsesName(body, base) || erawUsesName(body, base) || containsVarName(body, base);
-                if (!have.exists(base) && used) rename.set(n, base);
+                var baseUsed = VariableUsageCollector.usedInFunctionScope(body, base) || pinUsesName(body, base) || erawUsesName(body, base) || containsVarName(body, base);
+                // Also allow promotion when the underscored name itself is used, to silence warnings
+                var underscoredUsed = containsVarName(body, n);
+                if (!have.exists(base) && (baseUsed || underscoredUsed)) rename.set(n, base);
             default:
         }
         return rename;

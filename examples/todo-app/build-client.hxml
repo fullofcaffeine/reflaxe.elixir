@@ -22,4 +22,4 @@
 --macro exclude('server')
 
 # Main client entry point - minimal boot for Phoenix hooks
-client.Boot
+-main client.Boot

@@ -86,7 +86,7 @@ class FilterQueryBinderTransforms {
                             case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
                                 switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): if (bodyUsesQuery(clauses[0].body)) { needsRewrite = true; predRef = { cl: clauses[0], idx: i, isRemote: true }; } default: }
                             case ECall(_, "filter", args2) if (args2 != null && args2.length == 2):
-                                switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): if (bodyUsesQuery(clauses2[0].body)) { needsRewrite = true; predRef = { cl: clauses2[0], idx: i, isRemote: false }; } default: }
+                                switch (args2[1].def) { case EFn(clauses) if (clauses.length == 1): if (bodyUsesQuery(clauses[0].body)) { needsRewrite = true; predRef = { cl: clauses[0], idx: i, isRemote: false }; } default: }
                             case EMatch(lhsPat, rhsExpr):
                                 switch (rhsExpr.def) {
                                     case ERemoteCall({def: EVar(m3)}, "filter", args3) if (m3 == "Enum" && args3.length == 2):
@@ -173,7 +173,7 @@ class FilterQueryBinderTransforms {
                             case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
                                 switch (args[1].def) { case EFn(clauses) if (clauses.length == 1): if (predicateBodyUsesQuery(clauses[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses[0], idx: i, isRemote: true }; } default: }
                             case ECall(_, "filter", args2) if (args2 != null && args2.length == 2):
-                                switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): if (predicateBodyUsesQuery(clauses2[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses2[0], idx: i, isRemote: false }; } default: }
+                                switch (args2[1].def) { case EFn(clauses) if (clauses.length == 1): if (predicateBodyUsesQuery(clauses[0].body)) { needsPredicateRewrite = true; predicateRef = { cl: clauses[0], idx: i, isRemote: false }; } default: }
                             case EMatch(lhsPat3, rhsExpr3):
                                 switch (rhsExpr3.def) {
                                     case ERemoteCall({def: EVar(m5)}, "filter", a6) if (m5 == "Enum" && a6.length == 2):

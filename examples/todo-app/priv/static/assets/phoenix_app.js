@@ -1,4 +1,4 @@
-(() => {
+var TodoApp = (() => {
   var __defProp = Object.defineProperty;
   var __defProps = Object.defineProperties;
   var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
@@ -6375,6 +6375,20 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   // js/app.js
   (function($global) {
     "use strict";
+    var client_Boot = function() {
+    };
+    client_Boot.main = function() {
+      var hooks2 = { AutoFocus: { mounted: function() {
+        this.el && this.el.focus && this.el.focus();
+      } }, Ping: { mounted: function() {
+        try {
+          this.pushEvent && this.pushEvent("ping", {});
+        } catch (_) {
+        }
+        ;
+      } } };
+      window.Hooks = window.Hooks || hooks2;
+    };
     var haxe_iterators_ArrayIterator = function(array) {
       this.current = 0;
       this.array = array;
@@ -6387,6 +6401,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         return this.array[this.current++];
       }
     };
+    client_Boot.main();
   })({});
 
   // js/phoenix_app.js

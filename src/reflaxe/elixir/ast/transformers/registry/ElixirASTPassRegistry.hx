@@ -3056,6 +3056,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
         });
+        // Late: promote underscored params even when only underscored variant is used in body
+        passes.push({
+            name: "WebDefHeadPromotion_Final",
+            description: "Promote underscored Web/Live def/defp params to base names when body uses base or underscored variant",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WebDefHeadPromotionTransforms.pass
+        });
 
         // Re-run list helper normalizations at absolute-final to ensure effect after late hygiene
         passes.push({
@@ -3077,6 +3084,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
         });
 
+        // Reorder handle_event/3 clauses to be grouped contiguously and place catch-alls last
+        passes.push({
+            name: "HandleEventGroupingReorder",
+            description: "Group def handle_event/3 clauses and place catch-all immediately after event clauses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventGroupingReorderTransforms.pass
+        });
+
         // Absolute-final: rewrite self-compare predicates to param in any remaining anon fns
         passes.push({
             name: "SelfCompareToParamFix",
@@ -3091,6 +3106,14 @@ class ElixirASTPassRegistry {
             description: "Repair map-then-replace and filter-remove-by-id logic patterns (absolute final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.transformPass
+        });
+
+        // Absolute-final: promote underscored def/defp parameters when referenced in body
+        passes.push({
+            name: "UnderscoreParamPromotion_Final",
+            description: "Promote underscored parameters to base names when referenced in body and no conflict exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscoreParamPromotionFinalTransforms.pass
         });
 
         // Absolute-final: promote underscored case binders when body references them (controller/result cases)

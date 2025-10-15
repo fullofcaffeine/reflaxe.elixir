@@ -740,7 +740,7 @@ static function getUserFromSession(session: Dynamic): User {
     public static function render(assigns: TodoLiveAssigns): Dynamic {
         var content = HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
-				<div class="container mx-auto px-4 py-8 max-w-6xl">
+				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
 					
 					<!-- Header -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8">

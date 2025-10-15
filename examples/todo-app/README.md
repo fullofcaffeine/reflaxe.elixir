@@ -41,22 +41,21 @@ A comprehensive todo application showcasing Reflaxe.Elixir v1.0 capabilities, fe
 ### Installation
 
 ```bash
-# 1. Install dependencies
-mix deps.get
-npm install
+# From examples/todo-app
 
-# 2. Setup database
-mix ecto.create
-mix ecto.migrate
+# 1) One‑time setup (deps, DB, tools, client build)
+mix setup
 
-# 3. Compile Haxe to both Elixir and JavaScript
-npx haxe build-all.hxml
+# 2) Start the app with watchers (after first‐time setup)
+mix dev
 
-# 4. Start Phoenix server
+# Optional: explicit build steps
+# Build client bundle + server code, then run
+mix assets.build && mix compile
 mix phx.server
 ```
 
-Visit [http://localhost:4000](http://localhost:4000) to see the app!
+Visit `http://localhost:4000` to see the app.
 
 ## 🔍 Background Runtime-Debug Loop
 
@@ -66,13 +65,11 @@ Prerequisites
 - Postgres running and accessible (see `config/dev.exs`)
 - Deps installed and DB created/migrated
 
-Build (Haxe → Elixir) + Prepare
+Build (server + client) using Mix
 ```bash
 # From examples/todo-app
-npx haxe build-server.hxml        # Generate Elixir from Haxe
-mix deps.get                      # Ensure deps are installed
-mix ecto.create                   # Create dev DB (first run)
-mix ecto.migrate                  # Run migrations
+mix assets.build                  # Builds client (Haxe→JS via haxe.compile.client, then esbuild)
+mix compile --force               # Compiles server (Haxe→Elixir via Mix compiler)
 ```
 
 Start Phoenix in the background with logs
@@ -111,7 +108,7 @@ Iteration loop (fix → rebuild → reload)
 # 1) Edit Haxe/AST transforms or example source to fix the root cause
 
 # 2) Rebuild server output
-npx haxe build-server.hxml
+mix compile --force
 
 # 3) Let Phoenix code reloader pick up changes, or restart the background server
 kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true
@@ -140,7 +137,7 @@ if [ -f tmp_run_bg.pid ]; then kill "$(cat tmp_run_bg.pid)" 2>/dev/null || true;
 ```
 
 Tips
-- Keep using `npx haxe build-server.hxml` on source changes; add the curl+logs check to catch assign shape issues, HEEX contract violations, Presence wiring, etc.
+- Use `mix compile --force` (or `mix compile.haxe --watch`) on source changes; add the curl+logs check to catch assign shape issues, HEEx contract violations, Presence wiring, etc.
 - Prefer fixing transforms/Haxe source over editing generated Elixir. If you patch generated files for triage, follow up with proper fixes in the AST pipeline.
 - If custom Postgrex `types:` config causes local TypeManager errors, either define the types module or remove the option for local debugging.
 
@@ -157,10 +154,9 @@ todo-app/
 │   ├── services/          # Background services
 │   └── client/            # Client-side JavaScript
 ├── lib/                   # Generated Elixir code
-├── priv/static/js/        # Generated JavaScript
-├── build.hxml             # Elixir compilation
-├── build-js.hxml          # JavaScript compilation
-└── build-all.hxml         # Both targets
+├── priv/static/assets/    # Bundled JS/CSS (esbuild output)
+├── build.hxml             # Server (Haxe→Elixir) build
+└── build-client.hxml      # Client (Haxe→JS) build (used by assets alias)
 ```
 
 ### Compilation Flow
@@ -178,13 +174,41 @@ graph LR
 
 ## 💻 Development Workflow
 
+### Phoenix JS Bootstrap (phoenix_app.js)
+- Entry point: `assets/js/phoenix_app.js` (hand‑written JS, bundled by esbuild).
+- Responsibilities:
+  - Import `phoenix_html`, `phoenix`, and `phoenix_live_view`.
+  - Read CSRF meta from the HTML `<meta name="csrf-token" ...>`.
+  - Pick up LiveView Hooks from `window.Hooks` (populated by the Haxe bundle).
+  - Create and connect `LiveSocket`, and expose `window.liveSocket`.
+- Haxe integration:
+  - The Haxe client compiles to `assets/js/app.js` (`build-client.hxml`).
+  - `phoenix_app.js` imports `./app.js`, so any Hooks you export via Haxe are available to LiveView.
+- Why JS here and not Haxe?
+  - This file mirrors Phoenix’s canonical bootstrap and stays stable across Phoenix upgrades.
+  - All meaningful client behavior (Hooks, utils, shared types) remains in Haxe for type safety.
+
 ### Watch Mode
 ```bash
-# Terminal 1: Watch and compile Haxe files
-mix compile.haxe --watch
+# Recommended: single terminal with Phoenix watchers (server+client)
+mix dev
 
-# Terminal 2: Run Phoenix with live reload
-iex -S mix phx.server
+# Optional (manual split):
+# Terminal 1 (Phoenix with assets watchers)
+mix phx.server
+# Terminal 2 (manual client build)
+npm --prefix assets run watch:haxe
+```
+
+Note
+- The Haxe client watcher is launched via npm (`npm --prefix assets run watch:haxe`).
+- If npm is not available on PATH, Phoenix starts without the Haxe watcher; you can still build once with `mix assets.build`.
+
+### CSRF meta tag
+- The layout emits a standard Phoenix CSRF meta tag using Plug:
+  - `examples/todo-app/lib/todo_app_web/layouts.ex` includes
+    `<meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>`
+- LiveSocket reads this token in `phoenix_app.js` and passes it as `_csrf_token`.
 ```
 
 ### Testing
@@ -341,8 +365,9 @@ describe("TodoApp", () => {
 
 ### Production Build
 ```bash
-# Compile with optimizations
-MIX_ENV=prod npx haxe build-all.hxml -D release
+# Compile server and bundle client assets
+MIX_ENV=prod mix assets.deploy
+MIX_ENV=prod mix compile
 
 # Build release
 MIX_ENV=prod mix release
@@ -357,7 +382,8 @@ FROM elixir:1.14-alpine
 WORKDIR /app
 COPY . .
 RUN mix deps.get && \
-    npx haxe build-all.hxml && \
+    MIX_ENV=prod mix assets.deploy && \
+    MIX_ENV=prod mix compile && \
     MIX_ENV=prod mix release
 CMD ["_build/prod/rel/todo_app/bin/todo_app", "start"]
 ```

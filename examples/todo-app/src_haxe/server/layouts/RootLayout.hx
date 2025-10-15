@@ -54,7 +54,7 @@ class RootLayout {
                     <meta charset="utf-8"/>
                     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-                    <meta name="csrf-token" content={Component.get_csrf_token()}/>
+                    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>
                     
                     <title>Todo App - Haxe ❤️ Phoenix LiveView</title>
                     <meta name="description" content="A beautiful todo application built with Haxe and Phoenix LiveView, showcasing modern UI and type-safe development"/>
@@ -70,7 +70,7 @@ class RootLayout {
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
                     
                     <!-- Phoenix LiveView assets -->
-                    <script defer phx-track-static type="text/javascript" src="/assets/app.js"></script>
+                    <script defer phx-track-static type="text/javascript" src="/assets/phoenix_app.js"></script>
                     <link phx-track-static rel="stylesheet" href="/assets/app.css"/>
                     
                     <!-- Dark mode detection handled by app.js -->
