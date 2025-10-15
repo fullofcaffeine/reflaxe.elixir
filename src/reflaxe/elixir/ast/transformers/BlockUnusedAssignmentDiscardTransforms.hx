@@ -68,6 +68,19 @@ class BlockUnusedAssignmentDiscardTransforms {
         return switch (body.def) {
             case EBlock(stmts):
                 var out:Array<ElixirAST> = [];
+                // Helper to detect presence of HEEx (~H) usage in the tail of the block
+                function hasHeexFrom(start:Int):Bool {
+                    var found = false;
+                    for (k in start...stmts.length) {
+                        switch (stmts[k].def) {
+                            case ESigil(type, _, _) if (type == "H"): found = true;
+                            case ERaw(code) if (code != null && code.indexOf("~H\"") != -1): found = true;
+                            default:
+                        }
+                        if (found) break;
+                    }
+                    return found;
+                }
                 for (i in 0...stmts.length) {
                     var s = stmts[i];
                     switch (s.def) {
@@ -76,6 +89,8 @@ class BlockUnusedAssignmentDiscardTransforms {
                                 case EVar(nm):
                                     // Safety: do not discard known supervisor children binding
                                     if (nm == "children") { out.push(s); break; }
+                                    // Do not discard assigns anywhere; render/1 and ~H rely on it implicitly
+                                    if (nm == "assigns") { out.push(s); break; }
                                     if (nm == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                                         out.push(s);
                                     } else if (isDowncaseSearch(rhs)) {
@@ -89,6 +104,7 @@ class BlockUnusedAssignmentDiscardTransforms {
                             switch (pat) {
                                 case PVar(nm2):
                                     if (nm2 == "children") { out.push(s); break; }
+                                    if (nm2 == "assigns") { out.push(s); break; }
                                     if (isDowncaseSearch(rhs2)) {
                                         out.push(s);
                                     } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm2) && !hasPinnedVarInEctoWhere(stmts, i + 1, nm2, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, nm2)) {
@@ -110,6 +126,8 @@ class BlockUnusedAssignmentDiscardTransforms {
                         case EBinary(Match, left2, rhs2):
                             switch (left2.def) {
                                 case EVar(nm2):
+                                    // Preserve assigns rebinds in any context
+                                    if (nm2 == "assigns") { out2.push(s2); break; }
                                     if (nm2 == "query" && filterPredicateUsesQueryLater(stmts2, i + 1)) {
                                         out2.push(s2);
                                     } else if (isDowncaseSearch(rhs2)) {

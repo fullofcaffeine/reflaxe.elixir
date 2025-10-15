@@ -77,6 +77,34 @@ class DefParamUnusedUnderscoreSafeTransforms {
     // Closure-aware + ERaw-aware usage check
     static function usedInBodyOrRaw(b: ElixirAST, name: String): Bool {
         if (name == null || name.length == 0) return false;
+        // Special-case: render(assigns) must keep `assigns` when ~H is present even if not explicitly referenced
+        if (name == "assigns") {
+            var hasHeex = false;
+            function scanHeex(n: ElixirAST): Void {
+                if (n == null || n.def == null || hasHeex) return;
+                switch (n.def) {
+                    case ESigil(type, _, _) if (type == "H"): hasHeex = true;
+                    case ERaw(code) if (code != null && code.indexOf("~H\"") != -1): hasHeex = true;
+                    case EBlock(ss): for (s in ss) scanHeex(s);
+                    case EDo(ss2): for (s in ss2) scanHeex(s);
+                    case EIf(c,t,e): scanHeex(c); scanHeex(t); if (e != null) scanHeex(e);
+                    case ECase(expr, cs): scanHeex(expr); for (c in cs) { if (c.guard != null) scanHeex(c.guard); scanHeex(c.body); }
+                    case EWith(clauses, doBlock, elseBlock): for (wc in clauses) scanHeex(wc.expr); scanHeex(doBlock); if (elseBlock != null) scanHeex(elseBlock);
+                    case ECall(t,_,as): if (t != null) scanHeex(t); for (a in as) scanHeex(a);
+                    case ERemoteCall(t2,_,as2): scanHeex(t2); for (a2 in as2) scanHeex(a2);
+                    case EField(obj,_): scanHeex(obj);
+                    case EAccess(obj2,key): scanHeex(obj2); scanHeex(key);
+                    case EKeywordList(pairs): for (p in pairs) scanHeex(p.value);
+                    case EMap(pairs): for (p in pairs) { scanHeex(p.key); scanHeex(p.value); }
+                    case EStructUpdate(base,fs): scanHeex(base); for (f in fs) scanHeex(f.value);
+                    case ETuple(es) | EList(es): for (e in es) scanHeex(e);
+                    case EFn(clauses): for (cl in clauses) { if (cl.guard != null) scanHeex(cl.guard); scanHeex(cl.body); }
+                    default:
+                }
+            }
+            scanHeex(b);
+            if (hasHeex) return true;
+        }
         if (VariableUsageCollector.usedInFunctionScope(b, name)) return true;
         // Scan ERaw with token boundaries and metadata rawVarRefs
         var found = false;

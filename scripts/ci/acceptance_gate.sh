@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 
 pass_count=0
-gate_count=5
+gate_count=6
 
 msg() { printf "\n[Acceptance] %s\n" "$*"; }
 fail() { echo "[Acceptance] ❌ $*" >&2; exit 1; }
@@ -119,10 +119,18 @@ else
   echo "Smoke subsets had failures" >&2
 fi
 
-# 5) Todo‑app runtime smoke (via QA sentinel)
+# 5) Naming discipline: no timing suffixes in pass names
+msg "Naming discipline: no timing suffixes"
+if bash "$PROJECT_ROOT/scripts/ci/check-no-timing-suffixes.sh"; then
+  pass_count=$((pass_count+1))
+else
+  echo "Naming discipline gate failed" >&2
+fi
+
+# 6) Todo‑app runtime smoke (via QA sentinel)
 msg "Todo‑app runtime smoke"
 set +e
-bash "$PROJECT_ROOT/scripts/qa-sentinel.sh" --app "$PROJECT_ROOT/examples/todo-app" --port 4000
+bash "$PROJECT_ROOT/scripts/qa-sentinel.sh" --app "$PROJECT_ROOT/examples/todo-app" --port 4001
 runtime_rc=$?
 set -e
 if [ $runtime_rc -eq 0 ]; then

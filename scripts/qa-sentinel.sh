@@ -25,6 +25,25 @@ echo "[QA] Fetching deps and compiling with WAE"
 MIX_ENV=dev mix deps.get
 MIX_ENV=dev mix compile --warnings-as-errors
 
+# Ensure no stale Phoenix server is occupying the target port (or default :4000)
+for P in "$PORT" 4000; do
+  if command -v lsof >/dev/null 2>&1; then
+    PIDLIST=$(lsof -ti tcp:"$P" -sTCP:LISTEN || true)
+    if [ -n "$PIDLIST" ]; then
+      echo "[QA] Detected process on :$P → killing: $PIDLIST"
+      kill -9 $PIDLIST >/dev/null 2>&1 || true
+      sleep 0.5
+    fi
+  elif command -v ss >/dev/null 2>&1; then
+    PIDS=$(ss -ltnp 2>/dev/null | awk -v p=":$P" '$4 ~ p {print $6}' | sed -E 's/.*pid=([0-9]+),.*/\1/' | sort -u)
+    if [ -n "$PIDS" ]; then
+      echo "[QA] Detected process on :$P → killing: $PIDS"
+      kill -9 $PIDS >/dev/null 2>&1 || true
+      sleep 0.5
+    fi
+  fi
+done
+
 echo "[QA] Starting server on :$PORT"
 export PORT="$PORT"
 MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &

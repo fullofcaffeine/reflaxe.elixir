@@ -102,7 +102,7 @@ class HeexAssignsCaptureTransforms {
                             for (i in 0...stmts.length) {
                                 if (i == assignIdx && html != null) continue;
                                 if (i == heex.idx) {
-                                    // 1) Insert assigns = Phoenix.Component.assign(assigns, %{content: content})
+                                    // Insert assigns = Phoenix.Component.assign(assigns, %{content: content})
                                     var assignCall = makeAST(ERemoteCall(
                                         makeAST(EVar("Phoenix.Component")),
                                         "assign",
@@ -113,7 +113,7 @@ class HeexAssignsCaptureTransforms {
                                     ));
                                     trace('[HeexAssignsCapture] Injecting assigns capture for :content');
                                     newStmts.push(makeASTWithMeta(EMatch(PVar("assigns"), assignCall), stmts[i].metadata, stmts[i].pos));
-                                    // 2) Replace raw(content) with raw(@content) inside ~H
+                                    // Replace Phoenix.HTML.raw(content) with Phoenix.HTML.raw(@content) inside ~H
                                     var node = stmts[i];
                                     var parens = heex.parens;
                                     // unwrap to ESigil
