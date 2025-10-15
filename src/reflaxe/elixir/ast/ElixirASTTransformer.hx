@@ -1646,11 +1646,39 @@ class ElixirASTTransformer {
                                 }
                             }
                             
-                            // If this is a Layouts module, we always want Phoenix.Component
-                            // available because layouts routinely return ~H templates.
-                            var forceForLayouts = (name != null && StringTools.endsWith(name, ".Layouts"));
+                            /**
+                             * LayoutContextHtmlUse Injection
+                             *
+                             * WHAT
+                             * - For modules named `<App>Web.Layouts`, inject `use <App>Web, :html` instead of a raw
+                             *   `use Phoenix.Component` so that the full Phoenix 1.7 HTML context is available.
+                             *
+                             * WHY
+                             * - Layout modules commonly return ~H templates and rely on helpers (HTML, VerifiedRoutes,
+                             *   controller conveniences). `:html` brings those into scope without app coupling.
+                             *
+                             * HOW
+                             * - Detect EDefmodule with name ending in ".Layouts"; derive `<App>Web` from the prefix before
+                             *   "Web" and prepend `use <App>Web, :html` when missing.
+                             *
+                             * EXAMPLES
+                             *   Before:
+                             *     defmodule TodoAppWeb.Layouts do
+                             *       # (no imports)
+                             *       def root(assigns), do: ~H"<head>...</head>"
+                             *     end
+                             *
+                             *   After:
+                             *     defmodule TodoAppWeb.Layouts do
+                             *       use TodoAppWeb, :html
+                             *       def root(assigns), do: ~H"<head>...</head>"
+                             *     end
+                             */
+                            // If this is a Layouts module, ensure `use <App>Web, :html`
+                            // so ~H helpers (Phoenix.Component, VerifiedRoutes, controller helpers) are in scope.
+                            var isLayoutsModule = (name != null && StringTools.endsWith(name, ".Layouts"));
 
-                            // Don't add Phoenix.Component if LiveView is already used
+                            // Don't add Phoenix.Component or additional uses if LiveView is already used
                             if (hasLiveViewUse) {
                                 #if debug_phoenix_component_import
                                 trace('[XRay PhoenixComponentImport] Module already has LiveView use statement, skipping Phoenix.Component');
@@ -1658,18 +1686,41 @@ class ElixirASTTransformer {
                                 return node;
                             }
                             
-                            if (!hasImport || forceForLayouts) {
+                            // For Layouts modules, prefer `use <App>Web, :html`
+                            if (isLayoutsModule) {
+                                // Derive <App> from "<App>Web.Layouts"
+                                var appIdx = name.indexOf("Web");
+                                var appPrefix = appIdx > 0 ? name.substr(0, appIdx) : null;
+                                if (appPrefix != null) {
+                                    var webModule = appPrefix + "Web";
+                                    // Check if `use <App>Web, :html` already exists
+                                    var hasHtmlUse = false;
+                                    for (stmt in statements) switch (stmt.def) {
+                                        case EUse(mod, opts):
+                                            if (mod == webModule && opts != null) {
+                                                for (o in opts) switch (o.def) { case EAtom(a) if (a == "html"): hasHtmlUse = true; default: }
+                                            }
+                                        default:
+                                    }
+                                    if (!hasHtmlUse) {
+                                        #if debug_phoenix_component_import
+                                        trace('[XRay PhoenixComponentImport] Adding use ' + webModule + ', :html for Layouts module');
+                                        #end
+                                        var htmlUse = makeAST(EUse(webModule, [ makeAST(EAtom("html")) ]));
+                                        var newStatements2 = [htmlUse].concat(statements);
+                                        var newDoBlock2 = makeASTWithMeta(EBlock(newStatements2), doBlock.metadata, doBlock.pos);
+                                        return makeASTWithMeta(EDefmodule(name, newDoBlock2), node.metadata, node.pos);
+                                    }
+                                }
+                            } else if (!hasImport) {
                                 #if debug_phoenix_component_import
                                 trace('[XRay PhoenixComponentImport] Adding Phoenix.Component import');
                                 #end
-                                
                                 // Create the import statement using EUse which takes a string
                                 var importStmt = makeAST(EUse("Phoenix.Component", []));
-                                
                                 // Add import at the beginning of the module body
                                 var newStatements = [importStmt].concat(statements);
                                 var newDoBlock = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
-                                
                                 return makeASTWithMeta(EDefmodule(name, newDoBlock), node.metadata, node.pos);
                             }
                             

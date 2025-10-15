@@ -29,7 +29,7 @@ class Layouts {
                     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                     <title>Todo App</title>
-                    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>
+                    <meta name="csrf-token" content={Phoenix.Controller.get_csrf_token()}/>
                     
                     <!-- Static assets (served by Phoenix Endpoint) -->
                     <link phx-track-static rel="stylesheet" href="/assets/app.css"/>
