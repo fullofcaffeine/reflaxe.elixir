@@ -6,10 +6,9 @@
 -cp src_haxe
 -cp ../../std
 -cp ../../src
+-cp ../../vendor/genes/src
 
-# Enable genes ES6 generator (vendored) and async macro
-
-# JavaScript target with modern ES6 modules via genes
+# JavaScript target output
 -js assets/js/app.js
 -D js-unflatten               # Better module structure
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
@@ -22,5 +21,5 @@
 # Exclude server code from client compilation
 --macro exclude('server')
 
-# Main client entry point - pure Haxe Phoenix app
-client.TodoApp
+# Main client entry point - minimal boot for Phoenix hooks
+client.Boot
