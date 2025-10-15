@@ -227,9 +227,15 @@ class HXX {
         // Convert Haxe ${} interpolation to Elixir #{} interpolation
         var processed = template;
 
-        // Handle Haxe string interpolation: ${expr} -> #{expr}
+        // Handle Haxe string interpolation: ${expr} -> <%= expr %> (convert assigns.* -> @*)
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
-        processed = ~/\$\{([^}]+)\}/g.replace(processed, "#{$1}");
+        var interp = ~/\$\{([^}]+)\}/g;
+        processed = interp.map(processed, function (re) {
+            var expr = re.matched(1);
+            expr = StringTools.trim(expr);
+            expr = StringTools.replace(expr, "assigns.", "@");
+            return '<%= ' + expr + ' %>';
+        });
 
         // Convert camelCase attributes to kebab-case
         processed = convertAttributes(processed);

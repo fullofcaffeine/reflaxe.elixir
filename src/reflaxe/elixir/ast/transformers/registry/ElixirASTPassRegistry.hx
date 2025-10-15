@@ -175,20 +175,21 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.presenceTransformPass
         });
         
-        // Phoenix Component import pass (MUST run AFTER LiveViewTransform to detect LiveView use statements)
-        passes.push({
-            name: "PhoenixComponentImport",
-            description: "Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixComponentImportPass
-        });
-        
         // LiveView CoreComponents import pass (should run after Phoenix Component)
         passes.push({
             name: "LiveViewCoreComponentsImport",
             description: "Add CoreComponents import for LiveView modules that use components",
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_liveViewCoreComponentsImportPass
+        });
+
+        // Convert non-idiomatic handle_event(event, socket) case-dispatch into
+        // proper handle_event/3 callbacks for LiveView modules.
+        passes.push({
+            name: "LiveEventCaseToCallbacks",
+            description: "Rewrite handle_event/2 case dispatch into multiple handle_event/3 callbacks in LiveViews",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveEventCaseToCallbacksTransforms.transformPass
         });
         
         // Phoenix function name mapping pass (transforms assign_multiple to assign, etc.)
@@ -1670,6 +1671,43 @@ class ElixirASTPassRegistry {
             }
         });
 
+        // Ensure Phoenix.Component is used in Layouts modules so ~H is available.
+        passes.push({
+            name: "EnsurePhoenixComponentUseInLayouts",
+            description: "Inject `use Phoenix.Component` into <App>Web.Layouts modules",
+            enabled: true,
+            pass: function(ast: ElixirAST): ElixirAST {
+                return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+                    function hasUseStmt(stmts:Array<ElixirAST>):Bool {
+                        for (s in stmts) switch (s.def) { case EUse(module, _) if (module == "Phoenix.Component"): return true; default: }
+                        return false;
+                    }
+                    return switch (n.def) {
+                        case EDefmodule(name, doBlock) if (name != null && StringTools.endsWith(name, ".Layouts")):
+                            switch (doBlock.def) {
+                                case EBlock(stmts) | EDo(stmts):
+                                    if (!hasUseStmt(stmts)) {
+                                        var newDo = makeAST(EBlock([ makeAST(EUse("Phoenix.Component", [])) ].concat(stmts)));
+                                        makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+                                    } else {
+                                        n;
+                                    }
+                                default:
+                                    n;
+                            }
+                        case EModule(name, attrs, body) if (name != null && StringTools.endsWith(name, ".Layouts")):
+                            if (!hasUseStmt(body)) {
+                                makeASTWithMeta(EModule(name, attrs, [ makeAST(EUse("Phoenix.Component", [])) ].concat(body)), n.metadata, n.pos);
+                            } else {
+                                n;
+                            }
+                        default:
+                            n;
+                    }
+                });
+            }
+        });
+
         // Rewrite Phoenix.Presence.* calls to <App>Web.Presence.* where appropriate
         passes.push({
             name: "PresenceApiModuleRewrite",
@@ -1802,11 +1840,11 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoLocalShimNowarnTransforms.transformPass
         });
-        // Migration: inject nowarn + stubs for migration DSL helpers when referenced
+        // Migration: inject nowarn + stubs (scheduled in absolute-final section below for final shapes)
         passes.push({
             name: "EctoMigrationNowarnAndStubs",
-            description: "Inject @compile nowarn and defp stubs for migration helpers (create_table/add_column/...) when called",
-            enabled: true,
+            description: "(Deferred) Inject @compile nowarn and defp stubs for migration helpers at absolute-final",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.transformPass
         });
         // Qualify StringBuf usage to <App>.StringBuf inside Ecto DSL shim modules
@@ -1888,19 +1926,61 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.IfConstSimplifyTransforms.transformPass
         });
 
-        // Absolute late sweep: ensure HEEx raw(content) uses assigns and assigns has :content
-        // Prefer inlining the literal HTML into ~H before considering assigns capture
+        // Absolute late sweep: inline HEEx content when possible, then ensure assigns capture if needed
+        passes.push({
+            name: "HeexContentInline",
+            description: "Replace ~H raw(content|@var) using preceding literal assignment with direct ~H literal",
+            enabled: true,
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
+        });
+
+        // Robust inliner: works on render/1 EBlock/EDo, nested parens, any var name
+        passes.push({
+            name: "HeexInlineCapturedContent",
+            description: "Inline string assigned to a var referenced by Phoenix.HTML.raw(var|@var) inside ~H; drop scaffolding",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexInlineCapturedContentTransforms.transformPass
+        });
+
+        // Fallback inliner using simple preceding-literal heuristic
         passes.push({
             name: "HeexRawInlineFromPrecedingLiteral",
-            description: "Inline preceding string literal into ~H and drop Phoenix.HTML.raw(content) usage",
-            enabled: false,
+            description: "Inline preceding string literal into ~H and drop Phoenix.HTML.raw(var) usage (heuristic)",
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRawInlineFromPrecedingLiteralTransforms.pass
         });
+
+        // As a last resort, capture into assigns and rewrite raw(var) → raw(@var)
         passes.push({
             name: "HeexAssignsCapture",
-            description: "Ensure @content usage inside ~H and assign content into assigns",
+            description: "Ensure @var usage inside ~H and assign var into assigns when inlining isn't possible",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms.transformPass
+        });
+
+        // Validate that no Phoenix.HTML.raw(content) remains in ~H after inlining
+        passes.push({
+            name: "HeexRawUsageValidator",
+            description: "Warn on residual Phoenix.HTML.raw(content|@content) inside ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.pass,
+            contextualPass: reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.contextualPass
+        });
+
+        // Phoenix enum modules (generated) → ensure atom-tag tuples (no numeric tags)
+        passes.push({
+            name: "PhoenixEnumAtomTag",
+            description: "Rewrite Phoenix.* enum helpers from numeric tags to atom tags using function names",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PhoenixEnumAtomTagTransforms.transformPass
+        });
+
+        // Prune completely empty defmodule bodies (post-DCE clean up noise)
+        passes.push({
+            name: "EmptyModulePrune",
+            description: "Drop defmodule nodes with empty bodies to reduce noise",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EmptyModulePruneTransforms.transformPass
         });
         
         // Late safety net: re-run Repo qualification after all transformations
@@ -1958,6 +2038,35 @@ class ElixirASTPassRegistry {
             description: "Final promotion of local binders _name to name when body references name",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
+        });
+
+        // Convert helper functions that still return HTML strings to ~H sigils so nested
+        // content embedded via <%= helper(...) %> is rendered as HEEx rather than escaped.
+        // NOTE: This must run BEFORE any underscore-renaming of the `assigns` parameter,
+        // because HEEx requires the parameter to be named exactly `assigns`.
+        passes.push({
+            name: "HeexStringReturnToSigil",
+            description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.transformPass
+        });
+
+        // After converting to ~H, ensure `use Phoenix.Component` is present so the
+        // sigil is available. This ordering guarantees detection.
+        passes.push({
+            name: "PhoenixComponentImport",
+            description: "Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixComponentImportPass
+        });
+
+        // Transitional safety: wrap helper calls inside ~H so they are not escaped while
+        // helpers are being migrated to return ~H themselves.
+        passes.push({
+            name: "HeexRenderHelperCallWrap",
+            description: "Wrap <%= render_* %> calls inside ~H with Phoenix.HTML.raw(...)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms.transformPass
         });
 
         // Phoenix-scoped hygiene: underscore unused def/defp parameters in Web/Live/Presence modules
@@ -2145,7 +2254,21 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
         });
 
-        // Robust sweep: inline when raw(content) pattern wasn't caught by structural match
+        // Robust inliner: supports arbitrary variable names (raw(var|@var)), EBlock/EDo bodies,
+        // nested parentheses, and ERaw(~H ...) forms. Runs after legacy simple inliner and
+        // before fallback/validator passes.
+        passes.push({
+            name: "HeexInlineCapturedContent",
+            description: "Inline ~H raw(var|@var) using last string assignment to that var; drop scaffolding",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexInlineCapturedContentTransforms.transformPass
+        });
+
+        // (moved earlier) HeexStringReturnToSigil & HeexRenderHelperCallWrap now run before
+        // parameter underscore passes to preserve the `assigns` binder required by HEEx.
+        // See earlier registration for details.
+
+        // Fallback sweep: capture into assigns when inlining isn't possible
         passes.push({
             name: "HeexAssignsCapture",
             description: "Replace ~H raw(content) with assigns capture for @content",
@@ -2873,7 +2996,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EctoMigrationNowarnAndStubs",
             description: "Inject @compile nowarn and defp stubs for migration helpers (absolute final)",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.transformPass
         });
         // Absolute last controller normalization to ensure conn is present and not underscored
@@ -2931,6 +3054,15 @@ class ElixirASTPassRegistry {
             description: "Convert `_ = Phoenix.Component.assign(assigns, map)` back to `assigns = ...` in render/1",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexAssignsBindRepairTransforms.transformPass
+        });
+
+        // Normalize LiveView event names in HEEx (phx-*) to lowercase snake_case and validate
+        passes.push({
+            name: "HeexEventNameNormalization",
+            description: "Normalize phx-* event attribute values to lowercase snake_case; validate & warn on invalid names",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.transformPass,
+            contextualPass: reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.contextualPass
         });
 
         // Absolute final: ensure LiveView mount/3 has proper {:ok, socket} return

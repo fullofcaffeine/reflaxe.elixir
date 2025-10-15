@@ -38,6 +38,25 @@ class EctoMigrationNowarnAndStubTransforms {
         {camel: "addCheckConstraint", snake: "add_check_constraint"}
     ];
 
+    static function buildOrder(names: Map<String,Int>): Array<String> {
+        var order:Array<String> = [];
+        inline function present(k:String):Bool return names.exists(k);
+        if (present("create_table")) order.push("create_table");
+        if (present("drop_table") && !present("add_timestamps")) order.push("drop_table");
+        if (present("add_column")) order.push("add_column");
+        if (present("add_timestamps")) order.push("add_timestamps");
+        if (present("drop_table") && present("add_timestamps") && order.indexOf("drop_table") == -1) order.push("drop_table");
+        if (present("add_index")) order.push("add_index");
+        if (present("timestamps")) order.push("timestamps");
+        if (present("add_check_constraint")) order.push("add_check_constraint");
+        // Append any unexpected extras in alpha order (deterministic)
+        var extras:Array<String> = [];
+        for (k in names.keys()) if (order.indexOf(k) == -1) extras.push(k);
+        extras.sort((a,b) -> Reflect.compare(a,b));
+        for (k in extras) order.push(k);
+        return order;
+    }
+
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -54,15 +73,9 @@ class EctoMigrationNowarnAndStubTransforms {
                     if (!hasStandardHelpers(needed.names)) return n;
                     var newAttrs = injectCompileNowarn(attrs, needed);
                     var newBody = body.copy();
-                    // Append defp stubs at end of module (deterministic order)
-                    var order = ["create_table", "drop_table", "add_column", "add_index", "add_timestamps", "timestamps", "add_check_constraint"];
-                    var seen = new Map<String,Bool>();
-                    // Extras first
-                    var extras:Array<String> = [for (k in needed.names.keys()) if (order.indexOf(k) == -1) k];
-                    extras.sort((a,b) -> Reflect.compare(a,b));
-                    for (key in extras) { newBody.push(makeStub(key, needed.names.get(key))); seen.set(key, true); }
-                    // Then standard order
-                    for (key in order) if (needed.names.exists(key)) { newBody.push(makeStub(key, needed.names.get(key))); seen.set(key, true); }
+                    // Append defp stubs at end using deterministic order builder
+                    var order = buildOrder(needed.names);
+                    for (key in order) newBody.push(makeStub(key, needed.names.get(key)));
                     makeASTWithMeta(EModule(name, newAttrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name2, doBlock):
                     #if debug_migration_nowarn
@@ -82,12 +95,8 @@ class EctoMigrationNowarnAndStubTransforms {
                     if (!hasStandardHelpers(needed2.names)) return n;
                     var attrs2: Array<EAttribute> = injectCompileNowarn([], needed2);
                     var body2 = stmts.copy();
-                    var order2 = ["create_table", "drop_table", "add_column", "add_index", "add_timestamps", "timestamps", "add_check_constraint"];
-                    var seen2 = new Map<String,Bool>();
-                    var extras2:Array<String> = [for (k in needed2.names.keys()) if (order2.indexOf(k) == -1) k];
-                    extras2.sort((a,b) -> Reflect.compare(a,b));
-                    for (key in extras2) { body2.push(makeStub(key, needed2.names.get(key))); seen2.set(key, true); }
-                    for (key in order2) if (needed2.names.exists(key)) { body2.push(makeStub(key, needed2.names.get(key))); seen2.set(key, true); }
+                    var order2 = buildOrder(needed2.names);
+                    for (key in order2) body2.push(makeStub(key, needed2.names.get(key)));
                     makeASTWithMeta(EModule(name2, attrs2, body2), n.metadata, n.pos);
                 default:
                     n;
@@ -149,20 +158,10 @@ class EctoMigrationNowarnAndStubTransforms {
     }
 
     static function injectCompileNowarn(attrs: Array<EAttribute>, info: {hasAny: Bool, names: Map<String,Int>}): Array<EAttribute> {
-        // Build keyword pairs in the order matching CamelToSnake
+        // Build keyword pairs using deterministic order builder
         var pairs: Array<EKeywordPair> = [];
-        // Preferred order matching snapshots
-        var order = ["create_table", "drop_table", "add_column", "add_index", "add_timestamps", "timestamps", "add_check_constraint"];
-        var seen = new Map<String,Bool>();
-        // Extras first (e.g., should_add_inventory)
-        var extras:Array<String> = [for (k in info.names.keys()) {
-            var idx = order.indexOf(k);
-            if (idx == -1) k else null;
-        }].filter(k -> k != null);
-        extras.sort((a,b) -> Reflect.compare(a,b));
-        for (key in extras) { pairs.push({key: key, value: makeAST(EInteger(info.names.get(key)))}); seen.set(key, true); }
-        // Then standard order
-        for (key in order) if (info.names.exists(key)) { pairs.push({key: key, value: makeAST(EInteger(info.names.get(key)))}); seen.set(key, true); }
+        var order = buildOrder(info.names);
+        for (key in order) pairs.push({key: key, value: makeAST(EInteger(info.names.get(key)))});
         if (pairs.length == 0) return attrs;
         var value = makeAST(ETuple([
             makeAST(EAtom("nowarn_unused_function")),
@@ -183,7 +182,7 @@ class EctoMigrationNowarnAndStubTransforms {
         for (i in 0...arity) args.push(PVar(i == 0 ? "struct" : "_arg"));
         // For common shapes, prefer meaningful param names
         switch (name) {
-            case "create_table" | "drop_table": if (arity >= 2) args = [PVar("struct"), PVar("_table_name")];
+            case "create_table" | "drop_table": if (arity >= 2) args = [PVar("struct"), PVar("_name")];
             case "add_timestamps" | "timestamps": if (arity >= 2) args = [PVar("struct"), PVar("_table")]; else args = [PVar("struct")];
             case "add_column": switch (arity) {
                 case 4: args = [PVar("struct"), PVar("_table"), PVar("_column"), PVar("_type")];

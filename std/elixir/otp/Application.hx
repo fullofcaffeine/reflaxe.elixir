@@ -32,7 +32,32 @@ package elixir.otp;
 
 /**
  * Application start type - normal, temporary, or permanent
+ *
+ * WHAT
+ * - Marked with @:elixirIdiomatic so enum constructors compile to atoms
+ *   (:normal, :temporary, :permanent) instead of numeric tuple tags ({0}, {1}, {2}).
+ *
+ * WHY
+ * - OTP and Phoenix code pattern match on atoms for start types. Numeric tags are
+ *   non-idiomatic and make matching verbose and fragile. This aligns output with
+ *   standard Elixir expectations and makes generated code look hand-written.
+ *
+ * DEFAULT (without marker)
+ * - Reflaxe.Elixir emits Haxe enums as tuples tagged by the constructor's
+ *   integer index: {0}, {1}, {2}, or {idx, arg...}. This is the generic,
+ *   target‑agnostic mapping that mirrors the underlying Haxe enum indices
+ *   and avoids relying on names when tags are not explicitly defined.
+ *
+ * HOW
+ * - When @:elixirIdiomatic is present, the compiler switches from index tags to
+ *   atom tags, producing {:normal}/{:temporary}/{:permanent} tuples instead
+ *   (see ElixirCompiler.buildEnumAST idiomatic path).
+ *
+ * EXAMPLES
+ * Haxe:   ApplicationStartType.Normal → Elixir: {:normal}
+ * Haxe:   ApplicationStartType.Permanent → Elixir: {:permanent}
  */
+@:elixirIdiomatic
 enum ApplicationStartType {
     Normal;
     Temporary;
@@ -54,7 +79,30 @@ abstract ApplicationArgs(Dynamic) from Dynamic to Dynamic {
 
 /**
  * Application start result - success with state or error
+ *
+ * WHAT
+ * - Marked with @:elixirIdiomatic so constructors compile to {:ok, state},
+ *   {:error, reason}, and :ignore instead of {0, state}, {1, reason}, {2}.
+ *
+ * WHY
+ * - OTP/Application.start/2 idioms use :ok/:error/:ignore. Numeric tags prevent
+ *   idiomatic pattern matching and confuse maintainers.
+ *
+ * DEFAULT (without marker)
+ * - The generic enum emission uses integer indices and yields {0, state},
+ *   {1, reason}, {2}. This preserves Haxe enum identity but is not idiomatic
+ *   for OTP.
+ *
+ * HOW
+ * - @:elixirIdiomatic switches enum tag emission from integer indices to atoms
+ *   so output matches OTP conventions.
+ *
+ * EXAMPLES
+ * Haxe:   ApplicationResult.Ok(state)    → Elixir: {:ok, state}
+ * Haxe:   ApplicationResult.Error("x")  → Elixir: {:error, "x"}
+ * Haxe:   ApplicationResult.Ignore       → Elixir: {:ignore}
  */
+@:elixirIdiomatic
 enum ApplicationResult {
     Ok(state: Dynamic);
     Error(reason: String);

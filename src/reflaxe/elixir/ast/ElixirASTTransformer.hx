@@ -1646,6 +1646,10 @@ class ElixirASTTransformer {
                                 }
                             }
                             
+                            // If this is a Layouts module, we always want Phoenix.Component
+                            // available because layouts routinely return ~H templates.
+                            var forceForLayouts = (name != null && StringTools.endsWith(name, ".Layouts"));
+
                             // Don't add Phoenix.Component if LiveView is already used
                             if (hasLiveViewUse) {
                                 #if debug_phoenix_component_import
@@ -1654,7 +1658,7 @@ class ElixirASTTransformer {
                                 return node;
                             }
                             
-                            if (!hasImport) {
+                            if (!hasImport || forceForLayouts) {
                                 #if debug_phoenix_component_import
                                 trace('[XRay PhoenixComponentImport] Adding Phoenix.Component import');
                                 #end
