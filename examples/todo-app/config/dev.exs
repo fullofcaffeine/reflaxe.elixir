@@ -20,12 +20,12 @@ config :todo_app, TodoAppWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
   watchers: [
-    # Haxe client compilation watcher (flat list format for Phoenix.Endpoint.Watcher)
-    # haxe_client: ["haxe", "build-client.hxml", "--wait", "6001"],
-    # esbuild bundling watcher  
-    # esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},
-    # Tailwind CSS watcher
-    # tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
+    # Haxe client compilation (rebuild JS on change)
+    haxe_client: ["haxe", "build-client.hxml", "--wait", "6001"],
+    # esbuild bundling watcher for Phoenix assets
+    esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},
+    # Tailwind CSS watcher (if styles are edited)
+    tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
   ]
 
 # Watch static and templates for browser reloading.

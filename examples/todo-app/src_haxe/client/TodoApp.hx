@@ -4,7 +4,7 @@ import shared.TodoTypes;
 import client.hooks.Hooks;
 import client.utils.DarkMode;
 import client.utils.LocalStorage;
-import reflaxe.js.Async;
+// genes async/await support
 
 /**
  * Main client-side entry point for Todo App
@@ -13,7 +13,7 @@ import reflaxe.js.Async;
  * This provides a clean, modular architecture for client-side functionality
  * while maintaining type safety throughout the application.
  */
-@:build(reflaxe.js.Async.build())
+@:build(genes.AsyncMacro.build())
 class TodoApp {
     
     private static var isInitialized: Bool = false;

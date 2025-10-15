@@ -1,20 +1,17 @@
 # Haxe→JavaScript compilation for Phoenix LiveView client-side code
 # Generates efficient ES6 modules compatible with esbuild
 
-# Source directories  
+# Source directories and genes (vendored in repo)
 -cp src_haxe/client
 -cp src_haxe
 -cp ../../std
+-cp ../../src
 
-# Include libraries for modern JavaScript
-# Note: genes is currently incompatible with Haxe 4.3.7
-# Using built-in Haxe JS generation instead
-# -lib reflaxe
-# -lib genes
+# Enable genes ES6 generator (vendored) and async macro
 
 # JavaScript target with modern ES6 modules via genes
 -js assets/js/app.js
--D js-unflatten               # Better module structure 
+-D js-unflatten               # Better module structure
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
 --dce=full
 
