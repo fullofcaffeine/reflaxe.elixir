@@ -113,8 +113,8 @@ class FilterPredicateQueryInlineUltraFinalTransforms {
                         }
                     case ECall(target, "filter", args2) if (args2.length == 2):
                         switch (args2[1].def) {
-                            case EFn(clauses2) if (clauses2.length == 1):
-                                var cl2 = clauses2[0];
+                            case EFn(clauses) if (clauses.length == 1):
+                                var cl2 = clauses[0];
                                 var usesQ = false;
                                 ElixirASTTransformer.transformNode(cl2.body, function(x2: ElixirAST): ElixirAST {
                                     if (usesQ) return x2; switch (x2.def) { case EVar(nm2) if (nm2 == "query"): usesQ = true; return x2; default: return x2; }

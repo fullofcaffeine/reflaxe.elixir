@@ -235,7 +235,7 @@ class PresenceReduceRewriteTransforms {
                         case EBinary(Match, _, rhs) | EMatch(_, rhs):
                             switch (rhs.def) { case ERemoteCall(mod2, func2, args2) if (func2 == "each" && args2.length == 2):
                                 switch (mod2.def) { case EVar(m2) if (m2 == "Enum"): listTarget = args2[0];
-                                    switch (args2[1].def) { case EFn(clauses2) if (clauses2.length == 1): fnClause = clauses2[0]; eachIdx = i; default: } default: } default: }
+                                    switch (args2[1].def) { case EFn(clauses) if (clauses.length == 1): fnClause = clauses[0]; eachIdx = i; default: } default: } default: }
                         default:
                     }
                     if (eachIdx == -1 || listTarget == null || fnClause == null) return x;

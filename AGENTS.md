@@ -704,18 +704,32 @@ Issue with vendor code → Can I fix in compiler? → YES → Fix in compiler
 ### Development Workflow
 ```bash
 # Build and test (with CORRECT flags - no analyzer-optimize!)
-npm test                          # Full test suite (mandatory before commit)
-npx haxe build-server.hxml       # Compile Haxe to Elixir (check .hxml for flags)
-mix compile --force               # Compile generated Elixir
-mix phx.server                    # Run Phoenix application
+npm test                                 # Full test suite (mandatory before commit)
+mix assets.build && mix compile --force  # Compile client+server
+mix phx.server                           # Run Phoenix application (watchers on)
 
-# Integration testing
-cd examples/todo-app && npx haxe build-server.hxml && mix compile
-curl http://localhost:4000        # Test application response
+# Integration testing (example app)
+cd examples/todo-app && mix assets.build && mix compile
+curl http://localhost:4000               # Test application response
+
+# Dev convenience (example app)
+cd examples/todo-app && mix dev          # setup + start with watchers
 
 # ⚠️ IMPORTANT: Never add -D analyzer-optimize to build commands
 # It destroys idiomatic Elixir patterns. Use -dce full instead.
 ```
+
+### Mix Integration (Server + Client)
+
+- Server compiler: `Mix.Tasks.Compile.Haxe` integrates Haxe→Elixir into `mix compile`.
+- Client build (example app): handled by Phoenix assets tasks and dev watchers.
+  - Dev: a watcher runs `haxe build-client.hxml --wait` and esbuild bundles `assets/js/phoenix_app.js`.
+  - Build: `mix assets.build` (Haxe client + tailwind + esbuild)
+  - Deploy: `mix assets.deploy` (Haxe client + tailwind + esbuild + digest)
+
+Constraints
+- Do not add `-D analyzer-optimize` to any HXML. It breaks idiomatic Elixir/JS generation.
+- JS client public surfaces must be typed (No‑Dynamic policy). Use `js.Syntax.code` only at the boundary (e.g., within LiveView hook methods) and keep typedefs precise.
 
 ### Quick Testing
 ```bash

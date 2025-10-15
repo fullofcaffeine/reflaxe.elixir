@@ -1,5 +1,28 @@
 import Config
 
+# Dynamically enable optional watchers only when the executables are available
+npm_bin = System.find_executable("npm")
+
+# Base watchers (always on)
+base_watchers = [
+  # esbuild bundling watcher for Phoenix assets
+  esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},
+  # Tailwind CSS watcher (if styles are edited)
+  tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
+]
+
+# Optional watchers (enabled only if binaries are present)
+optional_watchers = []
+optional_watchers =
+  if npm_bin do
+    # Use npm to invoke the Haxe client watcher (portable and PATH-friendly)
+    Keyword.put(optional_watchers, :haxe_client, [npm_bin, "--prefix", Path.expand("../assets", __DIR__), "run", "watch:haxe", cd: Path.expand("../", __DIR__)])
+  else
+    optional_watchers
+  end
+
+all_watchers = base_watchers ++ optional_watchers
+
 # Configure the database
 config :todo_app, TodoApp.Repo,
   username: "postgres",
@@ -19,14 +42,7 @@ config :todo_app, TodoAppWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
-  watchers: [
-    # Haxe client compilation (rebuild JS on change)
-    haxe_client: ["haxe", "build-client.hxml", "--wait", "6001"],
-    # esbuild bundling watcher for Phoenix assets
-    esbuild: {Esbuild, :install_and_run, [:todo_app, ~w(--sourcemap=external --watch)]},
-    # Tailwind CSS watcher (if styles are edited)
-    tailwind: {Tailwind, :install_and_run, [:todo_app, ~w(--watch)]}
-  ]
+  watchers: all_watchers
 
 # Watch static and templates for browser reloading.
 config :todo_app, TodoAppWeb.Endpoint,

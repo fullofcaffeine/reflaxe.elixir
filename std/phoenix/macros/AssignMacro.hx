@@ -58,9 +58,10 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.Component.assign call using proper extern
-		// This ensures variables can be transformed by HygieneTransforms
-		return macro phoenix.Component.assign($socketExpr, $v{snakeCaseName}, $value);
+        // Generate Phoenix.Component.assign call with an atom key
+        // Use __elixir__ to embed :snake_case as an atom to match LiveView semantics
+        var codeStr = 'Phoenix.Component.assign({0}, :$snakeCaseName, {1})';
+        return macro untyped __elixir__($v{codeStr}, $socketExpr, $value);
 	}
 	
 	/**
