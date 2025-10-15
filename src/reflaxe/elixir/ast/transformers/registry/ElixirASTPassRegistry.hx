@@ -3057,6 +3057,34 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
         });
 
+        // Re-run list helper normalizations at absolute-final to ensure effect after late hygiene
+        passes.push({
+            name: "ContainsToEnumMember_Final",
+            description: "Late: arr.contains(v) -> Enum.member?(arr, v)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.containsToEnumMemberPass
+        });
+        passes.push({
+            name: "MemberFilterRemovalFix_Final",
+            description: "Late: Rewrite member?-guarded filter self-compare to compare with value",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.memberFilterRemovalFixPass
+        });
+        passes.push({
+            name: "FilterReturnInlineFix_Final",
+            description: "Late: Inline filter result into return when original list would be returned",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
+        });
+
+        // Absolute-final: rewrite self-compare predicates to param in any remaining anon fns
+        passes.push({
+            name: "SelfCompareToParamFix",
+            description: "Rewrite (t.id != t) and (t != t) to compare against id/_id function param",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SelfCompareToParamFixTransforms.paramSelfCompareFixPass
+        });
+
         // Absolute final: fix list update/remove logic shapes (run after WebParamFinalFix)
         passes.push({
             name: "ListUpdateAndFilterFix",
