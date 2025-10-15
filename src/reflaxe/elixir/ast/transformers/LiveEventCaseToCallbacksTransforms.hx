@@ -42,21 +42,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class LiveEventCaseToCallbacksTransforms {
     static inline function isHandleEvent2(name:String, args:Array<EPattern>):Bool {
-        if (name != "handle_event") return false;
-        return args != null && args.length == 2;
+        return name == "handle_event" && args != null && args.length == 2;
     }
 
     static function toStringLiteral(s:String):ElixirAST {
         return makeAST(EString(s));
     }
 
-    static function atomToString(a:String):String {
-        // Already lowercase atoms represent event names; use as-is
-        return a;
+    static function atomToString(a:reflaxe.elixir.ast.naming.ElixirAtom):String {
+        // ElixirAtom already normalized; use as provided
+        return (a : String);
     }
 
     static function makeNoReply(sock:ElixirAST):ElixirAST {
-        return makeAST(ETuple([ makeAST(EAtom("no_reply")), sock ]));
+        return makeAST(ETuple([ makeAST(EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw("noreply"))), sock ]));
     }
 
     static function needsIntConversion(varName:String):Bool {
@@ -74,48 +73,121 @@ class LiveEventCaseToCallbacksTransforms {
         return makeAST(EIf(isBin, toInt, get));
     }
 
-    static function buildCallback(eventName:String, binders:Array<String>, originalBody:ElixirAST, meta:ElixirMetadata, pos: haxe.macro.Expr.Position):ElixirAST {
+    static function extractSocketExpr(expr: ElixirAST): { prelude: Array<ElixirAST>, socket: ElixirAST } {
+        // If the branch returns {:noreply, socket}, unwrap to socket
+        switch (expr.def) {
+            case ETuple(elts) if (elts.length == 2):
+                switch (elts[0].def) {
+                    case EAtom(a) if ((a : String) == "noreply"):
+                        return { prelude: [], socket: elts[1] };
+                    default:
+                }
+            case EBlock(exprs) if (exprs.length > 0):
+                var pre = exprs.slice(0, exprs.length - 1);
+                var last = exprs[exprs.length - 1];
+                var inner = extractSocketExpr(last);
+                return { prelude: pre.concat(inner.prelude), socket: inner.socket };
+            default:
+        }
+        return { prelude: [], socket: expr };
+    }
+
+    static function buildCallback(eventName:String, binders:Array<String>, branchExpr:ElixirAST, meta:ElixirMetadata, pos: haxe.macro.Expr.Position):ElixirAST {
         // def handle_event("event", params, socket) do ... {:noreply, sock} end
-        var args = [ PVar("_event"), PVar("params"), PVar("socket") ];
         // Build extraction statements that bind each binder name from params
         var extracts:Array<ElixirAST> = [];
         for (b in binders) {
             var valueExpr = buildExtract(b);
             extracts.push(makeAST(EMatch(PVar(b), valueExpr)));
         }
+        // Unwrap {:noreply, socket} if present in branch
+        var unwrapped = extractSocketExpr(branchExpr);
         var blk:Array<ElixirAST> = [];
-        // Params are available; run extracts then return {:noreply, ...}
+        // First any param extracts, then any branch preludes, then final noreply tuple
         for (e in extracts) blk.push(e);
-        blk.push(makeNoReply(originalBody));
+        for (e in unwrapped.prelude) blk.push(e);
+        blk.push(makeNoReply(unwrapped.socket));
         var funBody = makeAST(EBlock(blk));
-        var def = makeASTWithMeta(EDef("handle_event", [ PVar("\"" + eventName + "\""), PVar("params"), PVar("socket") ], null, funBody), meta, pos);
+        var def = makeASTWithMeta(
+            EDef(
+                "handle_event",
+                [ PLiteral(makeAST(EString(eventName))), PVar("params"), PVar("socket") ],
+                null,
+                funBody
+            ),
+            meta,
+            pos
+        );
         return def;
     }
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
             return switch (n.def) {
-                case EModule(name, attrs, body) if (isLiveViewModule(n, name, body)):
+                case EModule(name, attrs, body) if (isLiveViewModule(n, body)):
+                    // Collect existing handle_event/3 callbacks keyed by event string
+                    var existing = new Map<String, Bool>();
+                    for (stmt in body) switch (stmt.def) {
+                        case EDef(fname, args, _, _ ) if (fname == "handle_event" && args.length == 3):
+                            switch (args[0]) {
+                                case PLiteral({def: EString(s)}): existing.set(s, true);
+                                default:
+                            }
+                        default:
+                    }
+
                     var newBody:Array<ElixirAST> = [];
-                    var replaced = false;
+                    var replacedAny = false;
                     for (stmt in body) {
                         switch (stmt.def) {
-                            case EDef(fname, args, _, fbody) if (isHandleEvent2(fname, args)):
+                            case EDef(fname, args, _, _ ) if (isHandleEvent2(fname, args)):
                                 // try to parse case dispatch
-                                var callbacks:Array<ElixirAST> = parseHandleEvent2(stmt, n.metadata, n.pos);
+                                var callbacks:Array<{event:String, def:ElixirAST}> = parseHandleEventArity2CaseDispatch(stmt, n.metadata, n.pos);
                                 if (callbacks != null && callbacks.length > 0) {
-                                    for (c in callbacks) newBody.push(c);
-                                    replaced = true; // drop original
+                                    for (c in callbacks) {
+                                        if (!existing.exists(c.event)) {
+                                            newBody.push(c.def);
+                                            existing.set(c.event, true);
+                                        }
+                                    }
+                                    replacedAny = true; // drop original
                                 } else {
+                                    // If not a recognized case form, keep as-is
                                     newBody.push(stmt);
                                 }
+                            case EDef(fname2, args2, g2, b2) if (fname2 == "handle_event" && args2.length == 3):
+                                // Keep the first definition for a given literal event, drop duplicates
+                                var keep = true;
+                                switch (args2[0]) {
+                                    case PLiteral({def: EString(s)}):
+                                        if (existing.exists(s)) {
+                                            // This is the first scan, we already seeded existing from body;
+                                            // ensure we only keep the first occurrence we encounter now.
+                                            // If newBody already has one for this event, drop this duplicate.
+                                            for (d in newBody) switch (d.def) {
+                                                case EDef("handle_event", a3, _, _):
+                                                    switch (a3[0]) { case PLiteral({def: EString(s2)}) if (s2 == s): keep = false; default: }
+                                                default:
+                                            }
+                                        } else {
+                                            existing.set(s, true);
+                                        }
+                                    default:
+                                }
+                                if (keep) newBody.push(stmt);
                             default:
                                 newBody.push(stmt);
                         }
                     }
-                    // Add a catch-all to avoid crashes if nothing matched
-                    if (replaced) {
-                        newBody.push(makeAST(EDef("handle_event", [PVar("_event"), PVar("_params"), PVar("socket")], null, makeNoReply(makeAST(EVar("socket"))))));
+
+                    // Add a catch-all to avoid crashes if nothing matched but only if no catch-all exists
+                    if (replacedAny && !hasCatchAllHandleEvent(newBody)) {
+                        newBody.push(makeAST(EDef(
+                            "handle_event",
+                            [PVar("_event"), PVar("_params"), PVar("socket")],
+                            null,
+                            makeNoReply(makeAST(EVar("socket")))
+                        )));
                     }
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 default:
@@ -124,41 +196,58 @@ class LiveEventCaseToCallbacksTransforms {
         });
     }
 
-    static function isLiveViewModule(node:ElixirAST, name:String, body:Array<ElixirAST>):Bool {
-        if (node.metadata?.isLiveView == true) return true;
-        // Heuristic (shape-based, not app-specific): name ends with "Live"
-        if (name != null && StringTools.endsWith(name, "Live")) return true;
-        // Or body contains `use <App>Web, :live_view`
-        for (b in body) switch (b.def) {
-            case EUse(mod, opts) if (opts != null && opts.length > 0):
-                for (o in opts) switch (o.def) { case EAtom(a) if (a == "live_view"): return true; default: }
+    static function hasCatchAllHandleEvent(body:Array<ElixirAST>):Bool {
+        for (stmt in body) switch (stmt.def) {
+            case EDef(name, args, _, _ ) if (name == "handle_event" && args.length == 3):
+                switch (args[0]) {
+                    case PVar(v) if (v == "_event"): return true;
+                    default:
+                }
             default:
         }
         return false;
     }
 
-    static function parseHandleEvent2(defNode:ElixirAST, meta:ElixirMetadata, pos:haxe.macro.Expr.Position):Array<ElixirAST> {
-        // Expect body: result_socket = case event do ... end ; {:no_reply, result_socket}
+    static function isLiveViewModule(node:ElixirAST, body:Array<ElixirAST>):Bool {
+        if (node.metadata?.phoenixContext == PhoenixContext.LiveView || node.metadata?.isLiveView == true) return true;
+        // Or body contains `use <App>Web, :live_view`
+        for (b in body) switch (b.def) {
+            case EUse(_, opts) if (opts != null && opts.length > 0):
+                for (o in opts) switch (o.def) { case EAtom(a) if ((a : String) == "live_view"): return true; default: }
+            default:
+        }
+        return false;
+    }
+
+    /**
+     * Parses a non-idiomatic handle_event/2 implementation that uses a case
+     * dispatch on `event` and returns corresponding handle_event/3 callbacks.
+     *
+     * Naming: "Arity2" to denote we specifically parse the two-argument form
+     * (event, socket) to synthesize the proper arity-3 callbacks.
+     */
+    static function parseHandleEventArity2CaseDispatch(defNode:ElixirAST, meta:ElixirMetadata, pos:haxe.macro.Expr.Position):Array<{event:String, def:ElixirAST}> {
+        // Expect body: result_socket = case event do ... end ; {:noreply, result_socket}
         switch (defNode.def) {
-            case EDef(_, _, _, body):
+            case EDef(_, args, _, body) if (args.length == 2):
                 var stmts:Array<ElixirAST> = switch (body.def) {
                     case EBlock(ss): ss;
                     case EDo(ss2): ss2;
                     default: null;
                 };
-                if (stmts == null || stmts.length < 2) return null;
-                // First assignment should be result var = case ...
+                if (stmts == null || stmts.length < 1) return null;
+                // First assignment should be result var = case ... OR direct case expr
+                var candidate:ElixirAST = stmts[0];
                 var caseNode:Null<ElixirAST> = null;
-                switch (stmts[0].def) {
-                    case EMatch(PVar(_), expr): caseNode = expr;
-                    case EBinary(Match, _, expr2): caseNode = expr2;
-                    default:
+                switch (candidate.def) {
+                    case EMatch(_, expr): caseNode = expr;
+                    default: caseNode = candidate;
                 }
                 switch (caseNode != null ? caseNode.def : null) {
                     case ECase(scrut, clauses):
                         // scrutinee should be `event`
                         switch (scrut.def) { case EVar(v) if (v == "event"): /* ok */ default: return null; }
-                        var out:Array<ElixirAST> = [];
+                        var out:Array<{event:String, def:ElixirAST}> = [];
                         for (cl in clauses) {
                             var evName:String = null;
                             var binders:Array<String> = [];
@@ -172,9 +261,8 @@ class LiveEventCaseToCallbacksTransforms {
                                 default:
                             }
                             if (evName == null) continue;
-                            // clause body expected to be helper call producing socket
-                            var helperCall:ElixirAST = cl.body;
-                            out.push(buildCallback(evName, binders, helperCall, meta, pos));
+                            var cb = buildCallback(evName, binders, cl.body, meta, pos);
+                            out.push({event: evName, def: cb});
                         }
                         return out;
                     default:
