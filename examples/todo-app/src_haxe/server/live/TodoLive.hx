@@ -981,7 +981,7 @@ static function getUserFromSession(session: Dynamic): User {
 		if (isEditing) {
 			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
 					<form phx-submit="save_todo" class="space-y-4">
-						<input type="hidden" name="id" value="${todo.id}" />
+						<input type="hidden" name="todo_id" value="${todo.id}" />
 						<input type="text" name="title" value="${todo.title}" required
 							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 						<textarea name="description" rows="2"

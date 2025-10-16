@@ -1629,8 +1629,8 @@ class ElixirASTPassRegistry {
         // Replace inline if assignments with discard (final)
         passes.push({
             name: "InlineIfAssignmentDiscard",
-            description: "Final rewrite of inline if assignments to _ = expr",
-            enabled: true,
+            description: "Final rewrite of inline if assignments to _ = expr (disabled: causes search-filter regressions)",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.InlineIfAssignmentDiscardTransforms.fixPass
         });
         // Inject @compile nowarn for defp main/0 so it's preserved by prune passes
@@ -3102,6 +3102,12 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.SafePubSubConverterCaptureTransforms.pass
         });
         passes.push({
+            name: "ListIndexAccessToEnumAt",
+            description: "Rewrite list index access (entry.metas[0]) to Enum.at(entry.metas, 0)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListIndexAccessToEnumAtTransforms.transformPass
+        });
+        passes.push({
             name: "SafePubSubModuleRewrite",
             description: "Rewrite SafePubSub.* to Phoenix.SafePubSub.* (ultimate fallback)",
             enabled: true,
@@ -3184,6 +3190,12 @@ class ElixirASTPassRegistry {
             description: "Late: Inline filter result into return when original list would be returned",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
+        });
+        passes.push({
+            name: "FilterWildcardAssignToVar_Final",
+            description: "Late: Rewrite `_ = Enum.filter(var, ...)` preceding a trailing `var` return to a proper rebind",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FilterWildcardAssignToVarTransforms.fixPass
         });
 
 
