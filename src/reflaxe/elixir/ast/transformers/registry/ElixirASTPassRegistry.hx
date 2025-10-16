@@ -2467,6 +2467,31 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseCallReuseTransforms.transformPass
         });
+        passes.push({
+            name: "FlattenNestedUnderscoreAssign",
+            description: "Flatten nested underscore matches: lhs = _ = expr -> lhs = expr",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.pass
+        });
+        // Early fold to align assigned var with case result before later hygiene
+        passes.push({
+            name: "DuplicateCaseAssignFold_Early",
+            description: "EARLY: Fold var = _ = call; case call do ... -> var = case call do ...",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DuplicateCaseAssignFoldTransforms.pass
+        });
+        passes.push({
+            name: "CaseBindSuccessToAssignedVar_Early",
+            description: "EARLY: Bind {:ok, u} to preceding assigned var inside case",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBindSuccessToAssignedVarTransforms.pass
+        });
+        passes.push({
+            name: "CamelAtomAccessToSnake",
+            description: "Rewrite EAccess(_, :camelCase) to snake_case atom keys",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CamelAtomAccessToSnakeTransforms.pass
+        });
         // Drop underscore-only remote call when followed by case on identical call
         passes.push({
             name: "RedundantUnderscoreCallBeforeCase",
@@ -3051,6 +3076,18 @@ class ElixirASTPassRegistry {
             description: "Remove immediately duplicated effectful calls prior to case on same call",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DuplicateEffectfulCallPruneTransforms.pass
+        });
+        passes.push({
+            name: "DuplicateCaseAssignFold",
+            description: "Fold var = _ = call; case call do ... end -> var = case call do ... end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DuplicateCaseAssignFoldTransforms.pass
+        });
+        passes.push({
+            name: "CaseBindSuccessToAssignedVar",
+            description: "Bind {:ok, u} success to preceding assigned var inside case and drop nested underscore",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBindSuccessToAssignedVarTransforms.pass
         });
         passes.push({
             name: "SafePubSubAliasInject",
