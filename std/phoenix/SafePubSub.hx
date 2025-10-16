@@ -161,7 +161,41 @@ class SafePubSub {
         msg: Dynamic,
         messageParser: Dynamic -> Option<M>
     ): Option<M> {
-        return messageParser(msg);
+        // Accept a proper function capture or a module.function atom/string
+        // and invoke the corresponding function with arity 1. This guards
+        // against cases where the compiler lowers identifiers to atoms.
+        return untyped __elixir__('
+          cond do
+            is_function({1}, 1) -> {1}.({0})
+            is_atom({1}) ->
+              s = to_string({1})
+              case String.split(s, ".") do
+                [mod_str, fun_str] ->
+                  mod = mod_str
+                        |> String.split("_")
+                        |> Enum.map(&String.capitalize/1)
+                        |> Module.concat()
+                  apply(mod, String.to_atom(fun_str), [{0}])
+                _ ->
+                  msg = "invalid message_parser atom: " <> inspect({1})
+                  raise ArgumentError, message: msg
+              end
+            is_binary({1}) ->
+              case String.split({1}, ".") do
+                [mod_str, fun_str] ->
+                  mod = mod_str
+                        |> String.split("_")
+                        |> Enum.map(&String.capitalize/1)
+                        |> Module.concat()
+                  apply(mod, String.to_atom(fun_str), [{0}])
+                _ ->
+                  msg = "invalid message_parser string: " <> inspect({1})
+                  raise ArgumentError, message: msg
+              end
+            true ->
+              raise ArgumentError, message: "invalid message_parser: expected function/1 or module.function string"
+          end
+        ', msg, messageParser);
     }
     
     /**
