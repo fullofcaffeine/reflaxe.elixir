@@ -109,20 +109,11 @@ class UnusedLocalAssignmentUnderscoreTransforms {
                         case EBlock(xs): makeASTWithMeta(EDo(xs), n.metadata, n.pos);
                         default: n;
                     }
-                case EIf(cond, thenBr, elseBr):
-                    // Handle unused assignment in then-branch: if cond, do: var = expr
-                    var newThen = thenBr;
-                    switch (thenBr.def) {
-                        case EBinary(Match, left, rhs):
-                            switch (left.def) {
-                                case EVar(n):
-                                    // In absence of parent context, conservatively underscore
-                                    newThen = makeASTWithMeta(EMatch(PWildcard, rhs), thenBr.metadata, thenBr.pos);
-                                default:
-                            }
-                        default:
-                    }
-                    makeASTWithMeta(EIf(cond, newThen, elseBr), n.metadata, n.pos);
+                case EIf(_, _, _):
+                    // Do not underscore assignments inside if-branches. Nested blocks
+                    // may assign to a variable that is used after the branch (e.g.,
+                    // filtering a list and returning it). Keep the branch unchanged.
+                    n;
                 default:
                     n;
             }
