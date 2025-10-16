@@ -90,16 +90,40 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
              normalized_params = for {k, v} <- Map.to_list(snake_params), into: %{} do
                type = data.__struct__.__schema__(:type, k)
                v2 = case {type, v} do
+                 # Comma-separated string -> {:array, :string}
                  {{:array, :string}, bin} when is_binary(bin) ->
-                   # Split comma-separated strings into list of strings
                    bin
                    |> String.split(",", trim: true)
                    |> Enum.map(&String.trim/1)
+                 # String -> integer (when field is :integer)
                  {:integer, bin} when is_binary(bin) ->
                    case Integer.parse(bin) do
                      {int, _} -> int
                      :error -> bin
                    end
+                 # String -> boolean ("true"/"false")
+                 {:boolean, bin} when is_binary(bin) ->
+                   case String.downcase(String.trim(bin)) do
+                     "true" -> true
+                     "false" -> false
+                     _ -> bin
+                   end
+                 # String -> NaiveDateTime
+                 {:naive_datetime, bin} when is_binary(bin) ->
+                   case NaiveDateTime.from_iso8601(bin) do
+                     {:ok, ndt} -> ndt
+                     {:error, _} ->
+                       case Date.from_iso8601(bin) do
+                         {:ok, d} ->
+                           case NaiveDateTime.new(d, ~T[00:00:00]) do
+                             {:ok, ndt2} -> ndt2
+                             _ -> bin
+                           end
+                         _ -> bin
+                       end
+                   end
+                 # Empty string -> nil for nullable fields (let validations handle required)
+                 {_, bin} when is_binary(bin) and bin == "" -> nil
                  _ -> v
                end
                {k, v2}
