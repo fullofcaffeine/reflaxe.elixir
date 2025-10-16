@@ -1075,14 +1075,14 @@ static function getUserFromSession(session: Dynamic): User {
 			case _: filtered;
 		};
 		
-		// Apply search
-		if (searchQuery != null && searchQuery != "") {
-			var query = searchQuery.toLowerCase();
-			filtered = filtered.filter(function(t) {
-				return t.title.toLowerCase().indexOf(query) >= 0 ||
-					   (t.description != null && t.description.toLowerCase().indexOf(query) >= 0);
-			});
-		}
+    // Apply search (expression form to ensure result is used even after hygiene passes)
+    if (searchQuery != null && searchQuery != "") {
+        var query = searchQuery.toLowerCase();
+        filtered = filtered.filter(function(t) {
+            return t.title.toLowerCase().indexOf(query) >= 0 ||
+                   (t.description != null && t.description.toLowerCase().indexOf(query) >= 0);
+        });
+    }
 		
 		return filtered;
 	}
