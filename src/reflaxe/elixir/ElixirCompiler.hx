@@ -2128,11 +2128,7 @@ class ElixirCompiler extends GenericCompiler<
                 // Skip if it's a static field or not a regular field
                 if (!varData.isStatic && varData.field.kind.match(FVar(_, _))) {
                     var fieldName = varData.field.name;
-                    var fieldType = switch(varData.field.type) {
-                        case TInst(t, _): t.get().name;
-                        case TAbstract(t, _): t.get().name;
-                        default: "String"; // Default type
-                    };
+                    var fieldType = schemaTypeNameFromType(varData.field.type);
                     schemaFields.push({
                         name: fieldName,
                         type: fieldType
@@ -2238,6 +2234,53 @@ class ElixirCompiler extends GenericCompiler<
         }
         
         return moduleAST;
+    }
+
+    /**
+     * Normalize Haxe type to a simple schema type string for Ecto field mapping.
+     * - Unwrap Null<T> to T
+     * - Map Array<T> to "Array<TName>"
+     * - Map core types to their canonical names used by schema mapping
+     */
+    static function schemaTypeNameFromType(t: Type): String {
+        return switch (t) {
+            case TType(td, params):
+                // Unwrap type aliases (including Null<T>)
+                var underlying = td.get();
+                if (underlying.name == "Null" && params != null && params.length == 1) {
+                    return schemaTypeNameFromType(params[0]);
+                } else {
+                    // Fallback to the aliased name
+                    underlying.name;
+                }
+            case TAbstract(ad, params):
+                var n = ad.get().name;
+                if (n == "Null" && params != null && params.length == 1) {
+                    return schemaTypeNameFromType(params[0]);
+                }
+                switch (n) {
+                    case "Int": return "Int";
+                    case "Bool": return "Bool";
+                    case "Single", "Float": return "Float";
+                    default: return n;
+                }
+            case TInst(td, params):
+                var cls = td.get();
+                if (cls.name == "Array" && params != null && params.length == 1) {
+                    return "Array<" + schemaTypeNameFromType(params[0]) + ">";
+                }
+                switch (cls.name) {
+                    case "String": return "String";
+                    case "Int": return "Int";
+                    case "Bool": return "Bool";
+                    case "Date": return "Date";
+                    default: return cls.name;
+                }
+            case TAnonymous(_):
+                // Treat anonymous objects as Dynamic
+                "Dynamic";
+            case _: "String"; // Reasonable default
+        }
     }
 
     /**

@@ -667,21 +667,34 @@ class AnnotationTransforms {
      * Returns an ElixirAST node for the field type (atom or tuple for complex types)
      */
     static function mapHaxeTypeToEctoFieldType(haxeType: String): ElixirAST {
-        return switch(haxeType) {
-            case "String": makeAST(EAtom("string"));
-            case "Int": makeAST(EAtom("integer")); 
-            case "Float": makeAST(EAtom("float"));
-            case "Bool": makeAST(EAtom("boolean"));
-            case "Date": makeAST(EAtom("naive_datetime"));
-            case "Array": 
-                // Arrays in Ecto need {:array, element_type}
-                // Default to string for now (could be enhanced to detect element type)
-                makeAST(ETuple([
-                    makeAST(EAtom("array")),
-                    makeAST(EAtom("string"))
-                ]));
-            case _: makeAST(EAtom("string")); // Default to string
-        };
+        // Handle generic-like strings (e.g., "Array<String>") and aliases (e.g., "NaiveDateTime")
+        if (haxeType == null) return makeAST(EAtom("string"));
+        switch(haxeType) {
+            case "String": return makeAST(EAtom("string"));
+            case "Int": return makeAST(EAtom("integer"));
+            case "Float": return makeAST(EAtom("float"));
+            case "Bool": return makeAST(EAtom("boolean"));
+            case "Date" | "NaiveDateTime": return makeAST(EAtom("naive_datetime"));
+            case _:
+                // Detect Array<...>
+                if (StringTools.startsWith(haxeType, "Array<") && StringTools.endsWith(haxeType, ">")) {
+                    var inner = haxeType.substr(6, haxeType.length - 7);
+                    var innerAtom = switch (inner) {
+                        case "String": "string";
+                        case "Int": "integer";
+                        case "Float": "float";
+                        case "Bool": "boolean";
+                        case "Date" | "NaiveDateTime": "naive_datetime";
+                        case _: "string";
+                    };
+                    return makeAST(ETuple([
+                        makeAST(EAtom("array")),
+                        makeAST(EAtom(innerAtom))
+                    ]));
+                }
+                // Fallback to string
+                return makeAST(EAtom("string"));
+        }
     }
     
     /**

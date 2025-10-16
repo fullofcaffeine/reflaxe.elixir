@@ -68,35 +68,7 @@ class DropStandaloneLiteralOneTransforms {
                         }
                     }
                     makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
-                case EIf(cond, thenBr, elseBr):
-                    var newThen = thenBr;
-                    switch (thenBr.def) {
-                        case EInteger(v) if (v == 1 || v == 0): newThen = makeAST(ENil);
-                        case EFloat(f) if (f == 0.0): newThen = makeAST(ENil);
-                        case ERaw(code) if (code.trim() == "1" || code.trim() == "0"): newThen = makeAST(ENil);
-                        default:
-                    }
-                    var newElse = elseBr;
-                    if (elseBr != null) switch (elseBr.def) {
-                        case EInteger(v2) if (v2 == 1 || v2 == 0): newElse = makeAST(ENil);
-                        case EFloat(f2) if (f2 == 0.0): newElse = makeAST(ENil);
-                        case ERaw(code2) if (code2.trim() == "1" || code2.trim() == "0"): newElse = makeAST(ENil);
-                        default:
-                    }
-                    makeASTWithMeta(EIf(cond, newThen, newElse), n.metadata, n.pos);
-                case ECase(expr, clauses):
-                    var newClauses = [];
-                    for (cl in clauses) {
-                        var body = cl.body;
-                        switch (body.def) {
-                            case EInteger(v) if (v == 1 || v == 0): body = makeAST(ENil);
-                            case EFloat(f) if (f == 0.0): body = makeAST(ENil);
-                            case ERaw(code4) if (code4.trim() == "1" || code4.trim() == "0"): body = makeAST(ENil);
-                            default:
-                        }
-                        newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: body });
-                    }
-                    makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
+                // Do NOT rewrite numeric literals inside EIf/ECase branches – they are legitimate values
                 default:
                     n;
             }

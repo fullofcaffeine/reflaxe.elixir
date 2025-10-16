@@ -744,6 +744,56 @@ cd examples/todo-app && mix dev          # setup + start with watchers
 # It destroys idiomatic Elixir patterns. Use -dce full instead.
 ```
 
+### Run Servers in Background (Agents)
+
+- Never block the terminal with long‑running servers during agent work. Always start them in the background, capture logs, and ensure teardown.
+- Recommended pattern (background + readiness + teardown):
+  ```bash
+  # Start (background) and capture PID
+  MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
+  PHX_PID=$!
+  trap 'kill $PHX_PID >/dev/null 2>&1 || true' EXIT
+
+  # Wait until ready
+  for i in $(seq 1 60); do
+    curl -fsS http://localhost:4000 >/dev/null 2>&1 && break
+    sleep 0.5
+  done
+
+  # Interact with the app here (tests, Playwright, etc.)
+  ```
+- Prefer `scripts/qa-sentinel.sh` when possible — it already starts Phoenix in the background, probes readiness, and tears down cleanly.
+- If a port is already in use, terminate the listener first (e.g., via `lsof -ti tcp:4000 | xargs -r kill -9`) before starting a new server.
+
+## 🧭 Architecture Lessons From Live QA (Elixir/Phoenix)
+
+- Prefer source-of-truth fixes over late transforms.
+  - Builder-level general rules beat app-specific transformer passes.
+  - Example: Rewrite local field assignment `params.userId = v` at AST-build time to `params = Map.put(params, "user_id", v)` rather than a narrow, late transform.
+
+- Normalize at stdlib boundaries, not in user code.
+  - The Ecto `Changeset.new` bridge should accept mixed input shapes and normalize to schema types (snake_case keys, split comma-separated tags, parse integers) before `cast/3`.
+  - Keep this logic generic and framework-faithful; avoid project-specific rewrites.
+
+- Keep the pass registry lean; transformers are not a hammer.
+  - Use transformers for semantic/idiomatic Elixir rewrites with broad applicability (e.g., struct immutability, comprehension conversions), not for app business rules.
+  - If a pass smells app-specific, move the behavior to:
+    - AST Builder (shape-driven, target-agnostic), or
+    - std externs (typed, API-faithful boundary adapters).
+
+- Variable naming discipline is non-negotiable.
+  - No cryptic abbreviations (`sp`, `fn`, `fq`) and no numeric suffixes (`sp2`, `qualifiedModule2`).
+  - Use descriptive names everywhere, including inside injected Elixir snippets: e.g., `snake_params`, `normalized_params`.
+
+- QA loop: gate + browser flows.
+  - Always run `scripts/qa-sentinel.sh` to validate build + runtime (WAE) before browser tests.
+  - Use Playwright MCP to drive add/toggle/delete/search; capture console logs and server logs.
+  - Start servers in background and ensure teardown between runs to avoid port conflicts and stale sessions.
+
+- Phoenix alignment first, then augmentation.
+  - Follow Phoenix/Ecto APIs exactly; add type-safety and normalization in typed externs rather than introducing synthetic APIs or app-only passes.
+
+
 ### Mix Integration (Server + Client)
 
 - Server compiler: `Mix.Tasks.Compile.Haxe` integrates Haxe→Elixir into `mix compile`.

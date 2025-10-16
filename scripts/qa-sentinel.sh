@@ -2,15 +2,20 @@
 set -euo pipefail
 
 # QA Sentinel: Compile, run, curl /, assert zero warnings/errors
-# Usage: scripts/qa-sentinel.sh [--app examples/todo-app] [--port 4001]
+# Usage: scripts/qa-sentinel.sh [--app examples/todo-app] [--port 4001] [--keep-alive]
+#
+# --keep-alive: Do not kill the Phoenix server on exit. Prints PHX_PID and PORT so
+#               external tools (e2e runners) can reuse the same background server.
 
 APP_DIR="examples/todo-app"
 PORT=4001
+KEEP_ALIVE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --app) APP_DIR="$2"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
+    --keep-alive) KEEP_ALIVE=1; shift 1 ;;
     *) echo "Unknown arg: $1"; exit 2 ;;
   esac
 done
@@ -48,7 +53,9 @@ echo "[QA] Starting server on :$PORT"
 export PORT="$PORT"
 MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
 PHX_PID=$!
-trap 'kill $PHX_PID >/dev/null 2>&1 || true' EXIT
+if [[ "$KEEP_ALIVE" -eq 0 ]]; then
+  trap 'kill $PHX_PID >/dev/null 2>&1 || true' EXIT
+fi
 
 echo "[QA] Waiting for server..."
 READY=0
@@ -99,4 +106,10 @@ else
 fi
 
 echo "[QA] OK: build + runtime smoke passed with zero warnings (WAE)"
+
+if [[ "$KEEP_ALIVE" -eq 1 ]]; then
+  echo "[QA] KEEP-ALIVE enabled. Phoenix continues running."
+  echo "PHX_PID=$PHX_PID"
+  echo "PORT=$PORT"
+fi
 popd >/dev/null

@@ -1789,8 +1789,71 @@ class ElixirASTBuilder {
                 var result = switch(op) {
                     case OpAssign:
                         // Assignment needs pattern extraction for the left side
-                        var pattern = PatternBuilder.extractPattern(e1);
-                        var rightAST = buildFromTypedExpr(e2, currentContext);
+                        // SPECIAL: Map/struct-like field assignment on a local variable
+                        // params.userId = value -> params = Map.put(params, "user_id", value)
+                        var isLocalFieldAssign = false;
+                        var baseLocalName: Null<String> = null;
+                        var fieldNameForPut: Null<String> = null;
+                        switch (e1.expr) {
+                            case TField(baseExpr, fa):
+                                switch (baseExpr.expr) {
+                                    case TLocal(v):
+                                        var baseVarName = ElixirASTHelpers.toElixirVarName(v.name);
+                                        // Avoid transforming instance field (this/_this)
+                                        if (baseVarName != "this" && baseVarName != "_this") {
+                                            isLocalFieldAssign = true;
+                                            baseLocalName = baseVarName;
+                                            // Extract field name from FieldAccess
+                                            var rawFieldName = switch (fa) {
+                                                case FInstance(_, _, cf): cf.get().name;
+                                                case FStatic(_, cf): cf.get().name;
+                                                case FAnon(cf): cf.get().name;
+                                                case FClosure(_, cf): cf.get().name;
+                                                case FEnum(_, ef): ef.name;
+                                                case FDynamic(s): s;
+                                            };
+                                            fieldNameForPut = reflaxe.elixir.ast.NameUtils.toSnakeCase(rawFieldName);
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+
+                        var pattern = (isLocalFieldAssign && baseLocalName != null)
+                            ? PVar(baseLocalName)
+                            : PatternBuilder.extractPattern(e1);
+
+                        // Flatten nested underscore assignment: x = _ = expr → x = expr
+                        var rightIsUnderscoreAssign = false;
+                        var flattenedRight: Null<TypedExpr> = null;
+                        switch (e2.expr) {
+                            case TBinop(OpAssign, innerLhs, innerRhs):
+                                switch (innerLhs.expr) {
+                                    case TLocal(v) if (v.name == "_"):
+                                        rightIsUnderscoreAssign = true;
+                                        flattenedRight = innerRhs;
+                                    default:
+                                }
+                            default:
+                        }
+
+                        var rightAST = if (isLocalFieldAssign && baseLocalName != null && fieldNameForPut != null) {
+                            // Build Map.put(base, key, value)
+                            var valueAST = buildFromTypedExpr(rightIsUnderscoreAssign && flattenedRight != null ? flattenedRight : e2, currentContext);
+                            makeAST(ERemoteCall(
+                                makeAST(EVar("Map")),
+                                "put",
+                                [
+                                    makeAST(EVar(baseLocalName)),
+                                    makeAST(EString(fieldNameForPut)),
+                                    valueAST
+                                ]
+                            ));
+                        } else if (rightIsUnderscoreAssign && flattenedRight != null) {
+                            buildFromTypedExpr(flattenedRight, currentContext);
+                        } else {
+                            buildFromTypedExpr(e2, currentContext);
+                        }
                         var shouldSkipAssign = false;
                         switch(pattern) {
                             case PVar(name):
@@ -1821,11 +1884,18 @@ class ElixirASTBuilder {
                         } else {
                             // Build a match node so we can attach metadata (varId) for binder retention
                             var matchNode = makeAST(EMatch(pattern, rightAST));
-                            // Attach varId when left is a local variable
+                            // Attach varId when left is a local variable (or base when rewriting field assign)
                             switch (e1.expr) {
                                 case TLocal(v):
                                     if (matchNode.metadata == null) matchNode.metadata = {};
                                     matchNode.metadata.varId = v.id;
+                                case TField(baseExpr, _):
+                                    switch (baseExpr.expr) {
+                                        case TLocal(v2):
+                                            if (matchNode.metadata == null) matchNode.metadata = {};
+                                            matchNode.metadata.varId = v2.id;
+                                        default:
+                                    }
                                 default:
                             }
                             matchNode.def;
