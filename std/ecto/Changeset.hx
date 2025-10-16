@@ -77,7 +77,8 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
         // are computed from the transformed map keys.
         this = untyped __elixir__('
           (fn data, params ->
-             sp = for {k, v} <- Map.to_list(params), into: %{} do
+             # Convert incoming keys to snake_case atoms
+             snake_params = for {k, v} <- Map.to_list(params), into: %{} do
                key =
                  cond do
                    is_atom(k) -> k
@@ -85,7 +86,25 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
                  end
                {key, v}
              end
-             Ecto.Changeset.cast(data, sp, Map.keys(sp))
+             # Normalize values based on schema types when possible
+             normalized_params = for {k, v} <- Map.to_list(snake_params), into: %{} do
+               type = data.__struct__.__schema__(:type, k)
+               v2 = case {type, v} do
+                 {{:array, :string}, bin} when is_binary(bin) ->
+                   # Split comma-separated strings into list of strings
+                   bin
+                   |> String.split(",", trim: true)
+                   |> Enum.map(&String.trim/1)
+                 {:integer, bin} when is_binary(bin) ->
+                   case Integer.parse(bin) do
+                     {int, _} -> int
+                     :error -> bin
+                   end
+                 _ -> v
+               end
+               {k, v2}
+             end
+             Ecto.Changeset.cast(data, normalized_params, Map.keys(normalized_params))
            end).({0}, {1})
         ', data, params);
     }
