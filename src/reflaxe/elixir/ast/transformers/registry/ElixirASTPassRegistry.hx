@@ -3047,10 +3047,22 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
         });
         passes.push({
+            name: "DuplicateEffectfulCallPrune",
+            description: "Remove immediately duplicated effectful calls prior to case on same call",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DuplicateEffectfulCallPruneTransforms.pass
+        });
+        passes.push({
             name: "SafePubSubAliasInject",
             description: "Ultimate alias injection for Phoenix.SafePubSub as SafePubSub",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.injectPass
+        });
+        passes.push({
+            name: "SafePubSubConverterCapture",
+            description: "Ensure parse_with_converter/2 receives a function capture (&mod.func/1)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SafePubSubConverterCaptureTransforms.pass
         });
         passes.push({
             name: "SafePubSubModuleRewrite",
