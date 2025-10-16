@@ -31,7 +31,7 @@ IMPORTANT: It's very important we don't fall into a never-ending cycle, that's w
 
 WE SHOULD NEVER COUPLE THE COMPILER CODE TO THE TODOAPP CODE. THE COMPILER SHOULD BE GENERIC AND NOT TIED TO ANY SPECIFIC APP OR CODE. THIS IS VERY IMPORTANT. So, for example, not comparing against var names or specific code shapes from the todoapp. The compiler should be generic and work for any code.
 
-Remember to use transformers wisely and only when needed. Don't overuse them, it might be a smell telling us the architecture of the compiler needs to change elsewhere. Justify the creation of transformers for me and in hxdoc. Always check if there's an existing transformer that can be adapted/used before creating a new one.
+Remember to use transformers wisely and only when needed. Don't overuse them, it might be a smell telling us the architecture of the compiler needs to change elsewhere. Justify the creation of transformers for me and in hxdoc. Always check if there's an existing transformer that can be adapted/used before creating a new one. Before using transformers, make sure it's not a deeper architectural issue that needs to be addressed elsewhere in the compiler!!!
 
 When you need to make a change in any component or transformer, you should first understand the compiler holistically. A new component should not break what another component did or undo it or cause regressions. You should understand the flow of the compiler and how data flows through it, and how each component interacts with each other. You should also check if there's any existing tests that cover the change you're making, if not, you should add them. For example, you should not add a new transformer to fix a warning or error if the root cause is elsewhere, you should fix it at the root cause and not add bandaids that might cause more problems in the future - the error/warning might disappear but it might cause other problems elsewhere (or other error and warnings), this should never happen!
 
@@ -67,5 +67,7 @@ When debugging the phoenix app when it starts, you should start it in the backgr
 Execution mode: if the task is a good plan go work on it, unless it nees to be updated (instructions above), then update and go back to working on it. Let's do it and bring us closer to the goal! Let the user knwow. If you're ready to execute, then start check the right task on shrimp and start executing it.
 
 IMPORTANT: If you need to address bugs and test, for the feedback loop, use playwright MCP but first make sure to compile the code (haxe+elixir) and then start the phoenix server in the background. If a phoenix server is already running, kill it first, then start it again.
+
+When using Playwright, make sure to test the todoapp properly, covering all the main flows. You should also check the console for errors/warnings and the network tab for failed requests. You should also check the output of the phoenix server in the terminal for any errors/warnings. If you find any, you should address them following the principles here. Ideally, we should have these flows described in the plan in shrimp so we can track them properly, if not, add them to your todo list and suggest a replan if needed.
 
 AGAIN: RUN THE FUCKING SERVER IN THE **BACKGROUND** AS NOT TO BLOCK THE FUCKING AGENT.
