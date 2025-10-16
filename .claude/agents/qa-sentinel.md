@@ -1,7 +1,6 @@
 ---
 name: qa-sentinel
 description: Use this agent when another agent reports task completion, especially for compiler fixes, feature implementations, or any changes that affect code generation. This agent acts as a verification layer to ensure tasks are truly complete and not just superficially addressed. Examples:\n\n<example>\nContext: An agent has just reported completing a fix for unused variable warnings in generated Elixir code.\nuser: "The compiler fix for unused variables has been implemented"\nassistant: "Let me use the qa-sentinel agent to verify this fix is working correctly"\n<commentary>\nSince a task completion has been reported, use the qa-sentinel agent to thoroughly verify the fix works in all scenarios.\n</commentary>\n</example>\n\n<example>\nContext: An agent claims to have resolved Phoenix.Presence integration issues.\nuser: "Phoenix.Presence is now working with the todo-app"\nassistant: "I'll launch the qa-sentinel agent to validate the Phoenix.Presence integration"\n<commentary>\nTask completion claim needs verification - the qa-sentinel will run tests and check the todo-app.\n</commentary>\n</example>\n\n<example>\nContext: After implementing a new AST transformation pass.\nuser: "The new idiomatic enum transformation is complete"\nassistant: "Using the qa-sentinel agent to verify the transformation generates correct Elixir code"\n<commentary>\nCompiler changes require thorough validation - qa-sentinel will check generated code quality.\n</commentary>\n</example>
-model: sonnet
 color: green
 ---
 

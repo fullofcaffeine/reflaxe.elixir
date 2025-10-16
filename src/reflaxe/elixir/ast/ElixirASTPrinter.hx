@@ -1022,11 +1022,12 @@ class ElixirASTPrinter {
                                     enumCall + ')';
                                 }
                             } else {
-                                // Special-case: to_iso8601 on DateTime values
+                                // Special-case: to_iso8601 on Date/NaiveDateTime values
                                 if (funcName == "to_iso8601") {
-                                    // Render as DateTime.to_iso8601(target)
+                                    // Prefer Kernel.to_string/1 to support both DateTime and
+                                    // NaiveDateTime without assuming a specific module.
                                     var tstr = print(target, indent);
-                                    return 'DateTime.to_iso8601(' + tstr + ')';
+                                    return 'Kernel.to_string(' + tstr + ')';
                                 }
                                 // Special-case: list.push(elem) → list = Enum.concat(list, [elem])
                                 if (funcName == "push") {
@@ -1112,9 +1113,9 @@ class ElixirASTPrinter {
                 // Special remappings before generic remote call printing
                 switch (module.def) {
                     case EVar(m) if (m == "Date_Impl_"):
-                        // Date_Impl_.get_time(x) -> DateTime.to_iso8601(x)
+                        // Date_Impl_.get_time(x) -> Kernel.to_string(x)
                         if (funcName == "get_time" && args.length == 1) {
-                            return 'DateTime.to_iso8601(' + printFunctionArg(args[0]) + ')';
+                            return 'Kernel.to_string(' + printFunctionArg(args[0]) + ')';
                         }
                         // Date_Impl_.from_string(x) -> x
                         if (funcName == "from_string" && args.length == 1) {
@@ -1311,9 +1312,10 @@ class ElixirASTPrinter {
                 if (field == "length") {
                     return 'length(' + print(target, 0) + ')';
                 }
-                // Special-case: now.to_iso8601 -> DateTime.to_iso8601(now)
+                // Special-case: now.to_iso8601 -> Kernel.to_string(now)
+                // Use Kernel.to_string/1 to support both DateTime and NaiveDateTime values.
                 if (field == "to_iso8601") {
-                    return 'DateTime.to_iso8601(' + print(target, 0) + ')';
+                    return 'Kernel.to_string(' + print(target, 0) + ')';
                 }
                 // If target is an atom, combine into a single atom with proper quoting
                 switch (target.def) {
