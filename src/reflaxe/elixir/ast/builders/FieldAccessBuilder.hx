@@ -260,8 +260,9 @@ class FieldAccessBuilder {
             return null;
         }
 
-        // Generate field access
-        return EField(objAST, fieldName);
+        // Generate field access (use snake_case for Elixir struct/map fields)
+        var snakeField = NameUtils.toSnakeCase(fieldName);
+        return EField(objAST, snakeField);
     }
 
     /**

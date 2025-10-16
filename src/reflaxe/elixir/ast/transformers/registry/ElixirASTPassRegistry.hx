@@ -1786,6 +1786,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceQualifiedModuleRewriteTransforms.transformPass
         });
+
+        // Normalize LiveView noreply return atoms
+        passes.push({
+            name: "LiveNoreplyAtomFix",
+            description: "Rewrite {:no_reply, socket} to {:noreply, socket} (shape-based)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveNoreplyAtomFixTransforms.transformPass
+        });
         // Inject alias for SafePubSub if bare module is referenced
         passes.push({
             name: "SafePubSubAliasInject",
@@ -2459,6 +2467,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseCallReuseTransforms.transformPass
         });
+        // Drop underscore-only remote call when followed by case on identical call
+        passes.push({
+            name: "RedundantUnderscoreCallBeforeCase",
+            description: "Remove `_ = Mod.func(args)` immediately before `case Mod.func(args) do ... end`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RedundantUnderscoreCallBeforeCaseTransforms.transformPass
+        });
         // Unify success var names when body references non-underscore variant
         passes.push({
             name: "CaseSuccessVarUnify",
@@ -3122,6 +3137,7 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
         });
 
+
         // Reorder handle_event/3 clauses to be grouped contiguously and place catch-alls last
         passes.push({
             name: "HandleEventGroupingReorder",
@@ -3129,6 +3145,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventGroupingReorderTransforms.pass
         });
+
 
         // Absolute-final: rewrite self-compare predicates to param in any remaining anon fns
         passes.push({
