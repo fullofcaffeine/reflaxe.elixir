@@ -1,7 +1,5 @@
 defmodule Log do
   def format_output(v, infos) do
-    str = inspect(v)
-    if Kernel.is_nil(infos), do: str
     str
   end
   def trace(v, infos) do

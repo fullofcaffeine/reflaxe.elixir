@@ -1,0 +1,6 @@
+NEG-OK HXXTypeSafetyErrors (3s)
+NEG-OK typed_query_invalid_field (3s)
+NEG-UNEXPECTED-SUCCESS hxx_assigns_linter (3s)
+NEG-OK HXXTypeSafetyErrors (2s)
+NEG-OK typed_query_invalid_field (2s)
+NEG-OK hxx_assigns_linter (3s)

@@ -1,12 +1,11 @@
 defmodule PresenceHelpers do
-  def simple_list(_presences) do
-    keys = []
-    keys
+  def simple_list(presences) do
+    Map.keys(presences)
   end
-  def is_present(_presences, _key) do
-    false
+  def is_present(presences, key) do
+    Map.has_key?(presences, key)
   end
-  def count(_presences) do
-    0
+  def count(presences) do
+    map_size(presences)
   end
 end

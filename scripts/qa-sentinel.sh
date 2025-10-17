@@ -1,12 +1,63 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# QA Sentinel: Compile, run, curl /, assert zero warnings/errors
-# Usage: scripts/qa-sentinel.sh [--app examples/todo-app] [--port 4001] [--keep-alive] [--verbose] [--async] [--deadline SECS]
-#        Optional timeouts (env): BUILD_TIMEOUT, DEPS_TIMEOUT, COMPILE_TIMEOUT, READY_PROBES
+# ============================================================================
+# QA Sentinel: Non‑Blocking Phoenix App Validation (Haxe→Elixir→Runtime)
+# ============================================================================
+# WHAT
+# - Builds the project (Haxe→Elixir), resolves Mix deps, compiles Elixir,
+#   launches Phoenix in the background, probes readiness, curls endpoints, and
+#   scans logs for errors — with strict non‑blocking behavior.
 #
-# --keep-alive: Do not kill the Phoenix server on exit. Prints PHX_PID and PORT so
-#               external tools (e2e runners) can reuse the same background server.
+# WHY
+# - Agents shouldn’t block on long compilation/runtime tasks. This script provides
+#   robust timeouts, visible progress, and an async mode that returns immediately
+#   while the full validation runs in the background with logs you can tail.
+#
+# USAGE
+#   scripts/qa-sentinel.sh [--app PATH] [--port N] [--keep-alive] [--verbose] [--async] [--deadline SECS]
+#
+# FLAGS
+#   --app PATH       Default: examples/todo-app
+#   --port N         Default: 4001 (auto-detect Phoenix-reported port fallback)
+#   --keep-alive     Do not kill Phoenix on exit; print PHX_PID and PORT
+#   --verbose|-v     Print shell commands and tail logs during probes
+#   --async          Dispatch pipeline to background and return immediately
+#   --deadline SECS  Hard cap: watchdog kills background job after SECS
+#
+# ENV (timeouts/probes)
+#   BUILD_TIMEOUT      Haxe build timeout (default: 300s)
+#   DEPS_TIMEOUT       mix deps.get timeout (default: 300s)
+#   COMPILE_TIMEOUT    mix compile timeout (default: 300s)
+#   READY_PROBES       Readiness probes (default: 60) at 0.5s interval
+#   PROGRESS_INTERVAL  Heartbeat interval in seconds (default: 10)
+#
+# OUTPUT / LOGS
+#   /tmp/qa-haxe.log         Haxe build output
+#   /tmp/qa-mix-deps.log     Mix deps.get output
+#   /tmp/qa-mix-compile.log  Mix compile output
+#   /tmp/qa-phx.log          Phoenix server output (background)
+#   /tmp/qa-index.html       GET / response on success
+#   Async mode main log: /tmp/qa-sentinel.<RUN_ID>.log
+#
+# NON‑BLOCKING DESIGN
+#   - Per‑step timeouts guard against hangs.
+#   - Heartbeat prints progress every PROGRESS_INTERVAL seconds.
+#   - Async mode returns immediately with PIDs + log paths; optional watchdog.
+#   - Background server is torn down unless --keep-alive is used.
+#
+# EXAMPLES
+#   scripts/qa-sentinel.sh --verbose --async --deadline 120
+#   BUILD_TIMEOUT=420s COMPILE_TIMEOUT=420s READY_PROBES=120 \
+#     scripts/qa-sentinel.sh --verbose --async --deadline 300
+#   PROGRESS_INTERVAL=5 scripts/qa-sentinel.sh --verbose
+#
+# TROUBLESHOOTING
+#   - Haxe stalls:  tail -n 80 /tmp/qa-haxe.log
+#   - Mix errors:   tail -n 80 /tmp/qa-mix-*.log
+#   - Phoenix boot: tail -n 80 /tmp/qa-phx.log
+#   - Kill async:   kill -TERM $QA_SENTINEL_PID
+# ============================================================================
 
 APP_DIR="examples/todo-app"
 PORT=4001
