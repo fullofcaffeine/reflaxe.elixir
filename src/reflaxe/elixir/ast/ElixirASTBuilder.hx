@@ -3238,7 +3238,11 @@ class ElixirASTBuilder {
                         // Build inner string/concat AST, collect HXX content, and emit ~H sigil.
                         var innerAst = buildFromTypedExpr(e, currentContext);
                         var content = collectTemplateContent(innerAst);
-                        ESigil("H", content, "");
+                        // Build typed fragment AST for attributes/children analysis
+                        var typedFrags = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
+                        var metaOut = emptyMetadata();
+                        (cast metaOut : Dynamic).heexAST = typedFrags;
+                        makeASTWithMeta(ESigil("H", content, ""), metaOut, e.pos);
                     default:
                         // Other metadata is compile-time only; process inner expression
                         convertExpression(e);

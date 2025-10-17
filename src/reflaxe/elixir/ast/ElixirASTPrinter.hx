@@ -1886,7 +1886,15 @@ class ElixirASTPrinter {
      */
     static function printAttributes(attrs: Array<EAttribute>): String {
         if (attrs.length == 0) return '';
-        return ' ' + [for (a in attrs) a.name + '="' + print(a.value, 0) + '"'].join(' ');
+        var parts = [];
+        for (a in attrs) {
+            var rendered = switch (a.value.def) {
+                case EString(v): '"' + v + '"';
+                default: '{' + print(a.value, 0) + '}';
+            };
+            parts.push(a.name + '=' + rendered);
+        }
+        return ' ' + parts.join(' ');
     }
     
     /**

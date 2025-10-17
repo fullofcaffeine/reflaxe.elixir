@@ -109,6 +109,8 @@ class HeexAssignsTypeLinterTransforms {
                         // Literal comparisons
                         checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
                     }
+                    // Attribute-level validation via fragment metadata (if available)
+                    validateHeexFragments(body, fields, assignsType, ctx);
                     // Return node unchanged
                     makeASTWithMeta(n.def, n.metadata, n.pos);
                 default:
@@ -133,6 +135,42 @@ class HeexAssignsTypeLinterTransforms {
             switch (x.def) {
                 case ESigil(type, content, _mods) if (type == "H"):
                     out.push({ content: content, pos: x.pos });
+                default:
+            }
+            return x;
+        });
+    }
+
+    // Validate attributes from parsed fragment metadata (if annotator ran)
+    static function validateHeexFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+        ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
+            switch (x.def) {
+                case ESigil(type, _content, _mods) if (type == "H"):
+                    var meta = x.metadata;
+                    if (meta != null) {
+                        var dyn: Dynamic = meta;
+                        if (Reflect.hasField(dyn, "heexFragments")) {
+                            var frags: Array<Dynamic> = Reflect.field(dyn, "heexFragments");
+                            if (frags != null) {
+                                for (f in frags) {
+                                    var attrs: Array<Dynamic> = f.attributes;
+                                    if (attrs == null) continue;
+                                    for (a in attrs) {
+                                        var vexpr: String = a.valueExpr;
+                                        // Unknown field checks: scan @field tokens
+                                        var used = collectAtFields(vexpr);
+                                        for (uf in used) {
+                                            if (!fields.exists(uf)) {
+                                                error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
+                                            }
+                                        }
+                                        // Literal kind mismatches within attribute expressions
+                                        checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 default:
             }
             return x;
