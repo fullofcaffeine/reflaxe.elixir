@@ -689,7 +689,7 @@ class ElixirASTBuilder {
 
                     #if debug_ast_builder
                     if (v.name == "_g" || v.name == "g") {
-                        trace('[DEBUG TVar]   VariableBuilder result: ${result != null ? Type.enumConstructor(result.def) : "null"}');
+                        trace('[DEBUG TVar]   VariableBuilder result: ${result != null ? Type.enumConstructor(result) : "null"}');
                     }
                     #end
 
