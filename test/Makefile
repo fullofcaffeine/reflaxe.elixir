@@ -42,7 +42,8 @@ NEGATIVE_TESTS := $(shell if [ -d "$(NEGATIVE_DIR)" ]; then find $(NEGATIVE_DIR)
 TEST_TARGETS := $(shell echo "$(POSITIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
 
 # Targets for negative tests (expected-to-fail compilation)
-NEGATIVE_TEST_TARGETS := $(shell echo "$(NEGATIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-negative-|' | tr '\n' ' ')
+# Use a dedicated prefix (neg-*) to avoid overlapping the generic test-% rule
+NEGATIVE_TEST_TARGETS := $(shell echo "$(NEGATIVE_TESTS)" | tr ' ' '\n' | sed 's|^negative/||' | sed 's|/|__|g' | sed 's|^|neg-|' | tr '\n' ' ')
 
 # Default target runs all tests with default parallelism
 .PHONY: all
@@ -138,42 +139,11 @@ summary-negative-safe:
 		exit 1; \
 	fi
 
-# Pattern rule for negative tests (expected-to-fail compilation) — placed before test-% to take precedence
-
-# Negative tests: the target stem includes one or more leading "negative/" prefixes (e.g.,
-# target name is test-negative-negative__hxx_assigns_linter). Normalize so we resolve to snapshot/negative/<name>.
-.PHONY: test-negative-%
-test-negative-%:
+# Pattern rule for negative tests (expected-to-fail compilation)
+.PHONY: neg-%
+neg-%:
 	@raw=$$(echo $* | sed 's|__|/|g'); \
-	# Strip one or more leading "negative/" prefixes from the stem
-	testname=$$(echo $$raw | sed -E 's|^(negative/)+||'); \
-	testdir=$(NEGATIVE_DIR)/$$testname; \
-	if [ ! -f $$testdir/compile.hxml ]; then \
-		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
-		exit 1; \
-	fi; \
-	echo "Running negative negative/$$testname (expected failure)..."; \
-	start=$$(date +%s); \
-	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
-		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-UNEXPECTED-SUCCESS negative/$$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-		exit 1; \
-	else \
-		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-OK negative/$$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-	fi
-
-# Pattern rule for negative tests (expected-to-fail compilation) — placed before test-% to take precedence
-
-# Negative tests: the target stem includes an extra "negative__" prefix (e.g.,
-# target name is test-negative-negative__hxx_assigns_linter). Normalize so testdir resolves to snapshot/negative/<name>.
-
-.PHONY: test-negative-%
-test-negative-%:
-	@raw=$$(echo $* | sed 's|__|/|g'); \
-	# Strip a single leading "negative/" prefix from the stem to avoid duplication with $(NEGATIVE_DIR)
-	testname=$${raw#negative/}; \
-	testdir=$(NEGATIVE_DIR)/$$testname; \
+	testdir=$(NEGATIVE_DIR)/$$raw; \
 	if [ ! -f $$testdir/compile.hxml ]; then \
 		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
 		exit 1; \
@@ -188,6 +158,11 @@ test-negative-%:
 		end=$$(date +%s); duration=$$((end - start)); \
 		echo "NEG-OK $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 	fi
+
+# Back-compat alias: allow test-negative-* targets to delegate to neg-*
+.PHONY: test-negative-%
+test-negative-%:
+	@$(MAKE) -f $(MAKEFILE_LIST) neg-$*
 
 # Pattern rule for running individual positive tests
 # Converts double underscores back to slashes for nested directories
