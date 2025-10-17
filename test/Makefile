@@ -166,15 +166,21 @@ test-%:
 	fi
 
 # Pattern rule for negative tests (expected-to-fail compilation)
+
+# Negative tests: the target stem includes an extra "negative__" prefix (e.g.,
+# target name is test-negative-negative__hxx_assigns_linter). Normalize it so
+# testdir always resolves to snapshot/negative/<name>.
 .PHONY: test-negative-%
 test-negative-%:
-	@testname=$$(echo $* | sed 's|__|/|g'); \
-	testdir=$(TEST_DIR)/$$testname; \
+	@raw=$$(echo $* | sed 's|__|/|g'); \
+	# Strip single leading "negative/" from the stem to avoid duplication with $(NEGATIVE_DIR)
+	testname=$${raw#negative/}; \
+	testdir=$(NEGATIVE_DIR)/$$testname; \
 	if [ ! -f $$testdir/compile.hxml ]; then \
-		echo "❌ $$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
 		exit 1; \
 	fi; \
-	echo "Running negative $$testname (expected failure)..."; \
+	echo "Running negative negative/$$testname (expected failure)..."; \
 	start=$$(date +%s); \
 	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); duration=$$((end - start)); \
