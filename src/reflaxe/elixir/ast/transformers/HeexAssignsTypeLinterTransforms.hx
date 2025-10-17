@@ -60,12 +60,12 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     static function lint(ast: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): ElixirAST {
-        // Lint only within LiveView modules to avoid non-template false positives
+        // Lint any render(assigns) function in project files; skip compiler/vendor/std paths
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             switch (n.def) {
-                case EModule(_name, _attrs, body) if (n.metadata?.isLiveView == true):
+                case EModule(_name, _attrs, body):
                     for (child in body) lintRender(child, ctx);
-                case EDefmodule(_name, doBlock) if (n.metadata?.isLiveView == true):
+                case EDefmodule(_name, doBlock):
                     lintRender(doBlock, ctx);
                 default:
             }
