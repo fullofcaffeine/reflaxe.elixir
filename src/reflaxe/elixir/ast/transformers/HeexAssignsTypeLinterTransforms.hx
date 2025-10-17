@@ -91,26 +91,27 @@ class HeexAssignsTypeLinterTransforms {
 #end
                     if (fields == null) fields = new Map<String, String>();
 
-                    // Collect all ~H sigil contents within this render function
+                    // Prefer structured validation first
+                    // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
+                    validateHeexFragments(body, fields, assignsType, ctx);
+
+                    // 2) Validate any native EFragment nodes already present in the render body
+                    validateNativeEFragments(body, fields, assignsType, ctx);
+
+                    // 3) Bridge path: string-based validation for ~H contents (kept until full EFragment emission)
                     var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
                     collectHeexContents(body, contents);
-
                     for (item in contents) {
-                        // Unknown fields
                         var used = collectAtFields(item.content);
 #if debug_assigns_linter
                         trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
 #end
-                        for (f in used) {
-                            if (!fields.exists(f)) {
-                                error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + assignsType + ')', item.pos);
-                            }
+                        for (f in used) if (!fields.exists(f)) {
+                            error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + assignsType + ')', item.pos);
                         }
-                        // Literal comparisons
                         checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
                     }
-                    // Attribute-level validation via fragment metadata (if available)
-                    validateHeexFragments(body, fields, assignsType, ctx);
+
                     // Return node unchanged
                     makeASTWithMeta(n.def, n.metadata, n.pos);
                 default:
@@ -179,6 +180,19 @@ class HeexAssignsTypeLinterTransforms {
                             }
                         }
                     }
+                default:
+            }
+            return x;
+        });
+    }
+
+    // Validate attributes using native EFragment nodes present in AST
+    static function validateNativeEFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+        ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
+            switch (x.def) {
+                case EFragment(_tag, _attrs, _children):
+                    // Validate this fragment and all nested children via structured walker
+                    validateNode(x, fields, typeName, ctx, x.pos);
                 default:
             }
             return x;
