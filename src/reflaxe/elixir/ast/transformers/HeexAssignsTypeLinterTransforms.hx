@@ -64,6 +64,10 @@ class HeexAssignsTypeLinterTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body) if (name == "render"):
+                    // Fail-fast: skip linter if this render body contains neither ~H sigils nor EFragment nodes
+                    if (!containsHeexOrFragments(body)) {
+                        return n;
+                    }
                     // Resolve Haxe source path for this function
                     var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
                     if (hxPath == null) {
@@ -140,6 +144,22 @@ class HeexAssignsTypeLinterTransforms {
             }
             return x;
         });
+    }
+
+    static function containsHeexOrFragments(node: ElixirAST): Bool {
+        var found = false;
+        ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
+            if (found) return x;
+            switch (x.def) {
+                case ESigil(type, _content, _mods) if (type == "H"):
+                    found = true;
+                case EFragment(_tag, _attrs, _children):
+                    found = true;
+                default:
+            }
+            return x;
+        });
+        return found;
     }
 
     // Validate attributes from parsed fragment metadata (if annotator ran)
