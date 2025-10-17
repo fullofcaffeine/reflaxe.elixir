@@ -39,15 +39,14 @@ class Todo {
 		this.priority = "medium";
 	}
 	
-	@:changeset
-	public static function changeset(todo: Todo, params: TodoParams): Changeset<Todo, TodoParams> {
-		// Create a fully typed changeset - no Dynamic!
-		var cs = new Changeset(todo, params);
-		return cs.validateRequired(["title", "userId"])
-			.validateLength("title", {min: 3, max: 200})
-			.validateLength("description", {max: 1000});
-			// Further validations will be added once macros are implemented
-	}
+    @:changeset
+    public static function changeset(todo: Todo, params: TodoParams): Changeset<Todo, TodoParams> {
+        // Build and return changeset without local binding to avoid hygiene drops
+        return new Changeset(todo, params)
+            .validateRequired(["title", "userId"]) 
+            .validateLength("title", {min: 3, max: 200})
+            .validateLength("description", {max: 1000});
+    }
 	
 	
 	// Helper functions for business logic with proper types

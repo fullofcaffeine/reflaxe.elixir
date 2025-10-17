@@ -343,6 +343,87 @@ class ChangesetTransforms {
     }
 
     static function normalizeBody(body: ElixirAST): ElixirAST {
+        #if sys
+        Sys.println('[ChangesetTransforms] normalizeBody invoked');
+        #end
+        // Ensure an initial `cs` binder exists for the changeset-producing expression
+        function lhsAllWildcards(lhs: ElixirAST): Bool {
+            return switch (lhs.def) {
+                case EVar(v) if (v == "_" || (v != null && v.length > 1 && v.charAt(0) == '_')): true;
+                case EBinary(Match, l2, r2): lhsAllWildcards(l2) || lhsAllWildcards(r2);
+                default: false;
+            }
+        }
+        function patternAllWildcards(p: EPattern): Bool {
+            return switch (p) {
+                case PVar(n) if (n == "_" || (n != null && n.length > 1 && n.charAt(0) == '_')): true;
+                case PTuple(es): var any = false; for (e in es) any = any || patternAllWildcards(e); any;
+                case PList(es): var any2 = false; for (e in es) any2 = any2 || patternAllWildcards(e); any2;
+                case PCons(h, t): patternAllWildcards(h) || patternAllWildcards(t);
+                default: false;
+            }
+        }
+        function peelInnermost(n: ElixirAST): ElixirAST {
+            var cur = n;
+            while (cur != null && cur.def != null) {
+                switch (cur.def) {
+                    case EBinary(Match, left, inner) if (lhsAllWildcards(left)):
+                        cur = inner;
+                    case EMatch(pat, inner2) if (patternAllWildcards(pat)):
+                        cur = inner2;
+                    default:
+                        return cur;
+                }
+            }
+            return cur == null ? n : cur;
+        }
+        function containsCastCall(e: ElixirAST): Bool {
+            return switch (e.def) {
+                case ERemoteCall(mod, fn, _) if (isChangeset(mod) && fn == "cast"): true;
+                case ERaw(code) if (code != null && code.indexOf("Ecto.Changeset.cast(") != -1): true;
+                case EMatch(_, inner): containsCastCall(inner);
+                case EBinary(Match, _, right): containsCastCall(right);
+                case EParen(inner): containsCastCall(inner);
+                default: false;
+            }
+        }
+        function ensureInitialBinder(b: ElixirAST): ElixirAST {
+            return switch (b.def) {
+                case EBlock(stmts) if (stmts.length > 0):
+                    var first = stmts[0];
+                    var rhs: Null<ElixirAST> = null;
+                    switch (first.def) {
+                        case EBinary(Match, left, r) if (lhsAllWildcards(left) && containsCastCall(r)):
+                            rhs = peelInnermost(r);
+                        case EMatch(pat, r2) if (patternAllWildcards(pat) && containsCastCall(r2)):
+                            rhs = r2;
+                        default:
+                    }
+                    if (rhs != null) {
+                        var csAssign = makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), rhs), first.metadata, first.pos);
+                        var newStmts = [csAssign];
+                        for (i in 1...stmts.length) newStmts.push(stmts[i]);
+                        makeASTWithMeta(EBlock(newStmts), b.metadata, b.pos);
+                    } else b;
+                default:
+                    b;
+            }
+        }
+        // Promote any wildcard assignment to cast(...) into cs = ...
+        function rewriteCastAssign(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EBinary(Match, left, rhs) if (lhsAllWildcards(left) && containsCastCall(rhs)):
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), peelInnermost(rhs)), n.metadata, n.pos);
+                case EMatch(pat, rhs2) if (patternAllWildcards(pat) && containsCastCall(rhs2)):
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), rhs2), n.metadata, n.pos);
+                case ERaw(code) if (code != null && code.indexOf("Ecto.Changeset.cast(") != -1):
+                    // Promote raw cast expression used as a standalone statement
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), n), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        }
+        body = ElixirASTTransformer.transformNode(ensureInitialBinder(body), rewriteCastAssign);
         // Determine canonical changeset variable name
         var csVar = findChangesetVar(body);
         if (csVar == null) {
@@ -394,6 +475,33 @@ class ChangesetTransforms {
                     }
                     
                     makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        }
+
+        // 3a) Rebind standalone validate_* calls to csVar
+        function rebindStandaloneValidate(n: ElixirAST): ElixirAST {
+            inline function isValidateCall(e: ElixirAST): Bool {
+                return switch (e.def) {
+                    case ERemoteCall(mod, fn, args): isChangesetValidate(mod, fn, args);
+                    case ERaw(code): code != null && (code.indexOf("Ecto.Changeset.validate_required(") != -1 || code.indexOf("Ecto.Changeset.validate_length(") != -1);
+                    default: false;
+                }
+            }
+            return switch (n.def) {
+                // _ = if ... validate_length ... else cs -> cs = if ... end
+                case EMatch(PVar("_"), rhs) if (isValidateLengthCall(rhs)):
+                    makeASTWithMeta(EMatch(PVar(csVar), rhs), n.metadata, n.pos);
+                // _ = <validate_* call>
+                case EMatch(PVar("_"), rhs) if (isValidateCall(rhs)):
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar(csVar)), rhs), n.metadata, n.pos);
+                // _ = nested assignment containing validate_*
+                case EBinary(Match, {def: EVar("_")}, rhs) if (isValidateCall(rhs)):
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar(csVar)), rhs), n.metadata, n.pos);
+                // Plain standalone validate_* call -> cs = call
+                case ERemoteCall(mod2, fn2, args2) if (isChangesetValidate(mod2, fn2, args2)):
+                    makeASTWithMeta(EBinary(Match, makeAST(EVar(csVar)), n), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -545,7 +653,8 @@ class ChangesetTransforms {
             }
         }
         // Third pass-b: canonicalize assignment LHS to csVar
-        var pass2b = ElixirASTTransformer.transformNode(pass2c2, rewriteAssignmentLhs);
+        var pass2a = ElixirASTTransformer.transformNode(pass2c2, rebindStandaloneValidate);
+        var pass2b = ElixirASTTransformer.transformNode(pass2a, rewriteAssignmentLhs);
 
         // 3d) Compress duplicated self-assignments like `cs = cs = cond do ... end`
         function compressDoubleAssign(n: ElixirAST): ElixirAST {

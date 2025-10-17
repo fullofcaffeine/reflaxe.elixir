@@ -120,10 +120,11 @@ class TodoLive {
 		var todos = loadTodos(currentUser.id);
 		
 		// Track user presence for real-time collaboration
-		var presenceSocket = server.presence.TodoPresence.trackUser(socket, currentUser);
-		
-		// Create type-safe assigns structure
-		var assigns: TodoLiveAssigns = {
+        // Presence tracking temporarily skipped pending presence module cleanup
+        var presenceSocket = socket;
+
+        // Create type-safe assigns structure
+        var assigns: TodoLiveAssigns = {
 			todos: todos,
 			filter: "all",
 			sort_by: "created",
@@ -171,10 +172,7 @@ class TodoLive {
 			
             case CancelEdit:
                 // Clear editing state in presence (idiomatic Phoenix pattern)
-                SafeAssigns.setEditingTodo(
-                    server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.current_user, null),
-                    null
-                );
+                SafeAssigns.setEditingTodo(socket, null);
 			
 			// Filtering and sorting
 			case FilterTodos(filter):
@@ -416,21 +414,15 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 		return null;
 	}
 	
-	static function countCompleted(todos: Array<server.schemas.Todo>): Int {
-		var count = 0;
-		for (todo in todos) {
-			if (todo.completed) count++;
-		}
-		return count;
-	}
+    static function countCompleted(todos: Array<server.schemas.Todo>): Int {
+        // Prefer filter+length to enable Enum.count generation on Elixir
+        return todos.filter(function(t) return t.completed).length;
+    }
 	
-	static function countPending(todos: Array<server.schemas.Todo>): Int {
-		var count = 0;
-		for (todo in todos) {
-			if (!todo.completed) count++;
-		}
-		return count;
-	}
+    static function countPending(todos: Array<server.schemas.Todo>): Int {
+        // Prefer filter+length to enable Enum.count generation on Elixir
+        return todos.filter(function(t) return !t.completed).length;
+    }
 	
 	static function parseTags(tagsString: String): Array<String> {
 		if (tagsString == null || tagsString == "") return [];
@@ -499,8 +491,7 @@ static function getUserFromSession(session: Dynamic): User {
 	static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo = findTodo(id, socket.assigns.todos);
 		// Update presence to show user is editing (idiomatic Phoenix pattern)
-		var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.current_user, id);
-		return SafeAssigns.setEditingTodo(presenceSocket, todo);
+        return SafeAssigns.setEditingTodo(socket, todo);
 	}
 	
 	// Bulk operations with type-safe socket handling
@@ -608,8 +599,7 @@ static function getUserFromSession(session: Dynamic): User {
 				}
 				
 				// Clear editing state in presence and assigns (idiomatic Phoenix pattern)
-				var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.current_user, null);
-				var updatedSocket = SafeAssigns.setEditingTodo(presenceSocket, null);
+                var updatedSocket = SafeAssigns.setEditingTodo(socket, null);
 				return loadAndAssignTodos(updatedSocket);
 				
 			case Error(changeset):
@@ -738,7 +728,7 @@ static function getUserFromSession(session: Dynamic): User {
 	 * This generates the HTML template that gets sent to the browser
 	 */
     public static function render(assigns: TodoLiveAssigns): Dynamic {
-        var content = HXX.hxx('
+        return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
 					
@@ -750,7 +740,7 @@ static function getUserFromSession(session: Dynamic): User {
 									📝 Todo Manager
 								</h1>
 								<p class="text-gray-600 dark:text-gray-400">
-									Welcome, <%= @current_user.name %>!
+									Welcome, ${assigns.current_user.name}!
 								</p>
 							</div>
 							
@@ -758,19 +748,19 @@ static function getUserFromSession(session: Dynamic): User {
 							<div class="flex space-x-6">
 								<div class="text-center">
 									<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-										<%= @total_todos %>
+										${assigns.total_todos}
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
 								</div>
 								<div class="text-center">
 									<div class="text-3xl font-bold text-green-600 dark:text-green-400">
-										<%= @completed_todos %>
+										${assigns.completed_todos}
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
 								</div>
 								<div class="text-center">
 									<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
-										<%= @pending_todos %>
+										${assigns.pending_todos}
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
 								</div>
@@ -779,12 +769,12 @@ static function getUserFromSession(session: Dynamic): User {
 						
 						<!-- Add Todo Button -->
 						<button phx-click="toggle_form" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
-							<%= if @show_form, do: "✖ Cancel", else: "➕ Add New Todo" %>
+							${assigns.show_form ? "✖ Cancel" : "➕ Add New Todo"}
 						</button>
 					</div>
 					
 					<!-- New Todo Form -->
-					<%= if @show_form do %>
+					<if {assigns.show_form}>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 							<form phx-submit="create_todo" class="space-y-4">
 								<div>
@@ -795,7 +785,7 @@ static function getUserFromSession(session: Dynamic): User {
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="What needs to be done?" />
 								</div>
-								
+
 								<div>
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Description
@@ -804,7 +794,7 @@ static function getUserFromSession(session: Dynamic): User {
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Add more details..."></textarea>
 								</div>
-								
+
 								<div class="grid grid-cols-2 gap-4">
 									<div>
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -817,7 +807,7 @@ static function getUserFromSession(session: Dynamic): User {
 											<option value="high">High</option>
 										</select>
 									</div>
-									
+
 									<div>
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 											Due Date
@@ -826,7 +816,7 @@ static function getUserFromSession(session: Dynamic): User {
                                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 									</div>
 								</div>
-								
+
 								<div>
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Tags (comma-separated)
@@ -835,14 +825,14 @@ static function getUserFromSession(session: Dynamic): User {
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="work, personal, urgent" />
 								</div>
-								
+
 								<button type="submit"
 									class="w-full py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md">
 									✅ Create Todo
 								</button>
 							</form>
 						</div>
-					<% end %>
+					</if>
 					
 					<!-- Filters and Search -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
@@ -898,7 +888,6 @@ static function getUserFromSession(session: Dynamic): User {
 				</div>
 			</div>
         ');
-        return untyped __elixir__('~H"""\n<%= Phoenix.HTML.raw(content) %>\n"""');
     }
 	
 	/**
@@ -906,7 +895,7 @@ static function getUserFromSession(session: Dynamic): User {
 	 * 
 	 * Uses idiomatic Phoenix pattern: single presence map with all user state
 	 */
-    static function renderPresencePanel(onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
+    @:keep public static function renderPresencePanel(onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
         // TEMP: Presence panel disabled pending compiler Map iteration fix.
         // Keeps runtime clean while we finalize Presence iteration transform in AST pipeline.
         return "";
@@ -915,7 +904,7 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Render bulk actions section
 	 */
-	static function renderBulkActions(assigns: TodoLiveAssigns): String {
+    @:keep public static function renderBulkActions(assigns: TodoLiveAssigns): String {
 		if (assigns.todos.length == 0) {
 			return "";
 		}
@@ -943,7 +932,7 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Render the todo list section
 	 */
-	static function renderTodoList(assigns: TodoLiveAssigns): String {
+    @:keep public static function renderTodoList(assigns: TodoLiveAssigns): String {
 		if (assigns.todos.length == 0) {
 			return HXX.hxx('
 				<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center">
@@ -981,7 +970,6 @@ static function getUserFromSession(session: Dynamic): User {
 		if (isEditing) {
 			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
 					<form phx-submit="save_todo" class="space-y-4">
-						<input type="hidden" name="todo_id" value="${todo.id}" />
 						<input type="text" name="title" value="${todo.title}" required
 							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 						<textarea name="description" rows="2"
@@ -1065,27 +1053,23 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Helper to filter todos based on filter and search query
 	 */
-	static function filterTodos(todos: Array<server.schemas.Todo>, filter: String, searchQuery: String): Array<server.schemas.Todo> {
-		var filtered = todos;
-		
-		// Apply filter
-		filtered = switch(filter) {
-			case "active": filtered.filter(function(t) return !t.completed);
-			case "completed": filtered.filter(function(t) return t.completed);
-			case _: filtered;
-		};
-		
-    // Apply search (expression form to ensure result is used even after hygiene passes)
-    if (searchQuery != null && searchQuery != "") {
-        var query = searchQuery.toLowerCase();
-        filtered = filtered.filter(function(t) {
-            return t.title.toLowerCase().indexOf(query) >= 0 ||
-                   (t.description != null && t.description.toLowerCase().indexOf(query) >= 0);
-        });
+    static function filterTodos(todos: Array<server.schemas.Todo>, filter: String, searchQuery: String): Array<server.schemas.Todo> {
+        // First apply status filter
+        var base = switch(filter) {
+            case "active": todos.filter(function(t) return !t.completed);
+            case "completed": todos.filter(function(t) return t.completed);
+            case _: todos;
+        };
+
+        // Return either the searched subset or the base list
+        return (searchQuery != null && searchQuery != "")
+            ? base.filter(function(t) {
+                var ql = searchQuery.toLowerCase();
+                return t.title.toLowerCase().indexOf(ql) >= 0 ||
+                       (t.description != null && t.description.toLowerCase().indexOf(ql) >= 0);
+            })
+            : base;
     }
-		
-		return filtered;
-	}
 	
 	/**
 	 * Helper to filter and sort todos
