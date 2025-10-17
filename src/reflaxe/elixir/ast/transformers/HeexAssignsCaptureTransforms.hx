@@ -122,14 +122,23 @@ class HeexAssignsCaptureTransforms {
                                             newStmts.push(makeASTWithMeta(rebuilt.def, stmts[i].metadata, stmts[i].pos));
                                         case ERaw(code):
                                             var code2 = code;
-                                            if (html != null) {
-                                                // Replace the raw(content) segment with inlined html
-                                                code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
-                                                trace('[HeexAssignsCapture] Inlined html into ERaw ~H');
+                                            if (html != null) code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
+                                            // If this ERaw wraps a ~H sigil, convert to ESigil so later passes (strip .to_string, etc.) apply
+                                            var idx = code2.indexOf('~H"""');
+                                            if (idx != -1) {
+                                                var start = idx + 4; // after ~H"""
+                                                var endIdx = code2.indexOf('"""', start);
+                                                if (endIdx != -1) {
+                                                    var sigilContent = code2.substr(start, endIdx - start);
+                                                    var rebuilt2: ElixirAST = makeAST(ESigil("H", sigilContent, ""));
+                                                    for (p in 0...heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
+                                                    newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
+                                                    break;
+                                                }
                                             }
-                                            var rebuilt2: ElixirAST = makeAST(ERaw(code2));
-                                            for (p in 0...heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
-                                            newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
+                                            var fallbackNode: ElixirAST = makeAST(ERaw(code2));
+                                            for (p in 0...heex.parens) fallbackNode = makeAST(EParen(fallbackNode));
+                                            newStmts.push(makeASTWithMeta(fallbackNode.def, stmts[i].metadata, stmts[i].pos));
                                         default:
                                             newStmts.push(stmts[i]);
                                     }

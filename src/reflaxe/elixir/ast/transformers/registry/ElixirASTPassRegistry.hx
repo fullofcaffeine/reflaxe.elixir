@@ -296,6 +296,22 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
         });
 
+        // Inline HXX.block(...) calls inside ~H to literal HTML before attribute normalization
+        passes.push({
+            name: "HeexRewriteHxxBlock",
+            description: "Replace <%= HXX.block(\"...\") %> residue in ~H with literal HTML",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
+        });
+
+        // Remove isolated quote lines introduced by earlier inlining/normalization
+        passes.push({
+            name: "HeexStripDanglingQuoteLines",
+            description: "Drop lines that are solely a quote (' or \" ) inside ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
+        });
+
         // Normalize attribute-level EEx to HEEx attribute expressions { ... }
         passes.push({
             name: "HeexAttributeExprNormalize",
@@ -2104,6 +2120,20 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.pass,
             contextualPass: reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.contextualPass
+        });
+
+        // Post-capture cleanup: inline HXX.block calls again and strip accidental dangling quotes
+        passes.push({
+            name: "HeexRewriteHxxBlock",
+            description: "(late) Replace <%= HXX.block(...) %> residue after capture inlining",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
+        });
+        passes.push({
+            name: "HeexStripDanglingQuoteLines",
+            description: "(late) Drop lines that are solely a quote in ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
         });
 
         // Phoenix enum modules (generated) → ensure atom-tag tuples (no numeric tags)
