@@ -322,6 +322,29 @@ class CallExprBuilder {
             }
         }
 
+        // Handle HXX.hxx(template) → ESigil("H", content)
+        // This enables deterministic ~H generation even when HXX is a stub returning strings.
+        if (e != null) {
+            switch (e.expr) {
+                case TField(target, fa):
+                    switch (fa) {
+                        case FStatic(classRef, cf):
+                            var cls = classRef.get();
+                            var methodName = cf.get().name;
+                            if (cls.name == "HXX" && methodName == "hxx" && args.length >= 1) {
+                                // Build inner argument AST and collect HXX content as HEEx string
+                                var innerAst = buildExpression(args[0]);
+                                var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(innerAst);
+                                // Normalize control tags to proper block HEEx
+                                content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
+                                return ESigil("H", content, "");
+                            }
+                        default:
+                    }
+                default:
+            }
+        }
+
         // Check if this is an enum constructor call first
         if (e != null && PatternDetector.isEnumConstructor(e)) {
             return buildEnumConstructor(e, args, context);

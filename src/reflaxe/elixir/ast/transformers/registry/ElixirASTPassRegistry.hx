@@ -287,6 +287,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_stringInterpolationPass
         });
+
+        // HXX control tag rewrite for ~H content
+        passes.push({
+            name: "HeexControlTagTransforms",
+            description: "Rewrite HXX-style <if>/<else> tags in ~H content to proper HEEx blocks",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
+        });
         
         // Loop variable restoration pass (must run after string interpolation)
         passes.push({
@@ -639,6 +647,15 @@ class ElixirASTPassRegistry {
             description: "Rename __elixir_switch_result_* to switch_result_*",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.renameSwitchResultVarsPass
+        });
+
+        // Immediately normalize trailing switch_result_* returns to inline case
+        // while the corresponding assignment is still present
+        passes.push({
+            name: "SwitchResultInlineReturnFix",
+            description: "Replace trailing switch_result_* with the assigned case expression (early)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.pass
         });
 
         // Remove redundant temp-to-binder assignments inside case bodies
@@ -1125,6 +1142,23 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.OptionWrapTransforms.optionWrapParseFunctionsPass
         });
 
+        // Introduce cs binder when validations reference cs before it is bound
+        passes.push({
+            name: "IntroduceChangesetBinder",
+            description: "When validate_* references cs without prior binding, bind cs = <prev expr>",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IntroduceChangesetBinderTransforms.pass
+        });
+
+        // Promote leading `_ = _ = ... = <changeset>` to `cs = <changeset>` inside changeset/2
+        passes.push({
+            name: "WildcardChangesetAssignPromote",
+            description: "In changeset/2, rewrite nested wildcard assign chain to `cs = <expr>`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WildcardChangesetAssignPromoteTransforms.pass
+        });
+        // (moved later in pipeline, after validate_* rewrites)
+
         // Changeset normalization: canonicalize cs variable, opts binding, and validate_* targets
         passes.push({
             name: "ChangesetNormalize",
@@ -1299,6 +1333,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
         });
+
+        // (moved later in pipeline; after functions are finalized)
         // Within a block, prefer consistent underscore references when only underscored binder exists
         passes.push({
             name: "BlockUnderscoreReferenceFix",
@@ -1550,6 +1586,14 @@ class ElixirASTPassRegistry {
             description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (late)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
+        });
+
+        // Late: Inline trailing return variables from their last assignments to avoid undefined vars
+        passes.push({
+            name: "InlineTrailingReturnVar",
+            description: "Replace trailing return variable with its last assigned expression (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineTrailingReturnVarTransforms.pass
         });
         
         // Consolidated hygiene sweep (usage-driven), orchestrating core hygiene steps in order
@@ -2119,6 +2163,23 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
         });
 
+        // PRIOR to string->~H conversion, ensure string interpolations of HEEx/html vars
+        // are wrapped with Phoenix.HTML.raw(var)
+        passes.push({
+            name: "HeexInlineRawForHeexVarsInStrings",
+            description: "Rewrite \"#{var}\" to \"#{Phoenix.HTML.raw(var)}\" for vars bound from ~H/HTML",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexInlineRawForHeexVarsInStringsTransforms.transformPass
+        });
+
+        // Convert LiveView render(assigns) returning HTML strings to ~H
+        passes.push({
+            name: "HeexRenderStringToSigil",
+            description: "Ensure render(assigns) returns ~H by converting final HTML strings to ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
+        });
+
         // Convert helper functions that still return HTML strings to ~H sigils so nested
         // content embedded via <%= helper(...) %> is rendered as HEEx rather than escaped.
         // NOTE: This must run BEFORE any underscore-renaming of the `assigns` parameter,
@@ -2128,6 +2189,39 @@ class ElixirASTPassRegistry {
             description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.transformPass
+        });
+
+        // After ~H sigils are materialized, rewrite HXX control tags to proper HEEx blocks
+        passes.push({
+            name: "HeexControlTagTransforms",
+            description: "Rewrite HXX-style <if>/<else> control tags in ~H content to HEEx blocks",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
+        });
+
+        // Strip unnecessary .to_string() inside HEEx interpolations
+        passes.push({
+            name: "HeexStripToStringInSigils",
+            description: "Remove trailing .to_string() in <%= ... %> within ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexStripToStringInSigilsTransforms.transformPass
+        });
+
+        // Rename `_assigns` parameter to `assigns` when function body contains ~H
+        passes.push({
+            name: "HeexAssignsParamRename",
+            description: "Rename _assigns → assigns in functions that contain ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAssignsParamRenameTransforms.transformPass
+        });
+
+        // After ~H materialization and control-tag normalization, wrap interpolated
+        // variables that are HEEx fragments/HTML strings with Phoenix.HTML.raw(var)
+        passes.push({
+            name: "HeexVariableRawWrap",
+            description: "Inside ~H, rewrite <%= var %> to raw(var) when var was bound from ~H or HTML string",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexVariableRawWrapTransforms.transformPass
         });
 
         // After converting to ~H, ensure `use Phoenix.Component` is present so the
@@ -2149,6 +2243,31 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms.transformPass
         });
 
+
+        // Final HEEx control tag rewrite to catch content introduced by prior passes
+        passes.push({
+            name: "HeexControlTagTransforms_Final",
+            description: "Final sweep to rewrite HXX-style <if>/<else> tags to HEEx blocks",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
+        });
+
+        // Assigns type linter: validate @field usage in ~H against typed assigns typedef
+        passes.push({
+            name: "HeexAssignsTypeLinter",
+            description: "Validate @assigns fields and literal comparisons in ~H against the Haxe typedef",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.transformPass,
+            contextualPass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.contextualPass
+        });
+
+        // Ensure assigns exists for helpers that contain ~H sigils but lack assigns parameter
+        passes.push({
+            name: "HeexEnsureAssignsForNestedSigils",
+            description: "Wrap functions containing ~H without assigns param with assigns = %{}",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsForNestedSigilsTransforms.transformPass
+        });
 
         // Phoenix-scoped hygiene: underscore unused def/defp parameters in Web/Live/Presence modules
         passes.push({
@@ -2538,6 +2657,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnArgCleanupTransforms.cleanupPass
         });
+        // Convert Enum.each counting patterns to Enum.count with predicate (early)
+        passes.push({
+            name: "CountEachToEnumCount_Early",
+            description: "Early: rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) → Enum.count(list, fn b -> cond end)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CountEachToEnumCountTransforms.transformPass
+        });
         passes.push({
             name: "EFnScopedUnderscoreRefCleanup",
             description: "Rewrite _name -> name in EFn bodies when a matching binder exists",
@@ -2550,6 +2676,19 @@ class ElixirASTPassRegistry {
             description: "Rewrite single free var in 1-arg EFn body to binder (shape-based, no coupling)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
+        });
+        // Early: also align when binder is used; prefer binder over single free var
+        passes.push({
+            name: "EFnSingleFreeVarToBinder_Early",
+            description: "Early: rewrite single free var in 1-arg EFn to binder even if binder used",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnSingleFreeVarToBinderTransforms.pass
+        });
+        passes.push({
+            name: "EFnFieldObjectToBinder_Early",
+            description: "Early: rewrite EField(free, field) -> EField(binder, field) in 1-arg EFn bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnFieldObjectToBinderTransforms.pass
         });
         passes.push({
             name: "EFnNumericSentinelCleanup",
@@ -2620,6 +2759,26 @@ class ElixirASTPassRegistry {
             description: "Absolute last: rewrite single free var in 1-arg EFn body to binder",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
+        });
+        // Absolute last: align single free var to binder even if binder is used
+        passes.push({
+            name: "EFnSingleFreeVarToBinder",
+            description: "Absolute last: rewrite single free var in 1-arg EFn to binder (binder may be used)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnSingleFreeVarToBinderTransforms.pass
+        });
+        passes.push({
+            name: "EFnFieldObjectToBinder",
+            description: "Absolute last: rewrite EField(free, field) -> EField(binder, field) in 1-arg EFn bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnFieldObjectToBinderTransforms.pass
+        });
+        // Convert Enum.each counting patterns to Enum.count with predicate (very late)
+        passes.push({
+            name: "CountEachToEnumCount",
+            description: "Rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) to Enum.count(list, fn b -> cond end)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CountEachToEnumCountTransforms.transformPass
         });
         passes.push({
             name: "EFnLastChanceFix",
@@ -2965,11 +3124,31 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms.pass
         });
+        // Late safety net: ensure cs binder exists when validate_* present but cs not declared
+        passes.push({
+            name: "LateEnsureCsBinder",
+            description: "Ensure `cs` binder exists by rewriting earliest cast/change producer to `cs = ...` (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LateEnsureCsBinderTransforms.pass
+        });
         passes.push({
             name: "TempAssignFlattenGlobal",
             description: "Flatten temp alias chains globally: outer=(temp=expr) → outer=expr",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TempAssignFlattenGlobalTransforms.pass
+        });
+        // Repair trivial getter bodies returning undeclared bare var from sibling Repo.get usage
+        passes.push({
+            name: "RepoGetBinderRepair",
+            description: "Rewrite bodies that return an undeclared var v to Repo.get(schema(v), firstParam)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RepoGetBinderRepairTransforms.pass
+        });
+        passes.push({
+            name: "BareGetterRepoGetRepair",
+            description: "For bare-var function bodies in Repo modules, rewrite to Repo.get(:var, id)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.pass
         });
         passes.push({
             name: "DefParamUnusedUnderscoreSafe",
@@ -3198,6 +3377,23 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.FilterWildcardAssignToVarTransforms.fixPass
         });
 
+        // Ultra-final normalization: avoid nested do/end in if-then branches
+        passes.push({
+            name: "IfThenDoToBlock_Final",
+            description: "Normalize EIf then-branch EDo to EBlock to prevent `if ... do do ... end`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfThenDoToBlockTransforms.normalizePass
+        });
+
+        // Ultra-final: Ensure trailing switch_result_* returns are replaced by the
+        // corresponding case expression moved to the end of the block
+        passes.push({
+            name: "SwitchResultInlineReturnFix_Final",
+            description: "Replace trailing switch_result_* with the last case expression in the block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.pass
+        });
+
 
         // Reorder handle_event/3 clauses to be grouped contiguously and place catch-alls last
         passes.push({
@@ -3281,12 +3477,58 @@ class ElixirASTPassRegistry {
             contextualPass: reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.contextualPass
         });
 
+        // Restore helper call arg after Repo.delete: prefer id param over deleted record binder
+        // Normalize success binder names before restoring call arguments
+        passes.push({
+            name: "RepoCaseBinderNormalize",
+            description: "Normalize {:ok, binder} binder names for Repo.delete cases: g3/s2 → deleted/_deleted",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.pass
+        });
+        passes.push({
+            name: "RepoDeleteCaseArgRestore",
+            description: "Inside case Repo.delete, rewrite (binder, socket) helper calls to (id, socket)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.pass
+        });
+
+        // Presence module cleanups: remove placeholder Repo.get calls and underscore unused params
+        passes.push({
+            name: "PresenceModuleFix",
+            description: "Clean up <App>Web.Presence: drop Repo.get placeholders, underscore unused params, return socket",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.pass
+        });
+
         // Absolute final: ensure LiveView mount/3 has proper {:ok, socket} return
         passes.push({
             name: "LiveMountReturnFinalize",
             description: "Ensure mount/3 ends with {:ok, socket}; assign assigns inline when present",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LiveMountReturnFinalizeTransforms.pass
+        });
+        // Final: Bare getter repair (Repo.get(:var, id)) for modules using Repo
+        passes.push({
+            name: "BareGetterRepoGetRepair_Final",
+            description: "Final pass: rewrite bare-var getter bodies to Repo.get(:var, id) when Repo is used",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.pass
+        });
+
+        // Absolute final HEEx safety: ensure assigns exists for any function body still containing ~H
+        passes.push({
+            name: "HeexEnsureAssignsTextualScan_Final",
+            description: "Absolute final: textual scan for ~H in function bodies; inject assigns = %{} when missing",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsTextualScanTransforms.transformPass
+        });
+
+        // Absolute final: ensure LiveView render(assigns) returns ~H
+        passes.push({
+            name: "HeexRenderStringToSigil_Final",
+            description: "Absolute final: convert render(assigns) trailing HTML string to ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
         });
 
         // Return only enabled passes (names carry no scheduling semantics)

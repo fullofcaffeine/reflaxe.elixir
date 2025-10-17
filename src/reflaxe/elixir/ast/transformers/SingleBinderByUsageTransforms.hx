@@ -7,6 +7,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.ValueShapeAnalyzer;
 
 /**
  * SingleBinderByUsageTransforms
@@ -76,11 +77,42 @@ class SingleBinderByUsageTransforms {
                             var used = collectUsedLowerVars(cl.body);
                             // Generic: rename binder to the unique undefined lower-case var used in body
                             var cands = used.filter(v -> v != binder && !isDefinedName(v, defined));
+                            // Special allowance: if the body uses `id` or `_id`, prefer unifying the binder to `id`
+                            // even when `id` is already defined at function scope. This avoids later misalignments
+                            // where calls inside the clause are rewritten to the binder name.
+                            var preferId = false;
+                            if (!used.remove("id")) {
+                                // used.remove returns false when key not present; we need presence check differently
+                            }
+                            // Presence check for id/_id
+                            var usedHasId = false; var usedHas_Uid = false;
+                            for (u in used) {
+                                if (u == "id") usedHasId = true;
+                                else if (u == "_id") usedHas_Uid = true;
+                            }
                             #if sys
-                            Sys.println('[SingleBinderByUsage] binder=' + binder + ' used=' + used.join(',') + ' cands=' + cands.join(','));
+                            var usedListDbg = [];
+                            for (k in used) usedListDbg.push(k);
+                            Sys.println('[SingleBinderByUsage] binder=' + binder + ' used=' + usedListDbg.join(',') + ' cands=' + cands.join(',') + ' hasId=' + usedHasId + ' has_Uid=' + usedHas_Uid);
                             #end
+                            var newName: Null<String> = null;
                             if (cands.length == 1) {
-                                var newName = cands[0];
+                                newName = cands[0];
+                            } else if (cands.length == 0 && binder != "id" && (usedHasId || usedHas_Uid)) {
+                                newName = "id";
+                            }
+                            // Shape guard: avoid binding a struct-shaped payload to an id-like name
+                            if (newName != null && newName != binder) {
+                                var shapes = ValueShapeAnalyzer.classify(cl.body);
+                                var newIsIdLike = ValueShapeAnalyzer.isIdLike(newName, shapes);
+                                // binder looks struct-like if used as field receiver in body
+                                var binderLooksStruct = ValueShapeAnalyzer.isStructLike(binder, shapes);
+                                if (newIsIdLike && binderLooksStruct) {
+                                    // Skip renaming: binding struct to `id` would be misleading and propagate incompatible naming
+                                    newName = null;
+                                }
+                            }
+                            if (newName != null && newName != binder) {
                                 #if debug_single_binder
                                 trace('[SingleBinderByUsage] Renaming binder ' + binder + ' -> ' + newName);
                                 #end

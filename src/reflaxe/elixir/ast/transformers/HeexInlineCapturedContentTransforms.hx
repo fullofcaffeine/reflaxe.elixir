@@ -229,6 +229,85 @@ class HeexInlineCapturedContentTransforms {
         return out.toString();
     }
 
+    // Rewrite inline if-do/else inside <%= ... %> to block HEEx to avoid quoted HTML issues
+    static function rewriteInlineIfDoToBlock(s:String):String {
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var start = s.indexOf("<%=", i);
+            if (start == -1) { out.add(s.substr(i)); break; }
+            out.add(s.substr(i, start - i));
+            var endTag = s.indexOf("%>", start + 3);
+            if (endTag == -1) { out.add(s.substr(start)); break; }
+            var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
+            if (StringTools.startsWith(inner, "if ")) {
+                var rest = StringTools.trim(inner.substr(3));
+                var idxDo = indexOfTopLevel(rest, ", do:");
+                if (idxDo != -1) {
+                    var cond = StringTools.trim(rest.substr(0, idxDo));
+                    var afterDo = StringTools.trim(rest.substr(idxDo + 5));
+                    var qv = extractQuoted(afterDo);
+                    if (qv != null) {
+                        var doHtml = qv.value;
+                        var rem = StringTools.trim(afterDo.substr(qv.length));
+                        if (StringTools.startsWith(rem, ",")) rem = StringTools.trim(rem.substr(1));
+                        var elseHtml:Null<String> = null;
+                        if (StringTools.startsWith(rem, "else:")) {
+                            var afterElse = StringTools.trim(rem.substr(5));
+                            var qv2 = extractQuoted(afterElse);
+                            if (qv2 != null) elseHtml = qv2.value;
+                        }
+                        out.add('<%= if ' + cond + ' do %>');
+                        out.add(doHtml);
+                        if (elseHtml != null && elseHtml != "") {
+                            out.add('<% else %>');
+                            out.add(elseHtml);
+                        }
+                        out.add('<% end %>');
+                        i = endTag + 2; 
+                        continue;
+                    }
+                }
+            }
+            out.add(s.substr(start, (endTag + 2) - start));
+            i = endTag + 2;
+        }
+        return out.toString();
+    }
+
+    static function extractQuoted(s:String):Null<{value:String, length:Int}> {
+        if (s.length == 0) return null;
+        var quote = s.charAt(0);
+        if (quote != '"' && quote != '\'') return null;
+        var i = 1;
+        while (i < s.length) {
+            var ch = s.charAt(i);
+            if (ch == quote) {
+                return { value: s.substr(1, i - 1), length: i + 1 };
+            }
+            i++;
+        }
+        return null;
+    }
+
+    static function indexOfTopLevel(s:String, token:String):Int {
+        var depth = 0;
+        var inS = false, inD = false;
+        for (i in 0...s.length - token.length + 1) {
+            var ch = s.charAt(i);
+            if (!inS && ch == '"' && !inD) { inD = true; continue; }
+            else if (inD && ch == '"') { inD = false; continue; }
+            if (!inD && ch == '\'' && !inS) { inS = true; continue; }
+            else if (inS && ch == '\'') { inS = false; continue; }
+            if (inS || inD) continue;
+            if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            if (depth != 0) continue;
+            if (s.substr(i, token.length) == token) return i;
+        }
+        return -1;
+    }
+
     // Core: inline in statements array
     static function inlineCaptured(stmts:Array<ElixirAST>): { changed:Bool, out:Array<ElixirAST> } {
         var sig = findHeexSigilIndexAndVar(stmts);
@@ -242,6 +321,7 @@ class HeexInlineCapturedContentTransforms {
         #end
         if (assign.html == null) return { changed:false, out: stmts };
         var html = convertInterpolations(assign.html);
+        html = rewriteInlineIfDoToBlock(html);
         var assignsIdx = -1;
         for (i in 0...stmts.length) if (isAssignsCaptureOfVar(stmts[i], sig.varName)) { assignsIdx = i; break; }
         #if debug_heex_inline

@@ -71,3 +71,63 @@ IMPORTANT: If you need to address bugs and test, for the feedback loop, use play
 When using Playwright, make sure to test the todoapp properly, covering all the main flows. You should also check the console for errors/warnings and the network tab for failed requests. You should also check the output of the phoenix server in the terminal for any errors/warnings. If you find any, you should address them following the principles here. Ideally, we should have these flows described in the plan in shrimp so we can track them properly, if not, add them to your todo list and suggest a replan if needed.
 
 AGAIN: RUN THE FUCKING SERVER IN THE **BACKGROUND** AS NOT TO BLOCK THE FUCKING AGENT.
+
+AGAIN: DO NOT USE SLOPPY VAR NAMES LIKE q, sp, etc. USE DESCRIPTIVE VAR NAMES. DO NOT ADD INTEGER SUFFIXES TO VAR NAMES UNLESS ABSOLUTELY NECESSARY. USE THE SAME VAR NAME IF IT'S OVERRIDEN IN A CASE BLOCK, FOR EXAMPLE.
+
+## qa
+
+• Use scripts/qa-sentinel.sh with these guardrails so it never “hangs.”
+
+Recommended workflow
+
+- Always run from repo root and pick a unique port:
+  - scripts/qa-sentinel.sh --app examples/todo-app --port 4045 --verbose
+- Use verbose mode to surface progress and logs on every step (Haxe, mix, server start).
+- If you need to reuse the server across steps, add --keep-alive:
+
+  - scripts/qa-sentinel.sh --app examples/todo-app --port 4046 --verbose --keep-alive
+  - The script prints PHX_PID and PORT; kill later with kill -TERM -<PGID> or kill <PHX_PID>.
+
+  What the script does (and where to look)
+
+- Haxe build → logs: /tmp/qa-haxe.log
+- mix deps.get → /tmp/qa-mix-deps.log
+- mix compile → /tmp/qa-mix-compile.log
+- Phoenix server (background) → /tmp/qa-phx.log
+- Readiness probe (30s total) tails logs live when --verbose is on.
+
+  If it seems stuck
+
+- Re-run with --verbose to tail readiness and watch where it stops:
+  - Haxe build stalls → tail -n 200 /tmp/qa-haxe.log
+  - mix compile stalls → tail -n 200 /tmp/qa-mix-compile.log
+  - Server not ready → tail -n 200 /tmp/qa-phx.log
+- Pick a new port if another process is binding it:
+  - scripts/qa-sentinel.sh --app examples/todo-app --port 4050 --verbose
+- If something else owns the port, the script tries to kill it. You can also do:
+
+  - lsof -ti tcp:4050 | xargs -r kill -9 (or choose a different port)
+
+  CI-safe usage
+
+- Wrap with a hard timeout to avoid job stalls if your CI environment doesn’t honor script exits:
+  - timeout 180s scripts/qa-sentinel.sh --app examples/todo-app --port 4045 --verbose
+- For parallel jobs, assign disjoint ports per job (e.g., 4041+index).
+
+  Teardown and cleanup
+
+- By default, the script traps and kills the server; no manual action needed.
+- If you ran --keep-alive, kill the server after tests:
+
+  - kill -TERM -<PGID> (kills process group), then kill -KILL -<PGID> if needed
+  - Or kill <PHX_PID> then ensure nothing is listening: lsof -ti tcp:<PORT> | xargs -r kill -9
+
+  Pro tips
+
+- If you only need to debug one step manually:
+  - Haxe: npx -y haxe examples/todo-app/build-server.hxml
+  - Elixir: MIX_ENV=dev mix compile
+  - Start server: PORT=4045 MIX_ENV=dev mix phx.server (watch /tmp/qa-phx.log)
+- The script auto-detects a different bound port in logs and switches to it for probes.
+
+  Use --verbose by default; that’s your “don’t get stuck” switch.

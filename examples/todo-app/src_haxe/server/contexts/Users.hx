@@ -52,15 +52,8 @@ class UserChangeset {
     public static function changeset(?user: User, attrs: UserParams): Changeset<User, UserParams> {
         // Create a typed changeset for compile-time safety
         // The actual Ecto validations would be added by the generated Elixir code
-        var changeset = new Changeset(user, attrs);
-        
-        // Validation annotations would go here when implemented:
-        // @:validate_required(["name", "email"])
-        // @:validate_format("email", "email_regex")
-        // @:validate_length("name", {min: 2, max: 100})
-        // @:validate_number("age", {greater_than: 0, less_than: 150})
-        
-        return changeset;
+        // Return inline to avoid losing the binding during hygiene passes
+        return new Changeset(user, attrs);
     }
 }
 

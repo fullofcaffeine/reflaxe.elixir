@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
+import reflaxe.elixir.ast.analyzers.ValueShapeAnalyzer;
 
 /**
  * EFnEnumClosureAlignTransforms
@@ -25,6 +26,8 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  * - Rewrites body `_primary` -> `primary` and single underscored other var -> `primary`.
  * - If `primary` unused and exactly one lower_snake free var is used as field receiver,
  *   rewrites it to `primary`.
+ * - Type-aware guard (shape-based): do not rewrite an id-like variable to a struct-like
+ *   `primary`, and do not rewrite a struct-like variable into an id-like `primary`.
  */
 class EFnEnumClosureAlignTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
@@ -65,6 +68,7 @@ class EFnEnumClosureAlignTransforms {
             if (primary == null) { out.push(cl); continue; }
             var p = primary;
             var body = cl.body;
+            var shapes = ValueShapeAnalyzer.classify(body);
             #if debug_enum_closure
             trace('[EFnEnumAlign] primary=' + p);
             #end
@@ -81,7 +85,12 @@ class EFnEnumClosureAlignTransforms {
                 #if debug_enum_closure
                 trace('[EFnEnumAlign] underscored victim ' + unders[0] + ' -> ' + p);
                 #end
-                body = renameVarDeep(body, unders[0], p);
+                // Guard against incompatible shape rewrites
+                var victim = unders[0];
+                if (!(ValueShapeAnalyzer.isIdLike(victim, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))
+                    && !(ValueShapeAnalyzer.isStructLike(victim, shapes) && ValueShapeAnalyzer.isIdLike(p, shapes))) {
+                    body = renameVarDeep(body, victim, p);
+                }
             }
             // Prefer a single field-receiver free var to rewrite to primary
             // Only for Enum.each: prefer single field-receiver victim to rewrite to primary
@@ -97,7 +106,10 @@ class EFnEnumClosureAlignTransforms {
                     #if debug_enum_closure
                     trace('[EFnEnumAlign] field-receiver victim ' + recvVictims[0] + ' -> ' + p);
                     #end
-                body = renameVarDeep(body, recvVictims[0], p);
+                var rv = recvVictims[0];
+                if (!(ValueShapeAnalyzer.isIdLike(rv, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))) {
+                    body = renameVarDeep(body, rv, p);
+                }
                 }
                 // If exactly one free var appears as a call argument, rewrite to primary
                 var argVictims = collectArgVarUses(body);
@@ -108,7 +120,10 @@ class EFnEnumClosureAlignTransforms {
                     #if debug_enum_closure
                     trace('[EFnEnumAlign] single arg victim ' + filteredArgs[0] + ' -> ' + p);
                     #end
-                body = renameVarDeep(body, filteredArgs[0], p);
+                var fav = filteredArgs[0];
+                if (!(ValueShapeAnalyzer.isIdLike(fav, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))) {
+                    body = renameVarDeep(body, fav, p);
+                }
                 }
                 // If we still have multiple, but they are all action victims (field receiver or arg), rewrite all
                 var actionVictims = new Map<String,Bool>();
@@ -119,7 +134,13 @@ class EFnEnumClosureAlignTransforms {
                     #if debug_enum_closure
                     trace('[EFnEnumAlign] action victims {' + actionList.join(',') + '} -> ' + p);
                     #end
-                for (av in actionList) body = renameVarDeep(body, av, p);
+                for (av in actionList) {
+                    if ((ValueShapeAnalyzer.isIdLike(av, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))
+                        || (ValueShapeAnalyzer.isStructLike(av, shapes) && ValueShapeAnalyzer.isIdLike(p, shapes))) {
+                        continue;
+                    }
+                    body = renameVarDeep(body, av, p);
+                }
                 }
                 #if debug_enum_closure
                 trace('[EFnEnumAlign] filteredArgs={' + filteredArgs.join(',') + '}');
@@ -129,7 +150,11 @@ class EFnEnumClosureAlignTransforms {
                     #if debug_enum_closure
                     trace('[EFnEnumAlign] single free var victim ' + victims[0] + ' -> ' + p);
                     #end
-                    body = renameVarDeep(body, victims[0], p);
+                    var v = victims[0];
+                    if (!((ValueShapeAnalyzer.isIdLike(v, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))
+                        || (ValueShapeAnalyzer.isStructLike(v, shapes) && ValueShapeAnalyzer.isIdLike(p, shapes)))) {
+                        body = renameVarDeep(body, v, p);
+                    }
                 }
                 #if debug_enum_closure
                 var afterUsed = collectUsedVars(body);

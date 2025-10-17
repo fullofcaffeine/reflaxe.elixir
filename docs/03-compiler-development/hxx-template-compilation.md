@@ -259,6 +259,30 @@ private function containsHxxCall(expr: TypedExpr): Bool {
 }
 ```
 
+---
+
+## Transitional Stub Path vs Macro Path
+
+While the final architecture compiles `HXX.hxx("...")` at macro time and feeds the builder with `@:heex`‑tagged strings (emitted as `ESigil("H", ...)`), this repository currently supports a transitional stub in `std/HXX.cross.hx`:
+
+- Authoring:
+  - `HXX.hxx("...")` returns the string unchanged at compile time (extern/inline, zero runtime).
+- AST pipeline:
+  - `HeexRenderStringToSigilTransforms` converts the final HTML‑like string returned from `render(assigns)` to `~H`.
+  - `HeexControlTagTransforms` rewrites HXX control tags (`<if {cond}> ... </if>`) into block HEEx.
+  - `TemplateHelpers` maps `assigns.*` → `@*` inside interpolations.
+
+Implications:
+
+- To get Haxe type‑checking today, prefer `${ ... }` inside the HXX string (e.g., `${assigns.sort_by == "created"}`). This ensures Haxe checks the expression even though the surrounding template is a string.
+- The stub is gated by target‑conditional classpath injection, so macro/other targets do not see Elixir‑specific code.
+
+Removal plan:
+
+1) Switch all HXX call‑sites to macro expansion (`@:heex`) → builder emits `ESigil("H", ...)` directly.
+2) Keep the same transforms for control‑flow normalization as a safety net, but they should be no‑ops for macro‑produced content.
+3) Remove the stub once examples/tests pass with the macro path only.
+
 ### 2. **Phoenix.Component Import**
 
 Classes using HXX automatically get Phoenix.Component:

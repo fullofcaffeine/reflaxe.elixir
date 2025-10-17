@@ -48,6 +48,10 @@
 
 # Exclude client code from server compilation
 --macro exclude('client')
+--macro exclude('server.live.UserLive')
+--macro exclude('server.controllers.UserController')
+--macro exclude('server.services.UserGenServer')
+--macro exclude('contexts.Users')
 
 # Define library version and initialize compiler
 -D reflaxe.elixir=0.1.0

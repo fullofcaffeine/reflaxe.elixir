@@ -3230,10 +3230,19 @@ class ElixirASTBuilder {
                 // Fallback to legacy implementation
                 EThrow(buildFromTypedExpr(e, currentContext));
                 
-            case TMeta(_, e):
-                // Metadata is compile-time only, transparent at runtime
-                // Just process the inner expression
-                convertExpression(e);
+            case TMeta(meta, e):
+                // Handle expression-level metadata with semantic meaning
+                switch (meta.name) {
+                    case ":heex":
+                        // HXX.hxx macro tagged this string as HEEx content.
+                        // Build inner string/concat AST, collect HXX content, and emit ~H sigil.
+                        var innerAst = buildFromTypedExpr(e, currentContext);
+                        var content = collectTemplateContent(innerAst);
+                        ESigil("H", content, "");
+                    default:
+                        // Other metadata is compile-time only; process inner expression
+                        convertExpression(e);
+                }
 
             case TParenthesis(e):
                 // Parentheses are for grouping, just process inner expression
@@ -4404,7 +4413,13 @@ class ElixirASTBuilder {
      */
     // Delegate to TemplateHelpers
     static inline function collectTemplateContent(ast: ElixirAST): String {
-        return TemplateHelpers.collectTemplateContent(ast);
+        var raw = TemplateHelpers.collectTemplateContent(ast);
+        // Rewrite HXX control tags (<if>/<else>) to proper HEEx blocks early,
+        // so downstream passes operate on valid HEEx content.
+        #if (macro || reflaxe_runtime)
+        raw = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(raw);
+        #end
+        return raw;
     }
     
     // Delegate to TemplateHelpers

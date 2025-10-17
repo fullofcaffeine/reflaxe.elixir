@@ -27,6 +27,110 @@ import haxe.macro.TypedExprTools;
 class TemplateHelpers {
     
     /**
+     * Render an ElixirAST expression into a HEEx-safe Elixir expression string.
+     * - Converts assigns.* access to @* for idiomatic HEEx
+     * - Handles common expression nodes (vars, fields, calls, literals, binaries, if)
+     */
+    static function renderExpr(ast: ElixirAST): String {
+        return switch (ast.def) {
+            case EString(s): '"' + s + '"';
+            case EInteger(i): Std.string(i);
+            case EFloat(f): Std.string(f);
+            case EBoolean(b): b ? "true" : "false";
+            case ENil: "nil";
+            case EAtom(a):
+                // a is ElixirAtom; use its string form with preceding :
+                ':' + Std.string(a);
+            case EVar(name):
+                name;
+            case EField(obj, field):
+                var base = renderExpr(obj);
+                // If base starts with "assigns.", convert to HEEx assigns shorthand
+                if (StringTools.startsWith(base, "assigns.")) {
+                    '@' + base.substr("assigns.".length) + '.' + field;
+                } else if (base == "assigns") {
+                    '@' + field;
+                } else {
+                    base + '.' + field;
+                }
+            case EAccess(target, key):
+                var t = renderExpr(target);
+                var k = renderExpr(key);
+                // Keep standard access syntax target[key]
+                t + "[" + k + "]";
+            case ECall(module, func, args):
+                var callStr = if (module != null) {
+                    switch (module.def) {
+                        case EVar(m): m + "." + func;
+                        case EField(_, _): renderExpr(module) + "." + func;
+                        default: func;
+                    }
+                } else {
+                    func;
+                };
+                if (args.length > 0) {
+                    var argStrs = [];
+                    for (arg in args) argStrs.push(renderExpr(arg));
+                    callStr + "(" + argStrs.join(", ") + ")";
+                } else {
+                    callStr + "()";
+                }
+            case EBinary(op, left, right):
+                var l = renderExpr(left);
+                var r = renderExpr(right);
+                var opStr = switch (op) {
+                    case Add: "+";
+                    case Subtract: "-";
+                    case Multiply: "*";
+                    case Divide: "/";
+                    case Remainder: "rem";
+                    case Power: "**";
+                    case Equal: "==";
+                    case NotEqual: "!=";
+                    case StrictEqual: "===";
+                    case StrictNotEqual: "!==";
+                    case Less: "<";
+                    case Greater: ">";
+                    case LessEqual: "<=";
+                    case GreaterEqual: ">=";
+                    case And: "and";
+                    case Or: "or";
+                    case AndAlso: "&&";
+                    case OrElse: "||";
+                    case BitwiseAnd: "&&&";
+                    case BitwiseOr: "|||";
+                    case BitwiseXor: "^^^";
+                    case ShiftLeft: "<<<";
+                    case ShiftRight: ">>>";
+                    case Concat: "++";
+                    case ListSubtract: "--";
+                    case StringConcat: "<>";
+                    case In: "in";
+                    case Match: "=";
+                    case Pipe: "|>";
+                    case TypeCheck: "::";
+                    case When: "when";
+                };
+                '(' + l + ' ' + opStr + ' ' + r + ')';
+            case EIf(condition, thenBranch, elseBranch):
+                var c = renderExpr(condition);
+                var t = renderExpr(thenBranch);
+                var e = elseBranch != null ? renderExpr(elseBranch) : "nil";
+                'if ' + c + ', do: ' + t + ', else: ' + e;
+            case EParen(inner):
+                '(' + renderExpr(inner) + ')';
+            default:
+                // Fallback to a placeholder to avoid crashing; this should be rare in templates
+                #if debug_hxx_transformation
+                #if debug_ast_builder
+                trace('[HXX] renderExpr fallback for: ${ast.def}');
+                #end
+                #end
+                "[expr]";
+        };
+    }
+    
+    /**
      * Collect template content from an ElixirAST node
      * 
      * Processes various AST patterns to extract template strings,
@@ -35,39 +139,66 @@ class TemplateHelpers {
     public static function collectTemplateContent(ast: ElixirAST): String {
         return switch(ast.def) {
             case EString(s): 
-                // Simple string - return as-is
-                s;
+                // Simple string - process interpolations and HXX control tags into HEEx-safe content
+                var processed = rewriteInterpolations(s);
+                processed = rewriteControlTags(processed);
+                processed;
                 
             case EBinary(StringConcat, left, right):
                 // String concatenation - collect both sides
-                collectTemplateContent(left) + collectTemplateContent(right);
+                var l = collectTemplateContent(left);
+                var r = collectTemplateContent(right);
+                // Ensure HXX control tags remain balanced across boundaries
+                rewriteControlTags(l + r);
                 
-            case EVar(name):
-                // Variable reference - convert to EEx interpolation
-                '<%= ' + name + ' %>';
-                
+            case EIf(condition, thenBranch, elseBranch):
+                // Render block-level HEEx if with do/else/end and unquoted inner content
+                var condStr = renderExpr(condition);
+                if (StringTools.startsWith(condStr, "assigns.")) condStr = '@' + condStr.substr("assigns.".length);
+                var thenStr = collectTemplateContent(thenBranch);
+                var elseStr = elseBranch != null ? collectTemplateContent(elseBranch) : "";
+                var out = new StringBuf();
+                out.add('<%= if ' + condStr + ' do %>');
+                out.add(thenStr);
+                if (elseStr != null && elseStr != "") {
+                    out.add('<% else %>');
+                    out.add(elseStr);
+                }
+                out.add('<% end %>');
+                out.toString();
+
             case ECall(module, func, args):
-                // Function call - convert to EEx interpolation
-                var callStr = if (module != null) {
-                    switch(module.def) {
-                        case EVar(m): m + "." + func;
-                        default: func;
-                    }
-                } else {
-                    func;
+                // Special handling for nested HXX helpers: HXX.block('...') or HXX.hxx('...')
+                var isHxxModule = false;
+                if (module != null) switch (module.def) {
+                    case EVar(m): isHxxModule = (m == "HXX");
+                    default:
                 }
-                
-                // Build the function call with arguments
-                if (args.length > 0) {
-                    var argStrs = [];
-                    for (arg in args) {
-                        argStrs.push(collectTemplateArgument(arg));
-                    }
-                    callStr += "(" + argStrs.join(", ") + ")";
-                } else {
-                    callStr += "()";
+                if (isHxxModule && (func == "block" || func == "hxx") && args.length >= 1) {
+                    var inner = collectTemplateContent(args[0]);
+                    return rewriteControlTags(inner);
                 }
-                '<%= ' + callStr + ' %>';
+                // Fallback to generic expression interpolation
+                var exprStr2 = renderExpr(makeAST(ECall(module, func, args)));
+                if (StringTools.startsWith(exprStr2, "assigns.")) exprStr2 = '@' + exprStr2.substr("assigns.".length);
+                '<%= ' + exprStr2 + ' %>';
+
+            case EVar(_)
+                | EField(_, _)
+                | EInteger(_)
+                | EFloat(_)
+                | EBoolean(_)
+                | ENil
+                | EAtom(_)
+                | EBinary(_, _, _)
+                | EParen(_):
+                // Expression inside template – render as HEEx interpolation
+                var exprStr = renderExpr(ast);
+                // Map assigns.* to @* for HEEx idioms
+                if (StringTools.startsWith(exprStr, "assigns.")) {
+                    exprStr = '@' + exprStr.substr("assigns.".length);
+                }
+                '<%= ' + exprStr + ' %>';
                 
             default:
                 // For other expressions, try to convert to a string representation
@@ -79,6 +210,354 @@ class TemplateHelpers {
                 #end
                 '<%= [unhandled expression] %>';
         };
+    }
+
+    /**
+     * Convert #{...} and ${...} interpolations into HEEx <%= ... %> and map assigns.* → @*
+     * Also rewrites inline ternary to block HEEx when then/else are string or HXX.block.
+     */
+    public static function rewriteInterpolations(s:String):String {
+        if (s == null) return s;
+        // First, convert attribute-level ${...} into HEEx attribute expressions: attr={...}
+        s = rewriteAttributeInterpolations(s);
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var j1 = s.indexOf("#{", i);
+            var j2 = s.indexOf("${", i);
+            var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
+            if (j == -1) { out.add(s.substr(i)); break; }
+            out.add(s.substr(i, j - i));
+            var k = j + 2;
+            var depth = 1;
+            while (k < s.length && depth > 0) {
+                var ch = s.charAt(k);
+                if (ch == '{') depth++;
+                else if (ch == '}') depth--;
+                k++;
+            }
+            var inner = s.substr(j + 2, (k - 1) - (j + 2));
+            var expr = StringTools.trim(inner);
+            // Try to split top-level ternary
+            var tern = splitTopLevelTernary(expr);
+            if (tern != null) {
+                var cond = StringTools.replace(tern.cond, "assigns.", "@");
+                var th = extractBlockHtml(StringTools.trim(tern.thenPart));
+                var el = extractBlockHtml(StringTools.trim(tern.elsePart));
+                if (th != null || el != null) {
+                    out.add('<%= if ' + cond + ' do %>');
+                    if (th != null) out.add(th);
+                    if (el != null && el != "") { out.add('<% else %>'); out.add(el); }
+                    out.add('<% end %>');
+                } else {
+                    out.add('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
+                }
+            } else {
+                out.add('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
+            }
+            i = k;
+        }
+        var res = out.toString();
+        // Inline if ... do: ".." else: ".." into block
+        res = rewriteInlineIfDoToBlock(res);
+        return res;
+    }
+
+    /**
+     * Rewrite attribute values written as ${...} into HEEx attribute expressions { ... }.
+     * - Handles: attr=${expr} or attr="${expr}" → attr={expr}
+     * - Maps assigns.* → @*
+     * - For top-level ternary cond ? a : b → {if cond, do: a, else: b}
+     */
+    static function rewriteAttributeInterpolations(s:String):String {
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var j = s.indexOf("${", i);
+            if (j == -1) { out.add(s.substr(i)); break; }
+            // Attempt to detect an attribute assignment immediately preceding ${
+            // Find the nearest '=' before j without encountering '>'
+            var k = j - 1;
+            var seenGt = false;
+            while (k >= i) {
+                var ch = s.charAt(k);
+                if (ch == '>') { seenGt = true; break; }
+                if (ch == '=') break;
+                k--;
+            }
+            if (k < i || seenGt || s.charAt(k) != '=') {
+                // Not an attr context; copy chunk up to j and continue generic handling later
+                out.add(s.substr(i, (j - i)));
+                // Copy marker to let generic pass handle it
+                out.add("${");
+                i = j + 2;
+                continue;
+            }
+            // Find attribute name by scanning backwards from k-1
+            var nameEnd = k - 1;
+            while (nameEnd >= i && ~/^\s$/.match(s.charAt(nameEnd))) nameEnd--;
+            var nameStart = nameEnd;
+            while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--;
+            nameStart++;
+            if (nameStart > nameEnd) {
+                // Fallback: not a valid attribute name, treat as generic
+                out.add(s.substr(i, (j - i)));
+                out.add("${");
+                i = j + 2;
+                continue;
+            }
+            var attrName = s.substr(nameStart, (nameEnd - nameStart + 1));
+            // Copy prefix up to attribute name start
+            out.add(s.substr(i, (nameStart - i)));
+            out.add(attrName);
+            out.add("=");
+            // Skip whitespace and optional opening quote after '='
+            var vpos = k + 1;
+            while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
+            var quote: Null<String> = null;
+            if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) {
+                quote = s.charAt(vpos);
+                vpos++;
+            }
+            // We expect vpos == j (start of ${); otherwise, treat as generic
+            if (vpos != j) {
+                // Not a plain attr=${...}; emit original sequence and continue
+                out.add(s.substr(k + 1, (j - (k + 1))));
+                out.add("${");
+                i = j + 2;
+                continue;
+            }
+            // Parse balanced braces for ${...}
+            var p = j + 2;
+            var depth = 1;
+            while (p < s.length && depth > 0) {
+                var c = s.charAt(p);
+                if (c == '{') depth++; else if (c == '}') depth--; p++;
+            }
+            var inner = s.substr(j + 2, (p - 1) - (j + 2));
+            var expr = StringTools.trim(inner);
+            // Map assigns.* → @*
+            expr = StringTools.replace(expr, "assigns.", "@");
+            // Ternary to inline-if for attribute context
+            var tern = splitTopLevelTernary(expr);
+            if (tern != null) {
+                var cond = StringTools.replace(StringTools.trim(tern.cond), "assigns.", "@");
+                var th = StringTools.trim(tern.thenPart);
+                var el = StringTools.trim(tern.elsePart);
+                expr = 'if ' + cond + ', do: ' + th + ', else: ' + el;
+            }
+            out.add('{');
+            out.add(expr);
+            out.add('}');
+            // Skip closing quote if present
+            if (quote != null) {
+                var qpos = p;
+                // Advance until we see the matching quote or tag end; be conservative
+                if (qpos < s.length && s.charAt(qpos) == quote) {
+                    p = qpos + 1;
+                }
+            }
+            // Advance index
+            i = p;
+        }
+        return out.toString();
+    }
+
+    static function extractBlockHtml(part:String):Null<String> {
+        if (part == null || part == "") return "";
+        var p = part;
+        if (StringTools.startsWith(p, "HXX.block(")) {
+            var start = p.indexOf('(') + 1;
+            var end = p.lastIndexOf(')');
+            if (start > 0 && end > start) {
+                var inner = StringTools.trim(p.substr(start, end - start));
+                return unquote(inner);
+            }
+        }
+        var uq = unquote(p);
+        if (uq != null) return uq;
+        return null;
+    }
+
+    static function unquote(s:String):Null<String> {
+        if (s.length >= 2) {
+            var a = s.charAt(0);
+            var b = s.charAt(s.length - 1);
+            if ((a == '"' && b == '"') || (a == '\'' && b == '\'')) {
+                return s.substr(1, s.length - 2);
+            }
+        }
+        return null;
+    }
+
+    static function splitTopLevelTernary(e:String):Null<{cond:String, thenPart:String, elsePart:String}> {
+        var depth = 0;
+        var inS = false, inD = false;
+        var q = -1, col = -1;
+        for (idx in 0...e.length) {
+            var ch = e.charAt(idx);
+            if (!inS && ch == '"' && !inD) { inD = true; continue; }
+            else if (inD && ch == '"') { inD = false; continue; }
+            if (!inD && ch == '\'' && !inS) { inS = true; continue; }
+            else if (inS && ch == '\'') { inS = false; continue; }
+            if (inS || inD) continue;
+            if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            if (depth != 0) continue;
+            if (ch == '?' && q == -1) { q = idx; }
+            else if (ch == ':' && q != -1) { col = idx; break; }
+        }
+        if (q == -1 || col == -1) return null;
+        var cond = StringTools.trim(e.substr(0, q));
+        var thenPart = StringTools.trim(e.substr(q + 1, col - (q + 1)));
+        var elsePart = StringTools.trim(e.substr(col + 1));
+        return { cond: cond, thenPart: thenPart, elsePart: elsePart };
+    }
+
+    static function rewriteInlineIfDoToBlock(s:String):String {
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var start = s.indexOf("<%=", i);
+            if (start == -1) { out.add(s.substr(i)); break; }
+            out.add(s.substr(i, start - i));
+            var endTag = s.indexOf("%>", start + 3);
+            if (endTag == -1) { out.add(s.substr(start)); break; }
+            var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
+            if (StringTools.startsWith(inner, "if ")) {
+                var rest = StringTools.trim(inner.substr(3));
+                var idxDo = indexOfTopLevel(rest, ", do:");
+                var cond:String = null;
+                var doPart:String = null;
+                var elsePart:String = null;
+                if (idxDo != -1) {
+                    cond = StringTools.trim(rest.substr(0, idxDo));
+                    var afterDo = StringTools.trim(rest.substr(idxDo + 5));
+                    var qv = extractQuoted(afterDo);
+                    if (qv != null) {
+                        doPart = qv.value;
+                        var rem = StringTools.trim(afterDo.substr(qv.length));
+                        if (StringTools.startsWith(rem, ",")) rem = StringTools.trim(rem.substr(1));
+                        if (StringTools.startsWith(rem, "else:")) {
+                            var afterElse = StringTools.trim(rem.substr(5));
+                            var qv2 = extractQuoted(afterElse);
+                            if (qv2 != null) elsePart = qv2.value;
+                        }
+                    }
+                }
+                if (cond != null && doPart != null) {
+                    out.add('<%= if ' + StringTools.replace(cond, "assigns.", "@") + ' do %>');
+                    out.add(doPart);
+                    if (elsePart != null && elsePart != "") { out.add('<% else %>'); out.add(elsePart); }
+                    out.add('<% end %>');
+                } else {
+                    out.add(s.substr(start, (endTag + 2) - start));
+                }
+            } else {
+                out.add(s.substr(start, (endTag + 2) - start));
+            }
+            i = endTag + 2;
+        }
+        return out.toString();
+    }
+
+    static function extractQuoted(s:String):Null<{value:String, length:Int}> {
+        if (s.length == 0) return null;
+        var quote = s.charAt(0);
+        if (quote != '"' && quote != '\'') return null;
+        var i = 1;
+        while (i < s.length) {
+            var ch = s.charAt(i);
+            if (ch == quote) {
+                var val = s.substr(1, i - 1);
+                return { value: val, length: i + 1 };
+            }
+            i++;
+        }
+        return null;
+    }
+
+    /**
+     * Structured rewrite of <if {cond}> ... (<else> ...)? </if> into block HEEx.
+     * Handles nesting and maps assigns.* to @*.
+     */
+    public static function rewriteControlTags(s:String):String {
+        if (s == null || s.indexOf("<if") == -1) return s;
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var idx = s.indexOf("<if", i);
+            if (idx == -1) { out.add(s.substr(i)); break; }
+            out.add(s.substr(i, idx - i));
+            var j = idx + 3; // after '<if'
+            while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
+            if (j >= s.length || s.charAt(j) != '{') { out.add("<if"); i = idx + 3; continue; }
+            var braceStart = j; j++;
+            var braceDepth = 1;
+            while (j < s.length && braceDepth > 0) {
+                var ch = s.charAt(j);
+                if (ch == '{') braceDepth++; else if (ch == '}') braceDepth--; j++;
+            }
+            if (braceDepth != 0) { out.add(s.substr(idx)); break; }
+            var braceEnd = j - 1;
+            while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
+            if (j >= s.length || s.charAt(j) != '>') { out.add(s.substr(idx, j - idx)); i = j; continue; }
+            var openEnd = j + 1;
+            var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
+            cond = StringTools.replace(cond, "assigns.", "@");
+            // find matching </if>
+            var k = openEnd;
+            var depth = 1;
+            var elsePos = -1;
+            while (k < s.length && depth > 0) {
+                var nextIf = s.indexOf("<if", k);
+                var nextElse = s.indexOf("<else>", k);
+                var nextClose = s.indexOf("</if>", k);
+                var next = -1;
+                var tag = 0;
+                if (nextIf != -1) { next = nextIf; tag = 1; }
+                if (nextElse != -1 && (next == -1 || nextElse < next)) { next = nextElse; tag = 2; }
+                if (nextClose != -1 && (next == -1 || nextClose < next)) { next = nextClose; tag = 3; }
+                if (next == -1) break;
+                if (tag == 1) { depth++; k = next + 3; }
+                else if (tag == 2 && depth == 1 && elsePos == -1) { elsePos = next; k = next + 6; }
+                else if (tag == 3) { depth--; k = next + 5; }
+                else k = next + 1;
+            }
+            if (depth != 0) { out.add(s.substr(idx)); break; }
+            var closeIdx = k - 5;
+            var thenStart = openEnd;
+            var thenEnd = elsePos != -1 ? elsePos : closeIdx;
+            var elseStart = elsePos != -1 ? (elsePos + 6) : -1;
+            var elseEnd = closeIdx;
+            var thenHtml = s.substr(thenStart, thenEnd - thenStart);
+            var elseHtml = elseStart != -1 ? s.substr(elseStart, elseEnd - elseStart) : null;
+            out.add('<%= if ' + cond + ' do %>');
+            out.add(thenHtml);
+            if (elseHtml != null && StringTools.trim(elseHtml) != "") { out.add('<% else %>'); out.add(elseHtml); }
+            out.add('<% end %>');
+            var afterClose = s.indexOf('>', closeIdx + 1);
+            i = (afterClose == -1) ? s.length : afterClose + 1;
+        }
+        return out.toString();
+    }
+
+    static function indexOfTopLevel(s:String, token:String):Int {
+        var depth = 0;
+        var inS = false, inD = false;
+        for (i in 0...s.length - token.length + 1) {
+            var ch = s.charAt(i);
+            if (!inS && ch == '"' && !inD) { inD = true; continue; }
+            else if (inD && ch == '"') { inD = false; continue; }
+            if (!inD && ch == '\'' && !inS) { inS = true; continue; }
+            else if (inS && ch == '\'') { inS = false; continue; }
+            if (inS || inD) continue;
+            if (ch == '(' || ch == '{' || ch == '[') depth++;
+            else if (ch == ')' || ch == '}' || ch == ']') depth--;
+            if (depth != 0) continue;
+            if (s.substr(i, token.length) == token) return i;
+        }
+        return -1;
     }
     
     /**
