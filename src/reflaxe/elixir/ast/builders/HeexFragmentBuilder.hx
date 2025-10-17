@@ -59,7 +59,6 @@ private class Parser {
     public function parseNodes(): Array<ElixirAST> {
         var out: Array<ElixirAST> = [];
         while (!eof()) {
-            skipWs();
             if (eof()) break;
             if (peek() == '<') {
                 var node = parseElement();
@@ -72,7 +71,8 @@ private class Parser {
                 var end = lt == -1 ? s.length : lt;
                 var txt = s.substr(start, end - start);
                 i = end;
-                if (txt.trim().length > 0) out.push(makeAST(EString(txt)));
+                // Preserve whitespace/newlines to maintain snapshot formatting parity
+                if (txt.length > 0) out.push(makeAST(EString(txt)));
             }
         }
         return out;
@@ -96,7 +96,6 @@ private class Parser {
         if (!selfClosing) {
             // Parse children until closing tag
             while (!eof()) {
-                skipWs();
                 if (peek() == '<' && peek2() == '/') {
                     // </tag>
                     advance(2);
@@ -114,7 +113,8 @@ private class Parser {
                     var end = lt == -1 ? s.length : lt;
                     var txt = s.substr(tstart, end - tstart);
                     i = end;
-                    if (txt.trim().length > 0) children.push(makeAST(EString(txt)));
+                    // Preserve whitespace/newlines inside children for parity
+                    if (txt.length > 0) children.push(makeAST(EString(txt)));
                 }
             }
         }

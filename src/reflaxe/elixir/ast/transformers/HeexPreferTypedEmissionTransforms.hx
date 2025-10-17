@@ -44,25 +44,22 @@ class HeexPreferTypedEmissionTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n) {
             switch (n.def) {
                 case ESigil(type, content, modifiers) if (type == "H"):
-                    // Require typed nodes from builder
-                    var meta = n.metadata;
-                    if (meta == null) return n;
-                    var dyn: Dynamic = meta;
-                    if (!Reflect.hasField(dyn, "heexAST")) return n;
-                    var nodes: Array<ElixirAST> = Reflect.field(dyn, "heexAST");
-                    if (nodes == null || nodes.length == 0) return n;
-
                     // Skip when content contains control tags/blocks still handled by string passes
                     var s = content;
                     if (
                         // Skip when control tags are present
                         s.indexOf("<if") != -1 || s.indexOf("</if>") != -1 || s.indexOf("<else") != -1 ||
                         // Skip when any EEx is present (attribute or block) to avoid partial handling for now
-                        s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<% if") != -1 || s.indexOf("<% else") != -1 || s.indexOf("<% end") != -1
+                        s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<% if") != -1 || s.indexOf("<% else") != -1 || s.indexOf("<% end") != -1 ||
+                        // Skip when original template still contains HXX-style interpolations
+                        s.indexOf("${") != -1 || s.indexOf("#{") != -1
                     ) {
                         return n;
                     }
 
+                    // Parse typed fragments from the CURRENT content (post prior string passes)
+                    var nodes = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
+                    if (nodes == null || nodes.length == 0) return n;
                     // Rebuild content from typed fragments using HEEx-aware rendering
                     var rendered = [for (child in nodes) renderHeex(child)].join("");
                     var replacement = makeASTWithMeta(ESigil(type, rendered, modifiers), n.metadata, n.pos);
