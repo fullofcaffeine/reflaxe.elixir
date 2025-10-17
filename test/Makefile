@@ -43,7 +43,8 @@ TEST_TARGETS := $(shell echo "$(POSITIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' 
 
 # Targets for negative tests (expected-to-fail compilation)
 # Use a dedicated prefix (neg-*) to avoid overlapping the generic test-% rule
-NEGATIVE_TEST_TARGETS := $(shell echo "$(NEGATIVE_TESTS)" | tr ' ' '\n' | sed 's|^negative/||' | sed 's|/|__|g' | sed 's|^|neg-|' | tr '\n' ' ')
+NEGATIVE_BASENAMES := $(patsubst negative/%,%,$(NEGATIVE_TESTS))
+NEGATIVE_TEST_TARGETS := $(addprefix neg-,$(subst /,__,$(NEGATIVE_BASENAMES)))
 
 # Default target runs all tests with default parallelism
 .PHONY: all
@@ -140,24 +141,27 @@ summary-negative-safe:
 	fi
 
 # Pattern rule for negative tests (expected-to-fail compilation)
+
 .PHONY: neg-%
 neg-%:
-	@raw=$$(echo $* | sed 's|__|/|g'); \
-	testdir=$(NEGATIVE_DIR)/$$raw; \
+	@{ \
+	name=$$(echo $* | sed 's|__|/|g'); \
+	testdir=$(NEGATIVE_DIR)/$$name; \
 	if [ ! -f $$testdir/compile.hxml ]; then \
-		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+		echo "❌ negative/$$name - Negative test directory not found" | tee -a test-results-$$$.tmp; \
 		exit 1; \
 	fi; \
-	echo "Running negative negative/$$testname (expected failure)..."; \
+	echo "Running negative negative/$$name (expected failure)..."; \
 	start=$$(date +%s); \
 	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-UNEXPECTED-SUCCESS $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+		echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$.tmp; \
 		exit 1; \
 	else \
 		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-OK $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-	fi
+		echo "NEG-OK $$name ($${duration}s)" | tee -a test-results-$$$.tmp; \
+	fi; \
+	}
 
 # Back-compat alias: allow test-negative-* targets to delegate to neg-*
 .PHONY: test-negative-%
