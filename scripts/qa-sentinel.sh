@@ -17,6 +17,8 @@ BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 DEPS_TIMEOUT=${DEPS_TIMEOUT:-300s}
 COMPILE_TIMEOUT=${COMPILE_TIMEOUT:-300s}
 READY_PROBES=${READY_PROBES:-60}
+# Heartbeat interval while long steps run (seconds)
+PROGRESS_INTERVAL=${PROGRESS_INTERVAL:-10}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +43,10 @@ run_step_with_log() {
   local cmd="$*"
   local start_ts=$(date +%s)
   log "[QA] ${desc} (timeout=${timeout_val})"
+  # Start a heartbeat so callers always see forward progress even if the command is quiet
+  ( while true; do sleep "$PROGRESS_INTERVAL"; log "[QA] .. ${desc} still running"; done ) &
+  local heartbeat_pid=$!
+  trap 'kill -9 $heartbeat_pid >/dev/null 2>&1 || true' EXIT
 
   # Prefer GNU timeout; then gtimeout (macOS coreutils); else manual watchdog
   if command -v timeout >/dev/null 2>&1; then
@@ -83,6 +89,8 @@ run_step_with_log() {
 
   local end_ts=$(date +%s)
   local dur=$(( end_ts - start_ts ))
+  # Stop heartbeat once step finishes
+  kill -9 "$heartbeat_pid" >/dev/null 2>&1 || true
   if [[ "$rc" -ne 0 ]]; then
     log "[QA] ❌ ${desc} failed (rc=$rc, ${dur}s). Last 100 lines:"
     tail -n 100 "$logfile" || true
