@@ -400,6 +400,7 @@ class ObjectBuilder {
                 // Check if the variable has been renamed
                 var idKey = Std.string(v.id);
 
+                #if debug_ast_builder
                 trace('[ObjectBuilder DEBUG] Field "${field.name}" TLocal: name="${v.name}" id=${v.id}');
                 trace('[ObjectBuilder DEBUG] Checking tempVarRenameMap for idKey "$idKey"');
                 trace('[ObjectBuilder DEBUG] tempVarRenameMap exists: ${context.tempVarRenameMap != null}');
@@ -408,17 +409,22 @@ class ObjectBuilder {
                     trace('[ObjectBuilder DEBUG] idKey exists in map: ${context.tempVarRenameMap.exists(idKey)}');
                     trace('[ObjectBuilder DEBUG] name exists in map: ${context.tempVarRenameMap.exists(v.name)}');
                 }
+                #end
 
                 // Check tempVarRenameMap for renamed variables
                 if (context.tempVarRenameMap.exists(idKey)) {
                     var mappedName = context.tempVarRenameMap.get(idKey);
+                    #if debug_ast_builder
                     trace('[ObjectBuilder DEBUG] Found ID mapping: "$idKey" -> "$mappedName"');
+                    #end
                     #if debug_variable_renaming
                     trace('[ObjectBuilder] Field "${field.name}" using tempVarRenameMap: "${v.name}" -> "${mappedName}"');
                     #end
                     return makeAST(EVar(mappedName));
                 } else {
+                    #if debug_ast_builder
                     trace('[ObjectBuilder DEBUG] No ID mapping found, falling back to buildFromTypedExpr');
+                    #end
                     // No mapping, compile normally
                     // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
                     // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
