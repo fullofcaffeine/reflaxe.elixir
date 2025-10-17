@@ -78,6 +78,11 @@ class HeexAssignsTypeLinterTransforms {
                     trace('[HeexAssignsTypeLinter] render/1 at hxPath=' + hxPath);
 #end
                     if (hxPath == null) return n; // No source; skip
+                    // Skip compiler/library/internal files to avoid scanning whole libs
+                    var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
+                    if (hxPathNorm.indexOf("/reflaxe/elixir/") != -1 || hxPathNorm.indexOf("/vendor/") != -1 || hxPathNorm.indexOf("/std/") != -1) {
+                        return n;
+                    }
                     var fileContent: String = null;
                     try fileContent = sys.io.File.getContent(hxPath) catch (e: Dynamic) fileContent = null;
                     if (fileContent == null) return n;
