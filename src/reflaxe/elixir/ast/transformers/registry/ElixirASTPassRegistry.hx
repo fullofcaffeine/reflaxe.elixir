@@ -2196,6 +2196,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
         });
 
+        // Prefer typed ~H emission from EFragment/EAttribute when available (guarded)
+        passes.push({
+            name: "HeexPreferTypedEmission",
+            description: "Prefer ~H content from typed HEEx AST when safe (attributes/children)",
+            enabled: #if hxx_prefer_efragment true #else false #end,
+            pass: reflaxe.elixir.ast.transformers.HeexPreferTypedEmissionTransforms.transformPass
+        });
+
         // Convert helper functions that still return HTML strings to ~H sigils so nested
         // content embedded via <%= helper(...) %> is rendered as HEEx rather than escaped.
         // NOTE: This must run BEFORE any underscore-renaming of the `assigns` parameter,
