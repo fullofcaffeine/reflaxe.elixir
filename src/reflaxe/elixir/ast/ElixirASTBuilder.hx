@@ -477,6 +477,16 @@ class ElixirASTBuilder {
             default:
         }
 
+        // Attach typed HEEx AST to metadata when emitting ESigil("H", ...)
+        switch (astDef) {
+            case ESigil(type, content, _mods) if (type == "H"):
+                try {
+                    var typedFrags = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
+                    (cast metadata : Dynamic).heexAST = typedFrags;
+                } catch (_:Dynamic) {}
+            default:
+        }
+
         var result = makeASTWithMeta(astDef, metadata, expr.pos);
 
         #if debug_ast_builder
@@ -3238,11 +3248,7 @@ class ElixirASTBuilder {
                         // Build inner string/concat AST, collect HXX content, and emit ~H sigil.
                         var innerAst = buildFromTypedExpr(e, currentContext);
                         var content = collectTemplateContent(innerAst);
-                        // Build typed fragment AST for attributes/children analysis
-                        var typedFrags = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
-                        var metaOut = emptyMetadata();
-                        (cast metaOut : Dynamic).heexAST = typedFrags;
-                        makeASTWithMeta(ESigil("H", content, ""), metaOut, e.pos);
+                        ESigil("H", content, "");
                     default:
                         // Other metadata is compile-time only; process inner expression
                         convertExpression(e);
