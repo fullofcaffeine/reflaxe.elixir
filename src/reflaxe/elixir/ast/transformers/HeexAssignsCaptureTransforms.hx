@@ -50,6 +50,7 @@ class HeexAssignsCaptureTransforms {
         while (true) {
             switch (cur.def) {
                 case EString(s): return s;
+                case ESigil(type, content, _mods) if (type == "H"): return content;
                 case EParen(inner): cur = inner; depth++;
                 default: return null;
             }
@@ -100,20 +101,10 @@ class HeexAssignsCaptureTransforms {
                             trace('[HeexAssignsCapture] Found candidate in render/1: assignIdx=' + assignIdx + ', heexIdx=' + heex.idx + ', hasHtml=' + (html != null));
                             var newStmts = [];
                             for (i in 0...stmts.length) {
+                                // Drop the content assignment if we have an html replacement
                                 if (i == assignIdx && html != null) continue;
                                 if (i == heex.idx) {
-                                    // Insert assigns = Phoenix.Component.assign(assigns, %{content: content})
-                                    var assignCall = makeAST(ERemoteCall(
-                                        makeAST(EVar("Phoenix.Component")),
-                                        "assign",
-                                        [
-                                            makeAST(EVar("assigns")),
-                                            makeAST(EMap([{ key: makeAST(EAtom(ElixirAtom.raw("content"))), value: makeAST(EVar("content")) }]))
-                                        ]
-                                    ));
-                                    trace('[HeexAssignsCapture] Injecting assigns capture for :content');
-                                    newStmts.push(makeASTWithMeta(EMatch(PVar("assigns"), assignCall), stmts[i].metadata, stmts[i].pos));
-                                    // Replace Phoenix.HTML.raw(content) with Phoenix.HTML.raw(@content) inside ~H
+                                    // Inline the html into ~H content, removing the content/temp indirection
                                     var node = stmts[i];
                                     var parens = heex.parens;
                                     // unwrap to ESigil
@@ -124,15 +115,18 @@ class HeexAssignsCaptureTransforms {
                                     }
                                     switch (node.def) {
                                         case ESigil(type, content, modifiers) if (type == "H"):
-                                            var replacedStr = content.split("Phoenix.HTML.raw(content)").join("Phoenix.HTML.raw(@content)");
-                                            if (replacedStr != content) trace('[HeexAssignsCapture] Rewrote raw(content) -> raw(@content)');
-                                            var rebuilt: ElixirAST = makeAST(ESigil("H", replacedStr, modifiers));
+                                            var newContent = (html != null) ? html : content;
+                                            var rebuilt: ElixirAST = makeAST(ESigil("H", newContent, modifiers));
                                             // rewrap to original depth
                                             for (p in 0...heex.parens) rebuilt = makeAST(EParen(rebuilt));
                                             newStmts.push(makeASTWithMeta(rebuilt.def, stmts[i].metadata, stmts[i].pos));
                                         case ERaw(code):
-                                            var code2 = code.split("Phoenix.HTML.raw(content)").join("Phoenix.HTML.raw(@content)");
-                                            if (code2 != code) trace('[HeexAssignsCapture] Rewrote raw(content) in ERaw ~H');
+                                            var code2 = code;
+                                            if (html != null) {
+                                                // Replace the raw(content) segment with inlined html
+                                                code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
+                                                trace('[HeexAssignsCapture] Inlined html into ERaw ~H');
+                                            }
                                             var rebuilt2: ElixirAST = makeAST(ERaw(code2));
                                             for (p in 0...heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
                                             newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
