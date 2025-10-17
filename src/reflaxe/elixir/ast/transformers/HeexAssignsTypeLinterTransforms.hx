@@ -148,6 +148,14 @@ class HeexAssignsTypeLinterTransforms {
                 case ESigil(type, _content, _mods) if (type == "H"):
                     var meta = x.metadata;
                     if (meta != null) {
+                        // Prefer typed HEEx AST when available
+                        var dyn2: Dynamic = meta;
+                        if (Reflect.hasField(dyn2, "heexAST")) {
+                            var nodes: Array<ElixirAST> = Reflect.field(dyn2, "heexAST");
+                            if (nodes != null && nodes.length > 0) {
+                                validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos);
+                            }
+                        }
                         var dyn: Dynamic = meta;
                         if (Reflect.hasField(dyn, "heexFragments")) {
                             var frags: Array<Dynamic> = Reflect.field(dyn, "heexFragments");
@@ -175,6 +183,105 @@ class HeexAssignsTypeLinterTransforms {
             }
             return x;
         });
+    }
+
+    // ---------------------------------------------------------------------
+    // Typed HEEx AST validation (preferred path)
+    // ---------------------------------------------------------------------
+    static function validateHeexTypedAST(nodes: Array<ElixirAST>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        for (n in nodes) validateNode(n, fields, typeName, ctx, pos);
+    }
+
+    static function validateNode(n: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        switch (n.def) {
+            case EFragment(_tag, attributes, children):
+                // Attributes
+                for (a in attributes) {
+                    validateExprForAssigns(a.value, fields, typeName, ctx, pos);
+                }
+                // Children
+                for (c in children) validateNode(c, fields, typeName, ctx, pos);
+            default:
+        }
+    }
+
+    static function validateExprForAssigns(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        // Collect used assigns fields and check comparisons on the fly
+        var used = new Map<String,Bool>();
+        analyzeExpr(expr, fields, typeName, ctx, pos, used);
+        for (k in used.keys()) {
+            if (!fields.exists(k)) {
+                error(ctx, 'HEEx assigns error: Unknown field @' + k + ' (not found in typedef ' + typeName + ')', pos);
+            }
+        }
+    }
+
+    static function analyzeExpr(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, used: Map<String,Bool>): Void {
+        switch (expr.def) {
+            case EAssign(name):
+                used.set(name, true);
+            case EField(target, _):
+                analyzeExpr(target, fields, typeName, ctx, pos, used);
+            case EAccess(target, key):
+                analyzeExpr(target, fields, typeName, ctx, pos, used);
+                analyzeExpr(key, fields, typeName, ctx, pos, used);
+            case EBinary(op, left, right):
+                // Recurse first
+                analyzeExpr(left, fields, typeName, ctx, pos, used);
+                analyzeExpr(right, fields, typeName, ctx, pos, used);
+                // Check literal comparisons like @field == "str" or 1 < @field
+                if (isComparisonOp(op)) {
+                    var lName = extractAssignFieldName(left);
+                    var rName = extractAssignFieldName(right);
+                    var lLit = extractLiteralKind(left);
+                    var rLit = extractLiteralKind(right);
+                    if (lName != null && rLit != null) checkKindCompat(lName, rLit, fields, typeName, ctx, pos);
+                    if (rName != null && lLit != null) checkKindCompat(rName, lLit, fields, typeName, ctx, pos);
+                }
+            case EIf(cond, thenB, elseB):
+                analyzeExpr(cond, fields, typeName, ctx, pos, used);
+                analyzeExpr(thenB, fields, typeName, ctx, pos, used);
+                if (elseB != null) analyzeExpr(elseB, fields, typeName, ctx, pos, used);
+            case ECall(target, _fn, args):
+                if (target != null) analyzeExpr(target, fields, typeName, ctx, pos, used);
+                for (a in args) analyzeExpr(a, fields, typeName, ctx, pos, used);
+            case EParen(inner):
+                analyzeExpr(inner, fields, typeName, ctx, pos, used);
+            default:
+        }
+    }
+
+    static inline function isComparisonOp(op: EBinaryOp): Bool {
+        return switch (op) {
+            case Equal | NotEqual | Less | Greater | LessEqual | GreaterEqual | StrictEqual | StrictNotEqual: true;
+            default: false;
+        }
+    }
+
+    static function extractAssignFieldName(expr: ElixirAST): Null<String> {
+        return switch (expr.def) {
+            case EAssign(name): name;
+            case EField(target, _): extractAssignFieldName(target);
+            case EAccess(target, _): extractAssignFieldName(target);
+            default: null;
+        }
+    }
+
+    static function extractLiteralKind(expr: ElixirAST): Null<String> {
+        return switch (expr.def) {
+            case EString(_): "string";
+            case EInteger(_): "int";
+            case EBoolean(_): "bool";
+            case ENil: "nil";
+            default: null;
+        }
+    }
+
+    static function checkKindCompat(field: String, litKind: String, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        var fieldKind = fields.exists(field) ? fields.get(field) : null;
+        if (fieldKind != null && !kindsCompatible(fieldKind, litKind)) {
+            error(ctx, 'HEEx assigns type error: @' + field + ' is ' + fieldKind + ' but compared to ' + litKind + ' literal', pos);
+        }
     }
 
     static function collectAtFields(s: String): Array<String> {
