@@ -33,7 +33,7 @@ WE SHOULD NEVER COUPLE THE COMPILER CODE TO THE TODOAPP CODE. THE COMPILER SHOUL
 
 Remember to use transformers wisely and only when needed. Don't overuse them, it might be a smell telling us the architecture of the compiler needs to change elsewhere. Justify the creation of transformers for me and in hxdoc. Always check if there's an existing transformer that can be adapted/used before creating a new one. Before using transformers, make sure it's not a deeper architectural issue that needs to be addressed elsewhere in the compiler!!!
 
-When you need to make a change in any component or transformer, you should first understand the compiler holistically. A new component should not break what another component did or undo it or cause regressions. You should understand the flow of the compiler and how data flows through it, and how each component interacts with each other. You should also check if there's any existing tests that cover the change you're making, if not, you should add them. For example, you should not add a new transformer to fix a warning or error if the root cause is elsewhere, you should fix it at the root cause and not add bandaids that might cause more problems in the future - the error/warning might disappear but it might cause other problems elsewhere (or other error and warnings), this should never happen!
+When you need to make a change in any component or transformer, you should first understand the compiler holistically. A new component should not break what another component did or undo it or cause regressions. You should understand the flow of the compiler and how data flows through it, and how each component interacts with each other. You should also check if there's any existing (snapshot) tests that cover the change you're making, if not, you should add them and we should keep tests updated and use them to avoid regresions. For example, you should not add a new transformer to fix a warning or error if the root cause is elsewhere, you should fix it at the root cause and not add bandaids that might cause more problems in the future - the error/warning might disappear but it might cause other problems elsewhere (or other error and warnings), this should never happen!
 
 Write idiomatic haxe and elixir code, follow best practices and patterns from the reference compilers and the languages. Follow SOLID principles and make sure the code is maintainable and clean. If you see a file growing too much (> 2k lines), then refactor it into smaller files, but don't be too strict about it, use your judgement depending on the case. Code quality should be high. Write self-descriptive code, with good descriptive variable names and structure. Use descriptive variable names and not short names like q, sp, etc. Don't add suffix to the end of vars in cases when you can use the same var name (that will get overriden in or reset in that case bloc) for example (pseudocode):
 
@@ -74,60 +74,4 @@ AGAIN: RUN THE FUCKING SERVER IN THE **BACKGROUND** AS NOT TO BLOCK THE FUCKING 
 
 AGAIN: DO NOT USE SLOPPY VAR NAMES LIKE q, sp, etc. USE DESCRIPTIVE VAR NAMES. DO NOT ADD INTEGER SUFFIXES TO VAR NAMES UNLESS ABSOLUTELY NECESSARY. USE THE SAME VAR NAME IF IT'S OVERRIDEN IN A CASE BLOCK, FOR EXAMPLE.
 
-## qa
-
-• Use scripts/qa-sentinel.sh with these guardrails so it never “hangs.”
-
-Recommended workflow
-
-- Always run from repo root and pick a unique port:
-  - scripts/qa-sentinel.sh --app examples/todo-app --port 4045 --verbose
-- Use verbose mode to surface progress and logs on every step (Haxe, mix, server start).
-- If you need to reuse the server across steps, add --keep-alive:
-
-  - scripts/qa-sentinel.sh --app examples/todo-app --port 4046 --verbose --keep-alive
-  - The script prints PHX_PID and PORT; kill later with kill -TERM -<PGID> or kill <PHX_PID>.
-
-  What the script does (and where to look)
-
-- Haxe build → logs: /tmp/qa-haxe.log
-- mix deps.get → /tmp/qa-mix-deps.log
-- mix compile → /tmp/qa-mix-compile.log
-- Phoenix server (background) → /tmp/qa-phx.log
-- Readiness probe (30s total) tails logs live when --verbose is on.
-
-  If it seems stuck
-
-- Re-run with --verbose to tail readiness and watch where it stops:
-  - Haxe build stalls → tail -n 200 /tmp/qa-haxe.log
-  - mix compile stalls → tail -n 200 /tmp/qa-mix-compile.log
-  - Server not ready → tail -n 200 /tmp/qa-phx.log
-- Pick a new port if another process is binding it:
-  - scripts/qa-sentinel.sh --app examples/todo-app --port 4050 --verbose
-- If something else owns the port, the script tries to kill it. You can also do:
-
-  - lsof -ti tcp:4050 | xargs -r kill -9 (or choose a different port)
-
-  CI-safe usage
-
-- Wrap with a hard timeout to avoid job stalls if your CI environment doesn’t honor script exits:
-  - timeout 180s scripts/qa-sentinel.sh --app examples/todo-app --port 4045 --verbose
-- For parallel jobs, assign disjoint ports per job (e.g., 4041+index).
-
-  Teardown and cleanup
-
-- By default, the script traps and kills the server; no manual action needed.
-- If you ran --keep-alive, kill the server after tests:
-
-  - kill -TERM -<PGID> (kills process group), then kill -KILL -<PGID> if needed
-  - Or kill <PHX_PID> then ensure nothing is listening: lsof -ti tcp:<PORT> | xargs -r kill -9
-
-  Pro tips
-
-- If you only need to debug one step manually:
-  - Haxe: npx -y haxe examples/todo-app/build-server.hxml
-  - Elixir: MIX_ENV=dev mix compile
-  - Start server: PORT=4045 MIX_ENV=dev mix phx.server (watch /tmp/qa-phx.log)
-- The script auto-detects a different bound port in logs and switches to it for probes.
-
-  Use --verbose by default; that’s your “don’t get stuck” switch.
+After a step is done, you should commit changes with a descriptive commit message.

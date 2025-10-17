@@ -295,6 +295,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
         });
+
+        // Normalize attribute-level EEx to HEEx attribute expressions { ... }
+        passes.push({
+            name: "HeexAttributeExprNormalize",
+            description: "Convert name=<%= expr %> and name=<% if ... %>... to name={...} inside ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAttributeExprNormalizeTransforms.transformPass
+        });
         
         // Loop variable restoration pass (must run after string interpolation)
         passes.push({

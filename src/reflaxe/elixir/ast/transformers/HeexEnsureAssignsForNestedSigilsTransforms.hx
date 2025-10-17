@@ -15,7 +15,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   have a local `assigns = %{}` binding in scope so HEEx compiles.
  *
  * WHY
- * - Some helpers render small HEEx fragments (for example, a checkmark span) inside
+ * - Some helpers render small HEEx fragments (for example, a small icon span) inside
  *   branches. When those helpers don't take `assigns`, Phoenix requires a local
  *   `assigns` map. This pass guarantees that requirement without changing
  *   public signatures.

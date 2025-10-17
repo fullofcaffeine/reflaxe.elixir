@@ -62,7 +62,8 @@
     "setup": "lix scope create && lix install haxelib:reflaxe",
     "lint:hxdoc": "bash scripts/lint/hxdoc_check.sh",
     "guard:names": "bash scripts/lint/name_heuristics_guard.sh",
-    "ci:guards": "npm run guard:names && echo 'Name heuristics guard passed'",
+    "guard:numeric": "bash scripts/lint/numeric_suffix_guard.sh",
+    "ci:guards": "npm run guard:names && npm run guard:numeric && echo 'Guards passed'",
     "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "hooks:install": "bash scripts/install-git-hooks.sh",
     "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001"

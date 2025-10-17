@@ -11,10 +11,9 @@ class Main {
   public static function render(assigns: Assigns): String {
     return HXX.hxx('<div>
       <option value="created" selected=${assigns.sort_by == "created"}></option>
-      <div class=${assigns.flag ? "on" : "off"}></div>
+      <div class=${assigns.flag ? "on" : "off"} id=${assigns.flag ? "flag-on" : "flag-off"}></div>
     </div>');
   }
 
   public static function main() {}
 }
-
