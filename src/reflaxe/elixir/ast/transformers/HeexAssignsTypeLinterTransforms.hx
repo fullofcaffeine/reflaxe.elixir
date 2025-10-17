@@ -427,19 +427,19 @@ class HeexAssignsTypeLinterTransforms {
         var braceEnd = i - 1;
         if (braceEnd <= braceStart) return out;
         var block = hx.substr(braceStart + 1, braceEnd - (braceStart + 1));
-        // Parse lines: var name: Type; (ignore accessors)
+        // Parse lines: supports both `var name: Type` and `name: Type`, with optional comma/semicolon terminators
         var lines = block.split("\n");
         for (ln in lines) {
             var line = ln.trim();
             if (line.length == 0 || line.startsWith("//")) continue;
             var name: String = null;
             var typeSpec: String = null;
-            var reVar = ~/^var\s+([A-Za-z0-9_]+)\s*:\s*([^;]+);/;
+            var reVar = ~/^var\s+([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
             if (reVar.match(line)) {
                 name = reVar.matched(1);
                 typeSpec = reVar.matched(2).trim();
             } else {
-                var rePlain = ~/^([A-Za-z0-9_]+)\s*:\s*([^;]+);/;
+                var rePlain = ~/^([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
                 if (rePlain.match(line)) {
                     name = rePlain.matched(1);
                     typeSpec = rePlain.matched(2).trim();
