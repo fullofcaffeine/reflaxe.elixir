@@ -220,6 +220,8 @@ class TemplateHelpers {
         if (s == null) return s;
         // First, convert attribute-level ${...} into HEEx attribute expressions: attr={...}
         s = rewriteAttributeInterpolations(s);
+        // Then, convert attribute-level <%= ... %> into HEEx attribute expressions: attr={...}
+        s = rewriteAttributeEexInterpolations(s);
         var out = new StringBuf();
         var i = 0;
         while (i < s.length) {
@@ -261,6 +263,80 @@ class TemplateHelpers {
         // Inline if ... do: ".." else: ".." into block
         res = rewriteInlineIfDoToBlock(res);
         return res;
+    }
+
+    // Convert attribute values written as <%= ... %> (and conditional blocks) into HEEx { ... }
+    static function rewriteAttributeEexInterpolations(s:String):String {
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var j = s.indexOf("<%", i);
+            if (j == -1) { out.add(s.substr(i)); break; }
+            // Check backward for '=' indicating attribute context without crossing '>'
+            var k = j - 1; var seenGt = false; while (k >= i) { var ch = s.charAt(k); if (ch == '>') { seenGt = true; break; } if (ch == '=') break; k--; }
+            if (k < i || seenGt || s.charAt(k) != '=') {
+                out.add(s.substr(i, j - i));
+                i = j; continue;
+            }
+            // Attribute name
+            var nameEnd = k - 1; while (nameEnd >= i && ~/^\s$/.match(s.charAt(nameEnd))) nameEnd--;
+            var nameStart = nameEnd; while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--; nameStart++;
+            if (nameStart > nameEnd) { out.add(s.substr(i, j - i)); i = j; continue; }
+            var attrName = s.substr(nameStart, nameEnd - nameStart + 1);
+            // Copy prefix up to attribute name
+            out.add(s.substr(i, nameStart - i)); out.add(attrName); out.add("=");
+            // Optional quote
+            var vpos = k + 1; while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
+            var quote: Null<String> = null; if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) { quote = s.charAt(vpos); vpos++; }
+            // We expect vpos == j (start of <% ... %>)
+            if (vpos != j) { out.add(s.substr(k + 1, j - (k + 1))); i = j; continue; }
+            // Determine if this is a simple <%= expr %> or a conditional block
+            if (j + 3 <= s.length && s.charAt(j + 2) == '=') {
+                // Simple EEx interpolation: <%= expr %>
+                var end = s.indexOf("%>", j + 3);
+                if (end == -1) { out.add(s.substr(i)); return out.toString(); }
+                var expr = StringTools.trim(s.substr(j + 3, end - (j + 3)));
+                // Map assigns.* style already handled earlier; ensure @ remains
+                out.add('{'); out.add(expr); out.add('}');
+                // Skip closing quote if present
+                var p = end + 2; if (quote != null && p < s.length && s.charAt(p) == quote) p++;
+                i = p;
+            } else {
+                // Possible block: <% if cond do %>then<% else %>else<% end %>
+                var ifStart = s.indexOf("if", j + 2);
+                var doPos = s.indexOf("do %>", j + 2);
+                if (ifStart != -1 && doPos != -1 && ifStart < doPos) {
+                    var condStr = StringTools.trim(s.substr(ifStart + 2, (doPos) - (ifStart + 2)));
+                    // then part until either <% else %> or <% end %>
+                    var thenStart = doPos + 5;
+                    var elseOpen = s.indexOf("<% else %>", thenStart);
+                    var endOpen = s.indexOf("<% end %>", thenStart);
+                    if (endOpen == -1) { out.add(s.substr(i)); return out.toString(); }
+                    var thenEnd = (elseOpen != -1 && elseOpen < endOpen) ? elseOpen : endOpen;
+                    var thenHtml = s.substr(thenStart, thenEnd - thenStart);
+                    var elseHtml = (elseOpen != -1 && elseOpen < endOpen) ? s.substr(elseOpen + 11, endOpen - (elseOpen + 11)) : null;
+                    // Build inline if
+                    out.add('{'); out.add('if ' + StringTools.trim(condStr) + ', do: ' + toQuoted(thenHtml) + (elseHtml != null ? ', else: ' + toQuoted(elseHtml) : '')); out.add('}');
+                    var p2 = endOpen + 9; if (quote != null && p2 < s.length && s.charAt(p2) == quote) p2++;
+                    i = p2;
+                } else {
+                    // Unknown block; emit verbatim
+                    out.add(s.substr(i, j - i)); i = j; continue;
+                }
+            }
+        }
+        return out.toString();
+    }
+
+    static inline function toQuoted(s:String): String {
+        var t = StringTools.trim(s);
+        // if already quoted, keep; otherwise wrap as string literal
+        if ((StringTools.startsWith(t, "\"") && StringTools.endsWith(t, "\"")) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"))) {
+            return t;
+        }
+        // Escape inner quotes minimally
+        t = StringTools.replace(t, "\"", "\\\"");
+        return '"' + t + '"';
     }
 
     /**

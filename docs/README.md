@@ -20,6 +20,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
+- [HXX Syntax & Comparison](02-user-guide/HXX_SYNTAX_AND_COMPARISON.md) - Typed HXX UX and comparison with Coconut UI & TSX
 - [Todo App Specifics](02-user-guide/todo-app-specifics.md) - LiveView implementation patterns and project-specific guidance
 - [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
 - [Bootstrap Code Generation](02-user-guide/bootstrap-code-generation.md) - Auto-execution for scripts

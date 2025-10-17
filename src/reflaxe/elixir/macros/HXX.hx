@@ -245,7 +245,12 @@ class HXX {
         // Convert Haxe ${} interpolation to Elixir #{} interpolation
         var processed = template;
 
-        // Handle Haxe string interpolation: ${expr} -> <%= expr %> (convert assigns.* -> @*)
+        // 1) Rewrite attribute-level interpolations first: attr=${expr} or attr="${expr}" → attr={expr}
+        //    Also map assigns.* → @* and ternary → inline if
+        processed = rewriteAttributeInterpolations(processed);
+
+        // 2) Handle remaining Haxe string interpolation (non-attribute positions):
+        //    ${expr} -> <%= expr %> (convert assigns.* -> @*)
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
         var interp = ~/\$\{([^}]+)\}/g;
         processed = interp.map(processed, function (re) {
@@ -253,6 +258,23 @@ class HXX {
             expr = StringTools.trim(expr);
             expr = StringTools.replace(expr, "assigns.", "@");
             return '<%= ' + expr + ' %>';
+        });
+
+        // 2b) Convert attribute-level EEx back into HEEx attribute expressions
+        //    name=<%= expr %>  → name={expr}
+        var eexAttr = ~/=\s*<%=\s*([^%]+?)\s*%>/g;
+        processed = eexAttr.replace(processed, '={$1}');
+
+        //    name=<% if cond do %>then<% else %>else<% end %> → name={if cond, do: "then", else: "else"}
+        var eexIf = ~/=\s*<%\s*if\s+(.+?)\s+do\s*%>([^<]*)<%\s*else\s*%>([^<]*)<%\s*end\s*%>/g;
+        processed = eexIf.map(processed, function (re) {
+            var cond = StringTools.trim(re.matched(1));
+            var th = StringTools.trim(re.matched(2));
+            var el = StringTools.trim(re.matched(3));
+            // Quote then/else if not already quoted
+            if (!(StringTools.startsWith(th, '"') && StringTools.endsWith(th, '"')) && !(StringTools.startsWith(th, "'") && StringTools.endsWith(th, "'"))) th = '"' + th + '"';
+            if (!(StringTools.startsWith(el, '"') && StringTools.endsWith(el, '"')) && !(StringTools.startsWith(el, "'") && StringTools.endsWith(el, "'"))) el = '"' + el + '"';
+            return '={if ' + cond + ', do: ' + th + ', else: ' + el + '}';
         });
 
         // Convert camelCase attributes to kebab-case
@@ -268,6 +290,91 @@ class HXX {
         processed = processLiveViewEvents(processed);
 
         return processed;
+    }
+
+    /**
+     * Rewrite attribute values written as ${...} into HEEx attribute expressions { ... }.
+     * - Handles: attr=${expr} or attr="${expr}" → attr={expr}
+     * - Maps assigns.* → @*
+     * - For top-level ternary cond ? a : b → {if cond, do: a, else: b}
+     */
+    static function rewriteAttributeInterpolations(s: String): String {
+        if (s == null || s.length == 0) return s;
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var j = s.indexOf("${", i);
+            if (j == -1) { out.add(s.substr(i)); break; }
+            // Find preceding '=' within tag, without crossing a '>'
+            var k = j - 1;
+            var seenGt = false;
+            while (k >= i) {
+                var ch = s.charAt(k);
+                if (ch == '>') { seenGt = true; break; }
+                if (ch == '=') break;
+                k--;
+            }
+            if (k < i || seenGt || s.charAt(k) != '=') {
+                // Not an attribute context, copy through '${' and continue
+                out.add(s.substr(i, j - i));
+                out.add("${");
+                i = j + 2;
+                continue;
+            }
+            // Identify attribute name
+            var nameEnd = k - 1;
+            while (nameEnd >= i && ~/^\s$/.match(s.charAt(nameEnd))) nameEnd--;
+            var nameStart = nameEnd;
+            while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--;
+            nameStart++;
+            if (nameStart > nameEnd) {
+                out.add(s.substr(i, j - i));
+                out.add("${");
+                i = j + 2;
+                continue;
+            }
+            var attrName = s.substr(nameStart, (nameEnd - nameStart + 1));
+            // Copy prefix up to attribute name start and '='
+            out.add(s.substr(i, (nameStart - i)));
+            out.add(attrName);
+            out.add("=");
+            // Optional opening quote after '='
+            var vpos = k + 1;
+            while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
+            var quote: Null<String> = null;
+            if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) { quote = s.charAt(vpos); vpos++; }
+            if (vpos != j) {
+                // Not plain attr=${...}
+                out.add(s.substr(k + 1, (j - (k + 1))));
+                out.add("${");
+                i = j + 2; continue;
+            }
+            // Parse balanced braces for ${...}
+            var p = j + 2; var depth = 1;
+            while (p < s.length && depth > 0) {
+                var c = s.charAt(p);
+                if (c == '{') depth++; else if (c == '}') depth--; p++;
+            }
+            var inner = s.substr(j + 2, (p - 1) - (j + 2));
+            var expr = StringTools.trim(inner);
+            // Map assigns.* → @*
+            expr = StringTools.replace(expr, "assigns.", "@");
+            // Ternary to inline-if for attribute context
+            var tern = ~/(.*)\?(.*):(.*)/;
+            if (tern.match(expr)) {
+                var cond = StringTools.trim(tern.matched(1));
+                var th = StringTools.trim(tern.matched(2));
+                var el = StringTools.trim(tern.matched(3));
+                expr = 'if ' + cond + ', do: ' + th + ', else: ' + el;
+            }
+            out.add('{'); out.add(expr); out.add('}');
+            // Skip closing quote if present
+            if (quote != null) {
+                var qpos = p; if (qpos < s.length && s.charAt(qpos) == quote) p = qpos + 1;
+            }
+            i = p;
+        }
+        return out.toString();
     }
 
     /**
