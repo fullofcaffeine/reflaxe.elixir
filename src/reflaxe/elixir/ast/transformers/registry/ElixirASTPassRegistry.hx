@@ -303,6 +303,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexAttributeExprNormalizeTransforms.transformPass
         });
+
+        // Annotate ~H sigils with parsed fragment metadata for analysis (linters)
+        passes.push({
+            name: "HeexSigilFragmentAnnotator",
+            description: "Parse ~H content into lightweight fragment metadata (analysis only)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexSigilFragmentAnnotatorTransforms.transformPass
+        });
         
         // Loop variable restoration pass (must run after string interpolation)
         passes.push({
