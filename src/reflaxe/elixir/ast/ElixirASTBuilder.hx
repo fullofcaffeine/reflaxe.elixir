@@ -3245,9 +3245,16 @@ class ElixirASTBuilder {
                 switch (meta.name) {
                     case ":heex":
                         // HXX.hxx macro tagged this string as HEEx content.
-                        // Build inner string/concat AST, collect HXX content, and emit ~H sigil.
+                        // Emit ~H sigil directly. Prefer fast-path for literal strings to avoid
+                        // unnecessary template collection for already-EEx content.
                         var innerAst = buildFromTypedExpr(e, currentContext);
-                        var content = collectTemplateContent(innerAst);
+                        var content: String = null;
+                        switch (innerAst.def) {
+                            case EString(s):
+                                content = s;
+                            default:
+                                content = collectTemplateContent(innerAst);
+                        }
                         ESigil("H", content, "");
                     default:
                         // Other metadata is compile-time only; process inner expression

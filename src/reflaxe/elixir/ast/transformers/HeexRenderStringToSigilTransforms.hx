@@ -71,10 +71,6 @@ class HeexRenderStringToSigilTransforms {
     static function rewriteRenderDef(n: ElixirAST): ElixirAST {
         return switch (n.def) {
             case EDef(name, args, guards, body) if (name == "render"):
-                // Ensure first arg is `assigns`
-                var hasAssigns = false;
-                for (a in args) switch (a) { case PVar(p) if (p == "assigns"): hasAssigns = true; default: }
-                if (!hasAssigns) return n;
                 var b0 = unwrapParens(body);
                 switch (b0.def) {
                     case EBlock(stmts) if (stmts.length > 0):
@@ -109,13 +105,13 @@ class HeexRenderStringToSigilTransforms {
     }
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
+        // Operate module-wide, but only rewrite EDef("render", ...) nodes with HTML-ish strings
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                // Only operate within LiveView modules
-                case EModule(name, attrs, body) if (n.metadata?.isLiveView == true):
+                case EModule(name, attrs, body):
                     var newBody = [for (b in body) rewriteRenderDef(b)];
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
-                case EDefmodule(name, doBlock) if (n.metadata?.isLiveView == true):
+                case EDefmodule(name, doBlock):
                     var newDo = rewriteRenderDef(doBlock);
                     makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                 default:

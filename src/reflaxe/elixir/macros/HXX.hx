@@ -3,7 +3,10 @@ package reflaxe.elixir.macros;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
+// Heavy registry import is gated behind `-D hxx_validate` to avoid compile-time overhead
+#if hxx_validate
 import phoenix.types.HXXComponentRegistry;
+#end
 #end
 
 /**
@@ -186,21 +189,33 @@ class HXX {
      * ```
      */
     public static macro function hxx(templateStr: Expr): Expr {
+        #if macro
+        haxe.macro.Context.warning("[HXX] hxx() invoked", templateStr.pos);
+        #end
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
-                // First validate the template
-                var validation = validateTemplateTypes(s);
-                if (!validation.valid) {
-                    // Report all errors
-                    for (error in validation.errors) {
-                        Context.warning(error, templateStr.pos);
-                    }
-                    // Still process but with warnings
+                // Fast-path: if author already provided EEx/HEEx markers, do not rewrite.
+                // This avoids unnecessary processing and prevents pathological regex scans.
+                // We still tag it so the builder emits a ~H sigil.
+                if (s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<%\n") != -1) {
+                    #if macro
+                    haxe.macro.Context.warning("[HXX] fast-path (pre-EEx detected)", templateStr.pos);
+                    #end
+                    return macro @:heex $v{s};
                 }
 
+                // Validate the template and proceed with HXX → HEEx conversion
+                #if macro
+                haxe.macro.Context.warning("[HXX] processing template string", templateStr.pos);
+                #end
+                var validation = validateTemplateTypes(s);
+                if (!validation.valid) {
+                    for (error in validation.errors) Context.warning(error, templateStr.pos);
+                }
                 var processed = processTemplateString(s);
-                // Tag the string as HEEx so the Elixir AST builder can emit a ~H sigil directly.
-                // This avoids brittle string paths and ensures proper HEEx semantics.
+                #if macro
+                haxe.macro.Context.warning("[HXX] processed (length=" + processed.length + ")", templateStr.pos);
+                #end
                 macro @:heex $v{processed};
             case _:
                 Context.error("hxx() expects a string literal", templateStr.pos);
@@ -467,6 +482,10 @@ class HXX {
      * - "Attribute 'href' not valid for <input>. Available: type, name, value..."
      */
     static function validateTemplateTypes(template: String): ValidationResult {
+#if !hxx_validate
+        // Validation disabled: return success without touching heavy registries
+        return { valid: true, errors: [] };
+#else
         var errors: Array<String> = [];
         var valid = true;
 
@@ -493,12 +512,17 @@ class HXX {
         });
 
         return { valid: valid, errors: errors };
+#end
     }
 
     /**
      * Validate attributes for an element
      */
     static function validateAttributes(tagName: String, attributesStr: String, errors: Array<String>): Void {
+#if !hxx_validate
+        // No-op when validation is disabled
+        return;
+#else
         // Parse attributes (simplified - real implementation would be more robust)
         var attrPattern = ~/([a-zA-Z][a-zA-Z0-9]*)\s*=/g;
 
@@ -522,6 +546,7 @@ class HXX {
 
             return "";
         });
+#end
     }
 
     /**

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # QA Sentinel: Compile, run, curl /, assert zero warnings/errors
-# Usage: scripts/qa-sentinel.sh [--app examples/todo-app] [--port 4001] [--keep-alive] [--verbose]
+# Usage: scripts/qa-sentinel.sh [--app examples/todo-app] [--port 4001] [--keep-alive] [--verbose] [--async] [--deadline SECS]
 #        Optional timeouts (env): BUILD_TIMEOUT, DEPS_TIMEOUT, COMPILE_TIMEOUT, READY_PROBES
 #
 # --keep-alive: Do not kill the Phoenix server on exit. Prints PHX_PID and PORT so
@@ -12,6 +12,9 @@ APP_DIR="examples/todo-app"
 PORT=4001
 KEEP_ALIVE=0
 VERBOSE=0
+# Non-blocking options
+ASYNC=0
+DEADLINE=""
 # Timeouts and probe counts (sane defaults; configurable via env)
 BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 DEPS_TIMEOUT=${DEPS_TIMEOUT:-300s}
@@ -26,6 +29,8 @@ while [[ $# -gt 0 ]]; do
     --port) PORT="$2"; shift 2 ;;
     --keep-alive) KEEP_ALIVE=1; shift 1 ;;
     --verbose|-v) VERBOSE=1; shift 1 ;;
+    --async) ASYNC=1; shift 1 ;;
+    --deadline) DEADLINE="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 2 ;;
   esac
 done
@@ -99,6 +104,28 @@ run_step_with_log() {
   log "[QA] ✅ ${desc} OK (${dur}s)"
   return 0
 }
+
+# Async launcher: re-invoke this script in background and return immediately
+if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
+  RUN_ID=$(date +%s)
+  LOG_MAIN="/tmp/qa-sentinel.${RUN_ID}.log"
+  # Reconstruct flags (omit --async to avoid recursion)
+  CHILD_FLAGS=("--app" "$APP_DIR" "--port" "$PORT")
+  if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
+  if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
+  log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
+  nohup env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" bash -lc "'$0' ${CHILD_FLAGS[*]}" >"$LOG_MAIN" 2>&1 &
+  SENTINEL_PID=$!
+  if [[ -n "$DEADLINE" ]]; then
+    ( sleep "$DEADLINE"; kill -TERM "$SENTINEL_PID" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$SENTINEL_PID" >/dev/null 2>&1 || true ) &
+    WATCHDOG_PID=$!
+    log "[QA] Async watchdog enabled: DEADLINE=$DEADLINE (PID=$WATCHDOG_PID)"
+  fi
+  echo "QA_SENTINEL_PID=$SENTINEL_PID"
+  echo "QA_SENTINEL_RUN_ID=$RUN_ID"
+  echo "QA_SENTINEL_LOG=$LOG_MAIN"
+  exit 0
+fi
 
 log "[QA] Starting QA Sentinel in $APP_DIR"
 log "[QA] Plan:"

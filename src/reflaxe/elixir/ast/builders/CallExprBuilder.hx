@@ -332,10 +332,18 @@ class CallExprBuilder {
                             var cls = classRef.get();
                             var methodName = cf.get().name;
                             if (cls.name == "HXX" && methodName == "hxx" && args.length >= 1) {
-                                // Build inner argument AST and collect HXX content as HEEx string
+                                // Build inner argument AST
                                 var innerAst = buildExpression(args[0]);
+                                // Fast-path: if literal string already contains EEx/HEEx markers, emit ~H as-is
+                                switch (innerAst.def) {
+                                    case EString(s):
+                                        if (s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<%\n") != -1) {
+                                            return ESigil("H", s, "");
+                                        }
+                                    default:
+                                }
+                                // General path: collect template content and normalize HXX control tags
                                 var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(innerAst);
-                                // Normalize control tags to proper block HEEx
                                 content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
                                 return ESigil("H", content, "");
                             }
