@@ -54,6 +54,15 @@ all:
 	@echo "Running negative tests (expected failures)..."
 	@$(MAKE) -f $(MAKEFILE_LIST) summary-negative
 
+# Safe, sequential runner to avoid long blocking and ensure completion with per-test timeouts
+.PHONY: all-safe
+all-safe:
+	@rm -f test-results*.tmp
+	@echo "Running all tests sequentially (safe mode)..."
+	@$(MAKE) -f $(MAKEFILE_LIST) -j1 summary
+	@echo "Running negative tests sequentially (safe mode)..."
+	@$(MAKE) -f $(MAKEFILE_LIST) -j1 summary-negative-safe
+
 # Summary target that depends on all tests
 .PHONY: summary
 summary: $(TEST_TARGETS)
@@ -92,7 +101,95 @@ summary-negative: $(NEGATIVE_TEST_TARGETS)
 		exit 1; \
 	fi
 
-# Pattern rule for running individual tests
+# Safe, sequential negative summary (bypasses pattern-rule ambiguity)
+.PHONY: summary-negative-safe
+summary-negative-safe:
+	@echo ""
+	@echo "========================================"
+	@echo "Running negative tests (safe sequential)"
+	@neg_total=0; neg_failed=0; neg_unexpected=0; \
+	for d in $(NEGATIVE_TESTS); do \
+		name=$${d#negative/}; \
+		td="$(NEGATIVE_DIR)/$$name"; \
+		if [ ! -f "$$td/compile.hxml" ]; then \
+			echo "❌ negative/$$name - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+			continue; \
+		fi; \
+		echo "Running negative negative/$$name (expected failure)..."; \
+		start=$$(date +%s); \
+		if timeout $(TIMEOUT) bash -c "cd $$td && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+			end=$$(date +%s); duration=$$((end - start)); \
+			echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+			neg_unexpected=$$((neg_unexpected + 1)); \
+		else \
+			end=$$(date +%s); duration=$$((end - start)); \
+			echo "NEG-OK $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+			neg_failed=$$((neg_failed + 1)); \
+		fi; \
+		neg_total=$$((neg_total + 1)); \
+	done; \
+	echo "Negative Tests: $$neg_failed/$$neg_total correctly failed"; \
+	if [ "$$neg_total" != "0" ] && [ $$neg_unexpected -eq 0 ] && [ $$neg_failed -eq $$neg_total ]; then \
+		echo "$(GREEN)SUCCESS: All negative tests failed as expected ✅$(RESET)"; \
+	else \
+		if [ $$neg_total -eq 0 ]; then echo "No negative tests found"; fi; \
+		echo "$(RED)FAILED: Some negative tests did not fail as expected$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
+		exit 1; \
+	fi
+
+# Pattern rule for negative tests (expected-to-fail compilation) — placed before test-% to take precedence
+
+# Negative tests: the target stem includes one or more leading "negative/" prefixes (e.g.,
+# target name is test-negative-negative__hxx_assigns_linter). Normalize so we resolve to snapshot/negative/<name>.
+.PHONY: test-negative-%
+test-negative-%:
+	@raw=$$(echo $* | sed 's|__|/|g'); \
+	# Strip one or more leading "negative/" prefixes from the stem
+	testname=$$(echo $$raw | sed -E 's|^(negative/)+||'); \
+	testdir=$(NEGATIVE_DIR)/$$testname; \
+	if [ ! -f $$testdir/compile.hxml ]; then \
+		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+		exit 1; \
+	fi; \
+	echo "Running negative negative/$$testname (expected failure)..."; \
+	start=$$(date +%s); \
+	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+		end=$$(date +%s); duration=$$((end - start)); \
+		echo "NEG-UNEXPECTED-SUCCESS negative/$$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+		exit 1; \
+	else \
+		end=$$(date +%s); duration=$$((end - start)); \
+		echo "NEG-OK negative/$$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+	fi
+
+# Pattern rule for negative tests (expected-to-fail compilation) — placed before test-% to take precedence
+
+# Negative tests: the target stem includes an extra "negative__" prefix (e.g.,
+# target name is test-negative-negative__hxx_assigns_linter). Normalize so testdir resolves to snapshot/negative/<name>.
+
+.PHONY: test-negative-%
+test-negative-%:
+	@raw=$$(echo $* | sed 's|__|/|g'); \
+	# Strip a single leading "negative/" prefix from the stem to avoid duplication with $(NEGATIVE_DIR)
+	testname=$${raw#negative/}; \
+	testdir=$(NEGATIVE_DIR)/$$testname; \
+	if [ ! -f $$testdir/compile.hxml ]; then \
+		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+		exit 1; \
+	fi; \
+	echo "Running negative negative/$$testname (expected failure)..."; \
+	start=$$(date +%s); \
+	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+		end=$$(date +%s); duration=$$((end - start)); \
+		echo "NEG-UNEXPECTED-SUCCESS $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+		exit 1; \
+	else \
+		end=$$(date +%s); duration=$$((end - start)); \
+		echo "NEG-OK $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+	fi
+
+# Pattern rule for running individual positive tests
 # Converts double underscores back to slashes for nested directories
 .PHONY: test-%
 test-%:
@@ -165,31 +262,7 @@ test-%:
 		fi; \
 	fi
 
-# Pattern rule for negative tests (expected-to-fail compilation)
-
-# Negative tests: the target stem includes an extra "negative__" prefix (e.g.,
-# target name is test-negative-negative__hxx_assigns_linter). Normalize it so
-# testdir always resolves to snapshot/negative/<name>.
-.PHONY: test-negative-%
-test-negative-%:
-	@raw=$$(echo $* | sed 's|__|/|g'); \
-	# Strip single leading "negative/" from the stem to avoid duplication with $(NEGATIVE_DIR)
-	testname=$${raw#negative/}; \
-	testdir=$(NEGATIVE_DIR)/$$testname; \
-	if [ ! -f $$testdir/compile.hxml ]; then \
-		echo "❌ negative/$$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
-		exit 1; \
-	fi; \
-	echo "Running negative negative/$$testname (expected failure)..."; \
-	start=$$(date +%s); \
-	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
-		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-UNEXPECTED-SUCCESS $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-		exit 1; \
-	else \
-		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-OK $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-	fi
+ 
 
 # Update targets for parallel execution
 # Replace forward slashes with double underscores for Make target compatibility
