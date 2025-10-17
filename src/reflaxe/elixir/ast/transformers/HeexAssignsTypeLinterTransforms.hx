@@ -60,73 +60,80 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     static function lint(ast: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): ElixirAST {
-        // Walk functions to target render(assigns)
+        // Lint only within LiveView modules to avoid non-template false positives
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EDef(name, args, guards, body) if (name == "render"):
-                    // Fail-fast: skip linter if this render body contains neither ~H sigils nor EFragment nodes
-                    if (!containsHeexOrFragments(body)) {
-                        return n;
-                    }
-                    // Resolve Haxe source path for this function
-                    var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
-                    if (hxPath == null) {
-                        // Fallback: search within body for any node carrying sourceFile metadata
-                        hxPath = findAnySourceFile(body);
-                    }
-#if debug_assigns_linter
-                    trace('[HeexAssignsTypeLinter] render/1 at hxPath=' + hxPath);
-#end
-                    if (hxPath == null) return n; // No source; skip
-                    // Skip compiler/library/internal files to avoid scanning whole libs
-                    var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
-                    if (hxPathNorm.indexOf("/reflaxe/elixir/") != -1 || hxPathNorm.indexOf("/vendor/") != -1 || hxPathNorm.indexOf("/std/") != -1) {
-                        return n;
-                    }
-                    var fileContent: String = null;
-                    try fileContent = sys.io.File.getContent(hxPath) catch (e: Dynamic) fileContent = null;
-                    if (fileContent == null) return n;
-
-                    var assignsType = extractAssignsTypeName(fileContent);
-#if debug_assigns_linter
-                    trace('[HeexAssignsTypeLinter] assigns type=' + assignsType);
-#end
-                    if (assignsType == null) return n; // cannot determine type name; skip
-
-                    var fields = extractAssignsFields(assignsType, fileContent);
-#if debug_assigns_linter
-                    var keys = [for (k in fields.keys()) k].join(',');
-                    trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
-#end
-                    if (fields == null) fields = new Map<String, String>();
-
-                    // Prefer structured validation first
-                    // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
-                    validateHeexFragments(body, fields, assignsType, ctx);
-
-                    // 2) Validate any native EFragment nodes already present in the render body
-                    validateNativeEFragments(body, fields, assignsType, ctx);
-
-                    // 3) Bridge path: string-based validation for ~H contents (kept until full EFragment emission)
-                    var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
-                    collectHeexContents(body, contents);
-                    for (item in contents) {
-                        var used = collectAtFields(item.content);
-#if debug_assigns_linter
-                        trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
-#end
-                        for (f in used) if (!fields.exists(f)) {
-                            error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + assignsType + ')', item.pos);
-                        }
-                        checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
-                    }
-
-                    // Return node unchanged
-                    makeASTWithMeta(n.def, n.metadata, n.pos);
+            switch (n.def) {
+                case EModule(_name, _attrs, body) if (n.metadata?.isLiveView == true):
+                    for (child in body) lintRender(child, ctx);
+                case EDefmodule(_name, doBlock) if (n.metadata?.isLiveView == true):
+                    lintRender(doBlock, ctx);
                 default:
-                    n;
             }
+            return n;
         });
+    }
+
+    static function lintRender(n: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+        switch (n.def) {
+            case EDef(name, _args, _guards, body) if (name == "render"):
+                // Fail-fast: skip linter if this render body contains neither ~H sigils nor EFragment nodes
+                if (!containsHeexOrFragments(body)) {
+                    return;
+                }
+                // Resolve Haxe source path for this function
+                var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
+                if (hxPath == null) {
+                    // Fallback: search within body for any node carrying sourceFile metadata
+                    hxPath = findAnySourceFile(body);
+                }
+#if debug_assigns_linter
+                trace('[HeexAssignsTypeLinter] render/1 at hxPath=' + hxPath);
+#end
+                if (hxPath == null) return; // No source; skip
+                // Skip compiler/library/internal files to avoid scanning whole libs
+                var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
+                if (hxPathNorm.indexOf("/reflaxe/elixir/") != -1 || hxPathNorm.indexOf("/vendor/") != -1 || hxPathNorm.indexOf("/std/") != -1) {
+                    return;
+                }
+                var fileContent: String = null;
+                try fileContent = sys.io.File.getContent(hxPath) catch (e: Dynamic) fileContent = null;
+                if (fileContent == null) return;
+
+                var assignsType = extractAssignsTypeName(fileContent);
+#if debug_assigns_linter
+                trace('[HeexAssignsTypeLinter] assigns type=' + assignsType);
+#end
+                if (assignsType == null) return; // cannot determine type name; skip
+
+                var fields = extractAssignsFields(assignsType, fileContent);
+#if debug_assigns_linter
+                var keys = [for (k in fields.keys()) k].join(',');
+                trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
+#end
+                if (fields == null) fields = new Map<String, String>();
+
+                // Prefer structured validation first
+                // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
+                validateHeexFragments(body, fields, assignsType, ctx);
+
+                // 2) Validate any native EFragment nodes already present in the render body
+                validateNativeEFragments(body, fields, assignsType, ctx);
+
+                // 3) Bridge path: string-based validation for ~H contents (kept until full EFragment emission)
+                var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
+                collectHeexContents(body, contents);
+                for (item in contents) {
+                    var used = collectAtFields(item.content);
+#if debug_assigns_linter
+                    trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
+#end
+                    for (f in used) if (!fields.exists(f)) {
+                        error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + assignsType + ')', item.pos);
+                    }
+                    checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
+                }
+            default:
+        }
     }
 
     static function findAnySourceFile(node: ElixirAST): Null<String> {

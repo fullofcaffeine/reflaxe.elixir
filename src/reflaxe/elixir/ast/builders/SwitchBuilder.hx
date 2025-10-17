@@ -108,8 +108,10 @@ class SwitchBuilder {
     public static function build(e: TypedExpr, cases: Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
 
         // DEBUG: Log ALL switch compilations
+        #if debug_switch_builder
         trace('[SwitchBuilder START] Compiling switch at ${e.pos}');
         trace('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
+        #end
 
         // CRITICAL: Detect TEnumIndex optimization and recover enum type
         // This is the KEY to eliminating integer-based switch cases!
@@ -157,15 +159,16 @@ class SwitchBuilder {
         var targetVarName = extractTargetVarName(actualSwitchExpr);
 
         // DEBUG: Output switch target info
+        #if debug_switch_builder
         trace('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
         if (targetVarName != null) {
             trace('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
             trace('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
         }
-
         if (targetVarName != null && isInfrastructureVar(targetVarName)) {
             trace('[SwitchBuilder DEBUG] Infrastructure variable detected but not handled!');
         }
+        #end
 
         // Build the switch target expression (use actual enum, not index)
         var targetAST = if (context.compiler != null) {
@@ -174,6 +177,7 @@ class SwitchBuilder {
             // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
             // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
             var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedTarget, context);
+            #if debug_switch_builder
             trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
             // DEBUG: Show exact variable name if it's EVar
             switch(result.def) {
@@ -181,6 +185,7 @@ class SwitchBuilder {
                     trace('[SwitchBuilder DEBUG] EVar variable name: "${name}"');
                 default:
             }
+            #end
             result;
         } else {
             return null;  // Can't proceed without compiler
@@ -208,15 +213,21 @@ class SwitchBuilder {
 
         for (i in 0...cases.length) {
             var switchCase = cases[i];
+            #if debug_switch_builder
             trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}');
+            #end
             var clausesFromCase = buildCaseClause(switchCase, targetVarName, context);
             if (clausesFromCase.length > 0) {
+                #if debug_switch_builder
                 trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case');
+                #end
                 for (clause in clausesFromCase) {
                     caseClauses.push(clause);
                 }
             } else {
+                #if debug_switch_builder
                 trace('[SwitchBuilder]   Case clause build returned empty array!');
+                #end
             }
         }
         
