@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
 
@@ -120,13 +121,8 @@ class TemplateHelpers {
             case EParen(inner):
                 '(' + renderExpr(inner) + ')';
             default:
-                // Fallback to a placeholder to avoid crashing; this should be rare in templates
-                #if debug_hxx_transformation
-                #if debug_ast_builder
-                trace('[HXX] renderExpr fallback for: ${ast.def}');
-                #end
-                #end
-                "[expr]";
+                // Fallback: delegate to AST printer for a best-effort representation
+                ElixirASTPrinter.print(ast, 0);
         };
     }
     
@@ -152,26 +148,35 @@ class TemplateHelpers {
                 rewriteControlTags(l + r);
                 
             case EIf(condition, thenBranch, elseBranch):
-                // Render block-level HEEx if with do/else/end and unquoted inner content
+                // Prefer inline-if when then/else are simple HTML strings (including HXX.block)
                 var condStr = renderExpr(condition);
                 if (StringTools.startsWith(condStr, "assigns.")) condStr = '@' + condStr.substr("assigns.".length);
-                var thenStr = collectTemplateContent(thenBranch);
-                var elseStr = elseBranch != null ? collectTemplateContent(elseBranch) : "";
-                var out = new StringBuf();
-                out.add('<%= if ' + condStr + ' do %>');
-                out.add(thenStr);
-                if (elseStr != null && elseStr != "") {
-                    out.add('<% else %>');
-                    out.add(elseStr);
+                // Try to extract simple HTML bodies from branches
+                var thenSimple: Null<String> = extractSimpleHtml(thenBranch);
+                var elseSimple: Null<String> = (elseBranch != null) ? extractSimpleHtml(elseBranch) : "";
+                if (thenSimple != null && elseSimple != null) {
+                    '<%= if ' + condStr + ', do: ' + toQuoted(thenSimple) + ', else: ' + toQuoted(elseSimple) + ' %>';
+                } else {
+                    // Fallback to block-if
+                    var thenStr = collectTemplateContent(thenBranch);
+                    var elseStr = elseBranch != null ? collectTemplateContent(elseBranch) : "";
+                    var out = new StringBuf();
+                    out.add('<%= if ' + condStr + ' do %>');
+                    out.add(thenStr);
+                    if (elseStr != null && elseStr != "") {
+                        out.add('<% else %>');
+                        out.add(elseStr);
+                    }
+                    out.add('<% end %>');
+                    out.toString();
                 }
-                out.add('<% end %>');
-                out.toString();
 
             case ECall(module, func, args):
-                // Special handling for nested HXX helpers: HXX.block('...') or HXX.hxx('...')
+                // Special handling for nested HXX helpers: HXX.block('...') or hxx.HXX.block('...')
                 var isHxxModule = false;
                 if (module != null) switch (module.def) {
                     case EVar(m): isHxxModule = (m == "HXX");
+                    case EField(_, fld): isHxxModule = (fld == "HXX");
                     default:
                 }
                 if (isHxxModule && (func == "block" || func == "hxx") && args.length >= 1) {
@@ -201,14 +206,10 @@ class TemplateHelpers {
                 '<%= ' + exprStr + ' %>';
                 
             default:
-                // For other expressions, try to convert to a string representation
-                // This is a fallback - ideally all cases should be handled explicitly
-                #if debug_hxx_transformation
-                #if debug_ast_builder
-                trace('[HXX] Unhandled AST type in template collection: ${ast.def}');
-                #end
-                #end
-                '<%= [unhandled expression] %>';
+                // Fallback: embed expression in interpolation using generic renderer
+                var exprAny = renderExpr(ast);
+                if (StringTools.startsWith(exprAny, "assigns.")) exprAny = '@' + exprAny.substr("assigns.".length);
+                '<%= ' + exprAny + ' %>';
         };
     }
 
@@ -247,10 +248,10 @@ class TemplateHelpers {
                 var th = extractBlockHtml(StringTools.trim(tern.thenPart));
                 var el = extractBlockHtml(StringTools.trim(tern.elsePart));
                 if (th != null || el != null) {
-                    out.add('<%= if ' + cond + ' do %>');
-                    if (th != null) out.add(th);
-                    if (el != null && el != "") { out.add('<% else %>'); out.add(el); }
-                    out.add('<% end %>');
+                    // Prefer inline-if in body when both branches are HTML strings
+                    var thenQ = (th != null) ? toQuoted(th) : '""';
+                    var elseQ = (el != null && el != "") ? toQuoted(el) : '""';
+                    out.add('<%= if ' + cond + ', do: ' + thenQ + ', else: ' + elseQ + ' %>');
                 } else {
                     out.add('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
                 }
@@ -259,10 +260,8 @@ class TemplateHelpers {
             }
             i = k;
         }
-        var res = out.toString();
-        // Inline if ... do: ".." else: ".." into block
-        res = rewriteInlineIfDoToBlock(res);
-        return res;
+        // Return as-is; attribute contexts are normalized elsewhere.
+        return out.toString();
     }
 
     // Convert attribute values written as <%= ... %> (and conditional blocks) into HEEx { ... }
@@ -453,6 +452,29 @@ class TemplateHelpers {
         var uq = unquote(p);
         if (uq != null) return uq;
         return null;
+    }
+
+    // Extracts simple HTML from an AST branch when it's either HXX.block('...') or a string literal
+    static function extractSimpleHtml(branch: ElixirAST): Null<String> {
+        return switch (branch.def) {
+            case ECall(module, func, args):
+                var isHxx = false;
+                if (module != null) switch (module.def) {
+                    case EVar(m): isHxx = (m == "HXX");
+                    case EField(_, fld): isHxx = (fld == "HXX");
+                    default:
+                }
+                if (isHxx && (func == "block" || func == "hxx") && args.length >= 1) {
+                    var inner = collectTemplateContent(args[0]);
+                    // Ensure no nested EEx in inner
+                    if (inner.indexOf("<%") == -1) inner else null;
+                } else null;
+            case EString(s):
+                var uq = unquote(s);
+                uq != null ? uq : s;
+            default:
+                null;
+        }
     }
 
     static function unquote(s:String):Null<String> {
