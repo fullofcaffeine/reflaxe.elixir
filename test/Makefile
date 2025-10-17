@@ -14,6 +14,7 @@ SHELL := /bin/bash
 # Get the directory where this Makefile is located
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_DIR := $(MAKEFILE_DIR)snapshot
+NEGATIVE_DIR := $(TEST_DIR)/negative
 TIMEOUT := 120s
 OUTPUT_DIR := out
 
@@ -32,10 +33,16 @@ GREEN := \033[0;32m
 RED := \033[0;31m
 RESET := \033[0m
 
-# Find all test directories with compile.hxml recursively
-# Replace forward slashes with double underscores for Make target compatibility
-TESTS := $(shell find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
-TEST_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+# Discover positive and negative tests
+# Positive tests: all under snapshot except the negative/ subtree
+POSITIVE_TESTS := $(shell find $(TEST_DIR) -name compile.hxml -not -path "$(NEGATIVE_DIR)/*" -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
+NEGATIVE_TESTS := $(shell if [ -d "$(NEGATIVE_DIR)" ]; then find $(NEGATIVE_DIR) -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort; fi)
+
+# Targets for positive tests (default summary uses these)
+TEST_TARGETS := $(shell echo "$(POSITIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+# Targets for negative tests (expected-to-fail compilation)
+NEGATIVE_TEST_TARGETS := $(shell echo "$(NEGATIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-negative-|' | tr '\n' ' ')
 
 # Default target runs all tests with default parallelism
 .PHONY: all
@@ -44,6 +51,8 @@ all:
 	@echo "Running all tests (use -j N to control parallelism)..."
 	# Respect jobserver: do not force -j here; top-level -j will propagate
 	@$(MAKE) -f $(MAKEFILE_LIST) summary
+	@echo "Running negative tests (expected failures)..."
+	@$(MAKE) -f $(MAKEFILE_LIST) summary-negative
 
 # Summary target that depends on all tests
 .PHONY: summary
@@ -62,6 +71,25 @@ summary: $(TEST_TARGETS)
 	else \
 		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
 		rm -f test-results*.tmp; \
+	fi
+
+# Summary for negative tests (expected-to-fail). Succeeds only if all negative tests fail to compile.
+.PHONY: summary-negative
+summary-negative: $(NEGATIVE_TEST_TARGETS)
+	@echo ""
+	@echo "========================================"
+	@neg_total=$$(echo "$(NEGATIVE_TESTS)" | tr ' ' '\n' | sed '/^$$/d' | wc -l | tr -d ' '); \
+	neg_failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "NEG-OK") || neg_failed=0; \
+	neg_unexpected=$$(cat test-results*.tmp 2>/dev/null | grep -c "NEG-UNEXPECTED-SUCCESS") || neg_unexpected=0; \
+	echo "Negative Tests: $$neg_failed/$$neg_total correctly failed"; \
+	if [ "$$neg_total" != "0" ] && [ $$neg_unexpected -eq 0 ] && [ $$neg_failed -eq $$neg_total ]; then \
+		echo "$(GREEN)SUCCESS: All negative tests failed as expected ✅$(RESET)"; \
+		true; \
+	else \
+		if [ $$neg_total -eq 0 ]; then echo "No negative tests found"; fi; \
+		echo "$(RED)FAILED: Some negative tests did not fail as expected$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
+		exit 1; \
 	fi
 
 # Pattern rule for running individual tests
@@ -135,6 +163,26 @@ test-%:
 		else \
 			echo "❌ $$testname - Compilation failed ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
+	fi
+
+# Pattern rule for negative tests (expected-to-fail compilation)
+.PHONY: test-negative-%
+test-negative-%:
+	@testname=$$(echo $* | sed 's|__|/|g'); \
+	testdir=$(TEST_DIR)/$$testname; \
+	if [ ! -f $$testdir/compile.hxml ]; then \
+		echo "❌ $$testname - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+		exit 1; \
+	fi; \
+	echo "Running negative $$testname (expected failure)..."; \
+	start=$$(date +%s); \
+	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+		end=$$(date +%s); duration=$$((end - start)); \
+		echo "NEG-UNEXPECTED-SUCCESS $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+		exit 1; \
+	else \
+		end=$$(date +%s); duration=$$((end - start)); \
+		echo "NEG-OK $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 	fi
 
 # Update targets for parallel execution

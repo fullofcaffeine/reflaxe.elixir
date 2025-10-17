@@ -6,5 +6,7 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 echo "[pre-commit] Running name-heuristics guard..."
 "$ROOT_DIR/scripts/lint/name_heuristics_guard.sh"
 
-echo "[pre-commit] OK"
+echo "[pre-commit] Running numeric-suffix guard..."
+"$ROOT_DIR/scripts/lint/numeric_suffix_guard.sh"
 
+echo "[pre-commit] OK"
