@@ -760,6 +760,9 @@ typedef ElixirMetadata = {
     ?poolSize: Int,               // Connection pool size for Repo
     ?needsPostgrexTypes: Bool,    // Whether to generate companion PostgrexTypes module
 
+    // HEEx/HXX annotation (experimental; analysis only)
+    ?heexFragments: Array<HeexFragmentMeta>, // Parsed fragments from ~H content for analysis (not used for emission)
+
     // Schema metadata (for @:schema)
     // haxeFqcn: Fully Qualified Class Name of the original Haxe type that produced this module.
     // Why string: metadata travels outside macro-only phases; we resolve it later when needed.
@@ -837,6 +840,28 @@ typedef ElixirMetadata = {
     ?patternKey: String,          // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")
     ?boundVars: Array<String>,    // Variables bound by this pattern (e.g., ["r", "g", "b"])
     ?hasGuard: Bool               // Whether this clause has a guard condition
+
+    // HEEx typed AST (Builder-attached; analysis only)
+    // WHAT: Typed EFragment/EAssign-based AST parsed from ~H content.
+    // WHY: Enable attribute-level static analysis (e.g., assigns lints) without relying on
+    //      brittle string scanning. Keeps final emission as ~H while providing structured shape.
+    // HOW: ElixirASTBuilder parses ESigil("H", ...) content using HeexFragmentBuilder and
+    //      attaches the resulting top-level nodes here. Printer ignores this; transformers/linters
+    //      may prefer it over heexFragments when present.
+    ?heexAST: Array<ElixirAST>
+}
+
+/** Minimal HEEx fragment metadata for analysis (not used for emission) */
+typedef HeexFragmentMeta = {
+    tag: String,
+    attributes: Array<HeexAttributeMeta>,
+    childrenText: String
+}
+
+typedef HeexAttributeMeta = {
+    name: String,
+    valueExpr: String,
+    isDynamic: Bool
 }
 
 // ============================================================================
