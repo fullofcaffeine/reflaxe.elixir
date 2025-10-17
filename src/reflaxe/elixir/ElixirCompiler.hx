@@ -1963,6 +1963,79 @@ class ElixirCompiler extends GenericCompiler<
             // Create function definition
             // Use toSafeElixirFunctionName to handle reserved keywords
             var elixirName = reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(funcData.field.name);
+            // Normalize LiveView render/1: convert trailing HTML strings to ~H and rewrite control tags
+            if (elixirName == "render") {
+                trace('[ElixirCompiler] Normalizing render/1 body to ~H when needed; initial body=' + Type.enumConstructor(funcBody.def));
+                // Helper to unwrap EParen
+                function unwrapParens(n: reflaxe.elixir.ast.ElixirAST): reflaxe.elixir.ast.ElixirAST {
+                    var cur = n;
+                    while (Type.enumConstructor(cur.def) == "EParen") {
+                        switch (cur.def) {
+                            case EParen(inner): cur = inner;
+                            default:
+                        }
+                    }
+                    return cur;
+                }
+                // Minimal interpolation converter: #{...} or ${...} → <%= ... %>, assigns.* → @*
+                function convInterp(s:String):String {
+                    if (s == null) return s;
+                    var out = new StringBuf();
+                    var i = 0;
+                    while (i < s.length) {
+                        var j1 = s.indexOf("#{", i);
+                        var j2 = s.indexOf("${", i);
+                        var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
+                        if (j == -1) { out.add(s.substr(i)); break; }
+                        out.add(s.substr(i, j - i));
+                        var k = j + 2;
+                        var depth = 1;
+                        while (k < s.length && depth > 0) {
+                            var ch = s.charAt(k);
+                            if (ch == '{') depth++;
+                            else if (ch == '}') depth--;
+                            k++;
+                        }
+                        var raw = s.substr(j + 2, (k - 1) - (j + 2));
+                        var expr = StringTools.trim(raw);
+                        expr = StringTools.replace(expr, "assigns.", "@");
+                        out.add('<%= ' + expr + ' %>');
+                        i = k;
+                    }
+                    return out.toString();
+                }
+                var b0 = unwrapParens(funcBody);
+                switch (b0.def) {
+                    case EString(s):
+                        var conv = convInterp(s);
+                        conv = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(conv);
+                        funcBody = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.ESigil("H", conv, ""));
+                    case EBlock(stmts) if (stmts.length > 0):
+                        var last = unwrapParens(stmts[stmts.length - 1]);
+                        switch (last.def) {
+                            case EString(s2):
+                                var conv2 = convInterp(s2);
+                                conv2 = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(conv2);
+                                var out = stmts.copy();
+                                out[out.length - 1] = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.ESigil("H", conv2, ""));
+                                funcBody = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EBlock(out));
+                            default:
+                        }
+                    case EDo(stmts) if (stmts.length > 0):
+                        var last2 = unwrapParens(stmts[stmts.length - 1]);
+                        switch (last2.def) {
+                            case EString(s3):
+                                var conv3 = convInterp(s3);
+                                conv3 = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(conv3);
+                                var out2 = stmts.copy();
+                                out2[out2.length - 1] = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.ESigil("H", conv3, ""));
+                                funcBody = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EDo(out2));
+                            default:
+                        }
+                    default:
+                }
+            }
+
             var funcDef = funcData.field.isPublic ?
                 EDef(elixirName, params, null, funcBody) :
                 EDefp(elixirName, params, null, funcBody);
@@ -2068,6 +2141,14 @@ class ElixirCompiler extends GenericCompiler<
         // Enable ExUnit transformation pass for @:exunit modules
         if (classType.meta.has(":exunit")) {
             metadata.isExunit = true;
+        }
+
+        // Enable LiveView transformation pass for @:liveview modules
+        if (classType.meta.has(":liveview")) {
+            metadata.isLiveView = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isLiveView=true metadata for ${classType.name}');
+            #end
         }
 
         // Enable Application transformation pass for @:application modules

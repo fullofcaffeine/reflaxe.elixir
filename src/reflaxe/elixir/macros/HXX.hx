@@ -199,9 +199,27 @@ class HXX {
                 }
 
                 var processed = processTemplateString(s);
-                macro $v{processed};
+                // Tag the string as HEEx so the Elixir AST builder can emit a ~H sigil directly.
+                // This avoids brittle string paths and ensures proper HEEx semantics.
+                macro @:heex $v{processed};
             case _:
                 Context.error("hxx() expects a string literal", templateStr.pos);
+        }
+    }
+
+    /**
+     * HXX.block – marks a nested template fragment to be inlined as HEEx content.
+     * Accepts a string literal containing HXX/HTML and returns it as-is at macro time.
+     * TemplateHelpers recognizes HXX.block() when nested inside another HXX.hxx() and
+     * will inline its processed content without wrapping it in an interpolation tag.
+     */
+    public static macro function block(content: Expr): Expr {
+        return switch (content.expr) {
+            case EConst(CString(s, _)):
+                // Return the string literal as-is; outer processing will handle it
+                macro $v{s};
+            case _:
+                Context.error("block() expects a string literal", content.pos);
         }
     }
 
@@ -353,7 +371,7 @@ class HXX {
             var attributesStr = r.matched(2);
 
             // Check if element is registered
-            if (!HXXComponentRegistry.isRegisteredElement(tagName) && !tagName.startsWith(".")) {
+            if (!HXXComponentRegistry.isRegisteredElement(tagName) && !StringTools.startsWith(tagName, ".")) {
                 // Phoenix components start with ".", so skip those
                 errors.push('Unknown HTML element: <${tagName}>. If this is a custom component, register it first.');
                 valid = false;

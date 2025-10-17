@@ -179,3 +179,27 @@ Tests compile in a different context than the main application. Ensure:
 ## Conclusion
 
 The .cross.hx staging mechanism is a powerful feature for providing target-specific implementations, but the current implementation has architectural flaws. The main issue is unconditional classpath inclusion, which should be replaced with target-conditional injection. Additionally, developers must be aware that static extension methods require explicit `using` statements in Haxe.
+
+---
+
+## Appendix: Transitional Stub Pattern (HXX)
+
+In this repository, `std/HXX.cross.hx` is implemented as a transitional stub. This is a minimal, compile‑time API surface that preserves authoring ergonomics (`HXX.hxx("...")`, `HXX.block("...")`) while the macro‑based HXX path is finalized.
+
+Key properties:
+
+- Zero runtime behavior: the stub returns the input string unchanged (extern/inline).
+- Deterministic pipeline: mid/late AST passes convert final HTML‑like strings to `~H` sigils and normalize control tags (`<if {cond}> ... </if>` → block HEEx).
+- Target‑conditional availability: the stub is gated via the classpath mechanism described above, so macro/other targets do not see Elixir‑only code.
+
+Why a stub (temporarily)?
+
+- Some example code already uses `HXX.hxx(...)`. The stub keeps call‑sites stable and delegates semantics to our AST pipeline while we complete the macro path that emits `ESigil("H", ...)` directly.
+
+Removal criteria:
+
+1) Macro‑based HXX marks strings with `@:heex` and the builder emits `ESigil("H", ...)` deterministically.
+2) Snapshot tests cover block HEEx generation and assigns mapping without relying on string→~H conversion.
+3) Example apps compile cleanly with only the macro path enabled.
+
+For a beginner‑friendly introduction to `.cross.hx` (what/why/when), see docs/01-getting-started/cross-hx.md.
