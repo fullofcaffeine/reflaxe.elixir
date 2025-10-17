@@ -839,7 +839,7 @@ typedef ElixirMetadata = {
     // Guard Condition Grouping (Added January 2025)
     ?patternKey: String,          // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")
     ?boundVars: Array<String>,    // Variables bound by this pattern (e.g., ["r", "g", "b"])
-    ?hasGuard: Bool               // Whether this clause has a guard condition
+    ?hasGuard: Bool,              // Whether this clause has a guard condition
 
     // HEEx typed AST (Builder-attached; analysis only)
     // WHAT: Typed EFragment/EAssign-based AST parsed from ~H content.

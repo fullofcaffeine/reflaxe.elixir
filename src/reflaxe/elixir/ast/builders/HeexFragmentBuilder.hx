@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.builders;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
+using StringTools;
 
 /**
  * HeexFragmentBuilder
@@ -230,7 +231,7 @@ private class ExprParser {
     var i: Int = 0;
 
     public function new(s: String) {
-        this.s = StringTools.trim(s);
+        this.s = s.trim();
         this.i = 0;
     }
 
@@ -429,7 +430,7 @@ private class ExprParser {
     }
     inline function startsWith(t: String): Bool return s.substr(i, t.length) == t;
     inline function remaining(): String return i < s.length ? s.substr(i) : "";
-    static function indexOfTopLevel(token: String, startAt: Int): Int {
+    function indexOfTopLevel(token: String, startAt: Int): Int {
         var depth = 0;
         var inS = false, inD = false;
         var i = startAt;
