@@ -38,7 +38,8 @@ class HeexStripDanglingQuoteLinesTransforms {
         var lines = s.split("\n");
         var out = [];
         for (ln in lines) {
-            var t = StringTools.trim(ln);
+            var t = StringTools.replace(ln, "\r", "");
+            t = StringTools.trim(t);
             if (t == '"' || t == "'") continue;
             out.push(ln);
         }
@@ -47,4 +48,3 @@ class HeexStripDanglingQuoteLinesTransforms {
 }
 
 #end
-

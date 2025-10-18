@@ -125,6 +125,22 @@ Examples
 - **ALL NEW DEVELOPMENT USES THIS PIPELINE**
 - **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
+## Runtime Artifacts — Source-of-Truth Rule (Hard)
+
+- Do not edit generated runtime files to change behavior. Never patch compiled Elixir files:
+  - Repo root/runtime shims and any `*.ex` such as: `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`
+  - Snapshot outputs under `test/snapshot/**/out/**/*.ex`
+- Make all behavior changes in the source-of-truth instead:
+  - Standard library Haxe sources: `std/_std/*.hx` and `std/*.cross.hx`
+  - Compiler pipeline: `src/reflaxe/elixir/ast/**` (Builder → Transformer → Printer)
+- Only edit a `.ex` under `std/` directly if it is explicitly documented as the canonical runtime source (no corresponding `.hx` exists). If unsure, assume it is generated and fix upstream.
+- Example: Reflect.compare/2 — do not touch `reflect.ex`; change `std/_std/Reflect.hx` (or `std/Reflect.cross.hx`) and re-run snapshots.
+- No band-aids: Do not “clean up” outputs or add runtime-only conditionals to mask upstream issues. Fix the transform or std source.
+- Pre-merge checks for std/behavior fixes:
+  - `rg` should show diffs only in `std/_std/*.hx`, `std/*.cross.hx`, or `src/reflaxe/elixir/**`.
+  - No diffs to `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`, or `test/snapshot/**/out/**` unless accompanied by matching upstream `.hx` changes and a note explaining why the `.ex` is canonical.
+- Temporary runtime edits for debugging are allowed only if clearly annotated “DEBUG ONLY” and removed in the same PR after the proper upstream fix lands.
+
 **⚠️ ARCHITECTURAL UPDATE: Complete Migration to AST Pipeline (August 2025)**
 - **The compiler now extends GenericCompiler<ElixirAST>** - Pure AST-based architecture
 - **The AST pipeline is the ONLY compilation path** - Everything goes through it

@@ -238,6 +238,7 @@ class ControlFlowBuilder {
     static function buildCondStatement(econd: TypedExpr, eif: TypedExpr, eelse: Null<TypedExpr>, context: CompilationContext): ElixirASTDef {
         var buildExpression = context.getExpressionBuilder();
         var clauses = [];
+        var hasFinalElse = false; // Track if we emitted a final else clause
         
         // Add first condition
         clauses.push({
@@ -265,12 +266,13 @@ class ControlFlowBuilder {
                         condition: makeAST(EAtom("true")),
                         body: buildExpression(current)
                     });
+                    hasFinalElse = true;
                     break;
             }
         }
         
-        // If no else, add default true -> nil
-        if (clauses[clauses.length - 1].condition.def != EAtom("true")) {
+        // If no else was present, add default true -> nil
+        if (!hasFinalElse) {
             clauses.push({
                 condition: makeAST(EAtom("true")),
                 body: makeAST(EAtom("nil"))

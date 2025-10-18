@@ -174,10 +174,17 @@ class FunctionHygieneTransforms {
         return switch (body.def) {
             case EBlock(stmts):
                 var out = [];
-                for (s in stmts) switch (s.def) {
-                    case EInteger(v) if (v == 0 || v == 1):
-                    case EFloat(f) if (f == 0.0):
-                    default: out.push(s);
+                for (i in 0...stmts.length) {
+                    var s = stmts[i];
+                    var isLast = (i == stmts.length - 1);
+                    switch (s.def) {
+                        case EInteger(v) if ((v == 0 || v == 1) && !isLast):
+                            // drop only when not the last statement
+                        case EFloat(f) if (f == 0.0 && !isLast):
+                            // drop only when not the last statement
+                        default:
+                            out.push(s);
+                    }
                 }
                 makeASTWithMeta(EBlock(out), body.metadata, body.pos);
             default:

@@ -28,25 +28,33 @@ class DropStandaloneLiteralOneTransforms {
             return switch (n.def) {
                 case EBlock(stmts):
                     var out: Array<ElixirAST> = [];
-                    for (s in stmts) switch (s.def) {
-                        case EInteger(v) if (v == 1 || v == 0):
-                            // drop
-                        case EFloat(f) if (f == 0.0):
-                            // drop
-                        case ERaw(code) if (code.trim() == "1" || code.trim() == "0"):
-                            // drop ERaw numeric sentinels
-                        default:
-                            out.push(s);
+                    for (i in 0...stmts.length) {
+                        var s = stmts[i];
+                        var isLast = (i == stmts.length - 1);
+                        switch (s.def) {
+                            case EInteger(v) if ((v == 1 || v == 0) && !isLast):
+                                // drop only when not last
+                            case EFloat(f) if (f == 0.0 && !isLast):
+                                // drop only when not last
+                            case ERaw(code) if ((code.trim() == "1" || code.trim() == "0") && !isLast):
+                                // drop ERaw numeric sentinels only when not last
+                            default:
+                                out.push(s);
+                        }
                     }
                     makeASTWithMeta(EBlock(out), n.metadata, n.pos);
                 case EDo(stmts):
                     var out2: Array<ElixirAST> = [];
-                    for (s in stmts) switch (s.def) {
-                        case EInteger(v) if (v == 1 || v == 0):
-                        case EFloat(f) if (f == 0.0):
-                        case ERaw(code) if (code.trim() == "1" || code.trim() == "0"):
-                        default:
-                            out2.push(s);
+                    for (i in 0...stmts.length) {
+                        var s = stmts[i];
+                        var isLast = (i == stmts.length - 1);
+                        switch (s.def) {
+                            case EInteger(v) if ((v == 1 || v == 0) && !isLast):
+                            case EFloat(f) if (f == 0.0 && !isLast):
+                            case ERaw(code) if ((code.trim() == "1" || code.trim() == "0") && !isLast):
+                            default:
+                                out2.push(s);
+                        }
                     }
                     makeASTWithMeta(EDo(out2), n.metadata, n.pos);
                 case EFn(clauses):
