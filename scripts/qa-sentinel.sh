@@ -189,8 +189,15 @@ log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 log "[QA] Config: PORT=$PORT KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
 pushd "$APP_DIR" >/dev/null
 
+# Prefer system haxe when available (faster, avoids npx bootstrap); fallback to npx
+if command -v haxe >/dev/null 2>&1; then
+  HAXE_CMD="haxe"
+else
+  HAXE_CMD="npx -y haxe"
+fi
+
 # Generate .ex files (full server build to ensure all modules are regenerated)
-run_step_with_log "Step 1: Haxe build (haxe build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "npx -y haxe build-server.hxml" || exit 1
+run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 
 run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log 'MIX_ENV=dev mix deps.get' || exit 1
 

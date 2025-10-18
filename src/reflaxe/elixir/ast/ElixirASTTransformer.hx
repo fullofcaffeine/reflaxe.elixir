@@ -1972,11 +1972,15 @@ class ElixirASTTransformer {
                     makeASTWithMeta(EIf(rewriteIfIncrements(cond), newThen, newElse), n.metadata, n.pos);
                 case EBlock(stmts):
                     var out: Array<ElixirAST> = [];
-                    for (s in stmts) {
-                        // Drop standalone numeric operations like 0 + 1
+                    for (idx in 0...stmts.length) {
+                        var s = stmts[idx];
+                        // Drop standalone numeric operations like 0 + 1, but preserve a trailing
+                        // bare numeric literal as it may represent an intentional return value
+                        // (e.g., final 0 in compare/2).
+                        var isLast = (idx == stmts.length - 1);
                         var drop = switch (s.def) {
                             case EBinary(_, l, r) if (isNumericLiteral(l) && isNumericLiteral(r)): true;
-                            case EInteger(_): true; // Drop bare integer literal statements
+                            case EInteger(_) if (!isLast): true; // Only drop bare integer when not last
                             default: false;
                         };
                         if (!drop) out.push(rewriteIfIncrements(s));

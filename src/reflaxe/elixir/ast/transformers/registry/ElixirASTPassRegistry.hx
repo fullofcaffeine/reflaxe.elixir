@@ -304,6 +304,38 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
         });
 
+        // Convert block-if with pure HTML branches into inline-if in ~H content
+        passes.push({
+            name: "HeexBlockIfToInline",
+            description: "Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.transformPass
+        });
+
+        // Normalize over-escaped quotes inside inline-if string branches
+        passes.push({
+            name: "HeexInlineIfQuoteNormalize",
+            description: "Reduce \\\" to \" inside quoted do/else branches of inline-if",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexInlineIfQuoteNormalizeTransforms.transformPass
+        });
+
+        // Collapse over-escaped quotes in ~H content (e.g., \\\" → \")
+        passes.push({
+            name: "HeexCollapseOverEscapedQuotes",
+            description: "Normalize double-escaped quotes inside ~H inline strings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
+        });
+
+        // Normalize trailing whitespace: collapse multiple trailing blank lines to one
+        passes.push({
+            name: "HeexTrimTrailingBlankLines",
+            description: "Collapse multiple trailing blank lines in ~H content to a single line",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
+        });
+
         // Remove isolated quote lines introduced by earlier inlining/normalization
         passes.push({
             name: "HeexStripDanglingQuoteLines",
@@ -2589,6 +2621,20 @@ class ElixirASTPassRegistry {
             description: "Ensure Enum.each bodies use binder (not list[0]); promote wildcard binder when needed",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachBinderIntegrityPass
+        });
+
+        // Ultra-late: collapse over-escaped quotes in ~H content once more after all passes
+        passes.push({
+            name: "HeexCollapseOverEscapedQuotes_Final",
+            description: "Final normalization of escaped quotes inside ~H inline strings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
+        });
+        passes.push({
+            name: "HeexTrimTrailingBlankLines_Final",
+            description: "Final collapse of trailing blank lines in ~H content to match snapshot style",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
         });
         passes.push({
             name: "CountRewrite",

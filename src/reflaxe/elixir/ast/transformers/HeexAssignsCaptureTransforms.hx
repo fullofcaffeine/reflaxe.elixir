@@ -129,7 +129,7 @@ class HeexAssignsCaptureTransforms {
                                                 var start = idx + 4; // after ~H"""
                                                 var endIdx = code2.indexOf('"""', start);
                                                 if (endIdx != -1) {
-                                                    var sigilContent = code2.substr(start, endIdx - start);
+                                                    var sigilContent = cleanSigil(code2.substr(start, endIdx - start));
                                                     var rebuilt2: ElixirAST = makeAST(ESigil("H", sigilContent, ""));
                                                     for (p in 0...heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
                                                     newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
@@ -154,6 +154,18 @@ class HeexAssignsCaptureTransforms {
                     node;
             }
         });
+    }
+
+    static function cleanSigil(s: String): String {
+        var lines = s.split("\n");
+        var out = [];
+        for (ln in lines) {
+            var t = StringTools.replace(ln, "\r", "");
+            t = StringTools.trim(t);
+            if (t == '"' || t == "'") continue;
+            out.push(ln);
+        }
+        return out.join("\n");
     }
 }
 

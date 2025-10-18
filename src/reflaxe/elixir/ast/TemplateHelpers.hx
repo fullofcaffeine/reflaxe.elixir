@@ -329,12 +329,10 @@ class TemplateHelpers {
 
     static inline function toQuoted(s:String): String {
         var t = StringTools.trim(s);
-        // if already quoted, keep; otherwise wrap as string literal
-        if ((StringTools.startsWith(t, "\"") && StringTools.endsWith(t, "\"")) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"))) {
+        // If already quoted, keep as-is; otherwise wrap with quotes without escaping inner quotes
+        if ((StringTools.startsWith(t, '"') && StringTools.endsWith(t, '"')) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"))) {
             return t;
         }
-        // Escape inner quotes minimally
-        t = StringTools.replace(t, "\"", "\\\"");
         return '"' + t + '"';
     }
 

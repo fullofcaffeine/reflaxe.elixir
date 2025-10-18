@@ -398,12 +398,11 @@ class Reflect {
      * @return -1 if a < b, 0 if a == b, 1 if a > b
      */
     public static function compare<T>(a: T, b: T): Int {
-        // Use string comparison as a generic fallback without introducing
-        // intermediate variables that later hygiene passes might demote.
-        // This avoids false-positive "unused" rewrites in ultra-late passes.
-        if (Std.string(a) < Std.string(b)) return -1;
-        if (Std.string(a) > Std.string(b)) return 1;
-        return 0;
+        // Use string comparison and avoid early returns so the printer emits a
+        // single expression (maps to `cond`/`if ... else ... end` in Elixir) and
+        // preserves the final 0 fallback deterministically.
+        // Avoid locals to prevent late passes from demoting them to underscores.
+        return if (Std.string(a) < Std.string(b)) -1 else if (Std.string(a) > Std.string(b)) 1 else 0;
     }
     
     /**
