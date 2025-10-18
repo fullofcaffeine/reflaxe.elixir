@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### 🐞 Bug Fixes
+
+- Runtime: Fixed `Reflect.compare/2` to return -1/0/1 deterministically by replacing two independent `if` expressions plus trailing `0` with a single `cond` fallback. The previous shape always returned `0` (last expression), breaking sort determinism used by module/key ordering and affecting qualification snapshots.
+
 ### 🎉 Major Features
 
 #### Critical Compiler Architecture Refactoring (2025-08-18)
