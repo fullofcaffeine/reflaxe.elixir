@@ -1917,7 +1917,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceWithSocketAssignNormalize",
             description: "In presence modules ending with `socket`, rewrite bare Presence.* call to `socket = Presence.*(...)`",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceWithSocketAssignNormalizeTransforms.pass
         });
 
