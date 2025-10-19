@@ -1,5 +1,26 @@
 # AI/Agent Development Context for Haxe→Elixir Compiler
 
+## 🚦 Non-Blocking Todo-App QA (Required)
+
+Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.
+
+- Quick (repo root):
+  - `npm run qa:sentinel`  → runs `scripts/qa-sentinel.sh --app examples/todo-app --port 4001`
+- Async, non-blocking (returns immediately):
+  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
+  - Prints `QA_SENTINEL_PID` and log path. Tail `/tmp/qa-phx.log` or the main run log; kill with `kill -TERM $QA_SENTINEL_PID`.
+- Keep server alive for manual browsing:
+  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+  - Prints `PHX_PID` and `PORT`; stop with `kill -TERM $PHX_PID`.
+- App-local helper (one-shot, :4000):
+  - `examples/todo-app/scripts/qa-sentinel-local.sh`
+
+What these scripts do
+- Build Haxe → Elixir (`build-server.hxml`), `mix deps.get`, `mix compile` (WAE), boot `mix phx.server` in background, wait for readiness with bounded probes, curl `/`, scan logs for errors, and tear down (unless `--keep-alive`).
+- All steps have timeouts with heartbeat progress lines to avoid hangs.
+
+Always use these sentinels for runtime checks. Do not run `mix phx.server` in the foreground during agent work.
+
 ## 🤖 Developer Identity & Vision
 
 **You are an experienced compiler developer** specializing in Haxe→Elixir transpilation with a mission to transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development**.

@@ -3845,6 +3845,49 @@ class ElixirASTBuilder {
                             // First argument should be the code string
                             switch(callArgs[0].expr) {
                                 case TConst(TString(code)):
+                                    // Presence fast-path: build pure AST for Phoenix.Presence calls
+                                    // to expose effectful statements to downstream passes.
+                                    inline function resolvePresenceModuleName(): String {
+                                        var moduleName = "Phoenix.Presence";
+                                        if (currentContext != null && currentContext.currentModuleHasPresence == true) {
+                                            var appModulePrefix: Null<String> = null;
+                                            if (currentModule != null) {
+                                                var webIndex = currentModule.indexOf("Web");
+                                                if (webIndex > 0) appModulePrefix = currentModule.substring(0, webIndex);
+                                            }
+                                            if (appModulePrefix == null) {
+                                                try appModulePrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                                            }
+                                            if (appModulePrefix != null) moduleName = appModulePrefix + "Web.Presence";
+                                        }
+                                        return moduleName;
+                                    }
+                                    var presenceModuleName = resolvePresenceModuleName();
+                                    // Helper to build Nth argument safely
+                                    inline function buildArgAt(index:Int): ElixirAST {
+                                        return (index < callArgs.length) ? buildFromTypedExpr(callArgs[index], currentContext) : makeAST(ENil);
+                                    }
+                                    if (StringTools.startsWith(code, "Phoenix.Presence.track")) {
+                                        var socketOrPidAst = buildArgAt(1);
+                                        var topicAst = buildArgAt(2);
+                                        var keyAst = buildArgAt(3);
+                                        var metaAst = buildArgAt(4);
+                                        return makeAST(ERemoteCall(makeAST(EVar(presenceModuleName)), "track", [socketOrPidAst, topicAst, keyAst, metaAst]));
+                                    } else if (StringTools.startsWith(code, "Phoenix.Presence.update")) {
+                                        var socketOrPidUpdateAst = buildArgAt(1);
+                                        var topicUpdateAst = buildArgAt(2);
+                                        var keyUpdateAst = buildArgAt(3);
+                                        var metaUpdateAst = buildArgAt(4);
+                                        return makeAST(ERemoteCall(makeAST(EVar(presenceModuleName)), "update", [socketOrPidUpdateAst, topicUpdateAst, keyUpdateAst, metaUpdateAst]));
+                                    } else if (StringTools.startsWith(code, "Phoenix.Presence.untrack")) {
+                                        var socketOrPidUntrackAst = buildArgAt(1);
+                                        var topicUntrackAst = buildArgAt(2);
+                                        var keyUntrackAst = buildArgAt(3);
+                                        return makeAST(ERemoteCall(makeAST(EVar(presenceModuleName)), "untrack", [socketOrPidUntrackAst, topicUntrackAst, keyUntrackAst]));
+                                    } else if (StringTools.startsWith(code, "Phoenix.Presence.list")) {
+                                        var listTopicAst = buildArgAt(1);
+                                        return makeAST(ERemoteCall(makeAST(EVar(presenceModuleName)), "list", [listTopicAst]));
+                                    }
                                     #if debug_elixir_injection
                                     #if debug_ast_builder
                                     trace('[XRay] Expanding __elixir__ with code: $code');
