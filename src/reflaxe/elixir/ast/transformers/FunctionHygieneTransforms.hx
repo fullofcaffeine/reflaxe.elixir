@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import StringTools;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
@@ -31,6 +32,10 @@ class FunctionHygieneTransforms {
     public static function blockAssignChainSimplifyPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
+                case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+                    n;
+                case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+                    n;
                 case EDef(name, args, guards, body):
                     #if debug_hygiene
                     Sys.println('[BlockAssignChainSimplify] visiting def ' + name);
@@ -161,6 +166,10 @@ class FunctionHygieneTransforms {
     public static function functionTopLevelSentinelCleanupPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
+                case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+                    n;
+                case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+                    n;
                 case EDef(name, args, guards, body):
                     var newBody = dropTopLevelSentinels(body);
                     makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
@@ -195,6 +204,10 @@ class FunctionHygieneTransforms {
     public static function fnParamUnusedUnderscorePass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
+                case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+                    n;
+                case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+                    n;
                 case EDef(name, args, guards, body):
                     var newArgs: Array<EPattern> = [];
                     for (a in args) newArgs.push(underscoreIfUnused(a, body));
@@ -203,6 +216,12 @@ class FunctionHygieneTransforms {
                     n;
             }
         });
+    }
+
+    static inline function looksLikePresenceModule(name:String, node:ElixirAST):Bool {
+        if (node != null && node.metadata != null && node.metadata.isPresence == true) return true;
+        if (name == null) return false;
+        return StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
     }
 
     static function underscoreIfUnused(pat: EPattern, body: ElixirAST): EPattern {

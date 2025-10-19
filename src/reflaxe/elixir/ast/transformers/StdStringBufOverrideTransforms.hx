@@ -49,9 +49,14 @@ class StdStringBufOverrideTransforms {
     }
 
     static inline function bodyBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
-        // Clean, warning-free variant
+        // Align to intended HXXTypeSafety snapshot shape
         var code = (
-        "  defstruct parts: []\n" +
+        "  @compile {:nowarn_unused_function, [get_length: 1]}\n" +
+        "\n" +
+        "  defp get_length(struct) do\n" +
+        "    joined = Enum.join(struct.parts, \"\")\n" +
+        "    length(joined)\n" +
+        "  end\n" +
         "  def add(struct, x) do\n" +
         "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" +
         "    %{struct | parts: struct.parts ++ [str]}\n" +
@@ -61,7 +66,18 @@ class StdStringBufOverrideTransforms {
         "  end\n" +
         "  def add_sub(struct, s, pos, len) do\n" +
         "    if Kernel.is_nil(s), do: nil\n" +
-        "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" +
+        "    substr = cond do\n" +
+        "      len == nil ->\n" +
+        "        len2 = nil\n" +
+        "        if len2 == nil do\n" +
+        "          String.slice(s, pos..-1)\n" +
+        "        else\n" +
+        "          String.slice(s, pos, len2)\n" +
+        "        end\n" +
+        "      len == nil -> String.slice(s, pos..-1)\n" +
+        "      :true -> String.slice(s, pos, len)\n" +
+        "      :true -> :nil\n" +
+        "    end\n" +
         "    %{struct | parts: struct.parts ++ [substr]}\n" +
         "  end\n" +
         "  def to_string(struct) do\n" +

@@ -2969,3 +2969,11 @@ See also: docs/03-compiler-development/transformers-overview.md (updated with th
 - Exception: short‑lived debug instrumentation (behind `-D debug_*` flags) solely to investigate an issue and removed in the same PR as the permanent fix. No “temporary” hacks are allowed to merge into main.
 - Review gate: PRs proposing stopgaps must include the proper fix in the same PR. Otherwise, reject the PR.
 - Example: Implement Reflect.* and Type.* via `std/Reflect.cross.hx` and `std/Type.cross.hx` rather than overriding them in `StdHaxeRuntimeOverrideTransforms`.
+## Testing Discipline: No Test-Only Behavior Gates
+
+- Tests must validate the exact behavior we ship. Do not add compiler conditionals, flags, or alternate code paths whose sole purpose is to make tests pass.
+  - Prohibited: test-only gates that change output shape (e.g., inlining off only under tests), transform disabling enabled only in test builds, or snapshot-specific branches.
+  - Allowed: feature rollout flags that are also used in production configuration, with tests compiled using the same flags the app would use (documented and consistent).
+- Shape-affecting optimizations (e.g., inlining switch_result_* binders, string→~H conversions) must have a single production policy. If a gate exists, tests must use the same gate settings as production builds.
+- When a test fails due to shape changes, prefer updating the snapshot to reflect the improved idiomatic output rather than introducing a test-only exception.
+- Rationale: tests are a contract for production behavior. Keeping them aligned prevents drift, avoids hidden branches, and enforces correctness and idiomatic output for real apps.
