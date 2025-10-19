@@ -44,6 +44,7 @@ class InlineTrailingReturnVarTransforms {
                 var last = stmts[stmts.length - 1];
                 var retName: Null<String> = switch (last.def) { case EVar(v): v; default: null; };
                 if (retName == null) return body;
+                // Keep consistent production shape: allow inlining for switch_result_* too
                 // Safety: only inline if retName is NOT referenced in any prior statement
                 // to avoid removing a needed binding used in guards or checks.
                 var referenced = false;

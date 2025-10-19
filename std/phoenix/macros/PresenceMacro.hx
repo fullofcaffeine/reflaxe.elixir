@@ -622,93 +622,96 @@ class PresenceMacro {
 	 * Generate chainable track method that returns the socket.
 	 * Useful for LiveView's socket chaining pattern.
 	 */
-	static function generateTrackWithSocket(): Field {
-		return {
-			name: "trackWithSocket",
-			pos: Context.currentPos(),
-			kind: FFun({
-				params: [
-					{name: "T"},  // Socket type parameter
-					{name: "M"}   // Metadata type parameter
-				],
-				args: [
-					{name: "socket", type: macro : T},
-					{name: "topic", type: macro : String},
-					{name: "key", type: macro : String},
-					{name: "meta", type: macro : M}
-				],
-				ret: macro : T,
-				expr: macro {
-					// Track and return socket for chaining
-					trackInternal(topic, key, meta);
-					return socket;
-				}
-			}),
-			access: [APublic, AStatic, AInline],
-			doc: "Track presence and return socket for LiveView chaining pattern.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
+		static function generateTrackWithSocket(): Field {
+			return {
+				name: "trackWithSocket",
+				pos: Context.currentPos(),
+				kind: FFun({
+					params: [
+						{name: "T"},  // Socket type parameter
+						{name: "M"}   // Metadata type parameter
+					],
+					args: [
+						{name: "socket", type: macro : T},
+						{name: "topic", type: macro : String},
+						{name: "key", type: macro : String},
+						{name: "meta", type: macro : M}
+					],
+					ret: macro : T,
+					expr: macro {
+						// Emit direct Presence call; builder will resolve target module and preserve as bare call
+						untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2}, {3})', 
+							untyped __elixir__('self()'), topic, key, meta);
+						return socket;
+					}
+				}),
+				access: [APublic, AStatic, AInline],
+				doc: "Track presence and return socket for LiveView chaining pattern.",
+				meta: [{name: ":doc", pos: Context.currentPos()}]
+			};
+		}
 	
 	/**
 	 * Generate chainable update method that returns the socket.
 	 */
-	static function generateUpdateWithSocket(): Field {
-		return {
-			name: "updateWithSocket",
-			pos: Context.currentPos(),
-			kind: FFun({
-				params: [
-					{name: "T"},  // Socket type parameter
-					{name: "M"}   // Metadata type parameter
-				],
-				args: [
-					{name: "socket", type: macro : T},
-					{name: "topic", type: macro : String},
-					{name: "key", type: macro : String},
-					{name: "meta", type: macro : M}
-				],
-				ret: macro : T,
-				expr: macro {
-					// Update and return socket for chaining
-					updateInternal(topic, key, meta);
-					return socket;
-				}
-			}),
-			access: [APublic, AStatic, AInline],
-			doc: "Update presence and return socket for LiveView chaining pattern.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
+		static function generateUpdateWithSocket(): Field {
+			return {
+				name: "updateWithSocket",
+				pos: Context.currentPos(),
+				kind: FFun({
+					params: [
+						{name: "T"},  // Socket type parameter
+						{name: "M"}   // Metadata type parameter
+					],
+					args: [
+						{name: "socket", type: macro : T},
+						{name: "topic", type: macro : String},
+						{name: "key", type: macro : String},
+						{name: "meta", type: macro : M}
+					],
+					ret: macro : T,
+					expr: macro {
+						// Emit direct Presence call; builder will resolve target module and preserve as bare call
+						untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2}, {3})', 
+							untyped __elixir__('self()'), topic, key, meta);
+						return socket;
+					}
+				}),
+				access: [APublic, AStatic, AInline],
+				doc: "Update presence and return socket for LiveView chaining pattern.",
+				meta: [{name: ":doc", pos: Context.currentPos()}]
+			};
+		}
 	
 	/**
 	 * Generate chainable untrack method that returns the socket.
 	 */
-	static function generateUntrackWithSocket(): Field {
-		return {
-			name: "untrackWithSocket",
-			pos: Context.currentPos(),
-			kind: FFun({
-				params: [
-					{name: "T"}  // Socket type parameter
-				],
-				args: [
-					{name: "socket", type: macro : T},
-					{name: "topic", type: macro : String},
-					{name: "key", type: macro : String}
-				],
-				ret: macro : T,
-				expr: macro {
-					// Untrack and return socket for chaining
-					untrackInternal(topic, key);
-					return socket;
-				}
-			}),
-			access: [APublic, AStatic, AInline],
-			doc: "Untrack presence and return socket for LiveView chaining pattern.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
+		static function generateUntrackWithSocket(): Field {
+			return {
+				name: "untrackWithSocket",
+				pos: Context.currentPos(),
+				kind: FFun({
+					params: [
+						{name: "T"}  // Socket type parameter
+					],
+					args: [
+						{name: "socket", type: macro : T},
+						{name: "topic", type: macro : String},
+						{name: "key", type: macro : String}
+					],
+					ret: macro : T,
+					expr: macro {
+						// Emit direct Presence call; builder will resolve target module and preserve as bare call
+						untyped __elixir__('Phoenix.Presence.untrack({0}, {1}, {2})', 
+							untyped __elixir__('self()'), topic, key);
+						return socket;
+					}
+				}),
+				access: [APublic, AStatic, AInline],
+				doc: "Untrack presence and return socket for LiveView chaining pattern.",
+				meta: [{name: ":doc", pos: Context.currentPos()}]
+			};
+		}
 	
 	#end
 }

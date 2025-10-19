@@ -43,6 +43,25 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
  *   :ok
  */
 class LocalAssignUnderscoreLateTransforms {
+    static function referencesVar(n: ElixirAST, name: String): Bool {
+        var found = false;
+        function visit(x: ElixirAST): Void {
+            if (found || x == null || x.def == null) return;
+            switch (x.def) {
+                case EVar(v) if (v == name): found = true;
+                case EBinary(_, l, r): visit(l); visit(r);
+                case EMatch(_, rhs): visit(rhs);
+                case ERemoteCall(m, _, as): visit(m); if (as != null) for (a in as) visit(a);
+                case ECall(t, _, as2): if (t != null) visit(t); if (as2 != null) for (a in as2) visit(a);
+                case EBlock(es): for (e in es) visit(e);
+                case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
+                case ECase(cond, cs): visit(cond); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
+                default:
+            }
+        }
+        visit(n);
+        return found;
+    }
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -98,7 +117,11 @@ class LocalAssignUnderscoreLateTransforms {
                     var newLeft = left;
                     if (leftName != null && leftName == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                         // keep as named binder
-                    } else if (leftName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName) && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, leftName)) {
+                    } else if (leftName != null
+                        && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName)
+                        && !referencesVar(newRhs, leftName) // preserve x = f(x) shape
+                        && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName, s.metadata != null ? s.metadata.varId : null)
+                        && !hasPinnedVarInBlock(stmts, i + 1, leftName)) {
                         newLeft = makeASTWithMeta(EVar('_' + leftName), left.metadata, left.pos);
                     }
                     if (collapse && collapsedExpr != null) {
@@ -129,7 +152,12 @@ class LocalAssignUnderscoreLateTransforms {
                     var newPat = pat;
                     if (leftName2 != null && leftName2 == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                         // keep as named binder
-                    } else if (leftName2 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName2) && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName2, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, leftName2) && leftName2.charAt(0) != '_') {
+                    } else if (leftName2 != null
+                        && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName2)
+                        && !referencesVar(newRhs2, leftName2) // preserve x = f(x) pattern
+                        && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName2, s.metadata != null ? s.metadata.varId : null)
+                        && !hasPinnedVarInBlock(stmts, i + 1, leftName2)
+                        && leftName2.charAt(0) != '_') {
                         newPat = PVar('_' + leftName2);
                     }
                     if (collapse2 && collapsedExpr2 != null) {

@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
+import StringTools;
 
 /**
  * BlockUnusedAssignmentDiscardTransforms
@@ -37,6 +38,11 @@ class BlockUnusedAssignmentDiscardTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
+                case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+                    // Skip this hygiene pass inside Presence modules to preserve effectful scaffolding
+                    n;
+                case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+                    n;
                 case EDef(name, args, guards, body):
                     var nb = rewriteBody(body);
                     makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
@@ -44,6 +50,18 @@ class BlockUnusedAssignmentDiscardTransforms {
                     rewriteBody(n);
                 case EDo(_):
                     rewriteBody(n);
+                case EIf(cond, then_, else_):
+                    var newThen = rewriteBody(then_);
+                    var newElse = else_ != null ? rewriteBody(else_) : null;
+                    makeASTWithMeta(EIf(cond, newThen, newElse), n.metadata, n.pos);
+                case ECase(expr, clauses):
+                    var newClauses:Array<ECaseClause> = [];
+                    for (cl in clauses) newClauses.push({
+                        pattern: cl.pattern,
+                        guard: cl.guard,
+                        body: rewriteBody(cl.body)
+                    });
+                    makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
                 case EFn(clauses):
                     var newClauses = [];
                     for (cl in clauses) {
@@ -55,6 +73,12 @@ class BlockUnusedAssignmentDiscardTransforms {
                     n;
             }
         });
+    }
+
+    static inline function looksLikePresenceModule(name:String, node:ElixirAST):Bool {
+        if (node != null && node.metadata != null && node.metadata.isPresence == true) return true;
+        if (name == null) return false;
+        return StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
     }
 
     /**
@@ -91,11 +115,17 @@ class BlockUnusedAssignmentDiscardTransforms {
                                     if (nm == "children") { out.push(s); break; }
                                     // Do not discard assigns anywhere; render/1 and ~H rely on it implicitly
                                     if (nm == "assigns") { out.push(s); break; }
+                                    // Preserve effectful Presence track/update/untrack assignment even if not referenced later
+                                    if (isPresenceEffectCall(rhs)) { out.push(s); break; }
                                     if (nm == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                                         out.push(s);
                                     } else if (isDowncaseSearch(rhs)) {
                                         out.push(s);
-                                    } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm) && !hasPinnedVarInEctoWhere(stmts, i + 1, nm, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, nm)) {
+                                    } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm)
+                                            && !rawIdentifierUsedLater(stmts, i + 1, nm)
+                                            && !exprReferencesName(rhs, nm)
+                                            && !hasPinnedVarInEctoWhere(stmts, i + 1, nm, s.metadata != null ? s.metadata.varId : null)
+                                            && !hasPinnedVarInBlock(stmts, i + 1, nm)) {
                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
                                     } else out.push(s);
                                 default: out.push(s);
@@ -105,9 +135,14 @@ class BlockUnusedAssignmentDiscardTransforms {
                                 case PVar(nm2):
                                     if (nm2 == "children") { out.push(s); break; }
                                     if (nm2 == "assigns") { out.push(s); break; }
+                                    if (isPresenceEffectCall(rhs2)) { out.push(s); break; }
                                     if (isDowncaseSearch(rhs2)) {
                                         out.push(s);
-                                    } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm2) && !hasPinnedVarInEctoWhere(stmts, i + 1, nm2, s.metadata != null ? s.metadata.varId : null) && !hasPinnedVarInBlock(stmts, i + 1, nm2)) {
+                                    } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm2)
+                                            && !rawIdentifierUsedLater(stmts, i + 1, nm2)
+                                            && !exprReferencesName(rhs2, nm2)
+                                            && !hasPinnedVarInEctoWhere(stmts, i + 1, nm2, s.metadata != null ? s.metadata.varId : null)
+                                            && !hasPinnedVarInBlock(stmts, i + 1, nm2)) {
                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s.metadata, s.pos));
                                     } else out.push(s);
                                 default: out.push(s);
@@ -132,7 +167,9 @@ class BlockUnusedAssignmentDiscardTransforms {
                                         out2.push(s2);
                                     } else if (isDowncaseSearch(rhs2)) {
                                         out2.push(s2);
-                                    } else if (!VarUseAnalyzer.usedLater(stmts2, i + 1, nm2)) {
+                                    } else if (!VarUseAnalyzer.usedLater(stmts2, i + 1, nm2)
+                                            && !rawIdentifierUsedLater(stmts2, i + 1, nm2)
+                                            && !exprReferencesName(rhs2, nm2)) {
                                         out2.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s2.metadata, s2.pos));
                                     } else out2.push(s2);
                                 default: out2.push(s2);
@@ -145,6 +182,37 @@ class BlockUnusedAssignmentDiscardTransforms {
             default:
                 body;
         }
+    }
+
+    static function exprReferencesName(e: ElixirAST, name: String): Bool {
+        var found = false;
+        function visit(x: ElixirAST): Void {
+            if (found || x == null || x.def == null) return;
+            switch (x.def) {
+                case EVar(n) if (n == name): found = true;
+                case EBinary(_, l, r): visit(l); visit(r);
+                case EMatch(_, rhs): visit(rhs);
+                case ECall(t, _, args): if (t != null) visit(t); if (args != null) for (a in args) visit(a);
+                case ERemoteCall(m, _, args2): visit(m); if (args2 != null) for (a in args2) visit(a);
+                case EBlock(ss): for (s in ss) visit(s);
+                case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
+                case ECase(cond, cs): visit(cond); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
+                default:
+            }
+        }
+        visit(e);
+        return found;
+    }
+
+    static function isPresenceEffectCall(e: ElixirAST): Bool {
+        return switch (e.def) {
+            case ERemoteCall({def: EVar(mod)}, func, _):
+                // API-based, not app-specific: match Presence module and known mutating calls
+                var isPresence = (mod == "Phoenix.Presence") || StringTools.endsWith(mod, ".Presence") || (mod == "Presence");
+                if (!isPresence) false else (func == "track" || func == "update" || func == "untrack");
+            default:
+                false;
+        };
     }
 
     static function hasPinnedVarInEctoWhere(stmts: Array<ElixirAST>, startIdx: Int, name: String, ?assignVarId: Null<Int>): Bool {
@@ -303,6 +371,39 @@ class BlockUnusedAssignmentDiscardTransforms {
 
     static function filterPredicateUsesQueryLater(stmts: Array<ElixirAST>, startIdx: Int): Bool {
         for (i in startIdx...stmts.length) if (stmtHasFilterQueryUse(stmts[i])) return true;
+        return false;
+    }
+
+    static function rawIdentifierUsedLater(stmts: Array<ElixirAST>, startIdx: Int, name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        inline function isIdentChar(c: String): Bool {
+            if (c == null || c.length == 0) return false;
+            var ch = c.charCodeAt(0);
+            return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+        }
+        for (i in startIdx...stmts.length) {
+            var s = stmts[i];
+            switch (s.def) {
+                case ERaw(code) if (code != null):
+                    var idx = 0;
+                    while (true) {
+                        idx = code.indexOf(name, idx);
+                        if (idx == -1) break;
+                        var before = idx > 0 ? code.substr(idx - 1, 1) : null;
+                        var afterIdx = idx + name.length;
+                        var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                        if (!isIdentChar(before) && !isIdentChar(after)) return true;
+                        idx = afterIdx;
+                    }
+                case EBlock(ss): if (rawIdentifierUsedLater(ss, 0, name)) return true;
+                case EDo(ss2): if (rawIdentifierUsedLater(ss2, 0, name)) return true;
+                case EIf(c,t,e):
+                    // scan nested branches conservatively
+                    var tmpS = [c, t].concat(e != null ? [e] : []);
+                    if (rawIdentifierUsedLater(tmpS, 0, name)) return true;
+                default:
+            }
+        }
         return false;
     }
 

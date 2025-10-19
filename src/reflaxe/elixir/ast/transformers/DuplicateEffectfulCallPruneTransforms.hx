@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import StringTools;
 
 /**
  * DuplicateEffectfulCallPruneTransforms
@@ -38,6 +39,10 @@ class DuplicateEffectfulCallPruneTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
+                case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+                    n;
+                case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+                    n;
                 case EDef(name, args, guards, body):
                     makeASTWithMeta(EDef(name, args, guards, pruneInBody(body)), n.metadata, n.pos);
                 case EDefp(name, args, guards, body):
@@ -46,6 +51,12 @@ class DuplicateEffectfulCallPruneTransforms {
                     n;
             }
         });
+    }
+
+    static inline function looksLikePresenceModule(name:String, node:ElixirAST):Bool {
+        if (node != null && node.metadata != null && node.metadata.isPresence == true) return true;
+        if (name == null) return false;
+        return StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
     }
 
     static function pruneInBody(body: ElixirAST): ElixirAST {
