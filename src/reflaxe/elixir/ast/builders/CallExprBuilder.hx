@@ -234,41 +234,41 @@ class CallExprBuilder {
                     // Target module determination: inside presence modules, route to <App>Web.Presence
                     // otherwise keep Phoenix.Presence for external contexts.
                     // Resolve target presence module based on compilation context
-                    var __presenceTargetModule = "Phoenix.Presence";
+                    var presenceTargetModule = "Phoenix.Presence";
                     if (context != null && (context.currentModuleHasPresence == true)) {
-                        var __appPrefix: Null<String> = null;
+                        var appPrefix: Null<String> = null;
                         if (context.currentModule != null) {
-                            var __idx = context.currentModule.indexOf("Web");
-                            if (__idx > 0) __appPrefix = context.currentModule.substring(0, __idx);
+                            var webIndex = context.currentModule.indexOf("Web");
+                            if (webIndex > 0) appPrefix = context.currentModule.substring(0, webIndex);
                         }
-                        if (__appPrefix == null) {
-                            try __appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                        if (appPrefix == null) {
+                            try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
                         }
-                        if (__appPrefix != null) __presenceTargetModule = __appPrefix + "Web.Presence";
+                        if (appPrefix != null) presenceTargetModule = appPrefix + "Web.Presence";
                     }
                     if (injectionString.indexOf("Phoenix.Presence.track") != -1 && args.length >= 5) {
                         var socketAst = buildExpression(args[1]);
                         var topicAst = buildExpression(args[2]);
                         var keyAst = buildExpression(args[3]);
                         var metaAst = buildExpression(args[4]);
-                        return ERemoteCall(makeAST(EVar(__presenceTargetModule)), "track", [socketAst, topicAst, keyAst, metaAst]);
+                        return ERemoteCall(makeAST(EVar(presenceTargetModule)), "track", [socketAst, topicAst, keyAst, metaAst]);
                     }
                     if (injectionString.indexOf("Phoenix.Presence.update") != -1 && args.length >= 5) {
                         var socketAst = buildExpression(args[1]);
                         var topicAst = buildExpression(args[2]);
                         var keyAst = buildExpression(args[3]);
                         var metaAst = buildExpression(args[4]);
-                        return ERemoteCall(makeAST(EVar(__presenceTargetModule)), "update", [socketAst, topicAst, keyAst, metaAst]);
+                        return ERemoteCall(makeAST(EVar(presenceTargetModule)), "update", [socketAst, topicAst, keyAst, metaAst]);
                     }
                     if (injectionString.indexOf("Phoenix.Presence.untrack") != -1 && args.length >= 4) {
                         var socketAst = buildExpression(args[1]);
                         var topicAst = buildExpression(args[2]);
                         var keyAst = buildExpression(args[3]);
-                        return ERemoteCall(makeAST(EVar(__presenceTargetModule)), "untrack", [socketAst, topicAst, keyAst]);
+                        return ERemoteCall(makeAST(EVar(presenceTargetModule)), "untrack", [socketAst, topicAst, keyAst]);
                     }
                     if (injectionString.indexOf("Phoenix.Presence.list") != -1 && args.length >= 2) {
                         var topicAst = buildExpression(args[1]);
-                        return ERemoteCall(makeAST(EVar(__presenceTargetModule)), "list", [topicAst]);
+                        return ERemoteCall(makeAST(EVar(presenceTargetModule)), "list", [topicAst]);
                     }
 
                     // Process parameter substitution with proper string interpolation handling

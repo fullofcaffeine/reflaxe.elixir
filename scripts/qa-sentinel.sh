@@ -102,7 +102,10 @@ run_step_with_log() {
   # Start a heartbeat so callers always see forward progress even if the command is quiet
   ( while true; do sleep "$PROGRESS_INTERVAL"; log "[QA] .. ${desc} still running"; done ) &
   local heartbeat_pid=$!
-  trap 'kill -9 $heartbeat_pid >/dev/null 2>&1 || true' EXIT
+  # Ensure the heartbeat is always stopped when this function returns, without leaking
+  # a trap that references a local variable after scope exit. Bind the numeric PID now.
+  local __hb="$heartbeat_pid"
+  trap "kill -9 $__hb >/dev/null 2>&1 || true" RETURN
 
   # Prefer GNU timeout; then gtimeout (macOS coreutils); else manual watchdog
   if command -v timeout >/dev/null 2>&1; then
@@ -145,8 +148,10 @@ run_step_with_log() {
 
   local end_ts=$(date +%s)
   local dur=$(( end_ts - start_ts ))
-  # Stop heartbeat once step finishes
+  # Stop heartbeat once step finishes (in addition to RETURN trap)
   kill -9 "$heartbeat_pid" >/dev/null 2>&1 || true
+  # Clear the RETURN trap for subsequent calls
+  trap - RETURN
   if [[ "$rc" -ne 0 ]]; then
     log "[QA] ❌ ${desc} failed (rc=$rc, ${dur}s). Last 100 lines:"
     tail -n 100 "$logfile" || true
@@ -165,11 +170,19 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
   log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
-  nohup env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" bash -lc "'$0' ${CHILD_FLAGS[*]}" >"$LOG_MAIN" 2>&1 &
+  # Launch background child fully detached; prefer setsid, fallback to nohup
+  if command -v setsid >/dev/null 2>&1; then
+    setsid env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+  else
+    nohup env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+  fi
   SENTINEL_PID=$!
+  # Disown the child so shells never warn/wait on background jobs
+  { disown "$SENTINEL_PID" 2>/dev/null || true; } >/dev/null 2>&1
   if [[ -n "$DEADLINE" ]]; then
-    ( sleep "$DEADLINE"; kill -TERM "$SENTINEL_PID" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$SENTINEL_PID" >/dev/null 2>&1 || true ) &
+    ( sleep "$DEADLINE"; kill -TERM "$SENTINEL_PID" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$SENTINEL_PID" >/dev/null 2>&1 || true ) </dev/null >/dev/null 2>&1 &
     WATCHDOG_PID=$!
+    { disown "$WATCHDOG_PID" 2>/dev/null || true; } >/dev/null 2>&1
     log "[QA] Async watchdog enabled: DEADLINE=$DEADLINE (PID=$WATCHDOG_PID)"
   fi
   echo "QA_SENTINEL_PID=$SENTINEL_PID"
@@ -187,6 +200,27 @@ log "[QA]  4) Start Phoenix (background, non-blocking)"
 log "[QA]  5) Readiness probe (READY_PROBES=$READY_PROBES, 0.5s interval)"
 log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 log "[QA] Config: PORT=$PORT KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
+
+# Optional overall deadline for synchronous mode too
+if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
+  log "[QA] Overall deadline enabled: ${DEADLINE} (synchronous watchdog)"
+  (
+    # Use a subshell watchdog to terminate this script if deadline elapses
+    sleep "${DEADLINE}" || true
+    echo "[$(ts)] [QA] ⏳ Overall deadline reached (${DEADLINE}). Collecting logs and terminating."
+    # Print last lines of known logs to aid debugging
+    for f in /tmp/qa-haxe.log /tmp/qa-mix-deps.log /tmp/qa-mix-compile.log /tmp/qa-phx.log; do
+      if [[ -s "$f" ]]; then
+        echo "[$(ts)] [QA] --- Tail of ${f} ---"; tail -n 80 "$f"; echo
+      fi
+    done
+    # Send TERM to the main shell to trigger cleanup trap
+    kill -TERM $$ >/dev/null 2>&1 || true
+  ) &
+  OVERALL_WATCHDOG_PID=$!
+  # Don’t keep a disowned child that shells may whine about
+  { disown "$OVERALL_WATCHDOG_PID" 2>/dev/null || true; } >/dev/null 2>&1
+fi
 pushd "$APP_DIR" >/dev/null
 
 # Prefer system haxe when available (faster, avoids npx bootstrap); fallback to npx
