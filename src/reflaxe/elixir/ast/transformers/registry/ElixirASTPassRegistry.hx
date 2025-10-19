@@ -2830,6 +2830,12 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.EFnUnusedArgUnderscoreTransforms.transformPass
         });
         passes.push({
+            name: "EFnForbiddenBinderRename",
+            description: "Rename forbidden EFn binders (e.g., elem -> entry) and update body references",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnForbiddenBinderRenameTransforms.pass
+        });
+        passes.push({
             name: "EFnLocalAssignDiscard",
             description: "Replace unused local rebinds in EFn bodies with wildcard assignment",
             enabled: true,

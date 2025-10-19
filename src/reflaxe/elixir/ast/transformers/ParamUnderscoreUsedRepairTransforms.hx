@@ -36,12 +36,13 @@ class ParamUnderscoreUsedRepairTransforms {
     static function repair(args:Array<EPattern>, body:ElixirAST):Array<EPattern> {
         if (args == null) return args;
         return [for (a in args) switch (a) {
-            case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_' && VariableUsageCollector.usedInFunctionScope(body, nm.substr(1))):
-                PVar(nm.substr(1));
+            case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
+                var base = nm.substr(1);
+                // Promote when either the base name is used or the underscored variant is used in the body
+                if (VariableUsageCollector.usedInFunctionScope(body, base) || VariableUsageCollector.usedInFunctionScope(body, nm)) PVar(base) else a;
             default: a;
         }];
     }
 }
 
 #end
-
