@@ -2848,6 +2848,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnBinderReferenceAlignTransforms.fixPass
         });
+        // Replay forbidden binder rename very late to catch any newly generated anonymous fns
+        passes.push({
+            name: "EFnForbiddenBinderRename_Final",
+            description: "Late pass: rename forbidden EFn binders (e.g., elem -> entry) post-normalization",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnForbiddenBinderRenameTransforms.pass
+        });
 
         // Safety replay: ensure any late-emitted underscored refs are normalized
         passes.push({
