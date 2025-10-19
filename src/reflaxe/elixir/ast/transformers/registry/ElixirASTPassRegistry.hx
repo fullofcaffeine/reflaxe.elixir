@@ -438,10 +438,12 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ApplicationEnsureStartLinkTransforms.transformPass
         });
         // Override problematic Haxe DS modules with minimal native implementations
+        // Disabled by default: overriding std DS modules is a band-aid and breaks tests.
+        // If ever needed for a specific app, gate via a define and enable conditionally.
         passes.push({
             name: "StdDsOverrides",
-            description: "Override haxe.ds BalancedTree/EnumValueMap modules with minimal Elixir implementations",
-            enabled: true,
+            description: "Override haxe.ds BalancedTree/EnumValueMap modules with minimal Elixir implementations (disabled by default)",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.StdDsOverrideTransforms.transformPass
         });
         passes.push({
@@ -1477,6 +1479,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.VarNameNormalizationTransforms.varNameNormalizationPass
         });
 
+        // Preserve camelCase registry field names in HXX component registry
+        passes.push({
+            name: "HXXRegistryFieldCasePreserve",
+            description: "Within HXXComponentRegistry, keep camelCase field names (e.g., allowedAttributes)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HXXRegistryFieldCasePreserveTransforms.pass
+        });
+
         // List helpers normalization (contains/member?, conditional removal, inline filter returns)
         passes.push({
             name: "ContainsToEnumMember",
@@ -1883,7 +1893,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceApiModuleRewrite",
             description: "Rewrite Phoenix.Presence.track/update/list/untrack to <App>Web.Presence.*",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.presenceApiModuleRewritePass
         });
 
@@ -1891,8 +1901,24 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceQualifiedModuleRewrite",
             description: "Rewrite <App>.Presence.* calls to <App>Web.Presence.*",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PresenceQualifiedModuleRewriteTransforms.transformPass
+        });
+
+        // Preserve effectful Presence statements even when results are unused
+        passes.push({
+            name: "PresenceBareCallPreserve",
+            description: "Rewrite bare Presence.track/update/untrack statements to `_ = ...` to preserve effects",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceBareCallPreserveTransforms.transformPass
+        });
+
+        // Normalize bare Presence.* call before trailing `socket` to `socket = Presence.*(...)` within presence modules
+        passes.push({
+            name: "PresenceWithSocketAssignNormalize",
+            description: "In presence modules ending with `socket`, rewrite bare Presence.* call to `socket = Presence.*(...)`",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.PresenceWithSocketAssignNormalizeTransforms.pass
         });
 
         // Normalize LiveView noreply return atoms
@@ -1913,15 +1939,15 @@ class ElixirASTPassRegistry {
         // Normalize Presence helpers to avoid Atom.to_string on Presence string keys
         passes.push({
             name: "PresenceHelpersNormalization",
-            description: "Collapse Enum.map(Map.keys(..), &Atom.to_string/1) to Map.keys(..) in Presence modules",
-            enabled: true,
+            description: "(disabled) Do not rewrite Presence key helpers; preserve original shapes",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PresenceHelpersTransforms.presenceHelpersNormalizationPass
         });
         // Presence ERaw normalization for Reflect.fields expansion
         passes.push({
             name: "PresenceERawNormalization",
-            description: "Within Presence modules, collapse ERaw Map.keys |> Enum.map(&Atom.to_string/1) to Map.keys",
-            enabled: true,
+            description: "(disabled) Do not rewrite ERaw Map.keys pipelines inside Presence modules",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PresenceERawTransforms.erawPresenceKeysNormalizePass
         });
         // Presence list-building reduce rewrite
@@ -2254,7 +2280,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HeexRenderStringToSigil",
             description: "Ensure render(assigns) returns ~H by converting final HTML strings to ~H",
-            enabled: true,
+            enabled: #if hxx_string_to_sigil true #else false #end,
             pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
         });
 
@@ -2273,7 +2299,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HeexStringReturnToSigil",
             description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils",
-            enabled: true,
+            enabled: #if hxx_string_to_sigil true #else false #end,
             pass: reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.transformPass
         });
 
@@ -3362,6 +3388,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DuplicateCaseAssignFoldTransforms.pass
         });
+        // PresenceWithSocketEffectPreserve disabled: keep original assignments to match intended snapshots
         passes.push({
             name: "CaseBindSuccessToAssignedVar",
             description: "Bind {:ok, u} success to preceding assigned var inside case and drop nested underscore",
@@ -3592,11 +3619,13 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.pass
         });
 
-        // Presence module cleanups: remove placeholder Repo.get calls and underscore unused params
+        // Presence module fix (disabled): this pass rewrote presence functions to just return `socket`,
+        // which removes effectful calls (track/update/untrack) and diverges from intended snapshots.
+        // Disable by default; preserve presence API calls and let hygiene handle unused params.
         passes.push({
             name: "PresenceModuleFix",
-            description: "Clean up <App>Web.Presence: drop Repo.get placeholders, underscore unused params, return socket",
-            enabled: true,
+            description: "(disabled) Do not rewrite Presence functions to return socket; preserve effectful calls",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.pass
         });
 

@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import StringTools;
 
 /**
  * AssignChainPruneTransforms
@@ -41,6 +42,10 @@ class AssignChainPruneTransforms {
     public static function prunePass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
+                case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+                    n;
+                case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+                    n;
                 case EBlock(stmts):
                     var out:Array<ElixirAST> = [];
                     for (i in 0...stmts.length) {
@@ -49,6 +54,11 @@ class AssignChainPruneTransforms {
                         var dropped = false;
                         switch (s.def) {
                             case EBinary(Match, left0, right0):
+                                // Never drop or rewrite presence effect assignments
+                                if (isPresenceEffectCall(right0)) {
+                                    out.push(s);
+                                    continue;
+                                }
                                 var lhsName0:Null<String> = switch (left0.def) { case EVar(nm): nm; default: null; };
                                 if (lhsName0 != null) {
                                     switch (right0.def) {
@@ -66,6 +76,7 @@ class AssignChainPruneTransforms {
                             case EBinary(Match, leftA, right):
                                 switch (right.def) {
                                     case EBinary(Match, leftB, expr):
+                                        if (isPresenceEffectCall(expr)) { out.push(s); continue; }
                                         var aName:Null<String> = switch (leftA.def) { case EVar(na): na; default: null; };
                                         var bName:Null<String> = switch (leftB.def) { case EVar(nb): nb; default: null; };
                                         if (bName != null && !nameUsedLater(stmts, i+1, bName)) {
@@ -83,6 +94,7 @@ class AssignChainPruneTransforms {
                             case EMatch(patA, right2):
                                 switch (right2.def) {
                                     case EBinary(Match, leftB2, expr2):
+                                        if (isPresenceEffectCall(expr2)) { out.push(s); continue; }
                                         var bName2:Null<String> = switch (leftB2.def) { case EVar(nb2): nb2; default: null; };
                                         // If left pattern is a single variable and it is unused, rewrite
                                         var aName2:Null<String> = switch (patA) { case PVar(na2): na2; default: null; };
@@ -107,6 +119,22 @@ class AssignChainPruneTransforms {
                     n;
             }
         });
+    }
+
+    static inline function looksLikePresenceModule(name:String, node:ElixirAST):Bool {
+        if (node != null && node.metadata != null && node.metadata.isPresence == true) return true;
+        if (name == null) return false;
+        return StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
+    }
+
+    static function isPresenceEffectCall(e: ElixirAST): Bool {
+        return switch (e.def) {
+            case ERemoteCall({def: EVar(mod)}, func, _):
+                var isPresence = (mod == "Phoenix.Presence") || StringTools.endsWith(mod, ".Presence") || (mod == "Presence");
+                isPresence && (func == "track" || func == "update" || func == "untrack");
+            default:
+                false;
+        };
     }
 
     static function nameUsedLater(stmts:Array<ElixirAST>, start:Int, name:String):Bool {

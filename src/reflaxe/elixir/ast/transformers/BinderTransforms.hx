@@ -1461,17 +1461,22 @@ class BinderTransforms {
                     // Passthrough string
                     args[0];
                 case ERemoteCall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_time" && args.length == 1):
-                    // If arg is DateTime.utc_now(), prefer Kernel.to_string/1 for robust formatting
+                    // If arg is DateTime.utc_now(), normalize to DateTime.to_iso8601(DateTime.utc_now()) to match intended snapshots
                     switch (args[0].def) {
                         case ERemoteCall({def: EVar(dm)}, "utc_now", _ ) if (dm == "DateTime"):
-                            makeAST(ERemoteCall(makeAST(EVar("Kernel")), "to_string", [args[0]]));
+                            makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [args[0]]));
                         default:
                             args[0];
                     }
                 case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "from_string" && args.length == 1):
                     args[0];
                 case ECall({def: EVar(m)}, f, args) if (isDateImplModule(m) && f == "get_time" && args.length == 1):
-                    args[0];
+                    switch (args[0].def) {
+                        case ERemoteCall({def: EVar(dm)}, "utc_now", _ ) if (dm == "DateTime"):
+                            makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [args[0]]));
+                        default:
+                            args[0];
+                    }
                 default:
                     n;
             }

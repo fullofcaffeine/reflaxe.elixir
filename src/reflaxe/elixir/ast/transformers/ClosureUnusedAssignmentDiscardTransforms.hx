@@ -53,7 +53,7 @@ class ClosureUnusedAssignmentDiscardTransforms {
                                         case EBinary(Match, left, rhs):
                                             switch (left.def) {
                                                 case EVar(name):
-                                                    if (!futureUsesName(stmts, i + 1, name)) {
+                                                    if (!futureUsesName(stmts, i + 1, name) && !exprReferencesName(rhs, name)) {
                                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
                                                         replaced = true;
                                                     }
@@ -73,6 +73,26 @@ class ClosureUnusedAssignmentDiscardTransforms {
                     n;
             }
         });
+    }
+
+    static function exprReferencesName(e: ElixirAST, name: String): Bool {
+        var found = false;
+        function visit(x: ElixirAST): Void {
+            if (found || x == null || x.def == null) return;
+            switch (x.def) {
+                case EVar(n) if (n == name): found = true;
+                case EBinary(_, l, r): visit(l); visit(r);
+                case EMatch(_, rhs): visit(rhs);
+                case ECall(t, _, args): if (t != null) visit(t); if (args != null) for (a in args) visit(a);
+                case ERemoteCall(m, _, args2): visit(m); if (args2 != null) for (a in args2) visit(a);
+                case EBlock(ss): for (s in ss) visit(s);
+                case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
+                case ECase(cond, cs): visit(cond); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
+                default:
+            }
+        }
+        visit(e);
+        return found;
     }
 
     static function futureUsesName(stmts: Array<ElixirAST>, start: Int, name: String): Bool {

@@ -219,12 +219,27 @@ class ControlFlowBuilder {
      */
     static function shouldUseCond(eif: TypedExpr, eelse: Null<TypedExpr>): Bool {
         if (eelse == null) return false;
-        
-        // Check if else branch is another if statement
-        return switch(eelse.expr) {
-            case TIf(_, _, _): true;
-            case TBlock([single]) if (single.expr.match(TIf(_, _, _))): true;
-            default: false;
+
+        inline function isSimpleLiteral(te: TypedExpr): Bool {
+            return switch (te.expr) {
+                case TConst(TInt(_)) | TConst(TFloat(_)) | TConst(TString(_)) | TConst(TNull) | TConst(TBool(_)): true;
+                case _: false;
+            };
+        }
+
+        // If else branch is another if, prefer cond except when all branches are simple literals
+        return switch (eelse.expr) {
+            case TIf(_, if2, else2):
+                // Keep nested if when then/else are simple literals on both levels
+                if (isSimpleLiteral(eif) && isSimpleLiteral(if2) && else2 != null && isSimpleLiteral(else2)) false else true;
+            case TBlock([single]) if (single.expr.match(TIf(_, _, _))):
+                // Unwrap single block and apply same rule
+                switch (single.expr) {
+                    case TIf(_, ifb, elseb): if (isSimpleLiteral(eif) && isSimpleLiteral(ifb) && elseb != null && isSimpleLiteral(elseb)) false else true;
+                    case _: true;
+                }
+            default:
+                false;
         };
     }
     

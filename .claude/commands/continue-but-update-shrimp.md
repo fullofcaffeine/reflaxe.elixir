@@ -1,0 +1,1 @@
+Let's update the plan on shrimp if needed, update tasks for a new session and give me a sum up of what we did, where we are and where we're going and what we need to do (prioritized), including the next (or same, if not finished yet) shrimp task to execute. You should also follow instructions on .claude/commands/continue.md to continue working on the tasks.

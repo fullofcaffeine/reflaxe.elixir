@@ -24,8 +24,11 @@ defmodule Reflect do
     apply(func, args)
   end
   def compare(a, b) do
-    if inspect(a) < inspect(b), do: -1
-    if inspect(a) > inspect(b), do: 1
+    if inspect(a) < inspect(b) do
+      -1
+    else
+      if inspect(a) > inspect(b), do: 1, else: 0
+    end
   end
   def is_enum_value(v) do
     is_tuple(v) and tuple_size(v) >= 1 and is_atom(elem(v, 0))
