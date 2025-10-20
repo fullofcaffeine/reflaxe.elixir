@@ -54,13 +54,13 @@ extern class String {
             var sub = untyped __elixir__('String.slice({0}, {1}..-1)', this, startIndex);
             var idx = untyped __elixir__('case :binary.match({0}, {1}) do
                 {pos, _} -> pos + {2}
-                nil -> -1
+                :nomatch -> -1
             end', sub, str, startIndex);
             return idx;
         } else {
             return untyped __elixir__('case :binary.match({0}, {1}) do
                 {pos, _} -> pos
-                nil -> -1
+                :nomatch -> -1
             end', this, str);
         }
     }
