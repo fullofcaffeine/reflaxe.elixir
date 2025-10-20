@@ -178,8 +178,8 @@ class CountEachToEnumCountTransforms {
     }
 
     static function safeBinderName(b: String): String {
-        if (b == null || b.length == 0) return "elem";
-        if (b.charAt(0) == '_') return b.substr(1) != null && b.substr(1).length > 0 ? b.substr(1) : "elem";
+        if (b == null || b.length == 0) return "item";
+        if (b.charAt(0) == '_') return b.substr(1) != null && b.substr(1).length > 0 ? b.substr(1) : "item";
         return b;
     }
 }

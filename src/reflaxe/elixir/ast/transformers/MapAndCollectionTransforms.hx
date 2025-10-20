@@ -97,7 +97,7 @@ class MapAndCollectionTransforms {
                             };
 
                             // Replace listExpr[0] usages with binder (or a synthesized name)
-                            var replacementName = binderName != null ? safeBinder(binderName) : "elem";
+                            var replacementName = binderName != null ? safeBinder(binderName) : "item";
 
                             function replaceHeadAccess(e: ElixirAST): ElixirAST {
                                 return ElixirASTTransformer.transformNode(e, function(x: ElixirAST): ElixirAST {

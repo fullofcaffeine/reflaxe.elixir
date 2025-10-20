@@ -85,6 +85,20 @@ class PresenceReduceRewriteTransforms {
         return false;
     }
 
+    /**
+     * Ensure we only wrap map inputs with Map.values/1 once.
+     * If the given target is already a Map.values(...) call, return it as-is;
+     * otherwise, wrap it in Map.values/1.
+     */
+    static inline function mapValuesOnce(target: ElixirAST): ElixirAST {
+        return switch (target.def) {
+            case ERemoteCall({def: EVar(mod)}, "values", args) if (mod == "Map" && args != null && args.length == 1):
+                target;
+            default:
+                makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [target]));
+        }
+    }
+
     public static function presenceReduceRewritePass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -186,8 +200,8 @@ class PresenceReduceRewriteTransforms {
                         // Return the conditional result directly (no trailing `acc` that discards the branch value)
                         var body = makeAST(EIf(outerCond, inner, makeAST(EVar("acc"))));
                         var reduceFn = makeAST(EFn([{ args: [PVar(binder), PVar("acc")], guard: null, body: body }]));
-                        var valuesCall2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [makeAST(EVar(listVar))]));
-                        var reduceCall2 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesCall2, makeAST(EList([])), reduceFn]));
+                        var valuesForListVar = mapValuesOnce(makeAST(EVar(listVar)));
+                        var reduceForListVar = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesForListVar, makeAST(EList([])), reduceFn]));
                         var out2: Array<ElixirAST> = [];
                         for (i in 0...stmts.length) {
                             if (i == listIdx) {
@@ -195,7 +209,7 @@ class PresenceReduceRewriteTransforms {
                                 out2.push(stmts[i]);
                             } else if (i == accIdx) {
                                 // replace acc init with reduce call result
-                                out2.push(makeAST(EBinary(Match, makeAST(EVar(accName)), reduceCall2)));
+                                out2.push(makeAST(EBinary(Match, makeAST(EVar(accName)), reduceForListVar)));
                             } else if (i == eachAt) {
                                 // drop Enum.each
                             } else {
@@ -250,7 +264,7 @@ class PresenceReduceRewriteTransforms {
 #end
 
                     // Build Map.values(listTarget) for reduce input
-                    var valuesCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [listTarget]));
+                    var valuesCall = mapValuesOnce(listTarget);
 
                     // Prepare reduce function body:
                     // - Replace any local 'entry' alias assignments from Map.get(listTarget, key) with binder references

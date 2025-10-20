@@ -740,6 +740,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameFromExprPass
         });
 
+        // Remove numeric suffixes from binders and references within local scopes
+        passes.push({
+            name: "NumericSuffixVarNormalize",
+            description: "Normalize variables with trailing digits to descriptive base names (no integers)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.NumericSuffixVarNormalizeTransforms.normalizePass
+        });
+
         // Normalize camelCase binders in case patterns to snake_case and update clause bodies
         passes.push({
             name: "BinderCamelToSnake",
@@ -1976,6 +1984,13 @@ class ElixirASTPassRegistry {
             description: "Use _children in Supervisor.start_link when assignment was underscored",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TelemetryChildrenArgFixTransforms.fixPass
+        });
+        // Promote LiveView mount/3 third parameter to `socket` and rewrite body references
+        passes.push({
+            name: "LiveMountSocketParamPromote",
+            description: "Promote mount/3 third param to `socket` (shape-based, no app coupling)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveViewMountSocketParamPromoteTransforms.promotePass
         });
         // LiveView mount flow normalization to restore required binders
         passes.push({
