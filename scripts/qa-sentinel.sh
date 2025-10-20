@@ -276,22 +276,33 @@ done
 log "[QA] Step 4: Starting Phoenix server on :$PORT (background, non-blocking)"
 export PORT="$PORT"
 # Start Phoenix in the background, detached when possible, and capture PID/PGID
+# Prefer setsid; on macOS where `setsid` may not exist, fall back to perl POSIX::setsid;
+# if neither available, start normally but ensure cleanup never targets our own PGID.
 if command -v setsid >/dev/null 2>&1; then
   setsid sh -c 'MIX_ENV=dev mix phx.server' >/tmp/qa-phx.log 2>&1 &
+elif command -v perl >/dev/null 2>&1; then
+  # Create a new session via perl; then exec a shell to run the server
+  nohup perl -MPOSIX -e 'POSIX::setsid() or die "setsid failed: $!"; exec @ARGV' \
+    sh -c 'MIX_ENV=dev mix phx.server' >/tmp/qa-phx.log 2>&1 &
 else
+  # Fallback: still background, but guard cleanup to avoid killing our own process group
   nohup env MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
 fi
 PHX_PID=$!
 PGID=$(ps -o pgid= "$PHX_PID" 2>/dev/null | tr -d ' ' || true)
+# Our own process group (for safety checks during cleanup)
+MY_PGID=$(ps -o pgid= $$ 2>/dev/null | tr -d ' ' || true)
 log "[QA] Phoenix started: PHX_PID=$PHX_PID PGID=$PGID (logs: /tmp/qa-phx.log)"
 
 cleanup() {
-  # Prefer killing the whole process group if available, fall back to PID, and finally port listeners
-  if [[ -n "$PGID" ]]; then
+  # Prefer killing the Phoenix process group when it is distinct from our own.
+  # This prevents terminating the host CLI when the server wasn't started in a new session.
+  if [[ -n "$PGID" && -n "$MY_PGID" && "$PGID" != "$MY_PGID" ]]; then
     kill -TERM -"$PGID" >/dev/null 2>&1 || true
     sleep 0.5
     kill -KILL -"$PGID" >/dev/null 2>&1 || true
   fi
+  # Always try to terminate the server PID directly
   kill "$PHX_PID" >/dev/null 2>&1 || true
   # Extra safety: kill anything still listening on the port
   if command -v lsof >/dev/null 2>&1; then
