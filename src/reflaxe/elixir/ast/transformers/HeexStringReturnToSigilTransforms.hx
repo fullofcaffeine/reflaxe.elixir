@@ -317,7 +317,9 @@ class HeexStringReturnToSigilTransforms {
                     if (tryIf != null) {
                         convertedLast = tryIf;
                     } else {
-                        convertedLast = toHeex(last);
+                        // Try converting HXX.hxx("...") call to ~H directly when present as final expr
+                        var tryHxx = tryConvertHxxCallToHeex(last);
+                        convertedLast = tryHxx != null ? tryHxx : toHeex(last);
                     }
                     if (convertedLast == last) return n;
                     var newStmts = stmts.copy();
@@ -339,6 +341,27 @@ class HeexStringReturnToSigilTransforms {
                     n;
             }
         });
+    }
+
+    // Convert final HXX.hxx("...") call into ESigil("H", ...) when encountered
+    static function tryConvertHxxCallToHeex(node: ElixirAST): Null<ElixirAST> {
+        switch (node.def) {
+            case ECall(mod, fnName, args) if (fnName == "hxx" && args != null && args.length >= 1):
+                // HXX.hxx(template)
+                var isHxx = false;
+                if (mod != null) switch (mod.def) {
+                    case EVar(m) if (m == "HXX"): isHxx = true;
+                    case EField(_, fld) if (fld == "HXX"): isHxx = true;
+                    default:
+                }
+                if (!isHxx) return null;
+                // Collect content and normalize control tags
+                var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(args[0]);
+                content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
+                return makeASTWithMeta(ESigil("H", content, ""), node.metadata, node.pos);
+            default:
+                return null;
+        }
     }
 
     // Attempt to convert an if expression with string branches into a ~H sigil

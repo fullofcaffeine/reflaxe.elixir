@@ -591,7 +591,7 @@ class HXX {
             var suffix = r.matched(3);
 
             // Convert the attribute name
-            var convertedName = HXXComponentRegistry.toHtmlAttribute(attrName);
+            var convertedName = phoenix.types.HXXComponentRegistry.toHtmlAttribute(attrName);
 
             return prefix + convertedName + suffix;
         });
