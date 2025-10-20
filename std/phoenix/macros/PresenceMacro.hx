@@ -266,14 +266,7 @@ class PresenceMacro {
 		newFields.push(generateUpdateWithSocket());
 		newFields.push(generateUntrackWithSocket());
 		
-		// Generate external static methods (without self())
-		newFields.push(generateExternalTrack());
-		newFields.push(generateExternalUpdate());
-		newFields.push(generateExternalUntrack());
-		
-		// Generate utility methods
-		newFields.push(generateList());
-		newFields.push(generateGetByKey());
+            // Do not generate external wrappers; rely on functions injected by `use Phoenix.Presence`.
 		
 		return fields.concat(newFields);
 	}
@@ -297,13 +290,13 @@ class PresenceMacro {
 					{name: "meta", type: macro : M}  // Generic metadata type
 				],
 				ret: macro : Void,  // Presence tracking doesn't return anything
-				expr: macro {
-					// Call Phoenix.Presence.track with correct LiveView signature
-					// (pid, topic, key, meta) where topic is a string
-					untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2}, {3})', 
-						untyped __elixir__('self()'), topic, key, meta);
-				}
-			}),
+                expr: macro {
+                    // Delegate to presence module: __MODULE__.track(self(), topic, key, meta)
+                    untyped __elixir__('{0}.track({1}, {2}, {3}, {4})', 
+                        untyped __elixir__('__MODULE__'), 
+                        untyped __elixir__('self()'), topic, key, meta);
+                }
+            }),
             access: [APublic, AStatic, AInline],  // inline for zero-cost abstraction
 			doc: "Track presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
@@ -329,11 +322,12 @@ class PresenceMacro {
 					{name: "meta", type: macro : M}
 				],
 				ret: macro : Void,
-				expr: macro {
-					// Call Phoenix.Presence.update with correct LiveView signature
-					untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2}, {3})', 
-						untyped __elixir__('self()'), topic, key, meta);
-				}
+                expr: macro {
+                    // Delegate to presence module: __MODULE__.update(self(), topic, key, meta)
+                    untyped __elixir__('{0}.update({1}, {2}, {3}, {4})', 
+                        untyped __elixir__('__MODULE__'), 
+                        untyped __elixir__('self()'), topic, key, meta);
+                }
 			}),
             access: [APublic, AStatic, AInline],
 			doc: "Update presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
@@ -355,11 +349,12 @@ class PresenceMacro {
 					{name: "key", type: macro : String}
 				],
 				ret: macro : Void,
-				expr: macro {
-					// Call Phoenix.Presence.untrack with correct LiveView signature
-					untyped __elixir__('Phoenix.Presence.untrack({0}, {1}, {2})', 
-						untyped __elixir__('self()'), topic, key);
-				}
+                expr: macro {
+                    // Delegate to presence module: __MODULE__.untrack(self(), topic, key)
+                    untyped __elixir__('{0}.untrack({1}, {2}, {3})', 
+                        untyped __elixir__('__MODULE__'), 
+                        untyped __elixir__('self()'), topic, key);
+                }
 			}),
             access: [APublic, AStatic, AInline],
 			doc: "Untrack presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
@@ -461,61 +456,14 @@ class PresenceMacro {
 	 * Works both internally and externally.
 	 * Uses generic types for socket and metadata.
 	 */
-	static function generateList(): Field {
-		return {
-			name: "list",
-			pos: Context.currentPos(),
-			kind: FFun({
-				params: [
-					{name: "T"},  // Socket type parameter
-					{name: "M"}   // Metadata type parameter
-				],
-				args: [
-					{name: "socket", type: macro : T}
-				],
-				ret: macro : Dynamic,  // Returns a map of presence entries
-				expr: macro {
-					// Always use Phoenix.Presence.list which works both internally and externally
-					// Phoenix.Presence handles the self() injection automatically when called from within a presence module
-					return untyped __elixir__('Phoenix.Presence.list({0})', socket);
-				}
-			}),
-			access: [APublic, AStatic, AExtern, AInline],
-			doc: "List all presences. Automatically detects context and uses appropriate method.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
+    // Removed: external list wrapper. Use __MODULE__.list/1 injected by `use Phoenix.Presence`.
 	
 	/**
 	 * Generate getByKey method for querying specific presence.
 	 * Works both internally and externally.
 	 * Uses generic types for full type safety.
 	 */
-	static function generateGetByKey(): Field {
-		return {
-			name: "getByKey",
-			pos: Context.currentPos(),
-			kind: FFun({
-				params: [
-					{name: "T"},  // Socket type parameter
-					{name: "M"}   // Metadata type parameter
-				],
-				args: [
-					{name: "socket", type: macro : T},
-					{name: "key", type: macro : String}
-				],
-				ret: macro : Dynamic,  // Returns a presence entry or null
-				expr: macro {
-					// Always use Phoenix.Presence.get_by_key which works both internally and externally
-					// Phoenix.Presence handles the self() injection automatically when called from within a presence module
-					return untyped __elixir__('Phoenix.Presence.get_by_key({0}, {1})', socket, key);
-				}
-			}),
-			access: [APublic, AStatic, AExtern, AInline],
-			doc: "Get presence by key. Automatically detects context and uses appropriate method.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
+    // Removed: external getByKey wrapper. Use __MODULE__.get_by_key/2 injected by `use Phoenix.Presence`.
 	
 	
 	/**
@@ -608,9 +556,9 @@ class PresenceMacro {
 				args: [],  // No arguments needed
 				ret: macro : Dynamic,  // Returns a map of presence entries
 				expr: macro {
-					// Use Phoenix.Presence.list with the class-level topic
-					return untyped __elixir__('Phoenix.Presence.list({0})', $v{topic});
-				}
+                    // Use presence module's list/1 with the class-level topic
+                    return untyped __elixir__('{0}.list({1})', untyped __elixir__('__MODULE__'), $v{topic});
+                }
 			}),
 			access: [APublic, AStatic, AInline],
 			doc: "List all presences for the class-level topic.",
