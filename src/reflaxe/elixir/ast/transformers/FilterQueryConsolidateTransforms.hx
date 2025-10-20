@@ -70,10 +70,11 @@ class FilterQueryConsolidateTransforms {
                         var branchNeedsBinder = branchHasQueryOrFilter(thenBranch);
                         if (branchNeedsBinder && !branchDefinesQueryTopLevel(thenBranch)) {
                             var binder = makeAST(EBinary(Match, makeAST(EVar("query")), makeAST(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar("search_query"))]))));
+                            // For EIf then-branch, always prefer EBlock to avoid nested `do` printing
                             var newThen: ElixirAST = switch (thenBranch.def) {
-                                case EDo(es): makeASTWithMeta(EDo([binder].concat(es)), thenBranch.metadata, thenBranch.pos);
+                                case EDo(es): makeASTWithMeta(EBlock([binder].concat(es)), thenBranch.metadata, thenBranch.pos);
                                 case EBlock(es2): makeASTWithMeta(EBlock([binder].concat(es2)), thenBranch.metadata, thenBranch.pos);
-                                default: makeASTWithMeta(EDo([binder, thenBranch]), thenBranch.metadata, thenBranch.pos);
+                                default: makeASTWithMeta(EBlock([binder, thenBranch]), thenBranch.metadata, thenBranch.pos);
                             };
                             makeASTWithMeta(EIf(cond, newThen, elseBranch), n.metadata, n.pos);
                         } else n;
