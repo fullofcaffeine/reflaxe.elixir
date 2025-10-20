@@ -26,6 +26,15 @@ set +m
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
 #   --deadline SECS  Hard cap: watchdog kills background job after SECS
+#   --playwright     After readiness, run Playwright tests (defaults to e2e/*.spec.ts under --app)
+#   --e2e-spec GLOB  Playwright spec or glob (relative to --app), e.g. e2e/search.spec.ts
+#
+# TDD LOOP (Recommended)
+#   1) Write/adjust a Playwright spec in examples/todo-app/e2e/ to describe the user-visible behavior.
+#   2) Start server non-blocking: scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v
+#   3) Run: BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/<spec>.ts
+#   4) Implement the fix generically (no app-coupling) and re-run with --playwright:
+#      scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/<spec>.ts" --deadline 600
 #   --playwright     After readiness, run Playwright tests (examples/todo-app/e2e/*.spec.ts by default)
 #   --e2e-spec GLOB  Playwright spec or glob (relative to --app); default: e2e/*.spec.ts
 #
