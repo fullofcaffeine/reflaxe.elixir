@@ -90,6 +90,47 @@ class HeexStringReturnToSigilTransforms {
         return res;
     }
 
+    // Extract a plain literal string from an interpolation wrapper like: "<%= ("...") %>"
+    static function tryExtractQuotedFromInterpolation(s:String): Null<String> {
+        if (s == null) return null;
+        var t = StringTools.trim(s);
+        if (!StringTools.startsWith(t, "<%=")) return null;
+        if (!StringTools.endsWith(t, "%>")) return null;
+        // strip the <%= and %>
+        t = StringTools.trim(t.substr(3)); // after "<%="
+        t = StringTools.trim(t.substr(0, t.length - 2)); // drop trailing "%>"
+        // optional surrounding parens
+        if (t.length >= 2 && t.charAt(0) == '(' && t.charAt(t.length - 1) == ')') {
+            t = StringTools.trim(t.substr(1, t.length - 2));
+        }
+        // now expect a quoted string
+        if (t.length < 2 || t.charAt(0) != '"' || t.charAt(t.length - 1) != '"') return null;
+        // unescape a subset of common escapes inside the string literal
+        var out = new StringBuf();
+        var i = 1;
+        var end = t.length - 1;
+        while (i < end) {
+            var ch = t.charAt(i);
+            if (ch == '\\' && i + 1 < end) {
+                var nxt = t.charAt(i + 1);
+                switch (nxt) {
+                    case 'n': out.add("\n"); i += 2; continue;
+                    case 'r': out.add("\r"); i += 2; continue;
+                    case 't': out.add("\t"); i += 2; continue;
+                    case '"': out.add('"'); i += 2; continue;
+                    case '\\': out.add('\\'); i += 2; continue;
+                    default:
+                        out.add(nxt);
+                        i += 2; continue;
+                }
+            } else {
+                out.add(ch);
+                i++;
+            }
+        }
+        return out.toString();
+    }
+
     // Map assigns.* to @* for HEEx idioms in expressions
     static function mapAssigns(e:String):String {
         return StringTools.replace(e, "assigns.", "@");
@@ -498,8 +539,13 @@ class HeexStringReturnToSigilTransforms {
                         // Fallback: if this is render(assigns) and body is string-ish, force conversion to ~H
                         if ((hasAssignsParam || hasUnderscoredAssigns) && name == "render") {
                             var collected = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(body);
-                            if (looksLikeHtml(collected)) {
-                                var normalized = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(collected);
+                            // If collector produced an interpolation-wrapped literal, extract the inner HTML first
+                            var extracted = tryExtractQuotedFromInterpolation(collected);
+                            var content = (extracted != null) ? extracted : collected;
+                            if (looksLikeHtml(content)) {
+                                // Convert any #{}/$ {} expressions and control tags inside the content
+                                var conv = convertInterpolations(content);
+                                var normalized = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(conv);
                                 var sig = makeAST(ESigil("H", normalized, ""));
                                 var newDef2 = Type.enumConstructor(n.def) == "EDef"
                                     ? EDef(name, argsRenamed, guards, sig)

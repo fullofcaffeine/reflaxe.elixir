@@ -55,6 +55,20 @@ class PresenceRouteLocalizeTransforms {
                             makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
                         default: x;
                     }
+                case ECall(target, fn, args):
+                    // Also handle calls emitted as ECall(EField(EField(Phoenix, Presence), fn), args)
+                    switch (target != null ? target.def : null) {
+                        case EField({def: EField({def: EVar("Phoenix")}, "Presence")}, f) if (f == fn):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
+                        default: x;
+                    }
+                case EField(target, field):
+                    // Rewrite Phoenix.Presence.<fn> chain heads into <currentModule>.<fn>
+                    switch (target.def) {
+                        case EField({def: EVar("Phoenix")}, "Presence"):
+                            makeASTWithMeta(EField(makeAST(EVar(moduleName)), field), x.metadata, x.pos);
+                        default: x;
+                    }
                 default:
                     x;
             }
@@ -63,4 +77,3 @@ class PresenceRouteLocalizeTransforms {
 }
 
 #end
-

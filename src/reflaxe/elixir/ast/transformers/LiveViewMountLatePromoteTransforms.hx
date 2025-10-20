@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import StringTools;
 
 /**
  * LiveViewMountLatePromoteTransforms
@@ -46,6 +47,7 @@ class LiveViewMountLatePromoteTransforms {
         if (params == null || params.length < 3) return n;
         var third = params[2];
         switch (third) {
+            // Promote when the third param is any var not named `socket` (covers underscored and mismatched names)
             case PVar(pname) if (pname != null && pname != "socket"):
                 var newParams = params.copy();
                 newParams[2] = PVar("socket");
@@ -63,11 +65,11 @@ class LiveViewMountLatePromoteTransforms {
             default: n;
         }
     }
-    static function getGuards(n: ElixirAST): Array<ElixirAST> {
+    static function getGuards(n: ElixirAST): Null<ElixirAST> {
         return switch (n.def) {
             case EDef(_, _, g, _): g;
             case EDefp(_, _, g, _): g;
-            default: [];
+            default: null;
         }
     }
 
@@ -82,4 +84,3 @@ class LiveViewMountLatePromoteTransforms {
 }
 
 #end
-
