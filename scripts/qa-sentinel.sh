@@ -94,7 +94,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 ts() { date "+%Y-%m-%d %H:%M:%S"; }
-log() { echo "[$(ts)] $*"; }
+log() { if [[ "${QUIET:-0}" -eq 0 ]]; then echo "[$(ts)] $*"; fi }
 run() { if [[ "$VERBOSE" -eq 1 ]]; then set -x; fi; "$@"; local rc=$?; if [[ "$VERBOSE" -eq 1 ]]; then set +x; fi; return $rc; }
 
 # Wrapper to run a command with optional timeout and tee to logfile.

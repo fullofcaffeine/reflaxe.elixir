@@ -319,7 +319,13 @@ class HeexStringReturnToSigilTransforms {
                     } else {
                         // Try converting HXX.hxx("...") call to ~H directly when present as final expr
                         var tryHxx = tryConvertHxxCallToHeex(last);
-                        convertedLast = tryHxx != null ? tryHxx : toHeex(last);
+                        if (tryHxx != null) {
+                            convertedLast = tryHxx;
+                        } else {
+                            // If final expr is a variable bound to an HTML-like string earlier, wrap it into ~H with raw(var)
+                            var tryVar = tryConvertVarToHeex(stmts, last);
+                            convertedLast = tryVar != null ? tryVar : toHeex(last);
+                        }
                     }
                     if (convertedLast == last) return n;
                     var newStmts = stmts.copy();
@@ -359,6 +365,62 @@ class HeexStringReturnToSigilTransforms {
                 var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(args[0]);
                 content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
                 return makeASTWithMeta(ESigil("H", content, ""), node.metadata, node.pos);
+            default:
+                return null;
+        }
+    }
+
+    // If last expression is EVar(name) and we can find a recent assignment
+    //   name = "<html ...>" or name = HXX.hxx("...")
+    // convert the final return into ~H with raw(name) so LiveView receives a Rendered.
+    static function tryConvertVarToHeex(stmts: Array<ElixirAST>, last: ElixirAST): Null<ElixirAST> {
+        switch (last.def) {
+            case EVar(varName):
+                // Scan backwards for the most recent assignment to varName
+                for (i in (stmts.length - 2)...-1) {
+                    // Haxe for-range reversed workaround
+                }
+                var i = stmts.length - 2;
+                while (i >= 0) {
+                    switch (stmts[i].def) {
+                        case EBinary(Match, l, r):
+                            switch (l.def) { case EVar(lhs) if (lhs == varName):
+                                // Check RHS shape
+                                switch (r.def) {
+                                    case EString(s) if (looksLikeHtml(s)):
+                                        return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
+                                    case ECall(m, f, a) if (f == "hxx"):
+                                        var isHxx = false;
+                                        if (m != null) switch (m.def) {
+                                            case EVar(mm) if (mm == "HXX"): isHxx = true;
+                                            case EField(_, fld) if (fld == "HXX"): isHxx = true;
+                                            default:
+                                        }
+                                        if (isHxx) return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
+                                    default:
+                                }
+                            default: }
+                        case EMatch(pat, rhs):
+                            switch (pat) { case PVar(lhs2) if (lhs2 == varName):
+                                switch (rhs.def) {
+                                    case EString(s2) if (looksLikeHtml(s2)):
+                                        return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
+                                    case ECall(m2, f2, a2) if (f2 == "hxx"):
+                                        var isHxx2 = false;
+                                        if (m2 != null) switch (m2.def) {
+                                            case EVar(mm2) if (mm2 == "HXX"): isHxx2 = true;
+                                            case EField(_, fld2) if (fld2 == "HXX"): isHxx2 = true;
+                                            default:
+                                        }
+                                        if (isHxx2) return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
+                                    default:
+                                }
+                            default: }
+                        default:
+                    }
+                    i--;
+                }
+                return null;
             default:
                 return null;
         }
@@ -413,6 +475,11 @@ class HeexStringReturnToSigilTransforms {
                     // Only convert helpers that already take assigns/_assigns.
                     if (!hasAssignsParam && !hasUnderscoredAssigns) return n;
                     var newBody = transformBody(body, false);
+                    // If no change and body itself is a string (or parens-wrapped string), convert to ~H
+                    if (newBody == body) {
+                        var topLevel = toHeex(body);
+                        if (topLevel != body) newBody = topLevel;
+                    }
                     if (newBody != body) {
                         if (!hasAssignsParam && hasUnderscoredAssigns) {
                             // Rename `_assigns` → `assigns` in the parameter list to satisfy HEEx
@@ -427,7 +494,20 @@ class HeexStringReturnToSigilTransforms {
                             ? EDef(name, argsRenamed, guards, newBody)
                             : EDefp(name, argsRenamed, guards, newBody);
                         makeASTWithMeta(newDef, n.metadata, n.pos);
-                    } else n;
+                    } else {
+                        // Fallback: if this is render(assigns) and body is string-ish, force conversion to ~H
+                        if ((hasAssignsParam || hasUnderscoredAssigns) && name == "render") {
+                            var collected = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(body);
+                            if (looksLikeHtml(collected)) {
+                                var normalized = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(collected);
+                                var sig = makeAST(ESigil("H", normalized, ""));
+                                var newDef2 = Type.enumConstructor(n.def) == "EDef"
+                                    ? EDef(name, argsRenamed, guards, sig)
+                                    : EDefp(name, argsRenamed, guards, sig);
+                                makeASTWithMeta(newDef2, n.metadata, n.pos);
+                            } else n;
+                        } else n;
+                    }
                 default:
                     n;
             }
