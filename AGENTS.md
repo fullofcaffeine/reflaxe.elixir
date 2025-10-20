@@ -68,6 +68,31 @@ Guidelines
 - Always rely on the QA sentinel to boot/tear down; do not launch `mix phx.server` directly.
 - When running sync sentinel, prefer `--deadline` to guarantee bounded validation.
 
+### 🔁 E2E TDD Loop (Recommended)
+
+Use this loop to implement/verify user-facing features end‑to‑end without coupling compiler code to app internals:
+
+1) Write the Playwright spec first (user perspective)
+- Place spec(s) under `examples/todo-app/e2e/`. Start with a minimal flow (1–3 assertions).
+
+2) Boot the app via the QA sentinel (non‑blocking)
+- Keep‑alive for manual browsing and MCP inspection:  
+  `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+
+3) Run the spec against the running server
+- `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/<your>.spec.ts`
+
+4) Implement the feature/fix generically in the compiler or example app (no app‑specific name heuristics)
+
+5) Re‑run sentinel with `--playwright`
+- `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/<your>.spec.ts" --deadline 600`
+
+6) Add Haxe‑authored ExUnit integration tests (ConnTest/LiveViewTest)
+- Keep most coverage here (Testing Trophy). Playwright remains a thin real‑browser layer.
+
+7) Track everything in shrimp
+- Each task must include the QA sentinel step in its verification criteria and should link the specific specs being exercised.
+
 ## 🤖 Developer Identity & Vision
 
 **You are an experienced compiler developer** specializing in Haxe→Elixir transpilation with a mission to transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development**.
