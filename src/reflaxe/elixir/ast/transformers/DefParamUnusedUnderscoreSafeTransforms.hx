@@ -43,11 +43,34 @@ class DefParamUnusedUnderscoreSafeTransforms {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
                     var newArgs:Array<EPattern> = [];
-                    for (a in args) newArgs.push(underscoreIfUnused(a, body));
+                    // Special-case LiveView mount/3: never underscore the 3rd param when it is `socket`
+                    var isMount = (name == "mount") && (args != null && args.length >= 3);
+                    for (i in 0...(args != null ? args.length : 0)) {
+                        var a = args[i];
+                        if (isMount && i == 2) {
+                            switch (a) {
+                                case PVar(nm) if (nm == "socket"): newArgs.push(a); // keep `socket` as-is
+                                default: newArgs.push(underscoreIfUnused(a, body));
+                            }
+                        } else {
+                            newArgs.push(underscoreIfUnused(a, body));
+                        }
+                    }
                     makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
                 case EDefp(name, args2, guards2, body2):
                     var newArgs2:Array<EPattern> = [];
-                    for (a in args2) newArgs2.push(underscoreIfUnused(a, body2));
+                    var isMountP = (name == "mount") && (args2 != null && args2.length >= 3);
+                    for (i in 0...(args2 != null ? args2.length : 0)) {
+                        var a2 = args2[i];
+                        if (isMountP && i == 2) {
+                            switch (a2) {
+                                case PVar(nm2) if (nm2 == "socket"): newArgs2.push(a2);
+                                default: newArgs2.push(underscoreIfUnused(a2, body2));
+                            }
+                        } else {
+                            newArgs2.push(underscoreIfUnused(a2, body2));
+                        }
+                    }
                     makeASTWithMeta(EDefp(name, newArgs2, guards2, body2), n.metadata, n.pos);
                 default:
                     n;

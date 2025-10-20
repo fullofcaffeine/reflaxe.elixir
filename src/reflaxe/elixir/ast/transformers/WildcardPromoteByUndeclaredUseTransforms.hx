@@ -692,19 +692,7 @@ class WildcardPromoteByUndeclaredUseTransforms {
             case EKeywordList(pairs): for (p in pairs) collectVars(p.value, out);
             case EStructUpdate(base, fields): collectVars(base, out); for (f in fields) collectVars(f.value, out);
             case ETuple(elems): for (e in elems) collectVars(e, out);
-            case EString(str):
-                if (str != null) {
-                    // conservative: mark common candidates when name-like substrings appear
-                    for (nm in ["now","todos","assigns","updated_socket","result_socket","uid","live_socket"]) {
-                        if (str.indexOf(nm) != -1) out.set(nm, true);
-                    }
-                }
-            case ERaw(code):
-                if (code != null) {
-                    for (nm in ["now","todos","assigns","updated_socket","result_socket","uid","live_socket"]) {
-                        if (code.indexOf(nm) != -1) out.set(nm, true);
-                    }
-                }
+            // Avoid name heuristics from textual content; rely on actual AST variable references only
             default:
         }
     }

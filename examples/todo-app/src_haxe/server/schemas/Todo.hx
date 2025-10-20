@@ -41,7 +41,7 @@ class Todo {
 	
     @:changeset
     public static function changeset(todo: Todo, params: TodoParams): Changeset<Todo, TodoParams> {
-        // Build and return changeset without local binding to avoid hygiene drops
+        // Fully typed pipeline: return idiomatic Ecto changeset without intermediate binders
         return new Changeset(todo, params)
             .validateRequired(["title", "userId"]) 
             .validateLength("title", {min: 3, max: 200})

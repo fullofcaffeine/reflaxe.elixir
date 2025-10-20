@@ -104,9 +104,8 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
 	public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-		// Test Date compilation - should generate DateTime.utc_now()
-		var now = Date.now();
-		trace("Current time: " + now.toString());
+        // Avoid noisy runtime logging and DateTime match warnings
+        // var now = Date.now(); // if needed, use server.templates.TodoTemplate.formatDate
 		
 		// Subscribe to todo updates for real-time sync using type-safe PubSub
 		switch (TodoPubSub.subscribe(TodoUpdates)) {
