@@ -53,6 +53,8 @@ class PresenceRouteLocalizeTransforms {
                     switch (mod.def) {
                         case EField({def: EVar("Phoenix")}, "Presence"):
                             makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
+                        case EVar(mname) if (mname == "Phoenix.Presence"):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
                         default: x;
                     }
                 case ECall(target, fn, args):
