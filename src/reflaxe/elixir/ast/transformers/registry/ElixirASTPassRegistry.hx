@@ -691,6 +691,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseClauseFixTransforms.caseClauseEmptyBodyToNilPass
         });
 
+        // Rewrite `not Kernel.is_nil(:binary.match(a, b))` to `String.contains?(a, b)`
+        passes.push({
+            name: "StringBinaryMatchContainsRewrite",
+            description: "Normalize binary.match/is_nil search predicates to String.contains?",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StringBinaryMatchContainsRewriteTransforms.transformPass
+        });
+
         // Guard sanitization pass (replace non-guard-safe calls with guard-safe equivalents)
         passes.push({
             name: "GuardSanitization",

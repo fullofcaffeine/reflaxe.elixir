@@ -1064,8 +1064,8 @@ static function getUserFromSession(session: Dynamic): User {
         return (searchQuery != null && searchQuery != "")
             ? base.filter(function(t) {
                 var ql = searchQuery.toLowerCase();
-                return t.title.toLowerCase().indexOf(ql) >= 0 ||
-                       (t.description != null && t.description.toLowerCase().indexOf(ql) >= 0);
+                return StringTools.contains(t.title.toLowerCase(), ql)
+                    || (t.description != null && StringTools.contains(t.description.toLowerCase(), ql));
             })
             : base;
     }
