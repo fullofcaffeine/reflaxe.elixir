@@ -45,6 +45,24 @@ Once the sentinel reports readiness, agents may run a lightweight Playwright che
      ```
   3) Run: `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/basic.spec.ts`
 
+### ✅ Testing Strategy (ExUnit in Haxe + Playwright in TS)
+
+- ExUnit tests should be authored in Haxe and compile to idiomatic Elixir ExUnit. See docs/02-user-guide/exunit-testing.md.
+- Real-browser E2E is covered with Playwright in TypeScript for now (kept small and high-value). We may convert these to Haxe later.
+- Trophy over pyramid: emphasize Phoenix integration tests (LiveViewTest/ConnTest) in Haxe→ExUnit, plus a thin Playwright layer for smoke/regression.
+
+Sentinel integration (optional):
+- You can have the QA sentinel run Playwright after readiness:
+  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+  - Sentinel sets `BASE_URL` from the detected PORT and fails on Playwright errors. Keep deadlines generous for first-run browser installs.
+- Current example specs:
+  - `examples/todo-app/e2e/basic.spec.ts` — home + todos load
+  - `examples/todo-app/e2e/search.spec.ts` — verifies search filters list and updates counter
+
+Best‑practice notes:
+- Keep Playwright specs under ~1 minute total; prefer resilient selectors (e.g., `getByPlaceholder`, `data-testid`).
+- Use sentinel for lifecycle; never run `mix phx.server` in foreground.
+
 Guidelines
 - Keep Playwright checks fast and smoke-level (1–2 assertions per path).
 - Always rely on the QA sentinel to boot/tear down; do not launch `mix phx.server` directly.
