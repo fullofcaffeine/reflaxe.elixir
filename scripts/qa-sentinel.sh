@@ -29,6 +29,24 @@ set +m
 #   --playwright     After readiness, run Playwright tests (defaults to e2e/*.spec.ts under --app)
 #   --e2e-spec GLOB  Playwright spec or glob (relative to --app), e.g. e2e/search.spec.ts
 #
+# QA LAYERS (Mapping)
+#   Layer 1 – Compiler snapshot tests (Haxe)
+#     - Outside this script; run: `make -C test summary` (and `summary-negative`)
+#     - Validates AST→Elixir printer shapes and transforms deterministically.
+#   Layer 2 – Integration (compiler→Phoenix runtime)
+#     - This script Steps 1–6: Haxe build → deps → mix compile → boot → readiness → GET / + log scan
+#     - Examples:
+#         Quick: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001`
+#         Async: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 300`
+#         Keep:  `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+#   Layer 3 – App E2E (browser)
+#     - Optional Step 7 when `--playwright` is used
+#     - Run entire E2E via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+#     - Or standalone against a keep-alive server: `BASE_URL=http://localhost:$PORT npx -C examples/todo-app playwright test`
+#   Testing Trophy Guidance
+#     - Most coverage via Haxe-authored ExUnit (LiveView/ConnTest)
+#     - Keep Playwright a thin smoke/regression layer (<1 minute total)
+#
 # TDD LOOP (Recommended)
 #   1) Write/adjust a Playwright spec in examples/todo-app/e2e/ to describe the user-visible behavior.
 #   2) Start server non-blocking: scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v
