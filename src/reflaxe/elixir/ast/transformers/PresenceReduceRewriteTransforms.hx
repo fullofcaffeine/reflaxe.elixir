@@ -233,7 +233,91 @@ class PresenceReduceRewriteTransforms {
                             switch (pat) { case PVar(n2): switch (rhs2.def) { case EList(items2) if (items2.length == 0): accVar = n2; accInitIdx = i; default: } default: }
                         default:
                     }
-                    if (accVar == null) return x;
+                    // If no explicit accumulator variable exists, attempt a synthesis when the block
+                    // ends with an empty list [] and contains an Enum.each(list, fn ... end).
+                    if (accVar == null) {
+                        var tailIsEmptyList = switch (stmts[stmts.length - 1].def) {
+                            case EList(items) if (items.length == 0): true;
+                            default: false;
+                        };
+                        var eachPos = -1;
+                        var eachList: Null<ElixirAST> = null;
+                        var eachClause: Null<{args:Array<EPattern>, body:ElixirAST, guard:Null<ElixirAST>}> = null;
+                        for (i in 0...stmts.length) switch (stmts[i].def) {
+                            case ERemoteCall(modE, funcE, argsE) if (funcE == "each" && argsE != null && argsE.length == 2):
+                                switch (modE.def) {
+                                    case EVar(mE) if (mE == "Enum"):
+                                        eachPos = i; eachList = argsE[0];
+                                        switch (argsE[1].def) { case EFn(csE) if (csE.length == 1): eachClause = csE[0]; default: }
+                                    default:
+                                }
+                            case EBinary(Match, _, rhsE) | EMatch(_, rhsE):
+                                switch (rhsE.def) {
+                                    case ERemoteCall(modE2, funcE2, argsE2) if (funcE2 == "each" && argsE2 != null && argsE2.length == 2):
+                                        switch (modE2.def) { case EVar(mE2) if (mE2 == "Enum"): eachPos = i; eachList = argsE2[0];
+                                            switch (argsE2[1].def) { case EFn(csE2) if (csE2.length == 1): eachClause = csE2[0]; default: } default: }
+                                    default:
+                                }
+                            default:
+                        }
+                        if (tailIsEmptyList && eachPos != -1 && eachList != null && eachClause != null) {
+                            // Synthesize reduce(Map.values(list), [], fn entry, acc -> body end)
+                            var binder0 = extractSingleArgName(eachClause.args);
+                            if (binder0 == null) binder0 = "entry";
+                            var fnBodyStmts: Array<ElixirAST> = switch (eachClause.body.def) { case EBlock(ssx): ssx; default: [eachClause.body]; };
+                            // Detect `meta = <binder>.metas[0]` alias
+                            var metaAlias: Null<String> = null;
+                            var metaExpr: Null<ElixirAST> = null;
+                            for (s3 in fnBodyStmts) switch (s3.def) {
+                                case EBinary(Match, leftB3, rightB3):
+                                    switch (rightB3.def) {
+                                        case EAccess(arr3, idx3):
+                                            switch (arr3.def) { case EField(obj3, field3) if (field3 == "metas"): metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), field3)), idx3)); default: }
+                                        default:
+                                            // not a metas head access
+                                    }
+                                    switch (leftB3.def) { case EVar(mn3): metaAlias = mn3; default: }
+                                default:
+                            }
+                            // Find inner equality on metaAlias.<field> == someVar
+                            var eqCond: Null<ElixirAST> = null;
+                            for (s4 in fnBodyStmts) switch (s4.def) {
+                                case EIf(c4, _, _):
+                                    // Prefer first equality cond that references the meta alias field
+                                    switch (c4.def) {
+                                        case EBinary(Equal, l4, r4):
+                                            var leftIsMetaField = switch (l4.def) { case EField({def: EVar(mv4)}, _fld4) if (metaAlias != null && mv4 == metaAlias): true; default: false; };
+                                            if (leftIsMetaField) eqCond = c4;
+                                        default:
+                                    }
+                                default:
+                            }
+                            // Reduce body: if length(entry.metas) > 0 do
+                            var outerCondS = makeAST(EBinary(Greater,
+                                makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [ makeAST(EField(makeAST(EVar(binder0)), "metas")) ])),
+                                makeAST(EInteger(0))
+                            ));
+                            var appendVal: ElixirAST = (metaExpr != null) ? metaExpr : makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), "metas")), makeAST(EInteger(0))));
+                            var appendExpr = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([appendVal]))));
+                            var innerBranch = (eqCond != null) ? makeAST(EIf(eqCond, appendExpr, makeAST(EVar("acc")))) : appendExpr;
+                            var reduceBody = makeAST(EIf(outerCondS, innerBranch, makeAST(EVar("acc"))));
+                            var reduceFnS = makeAST(EFn([{ args: [PVar(binder0), PVar("acc")], guard: eachClause.guard, body: reduceBody }]));
+                            var reduceCallS = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [ mapValuesOnce(eachList), makeAST(EList([])), reduceFnS ]));
+                            var outS: Array<ElixirAST> = [];
+                            for (i in 0...stmts.length) {
+                                if (i == eachPos) {
+                                    // drop Enum.each
+                                } else if (i == stmts.length - 1) {
+                                    // replace final [] with reduceCall
+                                    outS.push(reduceCallS);
+                                } else {
+                                    outS.push(stmts[i]);
+                                }
+                            }
+                            return makeASTWithMeta(EBlock(outS), x.metadata, x.pos);
+                        }
+                        return x;
+                    }
 #if debug_presence
                     trace('[PresenceReduceRewrite] Found accumulator init: ' + accVar);
 #end

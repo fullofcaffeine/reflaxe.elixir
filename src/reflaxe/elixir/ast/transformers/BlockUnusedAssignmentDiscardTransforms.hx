@@ -44,7 +44,7 @@ class BlockUnusedAssignmentDiscardTransforms {
                 case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
                     n;
                 case EDef(name, args, guards, body):
-                    var nb = rewriteBody(body);
+                    var nb = rewriteBody(body, name == "changeset");
                     makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
                 case EBlock(_):
                     rewriteBody(n);
@@ -88,7 +88,7 @@ class BlockUnusedAssignmentDiscardTransforms {
      * - Performs the per-block transformation, handling both EBinary(Match, …) and
      *   EMatch(PVar, rhs) forms.
      */
-    static function rewriteBody(body: ElixirAST): ElixirAST {
+    static function rewriteBody(body: ElixirAST, ?inChangeset: Bool = false): ElixirAST {
         return switch (body.def) {
             case EBlock(stmts):
                 var out:Array<ElixirAST> = [];
@@ -121,7 +121,9 @@ class BlockUnusedAssignmentDiscardTransforms {
                                         out.push(s);
                                     } else if (isDowncaseSearch(rhs)) {
                                         out.push(s);
-                                    } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm)
+                                    } else if (
+                                            !(inChangeset && rhsContainsChangesetCall(rhs))
+                                            && !VarUseAnalyzer.usedLater(stmts, i + 1, nm)
                                             && !rawIdentifierUsedLater(stmts, i + 1, nm)
                                             && !exprReferencesName(rhs, nm)
                                             && !hasPinnedVarInEctoWhere(stmts, i + 1, nm, s.metadata != null ? s.metadata.varId : null)
@@ -138,7 +140,9 @@ class BlockUnusedAssignmentDiscardTransforms {
                                     if (isPresenceEffectCall(rhs2)) { out.push(s); break; }
                                     if (isDowncaseSearch(rhs2)) {
                                         out.push(s);
-                                    } else if (!VarUseAnalyzer.usedLater(stmts, i + 1, nm2)
+                                    } else if (
+                                            !(inChangeset && rhsContainsChangesetCall(rhs2))
+                                            && !VarUseAnalyzer.usedLater(stmts, i + 1, nm2)
                                             && !rawIdentifierUsedLater(stmts, i + 1, nm2)
                                             && !exprReferencesName(rhs2, nm2)
                                             && !hasPinnedVarInEctoWhere(stmts, i + 1, nm2, s.metadata != null ? s.metadata.varId : null)
@@ -167,7 +171,9 @@ class BlockUnusedAssignmentDiscardTransforms {
                                         out2.push(s2);
                                     } else if (isDowncaseSearch(rhs2)) {
                                         out2.push(s2);
-                                    } else if (!VarUseAnalyzer.usedLater(stmts2, i + 1, nm2)
+                                    } else if (
+                                            !(inChangeset && rhsContainsChangesetCall(rhs2))
+                                            && !VarUseAnalyzer.usedLater(stmts2, i + 1, nm2)
                                             && !rawIdentifierUsedLater(stmts2, i + 1, nm2)
                                             && !exprReferencesName(rhs2, nm2)) {
                                         out2.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s2.metadata, s2.pos));
@@ -182,6 +188,26 @@ class BlockUnusedAssignmentDiscardTransforms {
             default:
                 body;
         }
+    }
+
+    static function rhsContainsChangesetCall(e: ElixirAST): Bool {
+        var found = false;
+        function scan(n: ElixirAST): Void {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case ERemoteCall(mod, _, _):
+                    switch (mod.def) { case EVar(m) if (m == "Ecto.Changeset"): found = true; default: }
+                case ERaw(code): if (code != null && code.indexOf("Ecto.Changeset.") != -1) found = true;
+                case ECall(t, _, as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                case ERemoteCall(t2, _, as2): scan(t2); if (as2 != null) for (a2 in as2) scan(a2);
+                case EBinary(_, l, r): scan(l); scan(r);
+                case EMatch(_, rhs): scan(rhs);
+                case EBlock(ss): for (s in ss) scan(s);
+                default:
+            }
+        }
+        scan(e);
+        return found;
     }
 
     static function exprReferencesName(e: ElixirAST, name: String): Bool {

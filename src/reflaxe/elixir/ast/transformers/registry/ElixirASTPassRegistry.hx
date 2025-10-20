@@ -1965,6 +1965,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
         });
+        // Presence shadowed binder rename inside EFn clauses (entry vs item clashes)
+        passes.push({
+            name: "PresenceEFnShadowedBinderRename",
+            description: "Rename shadowed anonymous-fn binders (e.g., item) to entry to avoid warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceEFnShadowedBinderRenameTransforms.pass
+        });
         // Localize Phoenix.Presence.* calls to current Presence module
         passes.push({
             name: "PresenceRouteLocalize",
@@ -2385,13 +2392,7 @@ class ElixirASTPassRegistry {
         });
 
 
-        // Final HEEx control tag rewrite to catch content introduced by prior passes
-        passes.push({
-            name: "HeexControlTagTransforms_Final",
-            description: "Final sweep to rewrite HXX-style <if>/<else> tags to HEEx blocks",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
-        });
+        // Final HEEx control tag rewrite removed; handled by main HeexControlTagTransforms earlier
 
         // Assigns type linter: validate @field usage in ~H against typed assigns typedef
         passes.push({
@@ -3246,10 +3247,11 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefTrailingAssignedVarReturnTransforms.pass
         });
+        // Disabled: generic ChangesetEnsureReturn handles trailing returns using actual last-assigned var
         passes.push({
             name: "EctoChangesetReturnFix",
-            description: "Ensure changeset/2 returns cs at the end",
-            enabled: true,
+            description: "(disabled) Legacy fix that appended cs; superseded by ChangesetEnsureReturn",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EctoChangesetReturnFixTransforms.pass
         });
         passes.push({
@@ -3292,6 +3294,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms.pass
         });
+        // Final repair: if changeset/2 body degraded to bare `cs`, rebuild to change(param1, param2)
+        passes.push({
+            name: "ChangesetBareCsRepair",
+            description: "Repair changeset/2 bodies reduced to bare cs by reconstructing change(p1, p2)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetBareCsRepairTransforms.pass
+        });
+        // Removed schema-specific rebuild; root cause fixed in ChangesetTransforms (preserve pure expressions)
         // Late safety net: ensure cs binder exists when validate_* present but cs not declared
         passes.push({
             name: "LateEnsureCsBinder",
@@ -3661,13 +3671,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.pass
         });
 
-        // Presence module fix (disabled): this pass rewrote presence functions to just return `socket`,
-        // which removes effectful calls (track/update/untrack) and diverges from intended snapshots.
-        // Disable by default; preserve presence API calls and let hygiene handle unused params.
+        // Presence module hygienics: underscore unused params and normalize simple helpers to return `socket`
         passes.push({
             name: "PresenceModuleFix",
-            description: "(disabled) Do not rewrite Presence functions to return socket; preserve effectful calls",
-            enabled: false,
+            description: "Underscore unused params and normalize trivial presence helpers to return `socket`",
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.pass
         });
 
@@ -3694,28 +3702,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsTextualScanTransforms.transformPass
         });
 
-        // Absolute final: ensure LiveView render(assigns) returns ~H
-        passes.push({
-            name: "HeexRenderStringToSigil_Final",
-            description: "Absolute final: convert render(assigns) trailing HTML string to ~H",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
-        });
-        // Absolute final: localize Phoenix.Presence.* to current Presence module
-        passes.push({
-            name: "PresenceRouteLocalize_Final",
-            description: "Absolute final: rewrite Phoenix.Presence.* calls inside Presence modules to current module",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceRouteLocalizeTransforms.pass
-        });
+        // Removed absolute final ~H conversion; ensured earlier by HeexRenderStringToSigil/HeexStringReturnToSigil
+        // Presence localization runs earlier in the Presence section
 
-        // Absolute final: promote mount/3 third param to `socket` and rewrite body refs
-        passes.push({
-            name: "LiveMountLatePromote_Final",
-            description: "Absolute final: ensure mount/3 uses `socket` as third param and body references",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.LiveViewMountLatePromoteTransforms.pass
-        });
+        // Removed duplicate absolute final mount promotion; covered by LiveMountLatePromote earlier
+        // Final section kept lean; mount and presence fixes are handled in their domain passes
 
         // Return only enabled passes (names carry no scheduling semantics)
         return passes.filter(p -> p.enabled);

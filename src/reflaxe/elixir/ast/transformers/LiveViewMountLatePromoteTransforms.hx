@@ -53,6 +53,10 @@ class LiveViewMountLatePromoteTransforms {
                 newParams[2] = PVar("socket");
                 var newBody = renameVarInBody(getBody(n), pname, "socket");
                 return makeASTWithMeta(isPrivate ? EDefp("mount", newParams, getGuards(n), newBody) : EDef("mount", newParams, getGuards(n), newBody), n.metadata, n.pos);
+            // If already `socket` in the head, still normalize any stray `_socket` references in the body
+            case PVar(pname2) if (pname2 == "socket"):
+                var fixedBody = renameVarInBody(getBody(n), "_socket", "socket");
+                return makeASTWithMeta(isPrivate ? EDefp("mount", params, getGuards(n), fixedBody) : EDef("mount", params, getGuards(n), fixedBody), n.metadata, n.pos);
             default:
                 return n;
         }
