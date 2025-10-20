@@ -94,10 +94,13 @@ class BareGetterRepoGetRepairTransforms {
         return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, params, guards, body):
+                    // Do not rewrite canonical Ecto changeset builders
+                    if (name == "changeset") return n;
                     var newBody = rewriteBody(body, params, repoMod);
                     #if sys if (newBody != body) Sys.println('[BareGetterRepoGetRepair] Rewrote def ' + name); #end
                     makeASTWithMeta(EDef(name, params, guards, newBody), n.metadata, n.pos);
                 case EDefp(name, params, guards, body):
+                    if (name == "changeset") return n;
                     var newBodyp = rewriteBody(body, params, repoMod);
                     #if sys if (newBodyp != body) Sys.println('[BareGetterRepoGetRepair] Rewrote defp ' + name); #end
                     makeASTWithMeta(EDefp(name, params, guards, newBodyp), n.metadata, n.pos);

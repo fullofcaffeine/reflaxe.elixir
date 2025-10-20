@@ -3160,16 +3160,16 @@ class BinderTransforms {
     }
 
     static function derivePreferredBinder(base: String): String {
-        // Use last segment after underscore if present, else base itself
-        var segs = base.split("_");
-        var last = segs[segs.length - 1];
-        // Normalize known endings
-        switch(last) {
-            case "level" | "action" | "user" | "todo" | "changeset" | "data" | "reason": return last;
-            default:
-                // fallback generic
-                return "value";
+        // Shape-based, domain-agnostic mapping
+        // - *_id   -> id
+        // - *error -> error
+        // - else   -> value (generic)
+        var last = (base != null && base.indexOf("_") != -1) ? base.split("_")[base.split("_").length - 1] : base;
+        if (last != null) {
+            if (StringTools.endsWith(last, "id")) return "id";
+            if (StringTools.endsWith(last, "error")) return "error";
         }
+        return "value";
     }
     public static function caseClauseBinderAliasInjectionPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {

@@ -346,6 +346,27 @@ class ChangesetTransforms {
         #if sys
         Sys.println('[ChangesetTransforms] normalizeBody invoked');
         #end
+        // Early exit: preserve pure expression bodies that directly return a Changeset pipeline
+        // (no assignments/blocks), to avoid introducing or expecting a `cs` binder.
+        var isSimpleExpr = switch (body.def) {
+            case EBlock(_)|EDo(_)|EIf(_,_,_)|ECase(_,_)|ECond(_): false;
+            case EBinary(Match, _, _)|EMatch(_, _): false;
+            default: true;
+        };
+        if (isSimpleExpr && containsChangesetCallsDetect(body)) {
+            return body; // keep direct returns intact
+        }
+        // Handle single-expression block that returns a pure changeset expression
+        switch (body.def) {
+            case EBlock(stmts) if (stmts.length == 1):
+                var only = stmts[0];
+                var onlySimple = switch (only.def) {
+                    case EBlock(_)|EDo(_)|EIf(_,_,_)|ECase(_,_)|ECond(_)|EBinary(Match,_,_)|EMatch(_, _): false;
+                    default: true;
+                };
+                if (onlySimple && containsChangesetCallsDetect(only)) return only;
+            default:
+        }
         // Ensure an initial `cs` binder exists for the changeset-producing expression
         function lhsAllWildcards(lhs: ElixirAST): Bool {
             return switch (lhs.def) {
@@ -674,6 +695,21 @@ class ChangesetTransforms {
 
         // Fourth pass: wrap conds rebinding to csVar
         return ElixirASTTransformer.transformNode(pass2d, wrapCondWithBinder);
+    }
+
+    // Helper: detect presence of Ecto.Changeset calls within an expression subtree
+    static function containsChangesetCallsDetect(e: ElixirAST): Bool {
+        return switch (e.def) {
+            case ERemoteCall(mod, fn, _):
+                switch (mod.def) { case EVar(m) if (m == "Ecto.Changeset"): true; default: false; }
+            case ERaw(code): code != null && code.indexOf("Ecto.Changeset.") != -1;
+            case ECall(_, _, args):
+                var found = false; if (args != null) for (a in args) if (containsChangesetCallsDetect(a)) { found = true; break; } found;
+            case ERemoteCall(t, _, args2):
+                if (containsChangesetCallsDetect(t)) true else { var f=false; if (args2 != null) for (a in args2) if (containsChangesetCallsDetect(a)) { f=true; break; } f; }
+            case EParen(inner): containsChangesetCallsDetect(inner);
+            default: false;
+        };
     }
 
     static inline function isThisLike(v: String): Bool {

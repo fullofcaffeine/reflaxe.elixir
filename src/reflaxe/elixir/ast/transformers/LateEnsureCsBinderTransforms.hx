@@ -78,6 +78,12 @@ class LateEnsureCsBinderTransforms {
         if (declares) return body;
 
         // Rewrite earliest candidate statement to cs = <expr>
+        function ensureTrailingCsBlock(stmts: Array<ElixirAST>): Array<ElixirAST> {
+            if (stmts == null || stmts.length == 0) return stmts;
+            var last = stmts[stmts.length - 1];
+            var endsWithCs = switch (last.def) { case EVar(v) if (v == "cs"): true; default: false; };
+            return endsWithCs ? stmts : stmts.concat([ makeAST(EVar("cs")) ]);
+        }
         return switch (body.def) {
             case EBlock(stmts):
                 var out:Array<ElixirAST> = [];
@@ -105,8 +111,13 @@ class LateEnsureCsBinderTransforms {
                     #if sys Sys.println('[LateEnsureCsBinder] Fallback binding cs from first stmt'); #end
                     var newStmts = [ makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), rhs0), s0.metadata, s0.pos) ];
                     for (i in 1...stmts.length) newStmts.push(stmts[i]);
-                    makeASTWithMeta(EBlock(newStmts), body.metadata, body.pos);
-                } else makeASTWithMeta(EBlock(out), body.metadata, body.pos);
+                    // Always end with `cs`
+                    var ensured = ensureTrailingCsBlock(newStmts);
+                    makeASTWithMeta(EBlock(ensured), body.metadata, body.pos);
+                } else {
+                    var ensured2 = ensureTrailingCsBlock(out);
+                    makeASTWithMeta(EBlock(ensured2), body.metadata, body.pos);
+                }
             case EDo(stmts2):
                 var blk = makeAST(EBlock(stmts2));
                 var res = ensureBinder(blk);
