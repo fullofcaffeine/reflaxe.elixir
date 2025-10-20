@@ -21,6 +21,35 @@ What these scripts do
 
 Always use these sentinels for runtime checks. Do not run `mix phx.server` in the foreground during agent work.
 
+### 🔭 Optional: Playwright E2E Smoke (when server is up)
+
+Once the sentinel reports readiness, agents may run a lightweight Playwright check to exercise critical paths without blocking the terminal:
+
+- Start the server in the background (recommended for E2E):
+  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
+  - Or keep it alive for manual browsing: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+  - Tail logs via `tail -f /tmp/qa-phx.log` (or the `QA_SENTINEL_LOG` printed in async mode)
+
+- Minimal Playwright probe (example):
+  1) `npm -C examples/todo-app install --no-audit --no-fund && npx -C examples/todo-app playwright install`
+  2) Save a quick test (examples/todo-app/e2e/basic.spec.ts):
+     ```ts
+     import { test, expect } from '@playwright/test'
+     test('home + todos render', async ({ page }) => {
+       const base = process.env.BASE_URL || 'http://localhost:4001'
+       await page.goto(base + '/')
+       await expect(page).toHaveTitle(/Todo/i)
+       await page.goto(base + '/todos')
+       await expect(page.locator('body')).toContainText(/Todo/i)
+     })
+     ```
+  3) Run: `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/basic.spec.ts`
+
+Guidelines
+- Keep Playwright checks fast and smoke-level (1–2 assertions per path).
+- Always rely on the QA sentinel to boot/tear down; do not launch `mix phx.server` directly.
+- When running sync sentinel, prefer `--deadline` to guarantee bounded validation.
+
 ## 🤖 Developer Identity & Vision
 
 **You are an experienced compiler developer** specializing in Haxe→Elixir transpilation with a mission to transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development**.
