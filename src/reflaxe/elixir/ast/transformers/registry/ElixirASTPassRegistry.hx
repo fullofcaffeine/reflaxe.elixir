@@ -724,6 +724,15 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.pass
         });
 
+        // Normalize if-then branches that accidentally emit nested `do` blocks
+        // Ensure any EDo in the then-branch becomes an EBlock to avoid `if ... do do ... end`
+        passes.push({
+            name: "IfThenDoToBlock",
+            description: "Normalize EIf then-branch EDo to EBlock (prevents nested do)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfThenDoToBlockTransforms.normalizePass
+        });
+
         // Remove redundant temp-to-binder assignments inside case bodies
         passes.push({
             name: "CasePatternTempAssignmentRemoval",
@@ -3522,56 +3531,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
         });
-        // Late: promote underscored params even when only underscored variant is used in body
-        passes.push({
-            name: "WebDefHeadPromotion_Final",
-            description: "Promote underscored Web/Live def/defp params to base names when body uses base or underscored variant",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.WebDefHeadPromotionTransforms.pass
-        });
+        // Late: promote underscored params even when only underscored variant is used in body (duplicate re-run removed)
 
-        // Re-run list helper normalizations at absolute-final to ensure effect after late hygiene
-        passes.push({
-            name: "ContainsToEnumMember_Final",
-            description: "Late: arr.contains(v) -> Enum.member?(arr, v)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.containsToEnumMemberPass
-        });
-        passes.push({
-            name: "MemberFilterRemovalFix_Final",
-            description: "Late: Rewrite member?-guarded filter self-compare to compare with value",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.memberFilterRemovalFixPass
-        });
-        passes.push({
-            name: "FilterReturnInlineFix_Final",
-            description: "Late: Inline filter result into return when original list would be returned",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
-        });
-        passes.push({
-            name: "FilterWildcardAssignToVar_Final",
-            description: "Late: Rewrite `_ = Enum.filter(var, ...)` preceding a trailing `var` return to a proper rebind",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FilterWildcardAssignToVarTransforms.fixPass
-        });
+        // Duplicate final re-runs of ListHelpersFix and FilterWildcardAssignToVar removed
 
-        // Ultra-final normalization: avoid nested do/end in if-then branches
-        passes.push({
-            name: "IfThenDoToBlock_Final",
-            description: "Normalize EIf then-branch EDo to EBlock to prevent `if ... do do ... end`",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.IfThenDoToBlockTransforms.normalizePass
-        });
+        // Duplicate final IfThenDoToBlock removed (handled earlier by domain pass)
 
-        // Ultra-final: Ensure trailing switch_result_* returns are replaced by the
-        // corresponding case expression moved to the end of the block
-        passes.push({
-            name: "SwitchResultInlineReturnFix_Final",
-            description: "Replace trailing switch_result_* with the last case expression in the block",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.pass
-        });
+        // Duplicate final SwitchResultInlineReturnFix removed (handled earlier by domain pass)
 
 
         // Reorder handle_event/3 clauses to be grouped contiguously and place catch-alls last
@@ -3686,21 +3652,9 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LiveMountReturnFinalizeTransforms.pass
         });
-        // Final: Bare getter repair (Repo.get(:var, id)) for modules using Repo
-        passes.push({
-            name: "BareGetterRepoGetRepair_Final",
-            description: "Final pass: rewrite bare-var getter bodies to Repo.get(:var, id) when Repo is used",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.pass
-        });
+        // Duplicate final BareGetterRepoGetRepair removed (handled earlier by domain pass)
 
-        // Absolute final HEEx safety: ensure assigns exists for any function body still containing ~H
-        passes.push({
-            name: "HeexEnsureAssignsTextualScan_Final",
-            description: "Absolute final: textual scan for ~H in function bodies; inject assigns = %{} when missing",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsTextualScanTransforms.transformPass
-        });
+        // Absolute-final HEEx assigns textual scan removed; earlier HEEx passes guarantee assigns handling
 
         // Removed absolute final ~H conversion; ensured earlier by HeexRenderStringToSigil/HeexStringReturnToSigil
         // Presence localization runs earlier in the Presence section

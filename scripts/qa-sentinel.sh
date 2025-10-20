@@ -26,6 +26,8 @@ set +m
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
 #   --deadline SECS  Hard cap: watchdog kills background job after SECS
+#   --playwright     After readiness, run Playwright tests (examples/todo-app/e2e/*.spec.ts by default)
+#   --e2e-spec GLOB  Playwright spec or glob (relative to --app); default: e2e/*.spec.ts
 #
 # ENV (timeouts/probes)
 #   BUILD_TIMEOUT      Haxe build timeout (default: 300s)
@@ -71,6 +73,9 @@ QUIET=0
 # Non-blocking options
 ASYNC=0
 DEADLINE=""
+# Optional E2E
+RUN_PLAYWRIGHT=0
+E2E_SPEC="e2e/*.spec.ts"
 # Timeouts and probe counts (sane defaults; configurable via env)
 BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 DEPS_TIMEOUT=${DEPS_TIMEOUT:-300s}
@@ -86,6 +91,8 @@ while [[ $# -gt 0 ]]; do
     --keep-alive) KEEP_ALIVE=1; shift 1 ;;
     --verbose|-v) VERBOSE=1; shift 1 ;;
     --async) ASYNC=1; shift 1 ;;
+    --playwright) RUN_PLAYWRIGHT=1; shift 1 ;;
+    --e2e-spec) E2E_SPEC="$2"; shift 2 ;;
     --no-heartbeat) NO_HEARTBEAT=1; shift 1 ;;
     --quiet|-q) QUIET=1; VERBOSE=0; shift 1 ;;
     --deadline) DEADLINE="$2"; shift 2 ;;
@@ -186,6 +193,7 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   CHILD_FLAGS=("--app" "$APP_DIR" "--port" "$PORT")
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
+  if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then CHILD_FLAGS+=("--playwright" "--e2e-spec" "$E2E_SPEC"); fi
   log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
   # Launch background child fully detached; prefer setsid, fallback to nohup
   if command -v setsid >/dev/null 2>&1; then
@@ -216,6 +224,9 @@ log "[QA]  3) mix compile (COMPILE_TIMEOUT=$COMPILE_TIMEOUT)"
 log "[QA]  4) Start Phoenix (background, non-blocking)"
 log "[QA]  5) Readiness probe (READY_PROBES=$READY_PROBES, 0.5s interval)"
 log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
+if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
+  log "[QA]  7) Run Playwright E2E (spec: $E2E_SPEC)"
+fi
 log "[QA] Config: PORT=$PORT KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
 
 # Optional overall deadline for synchronous mode too
@@ -375,6 +386,21 @@ else
 fi
 
 log "[QA] OK: build + runtime smoke passed with zero warnings (WAE)"
+
+# Optional: run Playwright tests after readiness
+if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
+  log "[QA] Step 7: Running Playwright tests ($E2E_SPEC)"
+  # Install dependencies and browsers for Playwright in the app dir
+  run_step_with_log "Playwright npm install" 180s /tmp/qa-playwright-install.log "npm -C . install --no-audit --no-fund" || { cleanup || true; exit 1; }
+  run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "npx -C . playwright install" || { cleanup || true; exit 1; }
+  if ! BASE_URL="http://localhost:$PORT" npx -C . playwright test "$E2E_SPEC" >/tmp/qa-playwright-run.log 2>&1; then
+    log "[QA] ❌ Playwright tests failed. Last 120 lines:"
+    tail -n 120 /tmp/qa-playwright-run.log || true
+    cleanup || true
+    exit 1
+  fi
+  log "[QA] ✅ Playwright tests passed"
+fi
 
 if [[ "$KEEP_ALIVE" -eq 1 ]]; then
   log "[QA] KEEP-ALIVE enabled. Phoenix continues running."
