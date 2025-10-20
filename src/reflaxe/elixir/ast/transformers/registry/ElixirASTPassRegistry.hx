@@ -1965,6 +1965,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
         });
+        // Localize Phoenix.Presence.* calls to current Presence module
+        passes.push({
+            name: "PresenceRouteLocalize",
+            description: "Inside Presence modules, rewrite Phoenix.Presence.* to current module",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceRouteLocalizeTransforms.pass
+        });
         // Safety net: qualify bare SafePubSub to Phoenix.SafePubSub
         passes.push({
             name: "SafePubSubAliasFix",
@@ -1991,6 +1998,13 @@ class ElixirASTPassRegistry {
             description: "Promote mount/3 third param to `socket` (shape-based, no app coupling)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LiveViewMountSocketParamPromoteTransforms.promotePass
+        });
+        // Very late fallback promotion to ensure no underscored socket leaks
+        passes.push({
+            name: "LiveMountLatePromote",
+            description: "Late safety net: rename mount/3 third param to `socket` and rewrite body refs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveViewMountLatePromoteTransforms.pass
         });
         // LiveView mount flow normalization to restore required binders
         passes.push({
