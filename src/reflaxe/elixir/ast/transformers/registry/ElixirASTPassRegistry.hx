@@ -3701,6 +3701,21 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
         });
+        // Absolute final: localize Phoenix.Presence.* to current Presence module
+        passes.push({
+            name: "PresenceRouteLocalize_Final",
+            description: "Absolute final: rewrite Phoenix.Presence.* calls inside Presence modules to current module",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceRouteLocalizeTransforms.pass
+        });
+
+        // Absolute final: promote mount/3 third param to `socket` and rewrite body refs
+        passes.push({
+            name: "LiveMountLatePromote_Final",
+            description: "Absolute final: ensure mount/3 uses `socket` as third param and body references",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveViewMountLatePromoteTransforms.pass
+        });
 
         // Return only enabled passes (names carry no scheduling semantics)
         return passes.filter(p -> p.enabled);
