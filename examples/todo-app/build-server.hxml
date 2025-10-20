@@ -61,6 +61,9 @@
 -D debug_success_unifier
 -D debug_presence
 
+# Enable deterministic render string → ~H conversion
+-D hxx_string_to_sigil
+
 # Main server classes to compile
 TodoApp
 TodoAppRouter

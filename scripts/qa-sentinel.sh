@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Disable job control notifications to avoid background job status lines like "Killed: 9"
+set +m
 
 # ============================================================================
 # QA Sentinel: Non‑Blocking Phoenix App Validation (Haxe→Elixir→Runtime)
@@ -63,6 +65,9 @@ APP_DIR="examples/todo-app"
 PORT=4001
 KEEP_ALIVE=0
 VERBOSE=0
+# Noise control
+NO_HEARTBEAT=0
+QUIET=0
 # Non-blocking options
 ASYNC=0
 DEADLINE=""
@@ -81,6 +86,8 @@ while [[ $# -gt 0 ]]; do
     --keep-alive) KEEP_ALIVE=1; shift 1 ;;
     --verbose|-v) VERBOSE=1; shift 1 ;;
     --async) ASYNC=1; shift 1 ;;
+    --no-heartbeat) NO_HEARTBEAT=1; shift 1 ;;
+    --quiet|-q) QUIET=1; VERBOSE=0; shift 1 ;;
     --deadline) DEADLINE="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 2 ;;
   esac
@@ -100,18 +107,28 @@ run_step_with_log() {
   local start_ts=$(date +%s)
   log "[QA] ${desc} (timeout=${timeout_val})"
   # Start a heartbeat so callers always see forward progress even if the command is quiet
-  ( while true; do sleep "$PROGRESS_INTERVAL"; log "[QA] .. ${desc} still running"; done ) &
-  local heartbeat_pid=$!
-  # Ensure the heartbeat is always stopped when this function returns, without leaking
-  # a trap that references a local variable after scope exit. Bind the numeric PID now.
-  local __hb="$heartbeat_pid"
-  trap "kill -9 $__hb >/dev/null 2>&1 || true" RETURN
+  local heartbeat_pid=""
+  if [[ "$NO_HEARTBEAT" -eq 0 ]]; then
+    ( while true; do sleep "$PROGRESS_INTERVAL"; log "[QA] .. ${desc} still running"; done ) >/dev/null 2>&1 &
+    heartbeat_pid=$!
+    # Ensure the heartbeat is always stopped when this function returns without noisy job messages
+    local __hb="$heartbeat_pid"
+    trap 'if [[ -n "$__hb" ]] && kill -0 "$__hb" 2>/dev/null; then kill "$__hb" 2>/dev/null || true; wait "$__hb" 2>/dev/null || true; fi' RETURN
+  fi
 
   # Prefer GNU timeout; then gtimeout (macOS coreutils); else manual watchdog
   if command -v timeout >/dev/null 2>&1; then
-    ( timeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+    if [[ "$QUIET" -eq 1 ]]; then
+      ( timeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
+    else
+      ( timeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+    fi
   elif command -v gtimeout >/dev/null 2>&1; then
-    ( gtimeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+    if [[ "$QUIET" -eq 1 ]]; then
+      ( gtimeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
+    else
+      ( gtimeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+    fi
   else
     # Manual watchdog fallback (portable): background command and kill after timeout
     # Parse numeric seconds from timeout_val (e.g., 300s -> 300)
@@ -143,13 +160,13 @@ run_step_with_log() {
     fi
     set -e
     # Mirror output to console on failure or verbose
-    if [[ "$VERBOSE" -eq 1 || "$rc" -ne 0 ]]; then tail -n +1 "$logfile" | tail -n 200; fi
+    if [[ "$VERBOSE" -eq 1 || ( "$QUIET" -eq 0 && "$rc" -ne 0 ) ]]; then tail -n +1 "$logfile" | tail -n 200; fi
   fi
 
   local end_ts=$(date +%s)
   local dur=$(( end_ts - start_ts ))
   # Stop heartbeat once step finishes (in addition to RETURN trap)
-  kill -9 "$heartbeat_pid" >/dev/null 2>&1 || true
+  if kill -0 "$heartbeat_pid" 2>/dev/null; then kill "$heartbeat_pid" >/dev/null 2>&1 || true; wait "$heartbeat_pid" 2>/dev/null || true; fi
   # Clear the RETURN trap for subsequent calls
   trap - RETURN
   if [[ "$rc" -ne 0 ]]; then
@@ -172,9 +189,9 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
   # Launch background child fully detached; prefer setsid, fallback to nohup
   if command -v setsid >/dev/null 2>&1; then
-    setsid env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    setsid env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
   else
-    nohup env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    nohup env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
   fi
   SENTINEL_PID=$!
   # Disown the child so shells never warn/wait on background jobs

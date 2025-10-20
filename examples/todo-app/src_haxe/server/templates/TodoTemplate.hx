@@ -1,4 +1,4 @@
-package templates;
+package server.templates;
 
 import reflaxe.elixir.macros.HXX;
 
@@ -477,8 +477,14 @@ class TodoTemplate {
         };
     }
     
-    public static function formatDate(date: String): String {
-        return date; // Would implement proper date formatting
+    public static function formatDate(date: Date): String {
+        // Robust runtime formatter: handles NaiveDateTime, DateTime, and strings
+        return untyped __elixir__('case {0} do
+  %NaiveDateTime{} = nd -> NaiveDateTime.to_iso8601(nd)
+  %DateTime{} = dt -> DateTime.to_iso8601(dt)
+  s when is_binary(s) -> s
+  other -> Kernel.to_string(other)
+end', date);
     }
     
     public static function getEmptyStateMessage(filter: String, search_query: String): String {

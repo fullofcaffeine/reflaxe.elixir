@@ -269,7 +269,8 @@ abstract Date(DateTime) from DateTime to DateTime {
         #if macro
         return (cast this : haxe.Date).toString();
         #else
-        return this.to_iso8601();
+        // Robust runtime formatting compatible with DateTime and NaiveDateTime
+        return untyped __elixir__('case {0} do\n  %NaiveDateTime{} = nd -> NaiveDateTime.to_iso8601(nd)\n  %DateTime{} = dt -> DateTime.to_iso8601(dt)\n  other -> Kernel.to_string(other)\nend', this);
         #end
     }
 

@@ -1012,7 +1012,7 @@ static function getUserFromSession(session: Dynamic): User {
 									Priority: ${todo.priority}
 								</span>
 								${todo.dueDate != null ? 
-									'<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${todo.dueDate}</span>' : 
+									'<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${server.templates.TodoTemplate.formatDate(todo.dueDate)}</span>' : 
 									''}
 								${renderTags(todo.tags)}
 							</div>
