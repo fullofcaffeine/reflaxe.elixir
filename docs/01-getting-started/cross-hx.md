@@ -97,21 +97,21 @@ Rule of thumb:
 
 ## Example: Tiny Target‑Specific Helper
 
-Transitional HXX stub used in this repo (std/HXX.cross.hx):
+HXX status update: The transitional stub (`std/HXX.cross.hx`) has been removed. HXX now compiles via a macro by default:
 
 ```haxe
-@:extern
+// std/HXX.hx
 class HXX {
-  public static inline function hxx(templateStr:String):String {
-    return templateStr; // author writes HXX/HEEx; AST pass converts final string to ~H
+  public static macro function hxx(template) {
+    return reflaxe.elixir.macros.HXX.hxx(template);
   }
-  public static inline function block(templateStr:String):String {
-    return templateStr; // nested fragments
+  public static macro function block(content) {
+    return reflaxe.elixir.macros.HXX.block(content);
   }
 }
 ```
 
-Why this exists: it lets application code call `HXX.hxx("...")` today, while the compiler’s AST pass converts the final returned string into a `~H` sigil and normalizes control tags. The long‑term plan is to use the macro implementation (compile‑time) for even better safety, but the stub demonstrates the pattern: `.cross.hx` can expose a familiar API with target‑friendly output and no runtime overhead.
+This macro path validates and transforms templates at compile time and feeds the builder with `@:heex` literals that are emitted as `ESigil("H", ...)` — no string → ~H post‑processing required.
 
 ## Pitfalls and How We Avoid Them
 

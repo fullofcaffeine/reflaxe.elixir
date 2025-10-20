@@ -2,7 +2,16 @@
 
 This document tracks the planned migration from the transitional `std/HXX.cross.hx` stub to a fully macro‑driven, type‑checked HXX experience (akin to TSX), and the intermediate safeguards that keep generated HEEx valid and idiomatic during the transition.
 
-## Current State (Transitional Stub)
+## Status (2025-10-20)
+
+- Step 4 complete: default HXX now uses the macro path via `std/HXX.hx` (forwarder to `reflaxe.elixir.macros.HXX`).
+- Step 5 complete: transitional stub `std/HXX.cross.hx` removed after green QA sentinel on `examples/todo-app` and snapshot coverage.
+- Added tests:
+  - `phoenix/hxx_inline_expr` and `phoenix/hxx_block_if` – deterministic ~H + control-tag rewrite
+  - `phoenix/hxx_assigns_linter_ok` – valid assigns usage compiles
+  - `negative/HXXAssignsLinterErrors` – unknown assigns and type mismatch rejected
+
+## Previous State (Transitional Stub)
 
 - File: `std/HXX.cross.hx`
 - WHAT: Minimal extern/inline class exposing `HXX.hxx(String)` and `HXX.block(String)` that returns the input string.
@@ -47,7 +56,7 @@ Limitations:
 - Keep target‑conditional gating so macro code doesn’t leak Elixir‑only internals into non‑Elixir contexts.
 
 5) Remove transitional stub
-- Once QA sentinel is green for example apps and snapshots lock the behavior, delete `std/HXX.cross.hx`.
+- DONE (2025-10-20): `std/HXX.cross.hx` deleted. Macro is the sole path.
 
 ## Guardrails & Non‑Goals
 
@@ -60,4 +69,3 @@ Limitations:
 - docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md — Staging `.cross.hx` to `std/_std/`
 - docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md — Target‑conditional classpath injection
 - docs/03-compiler-development/hxx-template-compilation.md — HXX → HEEx pipeline and transforms
-
