@@ -1595,6 +1595,22 @@ class ElixirASTTransformer {
         
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
+                case EModule(name, attributes, body):
+                    // Handle module nodes constructed via EModule (ModuleBuilder default)
+                    // Inject `use Phoenix.Component` at the top of the body when ~H is present
+                    var hasImport = false;
+                    // Scan existing body for EUse/EImport Phoenix.Component
+                    for (stmt in body) switch (stmt.def) {
+                        case EUse(mod, _): if (mod == "Phoenix.Component") { hasImport = true; }
+                        case EImport(mod, _, _): if (mod == "Phoenix.Component") { hasImport = true; }
+                        default:
+                    }
+                    if (!hasImport) {
+                        var importStmt = makeAST(EUse("Phoenix.Component", []));
+                        var newBody = [importStmt].concat(body);
+                        return makeASTWithMeta(EModule(name, attributes, newBody), node.metadata, node.pos);
+                    }
+                    return node;
                 case EDefmodule(name, doBlock):
                     #if debug_phoenix_component_import
                     trace('[XRay PhoenixComponentImport] Processing defmodule: $name');

@@ -81,16 +81,18 @@ class LiveViewPreserver {
                     }
                     
                     // Also check for other Phoenix annotations that need preservation
+                    // Include component modules so CoreComponents and similar are not DCE'd
                     if (cls.meta.has(":controller") || cls.meta.has(":channel") || 
                         cls.meta.has(":endpoint") || cls.meta.has(":router") ||
-                        cls.meta.has(":presence") || cls.meta.has(":socket")) {
+                        cls.meta.has(":presence") || cls.meta.has(":socket") ||
+                        cls.meta.has(":component") || cls.meta.has(":phoenix.components")) {
                         
                         // Add @:keep to preserve from DCE
                         if (!cls.meta.has(":keep")) {
                             cls.meta.add(":keep", [], cls.pos);
                         }
                         
-                        // Preserve all static methods for Phoenix components
+                        // Preserve all static methods for Phoenix components/modules
                         for (field in cls.statics.get()) {
                             if (!field.meta.has(":keep")) {
                                 field.meta.add(":keep", [], field.pos);

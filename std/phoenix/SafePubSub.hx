@@ -171,10 +171,8 @@ class SafePubSub {
               s = to_string({1})
               case String.split(s, ".") do
                 [mod_str, fun_str] ->
-                  mod = mod_str
-                        |> String.split("_")
-                        |> Enum.map(&String.capitalize/1)
-                        |> Module.concat()
+                  # Convert underscored module name to a single CamelCase alias (e.g., "todo_pub_sub" -> Elixir.TodoPubSub)
+                  mod = ("Elixir." <> Macro.camelize(mod_str)) |> String.to_atom()
                   apply(mod, String.to_atom(fun_str), [{0}])
                 _ ->
                   msg = "invalid message_parser atom: " <> inspect({1})
@@ -183,10 +181,7 @@ class SafePubSub {
             is_binary({1}) ->
               case String.split({1}, ".") do
                 [mod_str, fun_str] ->
-                  mod = mod_str
-                        |> String.split("_")
-                        |> Enum.map(&String.capitalize/1)
-                        |> Module.concat()
+                  mod = ("Elixir." <> Macro.camelize(mod_str)) |> String.to_atom()
                   apply(mod, String.to_atom(fun_str), [{0}])
                 _ ->
                   msg = "invalid message_parser string: " <> inspect({1})

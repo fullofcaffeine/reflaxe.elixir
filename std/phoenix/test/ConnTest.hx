@@ -28,19 +28,11 @@ import phoenix.test.Conn;
 extern class ConnTest {
     /**
      * Build a test connection.
-     * Creates a fresh Conn struct for testing.
+     * Overloads mirror Phoenix.ConnTest.build_conn/0|2|3.
      */
-    public static function build_conn(): Conn;
-    
-    /**
-     * Build a connection with custom method and path.
-     */
+    @:overload(function(): Conn {})
+    @:overload(function(method: String, path: String, params: Dynamic): Conn {})
     public static function build_conn(method: String, path: String): Conn;
-    
-    /**
-     * Build a connection with method, path, and params.
-     */
-    public static function build_conn(method: String, path: String, params: Dynamic): Conn;
     
     /**
      * Make a GET request with parameters.
@@ -154,13 +146,10 @@ extern class ConnTest {
     
     /**
      * Bypass Phoenix router for direct controller testing.
+     * Overloads mirror Phoenix.ConnTest.bypass_through/2|3.
      */
+    @:overload(function(conn: Conn, router: String, action: String): Conn {})
     public static function bypass_through(conn: Conn, router: String): Conn;
-    
-    /**
-     * Bypass with specific action.
-     */
-    public static function bypass_through(conn: Conn, router: String, action: String): Conn;
     
     /**
      * Dispatch the connection through the router.

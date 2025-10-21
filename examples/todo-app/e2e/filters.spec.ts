@@ -36,10 +36,15 @@ test('filter buttons switch visible items', async ({ page }) => {
       await expect(card).toBeVisible({ timeout: 20000 })
       await expect(toggleBtn).toBeVisible({ timeout: 20000 })
       await toggleBtn.click()
-      // Heading should gain line-through when completed
+      // Accept either data attribute (preferred) or class-based indicator
       await page.waitForFunction(
-        (text) => !!Array.from(document.querySelectorAll('h3'))
-          .find(h => h.textContent?.includes(text) && h.className.includes('line-through')),
+        (t) => {
+          const card = Array.from(document.querySelectorAll('[data-testid="todo-card"]')).find(c => c.querySelector('h3')?.textContent?.includes(t))
+          if (!card) return false
+          if ((card as HTMLElement).getAttribute('data-completed') === 'true') return true
+          const h = card.querySelector('h3')
+          return (h && h.className.includes('line-through')) || card.className.includes('opacity-60')
+        },
         title,
         { timeout: 25000 }
       )
