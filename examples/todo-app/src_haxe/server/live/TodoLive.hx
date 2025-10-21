@@ -262,12 +262,25 @@ class TodoLive {
 	/**
 	 * Create a new todo with typed parameters - no conversion needed!
 	 */
-	static function createTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>) : Socket<TodoLiveAssigns> {
-		// Add userId from socket assigns
-        params.userId = socket.assigns.current_user.id;
-		
-		// Direct use of typed params - no conversion!
-		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), params);
+    static function createTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>) : Socket<TodoLiveAssigns> {
+        // Convert incoming LiveView string params to typed TodoParams explicitly to avoid
+        // string-key map issues and ensure proper types (date, tags, booleans) are used.
+        // Note: LiveView delivers string keys; use Reflect to extract safely.
+        var evTitle: String = Reflect.field(params, "title");
+        var evDesc: String = Reflect.field(params, "description");
+        var evPri: String = Reflect.field(params, "priority");
+        var evDue: String = Reflect.field(params, "due_date");
+        var evTags: String = Reflect.field(params, "tags");
+        var todoParams: server.schemas.Todo.TodoParams = {
+            title: evTitle,
+            description: evDesc,
+            completed: false,
+            priority: evPri != null ? evPri : "medium",
+            dueDate: evDue != null && evDue != "" ? Date.fromString(evDue) : null,
+            tags: evTags != null ? parseTags(evTags) : [],
+            userId: socket.assigns.current_user.id
+        };
+        var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), todoParams);
 		
 		// Use type-safe Repo operations
 		switch (Repo.insert(changeset)) {

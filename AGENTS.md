@@ -63,6 +63,34 @@ Best‑practice notes:
 - Keep Playwright specs under ~1 minute total; prefer resilient selectors (e.g., `getByPlaceholder`, `data-testid`).
 - Use sentinel for lifecycle; never run `mix phx.server` in foreground.
 
+### 🧪 QA Layers and Responsibilities
+
+This repo exercises quality at three distinct layers. Keep them separate and use the right tool at each layer:
+
+1) Compiler layer — Snapshot tests (Haxe → Elixir codegen)
+- Location: `test/snapshot/**`
+- Runs: `make -C test summary` (positive) and `make -C test summary-negative` (negative)
+- Purpose: Validate AST → Elixir printer shapes and transforms deterministically. No app runtime.
+
+2) Integration layer — Todo‑app build + boot (Compiler E2E)
+- Entrypoint: `scripts/qa-sentinel.sh`
+- Steps: Haxe build → mix deps.get → mix compile → boot Phoenix (background) → readiness probe → `GET /` → log scan
+- Runs (examples):
+  - Quick: `npm run qa:sentinel`
+  - Async: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 300`
+  - Keep alive: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+- Purpose: Prove compiler output integrates with Phoenix correctly and runs without runtime errors.
+
+3) Application layer — App tests (Elixir ExUnit + Playwright E2E)
+- ExUnit (authored in Haxe, compiles to idiomatic Elixir tests):
+  - Recommended for LiveView/ConnTest coverage; see docs/02-user-guide/exunit-testing.md
+  - Keep these fast and deterministic; most UI logic belongs here (Testing Trophy).
+- Playwright E2E (TypeScript, thin real‑browser layer):
+  - Location: `examples/todo-app/e2e/*.spec.ts`
+  - Run standalone: `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test`
+  - Run via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+  - Purpose: Validate hydration/assets/hooks and critical user journeys cross‑browser; keep under ~1 minute.
+
 Guidelines
 - Keep Playwright checks fast and smoke-level (1–2 assertions per path).
 - Always rely on the QA sentinel to boot/tear down; do not launch `mix phx.server` directly.
