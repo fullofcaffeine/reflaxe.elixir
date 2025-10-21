@@ -10,6 +10,8 @@ test('filter buttons switch visible items', async ({ page }) => {
   const mk = async (title: string, complete: boolean) => {
     // Use deterministic test ids for creation flow; wait on title input (most stable)
     await page.getByTestId('btn-new-todo').click()
+    // Assert the toggle button shows Cancel (guard that event fired)
+    await expect(page.getByTestId('btn-new-todo')).toContainText(/Cancel|✖/i)
     const titleInput = page.getByTestId('input-title')
     await expect(titleInput).toBeVisible({ timeout: 15000 })
     await titleInput.fill(title)
