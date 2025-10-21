@@ -1729,7 +1729,39 @@ class ElixirASTPrinter {
             // Phoenix/Framework Specific
             // ================================================================
             case ESigil(type, content, modifiers):
-                '~' + type + '"""' + '\n' + content + '\n' + '"""' + modifiers;
+                // HEEx indentation normalization
+                inline function normalizeHeexIndent(s: String): String {
+                    if (s == null || s.length == 0) return s;
+                    // Split lines
+                    var lines = s.split('\n');
+                    // Trim leading/trailing blank lines
+                    var start = 0;
+                    while (start < lines.length && StringTools.trim(lines[start]) == "") start++;
+                    var endIdx = lines.length - 1;
+                    while (endIdx >= start && StringTools.trim(lines[endIdx]) == "") endIdx--;
+                    if (start > endIdx) return ""; // all blank
+                    var slice = lines.slice(start, endIdx + 1);
+                    // Compute shared indent (spaces only for HEEx; tabs preserved if present)
+                    var minIndent = 1000000;
+                    for (ln in slice) {
+                        if (StringTools.trim(ln) == "") continue;
+                        var i = 0;
+                        while (i < ln.length && ln.charAt(i) == ' ') i++;
+                        if (i < minIndent) minIndent = i;
+                    }
+                    if (minIndent == 1000000) minIndent = 0;
+                    // Strip shared indent
+                    var out = new StringBuf();
+                    for (i in 0...slice.length) {
+                        var ln = slice[i];
+                        if (minIndent > 0 && ln.length >= minIndent) ln = ln.substr(minIndent);
+                        out.add(ln);
+                        if (i < slice.length - 1) out.add('\n');
+                    }
+                    return out.toString();
+                }
+                var normalized = normalizeHeexIndent(content);
+                '~' + type + '"""' + '\n' + normalized + '\n' + '"""' + modifiers;
                 
             case ERaw(code):
                 // Raw code injection with conservative Ecto.from atom→module qualification
