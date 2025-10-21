@@ -22,6 +22,9 @@ set +m
 # FLAGS
 #   --app PATH       Default: examples/todo-app
 #   --port N         Default: 4001 (auto-detect Phoenix-reported port fallback)
+#   --env NAME       Mix environment (dev|test|e2e|prod). Default: dev
+#   --reuse-db       For non-dev envs, do not drop DB; ensure created + migrate only
+#   --seeds PATH     Run a seeds script after migrations (e.g., priv/repo/seeds.e2e.exs)
 #   --keep-alive     Do not kill Phoenix on exit; print PHX_PID and PORT
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
@@ -41,7 +44,8 @@ set +m
 #         Keep:  `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
 #   Layer 3 – App E2E (browser)
 #     - Optional Step 7 when `--playwright` is used
-#     - Run entire E2E via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
+#     - Use a dedicated env `--env e2e` (separate DB, server=true, PORT honored)
+#     - Run entire E2E via sentinel: `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600`
 #     - Or standalone against a keep-alive server: `BASE_URL=http://localhost:$PORT npx -C examples/todo-app playwright test`
 #   Testing Trophy Guidance
 #     - Most coverage via Haxe-authored ExUnit (LiveView/ConnTest)
@@ -49,10 +53,10 @@ set +m
 #
 # TDD LOOP (Recommended)
 #   1) Write/adjust a Playwright spec in examples/todo-app/e2e/ to describe the user-visible behavior.
-#   2) Start server non-blocking: scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v
+#   2) Start server non-blocking: scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --keep-alive -v
 #   3) Run: BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/<spec>.ts
 #   4) Implement the fix generically (no app-coupling) and re-run with --playwright:
-#      scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/<spec>.ts" --deadline 600
+#      scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --playwright --e2e-spec "e2e/<spec>.ts" --deadline 600
 #   --playwright     After readiness, run Playwright tests (examples/todo-app/e2e/*.spec.ts by default)
 #   --e2e-spec GLOB  Playwright spec or glob (relative to --app); default: e2e/*.spec.ts
 #
@@ -92,6 +96,9 @@ set +m
 
 APP_DIR="examples/todo-app"
 PORT=4001
+ENV_NAME="dev"
+REUSE_DB=0
+SEEDS_FILE=""
 KEEP_ALIVE=0
 VERBOSE=0
 # Noise control
@@ -102,7 +109,8 @@ ASYNC=0
 DEADLINE=""
 # Optional E2E
 RUN_PLAYWRIGHT=0
-E2E_SPEC="e2e/*.spec.ts"
+# Default to fast, stable smoke specs; override with --e2e-spec as needed
+E2E_SPEC="e2e/basic.spec.ts e2e/search.spec.ts e2e/create_todo.spec.ts"
 # Timeouts and probe counts (sane defaults; configurable via env)
 BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 DEPS_TIMEOUT=${DEPS_TIMEOUT:-300s}
@@ -115,6 +123,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --app) APP_DIR="$2"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
+    --env) ENV_NAME="$2"; shift 2 ;;
+    --reuse-db) REUSE_DB=1; shift 1 ;;
+    --seeds) SEEDS_FILE="$2"; shift 2 ;;
     --keep-alive) KEEP_ALIVE=1; shift 1 ;;
     --verbose|-v) VERBOSE=1; shift 1 ;;
     --async) ASYNC=1; shift 1 ;;
@@ -126,6 +137,12 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown arg: $1"; exit 2 ;;
   esac
 done
+
+# If Playwright is requested and no explicit env provided (still 'dev'),
+# default to e2e for proper DB isolation and server settings
+if [[ "$RUN_PLAYWRIGHT" -eq 1 && "$ENV_NAME" == "dev" ]]; then
+  ENV_NAME="e2e"
+fi
 
 ts() { date "+%Y-%m-%d %H:%M:%S"; }
 log() { if [[ "${QUIET:-0}" -eq 0 ]]; then echo "[$(ts)] $*"; fi }
@@ -254,7 +271,7 @@ log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   log "[QA]  7) Run Playwright E2E (spec: $E2E_SPEC)"
 fi
-log "[QA] Config: PORT=$PORT KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
+log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
 
 # Optional overall deadline for synchronous mode too
 if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
@@ -288,9 +305,29 @@ fi
 # Generate .ex files (full server build to ensure all modules are regenerated)
 run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 
-run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log 'MIX_ENV=dev mix deps.get' || exit 1
+run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME mix deps.get" || exit 1
 
-run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log 'MIX_ENV=dev mix compile' || exit 1
+# Prepare database for non-dev environments automatically
+if [[ "$ENV_NAME" != "dev" ]]; then
+  if [[ "$REUSE_DB" -eq 1 ]]; then
+    # Ensure DB exists (create is idempotent), then migrate
+    run_step_with_log "DB ensure ($ENV_NAME)" 120s /tmp/qa-mix-db-ensure.log "MIX_ENV=$ENV_NAME mix ecto.create --quiet" || true
+    run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "MIX_ENV=$ENV_NAME mix ecto.migrate" || exit 1
+  else
+    run_step_with_log "DB drop ($ENV_NAME)" 120s /tmp/qa-mix-db-drop.log "MIX_ENV=$ENV_NAME mix ecto.drop --quiet" || true
+    run_step_with_log "DB create ($ENV_NAME)" 120s /tmp/qa-mix-db-create.log "MIX_ENV=$ENV_NAME mix ecto.create --quiet" || true
+    run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "MIX_ENV=$ENV_NAME mix ecto.migrate" || exit 1
+  fi
+  # Optional seeds
+  if [[ -n "$SEEDS_FILE" ]]; then
+    run_step_with_log "DB seeds ($ENV_NAME)" 180s /tmp/qa-mix-db-seeds.log "MIX_ENV=$ENV_NAME mix run '$SEEDS_FILE'" || exit 1
+  fi
+fi
+
+run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME mix compile" || exit 1
+
+# Build static assets (JS/CSS) so LiveView client and UI interactions are available
+run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || true
 
 # Ensure no stale Phoenix server is occupying the target port (or default :4000)
 for P in "$PORT" 4000; do
@@ -317,14 +354,14 @@ export PORT="$PORT"
 # Prefer setsid; on macOS where `setsid` may not exist, fall back to perl POSIX::setsid;
 # if neither available, start normally but ensure cleanup never targets our own PGID.
 if command -v setsid >/dev/null 2>&1; then
-  setsid sh -c 'MIX_ENV=dev mix phx.server' >/tmp/qa-phx.log 2>&1 &
+  setsid sh -c "MIX_ENV=$ENV_NAME mix phx.server" >/tmp/qa-phx.log 2>&1 &
 elif command -v perl >/dev/null 2>&1; then
   # Create a new session via perl; then exec a shell to run the server
   nohup perl -MPOSIX -e 'POSIX::setsid() or die "setsid failed: $!"; exec @ARGV' \
-    sh -c 'MIX_ENV=dev mix phx.server' >/tmp/qa-phx.log 2>&1 &
+    sh -c "MIX_ENV=$ENV_NAME mix phx.server" >/tmp/qa-phx.log 2>&1 &
 else
   # Fallback: still background, but guard cleanup to avoid killing our own process group
-  nohup env MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
+  nohup env MIX_ENV=$ENV_NAME mix phx.server >/tmp/qa-phx.log 2>&1 &
 fi
 PHX_PID=$!
 PGID=$(ps -o pgid= "$PHX_PID" 2>/dev/null | tr -d ' ' || true)

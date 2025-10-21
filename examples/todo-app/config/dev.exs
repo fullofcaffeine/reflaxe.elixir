@@ -36,12 +36,26 @@ config :todo_app, TodoApp.Repo,
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
+
+# Allow overriding the port via PORT; default to 4000 for dev
+dev_port =
+  case System.get_env("PORT") do
+    nil -> 4000
+    val ->
+      case Integer.parse(val) do
+        {int, _} -> int
+        :error -> 4000
+      end
+  end
+
 config :todo_app, TodoAppWeb.Endpoint,
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: dev_port],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
+  # Prefer env in dev when provided, otherwise use a stable, non-sensitive fallback
+  secret_key_base: System.get_env("DEV_SECRET_KEY_BASE") ||
+    "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
   watchers: all_watchers
 
 # Watch static and templates for browser reloading.

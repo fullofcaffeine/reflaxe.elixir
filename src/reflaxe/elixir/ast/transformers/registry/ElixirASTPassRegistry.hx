@@ -691,13 +691,7 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseClauseFixTransforms.caseClauseEmptyBodyToNilPass
         });
 
-        // Rewrite `not Kernel.is_nil(:binary.match(a, b))` to `String.contains?(a, b)`
-        passes.push({
-            name: "StringBinaryMatchContainsRewrite",
-            description: "Normalize binary.match/is_nil search predicates to String.contains?",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.StringBinaryMatchContainsRewriteTransforms.transformPass
-        });
+        // (moved later) StringBinaryMatchContainsRewrite runs AFTER StringSearchFilterNormalization
 
         // Guard sanitization pass (replace non-guard-safe calls with guard-safe equivalents)
         passes.push({
@@ -1494,6 +1488,15 @@ class ElixirASTPassRegistry {
             description: "Normalize string contains checks to pure boolean expressions in filter predicates",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.stringSearchFilterNormalizationPass
+        });
+
+        // Rewrite `not Kernel.is_nil(:binary.match(a, b))` to idiomatic `String.contains?(a, b)`
+        // Must run AFTER StringSearchFilterNormalization which introduces the binary.match/is_nil shape
+        passes.push({
+            name: "StringBinaryMatchContainsRewrite",
+            description: "Normalize binary.match/is_nil search predicates to String.contains?",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StringBinaryMatchContainsRewriteTransforms.transformPass
         });
 
         // Normalize mixed-case variable references to existing snake_case bindings
