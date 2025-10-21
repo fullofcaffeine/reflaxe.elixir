@@ -8,6 +8,7 @@ function parseCounter(text: string): { shown: number; total: number } | null {
 test('search filters list and counter', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   await page.goto(base + '/todos')
+  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
 
   const counter = page.locator('text=Showing').first()
   await expect(counter).toContainText(/Showing \d+ of \d+ todos/i)

@@ -10,13 +10,13 @@
           - paragraph [ref=e12]: Welcome, Demo User!
         - generic [ref=e13]:
           - generic [ref=e14]:
-            - generic [ref=e15]: "49"
+            - generic [ref=e15]: "61"
             - generic [ref=e16]: Total
           - generic [ref=e17]:
             - generic [ref=e18]: "0"
             - generic [ref=e19]: Completed
           - generic [ref=e20]:
-            - generic [ref=e21]: "49"
+            - generic [ref=e21]: "61"
             - generic [ref=e22]: Pending
       - button "➕ Add New Todo" [ref=e23] [cursor=pointer]
     - generic [ref=e25]:
@@ -32,7 +32,7 @@
         - option "Sort by Priority"
         - option "Sort by Due Date"
     - generic [ref=e36]:
-      - generic [ref=e37]: Showing 49 of 49 todos
+      - generic [ref=e37]: Showing 61 of 61 todos
       - generic [ref=e38]:
         - button "✅ Complete All" [ref=e39] [cursor=pointer]
         - button "🗑️ Delete Completed" [ref=e40] [cursor=pointer]
@@ -527,4 +527,124 @@
         - generic [ref=e578]:
           - button "✏️" [ref=e579] [cursor=pointer]
           - button "🗑️" [ref=e580] [cursor=pointer]
+      - generic [ref=e582]:
+        - button [ref=e583] [cursor=pointer]
+        - generic [ref=e584]:
+          - heading "E2E New 1761015797122" [level=3] [ref=e585]
+          - generic [ref=e586]:
+            - generic [ref=e587]: "Priority: medium"
+            - button "#" [ref=e588] [cursor=pointer]
+        - generic [ref=e589]:
+          - button "✏️" [ref=e590] [cursor=pointer]
+          - button "🗑️" [ref=e591] [cursor=pointer]
+      - generic [ref=e593]:
+        - button [ref=e594] [cursor=pointer]
+        - generic [ref=e595]:
+          - heading "Active 1761015797012" [level=3] [ref=e596]
+          - generic [ref=e597]:
+            - generic [ref=e598]: "Priority: medium"
+            - button "#" [ref=e599] [cursor=pointer]
+        - generic [ref=e600]:
+          - button "✏️" [ref=e601] [cursor=pointer]
+          - button "🗑️" [ref=e602] [cursor=pointer]
+      - generic [ref=e604]:
+        - button [ref=e605] [cursor=pointer]
+        - generic [ref=e606]:
+          - heading "Edit Me 1761015797093" [level=3] [ref=e607]
+          - generic [ref=e608]:
+            - generic [ref=e609]: "Priority: medium"
+            - button "#" [ref=e610] [cursor=pointer]
+        - generic [ref=e611]:
+          - button "✏️" [ref=e612] [cursor=pointer]
+          - button "🗑️" [ref=e613] [cursor=pointer]
+      - generic [ref=e615]:
+        - button [ref=e616] [cursor=pointer]
+        - generic [ref=e617]:
+          - heading "Delete Me 1761015797094" [level=3] [ref=e618]
+          - generic [ref=e619]:
+            - generic [ref=e620]: "Priority: medium"
+            - button "#" [ref=e621] [cursor=pointer]
+        - generic [ref=e622]:
+          - button "✏️" [ref=e623] [cursor=pointer]
+          - button "🗑️" [ref=e624] [cursor=pointer]
+      - generic [ref=e626]:
+        - button [ref=e627] [cursor=pointer]
+        - generic [ref=e628]:
+          - heading "E2E New 1761018432166" [level=3] [ref=e629]
+          - generic [ref=e630]:
+            - generic [ref=e631]: "Priority: medium"
+            - button "#" [ref=e632] [cursor=pointer]
+        - generic [ref=e633]:
+          - button "✏️" [ref=e634] [cursor=pointer]
+          - button "🗑️" [ref=e635] [cursor=pointer]
+      - generic [ref=e637]:
+        - button [ref=e638] [cursor=pointer]
+        - generic [ref=e639]:
+          - heading "Delete Me 1761018432544" [level=3] [ref=e640]
+          - generic [ref=e641]:
+            - generic [ref=e642]: "Priority: medium"
+            - button "#" [ref=e643] [cursor=pointer]
+        - generic [ref=e644]:
+          - button "✏️" [ref=e645] [cursor=pointer]
+          - button "🗑️" [ref=e646] [cursor=pointer]
+      - generic [ref=e648]:
+        - button [ref=e649] [cursor=pointer]
+        - generic [ref=e650]:
+          - heading "Edit Me 1761018448437" [level=3] [ref=e651]
+          - generic [ref=e652]:
+            - generic [ref=e653]: "Priority: medium"
+            - button "#" [ref=e654] [cursor=pointer]
+        - generic [ref=e655]:
+          - button "✏️" [ref=e656] [cursor=pointer]
+          - button "🗑️" [ref=e657] [cursor=pointer]
+      - generic [ref=e659]:
+        - button [ref=e660] [cursor=pointer]
+        - generic [ref=e661]:
+          - heading "Active 1761018464781" [level=3] [ref=e662]
+          - generic [ref=e663]:
+            - generic [ref=e664]: "Priority: medium"
+            - button "#" [ref=e665] [cursor=pointer]
+        - generic [ref=e666]:
+          - button "✏️" [ref=e667] [cursor=pointer]
+          - button "🗑️" [ref=e668] [cursor=pointer]
+      - generic [ref=e670]:
+        - button [ref=e671] [cursor=pointer]
+        - generic [ref=e672]:
+          - heading "Toggle 1761018481375" [level=3] [ref=e673]
+          - generic [ref=e674]:
+            - generic [ref=e675]: "Priority: medium"
+            - button "#" [ref=e676] [cursor=pointer]
+        - generic [ref=e677]:
+          - button "✏️" [ref=e678] [cursor=pointer]
+          - button "🗑️" [ref=e679] [cursor=pointer]
+      - generic [ref=e681]:
+        - button [ref=e682] [cursor=pointer]
+        - generic [ref=e683]:
+          - heading "E2E New 1761018722885" [level=3] [ref=e684]
+          - generic [ref=e685]:
+            - generic [ref=e686]: "Priority: medium"
+            - button "#" [ref=e687] [cursor=pointer]
+        - generic [ref=e688]:
+          - button "✏️" [ref=e689] [cursor=pointer]
+          - button "🗑️" [ref=e690] [cursor=pointer]
+      - generic [ref=e692]:
+        - button [ref=e693] [cursor=pointer]
+        - generic [ref=e694]:
+          - heading "Delete Me 1761018723229" [level=3] [ref=e695]
+          - generic [ref=e696]:
+            - generic [ref=e697]: "Priority: medium"
+            - button "#" [ref=e698] [cursor=pointer]
+        - generic [ref=e699]:
+          - button "✏️" [ref=e700] [cursor=pointer]
+          - button "🗑️" [ref=e701] [cursor=pointer]
+      - generic [ref=e703]:
+        - button [ref=e704] [cursor=pointer]
+        - generic [ref=e705]:
+          - heading "Edit Me 1761018739150" [level=3] [ref=e706]
+          - generic [ref=e707]:
+            - generic [ref=e708]: "Priority: medium"
+            - button "#" [ref=e709] [cursor=pointer]
+        - generic [ref=e710]:
+          - button "✏️" [active] [ref=e711] [cursor=pointer]
+          - button "🗑️" [ref=e712] [cursor=pointer]
 ```

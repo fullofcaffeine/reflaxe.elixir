@@ -29,8 +29,10 @@ set +m
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
 #   --deadline SECS  Hard cap: watchdog kills background job after SECS
-#   --playwright     After readiness, run Playwright tests (defaults to e2e/*.spec.ts under --app)
-#   --e2e-spec GLOB  Playwright spec or glob (relative to --app), e.g. e2e/search.spec.ts
+#   --playwright       After readiness, run Playwright tests (defaults to e2e under --app)
+#   --e2e-spec ARG     Playwright spec selector (relative to --app), e.g. e2e or e2e/*.spec.ts
+#                       NOTE: pass globs UNQUOTED so the shell expands them: --e2e-spec e2e/*.spec.ts
+#   --e2e-workers NUM  Playwright workers to use (default: 1 for determinism in extended runs)
 #
 # QA LAYERS (Mapping)
 #   Layer 1 – Compiler snapshot tests (Haxe)
@@ -109,6 +111,7 @@ ASYNC=0
 DEADLINE=""
 # Optional E2E
 RUN_PLAYWRIGHT=0
+E2E_WORKERS=1
 # Default to fast, stable smoke specs; override with --e2e-spec as needed
 E2E_SPEC="e2e/basic.spec.ts e2e/search.spec.ts e2e/create_todo.spec.ts"
 # Timeouts and probe counts (sane defaults; configurable via env)
@@ -131,6 +134,7 @@ while [[ $# -gt 0 ]]; do
     --async) ASYNC=1; shift 1 ;;
     --playwright) RUN_PLAYWRIGHT=1; shift 1 ;;
     --e2e-spec) E2E_SPEC="$2"; shift 2 ;;
+    --e2e-workers) E2E_WORKERS="$2"; shift 2 ;;
     --no-heartbeat) NO_HEARTBEAT=1; shift 1 ;;
     --quiet|-q) QUIET=1; VERBOSE=0; shift 1 ;;
     --deadline) DEADLINE="$2"; shift 2 ;;
@@ -269,7 +273,7 @@ log "[QA]  4) Start Phoenix (background, non-blocking)"
 log "[QA]  5) Readiness probe (READY_PROBES=$READY_PROBES, 0.5s interval)"
 log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
-  log "[QA]  7) Run Playwright E2E (spec: $E2E_SPEC)"
+  log "[QA]  7) Run Playwright E2E (spec: ${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS})"
 fi
 log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
 
@@ -453,11 +457,13 @@ log "[QA] OK: build + runtime smoke passed with zero warnings (WAE)"
 
 # Optional: run Playwright tests after readiness
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
-  log "[QA] Step 7: Running Playwright tests ($E2E_SPEC)"
+  log "[QA] Step 7: Running Playwright tests (${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS})"
   # Install dependencies and browsers for Playwright in the app dir
   run_step_with_log "Playwright npm install" 180s /tmp/qa-playwright-install.log "npm -C . install --no-audit --no-fund" || { cleanup || true; exit 1; }
   run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "npx -C . playwright install" || { cleanup || true; exit 1; }
-  if ! BASE_URL="http://localhost:$PORT" npx -C . playwright test "$E2E_SPEC" >/tmp/qa-playwright-run.log 2>&1; then
+  # Important: do NOT quote the spec so that shell globs expand (e.g., e2e/*.spec.ts)
+  SPEC_ARG=${E2E_SPEC:-e2e}
+  if ! BASE_URL="http://localhost:$PORT" bash -lc "npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}" >/tmp/qa-playwright-run.log 2>&1; then
     log "[QA] ❌ Playwright tests failed. Last 120 lines:"
     tail -n 120 /tmp/qa-playwright-run.log || true
     cleanup || true

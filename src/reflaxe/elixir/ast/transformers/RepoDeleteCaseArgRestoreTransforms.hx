@@ -52,13 +52,14 @@ class RepoDeleteCaseArgRestoreTransforms {
         // Run only inside LiveView modules (metadata-only gating)
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
-                case EModule(name, attrs, body) if (node.metadata?.isLiveView == true):
+                // Run for all modules; transformation is shape-based and guarded by Repo.delete + id/socket usage
+                case EModule(name, attrs, body):
                     #if debug_ast_transformer
                     Sys.println('[RepoDeleteCaseArgRestore] Entering LiveView module ' + name);
                     #end
                     var newBody = [for (b in body) rewriteDefs(b)];
                     makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
-                case EDefmodule(name, doBlock) if (node.metadata?.isLiveView == true):
+                case EDefmodule(name, doBlock):
                     #if debug_ast_transformer
                     Sys.println('[RepoDeleteCaseArgRestore] Entering LiveView defmodule ' + name);
                     #end
