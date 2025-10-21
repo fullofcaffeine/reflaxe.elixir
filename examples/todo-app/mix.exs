@@ -33,13 +33,14 @@ defmodule TodoApp.MixProject do
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:e2e), do: ["lib"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
   defp deps do
     [
       # Add parent project as dependency for Haxe compilation functionality
-      {:reflaxe_elixir, path: "../..", only: [:dev, :test]},
+      {:reflaxe_elixir, path: "../..", only: [:dev, :test, :e2e]},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.10"},
