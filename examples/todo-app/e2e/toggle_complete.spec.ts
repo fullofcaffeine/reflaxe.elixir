@@ -24,7 +24,7 @@ test('toggle todo completed state', async ({ page }) => {
   await page.reload()
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
   await page.waitForFunction(
-    (text) => !!Array.from(document.querySelectorAll('h3'))
+    (text) => !!Array.from(document.querySelectorAll('[data-testid="todo-card"] h3'))
       .find(h => h.textContent?.includes(text) && h.className.includes('line-through')),
     title,
     { timeout: 15000 }

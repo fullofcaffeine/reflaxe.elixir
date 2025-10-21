@@ -21,9 +21,9 @@ test('delete todo removes it from list', async ({ page }) => {
   page.once('dialog', async (dialog) => { await dialog.accept() })
   await card.getByTestId('btn-delete-todo').click()
 
-  // Assert it is gone (robust wait)
+  // Assert it is gone (robust wait, scoped to cards)
   await page.waitForFunction(
-    (text) => !Array.from(document.querySelectorAll('h3')).some(h => h.textContent?.includes(text)),
+    (text) => !Array.from(document.querySelectorAll('[data-testid="todo-card"] h3')).some(h => h.textContent?.includes(text)),
     title,
     { timeout: 15000 }
   )
