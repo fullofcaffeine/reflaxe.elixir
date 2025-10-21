@@ -612,3 +612,24 @@ Key benefits:
 - ✅ **Helpful error messages** with suggestions
 - ✅ **Zero runtime cost** - types are compile-time only
 - ✅ **React/TypeScript equivalent** developer experience
+
+## HEEx Assigns Linter (raw ~H)
+
+HXX templates can contain both typed HXX expressions and raw HEEx (EEx) content:
+
+- Typed HXX expression (checked by Haxe):
+  ```haxe
+  return HXX.hxx('<div>${assigns.user.name}</div>');
+  ```
+
+- Raw HEEx inside HXX (checked by linter):
+  ```haxe
+  return HXX.hxx('<div><%= @user.name %></div>');
+  ```
+
+Because raw HEEx is inside a string literal, the Haxe typer cannot see it. To keep safety, the compiler runs a pass — HEEx Assigns Type Linter — which scans `~H` content for:
+
+- Unknown `@assigns` fields
+- Obvious literal type mismatches using `@field`
+
+Errors are reported at Haxe compile-time. See docs/03-compiler-development/heex-assigns-type-linter.md for details and examples.
