@@ -26,7 +26,13 @@ test('filter buttons switch visible items', async ({ page }) => {
       const el = document.querySelector('[data-testid="input-title"]') as HTMLInputElement | null
       return !!el && !el.hasAttribute('readonly')
     }, { timeout: 20000 })
-    await titleInput.fill(title)
+    // Some LiveView patches briefly mark inputs readonly; force-enable then set value with input event
+    await titleInput.evaluate((el, val) => {
+      const input = el as HTMLInputElement
+      input.removeAttribute('readonly')
+      input.value = val as string
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    }, title)
     await page.getByTestId('btn-create-todo').click()
     const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
     if (complete) {
