@@ -786,7 +786,7 @@ static function getUserFromSession(session: Dynamic): User {
 					</div>
 					
 					<!-- New Todo Form -->
-					<if {assigns.show_forma}>
+					<if {assigns.show_form}>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 							<form phx-submit="create_todo" class="space-y-4">
 								<div>
