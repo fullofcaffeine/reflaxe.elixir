@@ -395,6 +395,13 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":coreApi")) {
             return true;
         }
+
+        // Ensure Phoenix component modules are always generated
+        // WHY: `use AppWeb, :html` imports AppWeb.CoreComponents at runtime; Haxe DCE can't see this
+        // WHAT: Force generation for classes annotated with @:component (component modules)
+        if (classType.meta.has(":component")) {
+            return true;
+        }
         
         // Check if this is an @:application class
         // These need to be compiled to generate OTP application modules
@@ -722,6 +729,18 @@ class ElixirCompiler extends GenericCompiler<
         
         // Use AST pipeline for class compilation
         var moduleAST = buildClassAST(classType, varFields, funcFields);
+
+        // Ensure Phoenix component modules are always emitted
+        // WHAT: Classes annotated with @:component define Phoenix.Component functions
+        // WHY: Phoenix apps using `use AppWeb, :html` import AppWeb.CoreComponents unconditionally
+        //      Even if DCE removes unused functions, the module itself must exist at runtime
+        // HOW: Mark the module AST with metadata.forceEmit so the output iterator never suppresses it
+        if (classType.meta.has(":component")) {
+            if (moduleAST != null) {
+                if (moduleAST.metadata == null) moduleAST.metadata = {};
+                Reflect.setField(moduleAST.metadata, "forceEmit", true);
+            }
+        }
 
         // Add function usage information to module metadata
         if (functionUsageCollector != null && moduleAST != null) {
