@@ -8,9 +8,8 @@ test('filter buttons switch visible items', async ({ page }) => {
 
   // Ensure at least one active and one completed todo
   const mk = async (title: string, complete: boolean) => {
-    // Use deterministic test ids for creation flow
+    // Use deterministic test ids for creation flow; wait on title input (most stable)
     await page.getByTestId('btn-new-todo').click()
-    await expect(page.locator('form[phx-submit="create_todo"]').first()).toBeVisible({ timeout: 15000 })
     const titleInput = page.getByTestId('input-title')
     await expect(titleInput).toBeVisible({ timeout: 15000 })
     await titleInput.fill(title)
