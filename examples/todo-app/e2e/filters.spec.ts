@@ -22,10 +22,6 @@ test('filter buttons switch visible items', async ({ page }) => {
     await expect(page.getByTestId('btn-new-todo')).toContainText(/Cancel|✖/i, { timeout: 20000 })
     const titleInput = page.getByTestId('input-title')
     await expect(titleInput).toBeVisible({ timeout: 20000 })
-    await page.waitForFunction(() => {
-      const el = document.querySelector('[data-testid="input-title"]') as HTMLInputElement | null
-      return !!el && !el.hasAttribute('readonly')
-    }, { timeout: 20000 })
     // Some LiveView patches briefly mark inputs readonly; force-enable then set value with input event
     await titleInput.evaluate((el, val) => {
       const input = el as HTMLInputElement
