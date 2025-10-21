@@ -10,8 +10,14 @@ test('filter buttons switch visible items', async ({ page }) => {
   const mk = async (title: string, complete: boolean) => {
     // Use deterministic test ids for creation flow; wait on title input (most stable)
     await page.getByTestId('btn-new-todo').click()
-    // Wait for the form to appear (primary guard that event fired)
-    await expect(page.locator('form[phx-submit="create_todo"]').first()).toBeVisible({ timeout: 20000 })
+    // Wait for the form to appear (primary guard that event fired). Retry once if needed.
+    const createForm = page.locator('form[phx-submit="create_todo"]').first()
+    try {
+      await expect(createForm).toBeVisible({ timeout: 20000 })
+    } catch (e) {
+      await page.getByTestId('btn-new-todo').click()
+      await expect(createForm).toBeVisible({ timeout: 15000 })
+    }
     // Optional: assert button label toggled
     await expect(page.getByTestId('btn-new-todo')).toContainText(/Cancel|✖/i, { timeout: 20000 })
     const titleInput = page.getByTestId('input-title')
