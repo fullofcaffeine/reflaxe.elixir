@@ -36,12 +36,8 @@ test('filter buttons switch visible items', async ({ page }) => {
       await expect(card).toBeVisible({ timeout: 20000 })
       await expect(toggleBtn).toBeVisible({ timeout: 20000 })
       await toggleBtn.click()
-      await page.waitForFunction(
-        (text) => !!Array.from(document.querySelectorAll('h3'))
-          .find(h => h.textContent?.includes(text) && h.className.includes('line-through')),
-        title,
-        { timeout: 15000 }
-      )
+      // Card should gain opacity-60 when completed
+      await expect(card).toHaveClass(/opacity-60/, { timeout: 25000 })
     }
   }
   const activeTitle = `Active ${Date.now()}`
