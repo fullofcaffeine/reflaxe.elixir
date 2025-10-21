@@ -84,6 +84,37 @@ using Lambda;
  * - Complex expressions might need careful substitution to preserve semantics
  * - Infrastructure variables in loop constructs are handled by LoopBuilder
  */
+/**
+ * Preprocessors vs. Transformers (Architecture Overview)
+ *
+ * WHAT are Preprocessors?
+ * - Preprocessors operate on Haxe TypedExpr (typer-level) before the Elixir AST is built.
+ * - They fix paradigm mismatches and erase Haxe-internal artifacts (e.g., g/_g temps)
+ *   while we still have precise type information and original structure.
+ *
+ * HOW are they different from Transformers?
+ * - Transformers operate on the target-side ElixirAST after the builder phase, focusing on
+ *   target-shape rewrites (naming, patterns, code motion) with no dependency on Haxe typer data.
+ * - Preprocessors run earlier and are allowed to inspect/replace Haxe TypedExpr nodes; Transformers
+ *   must never depend on application names or Haxe implementation details.
+ *
+ * WHY this preprocessor exists
+ * - Haxe desugaring introduces infrastructure variables (g/_g…) and separates expressions in ways
+ *   that harm idiomatic Elixir (e.g., assigning a temp and then switching on that temp).
+ * - This pass removes those artifacts and preserves case/switch expression structure so the
+ *   generated Elixir looks hand-written and remains stable for later Transformer passes.
+ *
+ * WHAT it does (high level)
+ * - Detects infrastructure variables and substitutes their original expressions (ID-based) across
+ *   the tree.
+ * - Processes blocks to keep evaluation order while removing temp declarations.
+ * - Merges assignment + switch shapes at the TypedExpr level when present, and provides an early
+ *   generic merge to keep “var x = switch(expr)” intact for the builder.
+ *
+ * EXAMPLES (simplified)
+ * - TVar(_g, expr); TSwitch(TLocal(_g), …) → TSwitch(expr, …)
+ * - return switch(expr) … → (preserved by dedicated preprocessor) → idiomatic case in output
+ */
 class TypedExprPreprocessor {
 
     /**
@@ -149,6 +180,9 @@ class TypedExprPreprocessor {
         trace('[TypedExprPreprocessor] Checking for infrastructure pattern...');
         #end
 
+        // Always attempt a merge of TVar + TSwitch patterns to preserve switch-as-value
+        expr = mergeVarSwitchPatterns(expr);
+
         if (!containsInfrastructurePattern(expr)) {
             #if debug_preprocessor
             trace('[TypedExprPreprocessor] No pattern found, returning early');
@@ -187,6 +221,79 @@ class TypedExprPreprocessor {
         #end
 
         return result;
+    }
+
+    /**
+     * Merge TVar(output, INIT) followed by TSwitch(INIT, ...) patterns across the tree.
+     */
+    static function mergeVarSwitchPatterns(expr: TypedExpr): TypedExpr {
+        switch (expr.expr) {
+            case TBlock(exprs):
+                var transformed = exprs.map(e -> mergeVarSwitchPatterns(e));
+                // Local merge on this block
+                function exprEq(a: TypedExpr, b: TypedExpr): Bool {
+                    if (a == null || b == null) return false;
+                    switch (a.expr) {
+                        case TLocal(va):
+                            switch (b.expr) { case TLocal(vb): return va.id == vb.id; default: return false; }
+                        case TField(oa, fa):
+                            switch (b.expr) {
+                                case TField(ob, fb):
+                                    var ownerEq = exprEq(oa, ob);
+                                    var nameA = switch (fa) {
+                                        case FInstance(_, _, cf): cf.get().name;
+                                        case FStatic(_, cf): cf.get().name;
+                                        case FAnon(cf): cf.get().name;
+                                        case FDynamic(s): s;
+                                        default: null;
+                                    };
+                                    var nameB = switch (fb) {
+                                        case FInstance(_, _, cf2): cf2.get().name;
+                                        case FStatic(_, cf2): cf2.get().name;
+                                        case FAnon(cf2): cf2.get().name;
+                                        case FDynamic(s2): s2;
+                                        default: null;
+                                    };
+                                    return ownerEq && nameA != null && nameA == nameB;
+                                default: return false;
+                            }
+                        case TConst(ca):
+                            switch (b.expr) { case TConst(cb): return Std.string(ca) == Std.string(cb); default: return false; }
+                        case TParenthesis(ia):
+                            switch (b.expr) { case TParenthesis(ib): return exprEq(ia, ib); default: return exprEq(ia, b); }
+                        default:
+                            return false;
+                    }
+                }
+                var merged:Array<TypedExpr> = [];
+                var j = 0;
+                while (j < transformed.length) {
+                    var cur = transformed[j];
+                    if (j + 1 < transformed.length) {
+                        switch (cur.expr) {
+                            case TVar(v, initExpr) if (initExpr != null):
+                                var nxt = transformed[j + 1];
+                                switch (nxt.expr) {
+                                    case TSwitch(targetExpr, cases2, def2):
+                                        if (exprEq(initExpr, targetExpr)) {
+                                            var mergedInit:TypedExpr = { expr: TSwitch(targetExpr, cases2, def2), pos: nxt.pos, t: nxt.t };
+                                            merged.push({ expr: TVar(v, mergedInit), pos: cur.pos, t: cur.t });
+                                            j += 2;
+                                            continue;
+                                        }
+                                    default:
+                                }
+                            default:
+                        }
+                    }
+                    merged.push(cur);
+                    j++;
+                }
+                return { expr: TBlock(merged), pos: expr.pos, t: expr.t };
+            default:
+                // Recurse into children
+                return haxe.macro.TypedExprTools.map(expr, e -> mergeVarSwitchPatterns(e));
+        }
     }
     
     /**
@@ -353,9 +460,78 @@ class TypedExprPreprocessor {
                     #end
                     return result;
                 } else {
-                    // No infrastructure variables - just apply substitutions recursively
+                    // No infrastructure variables - apply substitutions recursively
                     var transformed = exprs.map(e -> applySubstitutionsRecursively(e, subs));
-                    return {expr: TBlock(transformed), pos: expr.pos, t: expr.t};
+                    // Also merge TVar + TSwitch pattern to preserve switch result assignment
+                    function exprEq(a: TypedExpr, b: TypedExpr): Bool {
+                        if (a == null || b == null) return false;
+                        switch (a.expr) {
+                            case TLocal(va):
+                                switch (b.expr) {
+                                    case TLocal(vb): return va.id == vb.id;
+                                    default: return false;
+                                }
+                            case TField(oa, fa):
+                                switch (b.expr) {
+                                    case TField(ob, fb):
+                                        var ownerEq = exprEq(oa, ob);
+                                        var nameA = switch (fa) {
+                                            case FInstance(_, _, cf): cf.get().name;
+                                            case FStatic(_, cf): cf.get().name;
+                                            case FAnon(cf): cf.get().name;
+                                            case FDynamic(s): s;
+                                            default: null;
+                                        };
+                                        var nameB = switch (fb) {
+                                            case FInstance(_, _, cf2): cf2.get().name;
+                                            case FStatic(_, cf2): cf2.get().name;
+                                            case FAnon(cf2): cf2.get().name;
+                                            case FDynamic(s2): s2;
+                                            default: null;
+                                        };
+                                        return ownerEq && nameA != null && nameA == nameB;
+                                    default:
+                                        return false;
+                                }
+                            case TConst(ca):
+                                switch (b.expr) {
+                                    case TConst(cb): return Std.string(ca) == Std.string(cb);
+                                    default: return false;
+                                }
+                            case TParenthesis(ia):
+                                switch (b.expr) {
+                                    case TParenthesis(ib): return exprEq(ia, ib);
+                                    default: return exprEq(ia, b);
+                                }
+                            default:
+                                return false;
+                        }
+                    }
+                    var merged:Array<TypedExpr> = [];
+                    var j = 0;
+                    while (j < transformed.length) {
+                        var cur = transformed[j];
+                        if (j + 1 < transformed.length) {
+                            switch (cur.expr) {
+                                case TVar(v, initExpr) if (initExpr != null):
+                                    var nxt = transformed[j + 1];
+                                    switch (nxt.expr) {
+                                        case TSwitch(targetExpr, cases2, def2):
+                                            if (exprEq(initExpr, targetExpr)) {
+                                                var mergedInit:TypedExpr = { expr: TSwitch(targetExpr, cases2, def2), pos: nxt.pos, t: nxt.t };
+                                                merged.push({ expr: TVar(v, mergedInit), pos: cur.pos, t: cur.t });
+                                                j += 2;
+                                                continue;
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
+                        merged.push(cur);
+                        j++;
+                    }
+                    return {expr: TBlock(merged), pos: expr.pos, t: expr.t};
                 }
 
             // Recursively process all other expression types
@@ -562,9 +738,82 @@ class TypedExprPreprocessor {
             }
         }
         
-        // Return the transformed block
+        // Merge pattern: TVar(output, INIT) followed by TSwitch(INIT, ...)
+        // → TVar(output, TSwitch(INIT, ...))
+        function exprEq(a: TypedExpr, b: TypedExpr): Bool {
+            if (a == null || b == null) return false;
+            switch (a.expr) {
+                case TLocal(va):
+                    switch (b.expr) {
+                        case TLocal(vb): return va.id == vb.id;
+                        default: return false;
+                    }
+                case TField(oa, fa):
+                    switch (b.expr) {
+                        case TField(ob, fb):
+                            var ownerEq = exprEq(oa, ob);
+                            var nameA = switch (fa) {
+                                case FInstance(_, _, cf): cf.get().name;
+                                case FStatic(_, cf): cf.get().name;
+                                case FAnon(cf): cf.get().name;
+                                case FDynamic(s): s;
+                                default: null;
+                            };
+                            var nameB = switch (fb) {
+                                case FInstance(_, _, cf2): cf2.get().name;
+                                case FStatic(_, cf2): cf2.get().name;
+                                case FAnon(cf2): cf2.get().name;
+                                case FDynamic(s2): s2;
+                                default: null;
+                            };
+                            return ownerEq && nameA != null && nameA == nameB;
+                        default:
+                            return false;
+                    }
+                case TConst(ca):
+                    switch (b.expr) {
+                        case TConst(cb): return Std.string(ca) == Std.string(cb);
+                        default: return false;
+                    }
+                case TParenthesis(ia):
+                    switch (b.expr) {
+                        case TParenthesis(ib): return exprEq(ia, ib);
+                        default: return exprEq(ia, b);
+                    }
+                default:
+                    return false;
+            }
+        }
+
+        var merged:Array<TypedExpr> = [];
+        var j = 0;
+        while (j < processed.length) {
+            var cur = processed[j];
+            if (j + 1 < processed.length) {
+                switch (cur.expr) {
+                    case TVar(v, initExpr) if (initExpr != null):
+                        var nxt = processed[j + 1];
+                        switch (nxt.expr) {
+                            case TSwitch(targetExpr, cases2, def2):
+                                if (exprEq(initExpr, targetExpr)) {
+                                    // Merge and skip next
+                                    var mergedInit:TypedExpr = { expr: TSwitch(targetExpr, cases2, def2), pos: nxt.pos, t: nxt.t };
+                                    merged.push({ expr: TVar(v, mergedInit), pos: cur.pos, t: cur.t });
+                                    j += 2;
+                                    continue;
+                                }
+                            default:
+                        }
+                    default:
+                }
+            }
+            merged.push(cur);
+            j++;
+        }
+
+        // Return the transformed (and merged) block
         return {
-            expr: TBlock(processed),
+            expr: TBlock(merged),
             pos: pos,
             t: t
         };
