@@ -14,17 +14,12 @@ test('delete todo removes it from list', async ({ page }) => {
   await expect(titleInput).toBeVisible({ timeout: 15000 })
   await titleInput.fill(title)
   await page.getByTestId('btn-create-todo').click()
-  const card = page.locator('h3', { hasText: title }).first()
-    .locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
+  const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
 
   // Accept the browser confirm dialog when deleting (single-use)
   page.once('dialog', async (dialog) => { await dialog.accept() })
   await card.getByTestId('btn-delete-todo').click()
 
-  // Assert it is gone (robust wait, scoped to cards)
-  await page.waitForFunction(
-    (text) => !Array.from(document.querySelectorAll('[data-testid="todo-card"] h3')).some(h => h.textContent?.includes(text)),
-    title,
-    { timeout: 15000 }
-  )
+  // Assert it is gone (robust, card-scoped)
+  await expect(page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) })).toHaveCount(0, { timeout: 15000 })
 })

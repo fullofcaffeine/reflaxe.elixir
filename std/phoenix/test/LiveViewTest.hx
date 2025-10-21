@@ -32,27 +32,15 @@ extern class LiveViewTest {
      * Mount a LiveView for testing.
      * Connects to the LiveView and returns a test harness.
      */
+    @:overload(function(conn: Conn, path: String, params: Map<String, Dynamic>): LiveView {})
+    @:overload(function(conn: Conn, path: String, session: Map<String, Dynamic>, params: Map<String, Dynamic>): LiveView {})
     public static function live(conn: Conn, path: String): LiveView;
-    
-    /**
-     * Mount a LiveView with parameters.
-     */
-    public static function live(conn: Conn, path: String, params: Map<String, Dynamic>): LiveView;
-    
-    /**
-     * Mount a LiveView with session and parameters.
-     */
-    public static function live(conn: Conn, path: String, session: Map<String, Dynamic>, params: Map<String, Dynamic>): LiveView;
     
     /**
      * Connect to an isolated LiveView component.
      */
+    @:overload(function(module: String, assigns: Map<String, Dynamic>): LiveView {})
     public static function live_component(module: String): LiveView;
-    
-    /**
-     * Connect to a LiveView component with assigns.
-     */
-    public static function live_component(module: String, assigns: Map<String, Dynamic>): LiveView;
     
     /**
      * Render the current LiveView state.
@@ -63,82 +51,50 @@ extern class LiveViewTest {
     /**
      * Simulate a click event on an element.
      */
+    @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
     public static function render_click(liveView: LiveView, element: String): LiveView;
-    
-    /**
-     * Simulate a click with custom value.
-     */
-    public static function render_click(liveView: LiveView, element: String, value: Dynamic): LiveView;
     
     /**
      * Simulate form submission.
      */
+    @:overload(function(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView {})
     public static function render_submit(liveView: LiveView, form: String): LiveView;
-    
-    /**
-     * Simulate form submission with data.
-     */
-    public static function render_submit(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView;
     
     /**
      * Simulate form change event (validation).
      */
+    @:overload(function(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView {})
     public static function render_change(liveView: LiveView, form: String): LiveView;
-    
-    /**
-     * Simulate form change with data.
-     */
-    public static function render_change(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView;
     
     /**
      * Simulate keydown event.
      */
+    @:overload(function(liveView: LiveView, element: String, key: String, meta: Map<String, Dynamic>): LiveView {})
     public static function render_keydown(liveView: LiveView, element: String, key: String): LiveView;
-    
-    /**
-     * Simulate keydown with metadata.
-     */
-    public static function render_keydown(liveView: LiveView, element: String, key: String, meta: Map<String, Dynamic>): LiveView;
     
     /**
      * Simulate keyup event.
      */
+    @:overload(function(liveView: LiveView, element: String, key: String, meta: Map<String, Dynamic>): LiveView {})
     public static function render_keyup(liveView: LiveView, element: String, key: String): LiveView;
-    
-    /**
-     * Simulate keyup with metadata.
-     */
-    public static function render_keyup(liveView: LiveView, element: String, key: String, meta: Map<String, Dynamic>): LiveView;
     
     /**
      * Simulate blur event (losing focus).
      */
+    @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
     public static function render_blur(liveView: LiveView, element: String): LiveView;
-    
-    /**
-     * Simulate blur with value.
-     */
-    public static function render_blur(liveView: LiveView, element: String, value: Dynamic): LiveView;
     
     /**
      * Simulate focus event.
      */
+    @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
     public static function render_focus(liveView: LiveView, element: String): LiveView;
-    
-    /**
-     * Simulate focus with value.
-     */
-    public static function render_focus(liveView: LiveView, element: String, value: Dynamic): LiveView;
     
     /**
      * Simulate hook event (JavaScript hooks).
      */
+    @:overload(function(liveView: LiveView, hook: String, event: String, data: Map<String, Dynamic>): LiveView {})
     public static function render_hook(liveView: LiveView, hook: String, event: String): LiveView;
-    
-    /**
-     * Simulate hook event with data.
-     */
-    public static function render_hook(liveView: LiveView, hook: String, event: String, data: Map<String, Dynamic>): LiveView;
     
     /**
      * Send a message to the LiveView process.
@@ -148,17 +104,9 @@ extern class LiveViewTest {
     /**
      * Follow a redirect from the LiveView.
      */
+    @:overload(function(liveView: LiveView, conn: Conn): LiveView {})
+    @:overload(function(liveView: LiveView, conn: Conn, maxRedirects: Int): LiveView {})
     public static function follow_redirect(liveView: LiveView): LiveView;
-    
-    /**
-     * Follow redirect to specific connection.
-     */
-    public static function follow_redirect(liveView: LiveView, conn: Conn): LiveView;
-    
-    /**
-     * Follow redirect with max redirects.
-     */
-    public static function follow_redirect(liveView: LiveView, conn: Conn, maxRedirects: Int): LiveView;
     
     /**
      * Assert that a redirect occurred.
@@ -203,32 +151,20 @@ extern class LiveViewTest {
     /**
      * Get LiveView flash messages.
      */
+    @:overload(function(liveView: LiveView, key: String): String {})
     public static function get_flash(liveView: LiveView): Map<String, String>;
-    
-    /**
-     * Get specific flash message.
-     */
-    public static function get_flash(liveView: LiveView, key: String): String;
     
     /**
      * Check if element exists in rendered HTML.
      */
+    @:overload(function(liveView: LiveView, selector: String, text: String): Bool {})
     public static function has_element(liveView: LiveView, selector: String): Bool;
-    
-    /**
-     * Check if element exists with specific text.
-     */
-    public static function has_element(liveView: LiveView, selector: String, text: String): Bool;
     
     /**
      * Find element in rendered HTML.
      */
+    @:overload(function(liveView: LiveView, selector: String, text: String): Dynamic {})
     public static function element(liveView: LiveView, selector: String): Dynamic;
-    
-    /**
-     * Find element with specific text.
-     */
-    public static function element(liveView: LiveView, selector: String, text: String): Dynamic;
     
     /**
      * Find all elements matching selector.
