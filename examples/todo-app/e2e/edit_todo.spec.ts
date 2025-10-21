@@ -14,16 +14,16 @@ test('edit todo updates title', async ({ page }) => {
   await titleInput.fill(original)
   await page.getByTestId('btn-create-todo').click()
   const heading = page.locator('h3', { hasText: original }).first()
-  const card = heading.locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]')
+  const card = heading.locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
 
   // Open edit form
   await card.getByTestId('btn-edit-todo').click()
-  // Wait for the edit form to appear (global is fine; only one edit form is expected)
-  await expect(page.locator('form[phx-submit="save_todo"]').first()).toBeVisible({ timeout: 15000 })
+  // Wait for the edit form to appear inside the card
+  await expect(card.locator('form[phx-submit="save_todo"]').first()).toBeVisible({ timeout: 15000 })
 
   const updated = `Edited ${Date.now()}`
   // Edit form now exposes data-testid on the title input
-  const editInput = page.getByTestId('input-title').first()
+  const editInput = card.getByTestId('input-title').first()
   await expect(editInput).toBeVisible({ timeout: 15000 })
   await editInput.fill(updated)
   await card.getByRole('button', { name: /Save/i }).click()

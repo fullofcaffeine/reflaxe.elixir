@@ -15,7 +15,7 @@ test('delete todo removes it from list', async ({ page }) => {
   await titleInput.fill(title)
   await page.getByTestId('btn-create-todo').click()
   const card = page.locator('h3', { hasText: title }).first()
-    .locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]')
+    .locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
 
   // Accept the browser confirm dialog when deleting (single-use)
   page.once('dialog', async (dialog) => { await dialog.accept() })
