@@ -43,11 +43,6 @@ extern class ConnTest {
     public static function build_conn(method: String, path: String, params: Dynamic): Conn;
     
     /**
-     * Make a GET request.
-     */
-    public static function get(conn: Conn, path: String): Conn;
-    
-    /**
      * Make a GET request with parameters.
      */
     @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
@@ -56,8 +51,6 @@ extern class ConnTest {
     /**
      * Make a POST request.
      */
-    public static function post(conn: Conn, path: String): Conn;
-    
     /**
      * Make a POST request with parameters.
      */
@@ -67,8 +60,6 @@ extern class ConnTest {
     /**
      * Make a PUT request.
      */
-    public static function put(conn: Conn, path: String): Conn;
-    
     /**
      * Make a PUT request with parameters.
      */
@@ -78,8 +69,6 @@ extern class ConnTest {
     /**
      * Make a PATCH request.
      */
-    public static function patch(conn: Conn, path: String): Conn;
-    
     /**
      * Make a PATCH request with parameters.
      */
@@ -89,8 +78,6 @@ extern class ConnTest {
     /**
      * Make a DELETE request.
      */
-    public static function delete(conn: Conn, path: String): Conn;
-    
     /**
      * Make a DELETE request with parameters.
      */
@@ -100,8 +87,6 @@ extern class ConnTest {
     /**
      * Make a HEAD request.
      */
-    public static function head(conn: Conn, path: String): Conn;
-    
     /**
      * Make a HEAD request with parameters.
      */
@@ -111,8 +96,6 @@ extern class ConnTest {
     /**
      * Make an OPTIONS request.
      */
-    public static function options(conn: Conn, path: String): Conn;
-    
     /**
      * Make an OPTIONS request with parameters.
      */

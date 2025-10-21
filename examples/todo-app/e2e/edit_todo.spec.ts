@@ -18,13 +18,12 @@ test('edit todo updates title', async ({ page }) => {
 
   // Open edit form
   await card.getByTestId('btn-edit-todo').click()
-  // Wait until the card contains a form element (scoped)
-  const form = card.locator('form').first()
-  await expect(form).toBeVisible({ timeout: 15000 })
+  // Wait for the edit form to appear (global is fine; only one edit form is expected)
+  await expect(page.locator('form[phx-submit="save_todo"]').first()).toBeVisible({ timeout: 15000 })
 
   const updated = `Edited ${Date.now()}`
   // Edit form now exposes data-testid on the title input
-  const editInput = card.getByTestId('input-title').first()
+  const editInput = page.getByTestId('input-title').first()
   await expect(editInput).toBeVisible({ timeout: 15000 })
   await editInput.fill(updated)
   await card.getByRole('button', { name: /Save/i }).click()
