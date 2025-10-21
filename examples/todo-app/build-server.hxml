@@ -53,6 +53,11 @@
 --macro exclude('server.services.UserGenServer')
 --macro exclude('contexts.Users')
 
+# Keep Phoenix CoreComponents even if not referenced directly in Haxe
+# WHY: Phoenix imports TodoAppWeb.CoreComponents via `use TodoAppWeb, :html`
+# which Haxe DCE cannot see. Force-keep to ensure the module is emitted.
+--macro keep('server.components.CoreComponents')
+
 # Define library version and initialize compiler
 -D reflaxe.elixir=0.1.0
 --macro reflaxe.elixir.CompilerInit.Start()

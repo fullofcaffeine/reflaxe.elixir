@@ -115,7 +115,7 @@ class ElixirOutputIterator {
         }
 
         // Determine which collection to pull from based on current index
-        final astData: DataAndFileInfo<ElixirAST> = if (index < compiler.classes.length) {
+        var astData: DataAndFileInfo<ElixirAST> = if (index < compiler.classes.length) {
             // Get from classes
             compiler.classes[index];
         } else if (index < compiler.classes.length + compiler.enums.length) {
@@ -156,6 +156,15 @@ class ElixirOutputIterator {
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Transformation complete');
         #end
+
+        // Generic gating: suppress emission of compile-time-only empty modules
+        // WHAT: Avoid generating `.ex` files for modules that have no runtime content
+        // WHY: Macro-only helpers (e.g., std/ecto/*Macros, std/HXX) previously emitted empty stubs
+        // HOW: Detect EDefmodule/EModule nodes with empty bodies and skip yielding output
+        if (shouldSuppressEmission(transformedAST)) {
+            // Recursively advance to the next item; hasNext() already reflects remaining items
+            return next();
+        }
 
         // Convert AST to string
         var output = ElixirASTPrinter.print(transformedAST, 0);
@@ -216,6 +225,42 @@ class ElixirOutputIterator {
 
         // Return the same DataAndFileInfo but with string output instead of AST
         return astData.withOutput(output);
+    }
+
+    /**
+     * Returns true when the transformed AST corresponds to an empty module that
+     * should not be emitted as a file (compile-time-only helpers, inline-only).
+     */
+    static function shouldSuppressEmission(ast: ElixirAST): Bool {
+        if (ast == null) return false;
+        // Honor explicit metadata first
+        if (ast.metadata != null) {
+            // Allow any future pass to set `suppressEmission = true`
+            var m: Dynamic = ast.metadata;
+            try {
+                // If explicitly forced to emit, never suppress
+                if (Reflect.hasField(m, "forceEmit") && Reflect.field(m, "forceEmit") == true) {
+                    return false;
+                }
+                if (Reflect.hasField(m, "suppressEmission") && Reflect.field(m, "suppressEmission") == true) {
+                    return true;
+                }
+            } catch (_:Dynamic) {}
+        }
+
+        // Structural empty-module detection
+        return switch (ast.def) {
+            case EDefmodule(_, doBlock):
+                switch (doBlock.def) {
+                    case EBlock(exprs): exprs == null || exprs.length == 0;
+                    case EDo(body): body == null || body.length == 0;
+                    default: false;
+                }
+            case EModule(_, _, body):
+                body == null || body.length == 0;
+            default:
+                false;
+        }
     }
 
     /**
