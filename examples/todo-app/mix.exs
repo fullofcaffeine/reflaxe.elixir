@@ -67,11 +67,13 @@ defmodule TodoApp.MixProject do
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      # Compile Haxe ExUnit tests before running mix test
+      test: ["haxe.compile.tests", "ecto.create --quiet", "ecto.migrate --quiet", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["haxe.compile.client", "tailwind todo_app", "esbuild todo_app"],
       "assets.deploy": ["haxe.compile.client", "tailwind todo_app --minify", "esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"],
-      "haxe.compile.client": ["cmd haxe build-client.hxml"]
+      "haxe.compile.client": ["cmd haxe build-client.hxml"],
+      "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
     ]
   end
 end

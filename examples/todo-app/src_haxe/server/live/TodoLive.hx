@@ -780,20 +780,20 @@ static function getUserFromSession(session: Dynamic): User {
 						</div>
 						
 						<!-- Add Todo Button -->
-						<button phx-click="toggle_form" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
+						<button phx-click="toggle_form" data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
 							${assigns.show_form ? "✖ Cancel" : "➕ Add New Todo"}
 						</button>
 					</div>
 					
 					<!-- New Todo Form -->
-					<if {assigns.show_form}>
+					<if {assigns.show_forma}>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 							<form phx-submit="create_todo" class="space-y-4">
 								<div>
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Title *
 									</label>
-									<input type="text" name="title" required
+									<input type="text" name="title" required data-testid="input-title"
 										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="What needs to be done?" />
 								</div>
@@ -838,7 +838,7 @@ static function getUserFromSession(session: Dynamic): User {
 										placeholder="work, personal, urgent" />
 								</div>
 
-								<button type="submit"
+									<button type="submit" data-testid="btn-create-todo"
 									class="w-full py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md">
 									✅ Create Todo
 								</button>
@@ -861,15 +861,15 @@ static function getUserFromSession(session: Dynamic): User {
 							
 							<!-- Filter Buttons -->
 							<div class="flex space-x-2">
-                        <button phx-click="filter_todos" phx-value-filter="all"
+                        <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									All
 								</button>
-                        <button phx-click="filter_todos" phx-value-filter="active"
+                        <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									Active
 								</button>
-                        <button phx-click="filter_todos" phx-value-filter="completed"
+                        <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									Completed
 								</button>
@@ -982,7 +982,7 @@ static function getUserFromSession(session: Dynamic): User {
 		if (isEditing) {
 			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
 					<form phx-submit="save_todo" class="space-y-4">
-						<input type="text" name="title" value="${todo.title}" required
+						<input type="text" name="title" value="${todo.title}" required data-testid="input-title"
 							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 						<textarea name="description" rows="2"
 							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">${todo.description}</textarea>
@@ -1004,7 +1004,7 @@ static function getUserFromSession(session: Dynamic): User {
 			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
 					<div class="flex items-start space-x-4">
 						<!-- Checkbox -->
-						<button phx-click="toggle_todo" phx-value-id="${todo.id}"
+						<button phx-click="toggle_todo" data-testid="btn-toggle-todo" phx-value-id="${todo.id}"
 							class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
 							${checkmark}
 						</button>
@@ -1032,11 +1032,11 @@ static function getUserFromSession(session: Dynamic): User {
 						
 						<!-- Actions -->
 						<div class="flex space-x-2">
-							<button phx-click="edit_todo" phx-value-id="${todo.id}"
+							<button phx-click="edit_todo" data-testid="btn-edit-todo" phx-value-id="${todo.id}"
 								class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
 								✏️
 							</button>
-							<button phx-click="delete_todo" phx-value-id="${todo.id}"
+							<button phx-click="delete_todo" data-testid="btn-delete-todo" phx-value-id="${todo.id}"
 								data-confirm="Are you sure?"
 								class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
 								🗑️
