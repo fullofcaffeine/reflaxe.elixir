@@ -66,7 +66,7 @@
     "ci:guards": "npm run guard:names && npm run guard:numeric && echo 'Guards passed'",
     "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "hooks:install": "bash scripts/install-git-hooks.sh",
-    "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001"
+    "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose"
   },
   "engines": {
     "node": ">=14.0.0"
