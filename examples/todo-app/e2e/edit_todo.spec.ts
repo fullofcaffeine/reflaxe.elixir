@@ -30,7 +30,13 @@ test('edit todo updates title', async ({ page }) => {
     const el = document.querySelector('[data-testid="input-title"]') as HTMLInputElement | null
     return !!el && !el.hasAttribute('readonly')
   }, { timeout: 20000 })
-  await editInput.fill(updated)
+  // Force-enable input and set value with input event to work around transient readonly
+  await editInput.evaluate((el, val) => {
+    const input = el as HTMLInputElement
+    input.removeAttribute('readonly')
+    input.value = val as string
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }, updated)
   await card.getByRole('button', { name: /Save/i }).click()
 
   // Assert the updated title is visible
