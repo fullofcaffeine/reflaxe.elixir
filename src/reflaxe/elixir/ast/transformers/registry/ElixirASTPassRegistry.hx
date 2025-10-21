@@ -726,6 +726,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.pass
         });
 
+        // Merge case result back into preceding assignment when split by lowering
+        passes.push({
+            name: "CaseResultAssignmentMerge",
+            description: "Merge `x = init; case x do ... end` into `x = case init do ... end`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass
+        });
+
         // Normalize if-then branches that accidentally emit nested `do` blocks
         // Ensure any EDo in the then-branch becomes an EBlock to avoid `if ... do do ... end`
         passes.push({

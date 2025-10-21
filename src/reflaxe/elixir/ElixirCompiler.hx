@@ -1647,7 +1647,39 @@ class ElixirCompiler extends GenericCompiler<
             #end
         }
         
-        // ALWAYS use ModuleBuilder for ALL classes to eliminate duplication
+        // Special-case: Generate Gettext module skeletons from @:gettext classes
+        if (classType.meta.has(":gettext")) {
+            var moduleName = reflaxe.elixir.ast.builders.ModuleBuilder.extractModuleName(classType);
+            // Determine otp_app from module prefix before "Web" when available (TodoAppWeb.* → :todo_app)
+            var appPrefix: Null<String> = null;
+            var webIdx = moduleName.indexOf("Web");
+            if (webIdx > 0) appPrefix = moduleName.substr(0, webIdx);
+            if (appPrefix == null || appPrefix.length == 0) {
+                try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+            }
+            if (appPrefix == null || appPrefix.length == 0) appPrefix = classType.name; // conservative fallback
+            var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(appPrefix);
+            // Build: defmodule <Module> do\n  use Gettext, otp_app: :app\nend
+            var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EUse("Gettext", [
+                reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EKeywordList([
+                    { key: "otp_app", value: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(appAtom)) }
+                ]))
+            ]));
+            var mod = {
+                def: reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, {
+                    def: reflaxe.elixir.ast.ElixirASTDef.EBlock([useStmt]),
+                    metadata: {},
+                    pos: classType.pos
+                }),
+                metadata: {},
+                pos: classType.pos
+            };
+            // Ensure this is emitted even if empty of functions
+            Reflect.setField(mod.metadata, "forceEmit", true);
+            return mod;
+        }
+
+        // ALWAYS use ModuleBuilder for ALL other classes to eliminate duplication
         // All classes go through ModuleBuilder now for consistency
 
         #if debug_module_builder

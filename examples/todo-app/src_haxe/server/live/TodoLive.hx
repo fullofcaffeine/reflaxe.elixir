@@ -980,7 +980,7 @@ static function getUserFromSession(session: Dynamic): User {
 		};
 		
 		if (isEditing) {
-			return '<div data-testid="todo-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
+			return '<div data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
 					<form phx-submit="save_todo" class="space-y-4">
 						<input type="text" name="title" value="${todo.title}" required data-testid="input-title"
 							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
@@ -1001,7 +1001,7 @@ static function getUserFromSession(session: Dynamic): User {
 			var textDecoration = todo.completed ? "line-through" : "";
 			var checkmark = todo.completed ? '<span class="text-green-500">✓</span>' : '';
 			
-			return '<div data-testid="todo-card" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
+			return '<div data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
 					<div class="flex items-start space-x-4">
 						<!-- Checkbox -->
 						<button phx-click="toggle_todo" data-testid="btn-toggle-todo" phx-value-id="${todo.id}"

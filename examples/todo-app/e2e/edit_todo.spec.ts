@@ -18,13 +18,15 @@ test('edit todo updates title', async ({ page }) => {
 
   // Open edit form
   await card.getByTestId('btn-edit-todo').click()
-  // Wait for the edit form and its Save button to appear inside the card
-  await expect(card.locator('form[phx-submit="save_todo"]').first()).toBeVisible({ timeout: 20000 })
-  await expect(card.getByRole('button', { name: /Save/i }).first()).toBeVisible({ timeout: 20000 })
+  // Prefer waiting for the edit form anywhere, then scope back to its card to avoid flakiness
+  const editForm = page.locator('form[phx-submit="save_todo"]').first()
+  await expect(editForm).toBeVisible({ timeout: 20000 })
+  const editCard = editForm.locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
+  await expect(editCard.getByRole('button', { name: /Save/i }).first()).toBeVisible({ timeout: 20000 })
 
   const updated = `Edited ${Date.now()}`
   // Edit form now exposes data-testid on the title input
-  const editInput = card.getByTestId('input-title').first()
+  const editInput = editCard.getByTestId('input-title').first()
   await expect(editInput).toBeVisible({ timeout: 20000 })
   await page.waitForFunction(() => {
     const el = document.querySelector('[data-testid="input-title"]') as HTMLInputElement | null
@@ -37,7 +39,7 @@ test('edit todo updates title', async ({ page }) => {
     input.value = val as string
     input.dispatchEvent(new Event('input', { bubbles: true }))
   }, updated)
-  await card.getByRole('button', { name: /Save/i }).click()
+  await editCard.getByRole('button', { name: /Save/i }).click()
 
   // Assert the updated title is visible
   await expect(page.locator('h3', { hasText: updated })).toBeVisible({ timeout: 15000 })
