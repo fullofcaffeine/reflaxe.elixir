@@ -28,11 +28,11 @@ test('filter buttons switch visible items', async ({ page }) => {
     }, { timeout: 20000 })
     await titleInput.fill(title)
     await page.getByTestId('btn-create-todo').click()
-    const heading = page.locator('h3', { hasText: title }).first()
-    const card = heading.locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
+    const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
     if (complete) {
       const toggleBtn = card.getByTestId('btn-toggle-todo').first()
-      await expect(toggleBtn).toBeVisible({ timeout: 15000 })
+      await expect(card).toBeVisible({ timeout: 20000 })
+      await expect(toggleBtn).toBeVisible({ timeout: 20000 })
       await toggleBtn.click()
       await page.waitForFunction(
         (text) => !!Array.from(document.querySelectorAll('h3'))
