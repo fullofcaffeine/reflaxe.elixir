@@ -321,6 +321,28 @@ extern class LiveView {
      * @param TValue The type of the specific field being retrieved
      */
     static function getAssign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String): Option<TValue>;
+
+    /**
+     * Streams API – declarative collection rendering helpers
+     * Mirrors Phoenix.LiveView.stream/3 and friends; options are left Dynamic for flexibility.
+     */
+    @:native("stream")
+    static function stream<TAssigns>(socket: Socket<TAssigns>, name: String, item: Dynamic, ?opts: Dynamic): Socket<TAssigns>;
+
+    @:native("stream_insert")
+    static function streamInsert<TAssigns>(socket: Socket<TAssigns>, name: String, item: Dynamic, ?opts: Dynamic): Socket<TAssigns>;
+
+    @:native("stream_delete")
+    static function streamDelete<TAssigns>(socket: Socket<TAssigns>, name: String, item: Dynamic, ?opts: Dynamic): Socket<TAssigns>;
+
+    /**
+     * Uploads API – allow and consume uploads
+     */
+    @:native("allow_upload")
+    static function allowUpload<TAssigns>(socket: Socket<TAssigns>, name: String, options: Dynamic): Socket<TAssigns>;
+
+    @:native("consume_uploaded_entries")
+    static function consumeUploadedEntries<TAssigns>(socket: Socket<TAssigns>, name: String, handler: Dynamic): Array<Dynamic>;
 }
 
 /**

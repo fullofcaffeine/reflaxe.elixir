@@ -84,6 +84,10 @@ IMPORTANT: If you need to address bugs and test, for the feedback loop, use play
 
 When using Playwright, make sure to test the todoapp properly, covering all the main flows. You should also check the console for errors/warnings and the network tab for failed requests. You should also check the output of the phoenix server in the terminal for any errors/warnings. If you find any, you should address them following the principles here. Ideally, we should have these flows described in the plan in shrimp so we can track them properly, if not, add them to your todo list and suggest a replan if needed.
 
+We will type properly and take advantage of Haxe's type system to make the code more robust and maintainable. Avoid using Dynamic unless absolutely necessary. Use proper types and interfaces to define the shape of data and functions'
+
+We will also make use of Haxe's advanced type features like abstracts, enums, and generics to create flexible and reusable components. We will strive to make the code as type-safe as possible to catch errors at compile time rather than runtime.
+
 AGAIN: RUN THE FUCKING SERVER IN THE **BACKGROUND** AS NOT TO BLOCK THE FUCKING AGENT.
 
 AGAIN: DO NOT USE SLOPPY VAR NAMES LIKE q, sp, etc. USE DESCRIPTIVE VAR NAMES. DO NOT ADD INTEGER SUFFIXES TO VAR NAMES UNLESS ABSOLUTELY NECESSARY. USE THE SAME VAR NAME IF IT'S OVERRIDEN IN A CASE BLOCK, FOR EXAMPLE.

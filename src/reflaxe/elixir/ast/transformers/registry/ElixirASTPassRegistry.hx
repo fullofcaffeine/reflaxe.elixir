@@ -167,6 +167,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.liveViewTransformPass
         });
+
+        // Bridge typed handleEvent(enum, socket) → handle_event/3 callbacks
+        passes.push({
+            name: "LiveViewTypedEventBridge",
+            description: "Generate handle_event/3 clauses that map string events + params to typed enums and delegate to handleEvent/2",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
+        });
         
         passes.push({
             name: "PresenceTransform",
@@ -1138,6 +1146,23 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });
 
+        // Prevent {:ok, socket} style shadowing that breaks LiveView flows
+        passes.push({
+            name: "CaseSuccessVarRenameCollisionFix",
+            description: "Rename {:ok, var} binder when it collides with function args (e.g., socket)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.transformPass
+        });
+
+        // Rename {:some, g} binder -> {:some, value} and rewrite references to avoid
+        // collisions with outer temporaries (e.g., `g = case ... end`).
+        passes.push({
+            name: "CaseSomeBinderRename",
+            description: "Rename {:some, g} binder to value and rewrite body refs to avoid shadowing",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSomeBinderRenameTransforms.transformPass
+        });
+
         // (moved) EqNilToIsNil should run after ChangesetNormalize so opts.* -> Map.get rewrites happen first
 
         // Simplify provably false is_nil checks based on prior literal assignments
@@ -1337,6 +1362,14 @@ class ElixirASTPassRegistry {
             description: "Inline (fn -> ... from(...) ... end).() used as where/2 query arg",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.transformPass
+        });
+
+        // Ensure Phoenix channel modules are set up idiomatically
+        passes.push({
+            name: "ChannelSetup",
+            description: "Inject `use <App>Web, :channel` for modules named like Phoenix channels",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.channelTransformPass
         });
 
         // Clean up wildcard assignments in Ecto where branches to restore idiomatic shape
@@ -2251,6 +2284,16 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
         });
+        // After inlining captured ~H content, some earlier inline-if constructs may have
+        // been converted to block-if by upstream conversions. Run the block→inline pass
+        // again late to normalize simple HTML branches back to inline form, matching
+        // snapshot expectations and improving readability.
+        passes.push({
+            name: "HeexBlockIfToInline",
+            description: "(late) Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.transformPass
+        });
         passes.push({
             name: "HeexStripDanglingQuoteLines",
             description: "(late) Drop lines that are solely a quote in ~H",
@@ -2264,6 +2307,16 @@ class ElixirASTPassRegistry {
             description: "Rewrite Phoenix.* enum helpers from numeric tags to atom tags using function names",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PhoenixEnumAtomTagTransforms.transformPass
+        });
+
+        // Flatten nested case for Option/Result-style constructs where a branch matches
+        // {:some, v} and immediately switches on v. This restores single-case nested
+        // tuple patterns like {:some, {:todo_created, todo}}.
+        passes.push({
+            name: "CaseFlattenNestedSwitch",
+            description: "Flatten {:some, v} -> case v do ... end into combined nested tuple patterns",
+            enabled: #if enable_case_flatten_nested_switch false #else false #end,
+            pass: reflaxe.elixir.ast.transformers.CaseFlattenNestedSwitchTransforms.transformPass
         });
 
         // Prune completely empty defmodule bodies (post-DCE clean up noise)
@@ -2321,6 +2374,14 @@ class ElixirASTPassRegistry {
             description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
+        });
+
+        // Late sweep: collapse nested aliasing chains like `lhs = g = expr` when alias is unused.
+        passes.push({
+            name: "AssignmentChainCleanupLate",
+            description: "Late sweep to collapse nested aliasing chains (lhs = g = expr) when alias is unused",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.transformPass
         });
 
         // Absolute final binder promotion: ensure _name -> name when name is referenced later
@@ -2525,6 +2586,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });
+        // Ultra-final: ensure {:ok, var} binder does not collide with function args after all renames
+        passes.push({
+            name: "CaseSuccessVarRenameCollisionFix",
+            description: "Ultra-final rename of {:ok, var} binder to avoid arg collisions",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.transformPass
+        });
         // Absolute-final: ensure query binder promotion inside search-guarded EIf branches
         passes.push({
             name: "QueryBinderFinalization",
@@ -2579,6 +2647,21 @@ class ElixirASTPassRegistry {
             description: "Simplify nested match chains by dropping unused side (generic)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.simplifyPass
+        });
+        // Simplify inner reassigns inside `if` expressions assigned to the same var
+        passes.push({
+            name: "IfInnerAssignSimplify",
+            description: "Rewrite lhs = if do lhs = expr else lhs end → lhs = if do expr else lhs end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfInnerAssignSimplifyTransforms.transformPass
+        });
+
+        // Merge result-assignment if-shapes by lifting inner rebind from then-branch
+        passes.push({
+            name: "IfResultAssignmentSimplify",
+            description: "Simplify lhs = if do lhs = expr else lhs end to lhs = if do expr else lhs end (block-aware)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfResultAssignmentSimplifyTransforms.transformPass
         });
 
         // Qualify struct literals passed to changeset/2 inside <App>Web.* modules

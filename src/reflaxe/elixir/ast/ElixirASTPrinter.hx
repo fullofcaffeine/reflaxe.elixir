@@ -782,7 +782,7 @@ class ElixirASTPrinter {
                             #if debug_ast_printer
                             trace('[Printer] Wrapping block with ${exprs.length} expressions in list');
                             #end
-                            '(fn -> ' + print(e, 0) + ' end).()';
+                            '(fn -> ' + print(e, 0).rtrim() + ' end).()';
                         case EBlock(exprs):
                             #if debug_ast_printer
                             trace('[Printer] Single expression block in list, not wrapping');
@@ -806,7 +806,7 @@ class ElixirASTPrinter {
                         case EBlock(exprs) if (exprs.length > 1):
                             // Fallback: ensure single expression in map field
                             // Wrap multi-statement block in zero-arity anonymous function call
-                            '(fn -> ' + print(value, 0) + ' end).()';
+                            '(fn -> ' + print(value, 0).rtrim() + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for map context
@@ -838,7 +838,7 @@ class ElixirASTPrinter {
                     var valueStr = switch(value.def) {
                         case EBlock(exprs) if (exprs.length > 1):
                             // Fallback for multi-statement in struct field
-                            '(fn -> ' + print(value, 0) + ' end).()';
+                            '(fn -> ' + print(value, 0).rtrim() + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for struct context
@@ -859,7 +859,7 @@ class ElixirASTPrinter {
                     // Check if value is an inline if-else that needs parentheses
                     var valueStr = switch(value.def) {
                         case EBlock(exprs) if (exprs.length > 1):
-                            '(fn -> ' + print(value, 0) + ' end).()';
+                            '(fn -> ' + print(value, 0).rtrim() + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for struct update context
@@ -878,7 +878,7 @@ class ElixirASTPrinter {
                     // Check if value is an inline if-else that needs parentheses
                     var valueStr = switch(value.def) {
                         case EBlock(exprs) if (exprs.length > 1):
-                            '(fn -> ' + print(value, 0) + ' end).()';
+                            '(fn -> ' + print(value, 0).rtrim() + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for keyword list context
@@ -969,7 +969,7 @@ class ElixirASTPrinter {
                     lines.join('\n' + indentStr(indent));
                 } else {
                     // Normal function call
-                    var argStr = [for (a in args) printFunctionArg(a)].join(', ');
+                    var argStr = [for (a in args) printFunctionArg(a, indent + 1)].join(', ');
                     if (target != null) {
                         // Fallback: Module.new() -> %<App>.Module{}
                         if (funcName == "new" && args.length == 0) {
@@ -1116,11 +1116,11 @@ class ElixirASTPrinter {
                     case EVar(m) if (m == "Date_Impl_"):
                         // Date_Impl_.get_time(x) -> DateTime.to_unix(x, :millisecond)
                         if (funcName == "get_time" && args.length == 1) {
-                            return 'DateTime.to_unix(' + printFunctionArg(args[0]) + ', :millisecond)';
+                            return 'DateTime.to_unix(' + printFunctionArg(args[0], indent) + ', :millisecond)';
                         }
                         // Date_Impl_.from_string(x) -> x
                         if (funcName == "from_string" && args.length == 1) {
-                            return printFunctionArg(args[0]);
+                            return printFunctionArg(args[0], indent);
                         }
                     default:
                 }
@@ -1147,10 +1147,10 @@ class ElixirASTPrinter {
                         } else {
                             parts.push(firstPrinted);
                         }
-                        for (i in 1...args.length) parts.push(printFunctionArg(args[i]));
+                        for (i in 1...args.length) parts.push(printFunctionArg(args[i], indent));
                         return parts.join(', ');
                     } else {
-                        var s = [for (a in args) printFunctionArg(a)].join(', ');
+                        var s = [for (a in args) printFunctionArg(a, indent)].join(', ');
                         // Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
                         var mstr = printQualifiedModule(module);
                         if (mstr == "Ecto.Query" && funcName == "from") {
@@ -2239,7 +2239,7 @@ class ElixirASTPrinter {
      * WHAT: Detects inline if expressions and wraps them in parentheses
      * HOW: Checks if the argument is an inline if and wraps it if needed
      */
-    static function printFunctionArg(arg: ElixirAST): String {
+    static function printFunctionArg(arg: ElixirAST, indentLevel: Int = 0): String {
         if (arg == null) return "";
         
         // Check what kind of expression this is
@@ -2266,18 +2266,18 @@ class ElixirASTPrinter {
                 };
                 
                 if (needsParens) {
-                    return '(' + print(arg, 0) + ')';
+                    return '(' + print(arg, indentLevel) + ')';
                 } else {
-                    return print(arg, 0);
+                    return print(arg, indentLevel);
                 }
                 
             case EBlock(expressions) if (expressions.length > 1):
                 // Multi-statement blocks in function arguments must be wrapped
                 // in immediately-invoked anonymous functions
-                return '(fn -> ' + print(arg, 0) + ' end).()';
+                return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
                 
             default:
-                return print(arg, 0);
+                return print(arg, indentLevel);
         }
     }
 

@@ -1,0 +1,69 @@
+name: QA Sentinel Smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            examples/todo-app/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27.2'
+          elixir-version: '1.18.3'
+
+      - name: Cache mix deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            examples/todo-app/deps
+            examples/todo-app/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('examples/todo-app/mix.lock') }}
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: '4.3.6'
+
+      - name: Install Playwright browsers (cached)
+        run: |
+          npm -C examples/todo-app ci --prefer-offline --no-audit --no-fund
+          npx -C examples/todo-app playwright install chromium
+
+      - name: Run QA Sentinel smoke (bounded)
+        env:
+          MIX_ENV: e2e
+        run: |
+          set -euo pipefail
+          scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-run.log
+
+      - name: Upload QA logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-logs
+          path: |
+            /tmp/qa-*.log
+            qa-run.log
+

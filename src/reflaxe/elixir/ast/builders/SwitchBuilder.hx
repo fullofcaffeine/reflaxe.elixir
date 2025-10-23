@@ -282,6 +282,93 @@ class SwitchBuilder {
         // TODO: Handle multiple values with pattern alternatives
         var value = switchCase.values[0];
 
+        // OPTIMIZATION: Flatten "Option.Some(param) with inner switch(param)" into a single
+        // top-level case with nested enum pattern, e.g.:
+        //   case Some(x): switch(x) { case TodoCreated(todo): ... }
+        // becomes
+        //   case {:some, {:todo_created, todo}} -> ...
+        function isOptionSomeCall(v: TypedExpr): { isSome:Bool, param:Null<TypedExpr> } {
+            return switch (v.expr) {
+                case TCall(ctorExpr, args) if (args != null && args.length == 1):
+                    switch (ctorExpr.expr) {
+                        case TField(_, FEnum(_, ef)):
+                            ef != null && ef.name == "Some" ? { isSome: true, param: args[0] } : { isSome: false, param: null };
+                        default:
+                            { isSome: false, param: null };
+                    }
+                default:
+                    { isSome: false, param: null };
+            };
+        }
+
+        function findNestedSwitchOnVar(e: TypedExpr, varName: String): Null<{ cases:Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef:Null<TypedExpr> } > {
+            if (e == null) return null;
+            return switch (e.expr) {
+                case TSwitch(scrutinee, innerCases, innerDefault):
+                    switch (scrutinee.expr) {
+                        case TLocal(v) if (v.name == varName): { cases: innerCases, edef: innerDefault };
+                        default: null;
+                    }
+                case TBlock(exprs):
+                    // Search within block statements
+                    var hit: Null<{ cases:Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef:Null<TypedExpr> }> = null;
+                    for (ex in exprs) {
+                        hit = findNestedSwitchOnVar(ex, varName);
+                        if (hit != null) return hit;
+                    }
+                    null;
+                case TMeta(_, inner):
+                    findNestedSwitchOnVar(inner, varName);
+                case TParenthesis(inner):
+                    findNestedSwitchOnVar(inner, varName);
+                default:
+                    null;
+            };
+        }
+
+        // Attempt flattening when matching Option.Some(var) and body switches on that var
+        var someInfo = isOptionSomeCall(value);
+        if (someInfo.isSome) {
+            // Determine the parameter variable name if it is a simple local; otherwise skip flatten
+            var paramVarName: Null<String> = switch (someInfo.param.expr) {
+                case TLocal(v): v.name;
+                case TParenthesis(inner):
+                    switch (inner.expr) { case TLocal(v2): v2.name; default: null; }
+                default: null;
+            };
+            if (paramVarName != null) {
+                var nested = findNestedSwitchOnVar(switchCase.expr, paramVarName);
+                if (nested != null) {
+                    // Build flattened clauses: for each inner case value, create {:some, <nestedPattern>} -> innerBody
+                    var flattened: Array<ECaseClause> = [];
+                    for (ic in nested.cases) {
+                        if (ic.values == null || ic.values.length == 0) continue;
+                        var innerVal = ic.values[0];
+                        // Build nested pattern for the inner enum constructor
+                        var nestedPattern = buildPattern(innerVal, paramVarName, [], ic.expr, context);
+                        if (nestedPattern != null) {
+                            var combined: EPattern = PTuple([
+                                PLiteral(makeAST(EAtom("some"))),
+                                nestedPattern
+                            ]);
+                            var bodyAst = context.compiler != null ? reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(ic.expr, context) : null;
+                            if (bodyAst != null) flattened.push({ pattern: combined, guard: null, body: bodyAst });
+                        }
+                    }
+                    // Handle inner default: {:some, _} -> defaultBody
+                    if (nested.edef != null) {
+                        var defaultBodyAst = context.compiler != null ? reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(nested.edef, context) : null;
+                        if (defaultBodyAst != null) {
+                            flattened.push({ pattern: PTuple([ PLiteral(makeAST(EAtom("some"))), PWildcard ]), guard: null, body: defaultBodyAst });
+                        }
+                    }
+                    if (flattened.length > 0) {
+                        return flattened;
+                    }
+                }
+            }
+        }
+
         // CRITICAL FIX: Extract variable names from CASE BODY, not pattern or guard!
         // After TEnumIndex optimization: pattern=TConst(0), NO variable names!
         // The user's variable "action" is in the case BODY where it's used
@@ -1290,6 +1377,33 @@ class SwitchBuilder {
                             isUsed: false  // Will be marked as used if referenced in body
                         });
                     }
+                case TCall(innerCtor, innerArgs):
+                    // Support nested enum constructor patterns, e.g., Some(TodoCreated(todo))
+                    var nested = buildEnumPattern(innerCtor, innerArgs, guardVars, context);
+                    if (nested != null) {
+                        patterns.push(nested);
+                    } else {
+                        patterns.push(PWildcard);
+                    }
+
+                case TParenthesis(innerP):
+                    // Unwrap parentheses and retry
+                    var nested2 = buildEnumPattern(innerP, [], guardVars, context);
+                    if (nested2 != null) {
+                        patterns.push(nested2);
+                    } else {
+                        patterns.push(PWildcard);
+                    }
+
+                case TMeta(_, innerM):
+                    // Unwrap metadata and attempt nested pattern
+                    var nested3 = buildEnumPattern(innerM, [], guardVars, context);
+                    if (nested3 != null) {
+                        patterns.push(nested3);
+                    } else {
+                        patterns.push(PWildcard);
+                    }
+
                 default:
                     // Use underscore for non-variable patterns
                     trace('[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***');

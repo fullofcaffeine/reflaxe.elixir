@@ -290,7 +290,9 @@ class LoopTransforms {
     public static function unrolledLoopTransformPass(ast: ElixirAST): ElixirAST {
         // Use Sys.println to ensure output is visible
         #if sys
+        #if debug_loop_transforms
         Sys.println('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============');
+        #end
         #end
         
         function detectAndTransformUnrolledLoops(node: ElixirAST): ElixirAST {
@@ -320,23 +322,23 @@ class LoopTransforms {
             switch (node.def) {
                 // Check modules
                 case EModule(name, attributes, body):
-                    trace('[XRay LoopTransforms] Found EModule: $name with ${body.length} body items');
+                #if debug_loop_transforms trace('[XRay LoopTransforms] Found EModule: $name with ${body.length} body items'); #end
                     var transformedBody = body.map(b -> detectAndTransformUnrolledLoops(b));
                     return makeAST(EModule(name, attributes, transformedBody));
                     
                 case EDefmodule(name, doBlock):
-                    trace('[XRay LoopTransforms] Found EDefmodule: $name');
+                    #if debug_loop_transforms trace('[XRay LoopTransforms] Found EDefmodule: $name'); #end
                     var transformedBlock = detectAndTransformUnrolledLoops(doBlock);
                     return makeAST(EDefmodule(name, transformedBlock));
                     
                 // Check function definitions for unrolled loops in their body
                 case EDef(name, args, guards, body):
-                    trace('[XRay LoopTransforms] Found EDef (public function): $name');
+                    #if debug_loop_transforms trace('[XRay LoopTransforms] Found EDef (public function): $name'); #end
                     var transformedBody = detectAndTransformUnrolledLoops(body);
                     return makeAST(EDef(name, args, guards, transformedBody));
                     
                 case EDefp(name, args, guards, body):
-                    trace('[XRay LoopTransforms] Found EDefp (private function): $name');
+                    #if debug_loop_transforms trace('[XRay LoopTransforms] Found EDefp (private function): $name'); #end
                     var transformedBody = detectAndTransformUnrolledLoops(body);
                     return makeAST(EDefp(name, args, guards, transformedBody));
                     
@@ -371,7 +373,7 @@ class LoopTransforms {
 
                         if (firstIsInit) {
                             #if debug_loop_transforms
-                            trace('[XRay LoopTransforms] ✓ Block starts with init pattern, checking comprehension');
+                            #if debug_loop_transforms trace('[XRay LoopTransforms] ✓ Block starts with init pattern, checking comprehension'); #end
                             #end
 
                             // The detector function expects to find EMatch(PVar, EBlock) but we're
@@ -425,7 +427,7 @@ class LoopTransforms {
                                  */
 
                                 #if debug_loop_transforms
-                                trace('[XRay LoopTransforms] Accumulator variable: $accumVar, collecting values from ${blockStmts.length - 2} potential if statements');
+                                #if debug_loop_transforms trace('[XRay LoopTransforms] Accumulator variable: $accumVar, collecting values from ${blockStmts.length - 2} potential if statements'); #end
                                 #end
 
                                 // Collect values and conditions from if statements
@@ -437,13 +439,13 @@ class LoopTransforms {
                                     var stmt = blockStmts[idx];
 
                                     #if debug_loop_transforms
-                                    trace('[XRay LoopTransforms]   Checking statement $idx: ${switch(stmt.def) { case EIf(_, _, _): "EIf"; default: "Other"; }}');
+                                    #if debug_loop_transforms trace('[XRay LoopTransforms]   Checking statement $idx: ${switch(stmt.def) { case EIf(_, _, _): "EIf"; default: "Other"; }}'); #end
                                     #end
 
                                     switch(stmt.def) {
                                         case EIf({def: EBoolean(condValue)}, thenBranch, _):
                                             #if debug_loop_transforms
-                                            trace('[XRay LoopTransforms]     Found EIf with boolean condition: $condValue');
+                                            #if debug_loop_transforms trace('[XRay LoopTransforms]     Found EIf with boolean condition: $condValue'); #end
                                             var thenDesc = switch(thenBranch.def) {
                                                 case ECall(target, method, args): 'ECall(target: ${target.def}, method: $method, args: ${args.length})';
                                                 case EMatch(_, _): 'EMatch';
@@ -458,12 +460,12 @@ class LoopTransforms {
                                             var value: Null<ElixirAST> = switch(thenBranch.def) {
                                                 case ECall({def: EVar(v)}, "push", [expr]) if (v == accumVar || v == '_$accumVar'):
                                                     #if debug_loop_transforms
-                                                    trace('[XRay LoopTransforms]       Matched push pattern: $v.push(...) (looking for $accumVar)');
+                                                    #if debug_loop_transforms trace('[XRay LoopTransforms]       Matched push pattern: $v.push(...) (looking for $accumVar)'); #end
                                                     #end
                                                     expr;
                                                 default:
                                                     #if debug_loop_transforms
-                                                    trace('[XRay LoopTransforms]       Did NOT match push pattern - looking for: $accumVar or _$accumVar');
+                                                    #if debug_loop_transforms trace('[XRay LoopTransforms]       Did NOT match push pattern - looking for: $accumVar or _$accumVar'); #end
                                                     #end
                                                     null;
                                             };
@@ -476,20 +478,20 @@ class LoopTransforms {
                                                     case EBinary(_, _, _): 'Binary';
                                                     default: 'Other';
                                                 };
-                                                trace('[XRay LoopTransforms]       ✓ Extracted value: $valueDesc, condition: $condValue');
+                                                #if debug_loop_transforms trace('[XRay LoopTransforms]       ✓ Extracted value: $valueDesc, condition: $condValue'); #end
                                                 #end
                                                 values.push(value);
                                                 conditions.push(condValue);
                                             } else {
                                                 #if debug_loop_transforms
-                                                trace('[XRay LoopTransforms]       ✗ Not a push pattern, stopping collection');
+                                                #if debug_loop_transforms trace('[XRay LoopTransforms]       ✗ Not a push pattern, stopping collection'); #end
                                                 #end
                                                 break;  // Not a push pattern, stop
                                             }
 
                                         default:
                                             #if debug_loop_transforms
-                                            trace('[XRay LoopTransforms]     ✗ Not an EIf, stopping collection');
+                                            #if debug_loop_transforms trace('[XRay LoopTransforms]     ✗ Not an EIf, stopping collection'); #end
                                             #end
                                             break;  // Not an if pattern, stop
                                     }
@@ -497,12 +499,12 @@ class LoopTransforms {
                                 }
 
                                 #if debug_loop_transforms
-                                trace('[XRay LoopTransforms] Collected ${values.length} values with ${conditions.length} conditions');
+                                #if debug_loop_transforms trace('[XRay LoopTransforms] Collected ${values.length} values with ${conditions.length} conditions'); #end
                                 #end
 
                                 if (values.length >= 2) {
                                     #if debug_loop_transforms
-                                    trace('[XRay LoopTransforms] ✅ FOUND COMPREHENSION INSIDE EMatch - building for expression!');
+                                    #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ FOUND COMPREHENSION INSIDE EMatch - building for expression!'); #end
                                     #end
 
                                     // Filter values by condition - only include where condition is true
@@ -514,7 +516,7 @@ class LoopTransforms {
                                     }
 
                                     #if debug_loop_transforms
-                                    trace('[XRay LoopTransforms]   Filtered to ${filteredValues.length} values (where condition==true)');
+                                    #if debug_loop_transforms trace('[XRay LoopTransforms]   Filtered to ${filteredValues.length} values (where condition==true)'); #end
                                     #end
 
                                     // Build the for comprehension with filtered values
@@ -534,7 +536,7 @@ class LoopTransforms {
                                     var comprehension = makeAST(EFor([generator], filters, bodyExpr, null, false));
 
                                     #if debug_loop_transforms
-                                    trace('[XRay LoopTransforms]   Generated: for $loopVar <- [${filteredValues.length} values], do: $loopVar');
+                                    #if debug_loop_transforms trace('[XRay LoopTransforms]   Generated: for $loopVar <- [${filteredValues.length} values], do: $loopVar'); #end
                                     #end
 
                                     return makeAST(EMatch(PVar(resultVar), comprehension));
@@ -544,7 +546,7 @@ class LoopTransforms {
                     }
 
                     #if debug_loop_transforms
-                    trace('[XRay LoopTransforms] ❌ No comprehension detected, processing RHS normally');
+                    #if debug_loop_transforms trace('[XRay LoopTransforms] ❌ No comprehension detected, processing RHS normally'); #end
                     #end
 
                     // Not a comprehension, process RHS normally
@@ -554,11 +556,11 @@ class LoopTransforms {
                 case EBlock(stmts):
                     #if sys
                     if (stmts.length > 2) {
-                        Sys.println('[XRay LoopTransforms] Found EBlock with ' + stmts.length + ' statements');
+                        #if debug_loop_transforms Sys.println('[XRay LoopTransforms] Found EBlock with ' + stmts.length + ' statements'); #end
                         // Print first few statements for debugging
                         var maxToShow = stmts.length < 3 ? stmts.length : 3;
                         for (i in 0...maxToShow) {
-                            Sys.println('[XRay LoopTransforms]   Statement ' + i + ' type: ' + stmts[i].def);
+                            #if debug_loop_transforms Sys.println('[XRay LoopTransforms]   Statement ' + i + ' type: ' + stmts[i].def); #end
                         }
                     }
                     #end
@@ -566,23 +568,23 @@ class LoopTransforms {
                     // First check for nested unrolled loops (alternating pattern)
                     var nestedUnrolledLoop = detectNestedUnrolledLoop(stmts);
                     if (nestedUnrolledLoop != null) {
-                        trace('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP - transforming to nested Enum.each');
+                        #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP - transforming to nested Enum.each'); #end
                         return nestedUnrolledLoop;
                     }
 
                     // Then check for regular nested loops
                     var nestedLoop = NestedLoopDetector.detectNestedLoop(stmts);
                     if (nestedLoop != null) {
-                        trace('[XRay LoopTransforms] ✅ DETECTED NESTED LOOP - transforming ${nestedLoop.count} statements');
+                        #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ DETECTED NESTED LOOP - transforming ${nestedLoop.count} statements'); #end
                         // Process remaining statements after the nested loop
                         var remainingStmts = stmts.slice(nestedLoop.count);
                         if (remainingStmts.length > 0) {
-                            trace('[XRay LoopTransforms] Processing ${remainingStmts.length} remaining statements after nested loop');
+                            #if debug_loop_transforms trace('[XRay LoopTransforms] Processing ${remainingStmts.length} remaining statements after nested loop'); #end
 
                             // Check if remaining statements form an unrolled loop
                             var remainingUnrolled = detectUnrolledLoop(remainingStmts);
                             if (remainingUnrolled != null) {
-                                trace('[XRay LoopTransforms] ✅ Remaining statements form an unrolled loop!');
+                                #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ Remaining statements form an unrolled loop!'); #end
                                 return makeAST(EBlock([nestedLoop.transformed, remainingUnrolled]));
                             }
 
@@ -596,10 +598,10 @@ class LoopTransforms {
                     // Check if this might be an unrolled loop
                     var unrolledLoop = detectUnrolledLoop(stmts);
                     if (unrolledLoop != null) {
-                        trace('[XRay LoopTransforms] ✅ DETECTED UNROLLED LOOP - transforming ${stmts.length} statements');
+                        #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ DETECTED UNROLLED LOOP - transforming ${stmts.length} statements'); #end
                         return unrolledLoop;
                     } else {
-                        trace('[XRay LoopTransforms] ❌ Not an unrolled loop pattern');
+                        #if debug_loop_transforms trace('[XRay LoopTransforms] ❌ Not an unrolled loop pattern'); #end
                     }
 
                     // Otherwise, recursively transform statements
