@@ -1,18 +1,15 @@
 # Haxe→Elixir compilation for ExUnit tests (MIX_ENV=test)
 
-# Include Reflaxe.Elixir and stdlib sources
--cp ../../src
--cp ../../std
--lib reflaxe
+# Include Reflaxe.Elixir compiler sources and stdlib overlays/externs
+ -cp ../../src
+ -cp ../../std
+ -lib reflaxe
 
-# Project sources (tests may reference server/shared code)
--cp src_haxe
--cp src_haxe/shared
--cp src_haxe/server
+# Test sources only (avoid compiling app/server code into test output)
 -cp src_haxe/test
 
-# Output directory for generated test modules
--D elixir_output=test
+# Output directory for generated test modules (isolated)
+-D elixir_output=test/generated
 
 # Required flags
 -D reflaxe_runtime
@@ -25,4 +22,5 @@
 --macro reflaxe.elixir.CompilerInit.Start()
 
 # Include test modules (explicit for now; add more as needed)
-test.web.HealthTest
+web.HealthTest
+web.TodoLiveCrudTest

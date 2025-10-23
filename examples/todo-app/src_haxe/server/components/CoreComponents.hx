@@ -175,7 +175,8 @@ class CoreComponents {
      */
     @:component  
     public static function simple_form(assigns: FormAssigns): String {
-        return HXX.hxx('<.form :let={f} for={@formFor} action={@action} method={@method || "post"}>
+        // Use `_f` to avoid unused variable warnings when slot variable is not referenced
+        return HXX.hxx('<.form :let={_f} for={@formFor} action={@action} method={@method || "post"}>
             <%= @inner_content %>
         </.form>');
     }

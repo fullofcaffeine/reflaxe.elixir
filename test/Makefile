@@ -214,6 +214,7 @@ test-%:
 				--exclude="string_buf.ex" \
 				--exclude="type.ex" \
 				--exclude="int_iterator.ex" \
+				--exclude="hxx.ex" \
 				--exclude="_any/*" \
 				--exclude="haxe" \
 				--exclude="_enum_value/*" \

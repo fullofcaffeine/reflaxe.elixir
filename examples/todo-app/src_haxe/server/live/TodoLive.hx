@@ -151,17 +151,18 @@ class TodoLive {
 	 * No more string matching or Dynamic params!
 	 * Each event carries its own typed parameters.
 	 */
-	public static function handleEvent(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
-		var resultSocket = switch (event) {
-			// Todo CRUD operations - params are already typed!
-			case CreateTodo(params):
-				createTodoTyped(params, socket);
+    public static function handleEvent(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+        var resultSocket = switch (event) {
+            // Todo CRUD operations - params are already typed!
+            case CreateTodo(params):
+                createTodoTyped(params, socket);
 			
 			case ToggleTodo(id):
 				toggleTodoStatus(id, socket);
 			
-			case DeleteTodo(id):
-				deleteTodo(id, socket);
+            case DeleteTodo(id):
+                trace('[TodoLive] handleEvent DeleteTodo id=' + id);
+                deleteTodo(id, socket);
 			
 			case EditTodo(id):
 				startEditing(id, socket);
@@ -212,97 +213,35 @@ class TodoLive {
 	 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-	public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-		// Parse incoming message to type-safe enum (will be auto-generated in Phase 2)
-		var resultSocket = switch (TodoPubSub.parseMessage(msg)) {
-			case Some(parsedMsg):
-				switch (parsedMsg) {
-					case TodoCreated(todo):
-						addTodoToList(todo, socket);
-					
-					case TodoUpdated(todo):
-						updateTodoInList(todo, socket);
-					
-					case TodoDeleted(id):
-						removeTodoFromList(id, socket);
-					
-					case BulkUpdate(action):
-						handleBulkUpdate(action, socket);
-					
-					case UserOnline(userId):
-						// Could update online user list in future
-						socket;
-					
-					case UserOffline(userId):
-						// Could update online user list in future
-						socket;
-					
-					case SystemAlert(message, level):
-						// Show system alert to user
-						var flashType = switch (level) {
-							case Info: phoenix.Phoenix.FlashType.Info;
-							case Warning: phoenix.Phoenix.FlashType.Warning;
-							case Error: phoenix.Phoenix.FlashType.Error;
-							case Critical: phoenix.Phoenix.FlashType.Error;
-						};
-						LiveView.putFlash(socket, flashType, message);
-				}
-			
-			case None:
-				// Unknown or malformed message - log and ignore
-				trace("Received unknown PubSub message: " + msg);
-				socket;
-		};
-		
-		return NoReply(resultSocket);
-	}
-	
-	// Helper functions with type-safe socket handling
-	
-	/**
-	 * Create a new todo with typed parameters - no conversion needed!
-	 */
-    static function createTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>) : Socket<TodoLiveAssigns> {
-        // Convert incoming LiveView string params to typed TodoParams explicitly to avoid
-        // string-key map issues and ensure proper types (date, tags, booleans) are used.
-        // Note: LiveView delivers string keys; use Reflect to extract safely.
-        var evTitle: String = Reflect.field(params, "title");
-        var evDesc: String = Reflect.field(params, "description");
-        var evPri: String = Reflect.field(params, "priority");
-        var evDue: String = Reflect.field(params, "due_date");
-        var evTags: String = Reflect.field(params, "tags");
-        var todoParams: server.schemas.Todo.TodoParams = {
-            title: evTitle,
-            description: evDesc,
-            completed: false,
-            priority: evPri != null ? evPri : "medium",
-            dueDate: evDue != null && evDue != "" ? Date.fromString(evDue) : null,
-            tags: evTags != null ? parseTags(evTags) : [],
-            userId: socket.assigns.current_user.id
+    public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+        // Return per-branch to avoid intermediate aliasing and ensure clean codegen
+        return switch (TodoPubSub.parseMessage(msg)) {
+            case Some(TodoCreated(todo)):
+                // Avoid duplicating our own just-created todo (creator already prepends it)
+                if (todo.userId == socket.assigns.current_user.id) {
+                    NoReply(socket);
+                } else {
+                    NoReply(addTodoToList(todo, socket));
+                }
+            case Some(TodoUpdated(todo)):
+                NoReply(updateTodoInList(todo, socket));
+            case Some(TodoDeleted(id)):
+                NoReply(removeTodoFromList(id, socket));
+            case Some(BulkUpdate(action)):
+                NoReply(handleBulkUpdate(action, socket));
+            case Some(UserOnline(_)):
+                NoReply(socket);
+            case Some(UserOffline(_)):
+                NoReply(socket);
+            case Some(SystemAlert(_, _)):
+                // Ignore system alerts for this LiveView for now
+                NoReply(socket);
+            case None:
+                trace("Received unknown PubSub message: " + msg);
+                NoReply(socket);
         };
-        var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), todoParams);
-		
-		// Use type-safe Repo operations
-		switch (Repo.insert(changeset)) {
-			case Ok(todo):
-				// Broadcast to other users using type-safe PubSub
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo))) {
-					case Ok(_):
-						// Broadcast successful
-					case Error(reason):
-						trace("Failed to broadcast todo creation: " + reason);
-				}
-				
-				// Refresh todos and update UI
-				var updatedSocket = loadAndAssignTodos(socket);
-				return SafeAssigns.setShowForm(updatedSocket, false);
-				
-			case Error(changeset):
-				// Handle validation errors
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
-		}
-	}
-	
+    }
+
 	// Legacy function for backward compatibility - will be removed
 	static function createNewTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		// Convert EventParams (with String dates) to TodoParams (with Date type)
@@ -343,6 +282,54 @@ class TodoLive {
 				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
 		}
 	}
+
+    /**
+     * Create a new todo using typed TodoParams.
+     */
+    static function createTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+        // LiveView form params arrive as a map with string keys; extract safely.
+        var rawTitle: Null<String> = Reflect.field(params, "title");
+        var rawDesc: Null<String> = Reflect.field(params, "description");
+        var rawPriority: Null<String> = Reflect.field(params, "priority");
+        var rawDue: Null<String> = Reflect.field(params, "due_date");
+        var rawTags: Null<String> = Reflect.field(params, "tags");
+
+        // Normalize values and convert to typed TodoParams
+        var title = (rawTitle != null) ? rawTitle : "";
+        var description = (rawDesc != null) ? rawDesc : "";
+        var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
+        var dueDate: Null<Date> = (rawDue != null && rawDue != "") ? Date.fromString(rawDue) : null;
+        var tagsArr: Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
+
+        var fullParams: server.schemas.Todo.TodoParams = {
+            title: title,
+            description: description,
+            completed: false,
+            priority: priority,
+            dueDate: dueDate,
+            tags: tagsArr,
+            userId: socket.assigns.current_user.id
+        };
+
+        var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), fullParams);
+        switch (Repo.insert(changeset)) {
+            case Ok(todo):
+                // Broadcast creation (best effort)
+                TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo));
+                // Prepend into list and close form
+                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+                var updated = liveSocket.merge({
+                    todos: [todo].concat(socket.assigns.todos),
+                    show_form: false,
+                    total_todos: socket.assigns.total_todos + 1,
+                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
+                });
+                return LiveView.putFlash(updated, phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
+            case Error(reason):
+                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
+        }
+    }
 	
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 	var todo = findTodo(id, socket.assigns.todos);
@@ -360,27 +347,23 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
 	return updateTodoInList(updatedTodo, socket);
 }
 	
-	static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = findTodo(id, socket.assigns.todos);
-		if (todo == null) return socket;
-		
-		// Use type-safe Repo operations
-		switch (Repo.delete(todo)) {
-			case Ok(deletedTodo):
-				// Broadcast to other users using type-safe PubSub
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id))) {
-					case Ok(_):
-						// Broadcast successful
-					case Error(reason):
-						trace("Failed to broadcast todo deletion: " + reason);
-				}
-				
-				return removeTodoFromList(id, socket);
-				
-			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
-		}
-	}
+    static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+        trace("[TodoLive] deleteTodo id=" + id + ", before_count=" + socket.assigns.todos.length);
+        var todo = findTodo(id, socket.assigns.todos);
+        if (todo == null) return socket;
+        
+        // Perform delete. On error, show flash and exit; otherwise proceed.
+        switch (Repo.delete(todo)) {
+            case Ok(_):
+                // continue
+            case Error(reason):
+                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
+        }
+        // Reflect locally, then broadcast best-effort to others
+        var updated = removeTodoFromList(id, socket);
+        TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id));
+        return updated;
+    }
 	
 static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 	var todo = findTodo(id, socket.assigns.todos);
@@ -592,32 +575,39 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Save edited todo with typed parameters.
 	 */
-	static function saveEditedTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		if (socket.assigns.editing_todo == null) {
-			return socket;
-		}
-		
-		var todo = socket.assigns.editing_todo;
-		var changeset = server.schemas.Todo.changeset(todo, params);
-		
-		switch (Repo.update(changeset)) {
-			case Ok(updatedTodo):
-				// Broadcast update
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
-					case Ok(_):
-						// Success
-					case Error(reason):
-						trace("Failed to broadcast todo update: " + reason);
-				}
-				
-				// Clear editing state in presence and assigns (idiomatic Phoenix pattern)
+    static function saveEditedTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+        if (socket.assigns.editing_todo == null) {
+            return socket;
+        }
+        
+        var todo = socket.assigns.editing_todo;
+
+        // Extract just the title for a safe, typed update
+        var rawTitle: Null<String> = Reflect.field(params, "title");
+        var title = (rawTitle != null) ? rawTitle : todo.title;
+        var fullParams: server.schemas.Todo.TodoParams = {
+            title: title
+        };
+        var changeset = server.schemas.Todo.changeset(todo, fullParams);
+        
+        switch (Repo.update(changeset)) {
+            case Ok(updatedTodo):
+                // Broadcast update
+                switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
+                    case Ok(_):
+                        // Success
+                    case Error(reason):
+                        trace("Failed to broadcast todo update: " + reason);
+                }
+                
+                // Clear editing state in assigns and reload list to reflect persisted edit
                 var updatedSocket = SafeAssigns.setEditingTodo(socket, null);
-				return loadAndAssignTodos(updatedSocket);
-				
-			case Error(changeset):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
-		}
-	}
+                return loadAndAssignTodos(updatedSocket);
+            
+            case Error(changeset):
+                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
+        }
+    }
 	
 	// Legacy function for backward compatibility - will be removed
 	static function saveEditedTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -859,21 +849,21 @@ static function getUserFromSession(session: Dynamic): User {
 								</form>
 							</div>
 							
-							<!-- Filter Buttons -->
-							<div class="flex space-x-2">
-                        <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
-									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
-									All
-								</button>
-                        <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
-									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
-									Active
-								</button>
-                        <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
-									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
-									Completed
-								</button>
-							</div>
+                        <!-- Filter Buttons -->
+                        <div class="flex space-x-2">
+                            <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
+                                class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
+                                All
+                            </button>
+                            <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
+                                class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
+                                Active
+                            </button>
+                            <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
+                                class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
+                                Completed
+                            </button>
+                        </div>
 							
 							<!-- Sort Dropdown -->
 							<div>
@@ -894,7 +884,7 @@ static function getUserFromSession(session: Dynamic): User {
 					${renderBulkActions(assigns)}
 					
 					<!-- Todo List -->
-					<div class="space-y-4">
+					<div id="todo-list" phx-update="replace" class="space-y-4">
 						${renderTodoList(assigns)}
 					</div>
 				</div>
@@ -980,7 +970,7 @@ static function getUserFromSession(session: Dynamic): User {
 		};
 		
 		if (isEditing) {
-			return '<div data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
+			return '<div id="todo-${todo.id}" data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
 					<form phx-submit="save_todo" class="space-y-4">
 						<input type="text" name="title" value="${todo.title}" required data-testid="input-title"
 							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
@@ -1001,13 +991,13 @@ static function getUserFromSession(session: Dynamic): User {
 			var textDecoration = todo.completed ? "line-through" : "";
 			var checkmark = todo.completed ? '<span class="text-green-500">✓</span>' : '';
 			
-			return '<div data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
+			return '<div id="todo-${todo.id}" data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
 					<div class="flex items-start space-x-4">
-						<!-- Checkbox -->
-						<button phx-click="toggle_todo" data-testid="btn-toggle-todo" phx-value-id="${todo.id}"
-							class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
-							${checkmark}
-						</button>
+                        <!-- Checkbox -->
+                            <button type="button" phx-click="toggle_todo" phx-value-id="${todo.id}" data-testid="btn-toggle-todo"
+                                class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
+                                ${checkmark}
+                            </button>
 						
 						<!-- Content -->
 						<div class="flex-1">
@@ -1032,15 +1022,14 @@ static function getUserFromSession(session: Dynamic): User {
 						
 						<!-- Actions -->
 						<div class="flex space-x-2">
-							<button phx-click="edit_todo" data-testid="btn-edit-todo" phx-value-id="${todo.id}"
-								class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
-								✏️
-							</button>
-							<button phx-click="delete_todo" data-testid="btn-delete-todo" phx-value-id="${todo.id}"
-								data-confirm="Are you sure?"
-								class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
-								🗑️
-							</button>
+                                <button type="button" phx-click="edit_todo" phx-value-id="${todo.id}" data-testid="btn-edit-todo"
+                                    class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
+                                    ✏️
+                                </button>
+                                <button type="button" phx-click="delete_todo" phx-value-id="${todo.id}" data-testid="btn-delete-todo"
+                                    class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
+                                    🗑️
+                                </button>
 						</div>
 					</div>
 				</div>';
@@ -1086,12 +1075,16 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Helper to filter and sort todos
 	 */
-	static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: String, sortBy: String, searchQuery: String): Array<server.schemas.Todo> {
-		var filtered = filterTodos(todos, filter, searchQuery);
-		
-		// Apply sorting
-		// Note: In real implementation, this would use proper date/priority comparison
-		// For now, we'll keep the original order
-		return filtered;
-	}
+    static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: String, sortBy: String, searchQuery: String): Array<server.schemas.Todo> {
+        var filtered = filterTodos(todos, filter, searchQuery);
+        
+        // Sort according to selected strategy (priority only for now)
+        return if (sortBy == "priority") {
+            // Use idiomatic Enum.sort_by for deterministic ordering
+            untyped __elixir__('Enum.sort_by({0}, fn t -> { case t.priority do "high" -> 0; "medium" -> 1; "low" -> 2; _ -> 3 end, -t.id } end)', filtered);
+        } else {
+            // Created/default: keep insertion order (as loaded from DB)
+            filtered;
+        }
+    }
 }

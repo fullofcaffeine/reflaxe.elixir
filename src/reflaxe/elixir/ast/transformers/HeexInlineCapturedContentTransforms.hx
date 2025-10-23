@@ -321,7 +321,6 @@ class HeexInlineCapturedContentTransforms {
         #end
         if (assign.html == null) return { changed:false, out: stmts };
         var html = convertInterpolations(assign.html);
-        html = rewriteInlineIfDoToBlock(html);
         var assignsIdx = -1;
         for (i in 0...stmts.length) if (isAssignsCaptureOfVar(stmts[i], sig.varName)) { assignsIdx = i; break; }
         #if debug_heex_inline

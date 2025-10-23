@@ -75,6 +75,51 @@ class AssignmentChainCleanupTransforms {
                         }
                     }
                     makeASTWithMeta(EBlock(out), node.metadata, node.pos);
+                case EDo(stmts):
+                    var out2:Array<ElixirAST> = [];
+                    var n2 = stmts.length;
+                    for (i in 0...n2) {
+                        var s = stmts[i];
+                        switch (s.def) {
+                            case EBinary(Match, leftOuter, rightOuter):
+                                var aliasName:Null<String> = null;
+                                var innerExpr:Null<ElixirAST> = null;
+                                switch (rightOuter.def) {
+                                    case EBinary(Match, leftInner, deepExpr):
+                                        switch (leftInner.def) { case EVar(a): aliasName = a; default: }
+                                        innerExpr = deepExpr;
+                                    case EMatch(patInner, deepExpr2):
+                                        switch (patInner) { case PVar(a2): aliasName = a2; default: }
+                                        innerExpr = deepExpr2;
+                                    default:
+                                }
+                                if (aliasName != null && innerExpr != null && !nameUsedLater(stmts, i+1, aliasName)) {
+                                    out2.push(makeASTWithMeta(EBinary(Match, leftOuter, innerExpr), s.metadata, s.pos));
+                                } else {
+                                    out2.push(s);
+                                }
+                            case EMatch(patOuter, rhsOuter):
+                                var alias2:Null<String> = null;
+                                var deep2:Null<ElixirAST> = null;
+                                switch (rhsOuter.def) {
+                                    case EBinary(Match, leftI2, expr2):
+                                        switch (leftI2.def) { case EVar(a): alias2 = a; default: }
+                                        deep2 = expr2;
+                                    case EMatch(patI2, expr3):
+                                        switch (patI2) { case PVar(a2): alias2 = a2; default: }
+                                        deep2 = expr3;
+                                    default:
+                                }
+                                if (alias2 != null && deep2 != null && !nameUsedLater(stmts, i+1, alias2)) {
+                                    out2.push(makeASTWithMeta(EMatch(patOuter, deep2), s.metadata, s.pos));
+                                } else {
+                                    out2.push(s);
+                                }
+                            default:
+                                out2.push(s);
+                        }
+                    }
+                    makeASTWithMeta(EDo(out2), node.metadata, node.pos);
                 default:
                     node;
             }

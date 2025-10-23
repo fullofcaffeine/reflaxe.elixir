@@ -68,6 +68,7 @@ class Users {
             // Apply filtering based on the provided criteria
             var query = TypedQuery.from(contexts.User);
             
+            // Prefer simple conditional mutation to avoid nested rebind warnings in Elixir
             if (filter.name != null) {
                 query = query.where(u -> u.name == '%${filter.name}%');
             }

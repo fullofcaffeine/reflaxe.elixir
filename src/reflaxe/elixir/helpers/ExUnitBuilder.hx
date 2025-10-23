@@ -37,13 +37,43 @@ class ExUnitBuilder {
     public static function build(): Array<Field> {
         // Get the class fields
         var fields = Context.getBuildFields();
-        
-        #if debug_exunit
         var cls = Context.getLocalClass().get();
+
+        #if debug_exunit
         trace('[ExUnitBuilder] Processing class: ${cls.name} with ${fields.length} fields');
         #end
-        
-        // Just return fields unchanged - AST transformer does the work
+
+        // Prevent DCE from removing test functions: add @:keep to fields
+        // annotated with test-related metadata so they survive to the AST phase
+        for (i in 0...fields.length) {
+            var f = fields[i];
+            switch (f.kind) {
+                case FFun(_):
+                    var metas = f.meta != null ? f.meta : [];
+                    var has = function(name:String):Bool {
+                        for (m in metas) if (m.name == name) return true; return false;
+                    };
+                    var isTestish = has("test") || has(":test") ||
+                                     has("setup") || has(":setup") ||
+                                     has("setupAll") || has(":setupAll") ||
+                                     has("teardown") || has(":teardown") ||
+                                     has("teardownAll") || has(":teardownAll");
+                    if (isTestish) {
+                        if (f.meta == null) f.meta = [];
+                        // Only add if not present
+                        var hasKeep = false;
+                        for (m in f.meta) if (m.name == ":keep" || m.name == "keep") { hasKeep = true; break; }
+                        if (!hasKeep) {
+                            f.meta.push({ name: ":keep", params: [], pos: f.pos });
+                            #if debug_exunit
+                            trace('[ExUnitBuilder]   Added @:keep to test function: ${f.name}');
+                            #end
+                        }
+                    }
+                default:
+            }
+        }
+
         return fields;
     }
 }

@@ -1659,8 +1659,8 @@ class ElixirCompiler extends GenericCompiler<
             }
             if (appPrefix == null || appPrefix.length == 0) appPrefix = classType.name; // conservative fallback
             var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(appPrefix);
-            // Build: defmodule <Module> do\n  use Gettext, otp_app: :app\nend
-            var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EUse("Gettext", [
+            // Build: defmodule <Module> do\n  use Gettext.Backend, otp_app: :app\nend
+            var useStmt = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EUse("Gettext.Backend", [
                 reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EKeywordList([
                     { key: "otp_app", value: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(appAtom)) }
                 ]))
@@ -2022,13 +2022,16 @@ class ElixirCompiler extends GenericCompiler<
             // Check for test-related metadata on the function field
             var funcMetadata: reflaxe.elixir.ast.ElixirAST.ElixirMetadata = {};
 
-            // Set ExUnit-related metadata flags directly
-            funcMetadata.isTest = funcData.field.meta.has(":test");
-            funcMetadata.isSetup = funcData.field.meta.has(":setup");
-            funcMetadata.isSetupAll = funcData.field.meta.has(":setupAll");
-            funcMetadata.isTeardown = funcData.field.meta.has(":teardown");
-            funcMetadata.isTeardownAll = funcData.field.meta.has(":teardownAll");
-            funcMetadata.isAsync = funcData.field.meta.has(":async");
+            // Set ExUnit-related metadata flags directly (accept both forms with and without ':')
+            inline function hasMeta(name:String):Bool {
+                return funcData.field.meta.has(name) || funcData.field.meta.has(":" + name);
+            }
+            funcMetadata.isTest = hasMeta("test");
+            funcMetadata.isSetup = hasMeta("setup");
+            funcMetadata.isSetupAll = hasMeta("setupAll");
+            funcMetadata.isTeardown = hasMeta("teardown");
+            funcMetadata.isTeardownAll = hasMeta("teardownAll");
+            funcMetadata.isAsync = hasMeta("async");
 
             #if debug_exunit
             if (funcMetadata.isTest) {
@@ -2036,8 +2039,12 @@ class ElixirCompiler extends GenericCompiler<
             }
             #end
 
-            // Check for test tags
-            var tagMeta = funcData.field.meta.extract(":tag");
+            // Check for test tags (gather both :tag and tag forms)
+            var tagMeta = funcData.field.meta.extract("tag");
+            var tagMetaAlt = funcData.field.meta.extract(":tag");
+            if (tagMetaAlt != null && tagMetaAlt.length > 0) {
+                if (tagMeta == null) tagMeta = tagMetaAlt; else tagMeta = tagMeta.concat(tagMetaAlt);
+            }
             if (tagMeta != null && tagMeta.length > 0) {
                 var tags = [];
                 for (entry in tagMeta) {
@@ -2055,8 +2062,12 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
 
-            // Check for describe block
-            var describeMeta = funcData.field.meta.extract(":describe");
+            // Check for describe block (accept both forms)
+            var describeMeta = funcData.field.meta.extract("describe");
+            var describeMetaAlt = funcData.field.meta.extract(":describe");
+            if (describeMetaAlt != null && describeMetaAlt.length > 0) {
+                if (describeMeta == null) describeMeta = describeMetaAlt; else describeMeta = describeMeta.concat(describeMetaAlt);
+            }
             if (describeMeta != null && describeMeta.length > 0) {
                 for (entry in describeMeta) {
                     if (entry.params != null && entry.params.length > 0) {
@@ -2118,7 +2129,9 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         // Enable ExUnit transformation pass for @:exunit modules
-        if (classType.meta.has(":exunit")) {
+        // Meta names in Haxe macros are stored without the leading colon.
+        // Be tolerant and check both with and without ':' to avoid fragile assumptions.
+        if (classType.meta.has("exunit") || classType.meta.has(":exunit")) {
             metadata.isExunit = true;
         }
 
