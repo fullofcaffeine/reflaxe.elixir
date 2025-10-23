@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.transformers;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import haxe.macro.Context;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -40,6 +41,7 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  * - @:application - OTP Application with supervision tree configuration
  * - @:phoenixWeb - Phoenix Web module with router/controller/live_view macros
  * - @:controller - Phoenix.Controller with action functions
+ * - @:channel - Phoenix.Channel with join/handle_in/handle_out callbacks
  * - @:presence - Phoenix.Presence with tracking and listing callbacks
  * - @:exunit - ExUnit.Case test modules with test functions
  * 
@@ -300,6 +302,44 @@ class AnnotationTransforms {
                 // Not a LiveView module, just pass through
                 return ast;
         }
+    }
+
+    /**
+     * Transform channel modules into Phoenix.Channel structure
+     *
+     * WHAT
+     * - Adds `use <App>Web, :channel` to modules shaped like Phoenix channels.
+     *
+     * WHY
+     * - Ensure idiomatic Phoenix channel setup without app-specific name heuristics.
+     *   We rely on the framework naming convention "<App>Web.*Channel".
+     *
+     * HOW
+     * - For EDefmodule/EModule whose name contains "Web." and "Channel",
+     *   prepend use <App>Web, :channel and preserve existing body.
+     */
+    public static function channelTransformPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EDefmodule(name, body) if (name != null && name.indexOf("Web.") > 0 && name.indexOf("Channel") > 0):
+                    var webIndex = name.indexOf("Web");
+                    var appNamePart = if (webIndex > 0) name.substring(0, webIndex) else name;
+                    var useStmt = makeAST(EUse(appNamePart + "Web", [ makeAST(EAtom(ElixirAtom.raw("channel"))) ]));
+                    var newBody = switch (body.def) {
+                        case EBlock(stmts): makeAST(EBlock([useStmt].concat(stmts)));
+                        case EDo(stmts2): makeAST(EDo([useStmt].concat(stmts2)));
+                        default: makeAST(EBlock([useStmt, body]));
+                    };
+                    makeASTWithMeta(EDefmodule(name, newBody), n.metadata, n.pos);
+                case EModule(name, attrs, stmts) if (name != null && name.indexOf("Web.") > 0 && name.indexOf("Channel") > 0):
+                    var webIndex2 = name.indexOf("Web");
+                    var appNamePart2 = if (webIndex2 > 0) name.substring(0, webIndex2) else name;
+                    var useStmt2 = makeAST(EUse(appNamePart2 + "Web", [ makeAST(EAtom(ElixirAtom.raw("channel"))) ]));
+                    makeASTWithMeta(EModule(name, attrs, [useStmt2].concat(stmts)), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        });
     }
     
     /**
@@ -1540,6 +1580,21 @@ class AnnotationTransforms {
             ])));
         } else {
             statements.push(makeAST(EUse("ExUnit.Case", [])));
+        }
+
+        // Inject Phoenix.ConnTest helpers and alias for convenience.
+        // Import brings functions like build_conn/0 into scope; alias supports ConnTest.* calls.
+        statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
+        statements.push(makeAST(EAlias("Phoenix.ConnTest", "ConnTest")));
+        // Inject Phoenix.LiveViewTest helpers and alias for LiveViewTest.* calls
+        statements.push(makeAST(EImport("Phoenix.LiveViewTest", null, null)));
+        statements.push(makeAST(EAlias("Phoenix.LiveViewTest", "LiveViewTest")));
+
+        // If app_name is provided (via -D app_name=MyApp), set @endpoint for ConnTest
+        var appName = Context.definedValue("app_name");
+        if (appName != null && appName.length > 0) {
+            var endpointModule = appName + "Web.Endpoint";
+            statements.push(makeAST(EModuleAttribute("endpoint", makeAST(EVar(endpointModule)))));
         }
         
         // Group tests by describe blocks

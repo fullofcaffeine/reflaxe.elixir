@@ -271,13 +271,31 @@ class TemplateHelpers {
         while (i < s.length) {
             var j = s.indexOf("<%", i);
             if (j == -1) { out.add(s.substr(i)); break; }
-            // Check backward for '=' indicating attribute context without crossing '>'
-            var k = j - 1; var seenGt = false; while (k >= i) { var ch = s.charAt(k); if (ch == '>') { seenGt = true; break; } if (ch == '=') break; k--; }
-            if (k < i || seenGt || s.charAt(k) != '=') {
+            // Robust attribute-context detection:
+            // Only treat as attribute value when <%%> appears inside an opening tag and inside quotes.
+            inline function isInsideAttrValue(src:String, pos:Int):Bool {
+                var tagStart = src.lastIndexOf('<', pos);
+                var tagClose = src.lastIndexOf('>', pos);
+                if (tagStart == -1 || (tagClose != -1 && tagClose > tagStart)) return false; // not inside a tag
+                // Do not consider EEx markers (<% or <%=) as HTML tags
+                if (tagStart + 1 < src.length && src.charAt(tagStart + 1) == '%') return false;
+                // Scan from tagStart to pos to determine quote state and ensure an '=' preceded the opening quote
+                var inSingle = false; var inDouble = false; var eqBeforeQuote = false;
+                for (idx in tagStart...pos) {
+                    var ch = src.charAt(idx);
+                    if (!inDouble && ch == "'") inSingle = !inSingle;
+                    else if (!inSingle && ch == "\"") inDouble = !inDouble;
+                    else if (!inSingle && !inDouble && ch == '=') eqBeforeQuote = true;
+                }
+                return (inSingle || inDouble) && eqBeforeQuote;
+            }
+            if (!isInsideAttrValue(s, j)) {
                 out.add(s.substr(i, j - i));
                 i = j; continue;
             }
             // Attribute name
+            var k = j - 1;
+            while (k >= i && s.charAt(k) != '=') k--;
             var nameEnd = k - 1; while (nameEnd >= i && ~/^\s$/.match(s.charAt(nameEnd))) nameEnd--;
             var nameStart = nameEnd; while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--; nameStart++;
             if (nameStart > nameEnd) { out.add(s.substr(i, j - i)); i = j; continue; }
@@ -286,11 +304,11 @@ class TemplateHelpers {
             out.add(s.substr(i, nameStart - i)); out.add(attrName); out.add("=");
             // Optional quote
             var vpos = k + 1; while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
-            var quote: Null<String> = null; if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) { quote = s.charAt(vpos); vpos++; }
+            var quote: Null<String> = null; if (vpos < s.length && (s.charAt(vpos) == "\"" || s.charAt(vpos) == "'")) { quote = s.charAt(vpos); vpos++; }
             // We expect vpos == j (start of <% ... %>)
             if (vpos != j) { out.add(s.substr(k + 1, j - (k + 1))); i = j; continue; }
             // Determine if this is a simple <%= expr %> or a conditional block
-            if (j + 3 <= s.length && s.charAt(j + 2) == '=') {
+            if (j + 3 <= s.length && s.charAt(j + 2) == "=") {
                 // Simple EEx interpolation: <%= expr %>
                 var end = s.indexOf("%>", j + 3);
                 if (end == -1) { out.add(s.substr(i)); return out.toString(); }
@@ -327,7 +345,7 @@ class TemplateHelpers {
         return out.toString();
     }
 
-    static inline function toQuoted(s:String): String {
+    public static inline function toQuoted(s:String): String {
         var t = StringTools.trim(s);
         // If already quoted, keep as-is; otherwise wrap with quotes without escaping inner quotes
         if ((StringTools.startsWith(t, '"') && StringTools.endsWith(t, '"')) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"))) {

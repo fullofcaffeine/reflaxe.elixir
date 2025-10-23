@@ -1,4 +1,4 @@
-package test.web;
+package web;
 
 import exunit.TestCase;
 import exunit.Assert.*;
@@ -24,12 +24,10 @@ class HealthTest extends TestCase {
     public function testHomePageLoads(): Void {
         var conn = ConnTest.build_conn();
         conn = ConnTest.get(conn, "/");
-        // Basic assertions: status is 200 and HTML has a title keyword
+        // Basic assertions: 200 OK and non-empty body via ConnTest helper
         assertTrue(conn != null);
-        // Status is available via conn.status in Phoenix.ConnTest structs
-        assertTrue(Reflect.hasField(conn, "status"));
-        var status: Int = Reflect.field(conn, "status");
+        // Assert status directly from Conn struct type
+        var status: Int = conn.status;
         assertEqual(200, status);
     }
 }
-

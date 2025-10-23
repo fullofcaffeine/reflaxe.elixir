@@ -264,6 +264,17 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   exit 0
 fi
 
+on_exit() {
+  local rc=$?
+  # Only report DONE for the actual runner (not the async launcher)
+  # ASYNC_CHILD=1 is set for the background process; or ASYNC=0 for sync mode
+  if [[ "${ASYNC_CHILD:-0}" -eq 1 || "${ASYNC}" -eq 0 ]]; then
+    echo "[$(ts)] [QA] DONE status=${rc}"
+  fi
+}
+
+trap on_exit EXIT
+
 log "[QA] Starting QA Sentinel in $APP_DIR"
 log "[QA] Plan:"
 log "[QA]  1) Haxe build (BUILD_TIMEOUT=$BUILD_TIMEOUT)"

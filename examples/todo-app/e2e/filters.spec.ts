@@ -30,10 +30,10 @@ test('filter buttons switch visible items', async ({ page }) => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
     }, title)
     await page.getByTestId('btn-create-todo').click()
-    const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
     if (complete) {
-      const toggleBtn = card.getByTestId('btn-toggle-todo').first()
-      await expect(card).toBeVisible({ timeout: 20000 })
+      const freshCard = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
+      await expect(freshCard).toBeVisible({ timeout: 20000 })
+      const toggleBtn = freshCard.getByTestId('btn-toggle-todo').first()
       await expect(toggleBtn).toBeVisible({ timeout: 20000 })
       await toggleBtn.click()
       // Accept either data attribute (preferred) or class-based indicator

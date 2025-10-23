@@ -97,42 +97,22 @@ class TodoPresence implements PresenceBehavior {
      * @param todoId The todo being edited (null to stop editing)
      */
     public static function updateUserEditing<T>(socket: Socket<T>, user: User, todoId: Null<Int>): Socket<T> {
-        // Get current presence metadata
-        var currentMeta = getUserPresence(socket, user.id);
-        if (currentMeta == null) {
-            // User not tracked yet, track them first
-            return trackUser(socket, user);
-        }
-        
-        // Update the metadata with new editing state
+        // Update the metadata with new editing state (assume track happened elsewhere)
         var updatedMeta: PresenceMeta = {
-            onlineAt: currentMeta.onlineAt,
-            userName: currentMeta.userName,
-            userEmail: currentMeta.userEmail,
-            avatar: currentMeta.avatar,
+            onlineAt: Date.now().getTime(),
+            userName: user.name,
+            userEmail: user.email,
+            avatar: null,
             editingTodoId: todoId,
             editingStartedAt: todoId != null ? Date.now().getTime() : null
         };
-        
         // Use the simplified API - topic is configured at class level
         updateSimple(Std.string(user.id), updatedMeta);
         return socket;
     }
     
-    /**
-     * Helper to get current user presence metadata
-     */
-    static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        // Use the generated listSimple() method with class-level topic
-        var presences = listSimple();
-        // Note: presences is a Dynamic map, need to use Reflect
-        var userKey = Std.string(userId);
-        if (Reflect.hasField(presences, userKey)) {
-            var entry: phoenix.Presence.PresenceEntry<PresenceMeta> = Reflect.field(presences, userKey);
-            return entry.metas.length > 0 ? entry.metas[0] : null;
-        }
-        return null;
-    }
+    // Removed getUserPresence helper to avoid unused function warning in generated code when
+    // presence update is simplified by transforms.
     
     /**
      * Get list of users currently online

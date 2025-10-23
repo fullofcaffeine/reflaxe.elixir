@@ -130,10 +130,29 @@ class SafePubSub {
      */
     public static function broadcastTopicPayload(topicString: String, payload: Dynamic): Result<Void, String> {
         return untyped __elixir__('
+          # Normalize top-level atom keys to also have string equivalents,
+          # preserving existing string keys. This avoids coupling to app-level
+          # field names while ensuring consumers matching on string keys work.
+          normalized = if is_map({1}) do
+            Enum.reduce(Map.keys({1}), {1}, fn k, acc ->
+              cond do
+                is_atom(k) ->
+                  sk = Atom.to_string(k)
+                  if Map.has_key?(acc, sk) do
+                    acc
+                  else
+                    Map.put(acc, sk, Map.get(acc, k))
+                  end
+                true -> acc
+              end
+            end)
+          else
+            {1}
+          end
           case Phoenix.PubSub.broadcast(
                    Phoenix.SafePubSub.get_pub_sub_module(),
                    {0},
-                   {1}
+                   normalized
                ) do
             :ok -> {:ok, nil}
             {:error, reason} -> {:error, to_string(reason)}
@@ -165,7 +184,7 @@ class SafePubSub {
         // and invoke the corresponding function with arity 1. This guards
         // against cases where the compiler lowers identifiers to atoms.
         return untyped __elixir__('
-          cond do
+          res = cond do
             is_function({1}, 1) -> {1}.({0})
             is_atom({1}) ->
               s = to_string({1})
@@ -190,6 +209,12 @@ class SafePubSub {
             true ->
               raise ArgumentError, message: "invalid message_parser: expected function/1 or module.function string"
           end
+          # Normalize nested Option shapes defensively
+          case res do
+            {:some, {:some, v}} -> {:some, v}
+            {:some, :none} -> :none
+            other -> other
+          end
         ', msg, messageParser);
     }
     
@@ -197,14 +222,13 @@ class SafePubSub {
      * Utility function to add timestamp to message payload
      */
     public static function addTimestamp(payload: Dynamic): Dynamic {
-        if (payload == null) {
-            payload = {};
-        }
+        // Avoid shadowing/rewrites by computing a base value once
+        var basePayload: Dynamic = (payload == null) ? {} : payload;
         
-        // Add timestamp for message tracking
-        Reflect.setField(payload, "timestamp", Date.now().getTime());
+        // Add timestamp for message tracking (returns updated map in Elixir)
+        Reflect.setField(basePayload, "timestamp", Date.now().getTime());
         
-        return payload;
+        return basePayload;
     }
     
     /**

@@ -33,8 +33,15 @@ class EctoQueryRequireEnsureTransforms {
                     switch (mod.def) { case EVar(m) if (m == "Ecto.Query"): res.needs = true; default: }
                     if (args != null) for (a in args) scan(a);
                 case ERaw(code):
-                    if (code != null && code.indexOf("Ecto.Query.") != -1) res.needs = true;
-                case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
+                    if (code != null && (code.indexOf("Ecto.Query.") != -1 || code.indexOf(" fragment(") != -1 || code.indexOf(" join(") != -1)) res.needs = true;
+                case ECall(t,_,as):
+                    // Detect bare fragment()/join() which rely on `require Ecto.Query`
+                    switch (t?.def) {
+                        case EVar(fn) if (fn == "fragment" || fn == "join"): res.needs = true;
+                        default:
+                    }
+                    if (t != null) scan(t);
+                    if (as != null) for (a in as) scan(a);
                 case EBlock(es): for (e in es) scan(e);
                 case EDo(es2): for (e in es2) scan(e);
                 // Remote-only gating: do NOT infer from pin operator alone

@@ -69,13 +69,10 @@ class HeexStringReturnToSigilTransforms {
                 if (thenHtml == null && elseHtml == null) {
                     out.add('<%= ' + mapAssigns(expr) + ' %>');
                 } else {
-                    out.add('<%= if ' + cond + ' do %>');
-                    if (thenHtml != null) out.add(thenHtml);
-                    if (elseHtml != null && elseHtml != "") {
-                        out.add('<% else %>');
-                        out.add(elseHtml);
-                    }
-                    out.add('<% end %>');
+                    // Prefer inline-if when branches are HTML strings (safer for attribute contexts too)
+                    var thenQ = (thenHtml != null) ? reflaxe.elixir.ast.TemplateHelpers.toQuoted(thenHtml) : '""';
+                    var elseQ = (elseHtml != null && elseHtml != "") ? reflaxe.elixir.ast.TemplateHelpers.toQuoted(elseHtml) : '""';
+                    out.add('<%= if ' + cond + ', do: ' + thenQ + ', else: ' + elseQ + ' %>');
                 }
             } else {
                 out.add('<%= ' + mapAssigns(expr) + ' %>');
@@ -85,8 +82,7 @@ class HeexStringReturnToSigilTransforms {
         var res = out.toString();
         // Post-process any fallback inline ternary that slipped through as <%= expr %>
         res = rewriteInlineTernaryToBlock(res);
-        // Post-process inline if ... do: "...", else: "..." into block to avoid quoting issues
-        res = rewriteInlineIfDoToBlock(res);
+        // Keep inline-if as-is for readability and stable snapshot shapes
         return res;
     }
 

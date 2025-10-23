@@ -30,7 +30,7 @@ class EctoLocalRequireInlineTransforms {
     static inline function isEctoQueryCall(n: ElixirAST): Bool {
         return switch (n.def) {
             case ERemoteCall(mod, func, _):
-                var ok = (func == "from" || func == "where" || func == "order_by" || func == "preload");
+                var ok = (func == "from" || func == "where" || func == "order_by" || func == "preload" || func == "join" || func == "fragment");
                 if (!ok) return false;
                 switch (mod.def) {
                     case EVar(m) if (m == "Ecto.Query"): true;

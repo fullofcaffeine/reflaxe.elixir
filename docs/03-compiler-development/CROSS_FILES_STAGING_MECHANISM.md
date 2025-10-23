@@ -198,6 +198,20 @@ Why a stub (temporarily)?
 
 Removal criteria:
 
+- Macro-default HXX is active and validated by snapshots (inline expression + block‑if)
+- All example/templates are migrated to macro path (no reliance on stubbed HXX)
+- QA sentinel (bounded) is green across full E2E suite
+- No module in std/ or src_haxe references `std/HXX.cross.hx`
+
+Once these gates are met, remove the transitional stub and its classpath entry, and re-run snapshots to lock intended shapes. Historical documentation should keep a short note on the stub for context.
+
+Verification steps:
+
+1) `rg -n "HXX.cross.hx|HXX.hxx\(|HXX.block\(" -S` shows only docs/tests/intentional macro usages
+2) `make -C test summary` passes with no unexpected diffs
+3) `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --e2e-workers 1 --deadline 900 -v` returns DONE=0
+
+
 1) Macro‑based HXX marks strings with `@:heex` and the builder emits `ESigil("H", ...)` deterministically.
 2) Snapshot tests cover block HEEx generation and assigns mapping without relying on string→~H conversion.
 3) Example apps compile cleanly with only the macro path enabled.
