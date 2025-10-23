@@ -1564,14 +1564,14 @@ var TodoApp = (() => {
   var TEMPLATES = "p";
   var STREAM = "stream";
   var EntryUploader = class {
-    constructor(entry, chunkSize, liveSocket2) {
-      this.liveSocket = liveSocket2;
+    constructor(entry, chunkSize, liveSocket3) {
+      this.liveSocket = liveSocket3;
       this.entry = entry;
       this.offset = 0;
       this.chunkSize = chunkSize;
       this.chunkTimer = null;
       this.errored = false;
-      this.uploadChannel = liveSocket2.channel(`lvu:${entry.ref}`, { token: entry.metadata() });
+      this.uploadChannel = liveSocket3.channel(`lvu:${entry.ref}`, { token: entry.metadata() });
     }
     error(reason) {
       if (this.errored) {
@@ -1661,9 +1661,9 @@ var TodoApp = (() => {
     return true;
   };
   var maybe = (el, callback) => el && callback(el);
-  var channelUploader = function(entries, onError, resp, liveSocket2) {
+  var channelUploader = function(entries, onError, resp, liveSocket3) {
     entries.forEach((entry) => {
-      let entryUploader = new EntryUploader(entry, resp.config.chunk_size, liveSocket2);
+      let entryUploader = new EntryUploader(entry, resp.config.chunk_size, liveSocket3);
       entryUploader.upload();
     });
   };
@@ -2781,7 +2781,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     entries() {
       return this._entries;
     }
-    initAdapterUpload(resp, onError, liveSocket2) {
+    initAdapterUpload(resp, onError, liveSocket3) {
       this._entries = this._entries.map((entry) => {
         if (entry.isCancelled()) {
           this.numEntriesInProgress--;
@@ -2803,14 +2803,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         if (!entry.meta) {
           return acc;
         }
-        let { name, callback } = entry.uploader(liveSocket2.uploaders);
+        let { name, callback } = entry.uploader(liveSocket3.uploaders);
         acc[name] = acc[name] || { callback, entries: [] };
         acc[name].entries.push(entry);
         return acc;
       }, {});
       for (let name in groupedEntries) {
         let { callback, entries } = groupedEntries[name];
-        callback(entries, onError, resp, liveSocket2);
+        callback(entries, onError, resp, liveSocket3);
       }
     }
   };
@@ -3586,20 +3586,20 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       });
     }
     perform(isJoinPatch) {
-      let { view, liveSocket: liveSocket2, container, html } = this;
+      let { view, liveSocket: liveSocket3, container, html } = this;
       let targetContainer = this.isCIDPatch() ? this.targetCIDContainer(html) : container;
       if (this.isCIDPatch() && !targetContainer) {
         return;
       }
-      let focused = liveSocket2.getActiveElement();
+      let focused = liveSocket3.getActiveElement();
       let { selectionStart, selectionEnd } = focused && dom_default.hasSelectionRange(focused) ? focused : {};
-      let phxUpdate = liveSocket2.binding(PHX_UPDATE);
-      let phxFeedbackFor = liveSocket2.binding(PHX_FEEDBACK_FOR);
-      let phxFeedbackGroup = liveSocket2.binding(PHX_FEEDBACK_GROUP);
-      let disableWith = liveSocket2.binding(PHX_DISABLE_WITH);
-      let phxViewportTop = liveSocket2.binding(PHX_VIEWPORT_TOP);
-      let phxViewportBottom = liveSocket2.binding(PHX_VIEWPORT_BOTTOM);
-      let phxTriggerExternal = liveSocket2.binding(PHX_TRIGGER_ACTION);
+      let phxUpdate = liveSocket3.binding(PHX_UPDATE);
+      let phxFeedbackFor = liveSocket3.binding(PHX_FEEDBACK_FOR);
+      let phxFeedbackGroup = liveSocket3.binding(PHX_FEEDBACK_GROUP);
+      let disableWith = liveSocket3.binding(PHX_DISABLE_WITH);
+      let phxViewportTop = liveSocket3.binding(PHX_VIEWPORT_TOP);
+      let phxViewportBottom = liveSocket3.binding(PHX_VIEWPORT_BOTTOM);
+      let phxTriggerExternal = liveSocket3.binding(PHX_TRIGGER_ACTION);
       let added = [];
       let feedbackContainers = [];
       let updates = [];
@@ -3757,7 +3757,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       }
       this.trackBefore("added", container);
       this.trackBefore("updated", container, container);
-      liveSocket2.time("morphdom", () => {
+      liveSocket3.time("morphdom", () => {
         this.streams.forEach(([ref, inserts, deleteIds, reset]) => {
           inserts.forEach(([key, streamAt, limit]) => {
             this.streamInserts[key] = { ref, streamAt, limit, reset };
@@ -3787,7 +3787,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         }
         morph.call(this, targetContainer, html);
       });
-      if (liveSocket2.isDebugEnabled()) {
+      if (liveSocket3.isDebugEnabled()) {
         detectDuplicateIds();
         Array.from(document.querySelectorAll("input[name=id]")).forEach((node) => {
           if (node.form) {
@@ -3796,18 +3796,18 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         });
       }
       if (appendPrependUpdates.length > 0) {
-        liveSocket2.time("post-morph append/prepend restoration", () => {
+        liveSocket3.time("post-morph append/prepend restoration", () => {
           appendPrependUpdates.forEach((update) => update.perform());
         });
       }
       dom_default.maybeHideFeedback(targetContainer, feedbackContainers, phxFeedbackFor, phxFeedbackGroup);
-      liveSocket2.silenceEvents(() => dom_default.restoreFocus(focused, selectionStart, selectionEnd));
+      liveSocket3.silenceEvents(() => dom_default.restoreFocus(focused, selectionStart, selectionEnd));
       dom_default.dispatchEvent(document, "phx:update");
       added.forEach((el) => this.trackAfter("added", el));
       updates.forEach((el) => this.trackAfter("updated", el));
       this.transitionPendingRemoves();
       if (externalFormTriggered) {
-        liveSocket2.unload();
+        liveSocket3.unload();
         Object.getPrototypeOf(externalFormTriggered).submit.call(externalFormTriggered);
       }
       return true;
@@ -3884,14 +3884,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       }
     }
     transitionPendingRemoves() {
-      let { pendingRemoves, liveSocket: liveSocket2 } = this;
+      let { pendingRemoves, liveSocket: liveSocket3 } = this;
       if (pendingRemoves.length > 0) {
-        liveSocket2.transitionRemoves(pendingRemoves);
-        liveSocket2.requestDOMUpdate(() => {
+        liveSocket3.transitionRemoves(pendingRemoves);
+        liveSocket3.requestDOMUpdate(() => {
           pendingRemoves.forEach((el) => {
             let child = dom_default.firstPhxChild(el);
             if (child) {
-              liveSocket2.destroyViewByEl(child);
+              liveSocket3.destroyViewByEl(child);
             }
             el.remove();
           });
@@ -4329,7 +4329,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
   var serializeForm = (form, metadata, onlyNames = []) => {
-    const _a2 = metadata, { submitter } = _a2, meta = __objRest(_a2, ["submitter"]);
+    const _a3 = metadata, { submitter } = _a3, meta = __objRest(_a3, ["submitter"]);
     let injectedElement;
     if (submitter && submitter.name) {
       const input = document.createElement("input");
@@ -4366,9 +4366,9 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     return params.toString();
   };
   var View = class {
-    constructor(el, liveSocket2, parentView, flash, liveReferer) {
+    constructor(el, liveSocket3, parentView, flash, liveReferer) {
       this.isDead = false;
-      this.liveSocket = liveSocket2;
+      this.liveSocket = liveSocket3;
       this.flash = flash;
       this.parent = parentView;
       this.root = parentView ? parentView.root : this;
@@ -4690,14 +4690,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       let destroyedCIDs = [];
       elements.forEach((parent) => {
         let components = dom_default.all(parent, `[${PHX_COMPONENT}]`);
-        let hooks2 = dom_default.all(parent, `[${this.binding(PHX_HOOK)}]`);
+        let hooks3 = dom_default.all(parent, `[${this.binding(PHX_HOOK)}]`);
         components.concat(parent).forEach((el) => {
           let cid = this.componentID(el);
           if (isCid(cid) && destroyedCIDs.indexOf(cid) === -1) {
             destroyedCIDs.push(cid);
           }
         });
-        hooks2.concat(parent).forEach((hookEl) => {
+        hooks3.concat(parent).forEach((hookEl) => {
           let hook = this.getHook(hookEl);
           hook && this.destroyHook(hook);
         });
@@ -6372,13 +6372,13 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
-  // js/app.js
+  // js/hx_app.js
   (function($global) {
     "use strict";
     var client_Boot = function() {
     };
     client_Boot.main = function() {
-      var hooks2 = { AutoFocus: { mounted: function() {
+      var hooks3 = { AutoFocus: { mounted: function() {
         this.el && this.el.focus && this.el.focus();
       } }, Ping: { mounted: function() {
         try {
@@ -6387,7 +6387,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         }
         ;
       } } };
-      window.Hooks = window.Hooks || hooks2;
+      window.Hooks = window.Hooks || hooks3;
     };
     var haxe_iterators_ArrayIterator = function(array) {
       this.current = 0;
@@ -6404,11 +6404,19 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     client_Boot.main();
   })({});
 
-  // js/phoenix_app.js
+  // js/app.js
   var _a;
   var csrfToken = (_a = document.querySelector("meta[name='csrf-token']")) == null ? void 0 : _a.getAttribute("content");
   var hooks = window.Hooks || {};
   var liveSocket = new LiveSocket("/live", Socket, { params: { _csrf_token: csrfToken }, hooks });
   liveSocket.connect();
   window.liveSocket = liveSocket;
+
+  // js/phoenix_app.js
+  var _a2;
+  var csrfToken2 = (_a2 = document.querySelector("meta[name='csrf-token']")) == null ? void 0 : _a2.getAttribute("content");
+  var hooks2 = window.Hooks || {};
+  var liveSocket2 = new LiveSocket("/live", Socket, { params: { _csrf_token: csrfToken2 }, hooks: hooks2 });
+  liveSocket2.connect();
+  window.liveSocket = liveSocket2;
 })();
