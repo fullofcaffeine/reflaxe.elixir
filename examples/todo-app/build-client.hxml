@@ -7,9 +7,12 @@
 -cp ../../std
 -cp ../../src
 -cp ../../vendor/genes/src
+# TODO: Integrate Genes ES6 generator once Haxe toolchain is upgraded; for now, default js generator
+# (Genes requires Compiler.setCustomJSGenerator; not available in current Haxe)
+# -lib genes
 
-# JavaScript target output
--js assets/js/app.js
+# JavaScript target output (separate from Phoenix bootstrap to avoid overwriting LiveView init)
+-js assets/js/hx_app.js
 -D js-unflatten               # Better module structure
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
 --dce=full
