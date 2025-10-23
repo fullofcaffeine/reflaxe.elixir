@@ -8,7 +8,7 @@
 -cp ../../src
 -cp ../../vendor/genes/src
 # TODO: Integrate Genes ES6 generator once Haxe toolchain is upgraded; for now, default js generator
-# (Genes requires Compiler.setCustomJSGenerator; not available in current Haxe)
+# (Genes requires newer Haxe macro APIs: Compiler.setCustomJSGenerator / addMetadata)
 # -lib genes
 
 # JavaScript target output (separate from Phoenix bootstrap to avoid overwriting LiveView init)
