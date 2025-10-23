@@ -113,7 +113,7 @@ var TodoApp = (() => {
   };
   var globalSelf = typeof self !== "undefined" ? self : null;
   var phxWindow = typeof window !== "undefined" ? window : null;
-  var global = globalSelf || phxWindow || global;
+  var global2 = globalSelf || phxWindow || global2;
   var DEFAULT_VSN = "2.0.0";
   var SOCKET_STATES = { connecting: 0, open: 1, closing: 2, closed: 3 };
   var DEFAULT_TIMEOUT = 1e4;
@@ -593,11 +593,11 @@ var TodoApp = (() => {
   };
   var Ajax = class {
     static request(method, endPoint, accept, body, timeout, ontimeout, callback) {
-      if (global.XDomainRequest) {
-        let req = new global.XDomainRequest();
+      if (global2.XDomainRequest) {
+        let req = new global2.XDomainRequest();
         return this.xdomainRequest(req, method, endPoint, body, timeout, ontimeout, callback);
       } else {
-        let req = new global.XMLHttpRequest();
+        let req = new global2.XMLHttpRequest();
         return this.xhrRequest(req, method, endPoint, accept, body, timeout, ontimeout, callback);
       }
     }
@@ -920,11 +920,11 @@ var TodoApp = (() => {
       this.sendBuffer = [];
       this.ref = 0;
       this.timeout = opts.timeout || DEFAULT_TIMEOUT;
-      this.transport = opts.transport || global.WebSocket || LongPoll;
+      this.transport = opts.transport || global2.WebSocket || LongPoll;
       this.primaryPassedHealthCheck = false;
       this.longPollFallbackMs = opts.longPollFallbackMs;
       this.fallbackTimer = null;
-      this.sessionStore = opts.sessionStorage || global && global.sessionStorage;
+      this.sessionStore = opts.sessionStorage || global2 && global2.sessionStorage;
       this.establishedConnections = 0;
       this.defaultEncoder = serializer_default.encode.bind(serializer_default);
       this.defaultDecoder = serializer_default.decode.bind(serializer_default);
@@ -6375,32 +6375,154 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   // js/hx_app.js
   (function($global) {
     "use strict";
-    var client_Boot = function() {
-    };
-    client_Boot.main = function() {
-      var hooks3 = { AutoFocus: { mounted: function() {
-        this.el && this.el.focus && this.el.focus();
-      } }, Ping: { mounted: function() {
-        try {
-          this.pushEvent && this.pushEvent("ping", {});
-        } catch (_) {
+    class client_Boot {
+      static main() {
+        let hooks3 = { AutoFocus: { mounted: function() {
+          this.el && this.el.focus && this.el.focus();
+        } }, Ping: { mounted: function() {
+          try {
+            this.pushEvent && this.pushEvent("ping", {});
+          } catch (_) {
+          }
+          ;
+        } } };
+        window.Hooks = window.Hooks || hooks3;
+      }
+    }
+    class genes_Register {
+      static global(name) {
+        if (genes_Register.globals[name]) {
+          return genes_Register.globals[name];
+        } else {
+          return genes_Register.globals[name] = {};
         }
-        ;
-      } } };
-      window.Hooks = window.Hooks || hooks3;
-    };
-    var haxe_iterators_ArrayIterator = function(array) {
-      this.current = 0;
-      this.array = array;
-    };
-    haxe_iterators_ArrayIterator.prototype = {
-      hasNext: function() {
+      }
+      static createStatic(obj, name, get) {
+        let value = null;
+        Object.defineProperty(obj, name, { enumerable: true, get: function() {
+          if (get != null) {
+            value = get();
+            get = null;
+          }
+          return value;
+        }, set: function(v) {
+          if (get != null) {
+            value = get();
+            get = null;
+          }
+          value = v;
+        } });
+      }
+      static iterator(a) {
+        if (!Array.isArray(a)) {
+          return typeof a.iterator === "function" ? a.iterator.bind(a) : a.iterator;
+        } else {
+          let a1 = a;
+          return function() {
+            return genes_Register.mkIter(a1);
+          };
+        }
+      }
+      static getIterator(a) {
+        if (!Array.isArray(a)) {
+          return a.iterator();
+        } else {
+          return genes_Register.mkIter(a);
+        }
+      }
+      static mkIter(a) {
+        return new genes__$Register_ArrayIterator(a);
+      }
+      static extend(superClass) {
+        function res() {
+          this[Register.new].apply(this, arguments);
+        }
+        Object.setPrototypeOf(res.prototype, superClass.prototype);
+        return res;
+      }
+      static inherits(resolve, defer) {
+        if (defer == null) {
+          defer = false;
+        }
+        function res() {
+          if (defer && resolve && res[Register.init])
+            res[Register.init]();
+          this[Register.new].apply(this, arguments);
+        }
+        if (!defer) {
+          if (resolve && resolve[Register.init]) {
+            defer = true;
+            res[Register.init] = () => {
+              if (resolve[Register.init])
+                resolve[Register.init]();
+              Object.setPrototypeOf(res.prototype, resolve.prototype);
+              res[Register.init] = void 0;
+            };
+          } else if (resolve) {
+            Object.setPrototypeOf(res.prototype, resolve.prototype);
+          }
+        } else {
+          res[Register.init] = () => {
+            const superClass = resolve();
+            if (superClass[Register.init])
+              superClass[Register.init]();
+            Object.setPrototypeOf(res.prototype, superClass.prototype);
+            res[Register.init] = void 0;
+          };
+        }
+        return res;
+      }
+      static bind(o, m) {
+        if (m == null) {
+          return null;
+        }
+        if (m.__id__ == null) {
+          m.__id__ = genes_Register.fid++;
+        }
+        let f = null;
+        if (o.hx__closures__ == null) {
+          o.hx__closures__ = {};
+        } else {
+          f = o.hx__closures__[m.__id__];
+        }
+        if (f == null) {
+          f = m.bind(o);
+          o.hx__closures__[m.__id__] = f;
+        }
+        return f;
+      }
+    }
+    class genes__$Register_ArrayIterator {
+      constructor(array) {
+        this.current = 0;
+        this.array = array;
+      }
+      hasNext() {
         return this.current < this.array.length;
-      },
-      next: function() {
+      }
+      next() {
         return this.array[this.current++];
       }
-    };
+    }
+    class haxe_iterators_ArrayIterator {
+      constructor(array) {
+        this.current = 0;
+        this.array = array;
+      }
+      hasNext() {
+        return this.current < this.array.length;
+      }
+      next() {
+        return this.array[this.current++];
+      }
+    }
+    {
+    }
+    genes_Register.$global = typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : void 0;
+    genes_Register.globals = {};
+    genes_Register.new = Symbol();
+    genes_Register.init = Symbol();
+    genes_Register.fid = 0;
     client_Boot.main();
   })({});
 
