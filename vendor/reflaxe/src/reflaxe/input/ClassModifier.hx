@@ -25,7 +25,12 @@ class ClassModifier {
 			modifications.set(classPath, []);
 
 			#if eval
+			// Haxe 4.3.x does not have Compiler.addMetadata; fall back to addGlobalMetadata
+			#if (haxe_ver >= 4.4)
 			Compiler.addMetadata("@:build(reflaxe.input.ClassModifier.applyMod(\"" + classPath + "\"))", classPath);
+			#else
+			Compiler.addGlobalMetadata("@:build(reflaxe.input.ClassModifier.applyMod(\"" + classPath + "\"))", classPath);
+			#end
 			#end
 		}
 

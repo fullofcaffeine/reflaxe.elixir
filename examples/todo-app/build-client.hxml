@@ -1,15 +1,11 @@
 # Haxe→JavaScript compilation for Phoenix LiveView client-side code
 # Generates efficient ES6 modules compatible with esbuild
 
-# Source directories and genes (vendored in repo)
+# Source directories (client only)
 -cp src_haxe/client
 -cp src_haxe
--cp ../../std
--cp ../../src
--cp ../../vendor/genes/src
-# TODO: Integrate Genes ES6 generator once Haxe toolchain is upgraded; for now, default js generator
-# (Genes requires newer Haxe macro APIs: Compiler.setCustomJSGenerator / addMetadata)
-# -lib genes
+# Enable Genes ES6 generator (uses haxe_libraries/genes.hxml)
+-lib genes
 
 # JavaScript target output (separate from Phoenix bootstrap to avoid overwriting LiveView init)
 -js assets/js/hx_app.js
