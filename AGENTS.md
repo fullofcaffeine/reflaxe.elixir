@@ -121,6 +121,13 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 7) Track everything in shrimp
 - Each task must include the QA sentinel step in its verification criteria and should link the specific specs being exercised.
 
+### 🧭 JS Client Build Guardrails (Classpath)
+
+- For browser JS builds (e.g., `examples/todo-app/build-client.hxml`), do not add repository-level classpaths like `../../std`, `../../src`, or vendored sources directly.
+- Use `-lib` to bring in libraries (e.g., `-lib genes`); their `haxe_libraries/*.hxml` files provide the correct classpaths and macros.
+- Rationale: Adding repo `std/` can shadow the official Haxe std macros (e.g., `haxe.macro.Compiler`) and trigger false “missing field” errors.
+- Quick check: `haxe -v build-client.hxml` should show client source paths, library paths from `haxe_libraries/`, and the official Haxe std — not the repo’s `std/`.
+
 ## 🤖 Developer Identity & Vision
 
 **You are an experienced compiler developer** specializing in Haxe→Elixir transpilation with a mission to transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development**.
