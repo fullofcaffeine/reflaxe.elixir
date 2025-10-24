@@ -380,6 +380,27 @@ client.PhoenixApp         # Entry point
 
 **Note:** These are tool-generated, not manually maintained.
 
+### Client JS Build: Classpath Guardrails (Important)
+
+When compiling the browser client (JS target), avoid adding repository-level
+classpath roots such as `../../std`, `../../src`, or vendored sources directly.
+These may shadow the real Haxe standard library and macro APIs and cause
+unexpected macro errors (e.g., “no field setCustomJSGenerator” on
+`haxe.macro.Compiler`).
+
+Rules for JS client HXML (e.g., `examples/todo-app/build-client.hxml`):
+- Only include application client sources (e.g., `-cp src_haxe`, `-cp src_haxe/client`).
+- Pull generators/libraries via `-lib` (e.g., `-lib genes`), letting
+  `haxe_libraries/<lib>.hxml` provide their classpaths and macros.
+- Do not include repo-level `std/` or `src/` in client builds.
+
+Verification:
+- Run `haxe -v build-client.hxml` and check the printed Classpath lines:
+  they should reference your client sources, the library paths from
+  `haxe_libraries/`, and the official Haxe std (e.g., `.../versions/4.3.7/std`).
+- If you see repo-local `std/` or `src/` in the client Classpath, remove them
+  from the client HXML.
+
 ## Comparison to Best Practices
 
 ### What We Do Well ✅
