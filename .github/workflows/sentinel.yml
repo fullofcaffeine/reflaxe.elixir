@@ -44,7 +44,20 @@ jobs:
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
         with:
-          haxe-version: '4.3.6'
+          haxe-version: '4.3.7'
+
+      - name: Verify JS client classpath (no repo std/src)
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          haxe -v examples/todo-app/build-client.hxml 2>&1 | tee classpath.log
+          echo '--- Classpath line ---'
+          grep '^Classpath:' classpath.log || true
+          echo '--- Guard: ensure no repo std/src/vendor paths present ---'
+          if grep -F "$WORKSPACE/std/" classpath.log; then echo "ERROR: repo std/ found in client classpath"; exit 1; fi
+          if grep -F "$WORKSPACE/src/" classpath.log; then echo "ERROR: repo src/ found in client classpath"; exit 1; fi
+          if grep -F "$WORKSPACE/vendor/genes/src/" classpath.log; then echo "ERROR: repo vendor/genes/src found in client classpath"; exit 1; fi
 
       - name: Install Playwright browsers (cached)
         run: |
@@ -66,4 +79,3 @@ jobs:
           path: |
             /tmp/qa-*.log
             qa-run.log
-
