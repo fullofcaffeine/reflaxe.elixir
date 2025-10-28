@@ -49,6 +49,24 @@ class LocalAssignUnderscoreLateTransforms {
             if (found || x == null || x.def == null) return;
             switch (x.def) {
                 case EVar(v) if (v == name): found = true;
+                case EString(s):
+                    // Consider identifiers inside string interpolation as references
+                    try {
+                        var block = new EReg("\\#\\{([^}]*)\\}", "g");
+                        var pos = 0;
+                        while (block.matchSub(s, pos)) {
+                            var inner = block.matched(1);
+                            var tok = new EReg("[a-z_][a-z0-9_]*", "gi");
+                            var tpos = 0;
+                            while (tok.matchSub(inner, tpos)) {
+                                var id = tok.matched(0);
+                                if (id == name) { found = true; break; }
+                                tpos = tok.matchedPos().pos + tok.matchedPos().len;
+                            }
+                            if (found) break;
+                            pos = block.matchedPos().pos + block.matchedPos().len;
+                        }
+                    } catch (e:Dynamic) {}
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
                 case ERemoteCall(m, _, as): visit(m); if (as != null) for (a in as) visit(a);

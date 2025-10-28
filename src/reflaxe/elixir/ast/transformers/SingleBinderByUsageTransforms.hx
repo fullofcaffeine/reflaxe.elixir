@@ -53,12 +53,12 @@ class SingleBinderByUsageTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, args, guards, body):
-                    var defined = collectFunctionDefinedVars(args, body);
-                    var newBody = rewriteCases(body, defined);
+                    var outerDefined = collectParamVars(args);
+                    var newBody = rewriteCasesWithOuter(body, outerDefined);
                     makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, args, guards, body):
-                    var defined = collectFunctionDefinedVars(args, body);
-                    var newBody = rewriteCases(body, defined);
+                    var outerDefined = collectParamVars(args);
+                    var newBody = rewriteCasesWithOuter(body, outerDefined);
                     makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
                 default:
                     node;
@@ -66,7 +66,7 @@ class SingleBinderByUsageTransforms {
         });
     }
 
-    static function rewriteCases(body: ElixirAST, defined: Map<String, Bool>): ElixirAST {
+    static function rewriteCasesWithOuter(body: ElixirAST, outerDefined: Map<String,Bool>): ElixirAST {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
@@ -74,32 +74,18 @@ class SingleBinderByUsageTransforms {
                     for (cl in clauses) {
                         var binder = extractSingleBinder(cl.pattern);
                         if (binder != null) {
+                            var clauseDefined = new Map<String,Bool>();
+                            collectPatternVars(cl.pattern, clauseDefined);
+                            collectLhsVarsInBody(cl.body, clauseDefined);
+                            if (outerDefined != null) for (k in outerDefined.keys()) clauseDefined.set(k, true);
                             var used = collectUsedLowerVars(cl.body);
-                            // Generic: rename binder to the unique undefined lower-case var used in body
-                            var cands = used.filter(v -> v != binder && !isDefinedName(v, defined));
-                            // Special allowance: if the body uses `id` or `_id`, prefer unifying the binder to `id`
-                            // even when `id` is already defined at function scope. This avoids later misalignments
-                            // where calls inside the clause are rewritten to the binder name.
-                            var preferId = false;
-                            if (!used.remove("id")) {
-                                // used.remove returns false when key not present; we need presence check differently
-                            }
-                            // Presence check for id/_id
-                            var usedHasId = false; var usedHas_Uid = false;
-                            for (u in used) {
-                                if (u == "id") usedHasId = true;
-                                else if (u == "_id") usedHas_Uid = true;
-                            }
-                            #if sys
-                            var usedListDbg = [];
-                            for (k in used) usedListDbg.push(k);
-                            Sys.println('[SingleBinderByUsage] binder=' + binder + ' used=' + usedListDbg.join(',') + ' cands=' + cands.join(',') + ' hasId=' + usedHasId + ' has_Uid=' + usedHas_Uid);
-                            #end
+                            var cands:Array<String> = [];
+                            for (v in used) if (v != binder && allowCandidate(v) && !isDefinedName(v, clauseDefined)) cands.push(v);
                             var newName: Null<String> = null;
-                            if (cands.length == 1) {
-                                newName = cands[0];
-                            } else if (cands.length == 0 && binder != "id" && (usedHasId || usedHas_Uid)) {
-                                newName = "id";
+                            if (cands.length == 1) newName = cands[0];
+                            if (newName == null && binder != "id") {
+                                var hasId = used.indexOf("id") != -1 || used.indexOf("_id") != -1;
+                                if (hasId && !isDefinedName("id", clauseDefined)) newName = "id";
                             }
                             // Shape guard: avoid binding a struct-shaped payload to an id-like name
                             if (newName != null && newName != binder) {
@@ -148,6 +134,13 @@ class SingleBinderByUsageTransforms {
         return vars;
     }
 
+    static function collectParamVars(args: Array<EPattern>): Map<String,Bool> {
+        var out = new Map<String,Bool>();
+        if (args == null) return out;
+        for (a in args) collectPatternVars(a, out);
+        return out;
+    }
+
     static function collectPatternVars(p: EPattern, vars: Map<String, Bool>): Void {
         switch (p) {
             case PVar(n): if (n != null && n.length > 0) vars.set(n, true);
@@ -168,6 +161,19 @@ class SingleBinderByUsageTransforms {
                 collectLhsVars(r2, vars);
             default:
         }
+    }
+
+    // Clause-local body declarations (patterns, simple matches, nested case patterns)
+    static function collectLhsVarsInBody(body: ElixirAST, vars: Map<String,Bool>): Void {
+        ASTUtils.walk(body, function(x: ElixirAST) {
+            if (x == null || x.def == null) return;
+            switch (x.def) {
+                case EMatch(p, _): collectPatternVars(p, vars);
+                case EBinary(Match, l, _): collectLhsVars(l, vars);
+                case ECase(_, cs): for (c in cs) collectPatternVars(c.pattern, vars);
+                default:
+            }
+        });
     }
 
     static function extractSingleBinder(pat: EPattern): Null<String> {
@@ -235,6 +241,12 @@ class SingleBinderByUsageTransforms {
     static inline function isLower(s: String): Bool {
         var c = s.charAt(0);
         return c.toLowerCase() == c;
+    }
+
+    static inline function allowCandidate(name:String):Bool {
+        if (name == null || name.length == 0) return false;
+        if (name == "socket" || name == "live_socket" || name == "liveSocket") return false;
+        return isLower(name);
     }
 
     static function toSnake(s: String): String {

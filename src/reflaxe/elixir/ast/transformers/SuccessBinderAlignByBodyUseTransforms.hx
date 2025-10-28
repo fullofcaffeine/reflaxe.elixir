@@ -63,55 +63,88 @@ class SuccessBinderAlignByBodyUseTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, args, guards, body):
-                    var newBody = process(body);
+                    var fnDeclared = collectFunctionDefinedVars(args, body);
+                    var newBody = process(body, fnDeclared);
                     makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, args, guards, body):
-                    var newBody = process(body);
-                    makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
+                    var fnDeclared2 = collectFunctionDefinedVars(args, body);
+                    var newBody2 = process(body, fnDeclared2);
+                    makeASTWithMeta(EDefp(name, args, guards, newBody2), node.metadata, node.pos);
                 default:
                     node;
             }
         });
     }
 
-    static function process(body: ElixirAST): ElixirAST {
+    static function process(body: ElixirAST, fnDeclared: Map<String,Bool>): ElixirAST {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
-#if debug_success_unifier
-                    Sys.println('[SuccessBinderAlign] Inspecting ECase with ' + clauses.length + ' clauses');
-#end
+                    #if sys Sys.println('[SuccessBinderAlign] Inspecting ECase with ' + clauses.length + ' clauses'); #end
                     var newClauses = [];
                     for (cl in clauses) {
                         var okBinder = extractOkBinder(cl.pattern);
-#if debug_success_unifier
-                        if (okBinder != null) Sys.println('[SuccessBinderAlign] Found {:ok, ' + okBinder + '}');
-#end
+                        #if sys if (okBinder != null) Sys.println('[SuccessBinderAlign] Found {:ok, ' + okBinder + '}'); #end
                         if (okBinder != null) {
                             // Collect declared names inside clause body (pattern LHS and matches)
                             var clauseDeclared: Map<String,Bool> = new Map();
                             collectPatternDecls(cl.pattern, clauseDeclared);
                             collectLhsDeclsInBody(cl.body, clauseDeclared);
+                            // Merge function-level declared (params + prior LHS) to avoid renaming to params
+                            if (fnDeclared != null) for (k in fnDeclared.keys()) clauseDeclared.set(k, true);
                             // Collect used names in clause body
                             var used = collectUsedNames(cl.body);
+                            #if sys {
+                                var declArr = [for (k in clauseDeclared.keys()) k];
+                                var usedArr = [for (k in used.keys()) k];
+                                Sys.println('[SuccessBinderAlign] declared=' + declArr.join(',') + ' used=' + usedArr.join(','));
+                            } #end
                             // Find exactly one undefined, excluding env names
                             var undef = [];
                             for (u in used.keys()) if (!clauseDeclared.exists(u) && u != okBinder && allowUndefined(u)) undef.push(u);
-#if debug_success_unifier
-                            if (undef.length > 0) Sys.println('[SuccessBinderAlign] undefined candidates: ' + undef.join(','));
-#end
+                            #if sys if (undef.length > 0) Sys.println('[SuccessBinderAlign] undefined candidates: ' + undef.join(',')); #end
                             if (undef.length == 1) {
                                 var newName = undef[0];
+                                // Guard: never rename binder to a reserved env name
+                                if (!allowUndefined(newName)) {
+                                    newClauses.push(cl);
+                                    continue;
+                                }
 #if debug_success_unifier
                                 Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName);
 #end
+                                #if sys
+                                Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName);
+                                #end
                                 // Rewrite pattern binder to newName
                                 var newPattern = rewriteOkBinder(cl.pattern, newName);
                                 // Rewrite old binder references in body to newName
-                                var newBody = replaceVar(cl.body, okBinder, newName);
-                                newClauses.push({ pattern: newPattern, guard: cl.guard, body: newBody });
+                                // Only rewrite the binder in the pattern. Do NOT replace the old
+                                // binder name inside the body so that any references to `socket`
+                                // (or other outer variables) correctly refer to the outer scope
+                                // once the shadowing binder is renamed.
+                                newClauses.push({ pattern: newPattern, guard: cl.guard, body: cl.body });
                                 continue;
                             }
+                            // Fallback: if multiple undefineds, choose the most frequently used in the body
+                            if (undef.length >= 1) {
+                                var freq = new haxe.ds.StringMap<Int>();
+                                for (u in undef) freq.set(u, 0);
+                                ASTUtils.walk(cl.body, function(w: ElixirAST) {
+                                    switch (w.def) { case EVar(nm) if (freq.exists(nm)): freq.set(nm, freq.get(nm) + 1); default: }
+                                });
+                                var best:Null<String> = null; var bestCount = -1;
+                                for (u in undef) {
+                                    var c = freq.exists(u) ? freq.get(u) : 0;
+                                    if (c > bestCount) { bestCount = c; best = u; }
+                                }
+                                if (best != null && allowUndefined(best)) {
+                                    var newPat2 = rewriteOkBinder(cl.pattern, best);
+                                    newClauses.push({ pattern: newPat2, guard: cl.guard, body: cl.body });
+                                    continue;
+                                }
+                            }
+                            // If no clear undefineds, keep binder as-is
                         }
                         newClauses.push(cl);
                     }

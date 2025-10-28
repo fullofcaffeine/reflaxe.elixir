@@ -24,6 +24,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 
 /**
  * ClauseUndefinedVarToBinderTransforms
@@ -52,10 +53,12 @@ class ClauseUndefinedVarToBinderTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, args, guards, body):
-                    var newBody = process(body);
+                    var outerDefined = collectParamVars(args);
+                    var newBody = processWithOuter(body, outerDefined);
                     makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, args, guards, body):
-                    var newBody = process(body);
+                    var outerDefined = collectParamVars(args);
+                    var newBody = processWithOuter(body, outerDefined);
                     makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
                 default:
                     node;
@@ -63,7 +66,7 @@ class ClauseUndefinedVarToBinderTransforms {
         });
     }
 
-    static function process(body: ElixirAST): ElixirAST {
+    static function processWithOuter(body: ElixirAST, outerDefined: Map<String,Bool>): ElixirAST {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
@@ -75,23 +78,41 @@ class ClauseUndefinedVarToBinderTransforms {
                             var clauseDefined = new Map<String,Bool>();
                             collectPatternVars(cl.pattern, clauseDefined);
                             collectLhsVarsInBody(cl.body, clauseDefined);
+                            // Merge outer (function parameter) scope to avoid rebinding params
+                            if (outerDefined != null) for (k in outerDefined.keys()) clauseDefined.set(k, true);
                             var used = collectUsedLowerVars(cl.body);
+                            #if sys
+                            var usedList = [for (u in used) u].join(",");
+                            var defList = [];
+                            for (k in clauseDefined.keys()) defList.push(k);
+                            Sys.println('[ClauseUndefinedVarToBinder] binder=' + binder + ' used=[' + usedList + '] declared=[' + defList.join(',') + ']');
+                            Sys.println('[ClauseUndefinedVarToBinder] body=' + ElixirASTPrinter.print(cl.body, 0));
+                            #end
                             // Prefer well-known, generic event payload names when present
-                            var preferred = pickPreferred(used, binder);
+                            var preferred = pickPreferred(used, binder, clauseDefined);
                             if (preferred != null) {
-                                var newBody = replaceVar(cl.body, preferred, binder);
-                                newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
-                                continue;
+                                // Rename binder to the body’s used local instead of rewriting body to binder
+                                var renamedPat = tryRenameSingleBinder(cl.pattern, preferred);
+                                if (renamedPat != null) {
+                                    Sys.println('[ClauseUndefinedVarToBinder] Renaming binder ' + binder + ' -> ' + preferred);
+                                    var newBody = replaceVar(cl.body, binder, preferred);
+                                    newClauses.push({ pattern: renamedPat, guard: cl.guard, body: newBody });
+                                    continue;
+                                }
                             } else {
-                                // Fallback: single undefined variable in body
+                                // Fallback: single undefined variable in body → rename binder to it
                                 var undef = used.filter(v -> v != binder && !isDefined(v, clauseDefined))
                                     .filter(v -> v != "socket" && v != "live_socket" && v != "liveSocket"
                                         && !StringTools.endsWith(v, "socket") && !StringTools.endsWith(v, "Socket"));
                                 if (undef.length == 1) {
                                     var targetVar = undef[0];
-                                    var nbody = replaceVar(cl.body, targetVar, binder);
-                                    newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: nbody });
-                                    continue;
+                                    var renamedPat2 = tryRenameSingleBinder(cl.pattern, targetVar);
+                                    if (renamedPat2 != null) {
+                                        Sys.println('[ClauseUndefinedVarToBinder] Renaming binder ' + binder + ' -> ' + targetVar);
+                                        var nbody = replaceVar(cl.body, binder, targetVar);
+                                        newClauses.push({ pattern: renamedPat2, guard: cl.guard, body: nbody });
+                                        continue;
+                                    }
                                 }
                             }
                         }
@@ -111,6 +132,17 @@ class ClauseUndefinedVarToBinderTransforms {
                 default: x;
             }
         });
+    }
+
+    static function tryRenameSingleBinder(pat: EPattern, newName: String): Null<EPattern> {
+        return switch (pat) {
+            case PTuple(elements) if (elements.length == 2):
+                switch (elements[1]) {
+                    case PVar(old) if (old != newName): PTuple([elements[0], PVar(newName)]);
+                    default: null;
+                }
+            default: null;
+        }
     }
 
     static function collectLhsVarsInBody(body: ElixirAST, vars: Map<String,Bool>): Void {
@@ -159,6 +191,22 @@ class ClauseUndefinedVarToBinderTransforms {
             if (n == null || n.def == null) return;
             switch (n.def) {
                 case EVar(name): if (name != null && name.length > 0 && isLower(name)) names.set(name, true);
+                case EString(s):
+                    if (s != null && s.indexOf("#{") != -1) {
+                        var block = new EReg("\\#\\{([^}]*)\\}", "g");
+                        var pos = 0;
+                        while (block.matchSub(s, pos)) {
+                            var inner = block.matched(1);
+                            var tok = new EReg("[a-z_][a-z0-9_]*", "gi");
+                            var tpos = 0;
+                            while (tok.matchSub(inner, tpos)) {
+                                var id = tok.matched(0);
+                                if (isLower(id)) names.set(id, true);
+                                tpos = tok.matchedPos().pos + tok.matchedPos().len;
+                            }
+                            pos = block.matchedPos().pos + block.matchedPos().len;
+                        }
+                    }
                 case EField(t, _): scan(t);
                 case EAccess(t, k): scan(t); scan(k);
                 case EBinary(_, l, r): scan(l); scan(r);
@@ -175,6 +223,25 @@ class ClauseUndefinedVarToBinderTransforms {
             }
         }
         scan(ast);
+        // Fallback: parse printed body text for interpolation identifiers only
+        if (!names.iterator().hasNext()) {
+            try {
+                var printed = ElixirASTPrinter.print(ast, 0);
+                var block = new EReg("\\#\\{([^}]*)\\}", "g");
+                var pos = 0;
+                while (block.matchSub(printed, pos)) {
+                    var inner = block.matched(1);
+                    var tok = new EReg("[a-z_][a-z0-9_]*", "gi");
+                    var tpos = 0;
+                    while (tok.matchSub(inner, tpos)) {
+                        var id = tok.matched(0);
+                        if (isLower(id)) names.set(id, true);
+                        tpos = tok.matchedPos().pos + tok.matchedPos().len;
+                    }
+                    pos = block.matchedPos().pos + block.matchedPos().len;
+                }
+            } catch (e:Dynamic) {}
+        }
         return [for (k in names.keys()) k];
     }
 
@@ -183,11 +250,21 @@ class ClauseUndefinedVarToBinderTransforms {
         return c.toLowerCase() == c;
     }
 
-    static function pickPreferred(used: Array<String>, binder: String): Null<String> {
+    static function pickPreferred(used: Array<String>, binder: String, defined: Map<String,Bool>): Null<String> {
         // Generic names commonly used for event payloads across Phoenix apps (target-agnostic)
         var prefs = ["id", "params", "query", "filter", "sort_by", "tag"];
-        var hits = [for (n in used) if (n != binder && prefs.indexOf(n) != -1) n];
+        var hits = [
+            for (n in used)
+                if (n != binder && prefs.indexOf(n) != -1 && !isDefined(n, defined)) n
+        ];
         return hits.length == 1 ? hits[0] : null;
+    }
+
+    static function collectParamVars(args: Array<EPattern>): Map<String,Bool> {
+        var out = new Map<String,Bool>();
+        if (args == null) return out;
+        for (a in args) collectPatternVars(a, out);
+        return out;
     }
 
     static function isDefined(name: String, defined: Map<String, Bool>): Bool {

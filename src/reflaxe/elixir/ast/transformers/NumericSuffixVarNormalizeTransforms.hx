@@ -12,6 +12,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Eliminates numeric suffixes from local variable binders and references
  *   (e.g., g2 -> g, entry3 -> entry) within well-defined scopes.
+ *   Conservative gating prevents renaming when digits are part of the
+ *   original identifier (e.g., user_id1, html_element5) by requiring
+ *   evidence that the base name is relevant in-scope.
  * - Applies to function parameters, local matches, case clause patterns,
  *   and anonymous function parameters and bodies.
  *
@@ -26,10 +29,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each scope (EDef/EDefp/EFn clause/Case clause):
  *   1) Collect currently bound names in the scope.
  *   2) For any newly bound name matching /^(?:_)?[a-z][a-z0-9_]*\d+$/:
- *      - Propose base = strip trailing digits (preserving leading underscore).
- *      - If base is free, rename binder to base.
- *      - Else choose a descriptive alternative (base_next/base_alt/base_copy/base_new/base_value/base_item)
- *        that is free in this scope.
+ *      - Only consider normalization if the base (digits stripped) is either
+ *        referenced in the function body or also declared in the same scope.
+ *        This distinguishes Haxe-introduced numeric suffixes from intentional
+ *        identifiers that include digits.
+ *      - If base is free, rename binder to base; otherwise choose a descriptive
+ *        alternative (base_value/base_entry/base_next/...) that avoids numbers.
  *   3) Rewrite all EVar references in the corresponding body using the computed map.
  * - Module names and atoms are never touched (we only rewrite lower-case EVar/PVar).
  *
@@ -56,8 +61,13 @@ class NumericSuffixVarNormalizeTransforms {
                 case ECase(expr, clauses):
                     var newClauses = new Array<{ pattern:EPattern, guard:Null<ElixirAST>, body:ElixirAST }>();
                     for (cl in clauses) {
-                        var scopeNames = collectPatternVars(cl.pattern);
-                        var rename = computeNumericRenames(scopeNames);
+                        var declared = collectPatternVars(cl.pattern);
+                        // Consider both guard and body references to decide if base names are desired
+                        var refScope = (cl.guard == null)
+                            ? cl.body
+                            : makeASTWithMeta(EBlock([cl.guard, cl.body]), {}, cl.body.pos);
+                        var refs = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(refScope);
+                        var rename = computeNumericRenamesGated(declared, refs);
                         var newPattern = renamePattern(cl.pattern, rename);
                         var newBody = renameBodyVars(cl.body, rename);
                         var newGuard = (cl.guard == null) ? null : renameBodyVars(cl.guard, rename);
@@ -69,7 +79,8 @@ class NumericSuffixVarNormalizeTransforms {
                     for (cl in clauses) {
                         var paramVars = new Map<String,Bool>();
                         for (a in cl.args) for (nm in collectPatternVars(a).keys()) paramVars.set(nm, true);
-                        var rename = computeNumericRenames(paramVars);
+                        var refs = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(cl.body);
+                        var rename = computeNumericRenamesGated(paramVars, refs);
                         out.push({ args: [for (a in cl.args) renamePattern(a, rename)], guard: cl.guard, body: renameBodyVars(cl.body, rename) });
                     }
                     makeASTWithMeta(EFn(out), n.metadata, n.pos);
@@ -84,8 +95,9 @@ class NumericSuffixVarNormalizeTransforms {
         var declared = new Map<String,Bool>();
         for (p in params) for (k in collectPatternVars(p).keys()) declared.set(k, true);
         // Propose renames for numeric-suffixed declared names in params
-        // Be conservative: if body contains ERaw, skip parameter renames to avoid mismatches
-        var paramRename = containsERaw(body) ? new Map<String,String>() : computeNumericRenames(declared);
+        // Conservative gating: only rename when the base form is referenced or also declared.
+        var __refs = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(body);
+        var paramRename = containsERaw(body) ? new Map<String,String>() : computeNumericRenamesGated(declared, __refs);
         var newParams = [for (p in params) renamePattern(p, paramRename)];
 
         // Extend declared with any new param names post-rename
@@ -96,7 +108,7 @@ class NumericSuffixVarNormalizeTransforms {
         var bodyDecl = collectLocalBinds(body);
         // Exclude already-declared param names from renaming decisions (avoid collisions)
         for (k in declared.keys()) if (bodyDecl.exists(k)) bodyDecl.remove(k);
-        var bodyRename = containsERaw(body) ? new Map<String,String>() : computeNumericRenames(bodyDecl, declared);
+        var bodyRename = containsERaw(body) ? new Map<String,String>() : computeNumericRenamesGated(bodyDecl, __refs, declared);
 
         // Merge rename maps (params first, then body).
         var rename = new Map<String,String>();
@@ -164,11 +176,9 @@ class NumericSuffixVarNormalizeTransforms {
         return vars;
     }
 
-    // Compute rename map for numeric-suffix variables in 'toNormalize'.
-    // If 'reserved' provided, avoid generating names colliding with reserved.
-    static function computeNumericRenames(toNormalize: Map<String,Bool>, ?reserved: Map<String,Bool>): Map<String,String> {
+    // Conservative numeric-suffix normalization: only when base is present/referenced.
+    static function computeNumericRenamesGated(toNormalize: Map<String,Bool>, refs: Map<String,Bool>, ?reserved: Map<String,Bool>): Map<String,String> {
         var rename = new Map<String,String>();
-        // Build current set for collision checks
         var used = new Map<String,Bool>();
         for (k in toNormalize.keys()) used.set(k, true);
         if (reserved != null) for (k in reserved.keys()) used.set(k, true);
@@ -177,6 +187,9 @@ class NumericSuffixVarNormalizeTransforms {
             var split = splitNumericSuffix(k);
             if (split == null) continue;
             var base = split.base;
+            var baseDeclared = used.exists(base);
+            var baseReferenced = refs != null && refs.exists(base);
+            if (!baseDeclared && !baseReferenced) continue; // keep original numeric name
             if (!used.exists(base)) {
                 rename.set(k, base);
                 used.remove(k); used.set(base, true);
