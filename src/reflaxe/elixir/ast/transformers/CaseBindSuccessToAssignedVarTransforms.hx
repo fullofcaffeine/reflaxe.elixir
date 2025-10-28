@@ -54,6 +54,19 @@ class CaseBindSuccessToAssignedVarTransforms {
                                     continue;
                                 }
                             }
+                            // New shape: lhs = (temp = call); case temp do {:ok, u} -> u ... end
+                            var tempMatch = extractVarTempCall(s1);
+                            if (tempMatch.lhs != null && tempMatch.temp != null && tempMatch.call != null) {
+                                var caseTempVar = extractCaseHeadVar(s2);
+                                if (caseTempVar != null && caseTempVar == tempMatch.temp) {
+                                    var bound = bindSuccessVarInCase(s2, tempMatch.lhs);
+                                    if (bound != null) {
+                                        out.push(bound);
+                                        i += 2;
+                                        continue;
+                                    }
+                                }
+                            }
                         }
                         out.push(stmts[i]);
                         i++;
@@ -104,6 +117,36 @@ class CaseBindSuccessToAssignedVarTransforms {
 
     static function extractCaseHeadCall(n: ElixirAST): Null<ElixirAST> {
         return switch (n.def) { case ECase(expr, _): expr; default: null; }
+    }
+    static function extractCaseHeadVar(n: ElixirAST): Null<String> {
+        return switch (n.def) { case ECase(expr, _): switch (expr.def) { case EVar(v): v; default: null; } default: null; }
+    }
+    static function extractVarTempCall(n: ElixirAST): { lhs: Null<String>, temp: Null<String>, call: Null<ElixirAST> } {
+        var lhs:Null<String> = null; var temp:Null<String> = null; var call:Null<ElixirAST> = null;
+        switch (n.def) {
+            case EBinary(Match, left, right):
+                switch (left.def) { case EVar(v): lhs = v; default: }
+                switch (right.def) {
+                    case EBinary(Match, {def: EVar(t)}, r): temp = t; call = extractRightmostCall(makeASTWithMeta(EBinary(Match, makeAST(EVar(t)), r), n.metadata, n.pos));
+                    case EMatch(PVar(t2), r2): temp = t2; call = extractRightmostCall(makeASTWithMeta(EMatch(PVar(t2), r2), n.metadata, n.pos));
+                    case EParen(inner):
+                        var innerRes = extractVarTempCall(inner);
+                        temp = innerRes.temp; call = innerRes.call;
+                    default:
+                }
+            case EMatch(PVar(lh), right2):
+                lhs = lh;
+                switch (right2.def) {
+                    case EBinary(Match, {def: EVar(t3)}, r3): temp = t3; call = extractRightmostCall(makeASTWithMeta(EBinary(Match, makeAST(EVar(t3)), r3), n.metadata, n.pos));
+                    case EMatch(PVar(t4), r4): temp = t4; call = extractRightmostCall(makeASTWithMeta(EMatch(PVar(t4), r4), n.metadata, n.pos));
+                    case EParen(inner2):
+                        var innerRes2 = extractVarTempCall(inner2);
+                        temp = innerRes2.temp; call = innerRes2.call;
+                    default:
+                }
+            default:
+        }
+        return { lhs: lhs, temp: temp, call: call };
     }
 
     static function callsEqual(a: ElixirAST, b: ElixirAST): Bool {
@@ -164,4 +207,3 @@ class CaseBindSuccessToAssignedVarTransforms {
 }
 
 #end
-

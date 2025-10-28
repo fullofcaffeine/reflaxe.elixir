@@ -121,14 +121,13 @@ class FieldAccessBuilder {
             var atomName = NameUtils.toSnakeCase(ef.name);
             
             if (hasParameters) {
-                // Parameterized constructor - generate tuple
-                // RGB(r, g, b) → {:rgb}  (parameters come later)
+                // Parameterized constructor - generate tuple tag; args are added by call builder
+                // RGB(r, g, b) → {:rgb}
                 return ETuple([makeAST(EAtom(atomName))]);
             } else {
-                // Simple constructor - generate plain atom
-                // Red → :red
-                // None → :none
-                return EAtom(atomName);
+                // Simple constructor - represent as one-element tuple for uniformity with patterns
+                // TopicA → {:topic_a}
+                return ETuple([makeAST(EAtom(atomName))]);
             }
         }
     }

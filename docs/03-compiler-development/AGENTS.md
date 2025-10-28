@@ -352,6 +352,19 @@ function build(): String {
 - **No performance regressions** - watch for timeout increases
 - **Update documentation** - reflect changes in architecture docs
 
+## 🚨 Never‑Break Todo‑App Rule (Critical)
+
+- The `examples/todo-app` is our integration canary and must not remain broken for more than a short iteration.
+- If the todo‑app fails to build or compile at any time:
+  - Treat it as a stop‑the‑line event.
+  - Immediately run the non‑blocking QA sentinel and inspect logs:
+    - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 420`
+    - `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200` (or `--follow 60`)
+  - Diagnose and fix at the appropriate level (builder/transformer/printer/std), keeping solutions generic and shape‑based (no app coupling) and without editing generated `.ex` files.
+  - Prefer minimal, well‑documented transformer fixes that improve correctness across apps.
+  - Only after the sentinel is green should you proceed with other tasks (snapshots, docs, refactors).
+- Rationale: The todo‑app validates real Phoenix/Ecto/LiveView integration and protects 1.0 quality. Keeping it green maintains developer trust and prevents regressions from compounding.
+
 ### Code Quality Standards
 - **Comprehensive documentation** - explain WHY, HOW, and architectural context
 - **Professional debugging** - use DebugHelper, not trace statements

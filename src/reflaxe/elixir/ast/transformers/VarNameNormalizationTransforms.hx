@@ -98,6 +98,8 @@ class VarNameNormalizationTransforms {
                 for (t in tokens) {
                     for (kt in ktokens) if (t == kt) score++;
                 }
+                // Strong bonus: when defined ends with the undefined token (e.g., search_query vs query)
+                if (k.length > name.length && StringTools.endsWith(k, "_" + name)) score += 3;
                 if (tokens.indexOf("priority") != -1 && ktokens.indexOf("priority") != -1) score += 2;
                 if (score > bestScore) { bestScore = score; best = k; }
             }
@@ -108,12 +110,14 @@ class VarNameNormalizationTransforms {
                 case EVar(name):
                     var snake = toSnake(name);
                     if (snake != name && defined.exists(snake)) {
+                        #if sys Sys.println('[VarNameNormalization] ' + name + ' -> ' + snake); #end
                         makeASTWithMeta(EVar(snake), n.metadata, n.pos);
                     } else {
                         // If not defined, try fuzzy token match to an existing defined binding
                         if (!defined.exists(name)) {
                             var candidate = findTokenMatch(name);
                             if (candidate != null) {
+                                #if sys Sys.println('[VarNameNormalization] ' + name + ' -> ' + candidate + ' (fuzzy)'); #end
                                 return makeASTWithMeta(EVar(candidate), n.metadata, n.pos);
                             }
                         }

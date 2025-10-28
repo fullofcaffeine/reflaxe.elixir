@@ -69,10 +69,11 @@ class CaseSuccessVarRenameCollisionFixTransforms {
                         switch (c.pattern) {
                             case PTuple(els) if (els.length == 2):
                                 switch (els[0]) {
-                                    case PLiteral({def: EAtom(a)}) if ((a : String) == "ok"):
+                                    case PLiteral({def: EAtom(a)}) if ((a : String) == ":ok" || (a : String) == "ok"):
                                         switch (els[1]) {
                                             case PVar(vname) if (vname != null && args.exists(vname)):
                                                 var replacement = safeName(vname);
+                                                #if sys Sys.println('[CaseSuccessVarRenameCollisionFix] Renaming {:ok, ' + vname + '} -> {:ok, ' + replacement + '} to avoid arg shadow'); #end
                                                 var newPat = PTuple([els[0], PVar(replacement)]);
                                                 // Do not rewrite body references here — leave function arg uses intact.
                                                 // Other passes (CaseSuccessVarUnifier) handle undefined placeholders.

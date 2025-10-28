@@ -1868,16 +1868,30 @@ class ElixirASTPrinter {
      * Print a case clause
      */
     static function printCaseClause(clause: ECaseClause, indent: Int): String {
-        var result = printPattern(clause.pattern);
+        var head = printPattern(clause.pattern);
         if (clause.guard != null) {
-            result += ' when ' + print(clause.guard, 0);
+            head += ' when ' + print(clause.guard, 0);
         }
-        var bodyStr = print(clause.body, indent + 1);
-        if (StringTools.trim(bodyStr) == '') {
-            bodyStr = 'nil';
+
+        // Prefer single-line format for simple bodies, multi-line for complex ones
+        var body = clause.body;
+        var bodyStr = print(body, indent + 1);
+        if (StringTools.trim(bodyStr) == '') bodyStr = 'nil';
+
+        var isBlock = switch (body.def) { case EBlock(_): true; default: false; };
+        var isMulti = switch (body.def) {
+            case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_, _, _): true;
+            case ECall(_, _, _) | ERemoteCall(_, _, _): true; // prefer multi-line for calls for readability and snapshot parity
+            case EBlock(exprs) if (exprs.length > 1): true;
+            case _: bodyStr.indexOf('\n') >= 0;
+        };
+        var preferSingle = !isBlock && !isMulti && (bodyStr.length <= 120);
+
+        if (!preferSingle && isMulti) {
+            return head + ' ->\n' + indentStr(indent + 1) + bodyStr;
+        } else {
+            return head + ' -> ' + bodyStr;
         }
-        result += ' ->\n' + indentStr(indent + 1) + bodyStr;
-        return result;
     }
     
     /**

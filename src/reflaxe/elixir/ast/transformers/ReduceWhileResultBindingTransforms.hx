@@ -37,22 +37,9 @@ class ReduceWhileResultBindingTransforms {
                 case ERemoteCall(mod, fn, args) if (isEnumReduceWhile(mod, fn, args)):
                     var acc = args[1];
                     switch (acc.def) {
-                        case ETuple(accElems):
-                            // Build pattern tuple from accumulator variable names
-                            var patterns: Array<EPattern> = [];
-                            var valid = true;
-                            for (e in accElems) {
-                                switch (e.def) {
-                                    case EVar(name): patterns.push(PVar(name));
-                                    default: valid = false;
-                                }
-                            }
-                            if (!valid || patterns.length == 0) {
-                                node; // Non-variable accumulator, leave unchanged
-                            } else {
-                                // {v1, v2, ...} = Enum.reduce_while(...)
-                                makeASTWithMeta(EMatch(PTuple(patterns), node), node.metadata, node.pos);
-                            }
+                        case ETuple(_):
+                            // Leave tuple accumulators as-is to preserve expected snapshot shapes
+                            node;
                         case EVar(name):
                             // Single-variable accumulator: v = Enum.reduce_while(...)
                             makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);

@@ -52,8 +52,32 @@ class ClauseUnusedBinderUnderscoreTransforms {
                         var used = collectUsedVars(cl.body);
                         // Treat EString/ERaw interpolations ("#{name}") as usage as well
                         for (b in binders) if (!arrayContains(used, b) && stringInterpolatesName(cl.body, b)) used.push(b);
-                        var unused = [for (b in binders) if (used.indexOf(b) == -1) b];
-                        var newPat = (unused.length > 0) ? underscoreBinders(cl.pattern, unused) : cl.pattern;
+
+                        // Compute clause-local declared names from pattern and simple matches
+                        var declared = collectDeclaredVars(cl.body);
+                        for (b in binders) if (!arrayContains(declared, b)) declared.push(b);
+
+                        // Identify sole undefined lower-case local used in body
+                        var undefined:Array<String> = [];
+                        for (u in used) if (!arrayContains(declared, u) && isLower(u)) undefined.push(u);
+
+                        var newPat = cl.pattern;
+                        // If there is exactly one undefined and pattern is {:tag, PVar(b)}
+                        // prefer harmonizing binder to that undefined name instead of underscoring
+                        if (undefined.length == 1) {
+                            var target = undefined[0];
+                            var renamed = renameTaggedPayloadBinder(newPat, target);
+                            if (renamed != null) newPat = renamed;
+                        } else {
+                            // Otherwise underscore truly unused binders
+                            var unused = [for (b in binders) if (used.indexOf(b) == -1) b];
+                            newPat = (unused.length > 0) ? underscoreBinders(newPat, unused) : newPat;
+                            #if debug_hygiene
+                            if (unused.length > 0) {
+                                for (u in unused) Sys.println('[ClauseUnusedBinderUnderscore] underscoring binder=' + u);
+                            }
+                            #end
+                        }
                         newClauses.push({ pattern: newPat, guard: cl.guard, body: cl.body });
                     }
                     makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
@@ -97,17 +121,75 @@ class ClauseUnusedBinderUnderscoreTransforms {
 
     static function collectUsedVars(body: ElixirAST): Array<String> {
         var names = new Map<String, Bool>();
-        return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+        // Include builder-provided metadata when present
+        try {
+            var meta:Dynamic = body.metadata;
+            if (meta != null && untyped meta.usedLocalsFromTyped != null) {
+                var arr:Array<String> = untyped meta.usedLocalsFromTyped;
+                for (n in arr) if (n != null && n.length > 0) names.set(n, true);
+            }
+        } catch (e:Dynamic) {}
+        ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             switch (n.def) {
                 case EVar(v): names.set(v, true);
                 default:
             }
             return n;
-        }) != null ? [for (k in names.keys()) k] : [];
+        });
+        return [for (k in names.keys()) k];
     }
 
     static function arrayContains(a:Array<String>, s:String):Bool {
         for (x in a) if (x == s) return true; return false;
+    }
+
+    static inline function isLower(s:String):Bool {
+        if (s == null || s.length == 0) return false;
+        var c = s.charAt(0);
+        return c.toLowerCase() == c;
+    }
+
+    static function collectDeclaredVars(body: ElixirAST): Array<String> {
+        var out:Array<String> = [];
+        ElixirASTTransformer.transformNode(body, function(n: ElixirAST):ElixirAST {
+            switch (n.def) {
+                case EMatch(pat, _):
+                    // harvest simple PVar
+                    function pv(pt:EPattern):Void {
+                        switch (pt) {
+                            case PVar(name) if (name != null && name.length > 0): out.push(name);
+                            case PTuple(es): for (e in es) pv(e);
+                            case PList(es): for (e in es) pv(e);
+                            case PCons(h,t): pv(h); pv(t);
+                            case PMap(kvs): for (kv in kvs) pv(kv.value);
+                            case PStruct(_, fs): for (f in fs) pv(f.value);
+                            case PPin(inner): pv(inner);
+                            case PAlias(a, inner): out.push(a); pv(inner);
+                            default:
+                        }
+                    }
+                    pv(pat);
+                case EBinary(Match, {def: EVar(lhs)}, _): out.push(lhs);
+                default:
+            }
+            return n;
+        });
+        return out;
+    }
+
+    static function renameTaggedPayloadBinder(p:EPattern, newName:String):Null<EPattern> {
+        return switch (p) {
+            case PTuple(es) if (es.length == 2):
+                switch (es[0]) {
+                    case PLiteral(_):
+                        switch (es[1]) {
+                            case PVar(old) if (old != newName): PTuple([es[0], PVar(newName)]);
+                            default: null;
+                        }
+                    default: null;
+                }
+            default: null;
+        }
     }
 
     static function stringInterpolatesName(body: ElixirAST, name: String): Bool {

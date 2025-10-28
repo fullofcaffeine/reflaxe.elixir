@@ -72,6 +72,27 @@ class ClauseContext {
     // This prevents redundant assignments like g = elem(...) or content = g
     private var patternSatisfiedVarIds: Map<Int, Bool> = new Map();
 
+    /**
+     * Primary binder variable for the current case clause (if any)
+     *
+     * WHAT
+     * - Records the most relevant variable bound by the case pattern to represent the
+     *   scrutinee value within the clause body (e.g., {:some, value} → "value").
+     *
+     * WHY
+     * - Inner case expressions produced by lowering sometimes incorrectly use the
+     *   outer result variable (e.g., "g") as their scrutinee inside the clause body
+     *   before that variable is assigned, causing undefined-variable errors.
+     *   Having the canonical binder available allows builders to repair such shapes
+     *   deterministically without name heuristics or app coupling.
+     *
+     * HOW
+     * - SwitchBuilder determines this binder from the concrete pattern shape
+     *   (prefer the first variable inside the tagged tuple’s payload; otherwise the
+     *   first bound variable in the pattern) and stores it here per-clause.
+     */
+    public var primaryCaseBinder: Null<String> = null;
+
     public function new(?parentContext: ClauseContext, ?varMapping: Map<Int, String>, ?enumPlan: Map<Int, {finalName: String, isUsed: Bool}>) {
         this.parent = parentContext;
 

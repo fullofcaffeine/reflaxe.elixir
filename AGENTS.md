@@ -8,7 +8,11 @@ Agents must never block the terminal when validating the todo-app. Use the provi
   - `npm run qa:sentinel`  → runs `scripts/qa-sentinel.sh --app examples/todo-app --port 4001`
 - Async, non-blocking (returns immediately):
   - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
-  - Prints `QA_SENTINEL_PID` and log path. Tail `/tmp/qa-phx.log` or the main run log; kill with `kill -TERM $QA_SENTINEL_PID`.
+  - Prints `QA_SENTINEL_PID` and log path.
+  - View logs without blocking:
+    - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
+    - Bounded follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --follow 60`
+    - Stop server: `kill -TERM $QA_SENTINEL_PID`
 - Keep server alive for manual browsing:
   - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
   - Prints `PHX_PID` and `PORT`; stop with `kill -TERM $PHX_PID`.
@@ -28,7 +32,9 @@ Once the sentinel reports readiness, agents may run a lightweight Playwright che
 - Start the server in the background (recommended for E2E):
   - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
   - Or keep it alive for manual browsing: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
-  - Tail logs via `tail -f /tmp/qa-phx.log` (or the `QA_SENTINEL_LOG` printed in async mode)
+  - Inspect logs without blocking (examples):
+    - `scripts/qa-logpeek.sh --file /tmp/qa-phx.log --last 200`
+    - `scripts/qa-logpeek.sh --file /tmp/qa-phx.log --follow 60`
 
 - Minimal Playwright probe (example):
   1) `npm -C examples/todo-app install --no-audit --no-fund && npx -C examples/todo-app playwright install`

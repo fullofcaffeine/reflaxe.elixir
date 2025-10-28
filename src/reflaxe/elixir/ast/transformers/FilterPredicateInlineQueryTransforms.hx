@@ -39,9 +39,10 @@ class FilterPredicateInlineQueryTransforms {
         function replaceInBody(body: ElixirAST): ElixirAST {
             return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
                 return switch (x.def) {
-                    case EVar(nm) if (nm == "query"): repl;
+                    case EVar(nm) if (nm == "query"): #if sys Sys.println('[FilterPredicateInlineQuery] inline query -> String.downcase(search_query)'); #end repl;
                     case ERaw(code) if (code != null && rawContainsIdent(code, "query")):
                         var newCode = replaceIdent(code, "query", "String.downcase(search_query)");
+                        #if sys Sys.println('[FilterPredicateInlineQuery] inline query in ERaw predicate'); #end
                         makeAST(ERaw(newCode));
                     default: x;
                 };
@@ -51,29 +52,21 @@ class FilterPredicateInlineQueryTransforms {
             return switch (n.def) {
                 case ERaw(code) if (code != null && code.indexOf('Enum.filter(') != -1 && rawContainsIdent(code, 'query')):
                     var newCode = replaceIdent(code, 'query', 'String.downcase(search_query)');
-                    #if debug_filter_query_consolidate
-                    Sys.println('[FilterPredicateInlineQuery] Inlined query inside ERaw Enum.filter statement');
-                    #end
+                    #if sys Sys.println('[FilterPredicateInlineQuery] Inlined query inside ERaw Enum.filter statement'); #end
                     makeAST(ERaw(newCode));
                 case ERemoteCall(mod, "filter", args) if (args != null && args.length == 2):
-                    #if debug_filter_query_consolidate
-                    Sys.println('[FilterPredicateInlineQuery] Considering Enum.filter(remote)');
-                    #end
+                    #if sys Sys.println('[FilterPredicateInlineQuery] Considering Enum.filter(remote)'); #end
                     switch (args[1].def) {
                         case EFn(cs) if (cs.length == 1):
                             var cl = cs[0];
                             var newBody = replaceInBody(cl.body);
                             var newFn = makeAST(EFn([{ args: cl.args, guard: cl.guard, body: newBody }]));
-                            #if debug_filter_query_consolidate
-                            Sys.println('[FilterPredicateInlineQuery] Inlined query in Enum.filter EFn');
-                            #end
+                            #if sys Sys.println('[FilterPredicateInlineQuery] Inlined query in Enum.filter EFn'); #end
                             makeASTWithMeta(ERemoteCall(mod, "filter", [args[0], newFn]), n.metadata, n.pos);
                         default: n;
                     }
                 case ECall(tgt, "filter", args2) if (args2 != null && args2.length >= 1):
-                    #if debug_filter_query_consolidate
-                    Sys.println('[FilterPredicateInlineQuery] Considering Enum.filter(call)');
-                    #end
+                    #if sys Sys.println('[FilterPredicateInlineQuery] Considering Enum.filter(call)'); #end
                     var predArg = args2[args2.length - 1];
                     switch (predArg.def) {
                         case EFn(cs2) if (cs2.length == 1):
@@ -81,9 +74,7 @@ class FilterPredicateInlineQueryTransforms {
                             var newBody2 = replaceInBody(cl2.body);
                             var newFn2 = makeAST(EFn([{ args: cl2.args, guard: cl2.guard, body: newBody2 }]));
                             var prefix = args2.slice(0, args2.length - 1);
-                            #if debug_filter_query_consolidate
-                            Sys.println('[FilterPredicateInlineQuery] Inlined query in call.filter EFn');
-                            #end
+                            #if sys Sys.println('[FilterPredicateInlineQuery] Inlined query in call.filter EFn'); #end
                             makeASTWithMeta(ECall(tgt, "filter", prefix.concat([newFn2])), n.metadata, n.pos);
                         default: n;
                     }

@@ -34,6 +34,9 @@ class HygieneConsolidatedTransforms {
         var r = ast;
         // 1) def/defp params underscore for unused
         r = DefParamUnusedUnderscoreSafeTransforms.pass(r);
+        // 1.1) def/defp params: promote underscored binders when the trimmed
+        // name is actually referenced in the body (prevents _id-after-use warnings)
+        r = DefParamUnderscorePromoteTransforms.promotePass(r);
         // 2) fallback rename refs name -> _name when only underscored variant declared
         r = LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass(r);
         // 3) remove underscore from used locals
@@ -48,4 +51,3 @@ class HygieneConsolidatedTransforms {
 }
 
 #end
-

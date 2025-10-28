@@ -74,6 +74,12 @@ class InlineTrailingReturnVarTransforms {
                     }
                 }
                 if (idx == -1 || rhs == null) return body;
+                // Safety: avoid inlining when RHS is a trivial literal that would degrade semantics
+                switch (rhs.def) {
+                    case EString(_) | EInteger(_) | EFloat(_) | EAtom(_) | ENil:
+                        return body;
+                    default:
+                }
                 var out = [];
                 for (i in 0...stmts.length - 1) if (i != idx) out.push(stmts[i]);
                 out.push(rhs);

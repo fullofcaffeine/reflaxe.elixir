@@ -1,3 +1,5 @@
+DO NOT, EVER, EDIT THIS FILE. YOU SHOULD FOLLOW THE FOLLOWING INSTRUCTIONS:
+
 Commit all changes describing the progress so far now, and let's work on a thoroguh plan **that will lead us to haxe.elixir 1.0 and the todoapp working well after compiled with it**.
 
 The plan shouldn't be too general, it should be as specfiic as we can make it with the information we gather now << THIS IS VERY IMPORTANT. We don't want the work to be delegated to hte execution part of the

@@ -41,12 +41,26 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class OptionWrapTransforms {
     public static function optionWrapParseFunctionsPass(ast: ElixirAST): ElixirAST {
+        // Detect if a value AST already looks like an Option.t tuple
+        inline function isAlreadyOption(val: ElixirAST): Bool {
+            return switch (val.def) {
+                case ETuple(elements) if (elements.length >= 1):
+                    switch (elements[0].def) {
+                        case EAtom(tag) if (tag == "some" || tag == ":some" || tag == "none" || tag == ":none"): true;
+                        default: false;
+                    }
+                default: false;
+            };
+        }
         // Wrap a value expression into {:some, v} unless it's :none
         inline function wrapValueIfNeeded(val: ElixirAST): ElixirAST {
+            if (isAlreadyOption(val)) return val;
             return switch (val.def) {
-                case EAtom(atom) if (atom == "none"): val;
-                case ETuple(_): makeAST(ETuple([ makeAST(EAtom("some")), val ]));
-                default: makeAST(ETuple([ makeAST(EAtom("some")), val ]));
+                case EAtom(atom) if (atom == "none" || atom == ":none"):
+                    // Normalize None to tuple form {:none}
+                    makeAST(ETuple([ makeAST(EAtom("none")) ]));
+                default:
+                    makeAST(ETuple([ makeAST(EAtom("some")), val ]));
             };
         }
 
@@ -57,10 +71,7 @@ class OptionWrapTransforms {
                     var out = stmts.copy();
                     var last = out.pop();
                     // Only wrap when last is a value or tuple; keep control structures as-is
-                    switch (last.def) {
-                        case EAtom(_) | ETuple(_): out.push(wrapValueIfNeeded(last));
-                        default: out.push(last);
-                    }
+                    out.push(wrapValueIfNeeded(last));
                     makeASTWithMeta(EBlock(out), b.metadata, b.pos);
                 default:
                     b;
@@ -73,11 +84,7 @@ class OptionWrapTransforms {
                         var wrapped = [];
                         for (cl in clauses) {
                             var b = cl.body;
-                            var nb = switch (b.def) {
-                                case EAtom(atom) if (atom != "none"): makeAST(ETuple([ makeAST(EAtom("some")), b ]));
-                                case ETuple(_): makeAST(ETuple([ makeAST(EAtom("some")), b ]));
-                                default: b;
-                            };
+                            var nb = isAlreadyOption(b) ? b : wrapValueIfNeeded(b);
                             wrapped.push({ pattern: cl.pattern, guard: cl.guard, body: nb });
                         }
                         makeASTWithMeta(EMatch(pat, makeAST(ECase(target, wrapped))), n.metadata, n.pos);
@@ -85,22 +92,19 @@ class OptionWrapTransforms {
                         var wrapped = [];
                         for (cl in clauses) {
                             var body = cl.body;
-                            var newBody = switch (body.def) {
-                                case EAtom(atom) if (atom != "none"): wrapValueIfNeeded(body);
-                                case ETuple(_): wrapValueIfNeeded(body);
+                            var newBody = isAlreadyOption(body) ? body : switch (body.def) {
                                 case EBlock(_): wrapBlockLastExpr(body);
-                                default: body;
+                                default: wrapValueIfNeeded(body);
                             };
                             wrapped.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
                         }
                         makeASTWithMeta(ECase(target, wrapped), n.metadata, n.pos);
                     case EIf(cond, thenB, elseB):
                         function wrapBranch(b: ElixirAST): ElixirAST {
-                            return switch (b.def) {
+                            return isAlreadyOption(b) ? b : switch (b.def) {
                                 case EBlock(_): wrapBlockLastExpr(b);
-                                case EAtom(_) | ETuple(_): wrapValueIfNeeded(b);
-                                default: b;
-                            }
+                                default: wrapValueIfNeeded(b);
+                            };
                         }
                         var newThen = wrapBranch(thenB);
                         var newElse = elseB != null ? wrapBranch(elseB) : elseB;

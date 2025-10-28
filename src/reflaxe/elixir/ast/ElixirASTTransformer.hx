@@ -2575,6 +2575,24 @@ class ElixirASTTransformer {
                                         transformedExpr;
                                 };
                                 
+                                // Simplify common shapes for idiomatic interpolation: inspect(Map.get(obj, :field)) -> obj.field
+                                function simplifyInterpolationExpr(e: ElixirAST): ElixirAST {
+                                    return switch (e.def) {
+                                        case ECall(null, "inspect", [inner]):
+                                            switch (inner.def) {
+                                                case ERemoteCall({def: EVar("Map")}, "get", args) if (args != null && args.length == 2):
+                                                    switch (args[1].def) {
+                                                        case EAtom(field): makeASTWithMeta(EField(args[0], field), e.metadata, e.pos);
+                                                        default: e;
+                                                    }
+                                                default: e;
+                                            }
+                                        default:
+                                            e;
+                                    }
+                                }
+                                exprToInterpolate = simplifyInterpolationExpr(exprToInterpolate);
+                                
                                 var exprStr = ElixirASTPrinter.printAST(exprToInterpolate);
                                 result += '#{' + exprStr + '}';
                             }

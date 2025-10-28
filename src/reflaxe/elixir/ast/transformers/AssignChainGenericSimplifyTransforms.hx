@@ -1,139 +1,106 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
-/**
- * AssignChainGenericSimplifyTransforms
- *
- * WHAT
- * - Simplify nested match chains `outer = inner = expr` inside blocks/EFn bodies by
- *   dropping the unused side of the chain based on forward usage.
- *
- * WHY
- * - Codegen sometimes emits chained assignments to thread values; intermediate temps
- *   (e.g., g, this1) often go unused and produce warnings.
- *
- * HOW
- * - For each EBlock/EDo/EFn body, scan statements. If a statement is
- *     EBinary(Match, leftOuter, EBinary(Match, leftInner, expr))
- *   and `inner` is not used later, rewrite to `leftOuter = expr`.
- *   Else if `outer` is not used later, rewrite to `leftInner = expr`.
- */
 class AssignChainGenericSimplifyTransforms {
-    public static function simplifyPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EBlock(stmts): makeASTWithMeta(EBlock(simplifyStmts(stmts)), n.metadata, n.pos);
-                case EDo(stmts2): makeASTWithMeta(EDo(simplifyStmts(stmts2)), n.metadata, n.pos);
-                case EFn(clauses):
-                    var newClauses = [];
-                    for (cl in clauses) {
-                        var b = cl.body;
-                        var nb = switch (b.def) {
-                            case EBlock(ss): makeASTWithMeta(EBlock(simplifyStmts(ss)), b.metadata, b.pos);
-                            case EDo(ss2): makeASTWithMeta(EDo(simplifyStmts(ss2)), b.metadata, b.pos);
-                            default: b;
-                        };
-                        newClauses.push({ args: cl.args, guard: cl.guard, body: nb });
-                    }
-                    makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
+  static function unwrapRhsAssign(e: ElixirAST): Null<{a:String, b:String, rhs:ElixirAST}> {
+    if (e == null || e.def == null) return null;
+    return switch (e.def) {
+      case EBinary(Match, {def: EVar(b)}, rhs): {a: null, b: b, rhs: rhs};
+      case EMatch(PVar(bm), rhsM): {a: null, b: bm, rhs: rhsM};
+      case EParen(inner): unwrapRhsAssign(inner);
+      case EBlock(es) if (es.length == 1): unwrapRhsAssign(es[0]);
+      default: null;
     }
-
-    static function simplifyStmts(stmts:Array<ElixirAST>): Array<ElixirAST> {
-        var out:Array<ElixirAST> = [];
-        var i = 0;
-        while (i < stmts.length) {
+  }
+  public static function simplifyPass(ast: ElixirAST): ElixirAST {
+    return transformPass(ast);
+  }
+  public static function transformPass(ast: ElixirAST): ElixirAST {
+    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+      return switch (n.def) {
+        case EFn(clauses):
+          var newClauses = [];
+          for (cl in clauses) {
+            var nb = transformPass(cl.body);
+            newClauses.push({ args: cl.args, guard: cl.guard, body: nb });
+          }
+          makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
+        case EBlock(stmts):
+          #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Visiting EBlock with ' + stmts.length + ' stmt(s)'); #end #end
+          var out = [];
+          var i = 0;
+          while (i < stmts.length) {
             var s = stmts[i];
             switch (s.def) {
-                case EBinary(Match, leftOuter, rhsOuter):
-                    // Pattern: outer = inner ; inner = expr  → outer = expr
-                    var collapsed = false;
-                    switch (rhsOuter.def) {
-                        case EVar(aliasName) if (i + 1 < stmts.length):
-                            switch (stmts[i + 1].def) {
-                                case EBinary(Match, left2, exprX):
-                                    switch (left2.def) {
-                                        case EVar(nm2) if (nm2 == aliasName):
-                                            out.push(makeASTWithMeta(EBinary(Match, leftOuter, exprX), s.metadata, s.pos));
-                                            i += 2; // skip next
-                                            collapsed = true;
-                                        default:
-                                    }
-                                default:
-                            }
-                        default:
-                    }
-                    if (collapsed) continue;
-                    switch (rhsOuter.def) {
-                        case EBinary(Match, leftInner, expr):
-                            var innerName:Null<String> = switch (leftInner.def) { case EVar(n): n; default: null; };
-                            var outerName:Null<String> = switch (leftOuter.def) { case EVar(n2): n2; default: null; };
-                            if (innerName != null && !usedLater(stmts, i + 1, innerName)) {
-                                out.push(makeASTWithMeta(EBinary(Match, leftOuter, expr), s.metadata, s.pos));
-                                continue;
-                            }
-                            if (outerName != null && !usedLater(stmts, i + 1, outerName)) {
-                                out.push(makeASTWithMeta(EBinary(Match, leftInner, expr), s.metadata, s.pos));
-                                continue;
-                            }
-                            out.push(s);
-                        case EMatch(patInner, expr2):
-                            var innerName2:Null<String> = switch (patInner) { case PVar(n3): n3; default: null; };
-                            var outerName2:Null<String> = switch (leftOuter.def) { case EVar(n4): n4; default: null; };
-                            if (innerName2 != null && !usedLater(stmts, i + 1, innerName2)) {
-                                out.push(makeASTWithMeta(EBinary(Match, leftOuter, expr2), s.metadata, s.pos));
-                                continue;
-                            }
-                            if (outerName2 != null && !usedLater(stmts, i + 1, outerName2)) {
-                                out.push(makeASTWithMeta(EMatch(patInner, expr2), s.metadata, s.pos));
-                                continue;
-                            }
-                            out.push(s);
-                        default:
-                            out.push(s);
-                    }
-                    i++;
-                default:
-                    out.push(s);
-                    i++;
+              case EBinary(Match, {def: EVar(a)}, rhsAny):
+                var un = unwrapRhsAssign(rhsAny);
+                if (un != null && un.b != null && un.rhs != null) {
+                  var b = un.b; var rhs = un.rhs;
+                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain a=(b=rhs) a=' + a + ' b=' + b); #end #end
+                  out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+                  out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EVar(b), s.metadata, s.pos)), s.metadata, s.pos));
+                  break;
+                } else {
+                  out.push(s);
+                }
+              case EMatch(PVar(a2), rhsAny2):
+                var un2 = unwrapRhsAssign(rhsAny2);
+                if (un2 != null && un2.b != null && un2.rhs != null) {
+                  var b2 = un2.b; var rhs2 = un2.rhs;
+                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain (EMatch) a=(b=rhs) a=' + a2 + ' b=' + b2); #end #end
+                  out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
+                  out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+                  break;
+                } else {
+                  out.push(s);
+                }
+              default:
+                out.push(s);
             }
-        }
-        return out;
-    }
-
-    static function usedLater(stmts:Array<ElixirAST>, startIdx:Int, name:String):Bool {
-        for (j in startIdx...stmts.length) if (stmtUsesVar(stmts[j], name)) return true; return false;
-    }
-
-    static function stmtUsesVar(n: ElixirAST, name: String): Bool {
-        var found = false;
-        function walk(x: ElixirAST, inPattern: Bool): Void {
-            if (found || x == null) return;
-            switch (x.def) {
-                case EVar(v) if (!inPattern && v == name): found = true;
-                case EBinary(Match, left, rhs): walk(rhs, false);
-                case EMatch(pat, rhs2): walk(rhs2, false);
-                case EBlock(ss): for (s in ss) walk(s, false);
-                case EDo(ss2): for (s in ss2) walk(s, false);
-                case EIf(c,t,e): walk(c, false); walk(t, false); if (e != null) walk(e, false);
-                case EBinary(_, l, r): walk(l, false); walk(r, false);
-                case ECall(tgt, _, args): if (tgt != null) walk(tgt, false); for (a in args) walk(a, false);
-                case ERemoteCall(tgt2, _, args2): walk(tgt2, false); for (a2 in args2) walk(a2, false);
-                case ECase(expr, cs): walk(expr, false); for (c in cs) walk(c.body, false);
-                default:
+            i++;
+          }
+          makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+        case EDo(stmts2):
+          #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Visiting EDo with ' + stmts2.length + ' stmt(s)'); #end #end
+          var out2 = [];
+          for (s in stmts2) {
+            switch (s.def) {
+              case EBinary(Match, {def: EVar(a2)}, rhsAny3):
+                var un3 = unwrapRhsAssign(rhsAny3);
+                if (un3 != null && un3.b != null && un3.rhs != null) {
+                  var b2 = un3.b; var rhs2 = un3.rhs;
+                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain in EDo a=' + a2 + ' b=' + b2); #end #end
+                  out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
+                  out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+                  break;
+                } else {
+                  out2.push(s);
+                }
+              case EMatch(PVar(a3), rhsAny4):
+                var un4 = unwrapRhsAssign(rhsAny4);
+                if (un4 != null && un4.b != null && un4.rhs != null) {
+                  var b3 = un4.b; var rhs3 = un4.rhs;
+                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain in EDo (EMatch*) a=' + a3 + ' b=' + b3); #end #end
+                  out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b3), s.metadata, s.pos), rhs3), s.metadata, s.pos));
+                  out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a3), s.metadata, s.pos), makeASTWithMeta(EVar(b3), s.metadata, s.pos)), s.metadata, s.pos));
+                  break;
+                } else {
+                  out2.push(s);
+                }
+              default:
+                out2.push(s);
             }
-        }
-        walk(n, false);
-        return found;
-    }
+          }
+          makeASTWithMeta(EDo(out2), n.metadata, n.pos);
+        default:
+          n;
+      }
+    });
+  }
 }
 
 #end
