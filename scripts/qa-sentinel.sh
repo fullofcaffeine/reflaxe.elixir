@@ -261,6 +261,7 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   echo "QA_SENTINEL_PID=$SENTINEL_PID"
   echo "QA_SENTINEL_RUN_ID=$RUN_ID"
   echo "QA_SENTINEL_LOG=$LOG_MAIN"
+  echo "TIP: View logs without blocking: scripts/qa-logpeek.sh --run-id $RUN_ID --last 200 --follow 30" >&2
   exit 0
 fi
 

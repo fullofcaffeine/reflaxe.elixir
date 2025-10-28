@@ -56,13 +56,17 @@ class LiveViewTypedEventBridgeTransforms {
 
     // Entry point
     public static function transformPass(ast: ElixirAST): ElixirAST {
+        #if sys Sys.println('[TypedEventBridge] pass start'); #end
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EModule(name, attrs, body) if (n.metadata?.isLiveView == true):
-                    makeASTWithMeta(EModule(name, attrs, synthesizeCallbacks(body, n.metadata, n.pos)), n.metadata, n.pos);
-                case EDefmodule(modName, doBlock) if (n.metadata?.isLiveView == true):
+                case EModule(name, attrs, body):
+                    var out = synthesizeCallbacks(body, n.metadata, n.pos);
+                    #if sys Sys.println('[TypedEventBridge] module=' + name + ' callbacks=' + Std.string(countHandleEvent(out))); #end
+                    makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
+                case EDefmodule(modName, doBlock):
                     var stmts = switch (doBlock.def) { case EDo(s): s; case EBlock(s2): s2; default: []; };
                     var out = synthesizeCallbacks(stmts, n.metadata, n.pos);
+                    #if sys Sys.println('[TypedEventBridge] defmodule=' + modName + ' callbacks=' + Std.string(countHandleEvent(out))); #end
                     makeASTWithMeta(EDefmodule(modName, makeAST(EBlock(out))), n.metadata, n.pos);
                 default:
                     n;
@@ -70,30 +74,47 @@ class LiveViewTypedEventBridgeTransforms {
         });
     }
 
-    static function synthesizeCallbacks(body: Array<ElixirAST>, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): Array<ElixirAST> {
-        var hasEvent3 = new Map<String, Bool>();
+    static function countHandleEvent(body:Array<ElixirAST>):Int {
+        var c = 0;
         for (s in body) switch (s.def) {
-            case EDef("handle_event", args, _, _) if (args.length == 3):
-                switch (args[0]) { case PLiteral({def: EString(ev)}): hasEvent3.set(ev, true); default: }
+            case EDef("handle_event", args, _, _) if (args != null && args.length == 3): c++;
             default:
         }
+        return c;
+    }
 
-        var callbacks = collectFromHandleEvent(body, meta, pos);
+    static function synthesizeCallbacks(body: Array<ElixirAST>, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): Array<ElixirAST> {
+        // Build fresh callbacks from the typed handleEvent/2 case. These are considered
+        // the single source of truth. We then drop any existing handle_event/3 with the
+        // same literal event and insert our deterministic definitions.
+        var synthesized = collectFromHandleEvent(body, meta, pos);
+        if (synthesized == null || synthesized.length == 0) return body; // nothing to do
+
+        var toReplace = new Map<String,Bool>();
+        for (cb in synthesized) toReplace.set(cb.event, true);
+
         var out:Array<ElixirAST> = [];
-        for (s in body) out.push(s);
-        for (cb in callbacks) {
-            if (!hasEvent3.exists(cb.event)) {
-                out.push(cb.def);
-                hasEvent3.set(cb.event, true);
-            }
+        for (s in body) switch (s.def) {
+            case EDef("handle_event", args, _, _ ) if (args.length == 3):
+                switch (args[0]) {
+                    case PLiteral({def: EString(ev)}) if (toReplace.exists(ev)):
+                        // Drop existing definition; will be replaced by synthesized one
+                        // (ensures no app-coupled/broken wrappers linger)
+                    default:
+                        out.push(s);
+                }
+            default:
+                out.push(s);
         }
+        // Append synthesized callbacks (deterministic order)
+        for (cb in synthesized) out.push(cb.def);
         return out;
     }
 
     static function collectFromHandleEvent(body: Array<ElixirAST>, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): Array<{event:String, def:ElixirAST}> {
         var out:Array<{event:String, def:ElixirAST}> = [];
         for (stmt in body) switch (stmt.def) {
-            case EDef(fname, args, _, bdy) if (fname == "handleEvent" && args.length == 2):
+            case EDef(fname, args, _, bdy) if ((fname == "handleEvent" || fname == "handle_event") && args.length == 2):
                 var evArg = patternVarName(args[0]);
                 var caseNode = findCaseOnVar(bdy, evArg);
                 if (caseNode != null) {
@@ -225,4 +246,3 @@ class LiveViewTypedEventBridgeTransforms {
 }
 
 #end
-

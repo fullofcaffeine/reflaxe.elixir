@@ -411,6 +411,19 @@ class EnumHandler {
         check(expr);
         return used;
     }
+
+    /**
+     * Check if a local variable with a specific name is referenced in the case body.
+     *
+     * WHY: When building idiomatic enum patterns we may not have TEnumParameter
+     *      nodes in the body (the parameter is bound by the pattern itself). In
+     *      such cases, usage must be inferred by direct TLocal references to the
+     *      parameter name originating from the enum field type (e.g., todo/id/message).
+     */
+    public static function isLocalNameUsed(varName:String, caseBody: TypedExpr): Bool {
+        if (varName == null || varName.length == 0 || caseBody == null) return false;
+        return isVariableUsedInExpression(varName, caseBody);
+    }
     
     // ================================================================
     // Case Body Processing

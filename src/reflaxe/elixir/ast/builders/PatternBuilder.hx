@@ -240,17 +240,24 @@ class PatternBuilder {
     }
     
     /**
-     * Convert regular enum pattern (uses atom tags, not integer indices)
+     * Convert regular enum pattern (runtime representation uses integer tag index)
+     *
+     * WHY
+     * - The canonical runtime (Type/Std) encodes Haxe enums as tuples where the
+     *   first element is the constructor index (0-based), followed by fields.
+     *   Snapshots (e.g., test_topic.ex) assume this shape: {0}, {1}, {2}, ...
+     *
+     * WHAT
+     * - Generate PTuple beginning with the integer tag (ef.index), then field
+     *   patterns converted recursively.
      */
     private static function convertRegularEnumPattern(ef: EnumField, args: Array<TypedExpr>, 
                                                      context: BuildContext): EPattern {
-        // Regular enums should use tuple with atom tag, not integer index
-        // Convert enum constructor name to snake_case atom
-        var atomName = NameUtils.toSnakeCase(ef.name);
-        var patterns = [PLiteral(makeAST(EAtom(atomName)))];
-        for (arg in args) {
-            patterns.push(convertPattern(arg, context));
-        }
+        #if debug_enum_patterns
+        trace('[EnumPattern] regular enum: ' + ef.name + ' index=' + ef.index);
+        #end
+        var patterns:Array<EPattern> = [PLiteral(makeAST(EInteger(ef.index)))];
+        for (arg in args) patterns.push(convertPattern(arg, context));
         return PTuple(patterns);
     }
     

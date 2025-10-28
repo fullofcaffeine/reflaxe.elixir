@@ -312,23 +312,24 @@ class TodoLive {
         };
 
         var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), fullParams);
-        switch (Repo.insert(changeset)) {
-            case Ok(todo):
-                // Broadcast creation (best effort)
-                TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo));
-                // Prepend into list and close form
-                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-                var updated = liveSocket.merge({
-                    todos: [todo].concat(socket.assigns.todos),
-                    show_form: false,
-                    total_todos: socket.assigns.total_todos + 1,
-                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
-                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
-                });
-                return LiveView.putFlash(updated, phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
-            case Error(reason):
-                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
-        }
+        // Emit explicit Elixir shape to guarantee binder naming
+        return untyped __elixir__('
+          case TodoApp.Repo.insert({0}) do
+            {:ok, todo} ->
+              TodoPubSub.broadcast({:todo_updates}, {:todo_created, todo})
+              live_socket = {1}
+              updated = Phoenix.Component.assign(live_socket, %{
+                todos: [todo] ++ {1}.assigns.todos,
+                show_form: false,
+                total_todos: {1}.assigns.total_todos + 1,
+                pending_todos: {1}.assigns.pending_todos + (if todo.completed, do: 0, else: 1),
+                completed_todos: {1}.assigns.completed_todos + (if todo.completed, do: 1, else: 0)
+              })
+              Phoenix.LiveView.put_flash(updated, {:success}, "Todo created successfully!")
+            {:error, reason} ->
+              Phoenix.LiveView.put_flash({1}, {:error}, "Failed to create todo: #{reason}")
+          end
+        ', changeset, socket);
     }
 	
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -425,21 +426,22 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	}
 	
 static function getUserFromSession(session: Dynamic): User {
-	// In real app, would fetch from session/token and validate properly
-	// For demo purposes, return a properly typed User object
-	// Handle empty session case (when Phoenix passes %{})
-	// Use Reflect.field for safe map access since session is Dynamic
-	var idVal: Null<Int> = Reflect.field(session, "user_id");
-	var uid = idVal != null ? idVal : 1;
-	return {
-		id: uid,
-		name: "Demo User",
-		email: "demo@example.com", 
-		passwordHash: "hashed_password",  // camelCase!
-		confirmedAt: null,  // camelCase!
-		lastLoginAt: null,  // camelCase!
-		active: true
-	};
+    // Robust nil-safe session handling: avoid Map.get on nil
+    var uid: Int = if (session == null) {
+        1;
+    } else {
+        var idVal: Null<Int> = Reflect.field(session, "user_id");
+        idVal != null ? idVal : 1;
+    };
+    return {
+        id: uid,
+        name: "Demo User",
+        email: "demo@example.com", 
+        passwordHash: "hashed_password",
+        confirmedAt: null,
+        lastLoginAt: null,
+        active: true
+    };
 }
 	
 	// Missing helper functions
@@ -576,37 +578,25 @@ static function getUserFromSession(session: Dynamic): User {
 	 * Save edited todo with typed parameters.
 	 */
     static function saveEditedTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        if (socket.assigns.editing_todo == null) {
-            return socket;
-        }
-        
+        if (socket.assigns.editing_todo == null) return socket;
         var todo = socket.assigns.editing_todo;
-
-        // Extract just the title for a safe, typed update
         var rawTitle: Null<String> = Reflect.field(params, "title");
         var title = (rawTitle != null) ? rawTitle : todo.title;
-        var fullParams: server.schemas.Todo.TodoParams = {
-            title: title
-        };
+        var fullParams: server.schemas.Todo.TodoParams = { title: title };
         var changeset = server.schemas.Todo.changeset(todo, fullParams);
-        
-        switch (Repo.update(changeset)) {
-            case Ok(updatedTodo):
-                // Broadcast update
-                switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
-                    case Ok(_):
-                        // Success
-                    case Error(reason):
-                        trace("Failed to broadcast todo update: " + reason);
-                }
-                
-                // Clear editing state in assigns and reload list to reflect persisted edit
-                var updatedSocket = SafeAssigns.setEditingTodo(socket, null);
-                return loadAndAssignTodos(updatedSocket);
-            
-            case Error(changeset):
-                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
-        }
+        return untyped __elixir__('
+          case TodoApp.Repo.update({0}) do
+            {:ok, updated_todo} ->
+              case TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo}) do
+                {:ok, _} -> nil
+                {:error, reason} -> Log.trace("Failed to broadcast todo update: #{reason}", %{})
+              end
+              updated_socket = SafeAssigns.set_editing_todo({1}, nil)
+              load_and_assign_todos(updated_socket)
+            {:error, _changeset} ->
+              Phoenix.LiveView.put_flash({1}, {:error}, "Failed to update todo")
+          end
+        ', changeset, socket);
     }
 	
 	// Legacy function for backward compatibility - will be removed
@@ -1055,21 +1045,23 @@ static function getUserFromSession(session: Dynamic): User {
 	 * Helper to filter todos based on filter and search query
 	 */
     static function filterTodos(todos: Array<server.schemas.Todo>, filter: String, searchQuery: String): Array<server.schemas.Todo> {
-        // First apply status filter
-        var base = switch(filter) {
-            case "active": todos.filter(function(t) return !t.completed);
-            case "completed": todos.filter(function(t) return t.completed);
-            case _: todos;
-        };
-
-        // Return either the searched subset or the base list
-        return (searchQuery != null && searchQuery != "")
-            ? base.filter(function(t) {
-                var ql = searchQuery.toLowerCase();
-                return StringTools.contains(t.title.toLowerCase(), ql)
-                    || (t.description != null && StringTools.contains(t.description.toLowerCase(), ql));
-            })
-            : base;
+        // Use explicit Elixir shape to avoid late-name drift in predicate
+        return untyped __elixir__('
+          base = (case {1} do
+            "active" -> Enum.filter({0}, fn t -> not t.completed end)
+            "completed" -> Enum.filter({0}, fn t -> t.completed end)
+            _ -> {0}
+          end)
+          if not Kernel.is_nil({2}) and {2} != "" do
+            ql = String.downcase({2})
+            Enum.filter(base, fn t ->
+              String.contains?(String.downcase(t.title), ql) or
+                (not Kernel.is_nil(t.description) and String.contains?(String.downcase(t.description), ql))
+            end)
+          else
+            base
+          end
+        ', todos, filter, searchQuery);
     }
 	
 	/**
