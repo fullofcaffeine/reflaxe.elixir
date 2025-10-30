@@ -1078,7 +1078,18 @@ class ElixirASTPrinter {
 
                             if (isEnumMethod) {
                                 // Transform: list.map(fn) → Enum.map(list, fn)
-                                var enumCall = 'Enum.' + funcName + '(' + print(target, indent);
+                                // Special-case join: ensure first arg is a single expression (wrap via IIFE if needed),
+                                // mirroring the remote-call branch handling to avoid leaking multi-statement builders.
+                                var receiverPrinted = print(target, indent);
+                                var firstArgStr = (function(){
+                                    if (funcName == "join") {
+                                        var trimmed = StringTools.trim(receiverPrinted);
+                                        return StringTools.startsWith(trimmed, '(fn ->') ? receiverPrinted : '(fn -> ' + receiverPrinted + ' end).()';
+                                    } else {
+                                        return receiverPrinted;
+                                    }
+                                })();
+                                var enumCall = 'Enum.' + funcName + '(' + firstArgStr;
                                 if (argStr.length > 0) {
                                     enumCall + ', ' + argStr + ')';
                                 } else {

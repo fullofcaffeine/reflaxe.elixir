@@ -63,35 +63,39 @@ class JoinArgBlockScopedFixTransforms {
         while (i < stmts.length) {
             var current = stmts[i];
             var handled = false;
-            switch (current.def) {
-                case ERemoteCall({def: EVar("Enum")}, "join", joinArgs) if (joinArgs != null && joinArgs.length == 2):
-                    var accVarName = extractVarName(joinArgs[0]);
-                    if (accVarName != null) {
-                        var match = findBuilderWindow(stmts, i, accVarName);
-                        if (match != null) {
-                            var mapExpr = buildEnumMap(match.listExpr, match.binderName, match.valueExpr);
-                            var newJoin = makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [mapExpr, joinArgs[1]]));
-                            // Remove contiguous builder window if safe and contiguous
-                            var didRemove = false;
-                            if (match.isContiguous) {
-                                // push all statements up to start (exclusive)
-                                for (k in 0...match.startIndex) updated.push(stmts[k]);
-                                // replace current position with rewritten join
-                                updated.push(newJoin);
-                                // skip past the original window and the current join
-                                i = match.endIndex + 1; // endIndex is last index of builder window
-                                handled = true;
-                                didRemove = true;
-                            }
-                            if (!didRemove) {
-                                // Only rewrite arg; keep statements untouched
-                                updated.push(newJoin);
-                                i++;
-                                handled = true;
-                            }
-                        }
-                    }
-                default:
+            // Try to repair a join call nested anywhere inside this statement
+            var matchedWindow: Null<{startIndex:Int, endIndex:Int, listExpr: ElixirAST, binderName:String, valueExpr: ElixirAST, isContiguous:Bool}> = null;
+            var sepArg: Null<ElixirAST> = null;
+            var repairedCurrent = ElixirASTTransformer.transformNode(current, function(m: ElixirAST): ElixirAST {
+                return switch (m.def) {
+                    case ERemoteCall({def: EVar("Enum")}, "join", joinArgs) if (joinArgs != null && joinArgs.length == 2 && matchedWindow == null):
+                        var accVarName = extractVarName(joinArgs[0]);
+                        var win = (accVarName != null) ? findBuilderWindow(stmts, i, accVarName) : null;
+                        if (win == null) win = findBuilderWindow(stmts, i, null);
+                        if (win != null) {
+                            matchedWindow = win;
+                            sepArg = joinArgs[1];
+                            var mapExpr = buildEnumMap(win.listExpr, win.binderName, win.valueExpr);
+                            makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [mapExpr, joinArgs[1]]));
+                        } else m;
+                    default:
+                        m;
+                }
+            });
+            if (matchedWindow != null) {
+                var didRemove = false;
+                if (matchedWindow.isContiguous) {
+                    for (k in 0...matchedWindow.startIndex) updated.push(stmts[k]);
+                    updated.push(repairedCurrent);
+                    i = matchedWindow.endIndex + 1;
+                    handled = true;
+                    didRemove = true;
+                }
+                if (!didRemove) {
+                    updated.push(repairedCurrent);
+                    i++;
+                    handled = true;
+                }
             }
             if (!handled) {
                 updated.push(current);
@@ -114,7 +118,7 @@ class JoinArgBlockScopedFixTransforms {
         return makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [listExpr, fnNode]));
     }
 
-    private static function findBuilderWindow(stmts: Array<ElixirAST>, joinIndex: Int, accName: String): Null<{startIndex:Int, endIndex:Int, listExpr: ElixirAST, binderName:String, valueExpr: ElixirAST, isContiguous:Bool}> {
+    private static function findBuilderWindow(stmts: Array<ElixirAST>, joinIndex: Int, accName: Null<String>): Null<{startIndex:Int, endIndex:Int, listExpr: ElixirAST, binderName:String, valueExpr: ElixirAST, isContiguous:Bool}> {
         // Expect a sequence: [initAcc], [Enum.each(list, fn binder -> acc = Enum.concat(acc, [value]) end)], [acc]
         var initIndex = -1;
         var eachIndex = -1;
@@ -122,14 +126,15 @@ class JoinArgBlockScopedFixTransforms {
         var listExpr: Null<ElixirAST> = null;
         var binderName = "item";
         var valueExpr: Null<ElixirAST> = null;
+        var accDetected: Null<String> = accName;
 
         // Search backwards up to three statements preceding join
         var startScan = Std.int(Math.max(0, joinIndex - 3));
         for (idx in startScan...joinIndex) switch (stmts[idx].def) {
-            case EBinary(Match, {def: EVar(v)}, {def: EList([])}) if (v == accName):
-                initIndex = idx;
-            case EMatch(PVar(v2), {def: EList([])}) if (v2 == accName):
-                initIndex = idx;
+            case EBinary(Match, {def: EVar(v)}, {def: EList([])}):
+                if (accDetected == null || v == accDetected) { initIndex = idx; if (accDetected == null) accDetected = v; }
+            case EMatch(PVar(v2), {def: EList([])}):
+                if (accDetected == null || v2 == accDetected) { initIndex = idx; if (accDetected == null) accDetected = v2; }
             case ERemoteCall({def: EVar("Enum")}, "each", eargs) if (eargs != null && eargs.length == 2):
                 var maybeList = eargs[0];
                 switch (eargs[1].def) {
@@ -138,11 +143,11 @@ class JoinArgBlockScopedFixTransforms {
                         switch (clause.args.length > 0 ? clause.args[0] : null) { case PVar(n): binderName = n; default: }
                         var bodyStmts: Array<ElixirAST> = switch (clause.body.def) { case EBlock(ss): ss; default: [clause.body]; };
                         for (bs in bodyStmts) switch (bs.def) {
-                            case EBinary(Match, {def: EVar(lhs)}, rhs) if (lhs == accName):
+                            case EBinary(Match, {def: EVar(lhs)}, rhs) if (accDetected != null && lhs == accDetected):
                                 switch (rhs.def) {
                                     case ERemoteCall({def: EVar("Enum")}, "concat", cargs) if (cargs.length == 2):
                                         switch (cargs[1].def) { case EList(items) if (items.length == 1): valueExpr = items[0]; default: }
-                                    case EBinary(Concat, {def: EVar(base)}, rhsAppend) if (base == accName):
+                                    case EBinary(Concat, {def: EVar(base)}, rhsAppend) if (accDetected != null && base == accDetected):
                                         // Accept acc = acc ++ [value]
                                         switch (rhsAppend.def) { case EList(items2) if (items2.length == 1): valueExpr = items2[0]; default: }
                                     default:
@@ -154,7 +159,7 @@ class JoinArgBlockScopedFixTransforms {
                         }
                     default:
                 }
-            case EVar(vret) if (vret == accName):
+            case EVar(vret) if (accDetected != null && vret == accDetected):
                 returnIndex = idx;
             default:
         }
@@ -170,4 +175,3 @@ class JoinArgBlockScopedFixTransforms {
 }
 
 #end
-
