@@ -31,9 +31,9 @@ class HandleEventCamelRefInlineFromParamsFinalTransforms {
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
           #if sys Sys.println('[HandleEventCamelInlineFinal] handle_event defp found'); #end
-          var pvar2 = paramsVar(args2);
-          var nb2 = inlineCamelRefs(body2, pvar2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+          var paramsVarAlt = paramsVar(args2);
+          var inlinedBodyAlt = inlineCamelRefs(body2, paramsVarAlt);
+          makeASTWithMeta(EDefp(name2, args2, guards2, inlinedBodyAlt), n.metadata, n.pos);
         default:
           n;
       }

@@ -38,10 +38,10 @@ class HandleEventWrapperFinalRepairTransforms {
           var repaired = repairBody(body, pvar, svar);
           makeASTWithMeta(EDef(name, args, guards, repaired), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
-          var pvar2 = secondArgVar(args2);
-          var svar2 = thirdArgVar(args2);
-          var repaired2 = repairBody(body2, pvar2, svar2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, repaired2), n.metadata, n.pos);
+          var paramsVarAlt = secondArgVar(args2);
+          var socketVarAlt = thirdArgVar(args2);
+          var repairedAlt = repairBody(body2, paramsVarAlt, socketVarAlt);
+          makeASTWithMeta(EDefp(name2, args2, guards2, repairedAlt), n.metadata, n.pos);
         default:
           n;
       }
