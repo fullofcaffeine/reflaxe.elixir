@@ -325,9 +325,9 @@ class TodoLive {
                 pending_todos: {1}.assigns.pending_todos + (if todo.completed, do: 0, else: 1),
                 completed_todos: {1}.assigns.completed_todos + (if todo.completed, do: 1, else: 0)
               })
-              Phoenix.LiveView.put_flash(updated, {:success}, "Todo created successfully!")
+              Phoenix.LiveView.put_flash(updated, :success, "Todo created successfully!")
             {:error, reason} ->
-              Phoenix.LiveView.put_flash({1}, {:error}, "Failed to create todo: #{reason}")
+              Phoenix.LiveView.put_flash({1}, :error, "Failed to create todo: #{reason}")
           end
         ', changeset, socket);
     }
@@ -594,7 +594,7 @@ static function getUserFromSession(session: Dynamic): User {
               updated_socket = SafeAssigns.set_editing_todo({1}, nil)
               load_and_assign_todos(updated_socket)
             {:error, _changeset} ->
-              Phoenix.LiveView.put_flash({1}, {:error}, "Failed to update todo")
+              Phoenix.LiveView.put_flash({1}, :error, "Failed to update todo")
           end
         ', changeset, socket);
     }

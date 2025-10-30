@@ -774,19 +774,82 @@ class ElixirASTPrinter {
                 // Invalid Elixir: [g = [], g ++ [0], g]  
                 // Valid Elixir: [(fn -> g = []; g = g ++ [0]; g end).()]
                 // Even better: Use proper comprehension [for i <- 0..1, do: i]
+                // Attempt to recover list-building blocks into proper list literals
+                inline function tryListFromBlock(block: ElixirAST): Null<Array<ElixirAST>> {
+                    inline function normalizeName(n:String): String {
+                        var i = 0; while (i < n.length && n.charAt(i) == "_") i++;
+                        return i > 0 ? n.substr(i) : n;
+                    }
+                    return switch (block.def) {
+                        case EBlock(stmts) if (stmts.length >= 2):
+                            var accName: Null<String> = null;
+                            // Detect initializer: acc = [] or acc <- []
+                            switch (stmts[0].def) {
+                                case EBinary(Match, {def: EVar(v)}, {def: EList(initEls)}) if (initEls.length == 0): accName = v;
+                                case EMatch(PVar(v2), {def: EList(initEls2)}) if (initEls2.length == 0): accName = v2;
+                                default:
+                            }
+                            if (accName == null) return null;
+                            var accNorm = normalizeName(accName);
+                            var outVals: Array<ElixirAST> = [];
+                            for (i in 1...stmts.length) {
+                                switch (stmts[i].def) {
+                                    case EBinary(Match, {def: EVar(lhs)}, rhs) if (normalizeName(lhs) == accNorm):
+                                        // acc = Enum.concat(acc, [value]) or acc = acc ++ [value]
+                                        switch (rhs.def) {
+                                            case ERemoteCall({def: EVar(m)}, "concat", cargs) if (m == "Enum" && cargs.length == 2):
+                                                switch (cargs[0].def) {
+                                                    case EVar(v) if (normalizeName(v) == accNorm):
+                                                        switch (cargs[1].def) {
+                                                            case EList(listElts) if (listElts.length == 1):
+                                                                outVals.push(listElts[0]);
+                                                            default:
+                                                        }
+                                                    default:
+                                                }
+                                            case EBinary(Add, {def: EVar(v2)}, rhs2) if (normalizeName(v2) == accNorm):
+                                                switch (rhs2.def) {
+                                                    case EList(listElts2) if (listElts2.length == 1):
+                                                        outVals.push(listElts2[0]);
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            }
+                            return outVals.length > 0 ? outVals : null;
+                        default:
+                            null;
+                    }
+                }
                 '[' + [for (e in elements) {
-                    switch(e.def) {
+                    switch (e.def) {
+                        // Parenthesize for-comprehensions inside list literals to avoid
+                        // ambiguity with keyword arguments (do:) in container contexts.
+                        case EFor(_, _, _, _, _):
+                            '(' + print(e, 0) + ')';
                         case EBlock(exprs) if (exprs.length > 1):
-                            // Multi-statement block in list context must be wrapped
-                            // in immediately-invoked anonymous function for valid Elixir
-                            #if debug_ast_printer
-                            trace('[Printer] Wrapping block with ${exprs.length} expressions in list');
-                            #end
-                            '(fn -> ' + print(e, 0).rtrim() + ' end).()';
-                        case EBlock(exprs):
-                            #if debug_ast_printer
-                            trace('[Printer] Single expression block in list, not wrapping');
-                            #end
+                            var recovered = tryListFromBlock(e);
+                            if (recovered != null) {
+                                '[' + [for (v in recovered) print(v, 0)].join(', ') + ']';
+                            } else {
+                                '(fn -> ' + print(e, 0).rtrim() + ' end).()';
+                            }
+                        case EParen(inner) if (switch (inner.def) { case EBlock(es) if (es.length > 1): true; default: false; }):
+                            // Attempt recovery just like EBlock case
+                            var recovered2 = tryListFromBlock(inner);
+                            if (recovered2 != null) {
+                                '[' + [for (v in recovered2) print(v, 0)].join(', ') + ']';
+                            } else {
+                                // Fallback: a parenthesized multi-statement block still needs wrapping
+                                var innerStr = print(inner, 0).rtrim();
+                                if (StringTools.startsWith(innerStr, "(") && StringTools.endsWith(innerStr, ")")) {
+                                    innerStr = innerStr.substr(1, innerStr.length - 2);
+                                }
+                                '(fn -> ' + innerStr + ' end).()';
+                            }
+                        case EBlock(_):
                             print(e, 0);
                         default:
                             print(e, 0);
@@ -1150,7 +1213,22 @@ class ElixirASTPrinter {
                         for (i in 1...args.length) parts.push(printFunctionArg(args[i], indent));
                         return parts.join(', ');
                     } else {
-                        var s = [for (a in args) printFunctionArg(a, indent)].join(', ');
+                        var s: String;
+                        // Special handling: ensure Enum.join first argument is a single valid expression
+                        // Some upstream shapes produce multi-statement fragments as the first argument.
+                        // Wrap such cases in an IIFE at print-time as a last resort for validity.
+                        var mstrTmp = printQualifiedModule(module);
+                        if (mstrTmp == "Enum" && funcName == "join" && args.length >= 1) {
+                            var parts: Array<String> = [];
+                            var firstPrintedRaw = print(args[0], indent);
+                            var trimmed = StringTools.trim(firstPrintedRaw);
+                            var firstPrinted = StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : '(fn -> ' + firstPrintedRaw + ' end).()';
+                            parts.push(firstPrinted);
+                            for (i in 1...args.length) parts.push(printFunctionArg(args[i], indent));
+                            s = parts.join(', ');
+                        } else {
+                            s = [for (a in args) printFunctionArg(a, indent)].join(', ');
+                        }
                         // Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
                         var mstr = printQualifiedModule(module);
                         if (mstr == "Ecto.Query" && funcName == "from") {
@@ -1286,14 +1364,22 @@ class ElixirASTPrinter {
                             print(left, 0);
                     };
 
-                    var rightStr = switch(right.def) {
+                    var rightStr = switch(right) {
+                        case null:
+                            '0';
+                        case _:
+                            switch(right.def) {
                         case EIf(_, _, _):
                             // If expressions in binary operations need parentheses
                             '(' + print(right, 0) + ')';
                         default:
                             print(right, 0);
+                            }
                     };
                     
+                    // Defensive: avoid invalid syntax if an operand prints empty
+                    if (leftStr == null || leftStr.length == 0) leftStr = '0';
+                    if (rightStr == null || rightStr.length == 0) rightStr = '0';
                     var result = leftStr + ' ' + opStr + ' ' + rightStr;
                     needsParens ? '(' + result + ')' : result;
                 }
@@ -1390,7 +1476,35 @@ class ElixirASTPrinter {
                 }
                 
             case EString(value):
-                '"' + escapeString(value) + '"';
+                // Sanitize interpolated strings that contain Enum.join(<multi-stmt>, sep)
+                // by wrapping the first argument in an IIFE to ensure valid syntax.
+                inline function sanitizeJoinArgInInterpolatedString(s:String):String {
+                    if (s == null || s.indexOf("#{") == -1 || s.indexOf("Enum.join(") == -1) return s;
+                    var out = new StringBuf();
+                    var i = 0;
+                    while (i < s.length) {
+                        var open = s.indexOf("#{", i);
+                        if (open == -1) { out.add(s.substr(i)); break; }
+                        out.add(s.substr(i, open - i));
+                        var k = open + 2; var depth = 1;
+                        while (k < s.length && depth > 0) {
+                            var ch = s.charAt(k);
+                            if (ch == '{') depth++; else if (ch == '}') depth--; k++;
+                        }
+                        var inner = s.substr(open + 2, (k - 1) - (open + 2));
+                        // Only wrap when needed and avoid double IIFEs
+                        var innerTrim = StringTools.trim(inner);
+                        var needsWrap = (inner.indexOf('\n') != -1) || (inner.indexOf('=') != -1 && inner.indexOf("==") == -1);
+                        if (needsWrap && !StringTools.startsWith(innerTrim, '(fn ->')) {
+                            inner = '(fn -> ' + inner + ' end).()';
+                        }
+                        out.add("#{" + inner + "}");
+                        i = k;
+                    }
+                    return out.toString();
+                }
+                var strVal = sanitizeJoinArgInInterpolatedString(value);
+                '"' + escapeString(strVal) + '"';
                 
             case EInteger(value):
                 Std.string(value);
@@ -1424,7 +1538,13 @@ class ElixirASTPrinter {
                 #end
 
                 // Normalize preserved switch result name to avoid leading underscores
-                var printed = name;
+                inline function safeIdent(nm:String):String {
+                    return switch (nm) {
+                        case "fn" | "do" | "end" | "case" | "cond" | "try" | "rescue" | "catch" | "after" | "receive" | "quote" | "unquote" | "when" | "and" | "or" | "not": nm + "_";
+                        default: nm;
+                    }
+                }
+                var printed = safeIdent(name);
                 if (name != null && name.length >= 23 && name.substr(0,23) == "__elixir_switch_result_") {
                     printed = "switch_result_" + name.substr(23);
                 }
@@ -1809,6 +1929,31 @@ class ElixirASTPrinter {
                         out = buf.toString();
                     }
                 }
+                // Sanitize #{...} interpolations so each interpolation is a single valid expression
+                inline function sanitizeInterpolationsInRawString(src:String):String {
+                    if (src == null || src.indexOf("#{") == -1) return src;
+                    var buf = new StringBuf();
+                    var i0 = 0;
+                    while (i0 < src.length) {
+                        var o = src.indexOf("#{", i0);
+                        if (o == -1) { buf.add(src.substr(i0)); break; }
+                        buf.add(src.substr(i0, o - i0));
+                        var k0 = o + 2; var dep = 1;
+                        while (k0 < src.length && dep > 0) {
+                            var ch = src.charAt(k0);
+                            if (ch == '{') dep++; else if (ch == '}') dep--; k0++;
+                        }
+                        var inner = src.substr(o + 2, (k0 - 1) - (o + 2));
+                        // Aggressively wrap every interpolation body as an IIFE to ensure a single valid expression
+                        if (!StringTools.startsWith(StringTools.trim(inner), '(fn ->')) {
+                            inner = '(fn -> ' + inner + ' end).()';
+                        }
+                        buf.add("#{" + inner + "}");
+                        i0 = k0;
+                    }
+                    return buf.toString();
+                }
+                out = sanitizeInterpolationsInRawString(out);
                 // Check if the (possibly rewritten) code is multi-line and needs wrapping
                 if (out.indexOf('\n') != -1 && out.indexOf('=') != -1) {
                     '(\n' + out + '\n)';
@@ -2289,7 +2434,13 @@ class ElixirASTPrinter {
                 // Multi-statement blocks in function arguments must be wrapped
                 // in immediately-invoked anonymous functions
                 return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
-                
+            case EDo(stmts) if (stmts.length > 1):
+                // Do-end blocks used as function arguments should also be wrapped
+                return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
+            case EParen(inner) if (switch (inner.def) { case EBlock(exprs) if (exprs.length > 1): true; default: false; }):
+                // Parenthesized multi-statement block as argument → wrap in IIFE too
+                return '(fn -> ' + print(inner, indentLevel).rtrim() + ' end).()';
+            
             default:
                 return print(arg, indentLevel);
         }

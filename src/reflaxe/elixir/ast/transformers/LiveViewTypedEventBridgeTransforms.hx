@@ -211,7 +211,11 @@ class LiveViewTypedEventBridgeTransforms {
         var extracts:Array<ElixirAST> = [];
         var reserved = new Map<String,Bool>();
         reserved.set("socket", true); reserved.set("params", true); reserved.set("event", true);
-        var unwrapped = extractSocketExpr(branchExpr);
+        // NOTE: We do not inline the typed branch body (`branchExpr`) here because
+        // `handleEvent/2` is the single source of truth for behavior. Instead, we
+        // delegate to `handleEvent/2` and normalize its return into
+        // `{:noreply, socket}`. This avoids double-running any branch preludes and
+        // prevents nested {:noreply, {:noreply, socket}} shapes.
         var finalBinders = binders != null ? binders.copy() : [];
         // Build param extracts (skip reserved)
         for (b in finalBinders) if (!reserved.exists(b)) extracts.push(makeAST(EMatch(PVar(b), buildExtract(b))));
@@ -229,8 +233,20 @@ class LiveViewTypedEventBridgeTransforms {
         var delegate = makeAST(ECall(null, "handleEvent", [ typed, makeAST(EVar("socket")) ]));
         var blk:Array<ElixirAST> = [];
         for (e in extracts) blk.push(e);
-        for (e in unwrapped.prelude) blk.push(e);
-        blk.push(makeNoReply(delegate));
+        // Normalize the result of handleEvent/2 into {:noreply, socket}
+        var noreplyAtom = makeAST(EAtom(ElixirAtom.raw("noreply")));
+        var clause1:ECaseClause = {
+            pattern: PTuple([ PLiteral(noreplyAtom), PVar("s") ]),
+            guard: null,
+            body: makeAST(ETuple([ noreplyAtom, makeAST(EVar("s")) ]))
+        };
+        var clause2:ECaseClause = {
+            pattern: PVar("s2"),
+            guard: null,
+            body: makeAST(ETuple([ noreplyAtom, makeAST(EVar("s2")) ]))
+        };
+        var normalized = makeAST(ECase(delegate, [ clause1, clause2 ]));
+        blk.push(normalized);
         var funBody = makeAST(EBlock(blk));
         return makeASTWithMeta(
             EDef(
