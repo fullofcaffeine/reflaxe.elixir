@@ -279,6 +279,28 @@ class LoopBuilder {
                 // Check if this should actually be Enum.reduce for accumulation
                 var accumulation = detectAccumulationPattern(body);
                 if (accumulation != null) {
+                    // SPECIAL CASE: canonical list build via accumulator concatenation
+                    // If the body is exactly building the accumulator with `acc = acc ++ [value]`
+                    // (or `acc += [value]`) optionally behind a simple if condition, we can
+                    // generate a comprehension instead of a reduce for idiomatic Elixir.
+                    var pushInfo = ComprehensionBuilder.extractPushFromBody(body, accumulation.varName);
+                    if (pushInfo != null && accumulation.isListAppend) {
+                        var rangeFor = makeAST(ERange(
+                            buildExpr(startExpr),
+                            buildExpr(endExpr),
+                            false
+                        ));
+                        var valueAst = buildExpr(pushInfo.value);
+                        var filterAsts: Array<ElixirAST> = [];
+                        if (pushInfo.condition != null) filterAsts.push(buildExpr(pushInfo.condition));
+                        return makeAST(EFor(
+                            [{ pattern: PVar(toSnakeCase(varName)), expr: rangeFor }],
+                            filterAsts,
+                            valueAst,
+                            null,
+                            false
+                        ));
+                    }
                     #if debug_loop_builder
                     trace('[LoopBuilder] Detected accumulation pattern for variable: ${accumulation.varName}');
                     trace('[LoopBuilder] Converting EnumEachRange to Enum.reduce');
@@ -509,24 +531,24 @@ class LoopBuilder {
                     if (result != null) return result;
                 }
                 
-            case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _):
-                // Pattern: var += value (string concatenation)
+            case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, rhs):
+                // Pattern: var += value
+                // Distinguish list append vs string concat by RHS shape
                 #if debug_loop_builder
                 trace('[LoopBuilder] Found accumulation pattern: ${v.name} += ...');
                 #end
-                return {
-                    varName: v.name,
-                    isStringConcat: true,
-                    isListAppend: false
+                return switch (rhs.expr) {
+                    case TArrayDecl(_): { varName: v.name, isStringConcat: false, isListAppend: true };
+                    default:           { varName: v.name, isStringConcat: true,  isListAppend: false };
                 };
                 
-            case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)})
+            case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, rhsAdd)})
                 if (v1.name == v2.name):
-                // Pattern: var = var + value (string concatenation)
-                return {
-                    varName: v1.name,
-                    isStringConcat: true,
-                    isListAppend: false
+                // Pattern: var = var + value
+                // Distinguish list append vs string concat by RHS shape
+                return switch (rhsAdd.expr) {
+                    case TArrayDecl(_): { varName: v1.name, isStringConcat: false, isListAppend: true };
+                    default:            { varName: v1.name, isStringConcat: true,  isListAppend: false };
                 };
                 
             case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TCall({expr: TField({expr: TLocal(v2)}, FInstance(_, _, cf))}, _)})

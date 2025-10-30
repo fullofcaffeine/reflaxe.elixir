@@ -127,6 +127,12 @@ class ReduceBodySanitizeTransforms {
                             for (stmt in bodyStmts) {
                                 var rewritten = stmt;
                                 rewritten = switch (rewritten.def) {
+                                    // Normalize push sentinels to acc = Enum.concat(acc, [value])
+                                    // Handles both push(value) and zero-arg push() by using the binder
+                                    case ECall(func, method, args) if (func == null && method == "push"):
+                                        var valueExpr: ElixirAST = (args != null && args.length >= 1) ? args[0] : makeAST(EVar(binderName));
+                                        var concatRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [ makeAST(EVar(accName)), makeAST(EList([ valueExpr ])) ]));
+                                        makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), concatRight), rewritten.metadata, rewritten.pos);
                                     // x = something[0]  → x = binder
                                     case EBinary(Match, left, rhs):
                                         switch (rhs.def) {

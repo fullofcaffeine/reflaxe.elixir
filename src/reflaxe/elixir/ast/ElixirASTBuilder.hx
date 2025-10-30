@@ -116,6 +116,8 @@ class ElixirASTBuilder {
         lastProgressTime = now;
     }
 
+    
+
     private static function enterNode(nodeType: String, exprDetails: String = "") {
         recursionDepth++;
         totalNodesProcessed++;
@@ -205,6 +207,16 @@ class ElixirASTBuilder {
     @:allow(reflaxe.elixir.ElixirCompiler)
     @:allow(reflaxe.elixir.ast.builders.ModuleBuilder)
     public static var compiler: reflaxe.elixir.ElixirCompiler = null;
+    
+    // Small utility: check if a string is composed only of digits (always available)
+    private static function isAllDigitsStr(s:String):Bool {
+        if (s == null || s.length == 0) return false;
+        for (i in 0...s.length) {
+            var c = s.charCodeAt(i);
+            if (c < '0'.code || c > '9'.code) return false;
+        }
+        return true;
+    }
     
     /**
      * BehaviorTransformer: Pluggable behavior transformation system
@@ -969,6 +981,27 @@ class ElixirASTBuilder {
                                 if (reconstructed != null) {
                                     // trace('[DEBUG] Successfully reconstructed as for comprehension');
                                     return EMatch(PVar(VariableAnalyzer.toElixirVarName(v.name)), reconstructed);
+                                }
+                            }
+
+                            // FINAL FALLBACK: if the initializer block is a canonical list-building
+                            // shape (var g = []; g = g ++ [..]; ...; g), synthesize a list literal
+                            // and assign it to the declared variable. This preserves statement order
+                            // (var init occurs before any following trace/return) and avoids leaking
+                            // inner concatenation statements.
+                            if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(blockStmts)) {
+                                var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(blockStmts);
+                                var valueAst: ElixirAST = null;
+                                if (strictVals != null && strictVals.length > 0) {
+                                    var built = [for (e in strictVals) buildFromTypedExpr(e, currentContext)];
+                                    valueAst = makeAST(EList(built));
+                                } else {
+                                    var loose = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(blockStmts, currentContext);
+                                    if (loose != null && loose.length > 0) valueAst = makeAST(EList(loose));
+                                }
+                                if (valueAst != null) {
+                                    var lhs = PVar(VariableAnalyzer.toElixirVarName(v.name));
+                                    return EMatch(lhs, valueAst);
                                 }
                             }
                         default:
@@ -2422,6 +2455,147 @@ class ElixirASTBuilder {
                     }
                 }
                 #end
+
+                // SPECIAL CASE: User variable declaration hoist for canonical initializer blocks
+                // WHAT
+                // - Detect a common Haxe pattern where a function begins with a user variable
+                //   declaration `var name = <expr>` and ends by returning the same variable.
+                // - Example (array comprehensions):
+                //     var grid = [ for (...) [ for (...) ... ] ];
+                //     trace(grid);
+                //     grid;
+                // WHY
+                // - Downstream loose list-building recovery may interleave or obscure the
+                //   declaration, resulting in traces appearing before initialization and
+                //   infrastructure temps (`g`, `g2`, …) leaking into the top-level block.
+                // HOW
+                // - When block[0] is `TVar(v, init)` and block[last] is `TLocal(v)`, build the
+                //   assignment first as a single `EMatch(PVar(v), build(init))`, then emit the
+                //   middle statements in order, and finally return the variable.
+                // - This preserves the intended statement order and gives ArrayBuilder/
+                //   ComprehensionBuilder the first shot at reconstructing nested comprehensions
+                //   inside the initializer.
+                if (el.length >= 2) {
+                    // Look at the last expression; if it returns a local variable, try to find
+                    // its declaration within the block and hoist it to the top.
+                    var retVar: Null<TVar> = null;
+                    switch (el[el.length - 1].expr) {
+                        case TLocal(v): retVar = v;
+                        case TReturn(e):
+                            switch (e.expr) { case TLocal(v2): retVar = v2; default: }
+                        default:
+                    }
+                    if (retVar != null) {
+                        var declIdx = -1;
+                        var declVar: Null<TVar> = null;
+                        var declInit: Null<TypedExpr> = null;
+                        for (i in 0...el.length - 1) {
+                            switch (el[i].expr) {
+                                case TVar(v, init) if (init != null && (v.id == retVar.id || v.name == retVar.name)):
+                                    // Skip infrastructure temps
+                                    var nm = v.name;
+                                    var isInfra = (nm == "g" || nm == "_g" 
+                                        || (nm.length > 1 && nm.charAt(0) == 'g' && ElixirASTBuilder.isAllDigitsStr(nm.substr(1)))
+                                        || (nm.length > 2 && nm.substr(0,2) == "_g" && ElixirASTBuilder.isAllDigitsStr(nm.substr(2))));
+                                    if (!isInfra) {
+                                        declIdx = i; declVar = v; declInit = init; break;
+                                    }
+                                default:
+                            }
+                        }
+                        if (declIdx != -1 && declVar != null && declInit != null) {
+                            var varName2 = VariableAnalyzer.toElixirVarName(declVar.name);
+                            var initAST2 = buildFromTypedExpr(declInit, currentContext);
+                            var stmts: Array<ElixirAST> = [];
+                            if (initAST2 != null) stmts.push({def: EMatch(PVar(varName2), initAST2), metadata: {}, pos: null});
+                            // Emit every statement except the original declaration and the last return
+                            for (i in 0...el.length - 1) if (i != declIdx) {
+                                var mid2 = buildFromTypedExpr(el[i], currentContext);
+                                if (mid2 != null) stmts.push(mid2);
+                            }
+                            // Return variable
+                            stmts.push({def: EVar(varName2), metadata: {}, pos: null});
+                            return EBlock(stmts);
+                        }
+                    }
+
+                    // Fallback A: First statement is a user variable initialized from a canonical
+                    // list‑building block or single‑element array block. Hoist assignment first,
+                    // then emit all remaining statements, and finally return the variable to
+                    // preserve intended shape (var = comprehension; trace(var); var).
+                    switch (el[0].expr) {
+                        case TVar(v0, init0) if (init0 != null):
+                            var nm0 = v0.name;
+                            var isInfra0 = (nm0 == "g" || nm0 == "_g"
+                                || (nm0.length > 1 && nm0.charAt(0) == 'g' && isAllDigitsStr(nm0.substr(1)))
+                                || (nm0.length > 2 && nm0.substr(0,2) == "_g" && isAllDigitsStr(nm0.substr(2))));
+                            if (!isInfra0) {
+                                var canonicalInit = false;
+                                switch (init0.expr) {
+                                    case TArrayDecl([inner]) if (switch(inner.expr) { case TBlock(_): true; default: false; }):
+                                        canonicalInit = true;
+                                    case TBlock(sts) if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(sts)):
+                                        canonicalInit = true;
+                                    default:
+                                }
+                                if (canonicalInit) {
+                                    var varName3 = VariableAnalyzer.toElixirVarName(nm0);
+                                    var initAST3 = buildFromTypedExpr(init0, currentContext);
+                                    var seq: Array<ElixirAST> = [];
+                                    if (initAST3 != null) seq.push({def: EMatch(PVar(varName3), initAST3), metadata: {}, pos: null});
+                                    // Emit all remaining statements except the original declaration
+                                    for (i in 1...el.length) {
+                                        var mid3 = buildFromTypedExpr(el[i], currentContext);
+                                        if (mid3 != null) seq.push(mid3);
+                                    }
+                                    // If the last expression is not a return of the same variable, append it
+                                    var lastIsSame = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == v0.id || vx.name == v0.name): true; default: false; };
+                                    if (!lastIsSame) seq.push({def: EVar(varName3), metadata: {}, pos: null});
+                                    return EBlock(seq);
+                                }
+                            }
+                        default:
+                    }
+
+                    // Fallback B: Find any later user TVar with canonical initializer and hoist
+                    // it to the top to preserve intended order for comprehensions.
+                    var hoisted = false;
+                    var declAt: Int = -1;
+                    var declV: Null<TVar> = null;
+                    var declI: Null<TypedExpr> = null;
+                    for (i in 0...el.length) {
+                        switch (el[i].expr) {
+                            case TVar(vh, ih) if (ih != null):
+                                var nmh = vh.name;
+                                var infra = (nmh == "g" || nmh == "_g"
+                                    || (nmh.length > 1 && nmh.charAt(0) == 'g' && isAllDigitsStr(nmh.substr(1)))
+                                    || (nmh.length > 2 && nmh.substr(0,2) == "_g" && isAllDigitsStr(nmh.substr(2))));
+                                if (!infra) {
+                                    var canon = false;
+                                    switch (ih.expr) {
+                                        case TArrayDecl([inner]) if (switch(inner.expr) { case TBlock(_): true; default: false; }): canon = true;
+                                        case TBlock(sts) if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(sts)): canon = true;
+                                        default:
+                                    }
+                                    if (canon) { declAt = i; declV = vh; declI = ih; break; }
+                                }
+                            default:
+                        }
+                    }
+                    if (declAt > 0 && declV != null && declI != null) {
+                        var vname = VariableAnalyzer.toElixirVarName(declV.name);
+                        var initASTx = buildFromTypedExpr(declI, currentContext);
+                        var seqx: Array<ElixirAST> = [];
+                        if (initASTx != null) seqx.push({def: EMatch(PVar(vname), initASTx), metadata: {}, pos: null});
+                        for (i in 0...el.length) if (i != declAt) {
+                            var midx = buildFromTypedExpr(el[i], currentContext);
+                            if (midx != null) seqx.push(midx);
+                        }
+                        var lastIsVar = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == declV.id || vx.name == declV.name): true; default: false; };
+                        if (!lastIsVar) seqx.push({def: EVar(vname), metadata: {}, pos: null});
+                        return EBlock(seqx);
+                    }
+                }
 
                 // Delegate to BlockBuilder for modular handling
                 var result = BlockBuilder.build(el, currentContext);

@@ -877,11 +877,11 @@ class ElixirCompiler extends GenericCompiler<
                                     #end
 
                                     if (insideString) {
-                                        // Inside string literal: wrap in #{...} for interpolation
-                                        #if debug_injection
-                                        trace('[ElixirCompiler] WRAPPING in #{}');
-                                        #end
-                                        finalCode += '#{$astStr}';
+                                        // Inside string literal: ensure the interpolated expression is a single valid expression
+                                        // Wrap multi-statement or assignment-heavy outputs in an IIFE inside #{...}
+                                        var needsIife = (astStr.indexOf("\n") != -1) || (astStr.indexOf("=") != -1 && astStr.indexOf("==") == -1);
+                                        var wrapped = needsIife ? '(fn -> ' + astStr + ' end).()' : astStr;
+                                        finalCode += '#{' + wrapped + '}';
                                     } else {
                                         // Outside string: direct substitution
                                         #if debug_injection

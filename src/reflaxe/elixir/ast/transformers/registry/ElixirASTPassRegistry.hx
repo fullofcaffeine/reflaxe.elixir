@@ -333,12 +333,91 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.PatternBindingHarmonizeTransforms.transformPass
         });
 
+        // Pre-interpolation: normalize list-builder args and wrap multi-statement args
+        // so interpolation prints valid expressions (no raw statements inside #{}).
+        passes.push({
+            name: "JoinArgListBuilderToMapJoin_Pre",
+            description: "Rewrite Enum.join(<block temp-builder>, sep) → Enum.map(..) |> Enum.join(sep) before interpolation",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.JoinArgListBuilderToMapJoinTransforms.transformPass
+        });
+        // Early: rewrite case length(list) → case list with list patterns
+        passes.push({
+            name: "CaseLengthToListPattern",
+            description: "Rewrite case length(list) do ... end → case list do [] | [head|tail] ... end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseLengthToListPatternTransforms.pass
+        });
+        // Hoist non-variable list scrutinee to a local name so guards/patterns can refer to it
+        passes.push({
+            name: "CaseListScrutineeHoist",
+            description: "Hoist non-variable list case scrutinee to a local variable",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseListScrutineeHoistTransforms.pass
+        });
+        // When case-with-list appears as RHS of an assignment, hoist scrutinee before assignment
+        passes.push({
+            name: "CaseScrutineeHoistInAssign",
+            description: "Hoist list/bitstring scrutinee for var = case ... end",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseScrutineeHoistInAssignTransforms.pass
+        });
+        // If an empty-list clause has a guard that implies non-empty (arr[0], length>1),
+        // rewrite the clause to a cons pattern and repair the guard to use head/tail.
+        passes.push({
+            name: "CaseListGuardToCons",
+            description: "Rewrite [] with non-empty guard → [head|tail] with repaired guard",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseListGuardToConsTransforms.pass
+        });
+        // First, rewrite free-var guard references (e.g., [] when arr[0]...) to the scrutinee
+        passes.push({
+            name: "CaseGuardFreeVarToScrutinee",
+            description: "Rewrite guard refs to clause-local free vars → scrutinee var",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseGuardFreeVarToScrutineeTransforms.pass
+        });
+        // Normalize []-with-non-empty guards to [first|rest] before further guard rewrites
+        passes.push({
+            name: "CaseEmptyListGuardNormalize",
+            description: "Rewrite [] guards implying non-empty → [first|rest] with repaired guard",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseEmptyListGuardNormalizeTransforms.pass
+        });
+        // After scrutinee normalization and list-pattern rewrite, repair guards to reference head/tail binders
+        // instead of listVar[0] and length(listVar) > 1.
+        passes.push({
+            name: "ListGuardIndexToHead",
+            description: "Rewrite guards: list[0] → head; length(list) > 1 → tail != []",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListGuardIndexToHeadTransforms.pass
+        });
+        passes.push({
+            name: "FunctionArgBlockToIIFE_Pre",
+            description: "Wrap multi-statement EBlock arguments in (fn -> ... end).() before interpolation",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FunctionArgBlockToIIFETransforms.pass
+        });
+
         // String interpolation transformation (should run before constant folding)
         passes.push({
             name: "StringInterpolation",
             description: "Convert string concatenation to idiomatic string interpolation",
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_stringInterpolationPass
+        });
+        // Post-interpolation: ensure any Enum.join(<block>, sep) inside #{...} is valid
+        passes.push({
+            name: "InterpolateJoinArgSanitize",
+            description: "Wrap Enum.join first arg as IIFE inside interpolation when it contains statements",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InterpolateJoinArgSanitizeTransforms.pass
+        });
+        passes.push({
+            name: "InterpolateIIFEWrap",
+            description: "Force-wrap all #{...} bodies in an IIFE to ensure a single valid expression",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InterpolateIIFEWrapTransforms.pass
         });
 
         // HXX control tag rewrite for ~H content
@@ -761,6 +840,14 @@ class ElixirASTPassRegistry {
             description: "Optimize pattern matching by extracting guards from case bodies",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
+        });
+
+        // Rewrite case length(list) → case list with list patterns after pattern matching is materialized
+        passes.push({
+            name: "CaseLengthToListPattern_Post",
+            description: "Rewrite case length(list) to list pattern case after PatternMatching",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseLengthToListPatternTransforms.pass
         });
 
         // Ensure case clause bodies are not empty (avoid syntax errors)
@@ -2982,6 +3069,18 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapJoinRewritePass
         });
+        passes.push({
+            name: "JoinArgListBuilderToMapJoin",
+            description: "Rewrite Enum.join(<block temp-builder>, sep) to Enum.map(list, fn -> ...) |> Enum.join(sep)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.JoinArgListBuilderToMapJoinTransforms.transformPass
+        });
+        passes.push({
+            name: "FunctionArgBlockToIIFE",
+            description: "Wrap multi-statement EBlock arguments in (fn -> ... end).()",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FunctionArgBlockToIIFETransforms.pass
+        });
         // Presence reduce rewrite (early) to catch Presence.list scans before generic rewrites
         passes.push({
             name: "PresenceReduceRewrite",
@@ -3283,12 +3382,84 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceBodySanitizeTransforms.transformPass
         });
+        // After reduce bodies are sanitized, rewrite trivial list-building reduces to comprehensions
+        passes.push({
+            name: "ReduceToComprehension",
+            description: "Rewrite Enum.reduce(range, [], fn iter, acc -> Enum.concat(acc, [v]) end) to for-comprehension",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceToComprehensionTransforms.rewritePass
+        });
+        // Sanitize any leftover push(...) sentinels to nil to avoid invalid syntax in non-reduce contexts
+        passes.push({
+            name: "PushSentinelSanitize",
+            description: "Replace stray push(...) sentinel calls with nil in non-reduce contexts",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PushSentinelSanitizeTransforms.transformPass
+        });
         // Late cleanup: unwrap Map.values(coll) in Enum.reduce when reducer does not use Presence metas
         passes.push({
             name: "ReduceInputValuesCleanup",
             description: "Unwrap Map.values(coll) in Enum.reduce when iterating lists (no binder.metas usage)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceInputValuesCleanupTransforms.pass
+        });
+        // Replay: ensure multi-statement function arguments are IIFEs after late rewrites
+        passes.push({
+            name: "FunctionArgBlockToIIFE_Post",
+            description: "Wrap multi-statement EBlock/EDo args in (fn -> ... end).() after late transforms",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FunctionArgBlockToIIFETransforms.pass
+        });
+        // Last-resort: force-wrap Enum.join first arg as IIFE when complex
+        passes.push({
+            name: "JoinArgForceIIFE",
+            description: "Ensure Enum.join first argument is a single expression by IIFE wrapping complex shapes",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.JoinArgForceIIFETransforms.pass
+        });
+        // Replay join-arg list-builder → Enum.map rewrite late to catch stabilized shapes
+        passes.push({
+            name: "JoinArgListBuilderToMapJoin_Post",
+            description: "Rewrite Enum.join(<builder block>, sep) to Enum.map |> Enum.join late",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.JoinArgListBuilderToMapJoinTransforms.transformPass
+        });
+        // Block-scoped fixer: if Enum.join receives a temp accumulator variable that was
+        // built in the same block (init -> Enum.each(concat) -> return acc), rewrite the
+        // argument to Enum.map(list, fn -> value end) and remove the builder window when safe.
+        passes.push({
+            name: "JoinArgBlockScopedFix",
+            description: "Rewrite block-scoped temp-list builder to Enum.map |> Enum.join and prune builder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.pass
+        });
+        // Absolute last: always IIFE-wrap Enum.join first arg unless simple/safe
+        passes.push({
+            name: "JoinArgAlwaysIIFE",
+            description: "Force Enum.join first arg to be a single expression by IIFE wrapping",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.JoinArgAlwaysIIFETransforms.pass
+        });
+        // Ensure binary operands are single expressions (wrap multi-stmt blocks)
+        passes.push({
+            name: "BinaryOperandBlockToIIFE",
+            description: "Wrap multi-statement operands of binary operators in IIFE",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinaryOperandBlockToIIFETransforms.pass
+        });
+        // Unwrap (fn -> (fn ... end) end).() → (fn ... end) to keep proper anonymous function args
+        passes.push({
+            name: "EFnIIFEUnwrap",
+            description: "Unwrap IIFE that returns an anonymous function to the function itself",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnIIFEUnwrapTransforms.pass
+        });
+        // Sanitize reserved-word variable names (e.g., fn → fn_)
+        passes.push({
+            name: "ReservedWordVarSanitize",
+            description: "Rename variables colliding with Elixir reserved words to safe variants",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.pass
         });
         // Drop top-level numeric sentinel literals in function bodies
         passes.push({
@@ -4301,6 +4472,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventCamelRefInlineFromParamsFinalTransforms.pass
         });
+        // Ultra-final: if first arg remains params in helper calls, pass extracted id instead
+        passes.push({
+            name: "HandleEventArg0FromParamsId_UltraFinal",
+            description: "Ultra-final: rewrite helper(arg0=params, ..., socket) to pass id extracted from params",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventArg0FromParamsIdUltraFinalTransforms.transformPass
+        });
         // Replay: resolve binder collision (socket param etc.) before final binder-use alignment
         passes.push({
             name: "CaseSuccessVarRenameCollisionFix_AbsoluteFinal",
@@ -4359,6 +4537,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessBinderPrefixMostUsedUndefinedTransforms.pass
         });
+        // Normalize handle_info helper call tails to pass the function-parameter socket
+        passes.push({
+            name: "HandleInfoReturnSocketNormalize_UltraFinal",
+            description: "Ultra-final: in handle_info/2, rewrite calls with duplicated first/last arg to end with socket",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoReturnSocketNormalizeTransforms.transformPass
+        });
         // One more binder safety replay at the very end (covers any late ref/name rewrites)
         passes.push({
             name: "CaseOkBinderPrefixBindAllUndefined_Replay2_UltraFinal",
@@ -4383,6 +4568,19 @@ class ElixirASTPassRegistry {
             description: "Absolute final: normalize sibling :tag patterns to {:tag} when tuple tag patterns exist",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseAtomPatternTupleNormalizeTransforms.transformPass
+        });
+        // Replay list guard/cons fixes at the very end to catch any late rewrites
+        passes.push({
+            name: "CaseListGuardToCons_Replay_Final",
+            description: "Absolute final replay: [] with non-empty guard → [head|tail]",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseListGuardToConsTransforms.pass
+        });
+        passes.push({
+            name: "ListGuardIndexToHead_Replay_Final",
+            description: "Absolute final replay: list[0]→head; length(list)>1→tail!=[] in cons clauses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListGuardIndexToHeadTransforms.pass
         });
 
         // Ultra-Ultimate: replay query normalizer and binder prefix-all at the very end to ensure landing

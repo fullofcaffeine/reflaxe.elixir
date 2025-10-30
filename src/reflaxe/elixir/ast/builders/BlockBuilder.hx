@@ -181,6 +181,61 @@ class BlockBuilder {
             return buildListComprehension(el, context);
         }
 
+        // NEW: Multi‑segment list building (outer list‑of‑lists)
+        // Detect repeated "temp = []" segments followed by concatenations and construct
+        // a list of lists deterministically instead of leaking the mutable temp.
+        var multi = detectMultiSegmentListOfLists(el);
+        if (multi != null) {
+            // Only apply when the last expression is an array literal of the same temp variable (e.g., [v, v, v])
+            var last = el[el.length - 1];
+            var tempInLast: Null<String> = null;
+            switch (last.expr) {
+                case TArrayDecl(items) if (items.length > 0):
+                    var same = true;
+                    var nameRef: String = null;
+                    for (it in items) switch (it.expr) {
+                        case TLocal(v):
+                            if (nameRef == null) nameRef = v.name; else if (nameRef != v.name) same = false;
+                        default: same = false;
+                    }
+                    if (same) tempInLast = nameRef;
+                default:
+            }
+            if (tempInLast == null) {
+                // Do not transform this block; keep default path
+            } else {
+                // Build full block: prefix statements + synthesized list-of-lists
+                var build = context.getExpressionBuilder();
+                var prefixBuilt: Array<ElixirAST> = [];
+                for (p in multi.prefix) {
+                    var pb = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(p, context);
+                    if (pb != null) prefixBuilt.push(pb);
+                }
+                // Build [[...], [...], ...]
+                var outer: Array<ElixirAST> = [];
+                for (seg in multi.segments) {
+                    var inner: Array<ElixirAST> = [];
+                    for (v in seg) {
+                        switch (v.expr) {
+                            case TBlock(nested) if (ComprehensionBuilder.looksLikeListBuildingBlock(nested)):
+                                var strictVals = ComprehensionBuilder.extractListElements(nested);
+                                if (strictVals != null && strictVals.length > 0) for (sv in strictVals) inner.push(build(sv));
+                                else {
+                                    var looseVals = ComprehensionBuilder.extractListElementsLoose(nested, context);
+                                    if (looseVals != null && looseVals.length > 0) inner.push({def: EList(looseVals), metadata: {}, pos: null});
+                                    else inner.push(build(v));
+                                }
+                            default:
+                                inner.push(build(v));
+                        }
+                    }
+                    outer.push({def: EList(inner), metadata: {}, pos: null});
+                }
+                prefixBuilt.push({def: EList(outer), metadata: {}, pos: null});
+                return EBlock(prefixBuilt);
+            }
+        }
+
         // ====================================================================
         // PATTERN DETECTION PHASE 6: Embedded Array Comprehensions
         // ====================================================================
@@ -862,6 +917,67 @@ class BlockBuilder {
         }
         
         return null;
+    }
+
+    /**
+     * Detects repeated segments of the form:
+     *   v = [];
+     *   v = v ++ [x]; v = v ++ [y]; ...
+     *   v = [];
+     *   v = v ++ [a]; ...
+     * and constructs a list of lists: [[x,y,...],[a,...], ...]
+     * This repairs shapes where a mutable temp leaks into the final array literal
+     * (e.g., [v, v, v]) by materializing each segment's value.
+     */
+    static function detectMultiSegmentListOfLists(el: Array<TypedExpr>): Null<{prefix:Array<TypedExpr>, segments:Array<Array<TypedExpr>>}> {
+        if (el.length < 3) return null;
+
+        // Track the candidate temp variable and collect segments
+        var temp: String = null;
+        var segments: Array<Array<TypedExpr>> = [];
+        var current: Array<TypedExpr> = null;
+        var prefix: Array<TypedExpr> = [];
+        var inPattern = false;
+
+        inline function pushSegment() {
+            if (current != null && current.length > 0) segments.push(current);
+            current = [];
+        }
+
+        // Scan statements for resets and concatenations
+        for (stmt in el) {
+            var s = switch (stmt.expr) {
+                case TMeta({name: ":mergeBlock" | ":implicitReturn"}, e) | TParenthesis(e): e;
+                default: stmt;
+            };
+            switch (s.expr) {
+                case TVar(v, init) if (init != null && switch (init.expr) { case TArrayDecl([]): true; default: false; }):
+                    if (temp == null) temp = v.name;
+                    if (v.name == temp) { pushSegment(); inPattern = true; }
+                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TArrayDecl([])}):
+                    if (temp == null) temp = v.name;
+                    if (v.name == temp) { pushSegment(); inPattern = true; }
+                case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TArrayDecl([value])}) if (temp != null && v.name == temp):
+                    if (current == null) current = [];
+                    current.push(value);
+                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}) if (temp != null && v.name == temp):
+                    if (current == null) current = [];
+                    current.push(value);
+                case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TBlock(blockStmts)}) if (temp != null && v.name == temp):
+                    // Nested block appends a whole list; capture as a block value
+                    if (current == null) current = [];
+                    current.push({t: s.t, pos: s.pos, expr: TBlock(blockStmts)});
+                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, {expr: TBlock(blockStmts)})}) if (temp != null && v.name == temp):
+                    if (current == null) current = [];
+                    current.push({t: s.t, pos: s.pos, expr: TBlock(blockStmts)});
+                default:
+                    if (!inPattern) prefix.push(stmt);
+            }
+        }
+        pushSegment();
+
+        if (temp == null || segments.length == 0) return null;
+        return {prefix: prefix, segments: segments};
     }
 }
 

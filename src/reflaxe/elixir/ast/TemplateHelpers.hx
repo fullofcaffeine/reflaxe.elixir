@@ -183,10 +183,51 @@ class TemplateHelpers {
                     var inner = collectTemplateContent(args[0]);
                     return rewriteControlTags(inner);
                 }
-                // Fallback to generic expression interpolation
-                var exprStr2 = renderExpr(makeAST(ECall(module, func, args)));
-                if (StringTools.startsWith(exprStr2, "assigns.")) exprStr2 = '@' + exprStr2.substr("assigns.".length);
-                '<%= ' + exprStr2 + ' %>';
+                // Generic call rendering with block-arg wrapping for validity in template interpolation
+                var callStr = (function() {
+                    var callHead = if (module != null) {
+                        switch (module.def) {
+                            case EVar(m): m + "." + func;
+                            case EField(_, _): renderExpr(module) + "." + func;
+                            default: func;
+                        }
+                    } else func;
+                    function renderArgForTemplate(a: ElixirAST): String {
+                        return switch (a.def) {
+                            case EBlock(sts) if (sts != null && sts.length > 1):
+                                // Wrap multi-statement blocks as IIFE to form a single expression
+                                '(fn -> ' + StringTools.rtrim(ElixirASTPrinter.print(a, 0)) + ' end).()';
+                            case EParen(inner) if (switch (inner.def) { case EBlock(es) if (es.length > 1): true; default: false; }):
+                                '(fn -> ' + StringTools.rtrim(ElixirASTPrinter.print(inner, 0)) + ' end).()';
+                            default:
+                                renderExpr(a);
+                        }
+                    }
+                    var parts = [];
+                    for (a in args) parts.push(renderArgForTemplate(a));
+                    return callHead + '(' + parts.join(', ') + ')';
+                })();
+                if (StringTools.startsWith(callStr, "assigns.")) callStr = '@' + callStr.substr("assigns.".length);
+                '<%= ' + callStr + ' %>';
+
+            case ERemoteCall(module, func, args):
+                // Render remote calls similarly to ECall, with arg block wrapping
+                var head = renderExpr(module) + "." + func;
+                function renderArg2(a: ElixirAST): String {
+                    return switch (a.def) {
+                        case EBlock(sts) if (sts != null && sts.length > 1):
+                            '(fn -> ' + StringTools.rtrim(ElixirASTPrinter.print(a, 0)) + ' end).()';
+                        case EParen(inner) if (switch (inner.def) { case EBlock(es) if (es.length > 1): true; default: false; }):
+                            '(fn -> ' + StringTools.rtrim(ElixirASTPrinter.print(inner, 0)) + ' end).()';
+                        default:
+                            renderExpr(a);
+                    }
+                }
+                var argList2 = [];
+                for (a in args) argList2.push(renderArg2(a));
+                var full = head + '(' + argList2.join(', ') + ')';
+                if (StringTools.startsWith(full, "assigns.")) full = '@' + full.substr("assigns.".length);
+                '<%= ' + full + ' %>';
 
             case EVar(_)
                 | EField(_, _)
