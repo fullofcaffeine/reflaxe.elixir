@@ -142,8 +142,21 @@ class BinaryOpBuilder {
                     // String concatenation in Elixir uses <> operator
                     ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftStr, rightStr);
                 } else {
-                    // Regular addition
-                    ElixirASTDef.EBinary(EBinaryOp.Add, leftAST, rightAST);
+                    // Regular addition with defensive identity fallback:
+                    // If either side somehow became null during upstream transforms,
+                    // substitute 0 to preserve valid syntax and additive identity.
+                    var safeLeft  = (leftAST  != null) ? leftAST  : makeAST(EInteger(0));
+                    var safeRight = rightAST;
+                    if (safeRight == null) {
+                        // Attempt to recover from original TypedExpr e2 for common literals/vars
+                        safeRight = switch (e2.expr) {
+                            case TConst(TInt(b)): makeAST(EInteger(b));
+                            case TConst(TFloat(f)): makeAST(EFloat(Std.parseFloat(Std.string(f))));
+                            case TLocal(v): makeAST(EVar(v.name));
+                            default: makeAST(EInteger(0)); // identity fallback
+                        };
+                    }
+                    ElixirASTDef.EBinary(EBinaryOp.Add, safeLeft, safeRight);
                 }
 
             // Assignment and compound assignments

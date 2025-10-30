@@ -85,19 +85,69 @@ class ComprehensionBuilder {
                 #end
                 #end
                 
-                // Build the comprehension body with conditional filtering support
+                // Helper to build a value and prefer nested comprehensions when canonical
+                function buildPossiblyNested(value: TypedExpr): ElixirAST {
+                    switch (value.expr) {
+                        case TBlock(stmts):
+                            // Prefer strict nested reconstruction when the inner block is a
+                            // canonical list-building shape (var g=[]; g = g ++ [...]; g)
+                            if (looksLikeListBuildingBlock(stmts)) {
+                                var nested = tryBuildArrayComprehensionFromBlock(stmts, context);
+                                if (nested != null) return nested;
+                            } else {
+                                // Even if not strictly canonical, attempt nested reconstruction
+                                var attempt = tryBuildArrayComprehensionFromBlock(stmts, context);
+                                if (attempt != null) return attempt;
+                                // Fallback: synthesize a list literal via loose extraction
+                                var loose = extractListElementsLoose(stmts, context);
+                                if (loose != null && loose.length > 0) return makeAST(EList(loose));
+                            }
+                            return context.getExpressionBuilder()(value);
+                        case TCall(f, args) if (args.length == 0):
+                            var iifeStmts = extractListBlockFromIIFE(value);
+                            if (iifeStmts != null) {
+                                if (looksLikeListBuildingBlock(iifeStmts)) {
+                                    var nestedIIFE = tryBuildArrayComprehensionFromBlock(iifeStmts, context);
+                                    if (nestedIIFE != null) return nestedIIFE;
+                                    var looseIIFE = extractListElementsLoose(iifeStmts, context);
+                                    if (looseIIFE != null && looseIIFE.length > 0) return makeAST(EList(looseIIFE));
+                                } else {
+                                    var attemptIIFE = tryBuildArrayComprehensionFromBlock(iifeStmts, context);
+                                    if (attemptIIFE != null) return attemptIIFE;
+                                }
+                            }
+                            return context.getExpressionBuilder()(value);
+                        case TArrayDecl([inner]) if (switch (inner.expr) { case TBlock(_): true; default: false; }):
+                            // Single-element array whose element is a list-building block.
+                            // Reconstruct the inner block as a comprehension returning the list,
+                            // then wrap it back into a list literal so the outer comprehension
+                            // yields a list-of-lists deterministically.
+                            var innerStmts = switch (inner.expr) { case TBlock(s): s; default: []; };
+                            var innerBuilt = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+                            if (innerBuilt != null) {
+                                return makeAST(EList([innerBuilt]));
+                            }
+                            return context.getExpressionBuilder()(value);
+                        case TArrayDecl([inner2]) if (switch (inner2.expr) { case TCall(_, _): true; default: false; }):
+                            var iifeStmts2 = extractListBlockFromIIFE(inner2);
+                            if (iifeStmts2 != null) {
+                                var nested2 = tryBuildArrayComprehensionFromBlock(iifeStmts2, context);
+                                if (nested2 != null) return makeAST(EList([nested2]));
+                                var loose2 = extractListElementsLoose(iifeStmts2, context);
+                                if (loose2 != null && loose2.length > 0) return makeAST(EList([makeAST(EList(loose2))]));
+                            }
+                            return context.getExpressionBuilder()(value);
+                        default:
+                            return context.getExpressionBuilder()(value);
+                    }
+                }
+
+                // Build the comprehension body with conditional filtering support and nested detection
                 var body = if (data.condition != null) {
                     // Handle conditional push (filter pattern)
-                    switch(data.body.expr) {
-                        case TBlock(stmts):
-                            // Nested block comprehension - recurse
-                            var nested = tryBuildArrayComprehensionFromBlock(stmts, context);
-                            if (nested != null) nested else context.getExpressionBuilder()(data.body);
-                        default:
-                            context.getExpressionBuilder()(data.body);
-                    }
+                    buildPossiblyNested(data.body);
                 } else {
-                    context.getExpressionBuilder()(data.body);
+                    buildPossiblyNested(data.body);
                 };
                 
                 #if debug_array_comprehension
@@ -166,6 +216,40 @@ class ComprehensionBuilder {
                                 #end
                                 #end
                                 return result;
+                            }
+                            // Fallback: scan middle for any TBlock that contains a for-loop pushing into v
+                            for (mid in middleStmts) {
+                                switch (unwrapMetaParens(mid).expr) {
+                                    case TBlock(inner):
+                                        for (s in inner) switch (unwrapMetaParens(s).expr) {
+                                            case TFor(loopVar, iterator, body):
+                                                var push = extractPushFromBody(body, v.name);
+                                                if (push != null) {
+                                                    #if debug_array_comprehension
+                                                    #if debug_ast_builder
+                                                    trace('[Array Comprehension] Fallback: building EFor from scanned middle TBlock with loopVar=' + loopVar.name);
+                                                    #end
+                                                    #end
+                                                    var filters = push.condition != null ? [context.getExpressionBuilder()(push.condition)] : [];
+                                                    var valueAst = (function() {
+                                                        switch (push.value.expr) {
+                                                            case TBlock(nested) if (looksLikeListBuildingBlock(nested)):
+                                                                var nestedComp = tryBuildArrayComprehensionFromBlock(nested, context);
+                                                                if (nestedComp != null) return nestedComp;
+                                                                var loose = extractListElementsLoose(nested, context);
+                                                                return (loose != null && loose.length > 0) ? makeAST(EList(loose)) : context.getExpressionBuilder()(push.value);
+                                                            default:
+                                                                return context.getExpressionBuilder()(push.value);
+                                                        }
+                                                    })();
+                                                    return makeAST(EFor([
+                                                        { pattern: PVar(loopVar.name), expr: context.getExpressionBuilder()(iterator) }
+                                                    ], filters, valueAst, null, false));
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
                             }
                         default:
                     }
@@ -408,7 +492,7 @@ class ComprehensionBuilder {
         var firstStmt = unwrapMetaParens(stmts[0]);
         var lastStmt = unwrapMetaParens(stmts[stmts.length - 1]);
         
-        // Check for: var g = []; ... ; g
+        // Check for: var g = []; ... ; g  OR  g = []; ... ; g
         var tempVar: String = null;
         switch(firstStmt.expr) {
             case TVar(v, {expr: TArrayDecl([])}):
@@ -416,6 +500,13 @@ class ComprehensionBuilder {
                 #if debug_array_comprehension
                 #if debug_ast_builder
                 trace('[Array Comprehension Detection] Found list init: var ${tempVar} = []');
+                #end
+                #end
+            case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TArrayDecl([])}):
+                tempVar = v.name;
+                #if debug_array_comprehension
+                #if debug_ast_builder
+                trace('[Array Comprehension Detection] Found list init: ${tempVar} = []');
                 #end
                 #end
             default:
@@ -484,6 +575,8 @@ class ComprehensionBuilder {
         switch(firstStmt.expr) {
             case TVar(v, _):
                 tempVarName = v.name;
+            case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TArrayDecl([])}):
+                tempVarName = v.name;
             default:
                 return null;
         }
@@ -522,11 +615,19 @@ class ComprehensionBuilder {
     /**
      * Extract push operation from loop body
      */
-    static function extractPushFromBody(body: TypedExpr, tempVar: String): Null<{value: TypedExpr, condition: Null<TypedExpr>}> {
+    public static function extractPushFromBody(body: TypedExpr, tempVar: String): Null<{value: TypedExpr, condition: Null<TypedExpr>}> {
         switch(body.expr) {
             case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, field))}, [value]) 
                 if (v.name == tempVar && field.get().name == "push"):
                 // Direct push
+                return {value: value, condition: null};
+            case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([value])})})
+                if (v.name == tempVar && v2.name == tempVar):
+                // Pattern: g = g ++ [value]
+                return {value: value, condition: null};
+            case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TArrayDecl([value])})
+                if (v.name == tempVar):
+                // Pattern: g += [value]
                 return {value: value, condition: null};
                 
             case TIf(condition, thenExpr, null):
@@ -570,19 +671,57 @@ class ComprehensionBuilder {
         
         var elements: Array<ElixirAST> = [];
         
+        // Helper: build list AST from an inner block if it represents list-building
+        inline function listFromBlock(blockStmts: Array<TypedExpr>): Null<ElixirAST> {
+            // Prefer strict extractor
+            var strictVals = extractListElements(blockStmts);
+            if (strictVals != null && strictVals.length > 0) {
+                var builtStrict = strictVals.map(v -> context.getExpressionBuilder()(v));
+                return makeAST(EList(builtStrict));
+            }
+            // Try loose extractor (allows locals)
+            var looseVals = extractListElementsLoose(blockStmts, context);
+            if (looseVals != null && looseVals.length > 0) {
+                return makeAST(EList(looseVals));
+            }
+            return null;
+        }
+
         // Process middle statements
         for (i in 1...statements.length - 1) {
             var stmt = unwrapMetaParens(statements[i]);
             switch(stmt.expr) {
                 case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TArrayDecl([value])}) if (v.name == tempVarName):
                     // g += [value]
-                    elements.push(context.getExpressionBuilder()(value));
-                    
+                    // If the single element is a canonical inner list-building block, prefer nested comprehension
+                    var built = switch (value.expr) {
+                        case TBinop(OpAdd, l, r):
+                            #if debug_array_comprehension
+                            #if debug_ast_builder
+                            trace('[Array Comprehension] value is OpAdd inside unrolled element');
+                            #end
+                            #end
+                            context.getExpressionBuilder()(value);
+                        case TBlock(innerStmts):
+                            var nested = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+                            if (nested != null) nested else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));
+                        default:
+                            context.getExpressionBuilder()(value);
+                    };
+                    elements.push(built);
+                
                 case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([value])})}) 
                     if (v.name == tempVarName && v2.name == tempVarName):
                     // g = g ++ [value]
-                    elements.push(context.getExpressionBuilder()(value));
-                    
+                    var built2 = switch (value.expr) {
+                        case TBlock(innerStmts):
+                            var nested2 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+                            if (nested2 != null) nested2 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));
+                        default:
+                            context.getExpressionBuilder()(value);
+                    };
+                    elements.push(built2);
+                
                 case TIf(condition, thenExpr, elseExpr):
                     // Conditional unrolled comprehension
                     // For now, we'll just process the then branch
@@ -591,12 +730,26 @@ class ComprehensionBuilder {
                         case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TArrayDecl([value])}) if (v.name == tempVarName):
                             // Skip conditional elements for now or include them
                             // This is a simplification - ideally we'd reconstruct as filtered comprehension
-                            elements.push(context.getExpressionBuilder()(value));
+                            var built3 = switch (value.expr) {
+                                case TBlock(innerStmts):
+                                    var nested3 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+                                    if (nested3 != null) nested3 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));
+                                default:
+                                    context.getExpressionBuilder()(value);
+                            };
+                            elements.push(built3);
                         case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}) if (v.name == tempVarName):
-                            elements.push(context.getExpressionBuilder()(value));
+                            var built4 = switch (value.expr) {
+                                case TBlock(innerStmts):
+                                    var nested4 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+                                    if (nested4 != null) nested4 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));
+                                default:
+                                    context.getExpressionBuilder()(value);
+                            };
+                            elements.push(built4);
                         default:
                     }
-                    
+                
                 default:
             }
         }
@@ -754,6 +907,30 @@ class ComprehensionBuilder {
         #end
         
         var elements: Array<TypedExpr> = [];
+        var encounteredUnsafe = false;
+
+        inline function hasAnyLocal(e: TypedExpr): Bool {
+            var found = false;
+            function walk(te: TypedExpr): Void {
+                if (found || te == null) return;
+                switch (te.expr) {
+                    case TLocal(_): found = true;
+                    case TArrayDecl(arr): for (a in arr) walk(a);
+                    case TBlock(bs): for (b in bs) walk(b);
+                    case TBinop(_, l, r): walk(l); walk(r);
+                    case TCall(t, args): walk(t); for (a in args) walk(a);
+                    case TField(t, _): walk(t);
+                    case TParenthesis(inner): walk(inner);
+                    case TIf(c,t,eo): walk(c); walk(t); if (eo != null) walk(eo);
+                    case TWhile(c,b,_): walk(c); walk(b);
+                    case TFor(v, it, b): walk(it); walk(b);
+                    case TMeta(_, inner): walk(inner);
+                    default:
+                }
+            }
+            walk(e);
+            return found;
+        }
         
         // Skip first (initialization) and last (return) statements
         for (i in 1...stmts.length - 1) {
@@ -780,8 +957,21 @@ class ComprehensionBuilder {
                                 elements.push(value);
                             }
                         default:
-                            elements.push(value);
-                    }
+                            // IIFE returning a block that builds a list
+                            var iifeInner = extractListBlockFromIIFE(value);
+                            if (iifeInner != null && looksLikeListBuildingBlock(iifeInner)) {
+                                var nestedIIFE = extractListElements(iifeInner);
+                                if (nestedIIFE != null && nestedIIFE.length > 0) {
+                                    var listExprIIFE = {expr: TArrayDecl(nestedIIFE), pos: value.pos, t: value.t};
+                                    elements.push(listExprIIFE);
+                                } else {
+                                    elements.push(value);
+                                }
+                            } else {
+                                // Avoid extracting values that reference inner locals (e.g., nested binders)
+                                if (hasAnyLocal(value)) { encounteredUnsafe = true; } else elements.push(value);
+                            }
+                }
                 case TBinop(OpAdd, _, {expr: TBlock(blockStmts)}):
                     // Direct concatenation with block: g ++ block
                     // Check if this block itself builds a list
@@ -816,7 +1006,7 @@ class ComprehensionBuilder {
                                         elements.push(value);
                                     }
                                 default:
-                                    elements.push(value);
+                                    if (hasAnyLocal(value)) { encounteredUnsafe = true; } else elements.push(value);
                             }
                         case TBinop(OpAdd, _, {expr: TBlock(blockStmts)}):
                             // Assignment with block concatenation
@@ -839,6 +1029,7 @@ class ComprehensionBuilder {
             }
         }
         
+        if (encounteredUnsafe) return null;
         return elements;
     }
 
@@ -881,6 +1072,9 @@ class ComprehensionBuilder {
     public static function extractListElementsLoose(stmts: Array<TypedExpr>, context: BuildContext): Null<Array<ElixirAST>> {
         var build = context.getExpressionBuilder();
         var out: Array<ElixirAST> = [];
+        // NOTE: We deliberately allow local references (e.g., outer loop variable `i`) inside
+        // values collected here. The loose extractor is only used to synthesize list literals
+        // as elements within a larger expression, which is valid even with locals.
 
         for (stmt in stmts) {
             var s = unwrapMetaParens(stmt);
@@ -888,10 +1082,24 @@ class ComprehensionBuilder {
                 // Bare concatenation: g ++ [value]
                 case TBinop(OpAdd, _, {expr: TArrayDecl([value])}):
                     out.push(build(value));
+                // Bare concatenation with IIFE that returns a list-building block: g ++ ((fn -> ... end).())
+                case TBinop(OpAdd, _, {expr: TCall(_, _) }):
+                    var iifeSt = extractListBlockFromIIFE(s);
+                    if (iifeSt != null) {
+                        var nestedI = extractListElementsLoose(iifeSt, context);
+                        if (nestedI != null && nestedI.length > 0) out.push(makeAST(EList(nestedI)));
+                    }
 
                 // Assignment with concatenation: g = g ++ [value]
                 case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}):
                     out.push(build(value));
+                // Assignment with IIFE: g = g ++ ((fn -> ... end).())
+                case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TCall(_, _)})}):
+                    var iifeSt2 = extractListBlockFromIIFE(s);
+                    if (iifeSt2 != null) {
+                        var nestedI2 = extractListElementsLoose(iifeSt2, context);
+                        if (nestedI2 != null && nestedI2.length > 0) out.push(makeAST(EList(nestedI2)));
+                    }
 
                 // Bare concatenation with nested block: g ++ (block)
                 case TBinop(OpAdd, _, {expr: TBlock(blockStmts)}):
@@ -960,6 +1168,25 @@ class ComprehensionBuilder {
                 unwrapMetaParens(e);
             default:
                 expr;
+        }
+    }
+
+    /**
+     * Extract statements from an immediately-invoked anonymous function
+     * returning a block. Pattern: (fn -> <TBlock> end)()
+     */
+    static function extractListBlockFromIIFE(expr: TypedExpr): Null<Array<TypedExpr>> {
+        return switch (expr.expr) {
+            case TCall(f, args) if (args.length == 0):
+                switch (unwrapMetaParens(f).expr) {
+                    case TFunction(tf):
+                        switch (tf.expr.expr) {
+                            case TBlock(stmts): stmts;
+                            default: null;
+                        }
+                    default: null;
+                }
+            default: null;
         }
     }
 }

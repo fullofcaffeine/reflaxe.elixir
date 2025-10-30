@@ -2593,8 +2593,41 @@ class ElixirASTTransformer {
                                 }
                                 exprToInterpolate = simplifyInterpolationExpr(exprToInterpolate);
                                 
-                                var exprStr = ElixirASTPrinter.printAST(exprToInterpolate);
-                                result += '#{' + exprStr + '}';
+                                // Sanitize inline expression for interpolation: ensure no raw multi-statement
+                                // blocks appear in function arguments (e.g., Enum.join(<block>, ",")).
+                                function sanitizeForInterpolation(n: ElixirAST): ElixirAST {
+                                    return transformNode(n, function(x: ElixirAST): ElixirAST {
+                                        return switch (x.def) {
+                                            case ECall(t, name, args):
+                                                var newArgs = [];
+                                                for (a in args) switch (a.def) {
+                                                    case EBlock(sts) if (sts != null && sts.length > 1):
+                                                        newArgs.push(makeAST(ECall(makeAST(EFn([{ args: [], guard: null, body: a }])), "", [])));
+                                                    default:
+                                                        newArgs.push(a);
+                                                }
+                                                if (newArgs != args) makeAST(ECall(t, name, newArgs)) else x;
+                                            case ERemoteCall(mod, fname, rargs):
+                                                var newRArgs = [];
+                                                for (a2 in rargs) switch (a2.def) {
+                                                    case EBlock(sts2) if (sts2 != null && sts2.length > 1):
+                                                        newRArgs.push(makeAST(ECall(makeAST(EFn([{ args: [], guard: null, body: a2 }])), "", [])));
+                                                    default:
+                                                        newRArgs.push(a2);
+                                                }
+                                                if (newRArgs != rargs) makeAST(ERemoteCall(mod, fname, newRArgs)) else x;
+                                            default:
+                                                x;
+                                        }
+                                    });
+                                }
+                                var sanitizedExpr = sanitizeForInterpolation(exprToInterpolate);
+                                var exprStr = ElixirASTPrinter.printAST(sanitizedExpr);
+                                // If the printed expression contains newlines or standalone assignments,
+                                // wrap it in an IIFE so interpolation remains a single valid expression.
+                                var needsWrapIife = (exprStr.indexOf('\n') != -1) || (exprStr.indexOf(' = ') != -1 && exprStr.indexOf('==') == -1);
+                                var printable = needsWrapIife ? '(fn -> ' + exprStr + ' end).()' : exprStr;
+                                result += '#{' + printable + '}';
                             }
                         }
                         
