@@ -1,14 +1,14 @@
 defmodule Phoenix.OnUpdateAction do
   def nothing() do
-    {0}
+    {:nothing}
   end
   def restrict() do
-    {1}
+    {:restrict}
   end
   def update_all() do
-    {2}
+    {:update_all}
   end
   def nilify_all() do
-    {3}
+    {:nilify_all}
   end
 end

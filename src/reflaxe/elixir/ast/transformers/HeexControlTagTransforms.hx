@@ -91,14 +91,17 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class HeexControlTagTransforms {
     /** Public helper to rewrite control tags in-place (builder-time use). */
     public static function rewrite(content:String):String {
-        if (content == null || content.indexOf("<if") == -1) return content;
-        return rewriteControlTags(content);
+        if (content == null) return content;
+        var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+        if (lowered.indexOf("<if") == -1) return lowered;
+        return rewriteControlTags(lowered);
     }
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ESigil(type, content, modifiers) if (type == "H"):
-                    var updated = rewriteControlTags(content);
+                    var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+                    var updated = rewriteControlTags(lowered);
                     if (updated != content) makeASTWithMeta(ESigil(type, updated, modifiers), n.metadata, n.pos) else n;
                 case ERaw(code):
                     // Handle ~H in raw code blocks as well

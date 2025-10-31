@@ -196,6 +196,18 @@ class ObjectBuilder {
             var atomName = NameUtils.toSnakeCase(field.name);
             // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
             var fieldValue = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context);
+            // Normalize strategy to bare atom when accidentally wrapped as one-element tuple
+            if (atomName == "strategy") {
+                switch (fieldValue.def) {
+                    case ETuple(items) if (items != null && items.length == 1):
+                        switch (items[0].def) {
+                            case EAtom(a):
+                                fieldValue = makeAST(EAtom(a));
+                            default:
+                        }
+                    default:
+                }
+            }
             keywordPairs.push({key: atomName, value: fieldValue});
         }
         

@@ -101,27 +101,23 @@ class BinaryOpBuilder {
                 var isStringConcat = leftIsString || rightIsString;
 
                 if (isStringConcat) {
-                    // For string concatenation, ensure both operands are strings
-                    // Handle left operand conversion if needed
-                    var leftStr = if (leftIsString) {
-                        leftAST;
-                    } else {
-                        // Left is not string but right is - convert left to string
-                        makeAST(ElixirASTDef.ECall(leftAST, "to_string", []));
-                    };
-                    
-                    // Handle right operand conversion if needed
+                    // For string concatenation, ensure both operands are strings.
+                    // Use Kernel.to_string/1 for coercion to avoid instance method rewrites.
+                    inline function toKernelString(e: ElixirAST): ElixirAST {
+                        return makeAST(ElixirASTDef.ERemoteCall(makeAST(ElixirASTDef.EVar("Kernel")), "to_string", [e]));
+                    }
+
+                    var leftStr = leftIsString ? leftAST : toKernelString(leftAST);
+
                     var rightStr = if (rightIsString) {
                         rightAST;
                     } else {
-                        // Check if the expression is an ERaw node (from __elixir__() injection)
-                        // or a block expression that shouldn't have .to_string() called on it
+                        // Avoid coercion on ERaw or complex block forms that already ensure binaries
                         var needsToString = switch(rightAST.def) {
-                            case ERaw(_): false;  // Raw Elixir code handles conversion itself
-                            case ECase(_, _) | ECond(_) | EWith(_, _, _): false; // Block expressions in interpolation auto-convert
-                            case EIf(_, _, elseBranch) if (elseBranch != null): false; // If with else is a block expression
+                            case ERaw(_): false;
+                            case ECase(_, _) | ECond(_) | EWith(_, _, _): false;
+                            case EIf(_, _, elseBranch) if (elseBranch != null): false;
                             case EBlock(exprs) if (exprs.length > 0):
-                                // Check if the block contains case/cond/with as its last expression
                                 var lastExpr = exprs[exprs.length - 1];
                                 switch(lastExpr.def) {
                                     case ECase(_, _) | ECond(_) | EWith(_, _, _): false;
@@ -130,15 +126,9 @@ class BinaryOpBuilder {
                                 }
                             default: true;
                         };
-                        
-                        if (needsToString) {
-                            // Convert non-string to string for concatenation
-                            makeAST(ElixirASTDef.ECall(rightAST, "to_string", []));
-                        } else {
-                            // Use the expression as-is, Elixir will handle conversion in interpolation context
-                            rightAST;
-                        }
+                        needsToString ? toKernelString(rightAST) : rightAST;
                     };
+
                     // String concatenation in Elixir uses <> operator
                     ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftStr, rightStr);
                 } else {

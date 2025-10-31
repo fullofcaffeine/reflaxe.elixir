@@ -1,17 +1,17 @@
 defmodule Phoenix.JoinType do
   def inner() do
-    {0}
+    {:inner}
   end
   def left() do
-    {1}
+    {:left}
   end
   def right() do
-    {2}
+    {:right}
   end
   def full() do
-    {3}
+    {:full}
   end
   def cross() do
-    {4}
+    {:cross}
   end
 end

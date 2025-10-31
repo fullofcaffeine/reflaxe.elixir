@@ -199,9 +199,10 @@ class HXX {
                 // We still tag it so the builder emits a ~H sigil.
                 if (s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<%\n") != -1) {
                     #if macro
-                    haxe.macro.Context.warning("[HXX] fast-path (pre-EEx detected)", templateStr.pos);
+                    haxe.macro.Context.warning("[HXX] fast-path (pre-EEx detected) + for-rewrite", templateStr.pos);
                     #end
-                    return macro @:heex $v{s};
+                    var preProcessed = rewriteForBlocks(s);
+                    return macro @:heex $v{preProcessed};
                 }
 
                 // Validate the template and proceed with HXX → HEEx conversion
@@ -212,7 +213,7 @@ class HXX {
                 if (!validation.valid) {
                     for (error in validation.errors) Context.warning(error, templateStr.pos);
                 }
-                var processed = processTemplateString(s);
+                var processed = processTemplateString(s, templateStr.pos);
                 #if macro
                 haxe.macro.Context.warning("[HXX] processed (length=" + processed.length + ")", templateStr.pos);
                 #end
@@ -256,21 +257,47 @@ class HXX {
      * @param template The raw template string from the user
      * @return Processed HEEx-compatible template string
      */
-    static function processTemplateString(template: String): String {
+    static function processTemplateString(template: String, ?pos: haxe.macro.Expr.Position): String {
         // Convert Haxe ${} interpolation to Elixir #{} interpolation
         var processed = template;
+
+        // 0) Rewrite HXX control/loop tags that must be lowered before interpolation scanning
+        //    - <for {item in expr}> ... </for> → <% for item <- expr do %> ... <% end %>
+        processed = rewriteForBlocks(processed);
 
         // 1) Rewrite attribute-level interpolations first: attr=${expr} or attr="${expr}" → attr={expr}
         //    Also map assigns.* → @* and ternary → inline if
         processed = rewriteAttributeInterpolations(processed);
 
         // 2) Handle remaining Haxe string interpolation (non-attribute positions):
-        //    ${expr} -> <%= expr %> (convert assigns.* -> @*)
+        //    ${expr} or #{expr} -> <%= expr %> (convert assigns.* -> @*)
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
         var interp = ~/\$\{([^}]+)\}/g;
         processed = interp.map(processed, function (re) {
             var expr = re.matched(1);
             expr = StringTools.trim(expr);
+            // Guard: disallow injecting HTML as string via ${"<div ..."}
+            if (expr.length >= 2) {
+                var first = expr.charAt(0);
+                if ((first == '"' || first == '\'') && expr.length >= 2) {
+                    // find first non-space after quote
+                    var idx = 1;
+                    while (idx < expr.length && ~/^\s$/.match(expr.charAt(idx))) idx++;
+                    if (idx < expr.length && expr.charAt(idx) == '<') {
+                        #if macro
+                        haxe.macro.Context.error('HXX: injecting HTML via string inside ${...} is not allowed. Use inline markup or HXX.block(\'...\') as a deliberate escape hatch.', pos != null ? pos : haxe.macro.Context.currentPos());
+                        #end
+                    }
+                }
+            }
+            expr = StringTools.replace(expr, "assigns.", "@");
+            return '<%= ' + expr + ' %>';
+        });
+
+        // Support #{expr} placeholders to avoid Haxe compile-time interpolation conflicts
+        var interpHash = ~/#\{([^}]+)\}/g;
+        processed = interpHash.map(processed, function (re) {
+            var expr = StringTools.trim(re.matched(1));
             expr = StringTools.replace(expr, "assigns.", "@");
             return '<%= ' + expr + ' %>';
         });
@@ -305,6 +332,45 @@ class HXX {
         processed = processLiveViewEvents(processed);
 
         return processed;
+    }
+
+    /**
+     * Rewrite <for {pattern in expr}> ... </for> to HEEx for-blocks.
+     * Supports simple patterns like `todo in list` or `item in some_call()`.
+     * Runs early, before generic interpolation handling.
+     */
+    static function rewriteForBlocks(src:String):String {
+        if (src == null || src.indexOf('<for {') == -1) return src;
+        var out = new StringBuf();
+        var i = 0;
+        while (i < src.length) {
+            var start = src.indexOf('<for {', i);
+            if (start == -1) { out.add(src.substr(i)); break; }
+            out.add(src.substr(i, start - i));
+            var headEnd = src.indexOf('}>', start);
+            if (headEnd == -1) { out.add(src.substr(start)); break; }
+            var headInner = src.substr(start + 6, headEnd - (start + 6)); // between { and }
+            var closeTag = src.indexOf('</for>', headEnd + 2);
+            if (closeTag == -1) { out.add(src.substr(start)); break; }
+            var body = src.substr(headEnd + 2, closeTag - (headEnd + 2));
+            var parts = headInner.split(' in ');
+            if (parts.length != 2) {
+                // Fallback: keep original; do not break template
+                out.add(src.substr(start, (closeTag + 6) - start));
+                i = closeTag + 6;
+                continue;
+            }
+            var pat = StringTools.trim(parts[0]);
+            var iter = StringTools.trim(parts[1]);
+            // Map assigns.* to @* in iterator expression
+            iter = StringTools.replace(iter, 'assigns.', '@');
+            out.add('<% for ' + pat + ' <- ' + iter + ' do %>');
+            // Recursively allow nested for/if inside body
+            out.add(rewriteForBlocks(body));
+            out.add('<% end %>');
+            i = closeTag + 6;
+        }
+        return out.toString();
     }
 
     /**

@@ -94,8 +94,13 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
     #if sys Sys.println('[HandleInfoBinderRepair] Renamed tuple binder colliding with ' + socketVar + ' -> payload'); #end
     // Clause pattern was renamed; repair helper calls in body where arg0==argN==socket
     var fixedBody = fixLocalCalls(c.body, socketVar, /*newBinder*/ "payload");
+    // Additionally, align the most-used undefined simple local in the clause body
+    // to the new binder (e.g., rename free `todo` → `payload`). This avoids
+    // references like `todo.user_id` when the scrutinee was re-matched to
+    // `{:tag, payload}`.
+    var aligned = alignMostUsedUndefinedToBinder(fixedBody, /*binder*/ "payload");
     // Recurse to handle nested case statements inside the clause body
-    var recursed = rewriteCaseClauses(fixedBody, socketVar);
+    var recursed = rewriteCaseClauses(aligned, socketVar);
     return { pattern: renamed, guard: c.guard, body: recursed };
   }
 
@@ -129,6 +134,78 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
           } else x;
         default:
           x;
+      }
+    });
+  }
+
+  static function alignMostUsedUndefinedToBinder(body: ElixirAST, binderName:String): ElixirAST {
+    // Compute declared + used simple locals
+    var declared = new Map<String,Bool>();
+    collectDecls(body, declared);
+    declared.set(binderName, true);
+    declared.set("socket", true);
+    declared.set("params", true);
+    var counts = new Map<String,Int>();
+    collectVarUseCounts(body, counts);
+    // Choose the most-used undefined, lowercase simple name
+    var best: Null<String> = null;
+    var bestCount = 0;
+    for (name in counts.keys()) {
+      if (!allow(name)) continue;
+      if (declared.exists(name)) continue;
+      var c = counts.get(name);
+      if (c > bestCount) { best = name; bestCount = c; }
+    }
+    if (best == null || best == binderName) return body;
+    // Rewrite occurrences best -> binderName
+    return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
+      return switch (x.def) {
+        case EVar(v) if (v == best): makeASTWithMeta(EVar(binderName), x.metadata, x.pos);
+        default: x;
+      }
+    });
+  }
+
+  static inline function allow(name:String):Bool {
+    if (name == null || name.length == 0) return false;
+    if (name == "socket" || name == "params" || name == "event" || name == "payload") return false;
+    var c = name.charAt(0);
+    return c.toLowerCase() == c && c != '_';
+  }
+
+  static function collectDecls(ast: ElixirAST, out: Map<String,Bool>): Void {
+    reflaxe.elixir.ast.ASTUtils.walk(ast, function(n: ElixirAST) {
+      if (n == null || n.def == null) return;
+      switch (n.def) {
+        case EMatch(p, _): collectPattern(p, out);
+        case EBinary(Match, l, _): collectLhs(l, out);
+        case ECase(_, cs): for (c in cs) collectPattern(c.pattern, out);
+        default:
+      }
+    });
+  }
+  static function collectPattern(p: EPattern, out: Map<String,Bool>): Void {
+    switch (p) {
+      case PVar(n): out.set(n, true);
+      case PTuple(es) | PList(es): for (e in es) collectPattern(e, out);
+      case PCons(h,t): collectPattern(h, out); collectPattern(t, out);
+      case PMap(kvs): for (kv in kvs) collectPattern(kv.value, out);
+      case PStruct(_, fs): for (f in fs) collectPattern(f.value, out);
+      case PPin(inner): collectPattern(inner, out);
+      default:
+    }
+  }
+  static function collectLhs(lhs: ElixirAST, out: Map<String,Bool>): Void {
+    switch (lhs.def) { case EVar(n): out.set(n, true); case EBinary(Match, l2, _): collectLhs(l2, out); default: }
+  }
+  static function collectVarUseCounts(ast: ElixirAST, out: Map<String,Int>): Void {
+    reflaxe.elixir.ast.ASTUtils.walk(ast, function(n: ElixirAST) {
+      if (n == null || n.def == null) return;
+      switch (n.def) {
+        case EVar(v):
+          var cur = out.exists(v) ? out.get(v) : 0;
+          out.set(v, cur + 1);
+        default:
       }
     });
   }

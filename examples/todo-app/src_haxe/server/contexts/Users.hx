@@ -66,20 +66,20 @@ class Users {
         // Use typed Repo extern for type-safe database access
         if (filter != null) {
             // Apply filtering based on the provided criteria
-            var query = TypedQuery.from(contexts.User);
+            var userQuery = TypedQuery.from(contexts.User);
             
             // Prefer simple conditional mutation to avoid nested rebind warnings in Elixir
             if (filter.name != null) {
-                query = query.where(u -> u.name == '%${filter.name}%');
+                userQuery = userQuery.where(u -> u.name == '%${filter.name}%');
             }
             if (filter.email != null) {
-                query = query.where(u -> u.email == '%${filter.email}%');
+                userQuery = userQuery.where(u -> u.email == '%${filter.email}%');
             }
             if (filter.isActive != null) {
-                query = query.where(u -> u.active == filter.isActive);
+                userQuery = userQuery.where(u -> u.active == filter.isActive);
             }
             
-            return Repo.all(query);
+            return Repo.all(userQuery);
         }
         
         return Repo.all(contexts.User);

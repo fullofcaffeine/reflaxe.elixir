@@ -2499,7 +2499,6 @@ class ElixirASTPrinter {
                 var prefix = currentAppPrefix();
                 if (prefix != null) return prefix + ".Repo";
                 if (observedAppPrefix != null) return observedAppPrefix + ".Repo";
-                // Fallback to app_name define (global) if available
                 try {
                     var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
                     if (app != null && app.length > 0) return app + ".Repo";
@@ -2512,6 +2511,22 @@ class ElixirASTPrinter {
                 // Never qualify standard/framework modules
                 if (reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedQualified(n)) {
                     return print(module, 0);
+                }
+                // In <App>Web.* modules, qualify single-segment CamelCase roots to <App>.<Name>
+                if (currentModuleName != null && currentModuleName.indexOf("Web") != -1) {
+                    var idx = currentModuleName.indexOf("Web");
+                    var app = idx > 0 ? currentModuleName.substring(0, idx) : null;
+                    inline function isSingleSegmentCamel(name:String):Bool {
+                        if (name == null || name.length == 0) return false;
+                        return name.indexOf(".") == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
+                    }
+                    // Do not qualify the application web module itself (e.g., TodoAppWeb)
+                    if (app != null && (n == app + "Web")) {
+                        return n;
+                    }
+                    if (app != null && isSingleSegmentCamel(n)) {
+                        return app + "." + n;
+                    }
                 }
                 return print(module, 0);
             default:

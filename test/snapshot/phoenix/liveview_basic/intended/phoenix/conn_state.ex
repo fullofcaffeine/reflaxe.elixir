@@ -1,17 +1,17 @@
 defmodule Phoenix.ConnState do
   def unset() do
-    {0}
+    {:unset}
   end
   def set() do
-    {1}
+    {:set}
   end
   def sent() do
-    {2}
+    {:sent}
   end
   def chunked() do
-    {3}
+    {:chunked}
   end
   def file_chunked() do
-    {4}
+    {:file_chunked}
   end
 end

@@ -353,7 +353,9 @@ class CallExprBuilder {
                                 switch (innerAst.def) {
                                     case EString(s):
                                         if (s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<%\n") != -1) {
-                                            return ESigil("H", s, "");
+                                            // Preserve existing EEx but still lower HXX <for> blocks
+                                            var pre = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(s);
+                                            return ESigil("H", pre, "");
                                         }
                                     default:
                                 }

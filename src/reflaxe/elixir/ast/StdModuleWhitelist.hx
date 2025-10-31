@@ -30,6 +30,9 @@ class StdModuleWhitelist {
             "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
             "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex",
             "Keyword","Access","Reflect","Type",
+            // Haxe runtime shim modules that must remain top-level
+            // Prevent accidental qualification to <App>.StringBuf inside Web context
+            "StringBuf",
             // Common helper modules generated at top-level (project-local utilities)
             "StringTools","Log","SafeAssigns","TodoPubSub",
             // Framework roots

@@ -32,8 +32,7 @@ test('sort by priority reorders list', async ({ page }) => {
 
   // Change sort to Priority and ensure a fresh render
   await page.selectOption('select[name="sort_by"]', 'priority')
-  await page.reload()
-  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
+  await page.waitForTimeout(300)
 
   // Expect relative ordering: High appears before Medium, which appears before Low
   await page.waitForTimeout(250); // brief settle for LiveView patch

@@ -74,14 +74,24 @@ class SafeAssigns {
      * Set the filter field using LiveSocket's type-safe assign pattern
      */
     public static function setFilter(socket: Socket<TodoLiveAssigns>, filter: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.filter, filter);
+        var parsed = switch (filter) {
+            case "active": shared.TodoTypes.TodoFilter.Active;
+            case "completed": shared.TodoTypes.TodoFilter.Completed;
+            case _: shared.TodoTypes.TodoFilter.All;
+        };
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.filter, parsed);
     }
     
     /**
      * Set the sortBy field using LiveSocket's type-safe assign pattern
      */
     public static function setSortBy(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.sort_by, sortBy);
+        var parsed = switch (sortBy) {
+            case "priority": shared.TodoTypes.TodoSort.Priority;
+            case "due_date": shared.TodoTypes.TodoSort.DueDate;
+            case _: shared.TodoTypes.TodoSort.Created;
+        };
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.sort_by, parsed);
     }
     
     /**

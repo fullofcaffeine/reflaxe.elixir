@@ -452,6 +452,22 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
         // Ecto's error structure, but provides the type-safe interface
         return untyped __elixir__('Ecto.Changeset.traverse_errors({0}, fn {msg, opts} -> msg end)', this);
     }
+
+    /**
+     * Low-level escape hatch: call Ecto.Changeset.change/2 directly with a pre-normalized map.
+     * Prefer using typed wrappers when possible; provided for integration points where
+     * the generated schema changeset delegates to change/2 internally.
+     */
+    extern inline public static function changeRaw(data: Dynamic, normalizedParams: Dynamic): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, normalizedParams);
+    }
+
+    /**
+     * Alias for change/2 to accommodate generated module namespace mapping.
+     */
+    extern inline public static function change(data: Dynamic, params: Dynamic): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
+    }
 }
 
 /**

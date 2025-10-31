@@ -1355,8 +1355,8 @@ class AnnotationTransforms {
         var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EUse("Phoenix.VerifiedRoutes", [
                 makeAST(EKeywordList([
-                    {key: "endpoint", value: makeAST(EAtom(moduleName + ".Endpoint"))},
-                    {key: "router", value: makeAST(EAtom(moduleName + ".Router"))},
+                    {key: "endpoint", value: makeAST(EVar(moduleName + ".Endpoint"))},
+                    {key: "router", value: makeAST(EVar(moduleName + ".Router"))},
                     {key: "statics", value: makeAST(ERemoteCall(
                         makeAST(EVar(moduleName)),
                         "static_paths",

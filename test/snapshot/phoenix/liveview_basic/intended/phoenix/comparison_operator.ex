@@ -1,32 +1,32 @@
 defmodule Phoenix.ComparisonOperator do
   def equal() do
-    {0}
+    {:equal}
   end
   def not_equal() do
-    {1}
+    {:not_equal}
   end
   def greater_than() do
-    {2}
+    {:greater_than}
   end
   def greater_than_or_equal() do
-    {3}
+    {:greater_than_or_equal}
   end
   def less_than() do
-    {4}
+    {:less_than}
   end
   def less_than_or_equal() do
-    {5}
+    {:less_than_or_equal}
   end
   def in_fn(arg0) do
-    {6, arg0}
+    {:in_fn, arg0}
   end
   def like(arg0) do
-    {7, arg0}
+    {:like, arg0}
   end
   def is_null() do
-    {8}
+    {:is_null}
   end
   def is_not_null() do
-    {9}
+    {:is_not_null}
   end
 end

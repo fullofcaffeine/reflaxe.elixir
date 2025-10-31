@@ -1,2 +1,0 @@
-defmodule IMap do
-end

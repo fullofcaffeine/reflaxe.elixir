@@ -127,6 +127,7 @@ class BlockUnusedAssignmentDiscardTransforms {
                                             && !rawIdentifierUsedLater(stmts, i + 1, nm)
                                             && !exprReferencesName(rhs, nm)
                                             && !hasPinnedVarInEctoWhere(stmts, i + 1, nm, s.metadata != null ? s.metadata.varId : null)
+                                            && !repoCallUsesVarLater(stmts, i + 1, nm)
                                             && !hasPinnedVarInBlock(stmts, i + 1, nm)) {
                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
                                     } else out.push(s);
@@ -146,6 +147,7 @@ class BlockUnusedAssignmentDiscardTransforms {
                                             && !rawIdentifierUsedLater(stmts, i + 1, nm2)
                                             && !exprReferencesName(rhs2, nm2)
                                             && !hasPinnedVarInEctoWhere(stmts, i + 1, nm2, s.metadata != null ? s.metadata.varId : null)
+                                            && !repoCallUsesVarLater(stmts, i + 1, nm2)
                                             && !hasPinnedVarInBlock(stmts, i + 1, nm2)) {
                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s.metadata, s.pos));
                                     } else out.push(s);
@@ -227,6 +229,46 @@ class BlockUnusedAssignmentDiscardTransforms {
             }
         }
         visit(e);
+        return found;
+    }
+
+    /**
+     * Detects later Repo.insert/update/delete calls that pass the given variable.
+     * Shape-based (module ends with ".Repo" or equals "Repo").
+     */
+    static function repoCallUsesVarLater(stmts: Array<ElixirAST>, startIdx: Int, name: String): Bool {
+        var found = false;
+        function usesInArgs(args:Array<ElixirAST>):Bool {
+            if (args == null) return false;
+            for (a in args) switch (a.def) {
+                case EVar(v) if (v == name): return true;
+                case ECall(_,_,as): if (usesInArgs(as)) return true; // nested
+                case ERemoteCall(_,_,as2): if (usesInArgs(as2)) return true;
+                case EBinary(_,l,r): if (usesInArgs([l,r])) return true;
+                case ETuple(es) | EList(es): if (usesInArgs(es)) return true;
+                default:
+            }
+            return false;
+        }
+        function scan(n:ElixirAST):Void {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case ERemoteCall(mod, func, args):
+                    var isRepo = switch (mod.def) {
+                        case EVar(m): m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo");
+                        default: false;
+                    };
+                    if (isRepo && (func == "insert" || func == "update" || func == "delete") && usesInArgs(args)) { found = true; return; }
+                case EBlock(ss): for (s in ss) { if (found) break; scan(s); }
+                case EDo(ss2): for (s in ss2) { if (found) break; scan(s); }
+                case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                case ECase(expr, cs): scan(expr); for (c in cs) { scan(c.body); }
+                case EMatch(_, rhs): scan(rhs);
+                case EBinary(Match, _, rhs2): scan(rhs2);
+                default:
+            }
+        }
+        for (i in startIdx...stmts.length) { scan(stmts[i]); if (found) break; }
         return found;
     }
 

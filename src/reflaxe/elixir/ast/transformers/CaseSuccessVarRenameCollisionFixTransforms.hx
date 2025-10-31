@@ -75,9 +75,9 @@ class CaseSuccessVarRenameCollisionFixTransforms {
                                                 var replacement = safeName(vname);
                                                 #if sys Sys.println('[CaseSuccessVarRenameCollisionFix] Renaming {:ok, ' + vname + '} -> {:ok, ' + replacement + '} to avoid arg shadow'); #end
                                                 var newPat = PTuple([els[0], PVar(replacement)]);
-                                                // Do not rewrite body references here — leave function arg uses intact.
-                                                // Other passes (CaseSuccessVarUnifier) handle undefined placeholders.
-                                                renamed = { pattern: newPat, guard: c.guard, body: c.body };
+                                                // Also rewrite body references from the old binder to the replacement
+                                                var newBody = renameVarInBody(c.body, vname, replacement);
+                                                renamed = { pattern: newPat, guard: c.guard, body: newBody };
                                             default:
                                         }
                                     default:
@@ -89,6 +89,16 @@ class CaseSuccessVarRenameCollisionFixTransforms {
                     makeASTWithMeta(ECase(expr, out), n.metadata, n.pos);
                 default:
                     n;
+            }
+        });
+    }
+
+    static function renameVarInBody(body: ElixirAST, from:String, to:String): ElixirAST {
+        if (from == null || to == null || from == to) return body;
+        return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EVar(v) if (v == from): makeASTWithMeta(EVar(to), n.metadata, n.pos);
+                default: n;
             }
         });
     }

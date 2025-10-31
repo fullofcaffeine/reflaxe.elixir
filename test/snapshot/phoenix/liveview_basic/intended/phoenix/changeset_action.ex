@@ -1,17 +1,17 @@
 defmodule Phoenix.ChangesetAction do
   def insert() do
-    {0}
+    {:insert}
   end
   def update() do
-    {1}
+    {:update}
   end
   def delete() do
-    {2}
+    {:delete}
   end
   def replace() do
-    {3}
+    {:replace}
   end
   def ignore() do
-    {4}
+    {:ignore}
   end
 end
