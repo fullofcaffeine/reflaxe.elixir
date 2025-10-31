@@ -1,14 +1,14 @@
 defmodule Phoenix.LogLevel do
   def debug() do
-    {0}
+    {:debug}
   end
   def info() do
-    {1}
+    {:info}
   end
   def warning() do
-    {2}
+    {:warning}
   end
   def error() do
-    {3}
+    {:error}
   end
 end

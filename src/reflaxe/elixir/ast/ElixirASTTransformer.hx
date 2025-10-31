@@ -1598,6 +1598,14 @@ class ElixirASTTransformer {
                     if (type == "H") {
                         needsPhoenixComponent = true;
                     }
+                case ERaw(code):
+                    // Also catch ~H usage present inside raw code blocks (e.g., untyped __elixir__ "~H\"\"\"...\"\"\"")
+                    if (code != null && (code.indexOf("~H\"\"\"") != -1 || code.indexOf("~H\"") != -1)) {
+                        needsPhoenixComponent = true;
+                    } else {
+                        // Continue traversal for any nested nodes in raw if needed
+                        iterateAST(node, checkForHSigil);
+                    }
                 default:
                     // For all other node types, recursively visit children
                     iterateAST(node, checkForHSigil);

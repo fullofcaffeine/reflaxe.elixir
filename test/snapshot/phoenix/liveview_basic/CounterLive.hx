@@ -2,6 +2,7 @@ package;
 
 import phoenix.LiveSocket;
 import phoenix.Phoenix.Socket;
+import HXX;
 import phoenix.Phoenix.LiveView;
 
 typedef CounterAssigns = {
@@ -33,11 +34,11 @@ class CounterLive {
 		return {noreply: socket};
 	}
 	
-	public function render(assigns: Dynamic): String {
-		return '<div>
-		  <h1>Counter: <%= @count %></h1>
-		  <button phx-click="increment">+</button>
-		  <button phx-click="decrement">-</button>
-		</div>';
-	}
+    public function render(assigns: CounterAssigns): String {
+        return HXX.hxx('<div>
+          <h1>Counter: ${assigns.count}</h1>
+          <button phx-click="increment">+</button>
+          <button phx-click="decrement">-</button>
+        </div>');
+    }
 }

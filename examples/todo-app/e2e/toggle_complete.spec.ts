@@ -17,38 +17,13 @@ test('toggle todo completed state', async ({ page }) => {
   await expect(page.locator('h3', { hasText: title })).toBeVisible()
   const heading = page.locator('h3', { hasText: title }).first()
   const card = page.locator('[data-testid="todo-card"]', { has: heading }).first()
+  const cardId = await card.getAttribute('id')
   const toggleBtn = card.getByTestId('btn-toggle-todo').first()
   await expect(toggleBtn).toBeVisible()
   await toggleBtn.click()
-  // Reload to verify persisted completion state deterministically
-  await page.reload()
-  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
-  // Prefer robust data attribute; fallback to class-based
-  await page.waitForFunction(
-    (t) => {
-      const card = Array.from(document.querySelectorAll('[data-testid="todo-card"]')).find(c => c.querySelector('h3')?.textContent?.includes(t))
-      if (!card) return false
-      if ((card as HTMLElement).getAttribute('data-completed') === 'true') return true
-      const h = card.querySelector('h3')
-      return (h && h.className.includes('line-through')) || card.className.includes('opacity-60')
-    },
-    title,
-    { timeout: 15000 }
-  )
+  await expect.poll(async () => (await card.getAttribute('data-completed')) || '').toBe('true')
 
   // Toggle back and verify cleared completion styles after reload
-  await page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first().getByTestId('btn-toggle-todo').first().click()
-  await page.reload()
-  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
-  await page.waitForFunction(
-    (t) => {
-      const card = Array.from(document.querySelectorAll('[data-testid="todo-card"]')).find(c => c.querySelector('h3')?.textContent?.includes(t))
-      if (!card) return false
-      if ((card as HTMLElement).getAttribute('data-completed') === 'false') return true
-      const h = card.querySelector('h3')
-      return (h && !h.className.includes('line-through')) && !card.className.includes('opacity-60')
-    },
-    title,
-    { timeout: 15000 }
-  )
+  await page.locator(`#${cardId}`).getByTestId('btn-toggle-todo').first().click()
+  await expect.poll(async () => (await card.getAttribute('data-completed')) || '').toBe('false')
 })

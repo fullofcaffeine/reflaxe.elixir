@@ -92,7 +92,9 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
         default:
       }
     });
-    var hasIdHint = declared.exists('id') || hasIdSuffix(declared);
+    // Prefer local id/*_id when present; otherwise default to extracting
+    // the "id" from params. We no longer gate the rewrite on an explicit
+    // id hint because many wrappers don't predeclare id but still need it.
     var chosenFirstArg:ElixirAST = chooseFirstArgReplacement(paramsVar, declared);
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
@@ -100,7 +102,7 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
           var lastArgIsSocket = switch (args[args.length - 1].def) { case EVar(v) if (v == socketVar): true; default: false; };
           var firstArgIsParams = switch (args[0].def) { case EVar(v) if (v == paramsVar): true; default: false; };
           var permittedByCallee = shouldRewriteByCallee(fname, args.length, sigs);
-          if (permittedByCallee && hasIdHint && lastArgIsSocket && firstArgIsParams) {
+          if (permittedByCallee && lastArgIsSocket && firstArgIsParams) {
             var newArgs = args.copy();
             newArgs[0] = chosenFirstArg;
             makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);
@@ -109,7 +111,7 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
           var lastArgIsSocket = switch (args[args.length - 1].def) { case EVar(v) if (v == socketVar): true; default: false; };
           var firstArgIsParams = switch (args[0].def) { case EVar(v) if (v == paramsVar): true; default: false; };
           var permittedByCallee = shouldRewriteByCallee(fname, args.length, sigs);
-          if (permittedByCallee && hasIdHint && lastArgIsSocket && firstArgIsParams) {
+          if (permittedByCallee && lastArgIsSocket && firstArgIsParams) {
             var newArgs = args.copy();
             newArgs[0] = chosenFirstArg;
             makeASTWithMeta(ERemoteCall(mod, fname, newArgs), x.metadata, x.pos);

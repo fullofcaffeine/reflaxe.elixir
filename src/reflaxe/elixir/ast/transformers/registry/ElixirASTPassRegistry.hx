@@ -45,6 +45,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantEnumExtractionPass
         });
 
+        // Align {:ok, binder} names to meaningful locals used in body (e.g., `todo`)
+        passes.push({
+            name: "CaseOkBinderAlign",
+            description: "Rename {:ok, var} binder to match body local (todo) and rewrite body refs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseOkBinderAlignTransforms.transformPass
+        });
+
         // Throw statement transformation (must run early to fix complex expressions)
         passes.push({
             name: "ThrowStatementTransform",
@@ -363,6 +371,35 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms.pass
         });
         // Early: avoid collisions between case binders and function argument names (e.g., socket)
+        // SPECIALIZED REPAIR for LiveView handle_info must run BEFORE the generic
+        // collision-avoid renamer so it can see the binder equal to the function arg
+        // and fix helper calls (payload first, socket last) in the clause body.
+        passes.push({
+            name: "HandleInfoCaseBinderCollisionRepair_Pre",
+            description: "Repair {:tag, socket} in handle_info/2 clauses by renaming binder and fixing local helper calls (runs before generic binder-avoid)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoCaseBinderCollisionRepairTransforms.transformPass
+        });
+
+        // After repair, map scrutinee var references to the tuple payload binder inside clauses
+        passes.push({
+            name: "CaseScrutineeVarToTupleBinder",
+            description: "In case scrutinee do {:tag, binder} -> ..., rewrite body EVar(scrutinee) → EVar(binder)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.transformPass
+        });
+
+        // Flatten nested case-of-binder to single case, merging tuple patterns and
+        // substituting outer binder references with inner payload binder.
+        passes.push({
+            name: "CaseNestedTupleFlatten",
+            description: "Flatten outer {:tag, v} → inner case v do {:tag2, b} into single case {:tag, {:tag2, b}}",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseNestedTupleFlattenTransforms.transformPass
+        });
+
+        // Then apply the generic binder-avoid transform which will now be a no-op
+        // for handle_info clauses already repaired above.
         passes.push({
             name: "CaseBinderArgCollisionAvoid",
             description: "Rename colliding case binders that shadow function arguments (e.g., {:tag, socket} → {:tag, payload}) and rewrite body references",
@@ -1361,7 +1398,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RepoAliasInjection",
             description: "Inject `alias <App>.Repo, as: Repo` when Repo.* is used in Web modules",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
         });
 
@@ -1699,10 +1736,12 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewUseInjectionPass
         });
         // Rename unused local assignment binders to underscore to silence warnings
+        // Disabled: mis-detected usage inside nested expressions (e.g., HEEx arg maps)
+        // leading to prefixing real locals with underscore and later undefined refs.
         passes.push({
             name: "UnusedLocalAssignmentUnderscore",
             description: "Prefix unused local assignment names with underscore in blocks",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignmentUnderscoreTransforms.transformPass
         });
         // Promote binders underscored earlier when body uses the base name
@@ -2385,6 +2424,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnusedImportCleanup.cleanupPass
         });
+        // Drop unused local assignments entirely when safe (side-effects preserved)
+        passes.push({
+            name: "LocalAssignDiscardIfUnused",
+            description: "Replace `var = expr` with `expr` when var is never referenced later in the block",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.LocalAssignDiscardIfUnusedTransforms.pass
+        });
 
         // Module-local: prune private functions that are not referenced
         passes.push({
@@ -2410,6 +2456,22 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.erawWebModuleQualificationPass
         });
 
+        // Promote underscored LiveView params where they are used (handle_event/3, mount/3)
+        passes.push({
+            name: "HandleEventParamsPromote",
+            description: "Rename handle_event/3 `_params` to `params` when referenced and rewrite body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsPromoteTransforms.pass
+        });
+        // (Temporarily disabled) Mount param promotion can interact with local
+        // temp binders in some shapes; keep handle_event promotion only.
+        passes.push({
+            name: "MountParamsPromote",
+            description: "Rename mount/3 `_params` to `params` when referenced and rewrite body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountParamsPromoteTransforms.pass
+        });
+
         // Normalize ERaw validate_required lists, validate_length field argument, opts nil comparisons (run at the very end)
         passes.push({
             name: "ERawEctoValidateAtomNormalize",
@@ -2417,12 +2479,40 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoValidateAtomNormalizePass
         });
+
+        // Absolute-final: enforce handle_event/3 second param name `params`
+        // and rewrite body references from old binder (e.g., _params) → params.
+        passes.push({
+            name: "HandleEventParamsUltraFinal",
+            description: "Ensure handle_event/3 uses `params` as second arg and align body refs (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalTransforms.transformPass
+        });
+        passes.push({
+            name: "MountParamsUltraFinal",
+            description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass
+        });
+        // Ensure inline if inside containers are parenthesized to avoid parser ambiguity
+        passes.push({
+            name: "IfInlineInContainerParen",
+            description: "Wrap inline if-expressions inside tuples/lists/maps in parentheses (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfInlineInContainerParenTransforms.pass
+        });
         // Inject @compile nowarn for local Ecto DSL shims (from/3, where/3)
         passes.push({
             name: "EctoLocalShimNowarn",
             description: "Inject @compile {:nowarn_unused_function, [from: 3, where: 3]} when local DSL shims are present",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoLocalShimNowarnTransforms.transformPass
+        });
+        passes.push({
+            name: "EctoQueryIfAssignSimplify",
+            description: "Simplify inner `query =` inside if-branches for Ecto.Query.where",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoQueryIfAssignSimplifyTransforms.pass
         });
         // Migration: inject nowarn + stubs (scheduled in absolute-final section below for final shapes)
         passes.push({
@@ -2495,6 +2585,19 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
         });
+        passes.push({
+            name: "UnderscoreLocalPromotion",
+            description: "Promote `_name` local binders to `name` when referenced and safe",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.pass
+        });
+        // Ultra-final: underscore unused local assignments (same-block conservative)
+        passes.push({
+            name: "UnusedLocalAssignUnderscoreFinal",
+            description: "Rename unused local assignment binders `name = expr` to `_name` (same-block only)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.pass
+        });
         // Split chained assignments a = b = expr into two statements (late readability/shape cleanup)
         passes.push({
             name: "SplitChainedAssignments",
@@ -2525,12 +2628,26 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.IfConstSimplifyTransforms.transformPass
         });
 
+        // Ultra-final: remove unused Repo alias if not referenced in module body
+        passes.push({
+            name: "UnusedRepoAliasCleanupFinal",
+            description: "Remove `alias <App>.Repo, as: Repo` when `Repo` isn’t referenced",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnusedRepoAliasCleanupFinalPass.pass
+        });
+
         // Absolute late sweep: inline HEEx content when possible, then ensure assigns capture if needed
         passes.push({
             name: "HeexContentInline",
             description: "Replace ~H raw(content|@var) using preceding literal assignment with direct ~H literal",
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
+        });
+        passes.push({
+            name: "ParamUnderscoreArgRefAlign",
+            description: "Rewrite `_params` to `params` in defs that have a `params` arg",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignTransforms.pass
         });
 
         // Robust inliner: works on render/1 EBlock/EDo, nested parens, any var name
@@ -2644,7 +2761,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RepoAliasInjection",
             description: "Inject alias <App>.Repo as Repo in any module referencing Repo.*",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionGlobalPass
         });
 
@@ -2669,7 +2786,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RepoAliasInjection",
             description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
         });
 
@@ -2721,7 +2838,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HeexStringReturnToSigil",
             description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils",
-            enabled: #if hxx_string_to_sigil true #else false #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.transformPass
         });
 
@@ -2739,6 +2856,14 @@ class ElixirASTPassRegistry {
             description: "Remove trailing .to_string() in <%= ... %> within ~H",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexStripToStringInSigilsTransforms.transformPass
+        });
+
+        // Simplify trivial IIFE wrappers inside HEEx interpolations for readability/snapshots
+        passes.push({
+            name: "HeexSimplifyIIFEInInterpolations",
+            description: "Rewrite <%= (fn -> expr end).() %> → <%= expr %> inside ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexSimplifyIIFEInInterpolations.transformPass
         });
 
         // Rename `_assigns` parameter to `assigns` when function body contains ~H
@@ -2919,6 +3044,20 @@ class ElixirASTPassRegistry {
             description: "Final sweep to qualify single-segment modules inside <App>Web.* EFn bodies",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.webEFnModuleQualificationPass
+        });
+        // Absolute-final qualification: ensure no bare app modules remain in Web contexts
+        passes.push({
+            name: "AbsoluteFinalWebModuleQualification",
+            description: "Absolute-final: qualify single-segment CamelCase modules to <App>.<Module> inside <App>Web.*",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AbsoluteFinalWebModuleQualificationTransforms.pass
+        });
+        // Insert alias <App>.<Module> for bare module calls inside Web modules (safety net)
+        passes.push({
+            name: "AliasAppLocalModules",
+            description: "Insert alias <App>.<Name> at top of <App>Web.* when bare <Name> is used in calls and module exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AliasAppLocalModulesTransforms.pass
         });
         // Targeted final pass to ensure Enum.reduce_while bodies are qualified in Web modules
         passes.push({
@@ -3736,10 +3875,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
         });
+        // Disabled: unsafe for nested usage sites (e.g., HEEx arg maps) — can underscore
+        // locals that are referenced immediately in the next statement inside nested expressions.
         passes.push({
             name: "LocalAssignUnderscoreLate",
             description: "Underscore local assigns when unused later; also nested inner assigns",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnderscoreLateTransforms.pass
         });
         // Consolidation removed legacy query guards; see FilterQueryConsolidate
@@ -3816,10 +3957,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DebugCaseBinderUndefScanTransforms.pass
         });
+        // Disabled: over-aggressive discards caused undefined-variable errors
+        // in LiveView flows where nested expressions reference immediately-bound locals.
+        // Correctness-first: warnings are handled by underscore-prefix passes without dropping semantics.
         passes.push({
             name: "BlockUnusedAssignmentDiscard",
             description: "Rewrite var = expr to _ = expr in function bodies when var unused later",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.BlockUnusedAssignmentDiscardTransforms.pass
         });
         // Drop stray `_ = String.downcase(search_query)`
@@ -4570,6 +4714,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventArg0FromParamsIdUltraFinalTransforms.transformPass
         });
+        // (Skip replaying underscore param repairs at absolute-final; existing ordering preserves compilation stability.)
         // Replay: resolve binder collision (socket param etc.) before final binder-use alignment
         passes.push({
             name: "CaseSuccessVarRenameCollisionFix_AbsoluteFinal",
@@ -4582,6 +4727,16 @@ class ElixirASTPassRegistry {
             description: "Replay ultra-final: align {:ok, binder} to single undefined body var after collision fix",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
+        });
+
+        // Late replay: map scrutinee var refs to tuple payload binder inside case clauses
+        // Some passes rebuild case bodies or rename binders after the early run; replay here ensures
+        // guards like `if (todo.user_id == ...)` use the tuple payload (e.g., `value.user_id`).
+        passes.push({
+            name: "CaseScrutineeVarToTupleBinder_Replay_Final",
+            description: "Replay ultra-final: rewrite EVar(scrutinee) → EVar(binder) inside case clause bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.transformPass
         });
         // Absolute-final safety: unshadow tuple binder when case scrutinee is a function arg
         passes.push({
@@ -4636,10 +4791,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.SuccessBinderPrefixMostUsedUndefinedTransforms.pass
         });
         // Repair handle_info tuple-binder collisions before normalizing call tails
+        // (Moved earlier as HandleInfoCaseBinderCollisionRepair_Pre)
         passes.push({
             name: "HandleInfoCaseBinderCollisionRepair_PreFinal",
-            description: "Pre-final: in handle_info/2, rename tuple payload binder colliding with function arg (e.g., socket) to 'payload' and fix local helper calls using payload first, socket last",
-            enabled: true,
+            description: "(disabled; pass now runs earlier)",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleInfoCaseBinderCollisionRepairTransforms.transformPass
         });
         // Normalize handle_info helper call tails to pass the function-parameter socket
@@ -4648,6 +4804,13 @@ class ElixirASTPassRegistry {
             description: "Ultra-final: in handle_info/2, rewrite calls with duplicated first/last arg to end with socket",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoReturnSocketNormalizeTransforms.transformPass
+        });
+        // Absolute final: ensure handle_info nested case bodies refer to tuple payload binder
+        passes.push({
+            name: "HandleInfoScrutineeToPayloadRef_AbsoluteFinal",
+            description: "Absolute final: rewrite handle_info/2 nested case scrutinee refs to tuple payload binder (value)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoScrutineeToPayloadRefTransforms.transformPass
         });
         // One more binder safety replay at the very end (covers any late ref/name rewrites)
         passes.push({

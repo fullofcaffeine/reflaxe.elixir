@@ -1,23 +1,23 @@
 defmodule Phoenix.HttpMethod do
   def get() do
-    {0}
+    {:get}
   end
   def post() do
-    {1}
+    {:post}
   end
   def put() do
-    {2}
+    {:put}
   end
   def patch() do
-    {3}
+    {:patch}
   end
   def delete() do
-    {4}
+    {:delete}
   end
   def head() do
-    {5}
+    {:head}
   end
   def options() do
-    {6}
+    {:options}
   end
 end
