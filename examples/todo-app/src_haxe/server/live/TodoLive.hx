@@ -75,8 +75,8 @@ enum TodoLiveEvent {
  */
 typedef TodoLiveAssigns = {
 	var todos: Array<server.schemas.Todo>;
-	var filter: String; // all, active, completed
-	var sort_by: String; // created, priority, dueDate
+	var filter: shared.TodoTypes.TodoFilter; // All | Active | Completed
+	var sort_by: shared.TodoTypes.TodoSort;  // Created | Priority | DueDate
 	var current_user: User;
 	var editing_todo: Null<server.schemas.Todo>;
 	var show_form: Bool;
@@ -124,9 +124,9 @@ class TodoLive {
 
         // Create type-safe assigns structure
         var assigns: TodoLiveAssigns = {
-			todos: todos,
-			filter: "all",
-			sort_by: "created",
+            todos: todos,
+            filter: shared.TodoTypes.TodoFilter.All,
+            sort_by: shared.TodoTypes.TodoSort.Created,
 			current_user: currentUser,
 			editing_todo: null,
 			show_form: false,
@@ -261,13 +261,8 @@ class TodoLive {
 		// Use type-safe Repo operations
 		switch (Repo.insert(changeset)) {
 			case Ok(todo):
-				// Broadcast to other users using type-safe PubSub with compile-time validation
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo))) {
-					case Ok(_):
-						// Broadcast successful
-					case Error(reason):
-						trace("Failed to broadcast todo creation: " + reason);
-				}
+				// Best-effort broadcast; ignore result
+				TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo));
 				
 				var todos = [todo].concat(socket.assigns.todos);
 				// Use LiveSocket for type-safe assigns manipulation
@@ -294,58 +289,67 @@ class TodoLive {
         var rawDue: Null<String> = Reflect.field(params, "due_date");
         var rawTags: Null<String> = Reflect.field(params, "tags");
 
-        // Normalize values and convert to typed TodoParams
+        // Normalize values and convert shapes
         var title = (rawTitle != null) ? rawTitle : "";
         var description = (rawDesc != null) ? rawDesc : "";
         var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
-        var dueDate: Null<Date> = (rawDue != null && rawDue != "") ? Date.fromString(rawDue) : null;
         var tagsArr: Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
 
-        var fullParams: server.schemas.Todo.TodoParams = {
+        // Build a params object with camelCase keys; normalize to snake_case + proper types via std helper
+        var rawParams: Dynamic = {
             title: title,
             description: description,
             completed: false,
             priority: priority,
-            dueDate: dueDate,
+            dueDate: (rawDue != null && rawDue != "") ? rawDue : null,
             tags: tagsArr,
             userId: socket.assigns.current_user.id
         };
-
-        var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), fullParams);
-        // Emit explicit Elixir shape to guarantee binder naming
-        return untyped __elixir__('
-          case TodoApp.Repo.insert({0}) do
-            {:ok, todo} ->
-              TodoPubSub.broadcast({:todo_updates}, {:todo_created, todo})
-              live_socket = {1}
-              updated = Phoenix.Component.assign(live_socket, %{
-                todos: [todo] ++ {1}.assigns.todos,
-                show_form: false,
-                total_todos: {1}.assigns.total_todos + 1,
-                pending_todos: {1}.assigns.pending_todos + (if todo.completed, do: 0, else: 1),
-                completed_todos: {1}.assigns.completed_todos + (if todo.completed, do: 1, else: 0)
-              })
-              Phoenix.LiveView.put_flash(updated, :success, "Todo created successfully!")
-            {:error, reason} ->
-              Phoenix.LiveView.put_flash({1}, :error, "Failed to create todo: #{reason}")
-          end
-        ', changeset, socket);
+        var todoStruct = new server.schemas.Todo();
+        var permitted = ["title","description","completed","priority","due_date","tags","user_id"];
+        var castParams: Dynamic = {
+            title: title,
+            description: description,
+            completed: false,
+            priority: priority,
+            due_date: (rawDue != null && rawDue != "") ? ((rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue) : null,
+            tags: tagsArr,
+            user_id: socket.assigns.current_user.id
+        };
+        var cs = ecto.ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
+        switch (Repo.insert(cs)) {
+            case Ok(todo):
+                // Best-effort broadcast; ignore result
+                TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo));
+                var todos = [todo].concat(socket.assigns.todos);
+                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+                var updated = liveSocket.merge({
+                    todos: todos,
+                    show_form: false,
+                    total_todos: socket.assigns.total_todos + 1,
+                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
+                });
+                return LiveView.putFlash(updated, phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
+            case Error(reason):
+                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
+        }
     }
-	
+
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	var todo = findTodo(id, socket.assigns.todos);
-	if (todo == null) return socket;
-
-	var updatedChangeset = server.schemas.Todo.toggleCompleted(todo);
-
-	// Use type-safe Repo operations with explicit binding to avoid temp var issues
-	var updatedTodo: server.schemas.Todo = switch (Repo.update(updatedChangeset)) {
-		case Ok(u): u;
-		case Error(reason): return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
-	};
-	// Broadcast (best-effort); ignore result
-	TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo));
-	return updateTodoInList(updatedTodo, socket);
+    var todo = findTodo(id, socket.assigns.todos);
+    if (todo == null) return socket;
+    switch (Repo.update(server.schemas.Todo.toggleCompleted(todo))) {
+        case Ok(_):
+        case Error(reason):
+            return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
+    }
+    var refreshed = Repo.get(server.schemas.Todo, id);
+    if (refreshed != null) {
+        TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed));
+        return updateTodoInList(refreshed, socket);
+    }
+    return socket;
 }
 	
     static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -367,19 +371,19 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
     }
 	
 static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	var todo = findTodo(id, socket.assigns.todos);
-	if (todo == null) return socket;
-
-	var updatedChangeset = server.schemas.Todo.updatePriority(todo, priority);
-
-	// Use type-safe Repo operations with explicit binding to avoid temp var issues
-	var updatedTodo: server.schemas.Todo = switch (Repo.update(updatedChangeset)) {
-		case Ok(u): u;
-		case Error(reason): return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
-	};
-	// Broadcast (best-effort); ignore result
-	TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo));
-	return updateTodoInList(updatedTodo, socket);
+    var todo = findTodo(id, socket.assigns.todos);
+    if (todo == null) return socket;
+    switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
+        case Ok(_):
+        case Error(reason):
+            return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
+    }
+    var refreshed = Repo.get(server.schemas.Todo, id);
+    if (refreshed != null) {
+        TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed));
+        return updateTodoInList(refreshed, socket);
+    }
+    return socket;
 }
 	
 	// List management helpers with type-safe socket handling
@@ -397,7 +401,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
 	
     static function loadTodos(userId: Int): Array<server.schemas.Todo> {
-        // Use type-safe Ecto query via TypedQuery; builder expands to Ecto AST
+        // Use type-safe Ecto query via TypedQuery; ordering is handled in filterAndSortTodos
         var query = ecto.TypedQuery.from(server.schemas.Todo)
             .where(t -> t.userId == userId);
         return Repo.all(query);
@@ -420,7 +424,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         return todos.filter(function(t) return !t.completed).length;
     }
 	
-	static function parseTags(tagsString: String): Array<String> {
+    static function parseTags(tagsString: String): Array<String> {
 		if (tagsString == null || tagsString == "") return [];
 		return tagsString.split(",").map(function(t) return t.trim());
 	}
@@ -506,13 +510,8 @@ static function getUserFromSession(session: Dynamic): User {
 			}
 		}
 		
-		// Broadcast bulk update
-		switch (TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll))) {
-			case Ok(_):
-				// Broadcast successful
-			case Error(reason):
-				trace("Failed to broadcast bulk complete: " + reason);
-		}
+        // Broadcast bulk update (best-effort)
+        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll));
 		
 		// Reload todos and update socket with complete assigns
 		var updatedTodos = loadTodos(socket.assigns.current_user.id);
@@ -543,7 +542,7 @@ static function getUserFromSession(session: Dynamic): User {
 			Repo.delete(todo);
 		}
 		
-		TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
+        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
 		
 		var remaining = socket.assigns.todos.filter(function(t) return !t.completed);
 		
@@ -582,21 +581,61 @@ static function getUserFromSession(session: Dynamic): User {
         var todo = socket.assigns.editing_todo;
         var rawTitle: Null<String> = Reflect.field(params, "title");
         var title = (rawTitle != null) ? rawTitle : todo.title;
-        var fullParams: server.schemas.Todo.TodoParams = { title: title };
-        var changeset = server.schemas.Todo.changeset(todo, fullParams);
-        return untyped __elixir__('
-          case TodoApp.Repo.update({0}) do
-            {:ok, updated_todo} ->
-              case TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo}) do
-                {:ok, _} -> nil
-                {:error, reason} -> Log.trace("Failed to broadcast todo update: #{reason}", %{})
-              end
-              updated_socket = SafeAssigns.set_editing_todo({1}, nil)
-              load_and_assign_todos(updated_socket)
-            {:error, _changeset} ->
-              Phoenix.LiveView.put_flash({1}, :error, "Failed to update todo")
-          end
-        ', changeset, socket);
+        switch (Repo.update(server.schemas.Todo.changeset(todo, { title: title }))) {
+            case Ok(updated):
+                // Best-effort broadcast
+                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updated));
+                var updatedSocket = updateTodoInList(updated, socket);
+                var liveSocket: LiveSocket<TodoLiveAssigns> = updatedSocket;
+                return liveSocket.assign(_.editing_todo, null);
+            case Error(_):
+                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
+        }
+    }
+
+    // Local helpers to bridge typed enums ↔ UI strings
+    static inline function format_due_date(d: Dynamic): String {
+        return d == null ? "" : Std.string(d);
+    }
+    static inline function encodeSort(s: shared.TodoTypes.TodoSort): String {
+        return switch (s) { case Created: "created"; case Priority: "priority"; case DueDate: "due_date"; };
+    }
+    static inline function encodeFilter(f: shared.TodoTypes.TodoFilter): String {
+        return switch (f) { case All: "all"; case Active: "active"; case Completed: "completed"; };
+    }
+
+    // Typed UI helpers (no inline HEEx ops in HXX)
+    static inline function filterBtnClass(current: shared.TodoTypes.TodoFilter, expect: shared.TodoTypes.TodoFilter): String {
+        var base = "px-4 py-2 rounded-lg font-medium transition-colors";
+        var active = " bg-blue-500 text-white";
+        var inactive = " bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300";
+        return base + ((current == expect) ? active : inactive);
+    }
+    static inline function sortSelected(current: shared.TodoTypes.TodoSort, expect: shared.TodoTypes.TodoSort): Bool {
+        return current == expect;
+    }
+    static inline function boolToStr(b: Bool): String {
+        return b ? "true" : "false";
+    }
+    static inline function cardId(id: Int): String {
+        return "todo-" + Std.string(id);
+    }
+    static inline function borderForPriority(p: String): String {
+        return switch (p) { case "high": "border-red-500"; case "medium": "border-yellow-500"; case "low": "border-green-500"; default: "border-gray-300"; };
+    }
+    static inline function cardClassFor(todo: server.schemas.Todo): String {
+        var base = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ";
+        var border = borderForPriority(todo.priority);
+        var dim = todo.completed ? " opacity-60" : "";
+        return base + border + dim + " transition-all hover:shadow-xl";
+    }
+    static inline function titleClass(completed: Bool): String {
+        var base = "text-lg font-semibold text-gray-800 dark:text-white";
+        return base + (completed ? " line-through" : "");
+    }
+    static inline function descClass(completed: Bool): String {
+        var base = "text-gray-600 dark:text-gray-400 mt-1";
+        return base + (completed ? " line-through" : "");
     }
 	
 	// Legacy function for backward compatibility - will be removed
@@ -618,13 +657,8 @@ static function getUserFromSession(session: Dynamic): User {
 		// Use type-safe Repo operations
 		switch (Repo.update(changeset)) {
 			case Ok(updatedTodo):
-				// Broadcast to other users using type-safe PubSub
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
-					case Ok(_):
-						// Broadcast successful
-					case Error(reason):
-						trace("Failed to broadcast todo save: " + reason);
-				}
+				// Best-effort broadcast
+				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo));
 				
 				var updatedSocket = updateTodoInList(updatedTodo, socket);
 				// Convert to LiveSocket to use assign for single field
@@ -804,7 +838,8 @@ static function getUserFromSession(session: Dynamic): User {
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 											Due Date
 										</label>
-                            <input type="date" name="due_date"
+                            <input type="text" name="due_date"
+                                placeholder="YYYY-MM-DD"
                                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 									</div>
 								</div>
@@ -842,43 +877,115 @@ static function getUserFromSession(session: Dynamic): User {
                         <!-- Filter Buttons -->
                         <div class="flex space-x-2">
                             <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
-                                class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
-                                All
-                            </button>
+                                class={filter_btn_class(@filter, :all)}>All</button>
                             <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
-                                class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
-                                Active
-                            </button>
+                                class={filter_btn_class(@filter, :active)}>Active</button>
                             <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
-                                class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
-                                Completed
-                            </button>
+                                class={filter_btn_class(@filter, :completed)}>Completed</button>
                         </div>
 							
 							<!-- Sort Dropdown -->
 							<div>
                             <select phx-change="sort_todos" name="sort_by"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-									<option value="created" selected={@sort_by == "created"}>Sort by Date</option>
-									<option value="priority" selected={@sort_by == "priority"}>Sort by Priority</option>
-                                <option value="due_date" selected={@sort_by == "due_date"}>Sort by Due Date</option>
-								</select>
+                                <option value="created" selected={sort_selected(@sort_by, :created)}>Sort by Date</option>
+                                <option value="priority" selected={sort_selected(@sort_by, :priority)}>Sort by Priority</option>
+                                <option value="due_date" selected={sort_selected(@sort_by, :due_date)}>Sort by Due Date</option>
+                            </select>
 							</div>
 						</div>
 					</div>
 					
 					<!-- Online Users Panel -->
-					${renderPresencePanel(assigns.online_users)}
+                    <!-- Presence panel (optional) -->
 					
 					<!-- Bulk Actions -->
-					${renderBulkActions(assigns)}
+                    <!-- Bulk Actions (typed HXX) -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            Showing #{length(filter_todos(assigns.todos, assigns.filter, assigns.search_query))} of #{@total_todos} todos
+                        </div>
+                        <div class="flex space-x-2">
+                            <button phx-click="bulk_complete"
+                                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">✅ Complete All</button>
+                            <button phx-click="bulk_delete_completed" data-confirm="Are you sure you want to delete all completed todos?"
+                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">🗑️ Delete Completed</button>
+                        </div>
+                    </div>
 					
 					<!-- Todo List -->
-					<div id="todo-list" phx-update="replace" class="space-y-4">
-						${renderTodoList(assigns)}
-					</div>
-				</div>
-			</div>
+                    <div id="todo-list" phx-update="replace" class="space-y-4">
+                        <for {todo in filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query)}>
+                            <if {not Kernel.is_nil(assigns.editing_todo) and assigns.editing_todo.id == todo.id}>
+                                <div id={card_id(todo.id)} data-testid="todo-card" data-completed={bool_to_str(todo.completed)}
+                                     class={card_class_for(todo)}>
+                                    <form phx-submit="save_todo" class="space-y-4">
+                                        <input type="text" name="title" value={todo.title} required data-testid="input-title"
+                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
+                                        <textarea name="description" rows="2"
+                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{todo.description}</textarea>
+                                        <div class="flex space-x-2">
+                                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Save</button>
+                                            <button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            <else>
+                                <div id={card_id(todo.id)} data-testid="todo-card" data-completed={bool_to_str(todo.completed)}
+                                     class={card_class_for(todo)}>
+                                    <div class="flex items-start space-x-4">
+                                        <!-- Checkbox -->
+                                        <button type="button" phx-click="toggle_todo" phx-value-id={todo.id} data-testid="btn-toggle-todo"
+                                            class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
+                                            <if {todo.completed}>
+                                                <span class="text-green-500">✓</span>
+                                            </if>
+                                        </button>
+
+                                        <!-- Content -->
+                                        <div class="flex-1">
+                                            <h3 class={title_class(todo.completed)}>
+                                                #{todo.title}
+                                            </h3>
+                                            <if {not Kernel.is_nil(todo.description) and todo.description != ""}>
+                                                <p class={desc_class(todo.completed)}>
+                                                    #{todo.description}
+                                                </p>
+                                            </if>
+
+                                            <!-- Meta info -->
+                                            <div class="flex flex-wrap gap-2 mt-3">
+                                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+                                                    Priority: #{todo.priority}
+                                                </span>
+                                                <if {not Kernel.is_nil(todo.due_date)}>
+                                                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+                                                        Due: #{format_due_date(todo.due_date)}
+                                                    </span>
+                                                </if>
+                                                <if {not Kernel.is_nil(todo.tags) and length(todo.tags) > 0}>
+                                                    <for {tag in todo.tags}>
+                                                        <button phx-click="toggle_tag" phx-value-tag={tag}
+                                                            class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#{tag}</button>
+                                                    </for>
+                                                </if>
+                                            </div>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="flex space-x-2">
+                                            <button type="button" phx-click="edit_todo" phx-value-id={todo.id} data-testid="btn-edit-todo"
+                                                class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">✏️</button>
+                                            <button type="button" phx-click="delete_todo" phx-value-id={todo.id} data-testid="btn-delete-todo"
+                                                class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">🗑️</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </if>
+                        </for>
+                    </div>
+                </div>
+            </div>
         ');
     }
 	
@@ -1003,9 +1110,9 @@ static function getUserFromSession(session: Dynamic): User {
 								<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
 									Priority: ${todo.priority}
 								</span>
-								${todo.dueDate != null ? 
-									'<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${server.templates.TodoTemplate.formatDate(todo.dueDate)}</span>' : 
-									''}
+                                ${todo.dueDate != null ? 
+                                    '<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${format_due_date(todo.dueDate)}</span>' : 
+                                    ''}
 								${renderTags(todo.tags)}
 							</div>
 						</div>
@@ -1044,39 +1151,28 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Helper to filter todos based on filter and search query
 	 */
-    static function filterTodos(todos: Array<server.schemas.Todo>, filter: String, searchQuery: String): Array<server.schemas.Todo> {
-        // Use explicit Elixir shape to avoid late-name drift in predicate
-        return untyped __elixir__('
-          base = (case {1} do
-            "active" -> Enum.filter({0}, fn t -> not t.completed end)
-            "completed" -> Enum.filter({0}, fn t -> t.completed end)
-            _ -> {0}
-          end)
-          if not Kernel.is_nil({2}) and {2} != "" do
-            ql = String.downcase({2})
-            Enum.filter(base, fn t ->
-              String.contains?(String.downcase(t.title), ql) or
-                (not Kernel.is_nil(t.description) and String.contains?(String.downcase(t.description), ql))
-            end)
-          else
-            base
-          end
-        ', todos, filter, searchQuery);
+    static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
+        var base = switch (filter) {
+            case Active: todos.filter(function(t) return !t.completed);
+            case Completed: todos.filter(function(t) return t.completed);
+            case All: todos;
+        };
+        var qlOpt: Null<String> = (searchQuery != null && searchQuery != "") ? searchQuery.toLowerCase() : null;
+        return (qlOpt == null)
+            ? base
+            : base.filter(function(t) {
+                var title = t.title != null ? t.title.toLowerCase() : "";
+                var desc = t.description != null ? t.description.toLowerCase() : "";
+                return title.indexOf(qlOpt) >= 0 || desc.indexOf(qlOpt) >= 0;
+            });
     }
 	
 	/**
 	 * Helper to filter and sort todos
 	 */
-    static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: String, sortBy: String, searchQuery: String): Array<server.schemas.Todo> {
+    static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String): Array<server.schemas.Todo> {
         var filtered = filterTodos(todos, filter, searchQuery);
-        
-        // Sort according to selected strategy (priority only for now)
-        return if (sortBy == "priority") {
-            // Use idiomatic Enum.sort_by for deterministic ordering
-            untyped __elixir__('Enum.sort_by({0}, fn t -> { case t.priority do "high" -> 0; "medium" -> 1; "low" -> 2; _ -> 3 end, -t.id } end)', filtered);
-        } else {
-            // Created/default: keep insertion order (as loaded from DB)
-            filtered;
-        }
+        // Delegate sorting to std helper (emitted under app namespace), avoid app __elixir__
+        return phoenix.Sorting.by(encodeSort(sortBy), filtered);
     }
 }

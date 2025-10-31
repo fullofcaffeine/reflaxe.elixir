@@ -1,17 +1,17 @@
 defmodule Phoenix.OnReplaceAction do
   def raise() do
-    {0}
+    {:raise}
   end
   def mark_as_invalid() do
-    {1}
+    {:mark_as_invalid}
   end
   def nilify() do
-    {2}
+    {:nilify}
   end
   def delete() do
-    {3}
+    {:delete}
   end
   def update() do
-    {4}
+    {:update}
   end
 end

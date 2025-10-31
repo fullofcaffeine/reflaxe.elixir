@@ -1,11 +1,11 @@
 defmodule Phoenix.NullsPosition do
   def first() do
-    {0}
+    {:first}
   end
   def last() do
-    {1}
+    {:last}
   end
   def default() do
-    {2}
+    {:default}
   end
 end

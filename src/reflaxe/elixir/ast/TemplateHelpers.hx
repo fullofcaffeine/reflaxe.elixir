@@ -264,6 +264,8 @@ class TemplateHelpers {
         s = rewriteAttributeInterpolations(s);
         // Then, convert attribute-level <%= ... %> into HEEx attribute expressions: attr={...}
         s = rewriteAttributeEexInterpolations(s);
+        // Normalize custom control tags first (so inner text gets rewritten next)
+        s = rewriteForBlocks(s);
         var out = new StringBuf();
         var i = 0;
         while (i < s.length) {
@@ -282,6 +284,14 @@ class TemplateHelpers {
             }
             var inner = s.substr(j + 2, (k - 1) - (j + 2));
             var expr = StringTools.trim(inner);
+            // Guard: disallow injecting HTML as string via interpolation of a string literal starting with '<'
+            if (expr.length >= 2 && expr.charAt(0) == '"' && expr.charAt(1) == '<') {
+                #if macro
+                haxe.macro.Context.error('HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block(\'...\') or inline markup.', haxe.macro.Context.currentPos());
+                #else
+                throw 'HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block(\'...\') or inline markup.';
+                #end
+            }
             // Try to split top-level ternary
             var tern = splitTopLevelTernary(expr);
             if (tern != null) {
@@ -302,6 +312,43 @@ class TemplateHelpers {
             i = k;
         }
         // Return as-is; attribute contexts are normalized elsewhere.
+        return out.toString();
+    }
+
+    /**
+     * Rewrite <for {pattern in expr}> ... </for> to HEEx for-blocks.
+     * Supports simple patterns like `todo in list` or `item in some_call()`.
+     */
+    public static function rewriteForBlocks(src:String):String {
+        var out = new StringBuf();
+        var i = 0;
+        while (i < src.length) {
+            var start = src.indexOf('<for {', i);
+            if (start == -1) { out.add(src.substr(i)); break; }
+            out.add(src.substr(i, start - i));
+            var headEnd = src.indexOf('}>', start);
+            if (headEnd == -1) { out.add(src.substr(start)); break; }
+            var headInner = src.substr(start + 6, headEnd - (start + 6)); // between { and }
+            var closeTag = src.indexOf('</for>', headEnd + 2);
+            if (closeTag == -1) { out.add(src.substr(start)); break; }
+            var body = src.substr(headEnd + 2, closeTag - (headEnd + 2));
+            var parts = headInner.split(' in ');
+            if (parts.length != 2) {
+                // Fallback: keep original; do not break template
+                out.add(src.substr(start, (closeTag + 6) - start));
+                i = closeTag + 6;
+                continue;
+            }
+            var pat = StringTools.trim(parts[0]);
+            var iter = StringTools.trim(parts[1]);
+            // Map assigns.* to @* in iterator expression
+            iter = StringTools.replace(iter, 'assigns.', '@');
+            out.add('<%= for ' + pat + ' <- ' + iter + ' do %>');
+            // Recursively allow nested for/if inside body
+            out.add(rewriteForBlocks(body));
+            out.add('<% end %>');
+            i = closeTag + 6;
+        }
         return out.toString();
     }
 

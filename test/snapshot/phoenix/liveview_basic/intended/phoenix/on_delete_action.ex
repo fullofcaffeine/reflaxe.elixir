@@ -1,14 +1,14 @@
 defmodule Phoenix.OnDeleteAction do
   def nothing() do
-    {0}
+    {:nothing}
   end
   def restrict() do
-    {1}
+    {:restrict}
   end
   def delete_all() do
-    {2}
+    {:delete_all}
   end
   def nilify_all() do
-    {3}
+    {:nilify_all}
   end
 end

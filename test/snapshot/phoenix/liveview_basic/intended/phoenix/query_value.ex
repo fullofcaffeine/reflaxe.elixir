@@ -1,29 +1,29 @@
 defmodule Phoenix.QueryValue do
   def string(arg0) do
-    {0, arg0}
+    {:string, arg0}
   end
   def integer(arg0) do
-    {1, arg0}
+    {:integer, arg0}
   end
   def float(arg0) do
-    {2, arg0}
+    {:float, arg0}
   end
   def boolean(arg0) do
-    {3, arg0}
+    {:boolean, arg0}
   end
   def date(arg0) do
-    {4, arg0}
+    {:date, arg0}
   end
   def binary(arg0) do
-    {5, arg0}
+    {:binary, arg0}
   end
   def array(arg0) do
-    {6, arg0}
+    {:array, arg0}
   end
   def field(arg0) do
-    {7, arg0}
+    {:field, arg0}
   end
   def fragment(arg0, arg1) do
-    {8, arg0, arg1}
+    {:fragment, arg0, arg1}
   end
 end

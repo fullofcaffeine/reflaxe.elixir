@@ -1,8 +1,11 @@
 defmodule CounterLive do
   use Phoenix.Component
-  def mount(struct, _params, _session, socket) do
+  use CounterLiveWeb, :live_view
+  require Ecto.Query
+  def mount(struct, _params, socket, socket) do
     socket = Phoenix.Component.assign(socket, "count", 0)
     %{:ok => socket}
+    {:ok, socket}
   end
   def handle_event_increment(struct, _params, socket) do
     count = socket.assigns.count
@@ -14,7 +17,13 @@ defmodule CounterLive do
     socket = Phoenix.Component.assign(socket, "count", (count - 1))
     %{:noreply => socket}
   end
-  def render(struct, _assigns) do
-    "<div>\n\t\t  <h1>Counter: <%= @count %></h1>\n\t\t  <button phx-click=\"increment\">+</button>\n\t\t  <button phx-click=\"decrement\">-</button>\n\t\t</div>"
+  def render(struct, assigns) do
+    ~H"""
+<div>
+          <h1>Counter: <%= @count %></h1>
+          <button phx-click="increment">+</button>
+          <button phx-click="decrement">-</button>
+        </div>
+"""
   end
 end

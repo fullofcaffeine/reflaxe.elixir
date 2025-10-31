@@ -4,15 +4,15 @@ defmodule TreeNode do
   end
   def to_string(struct) do
     (
-"#{if struct.left == nil do
+"#{(fn -> if (struct.left == nil) do
   ""
 else
-  "#{struct.left.toString()}, "
-end}#{inspect(struct.key)} => #{inspect(struct.value)}#{if struct.right == nil do
+  "#{(fn -> struct.left.toString() end).()}, "
+end end).()}#{(fn -> inspect(struct.key) end).()} => #{(fn -> inspect(struct.value) end).()}#{(fn -> if (struct.right == nil) do
   ""
 else
-  ", #{struct.right.toString()}"
-end}"
+  ", #{(fn -> struct.right.toString() end).()}"
+end end).()}"
 )
   end
 end
