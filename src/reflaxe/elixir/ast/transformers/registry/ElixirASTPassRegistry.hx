@@ -2485,13 +2485,13 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventParamsUltraFinal",
             description: "Ensure handle_event/3 uses `params` as second arg and align body refs (absolute-final)",
-            enabled: true,
+            enabled: false, // re-inserted later as absolute last
             pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalTransforms.transformPass
         });
         passes.push({
             name: "MountParamsUltraFinal",
             description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
-            enabled: true,
+            enabled: false, // re-inserted later as absolute last
             pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass
         });
         // Ensure inline if inside containers are parenthesized to avoid parser ambiguity
@@ -2646,7 +2646,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ParamUnderscoreArgRefAlign",
             description: "Rewrite `_params` to `params` in defs that have a `params` arg",
-            enabled: true,
+            enabled: false, // move to absolute-final section
             pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignTransforms.pass
         });
 
@@ -4870,6 +4870,44 @@ class ElixirASTPassRegistry {
             description: "Last: promote chained assign + if window in any block/do",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ChainAssignIfPromoteTransforms.transformPass
+        });
+
+        // ABSOLUTE FINAL (must be after any chain/underscore replay):
+        passes.push({
+            name: "MountParamsUltraFinal",
+            description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass,
+            runAfter: ["ChainAssignIfPromote_Replay_Last"]
+        });
+        passes.push({
+            name: "HandleEventParamsUltraFinal",
+            description: "Ensure handle_event/3 uses `params` as second arg and align body refs (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalTransforms.transformPass,
+            runAfter: ["MountParamsUltraFinal"]
+        });
+        passes.push({
+            name: "ParamUnderscoreArgRefAlign_Final",
+            description: "Final sweep: rewrite `_params` to `params` in bodies of defs that have a `params` arg (after promotions)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignTransforms.pass,
+            runAfter: ["HandleEventParamsUltraFinal", "MountParamsUltraFinal"]
+        });
+        passes.push({
+            name: "ParamUnderscoreGlobalAlign_Final",
+            description: "Absolute final safety: rewrite `_params` to `params` inside handle_event/3 and mount/3 bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreGlobalAlignFinalTransforms.pass,
+            runAfter: ["ParamUnderscoreArgRefAlign_Final"]
+        });
+        // Re-run safe unused-def-param underscore promotion at the very end
+        passes.push({
+            name: "DefParamUnusedUnderscoreGlobalSafe_Final",
+            description: "Final replay: underscore unused def params (safe, global)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass,
+            runAfter: ["ParamUnderscoreGlobalAlign_Final"]
         });
 
         // Filter disabled passes first
