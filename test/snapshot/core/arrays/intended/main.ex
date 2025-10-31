@@ -1,210 +1,159 @@
 defmodule Main do
   def basic_array_ops() do
     numbers = [1, 2, 3, 4, 5]
-    IO.inspect(Enum.at(numbers, 0))  # First element
-    IO.inspect(length(numbers))      # Length
-
-    # Array modification (immutable operations)
-    numbers = numbers ++ [6]          # push
-    numbers = [0 | numbers]           # unshift
-    popped = List.last(numbers)      # pop (get last)
-    shifted = List.first(numbers)    # shift (get first)
-    IO.puts("Popped: #{popped}, Shifted: #{shifted}")
-
-    # Array of different types
+    Log.trace(numbers[0], %{:file_name => "Main.hx", :line_number => 14, :class_name => "Main", :method_name => "basicArrayOps"})
+    Log.trace(length(numbers), %{:file_name => "Main.hx", :line_number => 15, :class_name => "Main", :method_name => "basicArrayOps"})
+    numbers = numbers ++ [6]
+    numbers.unshift(0)
+    popped = :List.delete_at(numbers, -1)
+    shifted = numbers.shift()
+    Log.trace("Popped: #{(fn -> popped end).()}, Shifted: #{(fn -> shifted end).()}", %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "basicArrayOps"})
     mixed = [1, "hello", true, 3.14]
-    IO.inspect(mixed)
+    Log.trace(mixed, %{:file_name => "Main.hx", :line_number => 26, :class_name => "Main", :method_name => "basicArrayOps"})
   end
-
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
-
-    # For loop
-    for fruit <- fruits do
-      IO.puts("Fruit: #{fruit}")
-    end
-
-    # For with index
-    for {fruit, i} <- Enum.with_index(fruits) do
-      IO.puts("#{i}: #{fruit}")
-    end
-
-    # While iteration (using recursion in Elixir)
-    iterate_fruits(fruits, 0)
+    Enum.each(fruits, fn item ->
+            Log.trace("Fruit: " <> item, %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "arrayIteration"})
+    end)
+    Enum.each(fruits, fn item ->
+      i = 1
+      Log.trace("" <> i.to_string() <> ": " <> fruits[i], %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "arrayIteration"})
+    end)
+    i = 0
+    Enum.each(0..(length(fruits) - 1), fn i ->
+      Log.trace("While: " <> fruits[i], %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "arrayIteration"})
+      i + 1
+    end)
   end
-
-  defp iterate_fruits([], _), do: :ok
-  defp iterate_fruits([fruit | rest], index) do
-    IO.puts("While: #{fruit}")
-    iterate_fruits(rest, index + 1)
-  end
-
   def array_methods() do
     numbers = [1, 2, 3, 4, 5]
-
-    # Map
     doubled = Enum.map(numbers, fn n -> n * 2 end)
-    IO.puts("Doubled: #{inspect(doubled)}")
-
-    # Filter
+    Log.trace("Doubled: #{(fn -> inspect(doubled) end).()}", %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "arrayMethods"})
     evens = Enum.filter(numbers, fn n -> rem(n, 2) == 0 end)
-    IO.puts("Evens: #{inspect(evens)}")
-
-    # Concat
+    Log.trace("Evens: #{(fn -> inspect(evens) end).()}", %{:file_name => "Main.hx", :line_number => 61, :class_name => "Main", :method_name => "arrayMethods"})
     more = [6, 7, 8]
-    combined = numbers ++ more
-    IO.puts("Combined: #{inspect(combined)}")
-
-    # Join
-    words = ["Hello", "World", "from", "Haxe"]
-    sentence = Enum.join(words, " ")
-    IO.puts("Sentence: #{sentence}")
-
-    # Reverse
-    reversed = Enum.reverse(numbers)
-    IO.puts("Reversed: #{inspect(reversed)}")
-
-    # Sort
+    combined = Enum.concat(numbers, more)
+    Log.trace("Combined: #{(fn -> inspect(combined) end).()}", %{:file_name => "Main.hx", :line_number => 66, :class_name => "Main", :method_name => "arrayMethods"})
+    _ = ["Hello", "World", "from", "Haxe"]
+    sentence = Enum.join((fn -> " " end).())
+    Log.trace("Sentence: #{(fn -> sentence end).()}", %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "arrayMethods"})
+    reversed = numbers.copy()
+    Enum.reverse(reversed)
+    Log.trace("Reversed: #{(fn -> inspect(reversed) end).()}", %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "arrayMethods"})
     unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
-    sorted = Enum.sort(unsorted)
-    IO.puts("Sorted: #{inspect(sorted)}")
+    Enum.sort(unsorted, fn a, b -> (a - b) end)
+    Log.trace("Sorted: #{(fn -> inspect(unsorted) end).()}", %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "arrayMethods"})
   end
-
   def array_comprehensions() do
-    # Simple comprehension
-    squares = for i <- 1..5, do: i * i
-    IO.puts("Squares: #{inspect(squares)}")
-
-    # Comprehension with condition
-    even_squares = for i <- 1..9, rem(i, 2) == 0, do: i * i
-    IO.puts("Even squares: #{inspect(even_squares)}")
-
-    # Nested comprehension
-    pairs = for x <- 1..3, y <- 1..3, x != y, do: %{x: x, y: y}
-    IO.puts("Pairs: #{inspect(pairs)}")
+    squares = [1, 4, 9, 16, 25]
+    Log.trace("Squares: #{(fn -> inspect(squares) end).()}", %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "arrayComprehensions"})
+    even_squares = for item <- [4, 16, 36, 64], do: item
+    Log.trace("Even squares: #{(fn -> inspect(even_squares) end).()}", %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "arrayComprehensions"})
+    pairs = [%{:x => 1, :y => 2}, %{:x => 1, :y => 3}, %{:x => 2, :y => 1}, %{:x => 2, :y => 3}, %{:x => 3, :y => 1}, %{:x => 3, :y => 2}]
+    Log.trace("Pairs: #{(fn -> inspect(pairs) end).()}", %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "arrayComprehensions"})
   end
-
   def multi_dimensional() do
-    # 2D array
-    matrix = [
-      [1, 2, 3],
-      [4, 5, 6],
-      [7, 8, 9]
-    ]
-
-    IO.puts("Matrix element [1][2]: #{Enum.at(Enum.at(matrix, 1), 2)}")
-
-    # Iterate 2D array
-    for row <- matrix do
-      for elem <- row do
-        IO.puts("Element: #{elem}")
-      end
-    end
-
-    # Create dynamic 2D array
-    grid = for i <- 0..2, do: for j <- 0..2, do: i * 3 + j
-    IO.puts("Grid: #{inspect(grid)}")
+    matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    Log.trace("Matrix element [1][2]: #{(fn -> matrix[1][2] end).()}", %{:file_name => "Main.hx", :line_number => 108, :class_name => "Main", :method_name => "multiDimensional"})
+    Enum.each(matrix, fn item ->
+            Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {row}, fn _, {row} ->
+        if (0 < length(row)) do
+          elem = row[0]
+          Log.trace("Element: " <> elem.to_string(), %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "multiDimensional"})
+          {:cont, {row}}
+        else
+          {:halt, {row}}
+        end
+      end)
+    end)
+    grid = [] ++ [(fn ->
+  Enum.each(0..2, fn _ -> push(0) end)
+  []
+end).()]
+    [] ++ [(fn ->
+  [] ++ [3]
+  [] ++ [4]
+  [] ++ [5]
+  []
+end).()]
+    [] ++ [(fn ->
+  [] ++ [6]
+  [] ++ [7]
+  [] ++ [8]
+  []
+end).()]
+    []
+    Log.trace("Grid: #{(fn -> inspect(grid) end).()}", %{:file_name => "Main.hx", :line_number => 119, :class_name => "Main", :method_name => "multiDimensional"})
   end
-
   def process_array(arr) do
-    arr
-    |> Enum.map(fn x -> x * x end)
-    |> Enum.filter(fn x -> x > 10 end)
+    Enum.filter(Enum.map(arr, fn x -> x * x end), fn x -> x > 10 end)
   end
-
   def first_n(arr, n) do
-    Enum.take(arr, n)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr, n, b}, fn _, {arr, n, b} ->
+      if (0 < trunc.((fn -> b = length(arr)
+  if (n < b), do: n, else: b end).())) do
+        i = 1
+        [].push(arr[i])
+        {:cont, {arr, n, b}}
+      else
+        {:halt, {arr, n, b}}
+      end
+    end)
+    []
   end
-
   def functional_methods() do
     numbers = [1, 2, 3, 4, 5]
     strings = ["hello", "world", "haxe", "elixir"]
-
-    # Test reduce/fold - accumulation operations
-    sum = Enum.reduce(numbers, 0, fn item, acc -> acc + item end)
-    IO.puts("Sum via reduce: #{sum}")
-
-    product = Enum.reduce(numbers, 1, fn item, acc -> acc * item end)
-    IO.puts("Product via fold: #{product}")
-
-    # Test find - search for first match
-    first_even = Enum.find(numbers, fn n -> rem(n, 2) == 0 end)
-    IO.puts("First even number: #{first_even}")
-
-    long_word = Enum.find(strings, fn s -> String.length(s) > 4 end)
-    IO.puts("First long word: #{long_word}")
-
-    # Test findIndex - get index of first match
-    even_index = Enum.find_index(numbers, fn n -> rem(n, 2) == 0 end)
-    IO.puts("Index of first even: #{even_index}")
-
-    long_word_index = Enum.find_index(strings, fn s -> String.length(s) > 4 end)
-    IO.puts("Index of first long word: #{long_word_index}")
-
-    # Test exists/any - check if any element matches
-    has_even = Enum.any?(numbers, fn n -> rem(n, 2) == 0 end)
-    IO.puts("Has even numbers: #{has_even}")
-
-    has_very_long = Enum.any?(strings, fn s -> String.length(s) > 10 end)
-    IO.puts("Has very long word: #{has_very_long}")
-
-    # Test foreach/all - check if all elements match
-    all_positive = Enum.all?(numbers, fn n -> n > 0 end)
-    IO.puts("All positive: #{all_positive}")
-
-    all_short = Enum.all?(strings, fn s -> String.length(s) < 10 end)
-    IO.puts("All short words: #{all_short}")
-
-    # Test forEach - side effects
-    IO.puts("Numbers via forEach:")
-    Enum.each(numbers, fn n -> IO.puts("  - #{n}") end)
-
-    # Test take - get first n elements
-    first3 = Enum.take(numbers, 3)
-    IO.puts("First 3 numbers: #{inspect(first3)}")
-
-    # Test drop - skip first n elements
-    skip2 = Enum.drop(numbers, 2)
-    IO.puts("Skip first 2: #{inspect(skip2)}")
-
-    # Test flatMap - map and flatten
+    sum = MyApp.ArrayTools.reduce(numbers, fn acc, item -> acc + item end, 0)
+    Log.trace("Sum via reduce: #{(fn -> sum end).()}", %{:file_name => "Main.hx", :line_number => 139, :class_name => "Main", :method_name => "functionalMethods"})
+    product = MyApp.ArrayTools.fold(numbers, fn acc, item -> acc * item end, 1)
+    Log.trace("Product via fold: #{(fn -> product end).()}", %{:file_name => "Main.hx", :line_number => 142, :class_name => "Main", :method_name => "functionalMethods"})
+    first_even = MyApp.ArrayTools.find(numbers, fn n -> rem(n, 2) == 0 end)
+    Log.trace("First even number: #{(fn -> first_even end).()}", %{:file_name => "Main.hx", :line_number => 146, :class_name => "Main", :method_name => "functionalMethods"})
+    long_word = MyApp.ArrayTools.find(strings, fn s -> length(s) > 4 end)
+    Log.trace("First long word: #{(fn -> long_word end).()}", %{:file_name => "Main.hx", :line_number => 149, :class_name => "Main", :method_name => "functionalMethods"})
+    even_index = MyApp.ArrayTools.find_index(numbers, fn n -> rem(n, 2) == 0 end)
+    Log.trace("Index of first even: #{(fn -> even_index end).()}", %{:file_name => "Main.hx", :line_number => 153, :class_name => "Main", :method_name => "functionalMethods"})
+    long_word_index = MyApp.ArrayTools.find_index(strings, fn s -> length(s) > 4 end)
+    Log.trace("Index of first long word: #{(fn -> long_word_index end).()}", %{:file_name => "Main.hx", :line_number => 156, :class_name => "Main", :method_name => "functionalMethods"})
+    has_even = MyApp.ArrayTools.exists(numbers, fn n -> rem(n, 2) == 0 end)
+    Log.trace("Has even numbers: #{(fn -> inspect(has_even) end).()}", %{:file_name => "Main.hx", :line_number => 160, :class_name => "Main", :method_name => "functionalMethods"})
+    has_very_long = MyApp.ArrayTools.any(strings, fn s -> length(s) > 10 end)
+    Log.trace("Has very long word: #{(fn -> inspect(has_very_long) end).()}", %{:file_name => "Main.hx", :line_number => 163, :class_name => "Main", :method_name => "functionalMethods"})
+    all_positive = MyApp.ArrayTools.foreach(numbers, fn n -> n > 0 end)
+    Log.trace("All positive: #{(fn -> inspect(all_positive) end).()}", %{:file_name => "Main.hx", :line_number => 167, :class_name => "Main", :method_name => "functionalMethods"})
+    all_short = MyApp.ArrayTools.all(strings, fn s -> length(s) < 10 end)
+    Log.trace("All short words: #{(fn -> inspect(all_short) end).()}", %{:file_name => "Main.hx", :line_number => 170, :class_name => "Main", :method_name => "functionalMethods"})
+    Log.trace("Numbers via forEach:", %{:file_name => "Main.hx", :line_number => 173, :class_name => "Main", :method_name => "functionalMethods"})
+    MyApp.ArrayTools.for_each(numbers, fn n -> Log.trace("  - " <> n.to_string(), %{:file_name => "Main.hx", :line_number => 174, :class_name => "Main", :method_name => "functionalMethods"}) end)
+    first3 = MyApp.ArrayTools.take(numbers, 3)
+    Log.trace("First 3 numbers: #{(fn -> inspect(first3) end).()}", %{:file_name => "Main.hx", :line_number => 178, :class_name => "Main", :method_name => "functionalMethods"})
+    skip2 = MyApp.ArrayTools.drop(numbers, 2)
+    Log.trace("Skip first 2: #{(fn -> inspect(skip2) end).()}", %{:file_name => "Main.hx", :line_number => 182, :class_name => "Main", :method_name => "functionalMethods"})
     nested_arrays = [[1, 2], [3, 4], [5]]
-    flattened = Enum.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
-    IO.puts("FlatMap doubled: #{inspect(flattened)}")
-
-    # Test chaining functional methods
-    processed = numbers
-    |> Enum.filter(fn n -> n > 2 end)       # [3, 4, 5]
-    |> Enum.map(fn n -> n * n end)          # [9, 16, 25]
-    |> Enum.take(2)                          # [9, 16]
-    |> Enum.reduce(0, fn n, acc -> acc + n end)  # 25
-    IO.puts("Chained operations result: #{processed}")
+    flattened = MyApp.ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
+    Log.trace("FlatMap doubled: #{(fn -> inspect(flattened) end).()}", %{:file_name => "Main.hx", :line_number => 187, :class_name => "Main", :method_name => "functionalMethods"})
+    processed = MyApp.ArrayTools.reduce(ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
+    Log.trace("Chained operations result: #{(fn -> processed end).()}", %{:file_name => "Main.hx", :line_number => 195, :class_name => "Main", :method_name => "functionalMethods"})
   end
-
   def main() do
-    IO.puts("=== Basic Array Operations ===")
+    Log.trace("=== Basic Array Operations ===", %{:file_name => "Main.hx", :line_number => 199, :class_name => "Main", :method_name => "main"})
     basic_array_ops()
-
-    IO.puts("\n=== Array Iteration ===")
+    Log.trace("\n=== Array Iteration ===", %{:file_name => "Main.hx", :line_number => 202, :class_name => "Main", :method_name => "main"})
     array_iteration()
-
-    IO.puts("\n=== Array Methods ===")
+    Log.trace("\n=== Array Methods ===", %{:file_name => "Main.hx", :line_number => 205, :class_name => "Main", :method_name => "main"})
     array_methods()
-
-    IO.puts("\n=== Array Comprehensions ===")
+    Log.trace("\n=== Array Comprehensions ===", %{:file_name => "Main.hx", :line_number => 208, :class_name => "Main", :method_name => "main"})
     array_comprehensions()
-
-    IO.puts("\n=== Multi-dimensional Arrays ===")
+    Log.trace("\n=== Multi-dimensional Arrays ===", %{:file_name => "Main.hx", :line_number => 211, :class_name => "Main", :method_name => "main"})
     multi_dimensional()
-
-    IO.puts("\n=== Array Functions ===")
+    Log.trace("\n=== Array Functions ===", %{:file_name => "Main.hx", :line_number => 214, :class_name => "Main", :method_name => "main"})
     result = process_array([1, 2, 3, 4, 5])
-    IO.puts("Processed: #{inspect(result)}")
-
+    Log.trace("Processed: #{(fn -> inspect(result) end).()}", %{:file_name => "Main.hx", :line_number => 216, :class_name => "Main", :method_name => "main"})
     first3 = first_n(["a", "b", "c", "d", "e"], 3)
-    IO.puts("First 3: #{inspect(first3)}")
-
-    IO.puts("\n=== NEW: Functional Array Methods ===")
+    Log.trace("First 3: #{(fn -> inspect(first3) end).()}", %{:file_name => "Main.hx", :line_number => 219, :class_name => "Main", :method_name => "main"})
+    Log.trace("\n=== NEW: Functional Array Methods ===", %{:file_name => "Main.hx", :line_number => 221, :class_name => "Main", :method_name => "main"})
     functional_methods()
   end
 end

@@ -4,12 +4,10 @@
   "string_buf.ex",
   "std.ex",
   "main.ex",
-  "int_iterator.ex",
   "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "create_users_table.ex",
-  "create_products_table.ex",
-  "create_posts_table.ex"
+  "create_products_table.ex"
 ],
   "id": 0,
   "wasCached": false,

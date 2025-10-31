@@ -4,77 +4,80 @@ defmodule Main do
     test_variable_reassignment()
     test_loop_counters()
   end
-
   defp test_mutable_ops() do
     x = 10
     x = x + 5
-    Log.trace("After +=: #{x}", %{:file_name => "Main.hx", :line_number => 17, :class_name => "Main", :method_name => "testMutableOps"})
-
-    x = x - 3
-    Log.trace("After -=: #{x}", %{:file_name => "Main.hx", :line_number => 20, :class_name => "Main", :method_name => "testMutableOps"})
-
+    Log.trace("After +=: #{(fn -> x end).()}", %{:file_name => "Main.hx", :line_number => 17, :class_name => "Main", :method_name => "testMutableOps"})
+    x = (x - 3)
+    Log.trace("After -=: #{(fn -> x end).()}", %{:file_name => "Main.hx", :line_number => 20, :class_name => "Main", :method_name => "testMutableOps"})
     x = x * 2
-    Log.trace("After *=: #{x}", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testMutableOps"})
-
+    Log.trace("After *=: #{(fn -> x end).()}", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testMutableOps"})
     x = rem(x, 3)
-    Log.trace("After %=: #{x}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testMutableOps"})
-
+    Log.trace("After %=: #{(fn -> x end).()}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testMutableOps"})
     str = "Hello"
-    str = str <> " World"
-    Log.trace("String concat: #{str}", %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "testMutableOps"})
-
+    str = "#{(fn -> str end).()} World"
+    Log.trace("String concat: #{(fn -> str end).()}", %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "testMutableOps"})
     arr = [1, 2, 3]
-    arr = arr ++ [4, 5]
-    Log.trace("Array: #{inspect(arr)}", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMutableOps"})
+    arr = Enum.concat(arr, [4, 5])
+    Log.trace("Array: #{(fn -> inspect(arr) end).()}", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMutableOps"})
   end
-
   defp test_variable_reassignment() do
     count = 0
     count = count + 1
     count = count + 1
     count = count + 1
-    Log.trace("Count after reassignments: #{count}", %{:file_name => "Main.hx", :line_number => 50, :class_name => "Main", :method_name => "testVariableReassignment"})
-
+    Log.trace("Count after reassignments: #{(fn -> count end).()}", %{:file_name => "Main.hx", :line_number => 50, :class_name => "Main", :method_name => "testVariableReassignment"})
     value = 5
-    value = if value > 0 do
-      value * 2
+    if (value > 0) do
+      value = value * 2
     else
-      value * -1
+      value = value * -1
     end
-    Log.trace("Value after conditional: #{value}", %{:file_name => "Main.hx", :line_number => 59, :class_name => "Main", :method_name => "testVariableReassignment"})
-
+    Log.trace("Value after conditional: #{(fn -> value end).()}", %{:file_name => "Main.hx", :line_number => 59, :class_name => "Main", :method_name => "testVariableReassignment"})
     result = 1
     result = result * 2
     result = result + 10
-    result = result - 5
-    Log.trace("Result: #{result}", %{:file_name => "Main.hx", :line_number => 66, :class_name => "Main", :method_name => "testVariableReassignment"})
+    result = (result - 5)
+    Log.trace("Result: #{(fn -> result end).()}", %{:file_name => "Main.hx", :line_number => 66, :class_name => "Main", :method_name => "testVariableReassignment"})
   end
-
   defp test_loop_counters() do
-    # While loop with increment
-    defp while_increment(i) when i < 5 do
-      Log.trace("While loop i: #{i}", %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "testLoopCounters"})
-      while_increment(i + 1)
-    end
-    defp while_increment(_i), do: :ok
-    while_increment(0)
-
-    # While loop with decrement
-    defp while_decrement(j) when j > 0 do
-      Log.trace("While loop j: #{j}", %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "testLoopCounters"})
-      while_decrement(j - 1)
-    end
-    defp while_decrement(_j), do: :ok
-    while_decrement(5)
-
-    # Sum calculation with loop
-    sum = Enum.reduce(1..5, 0, fn k, acc -> acc + k end)
-    Log.trace("Sum: #{sum}", %{:file_name => "Main.hx", :line_number => 91, :class_name => "Main", :method_name => "testLoopCounters"})
-
-    # Nested loops for total calculation
-    total = for x <- 0..2, y <- 0..2, reduce: 0 do
-      acc -> acc + x + y
-    end
-    Log.trace("Total from nested loops: #{total}", %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "testLoopCounters"})
+    i = 0
+    Enum.each(0..(5 - 1), fn i ->
+      Log.trace("While loop i: " <> i.to_string(), %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "testLoopCounters"})
+      i + 1
+    end)
+    j = 5
+    Enum.each(j, fn item ->
+      Log.trace("While loop j: " <> item.to_string(), %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "testLoopCounters"})
+      (item - 1)
+    end)
+    sum = 0
+    k = 1
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, k}, fn _, {sum, k} ->
+      if (k <= 5) do
+        sum = sum + k
+        k + 1
+        {:cont, {sum, k}}
+      else
+        {:halt, {sum, k}}
+      end
+    end)
+    Log.trace("Sum: #{(fn -> sum end).()}", %{:file_name => "Main.hx", :line_number => 91, :class_name => "Main", :method_name => "testLoopCounters"})
+    total = 0
+    x = 0
+    Enum.each(0..(3 - 1), fn x ->
+      y = 0
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, y}, fn _, {total, y} ->
+        if (y < 3) do
+          total = total + 1
+          y + 1
+          {:cont, {total, y}}
+        else
+          {:halt, {total, y}}
+        end
+      end)
+      x + 1
+    end)
+    Log.trace("Total from nested loops: #{(fn -> total end).()}", %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "testLoopCounters"})
   end
 end

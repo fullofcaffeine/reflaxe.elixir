@@ -1,134 +1,312 @@
 defmodule Main do
   def match_simple_value(value) do
-    case value do
-      0 ->
-        "zero"
-      1 ->
-        "one"
-      2 ->
-        "two"
-      n when n < 0 ->
-        "negative"
-      n when n > 100 ->
-        "large"
+    (case value do
+      0 -> "zero"
+      1 -> "one"
+      2 -> "two"
       _ ->
-        "other"
-    end
+        n = value
+        if (n < 0) do
+          "negative"
+        else
+          _ = value
+          if (value > 100), do: "large", else: "other"
+        end
+    end)
   end
-
   def process_array(arr) do
-    case arr do
-      [] ->
-        "empty"
-      [x] ->
-        "single: #{x}"
-      [x, y] ->
-        "pair: #{x},#{y}"
-      [x, y, z] ->
-        "triple: #{x},#{y},#{z}"
-      [first, second, third, fourth] ->
-        "quad: #{first},#{second},#{third},#{fourth}"
+    (case arr do
+      [] -> "empty"
+      [_head | _tail] -> "single: #{(fn -> x end).()}"
+      2 -> "pair: #{(fn -> x end).()},#{(fn -> y end).()}"
+      3 -> "triple: #{(fn -> x end).()},#{(fn -> y end).()},#{(fn -> z end).()}"
+      4 -> "quad: #{(fn -> first end).()},#{(fn -> second end).()},#{(fn -> third end).()},#{(fn -> fourth end).()}"
       _ ->
-        "many: #{length(arr)} items"
+        a = arr
+        if (length(a) > 4) do
+          "many: #{(fn -> length(a) end).()} elements"
+        else
+          "unknown"
+        end
+    end)
+  end
+  def classify_string(str) do
+    (case str do
+      "" -> "empty"
+      "goodbye" -> "farewell"
+      "hello" -> "greeting"
+      _ ->
+        s = str
+        if (length(s) == 1) do
+          "single char"
+        else
+          _ = str
+          if (length(s) > 10 and length(s) <= 20) do
+            "medium"
+          else
+            _ = str
+            if (length(s) > 20), do: "long", else: "other"
+          end
+        end
+    end)
+  end
+  def classify_number(n) do
+    if (n == 0) do
+      "zero"
+    else
+      x = n
+      if (x > 0 and x <= 1) do
+        "tiny"
+      else
+        _ = n
+        if (x > 1 and x <= 10) do
+          "small"
+        else
+          _ = n
+          if (x > 10 and x <= 100) do
+            "medium"
+          else
+            _ = n
+            if (x > 100 and x <= 1000) do
+              "large"
+            else
+              _ = n
+              if (x > 1000) do
+                "huge"
+              else
+                _ = n
+                if (x < 0 and x >= -10) do
+                  "small negative"
+                else
+                  _ = n
+                  if (x < -10), do: "large negative", else: "unknown"
+                end
+              end
+            end
+          end
+        end
+      end
     end
   end
-
-  def match_tuple(data) do
-    case data do
-      {:ok, value} ->
-        "success: #{value}"
-      {:error, reason} ->
-        "error: #{reason}"
-      {:warning, msg} ->
-        "warning: #{msg}"
-      _ ->
-        "unknown"
+  def match_flags(active, verified, premium) do
+    if (active) do
+      cond do
+        verified ->
+          if (premium), do: "full access", else: "verified user"
+        premium -> "unverified premium"
+        :true -> "basic user"
+      end
+    else
+      "inactive"
     end
   end
-
-  def nested_pattern(data) do
-    case data do
-      {:ok, {:data, value}} ->
-        "nested data: #{value}"
-      {:ok, {:error, reason}} ->
-        "nested error: #{reason}"
-      {:error, {:timeout, ms}} ->
-        "timeout after #{ms}ms"
+  def match_matrix(matrix) do
+    (case matrix do
+      [] -> "empty matrix"
+      [_head | _tail] when length(_tail) == 1 -> "single element: #{(fn -> x end).()}"
+      [_head | _tail] when length(m) == length(_head) -> "square matrix #{(fn -> length(m) end).()}x#{(fn -> length(m) end).()}"
+      [_head | _tail] -> "non-square matrix"
+      2 ->
+        cond do
+          length(_g) == 2 ->
+            g4 = _g[0]
+            g5 = _g[1]
+            "2x2 matrix: [[" <> a.to_string() <> "," <> b.to_string() <> "],[" <> c.to_string() <> "," <> d.to_string() <> "]]"
+          length(m) == length(m[0]) -> "square matrix " <> length(m).to_string() <> "x" <> length(m).to_string()
+          true -> "non-square matrix"
+        end
+      2 when length(m) == length(m[0]) -> "square matrix #{(fn -> length(m) end).()}x#{(fn -> length(m) end).()}"
+      2 -> "non-square matrix"
+      3 ->
+        cond do
+          length(_g) == 3 ->
+            g6 = _g[0]
+            g7 = _g[1]
+            g8 = _g[2]
+            if (length(_g) == 3) do
+              g9 = _g[0]
+              g10 = _g[1]
+              g11 = _g[2]
+              h = _g10
+              i = _g11
+              a = _g3
+              b = _g4
+              c = _g5
+              f = _g8
+              e = _g7
+              d = _g6
+              "3x3 matrix"
+            else
+              if (length(m) == length(m[0])), do: "square matrix " <> length(m).to_string() <> "x" <> length(m).to_string(), else: "non-square matrix"
+            end
+          length(m) == length(m[0]) -> "square matrix " <> length(m).to_string() <> "x" <> length(m).to_string()
+          true -> "non-square matrix"
+        end
+      3 when length(m) == length(m[0]) -> "square matrix #{(fn -> length(m) end).()}x#{(fn -> length(m) end).()}"
+      3 -> "non-square matrix"
       _ ->
-        "other nested"
+        m = matrix
+        if (length(m) == length(m[0])) do
+          "square matrix #{(fn -> length(m) end).()}x#{(fn -> length(m) end).()}"
+        else
+          "non-square matrix"
+        end
+    end)
+  end
+  def validate_age(age, has_permission) do
+    a = age
+    if (a < 0) do
+      "invalid age"
+    else
+      _ = age
+      if (a >= 0 and a < 13) do
+        "child"
+      else
+        (case has_permission do
+          :false when age >= 13 and age < 18 -> "teen without permission"
+          :false when age >= 18 and age < 21 -> "young adult"
+          :false when age >= 21 and age < 65 -> "adult"
+          :false when age >= 65 -> "senior"
+          :false -> "unknown"
+          :true when age >= 13 and age < 18 -> "teen with permission"
+          :true when age >= 18 and age < 21 -> "young adult"
+          :true when age >= 21 and age < 65 -> "adult"
+          :true when age >= 65 -> "senior"
+          :true -> "unknown"
+          _ ->
+            _ = age
+            if (a >= 18 and a < 21) do
+              "young adult"
+            else
+              _ = age
+              if (a >= 21 and a < 65) do
+                "adult"
+              else
+                _ = age
+                if (a >= 65), do: "senior", else: "unknown"
+              end
+            end
+        end)
+      end
     end
   end
-
-  def match_with_guards(x, y) do
-    case {x, y} do
-      {a, b} when a > 0 and b > 0 ->
-        "both positive"
-      {a, b} when a < 0 and b < 0 ->
-        "both negative"
-      {0, _} ->
-        "x is zero"
-      {_, 0} ->
-        "y is zero"
-      {a, b} when a * b < 0 ->
-        "opposite signs"
-      _ ->
-        "other"
+  def classify_value(value) do
+    v = value
+    if (MyApp.Std.is(v, :string)) do
+      "string: \"#{(fn -> inspect(v) end).()}\""
+    else
+      _ = value
+      if (MyApp.Std.is(v2, :int)) do
+        "integer: #{(fn -> inspect(v2) end).()}"
+      else
+        _ = value
+        if (MyApp.Std.is(v3, :float)) do
+          "float: #{(fn -> inspect(v3) end).()}"
+        else
+          _ = value
+          if (MyApp.Std.is(v4, :bool)) do
+            "boolean: #{(fn -> inspect(v4) end).()}"
+          else
+            _ = value
+            cond do
+              Std.is(v5, :array) -> "array of length " <> inspect(Map.get(v5, :length))
+              value == nil -> "null value"
+              :true -> "unknown type"
+            end
+          end
+        end
+      end
     end
   end
+  def check_color(color) do
+    primary_colors = ["red", "green", "blue"]
+    secondary_colors = ["orange", "purple", "yellow"]
+    c = color
+    if ((
 
-  def complex_guard(value) do
-    case value do
-      n when is_integer(n) and n > 0 and rem(n, 2) == 0 ->
-        "positive even"
-      n when is_integer(n) and n > 0 and rem(n, 2) == 1 ->
-        "positive odd"
-      n when is_integer(n) and n < 0 ->
-        "negative integer"
-      0 ->
-        "zero"
-      f when is_float(f) ->
-        "float: #{f}"
-      s when is_binary(s) ->
-        "string: #{s}"
-      _ ->
-        "other type"
+                case Enum.find_index(primary_colors, fn item -> item == c end) do
+                    nil -> -1
+                    idx -> idx
+                end
+            
+) >= 0) do
+      "primary color"
+    else
+      c2 = color
+      if ((
+
+                case Enum.find_index(secondary_colors, fn item -> item == c2 end) do
+                    nil -> -1
+                    idx -> idx
+                end
+            
+) >= 0) do
+        "secondary color"
+      else
+        (case color do
+          "black" -> "monochrome"
+          _ -> "unknown color"
+        end)
+      end
     end
   end
-
+  def match_status(status) do
+    (case status do
+      "crashed" -> "error state"
+      "disabled" -> "not operational"
+      "active" -> "operational"
+      "paused" -> "temporarily stopped"
+      _ -> "unknown status"
+    end)
+  end
   def main() do
-    Log.trace(match_simple_value(0), %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_simple_value(1), %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_simple_value(-5), %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_simple_value(150), %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_simple_value(50), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
-
-    Log.trace(process_array([]), %{:file_name => "Main.hx", :line_number => 82, :class_name => "Main", :method_name => "main"})
-    Log.trace(process_array([10]), %{:file_name => "Main.hx", :line_number => 83, :class_name => "Main", :method_name => "main"})
-    Log.trace(process_array([10, 20]), %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "main"})
-    Log.trace(process_array([10, 20, 30]), %{:file_name => "Main.hx", :line_number => 85, :class_name => "Main", :method_name => "main"})
-    Log.trace(process_array([1, 2, 3, 4]), %{:file_name => "Main.hx", :line_number => 86, :class_name => "Main", :method_name => "main"})
-    Log.trace(process_array([1, 2, 3, 4, 5, 6]), %{:file_name => "Main.hx", :line_number => 87, :class_name => "Main", :method_name => "main"})
-
-    Log.trace(match_tuple({:ok, "data"}), %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_tuple({:error, "not found"}), %{:file_name => "Main.hx", :line_number => 91, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_tuple({:warning, "deprecated"}), %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_tuple({:other, "value"}), %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "main"})
-
-    Log.trace(nested_pattern({:ok, {:data, "value"}}), %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "main"})
-    Log.trace(nested_pattern({:ok, {:error, "failed"}}), %{:file_name => "Main.hx", :line_number => 97, :class_name => "Main", :method_name => "main"})
-    Log.trace(nested_pattern({:error, {:timeout, 5000}}), %{:file_name => "Main.hx", :line_number => 98, :class_name => "Main", :method_name => "main"})
-
-    Log.trace(match_with_guards(5, 3), %{:file_name => "Main.hx", :line_number => 101, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_with_guards(-2, -8), %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_with_guards(0, 5), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_with_guards(3, 0), %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "main"})
-    Log.trace(match_with_guards(3, -5), %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "main"})
-
-    Log.trace(complex_guard(4), %{:file_name => "Main.hx", :line_number => 108, :class_name => "Main", :method_name => "main"})
-    Log.trace(complex_guard(3), %{:file_name => "Main.hx", :line_number => 109, :class_name => "Main", :method_name => "main"})
-    Log.trace(complex_guard(-5), %{:file_name => "Main.hx", :line_number => 110, :class_name => "Main", :method_name => "main"})
-    Log.trace(complex_guard(0), %{:file_name => "Main.hx", :line_number => 111, :class_name => "Main", :method_name => "main"})
-    Log.trace(complex_guard(3.14), %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "main"})
-    Log.trace(complex_guard("hello"), %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "main"})
+    Log.trace("Advanced pattern matching test", %{:file_name => "Main.hx", :line_number => 201, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_simple_value(0), %{:file_name => "Main.hx", :line_number => 204, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_simple_value(42), %{:file_name => "Main.hx", :line_number => 205, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_simple_value(-5), %{:file_name => "Main.hx", :line_number => 206, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_simple_value(150), %{:file_name => "Main.hx", :line_number => 207, :class_name => "Main", :method_name => "main"})
+    Log.trace(process_array([]), %{:file_name => "Main.hx", :line_number => 210, :class_name => "Main", :method_name => "main"})
+    Log.trace(process_array([1]), %{:file_name => "Main.hx", :line_number => 211, :class_name => "Main", :method_name => "main"})
+    Log.trace(process_array([1, 2]), %{:file_name => "Main.hx", :line_number => 212, :class_name => "Main", :method_name => "main"})
+    Log.trace(process_array([1, 2, 3]), %{:file_name => "Main.hx", :line_number => 213, :class_name => "Main", :method_name => "main"})
+    Log.trace(process_array([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 214, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_string(""), %{:file_name => "Main.hx", :line_number => 217, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_string("hello"), %{:file_name => "Main.hx", :line_number => 218, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_string("x"), %{:file_name => "Main.hx", :line_number => 219, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_string("medium length string"), %{:file_name => "Main.hx", :line_number => 220, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_string("this is a very long string that exceeds twenty characters"), %{:file_name => "Main.hx", :line_number => 221, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(0), %{:file_name => "Main.hx", :line_number => 224, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(0.5), %{:file_name => "Main.hx", :line_number => 225, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(5), %{:file_name => "Main.hx", :line_number => 226, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(50), %{:file_name => "Main.hx", :line_number => 227, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(500), %{:file_name => "Main.hx", :line_number => 228, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(5000), %{:file_name => "Main.hx", :line_number => 229, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(-5), %{:file_name => "Main.hx", :line_number => 230, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_number(-50), %{:file_name => "Main.hx", :line_number => 231, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_flags(true, true, true), %{:file_name => "Main.hx", :line_number => 234, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_flags(true, true, false), %{:file_name => "Main.hx", :line_number => 235, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_flags(false, false, false), %{:file_name => "Main.hx", :line_number => 236, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_matrix([]), %{:file_name => "Main.hx", :line_number => 239, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_matrix([[1]]), %{:file_name => "Main.hx", :line_number => 240, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_matrix([[1, 2], [3, 4]]), %{:file_name => "Main.hx", :line_number => 241, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]]), %{:file_name => "Main.hx", :line_number => 242, :class_name => "Main", :method_name => "main"})
+    Log.trace(validate_age(10, false), %{:file_name => "Main.hx", :line_number => 245, :class_name => "Main", :method_name => "main"})
+    Log.trace(validate_age(15, true), %{:file_name => "Main.hx", :line_number => 246, :class_name => "Main", :method_name => "main"})
+    Log.trace(validate_age(25, false), %{:file_name => "Main.hx", :line_number => 247, :class_name => "Main", :method_name => "main"})
+    Log.trace(validate_age(70, true), %{:file_name => "Main.hx", :line_number => 248, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_value("hello"), %{:file_name => "Main.hx", :line_number => 251, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_value(42), %{:file_name => "Main.hx", :line_number => 252, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_value(3.14), %{:file_name => "Main.hx", :line_number => 253, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_value(true), %{:file_name => "Main.hx", :line_number => 254, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_value([1, 2, 3]), %{:file_name => "Main.hx", :line_number => 255, :class_name => "Main", :method_name => "main"})
+    Log.trace(classify_value(nil), %{:file_name => "Main.hx", :line_number => 256, :class_name => "Main", :method_name => "main"})
+    Log.trace(check_color("red"), %{:file_name => "Main.hx", :line_number => 259, :class_name => "Main", :method_name => "main"})
+    Log.trace(check_color("orange"), %{:file_name => "Main.hx", :line_number => 260, :class_name => "Main", :method_name => "main"})
+    Log.trace(check_color("black"), %{:file_name => "Main.hx", :line_number => 261, :class_name => "Main", :method_name => "main"})
+    Log.trace(check_color("pink"), %{:file_name => "Main.hx", :line_number => 262, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_status("active"), %{:file_name => "Main.hx", :line_number => 265, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_status("paused"), %{:file_name => "Main.hx", :line_number => 266, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_status("error"), %{:file_name => "Main.hx", :line_number => 267, :class_name => "Main", :method_name => "main"})
+    Log.trace(match_status("unknown"), %{:file_name => "Main.hx", :line_number => 268, :class_name => "Main", :method_name => "main"})
   end
 end
