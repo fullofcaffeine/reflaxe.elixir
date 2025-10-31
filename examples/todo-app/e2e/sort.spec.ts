@@ -35,15 +35,12 @@ test('sort by priority reorders list', async ({ page }) => {
   await page.waitForTimeout(300)
 
   // Expect relative ordering: High appears before Medium, which appears before Low
-  await page.waitForTimeout(250); // brief settle for LiveView patch
-  const titles = await page.locator('[data-testid="todo-card"] h3').allTextContents()
-  console.log('TITLES:', titles)
-  const iHigh = titles.findIndex(t => t.includes(tHigh))
-  const iMed = titles.findIndex(t => t.includes(tMed))
-  const iLow = titles.findIndex(t => t.includes(tLow))
-  expect(iHigh).toBeGreaterThanOrEqual(0)
-  expect(iMed).toBeGreaterThanOrEqual(0)
-  expect(iLow).toBeGreaterThanOrEqual(0)
-  expect(iHigh).toBeLessThan(iMed)
-  expect(iMed).toBeLessThan(iLow)
+  await expect.poll(async () => {
+    const titles = await page.locator('[data-testid="todo-card"] h3').allTextContents()
+    console.log('TITLES:', titles)
+    const iHigh = titles.findIndex(t => t.includes(tHigh))
+    const iMed = titles.findIndex(t => t.includes(tMed))
+    const iLow = titles.findIndex(t => t.includes(tLow))
+    return iHigh >= 0 && iMed >= 0 && iLow >= 0 && iHigh < iMed && iMed < iLow
+  }, { timeout: 8000 }).toBe(true)
 })
