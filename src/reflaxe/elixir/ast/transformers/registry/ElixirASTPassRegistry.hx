@@ -341,12 +341,54 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.JoinArgListBuilderToMapJoinTransforms.transformPass
         });
+        // Early: ensure (fn -> ... end).() is properly parenthesized
+        passes.push({
+            name: "EFnCallTargetParen",
+            description: "Wrap anonymous function call targets in parentheses: (fn -> ... end).()",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnCallTargetParenTransforms.pass
+        });
         // Early: rewrite case length(list) → case list with list patterns
         passes.push({
             name: "CaseLengthToListPattern",
             description: "Rewrite case length(list) do ... end → case list do [] | [head|tail] ... end",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseLengthToListPatternTransforms.pass
+        });
+        // Early repair: unshadow tuple binder when case scrutinee is a function arg
+        passes.push({
+            name: "CaseTupleBinderUnshadow",
+            description: "For case over a function argument, rename tuple binder matching the arg to 'value' and prefix-bind most-used undefined local to that value",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms.pass
+        });
+        // Early: avoid collisions between case binders and function argument names (e.g., socket)
+        passes.push({
+            name: "CaseBinderArgCollisionAvoid",
+            description: "Rename colliding case binders that shadow function arguments (e.g., {:tag, socket} → {:tag, payload}) and rewrite body references",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBinderArgCollisionAvoidTransforms.pass
+        });
+        // Early: parenthesize case/cond/with/if when used as a side of a binary condition in if/unless
+        passes.push({
+            name: "IfConditionBinaryCaseParen",
+            description: "Wrap case/cond/with/if sides of binary if/unless conditions in parentheses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfConditionBinaryCaseParenTransforms.pass
+        });
+        // Early hoist: move complex constructs from binary if/unless conditions to a prior binding
+        passes.push({
+            name: "IfConditionComplexHoist_Early",
+            description: "Hoist case/cond/with/if from binary if/unless conditions (early)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.pass
+        });
+        // Align body refs to snake_case binders; un-ignore binders used via camelCase body refs
+        passes.push({
+            name: "CaseBodyCamelRefToSnakeBinder",
+            description: "Rewrite camelCase free vars in case bodies to snake_case pattern binders; drop leading underscore on binders when used",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBodyCamelRefToSnakeBinderTransforms.pass
         });
         // Hoist non-variable list scrutinee to a local name so guards/patterns can refer to it
         passes.push({
@@ -848,6 +890,13 @@ class ElixirASTPassRegistry {
             description: "Rewrite case length(list) to list pattern case after PatternMatching",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseLengthToListPatternTransforms.pass
+        });
+        // Resolve a single free var in case guards to the other function parameter (not the scrutinee)
+        passes.push({
+            name: "CaseGuardFreeVarToOtherParam",
+            description: "In case guards, rewrite a single free var to the other function parameter when uniquely identifiable",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseGuardFreeVarToOtherParamTransforms.pass
         });
 
         // Ensure case clause bodies are not empty (avoid syntax errors)
@@ -3447,6 +3496,27 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinaryOperandBlockToIIFETransforms.pass
         });
+        // Parenthesize if/unless conditions when they include complex constructs
+        passes.push({
+            name: "IfConditionComplexToParen",
+            description: "Wrap if/unless conditions in parentheses when containing case/cond/with/if",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfConditionComplexToParenTransforms.pass
+        });
+        // Hoist complex constructs from within binary if/unless conditions into a prior binding
+        passes.push({
+            name: "IfConditionComplexHoist",
+            description: "Hoist case/cond/with/if out of binary conditions: value = <complex>; if value <op> rhs do ...",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.pass
+        });
+        // Ensure complex expressions used as binary operands are parenthesized
+        passes.push({
+            name: "BinaryOperandComplexToParen",
+            description: "Wrap case/cond/with/if operands of binary ops in parentheses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinaryOperandComplexToParenTransforms.pass
+        });
         // Unwrap (fn -> (fn ... end) end).() → (fn ... end) to keep proper anonymous function args
         passes.push({
             name: "EFnIIFEUnwrap",
@@ -4073,6 +4143,27 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.ClauseUndefinedVarBindToBinderTransforms.bindPass
         });
+        // Ensure tuple binder does not shadow function arguments in late-built patterns
+        passes.push({
+            name: "CaseTupleBinderUnshadow_PreFinal",
+            description: "Rename tuple binder colliding with function arg to 'value' and, if exactly one undefined lower-case var exists in body, prefix-bind it to value (pre-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms.pass
+        });
+        // Pre-final nested repair: when an inner case immediately matches on the outer bound var with {:tag, var}
+        passes.push({
+            name: "NestedCaseTupleUnshadow_PreFinal",
+            description: "When clause body starts with case V do {:tag, V} -> ..., rename to {:tag, value} and prefix-bind sole undefined local to value",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.NestedCaseTupleUnshadowTransforms.pass
+        });
+        // Now apply the binding form (u = binder) so body can use meaningful names
+        passes.push({
+            name: "ClauseUndefinedVarBindToBinder_Replay_Final",
+            description: "Replay ultra-final: prefix-bind sole undefined local to the (now unshadowed) binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClauseUndefinedVarBindToBinderTransforms.bindPass
+        });
         // One more absolute-last alignment to ensure {:tag, binder} matches the sole undefined body var
         passes.push({
             name: "CaseBinderAlignFinal",
@@ -4492,6 +4583,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.alignPass
         });
+        // Absolute-final safety: unshadow tuple binder when case scrutinee is a function arg
+        passes.push({
+            name: "CaseTupleBinderUnshadow_Final",
+            description: "Final pass: rename tuple binder colliding with function arg to 'value' and prefix-bind most-used undefined local",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms.pass
+        });
         // Replay var name normalization very late so camel refs map to newly created snake_case binds
         passes.push({
             name: "VarNameNormalization_Final",
@@ -4536,6 +4634,13 @@ class ElixirASTPassRegistry {
             description: "Ultra-final: prefix-bind most-used undefined var to {:ok, binder} after late rewrites",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessBinderPrefixMostUsedUndefinedTransforms.pass
+        });
+        // Repair handle_info tuple-binder collisions before normalizing call tails
+        passes.push({
+            name: "HandleInfoCaseBinderCollisionRepair_PreFinal",
+            description: "Pre-final: in handle_info/2, rename tuple payload binder colliding with function arg (e.g., socket) to 'payload' and fix local helper calls using payload first, socket last",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoCaseBinderCollisionRepairTransforms.transformPass
         });
         // Normalize handle_info helper call tails to pass the function-parameter socket
         passes.push({
@@ -4604,8 +4709,74 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ChainAssignIfPromoteTransforms.transformPass
         });
 
-        return passes.filter(p -> p.enabled);
+        // Filter disabled passes first
+        var enabled = passes.filter(p -> p.enabled);
+        // Apply lightweight topological sort based on optional runAfter/runBefore
+        enabled = sortPassesByConstraints(enabled);
+        return enabled;
     
+    }
+
+    /**
+     * sortPassesByConstraints
+     * WHAT: Stable topological sort honoring optional runAfter/runBefore metadata.
+     * WHY: Provide deterministic ordering without hard-coded indices; allow passes to declare
+     *      minimal dependencies while keeping default order stable.
+     * HOW: Kahn’s algorithm; unknown pass names are ignored; on cycles, fall back to the
+     *      original order (debug warns when -D debug_pass_order is enabled).
+     */
+    static function sortPassesByConstraints(passes: Array<ElixirASTTransformer.PassConfig>): Array<ElixirASTTransformer.PassConfig> {
+        var indexByName = new Map<String, Int>();
+        for (i in 0...passes.length) indexByName.set(passes[i].name, i);
+
+        var adj = new Map<String, Array<String>>();
+        var indeg = new Map<String, Int>();
+        for (p in passes) { adj.set(p.name, []); indeg.set(p.name, 0); }
+
+        inline function addEdge(from:String, to:String):Void {
+            if (!adj.exists(from) || !adj.exists(to)) return;
+            var lst = adj.get(from);
+            var dup = false; for (x in lst) if (x == to) { dup = true; break; }
+            if (!dup) { lst.push(to); adj.set(from, lst); indeg.set(to, indeg.get(to) + 1); }
+        }
+
+        for (p in passes) {
+            if (p.runAfter != null) for (q in p.runAfter) addEdge(q, p.name);
+            if (p.runBefore != null) for (q in p.runBefore) addEdge(p.name, q);
+        }
+
+        var ready:Array<String> = [];
+        for (p in passes) if (indeg.get(p.name) == 0) ready.push(p.name);
+        // stable by original index
+        ready.sort(function(a,b) return indexByName.get(a) - indexByName.get(b));
+
+        var out:Array<String> = [];
+        while (ready.length > 0) {
+            var n = ready.shift();
+            out.push(n);
+            for (m in adj.get(n)) {
+                var v = indeg.get(m) - 1; indeg.set(m, v);
+                if (v == 0) {
+                    ready.push(m);
+                    ready.sort(function(a,b) return indexByName.get(a) - indexByName.get(b));
+                }
+            }
+        }
+
+        if (out.length != passes.length) {
+            #if debug_pass_order
+            Sys.println('[PassOrder] Cycle or unresolved constraint; falling back to original order');
+            #end
+            return passes;
+        }
+        var byName = new Map<String, ElixirASTTransformer.PassConfig>();
+        for (p in passes) byName.set(p.name, p);
+        var sorted:Array<ElixirASTTransformer.PassConfig> = [];
+        for (n in out) sorted.push(byName.get(n));
+        #if debug_pass_order
+        Sys.println('[PassOrder] ' + out.join(' → '));
+        #end
+        return sorted;
     }
 }
 #end

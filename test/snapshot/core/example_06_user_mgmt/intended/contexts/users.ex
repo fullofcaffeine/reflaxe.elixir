@@ -15,12 +15,12 @@ defmodule Users do
     nil
   end
   def create_user(attrs) do
-    changeset = UserChangeset.changeset(nil, attrs)
-    if (changeset != nil), do: %{:status => "ok", :user => nil}, else: %{:status => "error", :changeset => changeset}
+    changeset = MyApp.UserChangeset.changeset(nil, attrs)
+    if (not Kernel.is_nil(changeset)), do: %{:status => "ok", :user => nil}, else: %{:status => "error", :changeset => changeset}
   end
   def update_user(user, attrs) do
-    changeset = UserChangeset.changeset(user, attrs)
-    if (changeset != nil), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
+    changeset = MyApp.UserChangeset.changeset(user, attrs)
+    if (not Kernel.is_nil(changeset)), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
   end
   def delete_user(user) do
     update_user(user, %{:active => false})
@@ -28,7 +28,7 @@ defmodule Users do
   def search_users(_term) do
     []
   end
-  defp users_with_posts() do
+  def users_with_posts() do
     []
   end
   def user_stats() do

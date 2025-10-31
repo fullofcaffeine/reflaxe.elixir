@@ -535,11 +535,13 @@ class ElixirASTPrinter {
             // Pattern Matching
             // ================================================================
             case ECase(expr, clauses):
-                'case ' + print(expr, 0) + ' do\n' +
-                [for (clause in clauses) 
-                    indentStr(indent + 1) + printCaseClause(clause, indent + 1)
-                ].join('\n') + '\n' +
-                indentStr(indent) + 'end';
+                '(' + (
+                    'case ' + print(expr, 0) + ' do\n' +
+                    [for (clause in clauses) 
+                        indentStr(indent + 1) + printCaseClause(clause, indent + 1)
+                    ].join('\n') + '\n' +
+                    indentStr(indent) + 'end'
+                ) + ')';
                 
             case ECond(clauses):
                 var clauseStrs = [];
@@ -669,7 +671,8 @@ class ElixirASTPrinter {
                 #end
                 
                 // Print condition without unnecessary parentheses
-                var conditionStr = printIfCondition(condition);
+                // Always parenthesize the condition to avoid parser ambiguity in complex shapes
+                var conditionStr = '(' + print(condition, 0) + ')';
                 
                 if (isInline && elseBranch != null) {
                     // Inline if-else expression: if condition, do: then_val, else: else_val
@@ -1057,8 +1060,13 @@ class ElixirASTPrinter {
                         }
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
-                            // Function variable call - use .() syntax
-                            print(target, indent) + '.(' + argStr + ')';
+                            // Function variable call - ensure target is parenthesized when needed, then use .() syntax
+                            var tStr = switch (target.def) {
+                                case EFn(_): '(' + print(target, indent) + ')';
+                                case EParen(_): print(target, indent);
+                                default: print(target, indent);
+                            };
+                            tStr + '.(' + argStr + ')';
                         } else {
                             // Transform method call syntax to proper Elixir module calls
                             // Elixir doesn't support obj.method() - use Module.function(obj, args)
@@ -1368,7 +1376,7 @@ class ElixirASTPrinter {
 
                     // Check if operands need parentheses (e.g., if expressions in comparisons)
                     var leftStr = switch(left.def) {
-                        case EIf(_, _, _):
+                        case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_,_,_):
                             // If expressions in binary operations need parentheses
                             '(' + print(left, 0) + ')';
                         default:
@@ -1380,7 +1388,7 @@ class ElixirASTPrinter {
                             '0';
                         case _:
                             switch(right.def) {
-                        case EIf(_, _, _):
+                        case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_,_,_):
                             // If expressions in binary operations need parentheses
                             '(' + print(right, 0) + ')';
                         default:
@@ -2375,6 +2383,16 @@ class ElixirASTPrinter {
         
         // Check if this is a parenthesized simple expression
         switch(condition.def) {
+            case EBinary(_, left, right):
+                // Parenthesize when complex constructs appear; also wrap the entire expression for safety
+                var needsLeft = switch (left.def) { case ECase(_, _) | ECond(_) | EWith(_,_,_) | EIf(_,_,_): true; default: false; };
+                var needsRight = switch (right) { case null: false; case _: switch (right.def) { case ECase(_, _) | ECond(_) | EWith(_,_,_) | EIf(_,_,_): true; default: false; } };
+                var leftStr = needsLeft ? '(' + print(left, 0) + ')' : print(left, 0);
+                var opStr = binaryOpToString(switch (condition.def) { case EBinary(op, _, _): op; default: Add; });
+                var rightStr = (right == null) ? '0' : (needsRight ? '(' + print(right, 0) + ')' : print(right, 0));
+                var exprStr = leftStr + ' ' + opStr + ' ' + rightStr;
+                // Always parenthesize binary expressions in if/unless conditions to prevent parser ambiguities
+                return '(' + exprStr + ')';
             case EParen(inner):
                 // If the inner expression is simple, don't add parentheses
                 if (isSimpleVariable(inner)) {
@@ -2383,7 +2401,14 @@ class ElixirASTPrinter {
                 // Otherwise keep the parentheses for complex expressions
                 return '(' + print(inner, 0) + ')';
             default:
-                return print(condition, 0);
+                var s = print(condition, 0);
+                // Last-resort: if a block-form (case/cond/with) appears together with any comparison, parenthesize the entire condition
+                var hasComplex = (s.indexOf('case ') != -1 || s.indexOf('cond ') != -1 || s.indexOf('with ') != -1);
+                var hasCmpLoose = (s.indexOf('>') != -1 || s.indexOf('<') != -1 || s.indexOf('==') != -1 || s.indexOf('!=') != -1);
+                if (hasComplex && hasCmpLoose && !StringTools.startsWith(StringTools.trim(s), '(')) {
+                    return '(' + s + ')';
+                }
+                return s;
         }
     }
     

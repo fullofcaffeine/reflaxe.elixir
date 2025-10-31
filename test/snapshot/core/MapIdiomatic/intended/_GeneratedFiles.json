@@ -1,7 +1,15 @@
 {
   "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
   "reflect.ex",
   "main.ex",
+  "haxe/log.ex",
+  "haxe/iterators/array_iterator.ex",
+  "haxe/ds/tree_node.ex",
+  "haxe/ds/enum_value_map.ex",
+  "haxe/ds/balanced_tree.ex",
   "array_tools.ex"
 ],
   "id": 0,

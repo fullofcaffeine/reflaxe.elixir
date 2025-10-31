@@ -1,14 +1,9 @@
 defmodule TestStruct do
-  @field nil
   def write(struct, value) do
-    g = Type.typeof(value)
-    case (g) do
-      {:t_null} ->
-        field = struct.field <> "null"
-      {:t_int} ->
-        field = struct.field <> Std.string(value)
-      _ ->
-        field = struct.field <> "other"
-    end
+    _ = ((case typeof.(value) do
+  {:t_null} -> field = "#{(fn -> struct.field end).()}null"
+  {:t_int} -> field = "#{(fn -> struct.field end).()}#{(fn -> inspect(value) end).()}"
+  _ -> field = "#{(fn -> struct.field end).()}other"
+end))
   end
 end

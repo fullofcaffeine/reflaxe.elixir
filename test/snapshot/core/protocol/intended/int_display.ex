@@ -1,11 +1,11 @@
 defmodule IntDisplay do
   def display(value) do
-    Std.string(value)
+    inspect(value)
   end
   def format(value, options) do
-    if (options.hex) do
-      "0x" <> StringTools.hex(value)
+    if (Map.get(options, :hex)) do
+      "0x#{(fn -> StringTools.hex(value) end).()}"
     end
-    Std.string(value)
+    inspect(value)
   end
 end

@@ -1,8 +1,8 @@
 defmodule ApiResult do
   def ok(arg0) do
-    arg0
+    {:ok, arg0}
   end
   def error(arg0) do
-    arg0
+    {:error, arg0}
   end
 end

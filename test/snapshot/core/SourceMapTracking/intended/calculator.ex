@@ -1,5 +1,4 @@
 defmodule Calculator do
-  @value nil
   def add(struct, n) do
     value = struct.value + n
   end

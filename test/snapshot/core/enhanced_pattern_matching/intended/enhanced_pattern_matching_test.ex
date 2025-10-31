@@ -1,238 +1,251 @@
 defmodule EnhancedPatternMatchingTest do
   def match_status(status) do
-    case status do
-      {:idle} ->
-        "Currently idle"
-      {:working, task} ->
-        "Working on: #{task}"
-      {:completed, result, duration} ->
-        "Completed \"#{result}\" in #{duration}ms"
-      {:failed, error, retries} ->
-        "Failed with \"#{error}\" after #{retries} retries"
-    end
+    (case status do
+      {:idle} -> "Currently idle"
+      {:working, _value} ->
+        fn_ = _value
+        task = _value
+        "Working on: #{(fn -> task end).()}"
+      {:completed, result, duration} -> "Completed \"#{(fn -> result end).()}\" in #{(fn -> duration end).()}ms"
+      {:failed, error, retries} -> "Failed with \"#{(fn -> error end).()}\" after #{(fn -> retries end).()} retries"
+    end)
   end
-
   def incomplete_match(status) do
-    case status do
-      {:idle} ->
-        "idle"
-      {:working, task} ->
-        "working: #{task}"
-      _ ->
-        "unknown"
-    end
+    (case status do
+      {:idle} -> "idle"
+      {:working, _value} ->
+        fn_ = _value
+        task = _value
+        "working: #{(fn -> task end).()}"
+      _ -> "unknown"
+    end)
   end
-
   def match_nested_result(result) do
-    case result do
-      {:ok, inner_result} ->
-        case inner_result do
-          {:success, value} ->
-            "Double success: #{value}"
-          {:error, inner_error, inner_context} ->
-            "Outer success, inner error: #{inner_error} (context: #{inner_context})"
-        end
-      {:error, outer_error, outer_context} ->
-        "Outer error: #{outer_error} (context: #{outer_context})"
-    end
+    (case result do
+      {:success, value} ->
+        inner_error = value
+        _value = value
+        (case value do
+          {:success, _value} ->
+            inspect = _value
+            value = _value
+            "Double success: #{(fn -> inspect(value) end).()}"
+          {:error, inner_error, inner_context} -> "Outer success, inner error: #{(fn -> inner_error end).()} (context: #{(fn -> inner_context end).()})"
+        end)
+      {:error, outer_error, outer_context} -> "Outer error: #{(fn -> outer_error end).()} (context: #{(fn -> outer_context end).()})"
+    end)
   end
-
   def match_with_complex_guards(status, priority, is_urgent) do
-    case status do
-      {:idle} ->
-        "idle"
-      {:working, task} when priority > 5 and is_urgent ->
-        "High priority urgent task: #{task}"
-      {:working, task} when priority > 3 and not is_urgent ->
-        "High priority normal task: #{task}"
-      {:working, task} when priority <= 3 and is_urgent ->
-        "Low priority urgent task: #{task}"
-      {:working, task} ->
-        "Normal task: #{task}"
-      {:completed, result, duration} when duration < 1000 ->
-        "Fast completion: #{result}"
-      {:completed, result, duration} when duration >= 1000 and duration < 5000 ->
-        "Normal completion: #{result}"
-      {:completed, result, _duration} ->
-        "Slow completion: #{result}"
-      {:failed, error, retries} when retries < 3 ->
-        "Recoverable failure: #{error}"
-      {:failed, error, _retries} ->
-        "Permanent failure: #{error}"
-    end
+    (case status do
+      {:idle} -> "idle"
+      {:working, _value} when priority > 5 and is_urgent ->
+        fn_ = _value
+        task = _value
+        "High priority urgent task: #{(fn -> task end).()}"
+      {:working, _value} when priority > 3 and not is_urgent ->
+        fn_ = _value
+        task = _value
+        "High priority normal task: #{(fn -> task end).()}"
+      {:working, _value} when priority <= 3 and is_urgent ->
+        fn_ = _value
+        task = _value
+        "Low priority urgent task: #{(fn -> task end).()}"
+      {:working, _value} ->
+        fn_ = _value
+        task = _value
+        "Normal task: #{(fn -> task end).()}"
+      {:completed, duration, result} when duration < 1000 -> "Fast completion: #{(fn -> result end).()}"
+      {:completed, duration, result} when duration >= 1000 and duration < 5000 -> "Normal completion: #{(fn -> result end).()}"
+      {:completed, _duration, result} -> "Slow completion: #{(fn -> result end).()}"
+      {:failed, retries, error} when retries < 3 -> "Recoverable failure: #{(fn -> error end).()}"
+      {:failed, _retries, error} -> "Permanent failure: #{(fn -> error end).()}"
+    end)
   end
-
   def match_with_range_guards(value, category) do
-    case category do
-      "score" ->
-        cond do
-          value >= 90 -> "Excellent score"
-          value >= 70 -> "Good score"
-          value >= 50 -> "Average score"
-          value < 50 -> "Poor score"
-          true -> "Unknown score value: #{value}"
-        end
-      "temperature" ->
-        cond do
-          value >= 30 -> "Hot"
-          value >= 20 -> "Warm"
-          value >= 10 -> "Cool"
-          value < 10 -> "Cold"
-          true -> "Unknown temperature: #{value}"
-        end
-      "age" ->
-        cond do
-          value >= 60 -> "Senior"
-          value >= 30 -> "Adult"
-          value >= 18 -> "Young adult"
-          value < 18 -> "Minor"
-          true -> "Unknown age: #{value}"
-        end
-      other ->
-        "Unknown category \"#{other}\" with value #{value}"
-    end
-  end
-
-  def match_tuple_patterns(data) do
-    case data do
-      {x, y} when is_integer(x) and is_integer(y) ->
-        "Point at (#{x}, #{y})"
-      {name, age} when is_binary(name) and is_integer(age) ->
-        "Person: #{name}, age #{age}"
-      {a, b, c} when is_number(a) and is_number(b) and is_number(c) ->
-        "Triangle with sides: #{a}, #{b}, #{c}"
-      {status, message} when is_atom(status) ->
-        "Status #{status}: #{message}"
+    (case category do
+      "score" when value >= 90 -> "Excellent score"
+      "score" when value >= 70 and value < 90 -> "Good score"
+      "score" when value >= 50 and value < 70 -> "Average score"
+      "score" when value < 50 -> "Poor score"
+      "score" -> "Unknown category \"#{(fn -> cat end).()}\" with value #{(fn -> n end).()}"
+      "temperature" when value >= 30 -> "Hot"
+      "temperature" when value >= 20 and value < 30 -> "Warm"
+      "temperature" when value >= 10 and value < 20 -> "Cool"
+      "temperature" when value < 10 -> "Cold"
+      "temperature" -> "Unknown category \"#{(fn -> cat end).()}\" with value #{(fn -> n end).()}"
       _ ->
-        "Unknown tuple pattern"
-    end
+        cat = category
+        n = value
+        "Unknown category \"#{(fn -> cat end).()}\" with value #{(fn -> n end).()}"
+    end)
   end
-
-  def match_list_patterns(list) do
-    case list do
-      [] ->
-        "Empty list"
-      [x] ->
-        "Single element: #{x}"
-      [x, y] ->
-        "Pair: #{x} and #{y}"
-      [h | t] when length(t) > 0 ->
-        "List with head #{h} and #{length(t)} more elements"
+  def chain_result_operations(input) do
+    _ = validate_input(input)
+    parsed_result = ((case step1 do
+  {:success, validated} ->
+    process_data(validated)
+  {:error, context2, this1} ->
+    error = _g
+    context = _g1
+    context2 = context
+    if (context2 == nil) do
+      context2 = ""
+    end
+    this1 = result
+end))
+    (case parsed_result do
+      {:success, processed} ->
+        format_output(processed)
+      {:error, context, this1} ->
+        _ = context
+        if (Kernel.is_nil(context)) do
+          context = ""
+        end
+    end)
+  end
+  def match_array_patterns(arr) do
+    (case arr do
+      [] -> "empty array"
+      [_head | _tail] -> "single element: #{(fn -> x end).()}"
+      2 -> "pair: [#{(fn -> x end).()}, #{(fn -> y end).()}]"
+      3 -> "triple: [#{(fn -> x end).()}, #{(fn -> y end).()}, #{(fn -> z end).()}]"
       _ ->
-        "Unknown list pattern"
+        a = arr
+        if (length(a) > 3) do
+          "starts with #{(fn -> a[0] end).()}, has #{(fn -> (length(a) - 1) end).()} more elements"
+        else
+          "other array pattern"
+        end
+    end)
+  end
+  def match_string_patterns(input) do
+    if (input == "") do
+      "empty string"
+    else
+      s = input
+      if (length(s) == 1) do
+        "single character: \"#{(fn -> s end).()}\""
+      else
+        s2 = input
+        if (String.slice(s2, 0, 7) == "prefix_") do
+          "has prefix: \"#{(fn -> s2 end).()}\""
+        else
+          s3 = input
+          if ((fn ->
+  pos = (length(s3) - 7)
+  len = nil
+  if (Kernel.is_nil(len)) do
+    String.slice(s3, pos..-1)
+  else
+    String.slice(s3, pos, len)
+  end
+end).() == "_suffix") do
+            "has suffix: \"#{(fn -> s3 end).()}\""
+          else
+            s4 = input
+            if (case :binary.match(s4, "@") do
+                {pos, _} -> pos
+                :nomatch -> -1
+            end > -1) do
+              "contains @: \"#{(fn -> s4 end).()}\""
+            else
+              s5 = input
+              if (length(s5) > 100) do
+                "very long string"
+              else
+                s6 = input
+                "regular string: \"#{(fn -> s6 end).()}\""
+              end
+            end
+          end
+        end
+      end
     end
   end
-
+  def match_object_patterns(data) do
+    (case data.active do
+      :false -> "Inactive user: #{(fn -> name end).()} (#{(fn -> age end).()})"
+      :true when age >= 18 -> "Active adult: #{(fn -> name end).()} (#{(fn -> age end).()})"
+      :true when age < 18 -> "Active minor: #{(fn -> name end).()} (#{(fn -> age end).()})"
+      :true -> "unknown pattern"
+      _ -> "unknown pattern"
+    end)
+  end
   def match_validation_state(state) do
-    case state do
-      {:valid, data} ->
-        "Valid: #{inspect(data)}"
-      {:invalid, errors} when is_list(errors) ->
-        "Invalid with #{length(errors)} errors"
-      {:invalid, error} when is_binary(error) ->
-        "Invalid: #{error}"
-      {:pending} ->
-        "Validation pending"
-      {:unknown} ->
-        "Unknown validation state"
+    (case state do
+      {:valid} -> "Data is valid"
+      {:invalid, _value} when length(errors) == 1 ->
+        errors = _value
+        fn_ = _value
+        "Single error: #{(fn -> errors[0] end).()}"
+      {:invalid, _value} when length(errors) > 1 ->
+        fn_ = _value
+        length = _value
+        "Multiple errors: #{(fn -> length(errors) end).()} issues"
+      {:invalid, _value} -> "No specific errors"
+      {:pending, _value} ->
+        fn_ = _value
+        validator = _value
+        "Validation pending by: #{(fn -> validator end).()}"
+    end)
+  end
+  def match_binary_pattern(data) do
+    parsed_result = MyApp.Bytes.of_string(data)
+    (case parsed_result do
+      [] -> "empty"
+      [head | tail] -> "single byte: #{(fn -> bytes.get(0) end).()}"
       _ ->
-        "Unexpected state"
+        if (n <= 4) do
+          "small data: #{(fn -> n end).()} bytes"
+        else
+          "large data: #{(fn -> n2 end).()} bytes"
+        end
+    end)
+  end
+  defp validate_input(input) do
+    if (length(input) == 0) do
+      context = "validation"
+      nil
+      _ = {:error, "Empty input", context}
     end
-  end
-
-  def match_recursive_structure(tree) do
-    case tree do
-      {:leaf, value} ->
-        "Leaf: #{value}"
-      {:node, left, right} ->
-        left_desc = match_recursive_structure(left)
-        right_desc = match_recursive_structure(right)
-        "Node(#{left_desc}, #{right_desc})"
-      nil ->
-        "Empty"
-      _ ->
-        "Unknown tree structure"
+    if (length(input) > 1000) do
+      context = "validation"
+      nil
+      _ = {:error, "Input too long", context}
     end
+    value = String.downcase(input)
+    _ = {:success, value}
   end
-
-  def pattern_with_type_test(value) do
-    cond do
-      is_integer(value) -> "Integer: #{value}"
-      is_float(value) -> "Float: #{value}"
-      is_binary(value) -> "String: #{value}"
-      is_boolean(value) -> "Boolean: #{value}"
-      is_atom(value) -> "Atom: #{value}"
-      is_list(value) -> "List with #{length(value)} elements"
-      is_map(value) -> "Map with #{map_size(value)} keys"
-      true -> "Unknown type"
+  defp format_output(data) do
+    if (length(data) == 0) do
+      context = "formatting"
+      nil
+      _ = {:error, "No data to format", context}
     end
+    _ = {:success, "Formatted: [" <> data <> "]"}
   end
-
-  def test_all_patterns() do
-    Log.trace("Testing Status patterns:", %{:file_name => "Main.hx", :line_number => 286, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_status({:idle}), %{:file_name => "Main.hx", :line_number => 287, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_status({:working, "important task"}), %{:file_name => "Main.hx", :line_number => 288, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_status({:completed, "data processing", 1250}), %{:file_name => "Main.hx", :line_number => 289, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_status({:failed, "network error", 3}), %{:file_name => "Main.hx", :line_number => 290, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting incomplete match:", %{:file_name => "Main.hx", :line_number => 292, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(incomplete_match({:idle}), %{:file_name => "Main.hx", :line_number => 293, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(incomplete_match({:working, "task"}), %{:file_name => "Main.hx", :line_number => 294, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(incomplete_match({:completed, "done", 100}), %{:file_name => "Main.hx", :line_number => 295, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting nested results:", %{:file_name => "Main.hx", :line_number => 297, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_nested_result({:ok, {:success, 42}}), %{:file_name => "Main.hx", :line_number => 298, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_nested_result({:ok, {:error, "parse error", "line 10"}}), %{:file_name => "Main.hx", :line_number => 299, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_nested_result({:error, "connection failed", "timeout"}) , %{:file_name => "Main.hx", :line_number => 300, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting complex guards:", %{:file_name => "Main.hx", :line_number => 302, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_complex_guards({:working, "critical task"}, 10, true), %{:file_name => "Main.hx", :line_number => 303, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_complex_guards({:working, "normal task"}, 4, false), %{:file_name => "Main.hx", :line_number => 304, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_complex_guards({:completed, "report", 500}, 0, false), %{:file_name => "Main.hx", :line_number => 305, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_complex_guards({:failed, "disk full", 5}, 0, false), %{:file_name => "Main.hx", :line_number => 306, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting range guards:", %{:file_name => "Main.hx", :line_number => 308, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_range_guards(95, "score"), %{:file_name => "Main.hx", :line_number => 309, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_range_guards(65, "score"), %{:file_name => "Main.hx", :line_number => 310, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_range_guards(25, "temperature"), %{:file_name => "Main.hx", :line_number => 311, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_with_range_guards(5, "temperature"), %{:file_name => "Main.hx", :line_number => 312, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting tuple patterns:", %{:file_name => "Main.hx", :line_number => 314, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_tuple_patterns({10, 20}), %{:file_name => "Main.hx", :line_number => 315, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_tuple_patterns({"Alice", 25}), %{:file_name => "Main.hx", :line_number => 316, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_tuple_patterns({3.0, 4.0, 5.0}), %{:file_name => "Main.hx", :line_number => 317, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_tuple_patterns({:ok, "Success"}), %{:file_name => "Main.hx", :line_number => 318, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting list patterns:", %{:file_name => "Main.hx", :line_number => 320, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_list_patterns([]), %{:file_name => "Main.hx", :line_number => 321, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_list_patterns([42]), %{:file_name => "Main.hx", :line_number => 322, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_list_patterns([1, 2]), %{:file_name => "Main.hx", :line_number => 323, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_list_patterns([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 324, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting validation states:", %{:file_name => "Main.hx", :line_number => 326, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_validation_state({:valid, %{name: "John", age: 30}}), %{:file_name => "Main.hx", :line_number => 327, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_validation_state({:invalid, ["required field", "invalid format"]}), %{:file_name => "Main.hx", :line_number => 328, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_validation_state({:invalid, "validation failed"}), %{:file_name => "Main.hx", :line_number => 329, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_validation_state({:pending}), %{:file_name => "Main.hx", :line_number => 330, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting recursive structures:", %{:file_name => "Main.hx", :line_number => 332, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_recursive_structure({:leaf, 10}), %{:file_name => "Main.hx", :line_number => 333, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_recursive_structure({:node, {:leaf, 5}, {:leaf, 15}}), %{:file_name => "Main.hx", :line_number => 334, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(match_recursive_structure({:node, {:node, {:leaf, 1}, {:leaf, 2}}, {:leaf, 3}}), %{:file_name => "Main.hx", :line_number => 335, :class_name => "Main", :method_name => "testAllPatterns"})
-
-    Log.trace("\nTesting type patterns:", %{:file_name => "Main.hx", :line_number => 337, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test(42), %{:file_name => "Main.hx", :line_number => 338, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test(3.14), %{:file_name => "Main.hx", :line_number => 339, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test("hello"), %{:file_name => "Main.hx", :line_number => 340, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test(true), %{:file_name => "Main.hx", :line_number => 341, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test(:symbol), %{:file_name => "Main.hx", :line_number => 342, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test([1, 2, 3]), %{:file_name => "Main.hx", :line_number => 343, :class_name => "Main", :method_name => "testAllPatterns"})
-    Log.trace(pattern_with_type_test(%{a: 1, b: 2}), %{:file_name => "Main.hx", :line_number => 344, :class_name => "Main", :method_name => "testAllPatterns"})
-  end
-
   def main() do
-    Log.trace("=== Enhanced Pattern Matching Tests ===", %{:file_name => "Main.hx", :line_number => 348, :class_name => "Main", :method_name => "main"})
-    test_all_patterns()
-    Log.trace("=== Tests Complete ===", %{:file_name => "Main.hx", :line_number => 350, :class_name => "Main", :method_name => "main"})
+    Log.trace("Enhanced pattern matching compilation test", %{:file_name => "Main.hx", :line_number => 231, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_status({:working, "compile"}), %{:file_name => "Main.hx", :line_number => 234, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_status({:completed, "success", 1500}), %{:file_name => "Main.hx", :line_number => 235, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(incomplete_match({:failed, "timeout", 2}), %{:file_name => "Main.hx", :line_number => 238, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    nested_success = value = _ = {:success, "deep value"}
+    _ = {:success, value}
+    Log.trace(match_nested_result(nested_success), %{:file_name => "Main.hx", :line_number => 242, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_with_complex_guards({:working, "urgent task"}, 8, true), %{:file_name => "Main.hx", :line_number => 245, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_with_range_guards(85, "score"), %{:file_name => "Main.hx", :line_number => 248, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_with_range_guards(25, "temperature"), %{:file_name => "Main.hx", :line_number => 249, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(chain_result_operations("valid input"), %{:file_name => "Main.hx", :line_number => 252, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(chain_result_operations(""), %{:file_name => "Main.hx", :line_number => 253, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_array_patterns([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 256, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_array_patterns([]), %{:file_name => "Main.hx", :line_number => 257, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_string_patterns("prefix_test"), %{:file_name => "Main.hx", :line_number => 260, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_string_patterns("test@example.com"), %{:file_name => "Main.hx", :line_number => 261, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_object_patterns(%{:name => "Alice", :age => 25, :active => true}), %{:file_name => "Main.hx", :line_number => 264, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_object_patterns(%{:name => "Bob", :age => 16, :active => true}), %{:file_name => "Main.hx", :line_number => 265, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_validation_state({:invalid, ["Required field missing", "Invalid format"]}), %{:file_name => "Main.hx", :line_number => 268, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_validation_state({:pending, "security_validator"}), %{:file_name => "Main.hx", :line_number => 269, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_binary_pattern("test"), %{:file_name => "Main.hx", :line_number => 272, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_binary_pattern(""), %{:file_name => "Main.hx", :line_number => 273, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
   end
 end

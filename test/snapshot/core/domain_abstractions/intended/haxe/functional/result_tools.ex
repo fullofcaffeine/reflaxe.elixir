@@ -1,133 +1,100 @@
 defmodule ResultTools do
-  def map(_result, transform) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        transform.(value)
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        error
-    end
+  def map(result, transform) do
+    (case result do
+      {:ok, ok_transform} ->
+        ok_transform.(ok_transform)
+      {:error, value} -> value
+    end)
   end
-  def flat_map(_result, transform) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        transform.(value)
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        error
-    end
+  def flat_map(result, transform) do
+    (case result do
+      {:ok, ok_transform} ->
+        ok_transform.(ok_transform)
+      {:error, value} -> value
+    end)
   end
   def bind(result, transform) do
     flat_map(result, transform)
   end
-  def fold(_result, on_success, on_error) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        on_success.(value)
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        on_error.(error)
-    end
+  def fold(result, on_success, on_error) do
+    (case result do
+      {:ok, ok_on_success} ->
+        ok_on_success.(ok_on_success)
+      {:error, value} ->
+        on_error = value
+        on_error.(value)
+    end)
   end
-  def is_ok(_result) do
-    case (_result) do
-      {:ok, g} ->
-        _g = elem(_result, 1)
+  def is_ok(result) do
+    (case result do
+      {:ok, ok_result} ->
+        result = ok_result
+        true = result
         true
-      {:error, g} ->
-        _g = elem(_result, 1)
+      {:error, value} -> false
+    end)
+  end
+  def is_error(result) do
+    (case result do
+      {:ok, ok_result} ->
+        result = ok_result
+        false = result
         false
-    end
+      {:error, value} -> true
+    end)
   end
-  def is_error(_result) do
-    case (_result) do
-      {:ok, g} ->
-        _g = elem(_result, 1)
-        false
-      {:error, g} ->
-        _g = elem(_result, 1)
-        true
-    end
+  def unwrap(result) do
+    (case result do
+      {:ok, value} -> value
+      {:error, _value} -> throw("Attempted to unwrap Error result: " <> inspect(error))
+    end)
   end
-  def unwrap(_result) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        value
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        throw("Attempted to unwrap Error result: " <> Std.string(error))
-    end
-  end
-  def unwrap_or(_result, default_value) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        value
-      {:error, g} ->
-        _g = elem(_result, 1)
+  def unwrap_or(result, default_value) do
+    (case result do
+      {:ok, value} ->
+        default_value = default_value
         default_value
-    end
+      {:error, defaultValue} ->
+        default_value = default_value
+        default_value
+    end)
   end
-  def unwrap_or_else(_result, error_handler) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        value
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        error_handler.(error)
-    end
+  def unwrap_or_else(result, error_handler) do
+    (case result do
+      {:ok, value} -> value
+      {:error, value} ->
+        error_handler = value
+        error_handler.(value)
+    end)
   end
-  def filter(_result, predicate, error_value) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        if (predicate.(value)), do: value, else: error_value
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        error
-    end
+  def filter(result, predicate, error_value) do
+    (case result do
+      {:ok, value} when predicate.(error_value) ->
+        error_value = error_value
+        error_value
+      {:ok, value} ->
+        error_value = error_value
+        error_value
+      {:error, value} ->
+        error_value = error_value
+        error_value
+    end)
   end
-  def map_error(_result, transform) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        value
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        transform.(error)
-    end
+  def map_error(result, transform) do
+    (case result do
+      {:ok, value} -> value
+      {:error, value} ->
+        value.(value)
+    end)
   end
-  def bimap(_result, on_success, on_error) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        on_success.(value)
-      {:error, g} ->
-        g = elem(_result, 1)
-        error = g
-        on_error.(error)
-    end
+  def bimap(result, on_success, on_error) do
+    (case result do
+      {:ok, ok_on_success} ->
+        ok_on_success.(ok_on_success)
+      {:error, value} ->
+        on_error = value
+        on_error.(value)
+    end)
   end
   def ok(value) do
     {:ok, value}
@@ -136,32 +103,23 @@ defmodule ResultTools do
     {:error, error}
   end
   def sequence(results) do
-    values = []
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {results, g, :ok}, fn _, {acc_results, acc_g, acc_state} ->
-  if (acc_g < length(acc_results)) do
-    result = acc_results[acc_g]
-    acc_g = acc_g + 1
-    nil
-    {:cont, {acc_results, acc_g, acc_state}}
-  else
-    {:halt, {acc_results, acc_g, acc_state}}
-  end
+    Enum.reduce(results, [], fn item, acc ->
+      acc = Enum.concat(acc, [item])
+  {:error, result} ->
+    item
+    {:error, item}
 end)
-    {:ok, values}
+      acc
+    end)
   end
   def traverse(array, transform) do
-    sequence((Enum.map(array, transform)))
+    results = Enum.map(array, transform)
+    sequence(results)
   end
-  def to_option(_result) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        value
-      {:error, g} ->
-        _g = elem(_result, 1)
-        :none
-    end
+  def to_option(result) do
+    (case result do
+      {:ok, value} -> value
+      {:error, value} -> {:none}
+    end)
   end
 end

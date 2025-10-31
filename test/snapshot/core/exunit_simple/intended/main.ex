@@ -1,32 +1,24 @@
 defmodule Main do
   use ExUnit.Case
-
+  import Phoenix.ConnTest
+  alias Phoenix.ConnTest, as: ConnTest
+  import Phoenix.LiveViewTest
+  alias Phoenix.LiveViewTest, as: LiveViewTest
   test "basic assertions" do
-    # Test boolean assertions
-    assert true == true, "True should be true"
-    assert false == false, "False should be false"
-
-    # Test equality
-    assert 42 == 42, "Numbers should be equal"
-    assert "hello" != "world", "Strings should not be equal"
-
-    # Test null checks
+    Assert.is_true(true, "True should be true")
+    Assert.is_false(false, "False should be false")
+    Assert.equals(42, 42, "Numbers should be equal")
+    Assert.not_equals("hello", "world", "Strings should not be equal")
     null_value = nil
-    assert null_value == nil, "Null value should be null"
-
+    Assert.is_null(null_value, "Null value should be null")
     non_null_value = "something"
-    assert non_null_value != nil, "String should not be null"
+    Assert.is_not_null(non_null_value, "String should not be null")
   end
-
   test "failure assertion" do
-    # This test intentionally demonstrates flunk
-    # In a real test, this would only be used in unreachable code paths
     should_not_reach = false
-    if should_not_reach do
-      flunk("This code should never be reached")
+    if (should_not_reach) do
+      Assert.fail("This code should never be reached")
     end
-
-    # If we get here, the test passes
-    assert true, "Test should complete without failure"
+    Assert.is_true(true, "Test should complete without failure")
   end
 end

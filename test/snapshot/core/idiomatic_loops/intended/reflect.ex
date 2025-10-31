@@ -12,7 +12,7 @@ defmodule Reflect do
     Map.has_key?(o, String.to_existing_atom(field))
   end
   def delete_field(o, field) do
-    has_field(o, field)
+    Map.delete(o, String.to_existing_atom(field))
   end
   def is_object(v) do
     is_map(v)
@@ -24,11 +24,11 @@ defmodule Reflect do
     apply(func, args)
   end
   def compare(a, b) do
-    sa = Std.string(a)
-    sb = Std.string(b)
-    if (sa < sb), do: -1
-    if (sa > sb), do: 1
-    0
+    if (inspect(a) < inspect(b)) do
+      -1
+    else
+      if (inspect(a) > inspect(b)), do: 1, else: 0
+    end
   end
   def is_enum_value(v) do
     is_tuple(v) and tuple_size(v) >= 1 and is_atom(elem(v, 0))
@@ -40,10 +40,10 @@ defmodule Reflect do
     f1 == f2
   end
   def get_property(o, field) do
-    field(o, field)
+    Map.get(o, field)
   end
   def set_property(o, field, value) do
-    set_field(o, field, value)
+    Map.put(o, field, value)
   end
   def make_var_args(f) do
     fn args -> f.(args) end

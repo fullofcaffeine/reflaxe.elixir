@@ -64,7 +64,27 @@ typedef PassConfig = {
     description: String,
     enabled: Bool,
     pass: TransformPass,
-    ?contextualPass: ContextualTransformPass
+    /**
+     * Optional contextual variant of the pass (receives CompilationContext)
+     */
+    ?contextualPass: ContextualTransformPass,
+    /**
+     * Optional phase tag used for coarse ordering groups (e.g., "early", "post_interpolate").
+     * When omitted, the pass remains in its original relative position unless constrained
+     * by runAfter/runBefore.
+     */
+    ?phase: String,
+    /**
+     * Optional hard ordering constraints. Each entry indicates a pass name that this
+     * pass must run AFTER. Multiple entries are allowed. Names not present in the registry
+     * are ignored to keep ordering robust across optional builds.
+     */
+    ?runAfter: Array<String>,
+    /**
+     * Optional hard ordering constraints. Each entry indicates a pass name that this
+     * pass must run BEFORE. Multiple entries are allowed. Unknown names are ignored.
+     */
+    ?runBefore: Array<String>
 };
 
 /**

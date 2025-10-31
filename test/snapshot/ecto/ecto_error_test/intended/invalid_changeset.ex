@@ -1,2 +1,0 @@
-defmodule InvalidChangeset do
-end

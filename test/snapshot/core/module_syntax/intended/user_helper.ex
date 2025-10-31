@@ -1,5 +1,5 @@
 defmodule UserHelper do
   def format_name(first_name, last_name) do
-    first_name <> " " <> last_name
+    "#{(fn -> first_name end).()} #{(fn -> last_name end).()}"
   end
 end

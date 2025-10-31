@@ -3,10 +3,7 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "main.ex",
   "invalid_schema.ex",
-  "invalid_changeset.ex",
-  "int_iterator.ex",
   "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],

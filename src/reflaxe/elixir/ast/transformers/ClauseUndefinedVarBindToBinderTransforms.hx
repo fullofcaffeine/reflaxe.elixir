@@ -31,6 +31,7 @@ class ClauseUndefinedVarBindToBinderTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case ECase(target, clauses):
+          #if sys Sys.println('[ClauseBindToBinder] Visiting ECase target=' + (switch (target.def) { case EVar(v): v; default: Type.enumConstructor(target.def); })); #end
           var out:Array<ECaseClause> = [];
           for (cl in clauses) {
             var b = extractBinder(cl.pattern);

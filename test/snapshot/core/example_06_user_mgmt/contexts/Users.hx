@@ -127,8 +127,9 @@ class Users {
     
     /**
      * Get users with their posts (preload association)
+     * Public API: called from Main to exercise preload flow
      */
-    static function users_with_posts(): Array<User> {
+    public static function users_with_posts(): Array<User> {
         // Query DSL implementation will be handled by future @:query annotation
         return [];
     }

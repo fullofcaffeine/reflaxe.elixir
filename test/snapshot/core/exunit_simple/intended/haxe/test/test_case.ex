@@ -6,9 +6,9 @@ defmodule TestCase do
     context
   end
   def teardown(struct, _context) do
-    nil
+    
   end
   def teardown_all(struct, _context) do
-    nil
+    
   end
 end

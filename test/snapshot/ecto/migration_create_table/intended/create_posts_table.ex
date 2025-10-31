@@ -1,2 +1,0 @@
-defmodule CreatePostsTable do
-end

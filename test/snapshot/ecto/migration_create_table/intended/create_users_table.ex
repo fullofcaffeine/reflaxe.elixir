@@ -12,10 +12,10 @@ defmodule CreateUsersTable do
   def down(struct) do
     struct.dropTable("users")
   end
-  defp create_table(struct, _table_name) do
+  defp create_table(struct, _name) do
     
   end
-  defp drop_table(struct, _table_name) do
+  defp drop_table(struct, _name) do
     
   end
   defp add_column(struct, _table, _column, _type) do

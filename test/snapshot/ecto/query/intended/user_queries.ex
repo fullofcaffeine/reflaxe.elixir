@@ -40,17 +40,17 @@ defmodule UserQueries do
   end
   def search_users(filters) do
     query = from("users", "u", %{:select => "u"})
-    query = if not Kernel.is_nil(Map.get(filters, :name)) do
+    query = if (not Kernel.is_nil(Map.get(filters, :name))) do
       where(query, "u", %{:name_ilike => Map.get(filters, :name)})
     else
       query
     end
-    query = if not Kernel.is_nil(Map.get(filters, :email)) do
+    query = if (not Kernel.is_nil(Map.get(filters, :email))) do
       where(query, "u", %{:email => Map.get(filters, :email)})
     else
       query
     end
-    query = if not Kernel.is_nil(Map.get(filters, :min_age)) do
+    query = if (not Kernel.is_nil(Map.get(filters, :min_age))) do
       where(query, "u", %{:age_gte => Map.get(filters, :min_age)})
     else
       query
