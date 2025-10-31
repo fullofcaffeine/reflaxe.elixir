@@ -3,8 +3,6 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "my_app/postgrex_types.ex",
-  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

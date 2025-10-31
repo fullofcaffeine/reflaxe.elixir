@@ -443,3 +443,48 @@ git bisect reset
 ---
 
 **Remember**: Every compiler change affects the entire ecosystem. Always validate through the complete testing pipeline and integration with real applications.
+
+## Pass Ordering and Scheduler Invariants (1.0)
+
+- WHAT
+  - The pass registry now supports lightweight ordering metadata and a stable, deterministic sort.
+  - Each pass may optionally declare , , and  constraints.
+
+- WHY
+  - Avoid brittle, index-based ordering and enable local ordering hints without coupling to app code.
+  - Keep the default order stable while allowing precise constraints where correctness depends on order.
+
+- HOW
+  -  includes optional fields:
+    -  (coarse grouping; currently informational)
+    -  and  (hard ordering hints by pass name)
+  - The registry applies a stable topological sort; unknown names are ignored.
+  - On cycles, the sorter falls back to original order (enable  to diagnose).
+
+- Guardrails
+  - Do not use app- or example-specific pass names for ordering.
+  - Keep naming clear and descriptive (no numeric-suffix locals in new code).
+  - Never edit generated  to “fix order” — always express ordering via pass metadata.
+
+
+## Pass Ordering and Scheduler Invariants (1.0) — Addendum
+
+- WHAT
+  - The pass registry supports lightweight ordering metadata and a stable, deterministic sort.
+  - Each pass may optionally declare: phase, runAfter, runBefore.
+
+- WHY
+  - Avoid brittle index-based ordering; enable local hints without app coupling.
+  - Keep the default order stable while allowing precise constraints where required.
+
+- HOW
+  - PassConfig optional fields:
+    - phase: String (coarse grouping; informational)
+    - runAfter: Array<String> and runBefore: Array<String> (hard ordering hints by pass name)
+  - The registry applies a stable topological sort; unknown names are ignored.
+  - On cycles, the sorter falls back to original order (enable -D debug_pass_order to diagnose).
+
+- Guardrails
+  - Do not use app- or example-specific pass names for ordering.
+  - Use descriptive names (no numeric-suffix locals in new code).
+  - Never edit generated .ex to “fix order” — express ordering via pass metadata.

@@ -1,279 +1,414 @@
 defmodule Main do
-  @moduledoc "Main module generated from Haxe"
-
-  # Static functions
-  @doc """
-    Test binary pattern matching: <<data::binary>>
-    Addresses binary pattern issues from troubleshooting guide
-  """
-  @spec test_binary_patterns() :: String.t()
   def test_binary_patterns() do
-    data = [72, 101, 108, 108, 111]  # "Hello" in bytes
-
-    case data do
-      [] ->
-        "Empty binary"
-      [72] ->
-        "Starts with 'H' (single byte)"
-      [72 | rest] when length(rest) > 0 ->
-        rest_str = Enum.map(rest, &to_string/1) |> Enum.join(",")
-        "Starts with 'H', rest: #{rest_str}"
-      [72, _, _, _, _] ->
-        "5-byte message starting with H"
-      [first, second] when first > 64 and first < 90 ->
-        "2-byte uppercase start"
-      bytes when length(bytes) > 10 ->
-        "Large binary: #{length(bytes)} bytes"
+    data = (case [72, 101, 108, 108, 111] do
+      [head | tail] when head == 72 and tail != [] ->
+        (
+"Starts with 'H', rest: #{(fn -> Enum.join((fn ->
+  g = []
+  g1 = 1
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end)
+  _g
+end).(), ",") end).()}"
+)
+      [] -> "Empty binary"
+      [_head | _tail] when _g == 72 -> "Starts with 'H' (single byte)"
+      [_head | _tail] when _head == 72 and _tail != [] ->
+        (
+"Starts with 'H', rest: #{(fn -> Enum.join((fn ->
+  g2 = []
+  g1 = 1
+  _g3 = length(arr)
+  Enum.each(0..(arr_length - 1), fn _g1 ->
+    i = _g1 + 1
+    arr_length = Enum.concat(arr_length, [inspect(arr[i])])
+  end)
+  arr_length
+end).(), ",") end).()}"
+)
+      [_head | _tail] when length(bytes) > 10 -> "Large binary: #{(fn -> length(bytes) end).()} bytes"
+      [_head | _tail] -> "Other binary pattern"
+      2 ->
+        cond do
+          arr[0] == 72 and length(arr) > 1 ->
+            "Starts with 'H', rest: " <> Enum.join((fn -> g2 = []
+g3 = 1
+_g4 = length(arr)
+Enum.each(0..(arr_length - 1), fn arr_length ->
+  i = arr_length + 1
+  arr_length = Enum.concat(arr_length, [inspect(arr[i])])
+end)
+arr_length end).(), ",")
+          true ->
+            second = _g1
+            if (first > 64 and first < 90) do
+              "2-byte uppercase start"
+            else
+              if (length(bytes) > 10), do: "Large binary: " <> length(bytes).to_string() <> " bytes", else: "Other binary pattern"
+            end
+        end
+      5 ->
+        cond do
+          arr[0] == 72 and length(arr) > 1 ->
+            "Starts with 'H', rest: " <> Enum.join((fn -> g5 = []
+g6 = 1
+_g7 = length(arr)
+Enum.each(0..(arr_length - 1), fn _g6 ->
+  i = _g6 + 1
+  _g5 = Enum.concat(_g5, [inspect(arr[i])])
+end)
+_g5 end).(), ",")
+          true ->
+            b = _g1
+            c = arr_length
+            d = arr_length
+            e = arr_length
+            if (a == 72) do
+              "5-byte message starting with H"
+            else
+              if (length(bytes) > 10), do: "Large binary: " <> length(bytes).to_string() <> " bytes", else: "Other binary pattern"
+            end
+        end
       _ ->
-        "Other binary pattern"
-    end
+        arr = data
+        if (arr[0] == 72 and length(arr) > 1) do
+          (
+"Starts with 'H', rest: #{(fn -> Enum.join((fn ->
+  g = []
+  g1 = 1
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end)
+  _g
+end).(), ",") end).()}"
+)
+        else
+          bytes = data
+          if (length(bytes) > 10) do
+            "Large binary: #{(fn -> length(bytes) end).()} bytes"
+          else
+            "Other binary pattern"
+          end
+        end
+    end)
+    data
   end
-
-  @doc """
-    Test complex binary segment patterns
-    Tests enhanced binary compilation features
-  """
-  @spec test_complex_binary_segments() :: String.t()
   def test_complex_binary_segments() do
-    packet = [1, 0, 8, 72, 101, 108, 108, 111]
-
-    case packet do
-      [1, 0, size] ->
-        "Protocol v1, size=#{size} (header only)"
-      [1, 0, size | rest] when length(rest) > 0 ->
-        data_str = Enum.map(rest, &to_string/1) |> Enum.join(",")
-        "Protocol v1, size=#{size}, data=#{data_str}"
-      [version, _flags, _size] when version > 1 ->
-        "Future protocol v#{version}"
-      [version, flags, size, _payload] ->
-        "Packet: v#{version}, flags=#{flags}, size=#{size}"
-      header when length(header) < 3 ->
-        "Incomplete header"
+    packet = (case [1, 0, 8, 72, 101, 108, 108, 111] do
+      3 when _g == 1 ->
+        if (_g == 0) do
+          "Protocol v1, size=#{(fn -> size end).()} (header only)"
+        else
+          if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
+            (
+"Protocol v1, size=#{(fn -> arr[2] end).()}, data=#{(fn -> Enum.join((fn ->
+  g3 = []
+  g4 = 3
+  _g5 = length(arr)
+  Enum.each(0..(arr_length - 1), fn arr_length ->
+    i = arr_length + 1
+    arr_length = Enum.concat(arr_length, [inspect(arr[i])])
+  end)
+  arr_length
+end).(), ",") end).()}"
+)
+          else
+            if (version > 1) do
+              "Future protocol v#{(fn -> version end).()}"
+            else
+              if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
+            end
+          end
+        end
+      3 when length(packet) >= 4 and arr[0] == 1 and arr[1] == 0 ->
+        (
+"Protocol v1, size=#{(fn -> arr[2] end).()}, data=#{(fn -> Enum.join((fn ->
+  g3 = []
+  g4 = 3
+  _g5 = length(arr)
+  Enum.each(0..(arr_length - 1), fn arr_length ->
+    i = arr_length + 1
+    arr_length = Enum.concat(arr_length, [inspect(arr[i])])
+  end)
+  arr_length
+end).(), ",") end).()}"
+)
+      3 when version > 1 -> "Future protocol v#{(fn -> version end).()}"
+      3 when length(header) < 3 -> "Incomplete header"
+      3 -> "Unknown packet format"
+      4 ->
+        cond do
+          length(arr) >= 4 and arr[0] == 1 and arr[1] == 0 ->
+            "Protocol v1, size=" <> arr[2].to_string() <> ", data=" <> Enum.join((fn -> g4 = []
+g5 = 3
+_g6 = length(arr)
+Enum.each(0..(arr_length - 1), fn arr_length ->
+  i = arr_length + 1
+  arr_length = Enum.concat(arr_length, [inspect(arr[i])])
+end)
+arr_length end).(), ",")
+          true ->
+            payload = arr_length
+            "Packet: v" <> version.to_string() <> ", flags=" <> flags.to_string() <> ", size=" <> size.to_string()
+        end
       _ ->
-        "Unknown packet format"
-    end
+        arr = packet
+        if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
+          (
+"Protocol v1, size=#{(fn -> arr[2] end).()}, data=#{(fn -> Enum.join((fn ->
+  g = []
+  g1 = 3
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end)
+  _g
+end).(), ",") end).()}"
+)
+        else
+          header = packet
+          if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
+        end
+    end)
+    packet
   end
-
-  @doc """
-    Test pin operator patterns: ^existing_var
-    Addresses pin operator issues from troubleshooting guide
-  """
-  @spec test_pin_operator_patterns() :: String.t()
   def test_pin_operator_patterns() do
     expected_value = 42
     expected_name = "test"
     test_value = 42
     test_name = "test"
-
-    # Test basic pin patterns
-    result1 = case test_value do
-      value when value == expected_value -> "Matches expected value"
-      _ -> "Different value"
+    result1 = _ = test_value
+    if (test_value == expected_value), do: "Matches expected value", else: "Different value"
+    result2 = v = test_value
+    n = test_name
+    if (v == expected_value and n == expected_name) do
+      "Both match"
+    else
+      v2 = test_value
+      _ = test_name
+      if (v2 == expected_value) do
+        "Value matches, name different"
+      else
+        _ = test_value
+        n3 = test_name
+        if (n3 == expected_name), do: "Name matches, value different", else: "Neither matches"
+      end
     end
-
-    # Test pin with complex expressions
-    result2 = case {test_value, test_name} do
-      {v, n} when v == expected_value and n == expected_name -> "Both match"
-      {v, _n} when v == expected_value -> "Value matches, name different"
-      {_v, n} when n == expected_name -> "Name matches, value different"
-      _ -> "Neither matches"
-    end
-
-    "#{result1} | #{result2}"
+    "#{(fn -> result1 end).()} | #{(fn -> result2 end).()}"
   end
-
-  @doc """
-    Test advanced guard expressions: when conditions
-    Addresses guard expression issues from troubleshooting guide
-  """
-  @spec test_advanced_guards() :: String.t()
   def test_advanced_guards() do
     temperature = 23.5
     humidity = 65
     pressure = 1013.25
-
-    case {temperature, humidity, pressure} do
-      {t, h, _p} when t > 20 and t < 25 and h >= 60 and h <= 70 ->
-        "Perfect conditions"
-      {t, h, _p} when t > 30 or h > 80 ->
+    t = temperature
+    h = humidity
+    p = pressure
+    if (t > 20 and t < 25 and h >= 60 and h <= 70) do
+      "Perfect conditions"
+    else
+      _ = temperature
+      _ = humidity
+      _ = pressure
+      if (t > 30 or h > 80) do
         "Too hot or humid"
-      {t, h, _p} when t < 10 or h < 30 ->
-        "Too cold or dry"
-      {_t, _h, p} when p < 1000 or p > 1020 ->
-        "Abnormal pressure"
-      {t, h, p} when t >= 15 and t <= 25 and h >= 40 and h <= 75 and p >= 1000 and p <= 1020 ->
-        "Acceptable conditions"
-      _ ->
-        "Unknown conditions"
+      else
+        _ = temperature
+        _ = humidity
+        _ = pressure
+        if (t < 10 or h < 30) do
+          "Too cold or dry"
+        else
+          _ = temperature
+          _ = humidity
+          _ = pressure
+          if (p < 1000 or p > 1020) do
+            "Abnormal pressure"
+          else
+            _ = temperature
+            _ = humidity
+            _ = pressure
+            if (t >= 15 and t <= 25 and h >= 40 and h <= 75 and p >= 1000 and p <= 1020), do: "Acceptable conditions", else: "Unknown conditions"
+          end
+        end
+      end
     end
   end
-
-  @doc """
-    Test type guards with Elixir-style functions
-    Tests guard compilation enhancements
-  """
-  @spec test_type_guards() :: String.t()
   def test_type_guards() do
     value = "Hello World"
-
-    cond do
-      is_binary(value) and byte_size(value) > 10 ->
-        "Long string: #{value}"
-      is_binary(value) and byte_size(value) <= 10 ->
-        "Short string: #{value}"
-      is_integer(value) and value > 0 ->
-        "Positive integer: #{value}"
-      is_integer(value) and value <= 0 ->
-        "Non-positive integer: #{value}"
-      is_float(value) ->
-        "Float value: #{value}"
-      is_boolean(value) ->
-        "Boolean value: #{value}"
-      is_list(value) ->
-        "Array with #{length(value)} elements"
-      value == nil ->
-        "Null value"
-      true ->
-        "Unknown type"
+    v = value
+    if (MyApp.Std.is(v, :string) and Map.get(v, :length) > 10) do
+      "Long string: #{(fn -> inspect(v) end).()}"
+    else
+      v2 = value
+      if (MyApp.Std.is(v2, :string) and Map.get(v2, :length) <= 10) do
+        "Short string: #{(fn -> inspect(v2) end).()}"
+      else
+        v3 = value
+        if (MyApp.Std.is(v3, :int) and v3 > 0) do
+          "Positive integer: #{(fn -> inspect(v3) end).()}"
+        else
+          v4 = value
+          if (MyApp.Std.is(v4, :int) and v4 <= 0) do
+            "Non-positive integer: #{(fn -> inspect(v4) end).()}"
+          else
+            v5 = value
+            if (MyApp.Std.is(v5, :float)) do
+              "Float value: #{(fn -> inspect(v5) end).()}"
+            else
+              v6 = value
+              if (MyApp.Std.is(v6, :bool)) do
+                "Boolean value: #{(fn -> inspect(v6) end).()}"
+              else
+                _ = value
+                cond do
+                  Std.is(v7, :array) -> "Array with " <> inspect(Map.get(v7, :length)) <> " elements"
+                  value == nil -> "Null value"
+                  :true -> "Unknown type"
+                end
+              end
+            end
+          end
+        end
+      end
     end
   end
-
-  @doc """
-    Test range guard expressions
-    Tests enhanced guard capabilities
-  """
-  @spec test_range_guards() :: String.t()
   def test_range_guards() do
     score = 85
-
-    cond do
-      score >= 90 and score <= 100 -> "Grade A (90-100)"
-      score >= 80 and score < 90 -> "Grade B (80-89)"
-      score >= 70 and score < 80 -> "Grade C (70-79)"
-      score >= 60 and score < 70 -> "Grade D (60-69)"
-      score >= 0 and score < 60 -> "Grade F (0-59)"
-      score < 0 or score > 100 -> "Invalid score"
-      true -> "Unknown score"
+    s = score
+    if (s >= 90 and s <= 100) do
+      "Grade A (90-100)"
+    else
+      _ = score
+      if (s >= 80 and s < 90) do
+        "Grade B (80-89)"
+      else
+        _ = score
+        if (s >= 70 and s < 80) do
+          "Grade C (70-79)"
+        else
+          _ = score
+          if (s >= 60 and s < 70) do
+            "Grade D (60-69)"
+          else
+            _ = score
+            if (s >= 0 and s < 60) do
+              "Grade F (0-59)"
+            else
+              _ = score
+              if (s < 0 or s > 100), do: "Invalid score", else: "Unknown score"
+            end
+          end
+        end
+      end
     end
   end
-
-  @doc """
-    Test exhaustive pattern validation
-    Addresses exhaustive pattern checking from troubleshooting guide
-  """
-  @spec test_exhaustive_patterns() :: String.t()
   def test_exhaustive_patterns() do
-    # Test boolean exhaustiveness
     flag = true
-    bool_result = case flag do
-      true -> "True case"
-      false -> "False case"
+    bool_result = if (flag), do: "True case", else: "False case"
+    _ = 1
+    enum_result = ((case status do
+  0 -> "Inactive"
+  1 -> "Active"
+  2 -> "Pending"
+  3 -> "Error"
+  _ -> "Unknown status"
+end))
+    _ = 1
+    _ = 2
+    _ = 3
+    array_result = ((case 3 do
+  0 -> "Empty"
+  1 -> "Single: #{(fn -> x end).()}"
+  2 -> "Pair: #{(fn -> x end).()},#{(fn -> y end).()}"
+  3 -> "Triple: #{(fn -> x end).()},#{(fn -> y end).()},#{(fn -> z end).()}"
+  _ ->
+    cond do
+      3 > 3 -> "Many: " <> 3.to_string() <> " items"
+      true -> "Other array pattern"
     end
-
-    # Test enum-like exhaustiveness with constants
-    status = 1
-    enum_result = case status do
-      0 -> "Inactive"
-      1 -> "Active"
-      2 -> "Pending"
-      3 -> "Error"
-      _ -> "Unknown status"
-    end
-
-    # Test array length exhaustiveness
-    items = [1, 2, 3]
-    array_result = case items do
-      [] -> "Empty"
-      [x] -> "Single: #{x}"
-      [x, y] -> "Pair: #{x},#{y}"
-      [x, y, z] -> "Triple: #{x},#{y},#{z}"
-      arr when length(arr) > 3 -> "Many: #{length(arr)} items"
-      _ -> "Other array pattern"
-    end
-
-    "#{bool_result} | #{enum_result} | #{array_result}"
+end))
+    "#{(fn -> bool_result end).()} | #{(fn -> enum_result end).()} | #{(fn -> array_result end).()}"
   end
-
-  @doc """
-    Test nested patterns with guards
-    Tests complex pattern matching scenarios
-  """
-  @spec test_nested_patterns_with_guards() :: String.t()
   def test_nested_patterns_with_guards() do
-    data = %{
-      user: %{
-        name: "Alice",
-        age: 28,
-        active: true
-      },
-      permissions: ["read", "write"],
-      last_login: 1640995200
-    }
-
-    age = data.user.age
-    perms = length(data.permissions)
-    active = data.user.active
-
-    cond do
-      age >= 18 and age < 25 and perms > 0 and active ->
-        "Young adult with permissions"
-      age >= 25 and age < 65 and perms >= 2 and active ->
+    _ = "Alice"
+    data_user_age = 28
+    data_user_active = true
+    _ = "read"
+    _ = "write"
+    _ = 1640995200
+    _ = data_user_age
+    _ = 2
+    _ = data_user_active
+    active = arr_length
+    if (data_user_age >= 18 and data_user_age < 25 and perms > 0 and active) do
+      "Young adult with permissions"
+    else
+      _ = arr_length
+      if (age2 >= 25 and age2 < 65 and perms2 >= 2 and data_user_active) do
         "Adult with full permissions"
-      age >= 65 and active ->
-        "Senior user"
-      not active ->
-        "Inactive user"
-      perms == 0 ->
-        "User without permissions"
-      true ->
-        "Other user type"
+      else
+        _ = arr_length
+        if (age3 >= 65 and data_user_active) do
+          "Senior user"
+        else
+          _ = arr_length
+          if (not data_user_active) do
+            "Inactive user"
+          else
+            _ = arr_length
+            if (perms5 == 0), do: "User without permissions", else: "Other user type"
+          end
+        end
+      end
     end
   end
-
-  @doc """
-    Test performance with complex guard combinations
-    Ensures guard compilation is efficient
-  """
-  @spec test_complex_guard_performance() :: String.t()
   def test_complex_guard_performance() do
-    metrics = %{
-      cpu: 45.2,
-      memory: 68.7,
-      disk: 23.1,
-      network: 12.8
-    }
-
-    cpu = metrics.cpu
-    mem = metrics.memory
-    disk = metrics.disk
-    net = metrics.network
-
-    cond do
-      cpu > 80 or mem > 90 or disk > 90 or net > 80 ->
-        "Critical resource usage"
-      cpu > 60 or mem > 75 or disk > 75 or net > 60 ->
+    metrics_cpu = 45.2
+    metrics_memory = 68.7
+    metrics_disk = 23.1
+    metrics_network = 12.8
+    _ = metrics_cpu
+    _ = metrics_memory
+    _ = metrics_disk
+    _ = metrics_network
+    disk = arr_length
+    net = arr_length
+    if (metrics_cpu > 80 or mem > 90 or disk > 90 or net > 80) do
+      "Critical resource usage"
+    else
+      _ = arr_length
+      _ = arr_length
+      if (cpu2 > 60 or mem2 > 75 or metrics_disk > 75 or net > 60) do
         "High resource usage"
-      cpu > 40 and mem > 50 and disk > 50 and net > 30 ->
-        "Moderate resource usage"
-      cpu <= 40 and mem <= 50 and disk <= 50 and net <= 30 ->
-        "Low resource usage"
-      true ->
-        "Unknown resource state"
+      else
+        _ = arr_length
+        _ = arr_length
+        if (cpu3 > 40 and mem3 > 50 and metrics_disk > 50 and net > 30) do
+          "Moderate resource usage"
+        else
+          _ = arr_length
+          _ = arr_length
+          if (cpu4 <= 40 and mem4 <= 50 and metrics_disk <= 50 and net <= 30), do: "Low resource usage", else: "Unknown resource state"
+        end
+      end
     end
   end
-
-  @doc "Function main"
-  @spec main() :: nil
   def main() do
     Log.trace("Enhanced Pattern Matching Test Suite", %{:file_name => "Main.hx", :line_number => 260, :class_name => "Main", :method_name => "main"})
-    Log.trace("Binary Patterns: #{test_binary_patterns()}", %{:file_name => "Main.hx", :line_number => 263, :class_name => "Main", :method_name => "main"})
-    Log.trace("Complex Binary: #{test_complex_binary_segments()}", %{:file_name => "Main.hx", :line_number => 264, :class_name => "Main", :method_name => "main"})
-    Log.trace("Pin Operators: #{test_pin_operator_patterns()}", %{:file_name => "Main.hx", :line_number => 265, :class_name => "Main", :method_name => "main"})
-    Log.trace("Advanced Guards: #{test_advanced_guards()}", %{:file_name => "Main.hx", :line_number => 266, :class_name => "Main", :method_name => "main"})
-    Log.trace("Type Guards: #{test_type_guards()}", %{:file_name => "Main.hx", :line_number => 267, :class_name => "Main", :method_name => "main"})
-    Log.trace("Range Guards: #{test_range_guards()}", %{:file_name => "Main.hx", :line_number => 268, :class_name => "Main", :method_name => "main"})
-    Log.trace("Exhaustive Patterns: #{test_exhaustive_patterns()}", %{:file_name => "Main.hx", :line_number => 269, :class_name => "Main", :method_name => "main"})
-    Log.trace("Nested Guards: #{test_nested_patterns_with_guards()}", %{:file_name => "Main.hx", :line_number => 270, :class_name => "Main", :method_name => "main"})
-    Log.trace("Performance Guards: #{test_complex_guard_performance()}", %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "main"})
+    Log.trace("Binary Patterns: #{(fn -> test_binary_patterns() end).()}", %{:file_name => "Main.hx", :line_number => 263, :class_name => "Main", :method_name => "main"})
+    Log.trace("Complex Binary: #{(fn -> test_complex_binary_segments() end).()}", %{:file_name => "Main.hx", :line_number => 264, :class_name => "Main", :method_name => "main"})
+    Log.trace("Pin Operators: #{(fn -> test_pin_operator_patterns() end).()}", %{:file_name => "Main.hx", :line_number => 265, :class_name => "Main", :method_name => "main"})
+    Log.trace("Advanced Guards: #{(fn -> test_advanced_guards() end).()}", %{:file_name => "Main.hx", :line_number => 266, :class_name => "Main", :method_name => "main"})
+    Log.trace("Type Guards: #{(fn -> test_type_guards() end).()}", %{:file_name => "Main.hx", :line_number => 267, :class_name => "Main", :method_name => "main"})
+    Log.trace("Range Guards: #{(fn -> test_range_guards() end).()}", %{:file_name => "Main.hx", :line_number => 268, :class_name => "Main", :method_name => "main"})
+    Log.trace("Exhaustive Patterns: #{(fn -> test_exhaustive_patterns() end).()}", %{:file_name => "Main.hx", :line_number => 269, :class_name => "Main", :method_name => "main"})
+    Log.trace("Nested Guards: #{(fn -> test_nested_patterns_with_guards() end).()}", %{:file_name => "Main.hx", :line_number => 270, :class_name => "Main", :method_name => "main"})
+    Log.trace("Performance Guards: #{(fn -> test_complex_guard_performance() end).()}", %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "main"})
   end
 end

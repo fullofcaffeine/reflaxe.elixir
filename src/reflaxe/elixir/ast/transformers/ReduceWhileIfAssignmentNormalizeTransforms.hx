@@ -50,9 +50,9 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
           var outClauses = [];
           for (cl in clauses) {
             #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   (generic) body before = ' + ElixirASTPrinter.print(cl.body, 0)); #end
-            var nb2 = normalizeBlock(cl.body);
-            #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   (generic) body after  = ' + ElixirASTPrinter.print(nb2, 0)); #end
-            outClauses.push({ args: cl.args, guard: cl.guard, body: nb2 });
+            var normalizedBody = normalizeBlock(cl.body);
+            #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   (generic) body after  = ' + ElixirASTPrinter.print(normalizedBody, 0)); #end
+            outClauses.push({ args: cl.args, guard: cl.guard, body: normalizedBody });
           }
           makeASTWithMeta(EFn(outClauses), n.metadata, n.pos);
         default:
@@ -79,7 +79,7 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
               var j = i + 1;
               while (j < stmts.length && j <= i + 3) {
                 switch (stmts[j].def) {
-                  case EIf(cond, thenE, elseE):
+                  case EIf(cond, thenE, elseE) if (elseE != null):
                     var elseIsB = switch (elseE.def) { case EVar(bb) if (bb == b): true; default: false; };
                     if (elseIsB) {
                       #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   Matched trailing if ... else ' + b + ' → rewriting to b = rhs; ' + a + ' = if ...'); #end
@@ -98,38 +98,38 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
               }
             // Additional shapes: EMatch-based variants
             case EMatch(PVar(aM), {def: EBinary(Match, {def: EVar(bM)}, rhsM)}):
-              var j2 = i + 1;
-              while (j2 < stmts.length && j2 <= i + 3) {
-                switch (stmts[j2].def) {
-                  case EIf(condM, thenM, elseM):
+              var scanIndexSecondary = i + 1;
+              while (scanIndexSecondary < stmts.length && scanIndexSecondary <= i + 3) {
+                switch (stmts[scanIndexSecondary].def) {
+                  case EIf(condM, thenM, elseM) if (elseM != null):
                     var elseIsBM = switch (elseM.def) { case EVar(bbM) if (bbM == bM): true; default: false; };
                     if (elseIsBM) {
                       out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM), s.metadata, s.pos), rhsM), s.metadata, s.pos));
-                      out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), s.metadata, s.pos), makeASTWithMeta(EIf(condM, thenM, elseM), stmts[j2].metadata, stmts[j2].pos)), s.metadata, s.pos));
-                      for (k2 in i + 1...j2) out.push(stmts[k2]);
-                      i = j2 + 1; rewritten = true;
+                      out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), s.metadata, s.pos), makeASTWithMeta(EIf(condM, thenM, elseM), stmts[scanIndexSecondary].metadata, stmts[scanIndexSecondary].pos)), s.metadata, s.pos));
+                      for (k2 in i + 1...scanIndexSecondary) out.push(stmts[k2]);
+                      i = scanIndexSecondary + 1; rewritten = true;
                     }
                   default:
                 }
                 if (rewritten) break;
-                j2++;
+                scanIndexSecondary++;
               }
-            case EMatch(PVar(aM2), {def: EMatch(PVar(bM2), rhsM2)}):
-              var j3 = i + 1;
-              while (j3 < stmts.length && j3 <= i + 3) {
-                switch (stmts[j3].def) {
-                  case EIf(condM2, thenM2, elseM2):
-                    var elseIsBM2 = switch (elseM2.def) { case EVar(bbM2) if (bbM2 == bM2): true; default: false; };
-                    if (elseIsBM2) {
-                      out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM2), s.metadata, s.pos), rhsM2), s.metadata, s.pos));
-                      out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM2), s.metadata, s.pos), makeASTWithMeta(EIf(condM2, thenM2, elseM2), stmts[j3].metadata, stmts[j3].pos)), s.metadata, s.pos));
-                      for (k3 in i + 1...j3) out.push(stmts[k3]);
-                      i = j3 + 1; rewritten = true;
+            case EMatch(PVar(lhsName), {def: EMatch(PVar(rhsBinder), rhsValue)}):
+              var scanIndexTertiary = i + 1;
+              while (scanIndexTertiary < stmts.length && scanIndexTertiary <= i + 3) {
+                switch (stmts[scanIndexTertiary].def) {
+                  case EIf(nestedCond, nestedThen, nestedElse) if (nestedElse != null):
+                    var elseReturnsBinder = switch (nestedElse.def) { case EVar(binderName) if (binderName == rhsBinder): true; default: false; };
+                    if (elseReturnsBinder) {
+                      out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(rhsBinder), s.metadata, s.pos), rhsValue), s.metadata, s.pos));
+                      out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(lhsName), s.metadata, s.pos), makeASTWithMeta(EIf(nestedCond, nestedThen, nestedElse), stmts[scanIndexTertiary].metadata, stmts[scanIndexTertiary].pos)), s.metadata, s.pos));
+                      for (k3 in i + 1...scanIndexTertiary) out.push(stmts[k3]);
+                      i = scanIndexTertiary + 1; rewritten = true;
                     }
                   default:
                 }
                 if (rewritten) break;
-                j3++;
+                scanIndexTertiary++;
               }
             default:
           }

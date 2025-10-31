@@ -1007,6 +1007,18 @@ class SwitchBuilder {
                 return foundId != null && context.functionParameterIds.exists(Std.string(foundId));
             }
 
+            // Choose a better binder when exactly one parameter and there are lower-case locals used
+            function bestUsedLowerName(): Null<String> {
+                if (parameterNames.length != 1 || usedLower.length == 0) return null;
+                // Prefer a non-env, non-param name; pick the first that passes filters
+                for (n in usedLower) {
+                    var alt = VariableAnalyzer.toElixirVarName(n);
+                    if (!isEnvLikeName(alt) && !isFunctionParamByName(alt)) return alt;
+                }
+                return null;
+            }
+            var preferredLower: Null<String> = bestUsedLowerName();
+
             for (i in 0...parameterNames.length) {
                 // Select a safe base source name with strict filtering
                 var candidate:Null<String> = null;
@@ -1017,12 +1029,9 @@ class SwitchBuilder {
 
                 var baseParamName = VariableAnalyzer.toElixirVarName(candidate);
 
-                // If there is exactly one lower-case local used in the body and only one enum parameter,
-                // prefer that local as the binder name (usage-driven, generic). Already excludes env names.
-                if (parameterNames.length == 1 && usedLower.length == 1) {
-                    var alt = VariableAnalyzer.toElixirVarName(usedLower[0]);
-                    if (!isEnvLikeName(alt) && !isFunctionParamByName(alt)) baseParamName = alt;
-                }
+                // If only one parameter and we detected lower-case locals in body,
+                // prefer the first safe lower-case local as binder (usage-driven, generic).
+                if (preferredLower != null) baseParamName = preferredLower;
 
                 // CRITICAL: Analyze case body to determine if this parameter is actually used
                 var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
@@ -1030,11 +1039,8 @@ class SwitchBuilder {
                     var rawParamName = candidate;
                     if (rawParamName != null) isUsed = EnumHandler.isLocalNameUsed(rawParamName, caseBody);
                 }
-                // If we detected exactly one lower-case local in the body and there is a single enum parameter,
-                // treat it as a used binder (usage-driven) to avoid underscore prefixing due to generic param names like "value".
-                if (!isUsed && parameterNames.length == 1 && usedLower.length == 1) {
-                    isUsed = true;
-                }
+                // If a preferred lower-case local was selected, treat binder as used
+                if (!isUsed && preferredLower != null) isUsed = true;
 
                 // Apply underscore prefix for unused parameters
                 var paramName = isUsed ? baseParamName : "_" + baseParamName;
@@ -1054,7 +1060,7 @@ class SwitchBuilder {
 
             var finalNames = [for (i in 0...parameterNames.length) {
                 var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
-                var effectiveBase = (parameterNames.length == 1 && usedLower.length == 1) ? usedLower[0] : base;
+                var effectiveBase = (preferredLower != null) ? preferredLower : base;
                 var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) ||
                     (effectiveBase != null && EnumHandler.isLocalNameUsed(effectiveBase, caseBody));
                 isUsed ? base : "_" + base;

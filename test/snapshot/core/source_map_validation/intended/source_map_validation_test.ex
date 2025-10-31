@@ -9,34 +9,22 @@ defmodule SourceMapValidationTest do
     else
       Log.trace("Non-positive number", %{:file_name => "SourceMapValidationTest.hx", :line_number => 26, :class_name => "SourceMapValidationTest", :method_name => "main"})
     end
-    Log.trace("Loop iteration: " <> Kernel.to_string(0), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
-    Log.trace("Loop iteration: " <> Kernel.to_string(1), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
-    Log.trace("Loop iteration: " <> Kernel.to_string(2), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
-    Log.trace("Loop iteration: " <> Kernel.to_string(3), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
-    Log.trace("Loop iteration: " <> Kernel.to_string(4), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
+    Enum.each(0..4, fn item -> Log.trace("Loop iteration: #{(fn -> k end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"}) end)
     array = [1, 2, 3, 4, 5]
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
-  if (acc_g < length(acc_array)) do
-    item = acc_array[acc_g]
-    acc_g = acc_g + 1
-    process_item(item)
-    {:cont, {acc_array, acc_g, acc_state}}
-  else
-    {:halt, {acc_array, acc_g, acc_state}}
-  end
-end)
-    obj_name = "Test"
-    obj_value = 100
-    obj_nested_field = "nested value"
-    instance = TestClass.new("example")
-    instance.do_something()
+    Enum.each(array, fn item ->
+            process_item(item)
+    end)
+    _ = "Test"
+    _ = 100
+    _ = "nested value"
+    instance = MyApp.TestClass.new("example")
+    instance.doSomething()
     Log.trace("=== Test Complete ===", %{:file_name => "SourceMapValidationTest.hx", :line_number => 53, :class_name => "SourceMapValidationTest", :method_name => "main"})
   end
   defp test_function(str, num) do
-    Log.trace("Testing with: " <> str <> " and " <> Kernel.to_string(num), %{:file_name => "SourceMapValidationTest.hx", :line_number => 57, :class_name => "SourceMapValidationTest", :method_name => "testFunction"})
+    Log.trace("Testing with: #{(fn -> str end).()} and #{(fn -> num end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 57, :class_name => "SourceMapValidationTest", :method_name => "testFunction"})
   end
   defp process_item(item) do
-    Log.trace("Processing item: " <> Kernel.to_string(item), %{:file_name => "SourceMapValidationTest.hx", :line_number => 61, :class_name => "SourceMapValidationTest", :method_name => "processItem"})
+    Log.trace("Processing item: #{(fn -> item end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 61, :class_name => "SourceMapValidationTest", :method_name => "processItem"})
   end
 end
