@@ -103,10 +103,14 @@ class PresenceReduceRewriteTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
+                    var inPresence = (n.metadata?.isPresence == true) || (name != null && name.indexOf("Web.Presence") > 0);
+                    if (!inPresence) return n;
                     var newBody: Array<ElixirAST> = [];
                     for (b in body) newBody.push(rewriteInNode(b));
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
+                    var looksPresence = (n.metadata?.isPresence == true) || (name != null && name.indexOf("Web.Presence") > 0);
+                    if (!looksPresence) return n;
                     makeASTWithMeta(EDefmodule(name, rewriteInNode(doBlock)), n.metadata, n.pos);
                 default:
                     n;

@@ -53,6 +53,21 @@ class LocalUnderscoreUsedPromotionTransforms {
           out.push(s1);
         }
         makeASTWithMeta(EBlock(out), body.metadata, body.pos);
+      case EDo(stmts2):
+        var out2:Array<ElixirAST> = [];
+        for (i in 0...stmts2.length) {
+          var s = stmts2[i];
+          var s1 = switch (s.def) {
+            case EMatch(PVar(b), rhs) if (shouldPromote(b) && usedLater(stmts2, i, b)):
+              makeASTWithMeta(EMatch(PVar(trim(b)), rhs), s.metadata, s.pos);
+            case EBinary(Match, {def: EVar(b2)}, rhs2) if (shouldPromote(b2) && usedLater(stmts2, i, b2)):
+              makeASTWithMeta(EBinary(Match, makeAST(EVar(trim(b2))), rhs2), s.metadata, s.pos);
+            default:
+              s;
+          }
+          out2.push(s1);
+        }
+        makeASTWithMeta(EDo(out2), body.metadata, body.pos);
       default:
         body;
     }

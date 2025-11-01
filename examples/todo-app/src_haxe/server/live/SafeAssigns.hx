@@ -4,6 +4,17 @@ import phoenix.Phoenix.Socket;
 import phoenix.LiveSocket;
 import server.live.TodoLive.TodoLiveAssigns;
 
+// Bridge to the generated LiveView module for reuse of server-side helpers
+@:native("TodoAppWeb.TodoLive")
+extern class TodoLiveNative {
+    public static function filter_and_sort_todos(
+        todos: Array<server.schemas.Todo>,
+        filter: shared.TodoTypes.TodoFilter,
+        sortBy: shared.TodoTypes.TodoSort,
+        searchQuery: String
+    ): Array<server.schemas.Todo>;
+}
+
 /**
  * Type-safe socket assign operations for TodoLive using LiveSocket patterns
  * 
@@ -106,7 +117,7 @@ class SafeAssigns {
             case _: shared.TodoTypes.TodoSort.Created;
         };
         // Reuse the server helper to ensure identical sort semantics (no module resolution issues)
-        var sorted = server.live.TodoLive.filterAndSortTodos(
+        var sorted = TodoLiveNative.filter_and_sort_todos(
             socket.assigns.todos,
             socket.assigns.filter,
             parsed,

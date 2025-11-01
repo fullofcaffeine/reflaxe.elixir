@@ -2435,7 +2435,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LocalAssignDiscardIfUnused",
             description: "Replace `var = expr` with `expr` when var is never referenced later in the block",
-            enabled: false,
+            enabled: false, // disabled after SafeAssigns false positive; refine before enabling
             pass: reflaxe.elixir.ast.transformers.LocalAssignDiscardIfUnusedTransforms.pass
         });
 
@@ -2948,6 +2948,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexSimplifyIIFEInInterpolations.transformPass
         });
 
+        // Qualify single-segment remote call modules inside Web.* namespaces (AppWeb prefix)
+        passes.push({
+            name: "WebRemoteCallModuleQualification",
+            description: "Rewrite Foo.bar(...) → AppWeb.Foo.bar(...) inside Web modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WebRemoteCallModuleQualificationTransforms.pass
+        });
+
         // Rename `_assigns` parameter to `assigns` when function body contains ~H
         passes.push({
             name: "HeexAssignsParamRename",
@@ -3355,8 +3363,21 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceReduceRewrite",
             description: "Rewrite Presence Enum.each + Reflect.fields to Enum.reduce(Map.values(map), [], ...) with conditional append (early)",
-            enabled: true,
+            enabled: false, // temporarily disable to prevent incorrect accumulator removal; presence already idiomatic
             pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
+        });
+        // Presence safety: ensure concat accumulators have [] initialization if removed upstream
+        passes.push({
+            name: "PresenceConcatAccumulatorInit",
+            description: "Insert acc=[] when Enum.concat(acc, [...]) appears without prior definition (Presence only)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceConcatAccumulatorInitTransforms.pass
+        });
+        passes.push({
+            name: "PresenceReduceWhileAccumulatorRepair",
+            description: "Inject acc=[] and return acc for reduce_while loops missing initialization (Presence only)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceReduceWhileAccumulatorRepairTransforms.pass
         });
         passes.push({
             name: "MapConcatEachToMapAssign",
@@ -5040,11 +5061,19 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.pass,
             runAfter: ["DropInvalidMapGetSelfAssign_Final"]
         });
+        // Absolute final: discard `params = expr` side-effect-only assignments in mount/3
+        passes.push({
+            name: "MountParamsSideEffectAssignDiscard_Final",
+            description: "Drop head-binder reassignments of params in mount/3 when unused later",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountParamsSideEffectAssignDiscardTransforms.pass,
+            runAfter: ["MountSessionExtractCleanup_Final"]
+        });
         // Absolute-final replay: underscore unused locals in Controller modules (late shapes)
         passes.push({
             name: "ControllerLocalUnusedUnderscore_Final",
             description: "Final replay: underscore unused local assignment binders in controllers",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.ControllerLocalUnusedUnderscoreTransforms.pass,
             runAfter: ["MountSessionExtractCleanup_Final"]
         });
@@ -5062,6 +5091,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.AssignWhereSelfBinderUnderscoreTransforms.pass,
             runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
         });
+        // Late: fix Repo.all/Repo.one(query) to use last refined binder from query if/where chain
+        passes.push({
+            name: "EctoRepoFinalArgFromLatestQueryVar",
+            description: "Rewrite Repo.*(query) to use last refinement binder when present in the same block",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoRepoFinalArgFromLatestQueryVarTransforms.pass,
+            runAfter: ["AssignWhereSelfBinderUnderscore_Final"]
+        });
         // Absolute-final: ensure Phoenix component functions using ~H have `assigns` as the first arg
         passes.push({
             name: "HeexAssignsParamRename_Final",
@@ -5078,6 +5115,21 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.pass,
             runAfter: ["HandleEventParamsForceBodyRewrite_Final"]
+        });
+        // Absolute-last: guarantee no `_params` uses remain in handle_event/3
+        passes.push({
+            name: "HandleEventParamsUltraFinal_Last",
+            description: "Last guard: if body uses _params, set head to params and rewrite body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalLastTransforms.pass,
+            runAfter: [
+                "DefParamHeadUnderscoreWhenUnused_Final",
+                "DefParamUnusedUnderscoreGlobalSafe_Final",
+                "DropInvalidMapGetSelfAssign_Final",
+                "MountSessionExtractCleanup_Final",
+                "EctoRepoFinalArgFromLatestQueryVar",
+                "AssignWhereSelfBinderUnderscore_Final"
+            ]
         });
         passes.push({
             name: "LocalAssignUnusedUnderscore_Final",

@@ -130,8 +130,9 @@ class LiveEventCaseToCallbacksTransforms {
         for (e in unwrapped.prelude) blk.push(e);
         blk.push(makeNoReply(unwrapped.socket));
         var funBody = makeAST(EBlock(blk));
-        // Use `_params` if no binders (0‑arity event); otherwise use `params`.
-        var paramsBinder:EPattern = (safeBinders.length == 0) ? PVar("_params") : PVar("params");
+        // Always start with `params` for the 2nd arg; late passes may underscore
+        // when the body truly does not use it.
+        var paramsBinder:EPattern = PVar("params");
         var def = makeASTWithMeta(
             EDef(
                 "handle_event",
