@@ -68,15 +68,42 @@ class MountSessionExtractCleanupTransforms {
                     if (!drop) out.push(s);
                 }
                 makeASTWithMeta(EBlock(out), body.metadata, body.pos);
+            case EDo(stmtsDo):
+                var outDo:Array<ElixirAST> = [];
+                for (s in stmtsDo) {
+                    var drop = false;
+                    switch (s.def) {
+                        case EMatch(PVar(lhs), rhs) if (lhs == sessionName):
+                            drop = isSessionGetFromParams(rhs, paramsName);
+                        case EBinary(Match, left, right):
+                            switch (left.def) {
+                                case EVar(lhs2) if (lhs2 == sessionName):
+                                    drop = isSessionGetFromParams(right, paramsName);
+                                default:
+                            }
+                        default:
+                    }
+                    if (!drop) outDo.push(s);
+                }
+                makeASTWithMeta(EDo(outDo), body.metadata, body.pos);
             default:
                 body;
         }
     }
 
-    static inline function isSessionGetFromParams(expr: ElixirAST, paramsName: String): Bool {
+    static function sameIgnoringUnderscore(a:String, b:String):Bool {
+        if (a == b) return true;
+        if (a != null && b != null) {
+            if (a.length > 1 && a.charAt(0) == '_' && a.substr(1) == b) return true;
+            if (b.length > 1 && b.charAt(0) == '_' && b.substr(1) == a) return true;
+        }
+        return false;
+    }
+
+    static function isSessionGetFromParams(expr: ElixirAST, paramsName: String): Bool {
         return switch (expr.def) {
             case ERemoteCall({def: EVar(mod)}, fn, [arg0, {def: EString(key)}]) if (mod == "Map" && fn == "get" && key == "session"):
-                switch (arg0.def) { case EVar(v) if (v == paramsName): true; default: false; }
+                switch (arg0.def) { case EVar(v) if (sameIgnoringUnderscore(v, paramsName)): true; default: false; }
             default: false;
         }
     }

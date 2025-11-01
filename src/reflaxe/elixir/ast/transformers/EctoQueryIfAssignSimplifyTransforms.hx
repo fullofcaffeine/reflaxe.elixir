@@ -40,9 +40,18 @@ class EctoQueryIfAssignSimplifyTransforms {
                 function rewriteStmt(stmt:ElixirAST):Null<ElixirAST> {
                     return switch (stmt.def) {
                         case EMatch(PVar(inner), innerRhs) if (isEctoWhere(innerRhs)):
-                            rewriteInnerVar(innerRhs, inner, varName);
+                            // If binding the same var or its underscored variant, drop the inner assign
+                            if (inner == varName || (inner != null && inner.length > 1 && inner.charAt(0) == '_' && inner.substr(1) == varName)) {
+                                innerRhs;
+                            } else {
+                                rewriteInnerVar(innerRhs, inner, varName);
+                            }
                         case EBinary(Match, {def: EVar(inner2)}, innerRhs2) if (isEctoWhere(innerRhs2)):
-                            rewriteInnerVar(innerRhs2, inner2, varName);
+                            if (inner2 == varName || (inner2 != null && inner2.length > 1 && inner2.charAt(0) == '_' && inner2.substr(1) == varName)) {
+                                innerRhs2;
+                            } else {
+                                rewriteInnerVar(innerRhs2, inner2, varName);
+                            }
                         case EMatch(PVar(innerU), innerRhsU) if (isEctoWhere(innerRhsU) && innerU == varName):
                             makeAST(EBinary(Match, makeAST(EVar('_' + innerU)), innerRhsU));
                         case EBinary(Match, {def: EVar(innerU2)}, innerRhsU2) if (isEctoWhere(innerRhsU2) && innerU2 == varName):
