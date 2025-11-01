@@ -4,6 +4,7 @@ package phoenix;
 import haxe.functional.Result;
 import haxe.ds.Option;
 import phoenix.Ecto.Changeset;
+import phoenix.types.Flash.FlashType;
 
 /**
  * Comprehensive Phoenix framework extern definitions with full type safety
@@ -257,16 +258,9 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    // Map rich FlashType to Phoenix-supported keys (:info | :error)
+    // Map rich FlashType to Phoenix-supported keys via FlashTypeTools, then String.to_atom
     extern inline static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns> {
-        return untyped __elixir__(
-            'Phoenix.LiveView.put_flash({0}, (case {1} do ' +
-            '  {:info} -> :info; ' +
-            '  {:success} -> :info; ' +
-            '  {:warning} -> :info; ' +
-            '  {:error} -> :error; ' +
-            '  {:custom, _} -> :error ' +
-            'end), {2})', socket, type, message);
+        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', socket, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
     }
     
     /**
@@ -641,16 +635,7 @@ enum HttpStatus {
     Custom(code: Int);
 }
 
-/**
- * Flash message types
- */
-enum FlashType {
-    Info;
-    Success;
-    Warning;
-    Error;
-    Custom(type: String);
-}
+// Flash types are defined in phoenix.types.Flash.FlashType
 
 /**
  * Connection state

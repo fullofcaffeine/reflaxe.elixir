@@ -320,16 +320,8 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param message The message to display
 	 * @return Updated LiveSocket
 	 */
-    extern inline public function putFlash(type: phoenix.Phoenix.FlashType, message: String): LiveSocket<T> {
-        // Do mapping in Elixir to avoid pattern gaps during Haxe compilation
-        return untyped __elixir__(
-            'Phoenix.LiveView.put_flash({0}, (case {1} do ' +
-            '  {:info} -> :info; ' +
-            '  {:success} -> :info; ' +
-            '  {:warning} -> :info; ' +
-            '  {:error} -> :error; ' +
-            '  {:custom, _} -> :error ' +
-            'end), {2})', this, type, message);
+    extern inline public function putFlash(type: phoenix.types.Flash.FlashType, message: String): LiveSocket<T> {
+        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', this, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
     }
 	
 	/**

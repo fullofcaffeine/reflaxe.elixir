@@ -1,0 +1,66 @@
+# Page snapshot
+
+```yaml
+- main [ref=e2]:
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - heading "📝 Todo Manager" [level=1] [ref=e11]
+          - paragraph [ref=e12]: Welcome, Demo User!
+        - generic [ref=e13]:
+          - generic [ref=e14]:
+            - generic [ref=e15]: "3"
+            - generic [ref=e16]: Total
+          - generic [ref=e17]:
+            - generic [ref=e18]: "2"
+            - generic [ref=e19]: Completed
+          - generic [ref=e20]:
+            - generic [ref=e21]: "1"
+            - generic [ref=e22]: Pending
+      - button "➕ Add New Todo" [active] [ref=e23] [cursor=pointer]
+    - generic [ref=e25]:
+      - generic [ref=e27]:
+        - searchbox "Search todos..." [ref=e28]
+        - generic [ref=e29]: 🔍
+      - generic [ref=e30]:
+        - button "All" [ref=e31] [cursor=pointer]
+        - button "Active" [ref=e32] [cursor=pointer]
+        - button "Completed" [ref=e33] [cursor=pointer]
+      - combobox [ref=e35]:
+        - option "Sort by Date" [selected]
+        - option "Sort by Priority"
+        - option "Sort by Due Date"
+    - generic [ref=e36]:
+      - generic [ref=e37]: Showing 3 of 3 todos
+      - generic [ref=e38]:
+        - button "✅ Complete All" [ref=e39] [cursor=pointer]
+        - button "🗑️ Delete Completed" [ref=e40] [cursor=pointer]
+    - generic [ref=e41]:
+      - generic [ref=e43]:
+        - button [ref=e44] [cursor=pointer]
+        - generic [ref=e45]:
+          - heading "BD-A 1762026911781" [level=3] [ref=e46]
+          - generic [ref=e48]: "Priority: medium"
+        - generic [ref=e49]:
+          - button "✏️" [ref=e50] [cursor=pointer]
+          - button "🗑️" [ref=e51] [cursor=pointer]
+      - generic [ref=e53]:
+        - button "✓" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: ✓
+        - generic [ref=e56]:
+          - heading "BC2 1762026906956" [level=3] [ref=e57]
+          - generic [ref=e59]: "Priority: medium"
+        - generic [ref=e60]:
+          - button "✏️" [ref=e61] [cursor=pointer]
+          - button "🗑️" [ref=e62] [cursor=pointer]
+      - generic [ref=e64]:
+        - button "✓" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]: ✓
+        - generic [ref=e67]:
+          - heading "BC1 1762026906956" [level=3] [ref=e68]
+          - generic [ref=e70]: "Priority: medium"
+        - generic [ref=e71]:
+          - button "✏️" [ref=e72] [cursor=pointer]
+          - button "🗑️" [ref=e73] [cursor=pointer]
+```
