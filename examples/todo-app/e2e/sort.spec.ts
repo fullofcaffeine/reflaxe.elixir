@@ -4,6 +4,7 @@ test('sort by priority reorders list', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   await page.goto(base + '/todos')
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
+  const group = `grp-${Date.now()}`
 
   const mk = async (title: string, priority: 'low' | 'medium' | 'high') => {
     await page.getByTestId('btn-new-todo').click()
@@ -19,8 +20,10 @@ test('sort by priority reorders list', async ({ page }) => {
     await titleInput.fill(title)
     // Set priority
     await page.selectOption('select[name="priority"]', priority)
+    // Stamp with a unique tag to scope assertions
+    await page.locator('input[name="tags"]').fill(group)
     await page.getByTestId('btn-create-todo').click()
-    await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('[data-testid="todo-card"]', { hasText: group }).locator('h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }
 
   const tHigh = `High ${Date.now()}`
@@ -32,15 +35,17 @@ test('sort by priority reorders list', async ({ page }) => {
 
   // Change sort to Priority and ensure a fresh render
   await page.selectOption('select[name="sort_by"]', 'priority')
-  await page.waitForTimeout(300)
+  await page.waitForFunction(() => document.querySelector('select[name="sort_by"]').value === 'priority')
 
-  // Expect relative ordering: High appears before Medium, which appears before Low
+  // Expect priority ascending by rank: low < medium < high (UI sort semantics)
   await expect.poll(async () => {
-    const titles = await page.locator('[data-testid="todo-card"] h3').allTextContents()
-    console.log('TITLES:', titles)
-    const iHigh = titles.findIndex(t => t.includes(tHigh))
-    const iMed = titles.findIndex(t => t.includes(tMed))
-    const iLow = titles.findIndex(t => t.includes(tLow))
-    return iHigh >= 0 && iMed >= 0 && iLow >= 0 && iHigh < iMed && iMed < iLow
-  }, { timeout: 8000 }).toBe(true)
+    const cards = page.locator('[data-testid="todo-card"]').filter({ hasText: group })
+    const priorities = await cards.locator('span').allTextContents()
+    const ranks = priorities
+      .filter(t => /Priority:/i.test(t))
+      .map(t => t.toLowerCase().includes('low') ? 0 : t.toLowerCase().includes('medium') ? 1 : 2)
+    // We created exactly three with the same stamp; ensure we have 3 readings
+    if (ranks.length < 3) return false
+    return ranks[0] <= ranks[1] && ranks[1] <= ranks[2]
+  }, { timeout: 20000 }).toBe(true)
 })

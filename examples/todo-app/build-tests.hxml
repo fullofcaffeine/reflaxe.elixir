@@ -24,4 +24,4 @@
 # Include test modules (explicit for now; add more as needed)
 web.HealthTest
 web.TodoLiveCrudTest
-test.live.TodoLiveDueDateTest
+live.TodoLiveDueDateTest
