@@ -39,9 +39,9 @@ class MountParamsUnusedReassignUnderscoreTransforms {
     for (i in 0...stmts.length) {
       var s = stmts[i];
       var s1 = switch (s.def) {
-        case EMatch(PVar("params"), rhs):
+        case EMatch(PVar("params"), rhs) | EMatch(PVar("_params"), rhs):
           makeASTWithMeta(EMatch(PVar("_"), rhs), s.metadata, s.pos);
-        case EBinary(Match, {def: EVar("params")}, rhs2):
+        case EBinary(Match, {def: EVar("params")}, rhs2) | EBinary(Match, {def: EVar("_params")}, rhs2):
           makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs2), s.metadata, s.pos);
         default: s;
       };
