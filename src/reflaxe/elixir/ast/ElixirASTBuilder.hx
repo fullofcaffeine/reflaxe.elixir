@@ -3446,10 +3446,10 @@ class ElixirASTBuilder {
                 convertExpression(e);
 
             case TTypeExpr(m):
-                // Type expressions become module references (atoms)
-                // Reuse existing moduleTypeToString utility function
+                // Type expressions become module references (ModuleName), not atoms
+                // Reuse existing moduleTypeToString utility function and emit a bare module ref
                 var moduleName = moduleTypeToString(m);
-                EAtom(moduleName);
+                EVar(moduleName);
 
             case TIdent(s):
                 // Identifier reference
