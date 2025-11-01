@@ -52,8 +52,9 @@ class PresenceReduceWhileAccumulatorRepairTransforms {
       if (n == null || n.def == null) return;
       switch (n.def) {
         case ERemoteCall(_, func, _) if (func == "reduce_while"): hasReduceWhile = true;
-        case ERemoteCall({def: EVar("Enum")}, "concat", args) if (args != null && args.length >= 1):
-          switch (args[0].def) { case EVar(v): accVar = v; default: }
+        case ERemoteCall({def: EVar(modName)}, "concat", args) if (args != null && args.length >= 1):
+          var isEnum = (modName == "Enum") || StringTools.endsWith(modName, ".Enum");
+          if (isEnum) switch (args[0].def) { case EVar(v): accVar = v; default: }
         default:
       }
       switch (n.def) {
@@ -99,4 +100,3 @@ class PresenceReduceWhileAccumulatorRepairTransforms {
 }
 
 #end
-

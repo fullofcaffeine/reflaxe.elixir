@@ -56,12 +56,39 @@ class HandleEventLocalUnusedUnderscoreTransforms {
                                     makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binder2)), right), s.metadata, s.pos);
                                 default: s;
                             }
+                        case ECase(expr, clauses):
+                            var newClauses = [];
+                            for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnusedLocals(cl.body) });
+                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
                         default:
                             s;
                     };
                     out.push(s1);
                 }
                 makeASTWithMeta(EBlock(out), body.metadata, body.pos);
+            case EDo(stmts2):
+                var out2:Array<ElixirAST> = [];
+                for (i in 0...stmts2.length) {
+                    var s = stmts2[i];
+                    var s1 = switch (s.def) {
+                        case EMatch(PVar(binder), rhs):
+                            if (!usedLater(stmts2, i+1, binder)) makeASTWithMeta(EMatch(PVar('_' + binder), rhs), s.metadata, s.pos) else s;
+                        case EBinary(Match, left, right):
+                            switch (left.def) {
+                                case EVar(binder2) if (!usedLater(stmts2, i+1, binder2)):
+                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binder2)), right), s.metadata, s.pos);
+                                default: s;
+                            }
+                        case ECase(expr, clauses):
+                            var newClauses = [];
+                            for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnusedLocals(cl.body) });
+                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
+                        default:
+                            s;
+                    };
+                    out2.push(s1);
+                }
+                makeASTWithMeta(EDo(out2), body.metadata, body.pos);
             default:
                 body;
         }
@@ -79,4 +106,3 @@ class HandleEventLocalUnusedUnderscoreTransforms {
 }
 
 #end
-

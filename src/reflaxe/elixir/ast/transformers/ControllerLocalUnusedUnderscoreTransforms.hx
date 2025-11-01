@@ -62,12 +62,39 @@ class ControllerLocalUnusedUnderscoreTransforms {
                                     makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), right), s.metadata, s.pos);
                                 default: s;
                             }
+                        case ECase(expr, clauses):
+                            var newClauses = [];
+                            for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnused(cl.body) });
+                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
                         default:
                             s;
                     };
                     out.push(s1);
                 }
                 makeASTWithMeta(EBlock(out), body.metadata, body.pos);
+            case EDo(stmts2):
+                var out2:Array<ElixirAST> = [];
+                for (i in 0...stmts2.length) {
+                    var s = stmts2[i];
+                    var s1 = switch (s.def) {
+                        case EMatch(PVar(b), rhs) if (!usedLater(stmts2, i+1, b)):
+                            makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
+                        case EBinary(Match, left, right):
+                            switch (left.def) {
+                                case EVar(b2) if (!usedLater(stmts2, i+1, b2)):
+                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), right), s.metadata, s.pos);
+                                default: s;
+                            }
+                        case ECase(expr, clauses):
+                            var newClauses = [];
+                            for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnused(cl.body) });
+                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
+                        default:
+                            s;
+                    };
+                    out2.push(s1);
+                }
+                makeASTWithMeta(EDo(out2), body.metadata, body.pos);
             default:
                 body;
         }
@@ -75,11 +102,39 @@ class ControllerLocalUnusedUnderscoreTransforms {
 
     static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
         var found = false;
-        for (j in start...stmts.length) if (!found) {
-            reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-                switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-            });
+        function scan(n: ElixirAST, inLhs:Bool = false): Void {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case EVar(v) if (v == name && !inLhs): found = true;
+                case EBinary(Match, l, r):
+                    // Do not treat occurrences on LHS as a "use" (it's a binder)
+                    scan(l, true); scan(r, false);
+                case EMatch(pat, rhs):
+                    // skip scanning pattern entirely; only consider RHS for usages
+                    scan(rhs, false);
+                case EBlock(ss): for (s in ss) scan(s);
+                case EDo(ss2): for (s in ss2) scan(s);
+                case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
+                case ECase(expr, clauses):
+                    scan(expr, false);
+                    for (cl in clauses) { if (cl.guard != null) scan(cl.guard, false); scan(cl.body, false); }
+                case EWith(clauses, doBlock, elseBlock):
+                    for (wc in clauses) scan(wc.expr, false);
+                    scan(doBlock, false);
+                    if (elseBlock != null) scan(elseBlock, false);
+                case ECall(t,_,as): if (t != null) scan(t, false); if (as != null) for (a in as) scan(a, false);
+                case ERemoteCall(t2,_,as2): scan(t2, false); if (as2 != null) for (a2 in as2) scan(a2, false);
+                case EField(obj,_): scan(obj, false);
+                case EAccess(obj2,key): scan(obj2, false); scan(key, false);
+                case EKeywordList(pairs): for (p in pairs) scan(p.value, false);
+                case EMap(pairs): for (p in pairs) { scan(p.key, false); scan(p.value, false); }
+                case EStructUpdate(base, fs): scan(base, false); for (f in fs) scan(f.value, false);
+                case ETuple(es) | EList(es): for (e in es) scan(e, false);
+                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) scan(cl.guard, false); scan(cl.body, false); }
+                default:
+            }
         }
+        for (j in start...stmts.length) if (!found) scan(stmts[j], false);
         return found;
     }
 
@@ -95,4 +150,3 @@ class ControllerLocalUnusedUnderscoreTransforms {
 }
 
 #end
-

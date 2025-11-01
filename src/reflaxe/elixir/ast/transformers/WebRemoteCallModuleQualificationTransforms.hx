@@ -49,14 +49,28 @@ class WebRemoteCallModuleQualificationTransforms {
   static function qualifyInNode(node: ElixirAST, prefix:String): ElixirAST {
     return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
-        case ERemoteCall({def: EVar(mod)}, fn, args) if (mod != null && mod.indexOf(".") == -1):
-          makeASTWithMeta(ERemoteCall(makeAST( EVar(prefix + "." + mod) ), fn, args), x.metadata, x.pos);
+        // Only qualify well-known Phoenix Web single-segment modules.
+        // This avoids incorrectly rewriting application modules (e.g., PubSub helpers)
+        // into the AppWeb namespace.
+        case ERemoteCall({def: EVar(mod)}, fn, args)
+          if (mod != null && mod.indexOf(".") == -1 && isPhoenixWebModule(mod)):
+          makeASTWithMeta(ERemoteCall(makeAST(EVar(prefix + "." + mod)), fn, args), x.metadata, x.pos);
         default:
           x;
       }
     });
   }
+
+  /**
+   * Guard list of Phoenix Web modules that are universally present under AppWeb.
+   * Shape-based and framework-scoped (not app-specific): keeps transform safe.
+   */
+  static inline function isPhoenixWebModule(mod:String):Bool {
+    return switch (mod) {
+      case "Routes" | "Gettext" | "HTML" | "CoreComponents" | "Components" | "Layouts": true;
+      default: false;
+    }
+  }
 }
 
 #end
-

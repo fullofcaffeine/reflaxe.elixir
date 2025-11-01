@@ -177,11 +177,14 @@ class TodoPubSub {
                 if (msg.todo_id != null) Some(TodoDeleted(msg.todo_id)) else None;
             case "bulk_update":
                 if (msg.action != null) {
-                    var bulkAction = parseBulkAction(msg.action);
-                    switch (bulkAction) {
-                        case Some(action): Some(BulkUpdate(action));
-                        case None: None;
-                    }
+                    return switch (msg.action) {
+                        case "complete_all": Some(BulkUpdate(CompleteAll));
+                        case "delete_completed": Some(BulkUpdate(DeleteCompleted));
+                        case "set_priority": Some(BulkUpdate(SetPriority(TodoPriority.Medium)));
+                        case "add_tag": Some(BulkUpdate(AddTag("")));
+                        case "remove_tag": Some(BulkUpdate(RemoveTag("")));
+                        case _: None;
+                    };
                 } else None;
             case "user_online":
                 if (msg.user_id != null) Some(UserOnline(msg.user_id)) else None;
@@ -189,11 +192,13 @@ class TodoPubSub {
                 if (msg.user_id != null) Some(UserOffline(msg.user_id)) else None;
             case "system_alert":
                 if (msg.message != null && msg.level != null) {
-                    var alertLevel = parseAlertLevel(msg.level);
-                    switch (alertLevel) {
-                        case Some(level): Some(SystemAlert(msg.message, level));
-                        case None: None;
-                    }
+                    return switch (msg.level) {
+                        case "info": Some(SystemAlert(msg.message, Info));
+                        case "warning": Some(SystemAlert(msg.message, Warning));
+                        case "error": Some(SystemAlert(msg.message, Error));
+                        case "critical": Some(SystemAlert(msg.message, Critical));
+                        case _: None;
+                    };
                 } else None;
             case _:
                 trace(SafePubSub.createUnknownMessageError(msg.type));
@@ -217,14 +222,14 @@ class TodoPubSub {
     /**
      * Parse bulk action string back to enum
      */
-    private static function parseBulkAction(action: String): Option<BulkOperationType> {
+    @:keep private static function parseBulkAction(action: String): Null<BulkOperationType> {
         return switch (action) {
-            case "complete_all": Some(CompleteAll);
-            case "delete_completed": Some(DeleteCompleted);
-            case "set_priority": Some(SetPriority(TodoPriority.Medium));
-            case "add_tag": Some(AddTag(""));
-            case "remove_tag": Some(RemoveTag(""));
-            case _: None;
+            case "complete_all": CompleteAll;
+            case "delete_completed": DeleteCompleted;
+            case "set_priority": SetPriority(TodoPriority.Medium);
+            case "add_tag": AddTag("");
+            case "remove_tag": RemoveTag("");
+            case _: null;
         };
     }
     
@@ -243,13 +248,13 @@ class TodoPubSub {
     /**
      * Parse alert level string back to enum
      */
-    private static function parseAlertLevel(level: String): Option<AlertLevel> {
+    @:keep private static function parseAlertLevel(level: String): Null<AlertLevel> {
         return switch (level) {
-            case "info": Some(Info);
-            case "warning": Some(Warning);
-            case "error": Some(Error);
-            case "critical": Some(Critical);
-            case _: None;
+            case "info": Info;
+            case "warning": Warning;  
+            case "error": Error;
+            case "critical": Critical;
+            case _: null;
         };
     }
 }
