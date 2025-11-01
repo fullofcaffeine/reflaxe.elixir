@@ -320,9 +320,15 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param message The message to display
 	 * @return Updated LiveSocket
 	 */
-	extern inline public function putFlash(type: phoenix.Phoenix.FlashType, message: String): LiveSocket<T> {
-		return untyped __elixir__('Phoenix.LiveView.put_flash({0}, {1}, {2})', this, type, message);
-	}
+    extern inline public function putFlash(type: phoenix.Phoenix.FlashType, message: String): LiveSocket<T> {
+        // Map rich FlashType to Phoenix-supported keys (:info | :error)
+        // Info/Success/Warning → :info, Error/Custom → :error
+        var key = switch (type) {
+            case Info | Success | Warning: "info";
+            case Error | Custom(_): "error";
+        };
+        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', this, key, message);
+    }
 	
 	/**
 	 * Push an event to client-side hooks.
