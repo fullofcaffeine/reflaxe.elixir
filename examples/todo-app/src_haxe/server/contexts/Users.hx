@@ -63,13 +63,9 @@ class Users {
      * Get all users with optional filtering
      */
     public static function listUsers(?filter: UserFilter): Array<User> {
-        // Use typed Repo extern for type-safe database access
+        // Build a single query variable and refine it conditionally; return at the end.
+        var query = TypedQuery.from(contexts.User);
         if (filter != null) {
-            // Build a single query variable and refine it conditionally to avoid
-            // inner shadowing like `query = where(query, ...)` inside branches.
-            var query = TypedQuery.from(contexts.User);
-
-            // Refine the same `query` variable conditionally to avoid unused temp binders
             if (filter.name != null) {
                 query = query.where(u -> u.name == '%${filter.name}%');
             }
@@ -79,10 +75,8 @@ class Users {
             if (filter.isActive != null) {
                 query = query.where(u -> u.active == filter.isActive);
             }
-            return Repo.all(query);
         }
-        
-        return Repo.all(contexts.User);
+        return Repo.all(query);
     }
     
     /**
