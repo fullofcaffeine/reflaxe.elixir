@@ -51,6 +51,31 @@ class InlineUnderscoreTempUsedOnceTransforms {
             }
           }
           makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+        // Also handle do-blocks (EDo) the same way
+        case EDo(stmts) if (stmts.length >= 2):
+          var out2:Array<ElixirAST> = [];
+          var i2 = 0;
+          while (i2 < stmts.length) {
+            var s2 = stmts[i2];
+            switch (s2.def) {
+              case EMatch(PVar(tmp), rhs) if (isUnderscore(tmp) && i2 + 1 < stmts.length):
+                var next = stmts[i2+1];
+                if (usedExactlyOnceAsVar(next, tmp)) {
+                  var inlined = substituteVar(next, tmp, rhs);
+                  out2.push(inlined);
+                  i2 += 2; continue;
+                } else { out2.push(s2); i2++; }
+              case EBinary(Match, {def: EVar(tmp2)}, rhs2) if (isUnderscore(tmp2) && i2 + 1 < stmts.length):
+                var next2 = stmts[i2+1];
+                if (usedExactlyOnceAsVar(next2, tmp2)) {
+                  var inlined2 = substituteVar(next2, tmp2, rhs2);
+                  out2.push(inlined2); i2 += 2; continue;
+                } else { out2.push(s2); i2++; }
+              default:
+                out2.push(s2); i2++;
+            }
+          }
+          makeASTWithMeta(EDo(out2), n.metadata, n.pos);
         default:
           n;
       }
@@ -95,4 +120,3 @@ class InlineUnderscoreTempUsedOnceTransforms {
 }
 
 #end
-

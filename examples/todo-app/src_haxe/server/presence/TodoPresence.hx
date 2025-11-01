@@ -131,19 +131,14 @@ class TodoPresence implements PresenceBehavior {
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
         // Get all users through the generated listSimple() method
         var allUsers = listSimple();
-        var editingUsers = [];
-        
-        // Iterate over Dynamic presence map using Reflect
+        var metas:Array<PresenceMeta> = [];
         for (userId in Reflect.fields(allUsers)) {
             var entry: phoenix.Presence.PresenceEntry<PresenceMeta> = Reflect.field(allUsers, userId);
             if (entry.metas.length > 0) {
                 var meta = entry.metas[0];
-                if (meta.editingTodoId == todoId) {
-                    editingUsers.push(meta);
-                }
+                if (meta.editingTodoId == todoId) metas.push(meta);
             }
         }
-        
-        return editingUsers;
+        return metas;
     }
 }
