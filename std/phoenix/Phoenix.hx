@@ -257,8 +257,14 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    @:native("put_flash")
-    static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
+    // Map rich FlashType to Phoenix-supported keys (:info | :error)
+    extern inline static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns> {
+        var key = switch (type) {
+            case Info | Success | Warning: "info";
+            case Error | Custom(_): "error";
+        };
+        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', socket, key, message);
+    }
     
     /**
      * Put temporary flash (cleared after next render)
