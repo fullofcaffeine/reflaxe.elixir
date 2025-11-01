@@ -221,9 +221,9 @@ class TodoPubSub {
         return switch (action) {
             case "complete_all": Some(CompleteAll);
             case "delete_completed": Some(DeleteCompleted);
-            case "set_priority": Some(SetPriority(TodoPriority.Medium)); // Default priority
-            case "add_tag": Some(AddTag("")); // Default tag - could be enhanced
-            case "remove_tag": Some(RemoveTag("")); // Default tag - could be enhanced
+            case "set_priority": Some(SetPriority(TodoPriority.Medium));
+            case "add_tag": Some(AddTag(""));
+            case "remove_tag": Some(RemoveTag(""));
             case _: None;
         };
     }

@@ -178,8 +178,8 @@ class TodoLive {
 			case FilterTodos(filter):
 				SafeAssigns.setFilter(socket, filter);
 			
-			case SortTodos(sortBy):
-				SafeAssigns.setSortBy(socket, sortBy);
+            case SortTodos(sortBy):
+                SafeAssigns.setSortByAndResort(socket, sortBy);
 			
 			case SearchTodos(query):
 				SafeAssigns.setSearchQuery(socket, query);
@@ -1170,7 +1170,7 @@ static function getUserFromSession(session: Dynamic): User {
 	/**
 	 * Helper to filter and sort todos
 	 */
-    static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String): Array<server.schemas.Todo> {
+    public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String): Array<server.schemas.Todo> {
         var filtered = filterTodos(todos, filter, searchQuery);
         // Delegate sorting to std helper (emitted under app namespace), avoid app __elixir__
         return phoenix.Sorting.by(encodeSort(sortBy), filtered);

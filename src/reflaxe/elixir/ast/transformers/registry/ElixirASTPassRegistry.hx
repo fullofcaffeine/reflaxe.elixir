@@ -263,6 +263,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.controllerTransformPass
         });
+        // Controller local unused binder underscore (shape-based, avoids warnings)
+        passes.push({
+            name: "ControllerLocalUnusedUnderscore",
+            description: "In Controller modules, underscore unused local binders introduced by intermediate chains",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ControllerLocalUnusedUnderscoreTransforms.pass
+        });
         
         passes.push({
             name: "RouterTransform",
@@ -2461,7 +2468,8 @@ class ElixirASTPassRegistry {
             name: "HandleEventParamsPromote",
             description: "Rename handle_event/3 `_params` to `params` when referenced and rewrite body",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamsPromoteTransforms.pass
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsPromoteTransforms.pass,
+            runAfter: ["DefParamUnusedUnderscoreSafe"]
         });
         // (Temporarily disabled) Mount param promotion can interact with local
         // temp binders in some shapes; keep handle_event promotion only.
@@ -2491,7 +2499,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "MountParamsUltraFinal",
             description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
-            enabled: false, // re-inserted later as absolute last
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass
         });
         // Ensure inline if inside containers are parenthesized to avoid parser ambiguity
@@ -2500,6 +2508,60 @@ class ElixirASTPassRegistry {
             description: "Wrap inline if-expressions inside tuples/lists/maps in parentheses (absolute-final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.IfInlineInContainerParenTransforms.pass
+        });
+        // Global variant for non-LiveView contexts (e.g., PubSub helpers)
+        passes.push({
+            name: "InlineIfInContainersGlobal",
+            description: "Wrap inline if-expressions in tuples/lists/maps (global contexts)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineIfInContainersGlobalTransforms.pass
+        });
+        // Generic: underscore unused case/with pattern vars
+        passes.push({
+            name: "CasePatternUnusedUnderscore",
+            description: "Underscore unused variables bound in case/with patterns",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CasePatternUnusedUnderscoreTransforms.pass
+        });
+        passes.push({
+            name: "LocalUnderscoreUsedPromotion",
+            description: "Promote local `_name` binders to `name` when actually used (warnings cleanup)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreUsedPromotionTransforms.pass
+        });
+        passes.push({
+            name: "InlineUnderscoreTempUsedOnce",
+            description: "Inline `_tmp = expr` followed by single-use of `_tmp` in next statement",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineUnderscoreTempUsedOnceTransforms.pass
+        });
+        passes.push({
+            name: "MountBodyAlignToHead_Final",
+            description: "Align body references (params/_params) to mount/3 head binder (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountBodyAlignToHeadTransforms.pass,
+            runAfter: ["MountParamsUltraFinal"]
+        });
+        // Drop redundant `session = Map.get(params, "session")` when mount/3 already receives session
+        passes.push({
+            name: "MountSessionExtractCleanup",
+            description: "Remove session extraction from params in mount/3; use real session arg",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.pass
+        });
+        passes.push({
+            name: "HandleEventBodyAlignToHead_Final",
+            description: "Align body references (params/_params) to handle_event/3 head binder (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventBodyAlignToHeadTransforms.pass,
+            runAfter: ["HandleEventParamsUltraFinal"]
+        });
+        // HandleEvent local hygiene: underscore unused local Map.get extractions
+        passes.push({
+            name: "HandleEventLocalUnusedUnderscore_Final",
+            description: "Rename unused local binders in handle_event/3 to underscore (shape-based)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventLocalUnusedUnderscoreTransforms.pass
         });
         // Inject @compile nowarn for local Ecto DSL shims (from/3, where/3)
         passes.push({
@@ -2513,6 +2575,26 @@ class ElixirASTPassRegistry {
             description: "Simplify inner `query =` inside if-branches for Ecto.Query.where",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoQueryIfAssignSimplifyTransforms.pass
+        });
+        passes.push({
+            name: "EctoQueryBranchSelfAssignUnderscore",
+            description: "In branch tails, rewrite `x = Ecto.Query.where(x, ..)` to `_x = ...`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.pass
+        });
+        passes.push({
+            name: "AssignWhereSelfBinderUnderscore",
+            description: "Rewrite `x = Ecto.Query.where(x, ...)` to `_x = ...` everywhere in bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignWhereSelfBinderUnderscoreTransforms.pass
+        });
+        // Safety: drop invalid self-assignments of Map.get/2 that can be introduced
+        // by alignment passes; must run late after other body rewrites.
+        passes.push({
+            name: "DropInvalidMapGetSelfAssign",
+            description: "Remove `Map.get(params, key) = Map.get(params, key)` statements in function bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.pass
         });
         // Migration: inject nowarn + stubs (scheduled in absolute-final section below for final shapes)
         passes.push({
@@ -2646,7 +2728,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ParamUnderscoreArgRefAlign",
             description: "Rewrite `_params` to `params` in defs that have a `params` arg",
-            enabled: false, // move to absolute-final section
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignTransforms.pass
         });
 
@@ -2926,7 +3008,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules",
-            enabled: true,
+            enabled: false, // disabled to avoid false-positives in LiveView helpers
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -2934,7 +3016,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Late sweep: underscore unused def/defp params in Phoenix modules",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -2955,7 +3037,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Ultra-final underscore of unused def/defp params in Web/Live/Presence",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
         // Final: discard top-level nil assignments in function bodies when unused
@@ -4027,24 +4109,25 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass
         });
         // Final repair: remove underscore from params when body uses the base name
+        // KEEP DISABLED for Task 1 stability: avoid late param renames that can churn LiveView heads
         passes.push({
             name: "ParamUnderscoreUsedRepair",
-            description: "Rename `_name` to `name` for parameters used in function body",
+            description: "Rename `_name` to `name` for parameters used in function body (disabled for runtime stabilization)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ParamUnderscoreUsedRepairTransforms.pass
         });
         // Targeted: changeset/2 binder repair (ensure base names when body uses them)
         passes.push({
             name: "ChangesetParamUsedRepair",
-            description: "In changeset/2, rename underscored params to base names when body uses base",
-            enabled: true,
+            description: "In changeset/2, rename underscored params to base names when body uses base (disabled for stabilization)",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ChangesetParamUsedRepairTransforms.pass
         });
         // Final guard: align body references to declared underscored params in changeset/2
         passes.push({
             name: "ChangesetBodyAlignToParam",
-            description: "Rewrite body vars user/attrs to _user/_attrs when params are underscored",
-            enabled: true,
+            description: "Rewrite body vars user/attrs to _user/_attrs when params are underscored (disabled for stabilization)",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ChangesetBodyAlignToParamTransforms.pass
         });
         // After all changeset shape injections, underscore unused params if still unused
@@ -4876,7 +4959,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "MountParamsUltraFinal",
             description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass,
             runAfter: ["ChainAssignIfPromote_Replay_Last"]
         });
@@ -4901,13 +4984,107 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ParamUnderscoreGlobalAlignFinalTransforms.pass,
             runAfter: ["ParamUnderscoreArgRefAlign_Final"]
         });
+        passes.push({
+            name: "HandleEventParamsForceBodyRewrite_Final",
+            description: "Absolute final: force `_params` → `params` inside handle_event/3 bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsForceBodyRewriteFinalTransforms.pass,
+            runAfter: [
+                "ParamUnderscoreGlobalAlign_Final",
+                "DefParamUnusedUnderscoreGlobalSafe_Final",
+                "DropInvalidMapGetSelfAssign_Final",
+                "MountSessionExtractCleanup_Final",
+                "EctoQueryBranchSelfAssignUnderscore_Final",
+                "AssignWhereSelfBinderUnderscore_Final"
+            ]
+        });
+        passes.push({
+            name: "DefParamUsedBaseNamePromotion_Final",
+            description: "Promote underscored def params to base name when body uses base name (absolute final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamUsedBaseNamePromotionFinalTransforms.pass,
+            // Make this truly last across hygiene by running after all late underscore/align replays
+            runAfter: [
+                "ParamUnderscoreArgRefAlign_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsForceBodyRewrite_Final",
+                "DefParamUnusedUnderscoreGlobalSafe_Final",
+                "DropInvalidMapGetSelfAssign_Final",
+                "MountSessionExtractCleanup_Final",
+                "EctoQueryBranchSelfAssignUnderscore_Final",
+                "AssignWhereSelfBinderUnderscore_Final",
+                "LocalAssignUnusedUnderscore_Final"
+            ]
+        });
         // Re-run safe unused-def-param underscore promotion at the very end
         passes.push({
             name: "DefParamUnusedUnderscoreGlobalSafe_Final",
-            description: "Final replay: underscore unused def params (safe, global)",
+            description: "Final replay: underscore unused def params (safe, global) [disabled due to false positives in Web helpers]",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass,
             runAfter: ["ParamUnderscoreGlobalAlign_Final"]
+        });
+        // Absolute-final sanitizer: drop any self-assign Map.get artifacts
+        passes.push({
+            name: "DropInvalidMapGetSelfAssign_Final",
+            description: "Absolute final: remove Map.get(params, key) = Map.get(params, key) statements in defs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.pass,
+            runAfter: ["DefParamUnusedUnderscoreGlobalSafe_Final", "ParamUnderscoreGlobalAlign_Final", "HandleEventParamsUltraFinal", "MountParamsUltraFinal"]
+        });
+        // Absolute-final: ensure mount/3 session extraction is dropped if still present
+        passes.push({
+            name: "MountSessionExtractCleanup_Final",
+            description: "Absolute final: drop `session = Map.get(params, \"session\")` inside mount/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.pass,
+            runAfter: ["DropInvalidMapGetSelfAssign_Final"]
+        });
+        // Absolute-final replay: underscore unused locals in Controller modules (late shapes)
+        passes.push({
+            name: "ControllerLocalUnusedUnderscore_Final",
+            description: "Final replay: underscore unused local assignment binders in controllers",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.ControllerLocalUnusedUnderscoreTransforms.pass,
+            runAfter: ["MountSessionExtractCleanup_Final"]
+        });
+        passes.push({
+            name: "EctoQueryBranchSelfAssignUnderscore_Final",
+            description: "Absolute final replay: underscore trailing self-assign where/3 in branches",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.pass,
+            runAfter: ["ControllerLocalUnusedUnderscore_Final"]
+        });
+        passes.push({
+            name: "AssignWhereSelfBinderUnderscore_Final",
+            description: "Absolute final replay: rewrite `x = Ecto.Query.where(x, ...)` to `_x = ...` everywhere",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignWhereSelfBinderUnderscoreTransforms.pass,
+            runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
+        });
+        // Absolute-final: ensure Phoenix component functions using ~H have `assigns` as the first arg
+        passes.push({
+            name: "HeexAssignsParamRename_Final",
+            description: "Absolute final safety: rename _assigns → assigns when ~H is present in body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAssignsParamRenameFinalTransforms.pass,
+            runAfter: ["AssignWhereSelfBinderUnderscore_Final", "DefParamUnusedUnderscoreGlobalSafe_Final"]
+        });
+        // Absolute-final: underscore `params` head binder in mount/3 and handle_event/3
+        // when unused in the body to silence warnings
+        passes.push({
+            name: "DefParamHeadUnderscoreWhenUnused_Final",
+            description: "Rename params→_params in mount/3 & handle_event/3 when body does not reference params",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.pass,
+            runAfter: ["HandleEventParamsForceBodyRewrite_Final"]
+        });
+        passes.push({
+            name: "LocalAssignUnusedUnderscore_Final",
+            description: "Absolute final: underscore local assign binders not used later in the same block",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreTransforms.pass,
+            runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
         });
 
         // Filter disabled passes first

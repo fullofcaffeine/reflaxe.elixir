@@ -248,10 +248,12 @@ class LiveViewTypedEventBridgeTransforms {
         var normalized = makeAST(ECase(delegate, [ clause1, clause2 ]));
         blk.push(normalized);
         var funBody = makeAST(EBlock(blk));
+        // Use `_params` for 0‑arity events to avoid unused param warnings; otherwise keep `params`.
+        var paramsBinder = (finalBinders.length == 0) ? PVar("_params") : PVar("params");
         return makeASTWithMeta(
             EDef(
                 "handle_event",
-                [ PLiteral(makeAST(EString(eventName))), PVar("params"), PVar("socket") ],
+                [ PLiteral(makeAST(EString(eventName))), paramsBinder, PVar("socket") ],
                 null,
                 funBody
             ),

@@ -93,6 +93,27 @@ class SafeAssigns {
         };
         return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.sort_by, parsed);
     }
+
+    /**
+     * Set sort_by and immediately apply sorting to the visible list.
+     * Keeps behavior deterministic for UI tests and user expectations.
+     */
+    public static function setSortByAndResort(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        var parsed = switch (sortBy) {
+            case "priority": shared.TodoTypes.TodoSort.Priority;
+            case "due_date": shared.TodoTypes.TodoSort.DueDate;
+            case _: shared.TodoTypes.TodoSort.Created;
+        };
+        // Reuse the server helper to ensure identical sort semantics (no module resolution issues)
+        var sorted = server.live.TodoLive.filterAndSortTodos(
+            socket.assigns.todos,
+            socket.assigns.filter,
+            parsed,
+            socket.assigns.search_query
+        );
+        return liveSocket.merge({ sort_by: parsed, todos: sorted });
+    }
     
     /**
      * Set the searchQuery field using LiveSocket's type-safe assign pattern

@@ -45,6 +45,7 @@ class DefParamUnusedUnderscoreSafeTransforms {
                     var newArgs:Array<EPattern> = [];
                     // Special-case LiveView mount/3: never underscore the 3rd param when it is `socket`
                     var isMount = (name == "mount") && (args != null && args.length >= 3);
+                    var isHandleEvent = (name == "handle_event") && (args != null && args.length == 3);
                     for (i in 0...(args != null ? args.length : 0)) {
                         var a = args[i];
                         if (isMount && i == 2) {
@@ -52,6 +53,10 @@ class DefParamUnusedUnderscoreSafeTransforms {
                                 case PVar(nm) if (nm == "socket"): newArgs.push(a); // keep `socket` as-is
                                 default: newArgs.push(underscoreIfUnused(a, body));
                             }
+                        } else if (isHandleEvent && i == 1) {
+                            // Do not touch handle_event/3 second arg here; downstream
+                            // promotion/alignment passes handle it safely.
+                            newArgs.push(a);
                         } else {
                             newArgs.push(underscoreIfUnused(a, body));
                         }

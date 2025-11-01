@@ -25,9 +25,12 @@ class DefParamUnusedUnderscoreGlobalSafeTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
-                    makeASTWithMeta(EDef(name, underscoreArgsIfUnused(args, body), guards, body), n.metadata, n.pos);
+                    // Do not underscore handle_event/3 second arg; reserved for Phoenix params
+                    var newArgs = if (name == "handle_event" && args != null && args.length == 3) args else underscoreArgsIfUnused(args, body);
+                    makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
                 case EDefp(name2, args2, guards2, body2):
-                    makeASTWithMeta(EDefp(name2, underscoreArgsIfUnused(args2, body2), guards2, body2), n.metadata, n.pos);
+                    var newArgs2 = if (name2 == "handle_event" && args2 != null && args2.length == 3) args2 else underscoreArgsIfUnused(args2, body2);
+                    makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -66,4 +69,3 @@ class DefParamUnusedUnderscoreGlobalSafeTransforms {
 }
 
 #end
-

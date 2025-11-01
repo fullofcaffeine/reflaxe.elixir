@@ -7,28 +7,19 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
- * IfInlineInContainerParenTransforms
+ * InlineIfInContainersGlobalTransforms
  *
  * WHAT
- * - Wrap inline `if ... do ... else ... end` expressions in parentheses when
- *   they appear inside container literals (tuples, lists, maps). This avoids
- *   parser ambiguity errors in Elixir, which require parentheses in such cases.
+ * - Wrap inline `if ...` expressions in parentheses when they appear as
+ *   children of tuples, lists, or maps to avoid parser ambiguity.
  *
  * WHY
- * - Generated code can embed an `if` directly as an element of a tuple or as a
- *   value inside a map literal. Elixir requires parentheses around the `if`
- *   expression to disambiguate container boundaries.
- *
- * HOW
- * - For ETuple/elist/EMap, wrap any child expression of form EIf(...) with
- *   EParen(EIf(...)).
+ * - Outside LiveView code (e.g., PubSub helpers), inline if inside tuples
+ *   produces invalid `{:tag, if ..., do: ..., else: ...}` without parens.
+ *   Adding parentheses fixes the ambiguity.
  */
-class IfInlineInContainerParenTransforms {
+class InlineIfInContainersGlobalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
-        // Gate: only run for LiveView modules to avoid broad snapshot churn
-        if (ast == null || ast.metadata == null || (ast.metadata.isLiveView != true)) {
-            return ast;
-        }
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ETuple(elements):
@@ -68,3 +59,4 @@ class IfInlineInContainerParenTransforms {
 }
 
 #end
+
