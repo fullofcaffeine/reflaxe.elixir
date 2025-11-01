@@ -69,12 +69,17 @@ class Users {
             // inner shadowing like `query = where(query, ...)` inside branches.
             var query = TypedQuery.from(contexts.User);
 
-            // Build without inner rebind in branches to avoid compiler warnings
-            var q1 = (filter.name != null) ? query.where(u -> u.name == '%${filter.name}%') : query;
-            var q2 = (filter.email != null) ? q1.where(u -> u.email == '%${filter.email}%') : q1;
-            var q3 = (filter.isActive != null) ? q2.where(u -> u.active == filter.isActive) : q2;
-
-            return Repo.all(q3);
+            // Refine the same `query` variable conditionally to avoid unused temp binders
+            if (filter.name != null) {
+                query = query.where(u -> u.name == '%${filter.name}%');
+            }
+            if (filter.email != null) {
+                query = query.where(u -> u.email == '%${filter.email}%');
+            }
+            if (filter.isActive != null) {
+                query = query.where(u -> u.active == filter.isActive);
+            }
+            return Repo.all(query);
         }
         
         return Repo.all(contexts.User);
