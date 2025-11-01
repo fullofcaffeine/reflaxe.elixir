@@ -4771,10 +4771,11 @@ class ElixirASTBuilder {
                 return name;  // Return just the name without package prefix
             }
             
-            // For non-extern classes (like ecto.Query wrapper), just return the name
-            // This allows our Query wrapper to be called as Query.from() not Ecto.Query.from()
+            // For non-extern application classes, qualify with App module prefix
+            // e.g., server.schemas.Todo → TodoApp.Todo (using -D app_name)
             if (!isExtern) {
-                return name;
+                var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+                return (app != null && app.length > 0 ? (app + "." + name) : name);
             }
             
             // For extern classes, add the package prefix for proper Elixir module references
