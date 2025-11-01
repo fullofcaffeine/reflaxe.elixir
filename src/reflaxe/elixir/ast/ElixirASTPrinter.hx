@@ -1285,6 +1285,29 @@ class ElixirASTPrinter {
                                 }
                             }
                         }
+                        // Repo.get/one bare module arg qualification: Repo.get(Todo, id) → Repo.get(<App>.Todo, id)
+                        if ((mstr == reflaxe.elixir.PhoenixMapper.getAppModuleName() + ".Repo" || StringTools.endsWith(mstr, ".Repo")) && (funcName == "get" || funcName == "one")) {
+                            var comma = s.indexOf(',');
+                            var firstArg = comma != -1 ? s.substr(0, comma) : s;
+                            var trimmed = StringTools.trim(firstArg);
+                            inline function isBareModule(name:String):Bool {
+                                return name.length > 0 && name.indexOf('.') == -1 && ~/^[A-Z][A-Za-z0-9_]*$/.match(name);
+                            }
+                            var app = (function(){
+                                var pfx: Null<String> = null;
+                                if (currentModuleName != null) {
+                                    var w = currentModuleName.indexOf("Web");
+                                    if (w > 0) pfx = currentModuleName.substring(0, w);
+                                }
+                                if (pfx == null) pfx = observedAppPrefix;
+                                if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {} }
+                                return pfx;
+                            })();
+                            if (app != null && isBareModule(trimmed)) {
+                                var rest = comma != -1 ? s.substr(comma) : "";
+                                s = app + "." + trimmed + rest;
+                            }
+                        }
                         return s;
                     }
                 })();
