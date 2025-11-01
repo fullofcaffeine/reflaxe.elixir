@@ -36,6 +36,10 @@ class MountParamsSideEffectAssignDiscardTransforms {
               out.push(rhs);
             case EBinary(Match, {def: EVar("params")}, rhs2) if (!usedLater(stmts, i+1, "params")):
               out.push(rhs2);
+            case EMatch(PVar("_params"), rhs3) if (!usedLater(stmts, i+1, "_params")):
+              out.push(rhs3);
+            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!usedLater(stmts, i+1, "_params")):
+              out.push(rhs4);
             default:
               out.push(s);
           }
@@ -50,6 +54,10 @@ class MountParamsSideEffectAssignDiscardTransforms {
               outB.push(rhs);
             case EBinary(Match, {def: EVar("params")}, rhs2) if (!usedLater(stmtsB, i+1, "params")):
               outB.push(rhs2);
+            case EMatch(PVar("_params"), rhs3) if (!usedLater(stmtsB, i+1, "_params")):
+              outB.push(rhs3);
+            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!usedLater(stmtsB, i+1, "_params")):
+              outB.push(rhs4);
             default:
               outB.push(s);
           }
