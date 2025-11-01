@@ -5,7 +5,7 @@ import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
 import haxe.functional.Result; // Import Result type properly
 import phoenix.LiveSocket; // Type-safe socket wrapper
-import phoenix.Phoenix.FlashType;
+import phoenix.types.Flash.FlashType;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.HandleInfoResult;
 import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
@@ -271,10 +271,10 @@ class TodoLive {
 					todos: todos,
 					show_form: false
 				});
-				return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
+                    return LiveView.putFlash(updatedSocket, FlashType.Success, "Todo created successfully!");
 				
 			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
+                    return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo: " + reason);
 		}
 	}
 
@@ -330,9 +330,9 @@ class TodoLive {
                     pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
                     completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
                 });
-                return LiveView.putFlash(updated, phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
-            case Error(reason):
-                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
+                return LiveView.putFlash(updated, FlashType.Success, "Todo created successfully!");
+            case Error(_reason):
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
         }
     }
 
@@ -341,8 +341,8 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
     if (todo == null) return socket;
     switch (Repo.update(server.schemas.Todo.toggleCompleted(todo))) {
         case Ok(_):
-        case Error(reason):
-            return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
+        case Error(_reason):
+            return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
     }
     var refreshed = Repo.get(server.schemas.Todo, id);
     if (refreshed != null) {
@@ -361,8 +361,8 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
         switch (Repo.delete(todo)) {
             case Ok(_):
                 // continue
-            case Error(reason):
-                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
+            case Error(_reason):
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo");
         }
         // Reflect locally, then broadcast best-effort to others
         var updated = removeTodoFromList(id, socket);
@@ -375,8 +375,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
     if (todo == null) return socket;
     switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
         case Ok(_):
-        case Error(reason):
-            return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
+        case Error(_reason):
+            return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority");
     }
     var refreshed = Repo.get(server.schemas.Todo, id);
     if (refreshed != null) {
@@ -426,7 +426,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
     static function parseTags(tagsString: String): Array<String> {
 		if (tagsString == null || tagsString == "") return [];
-		return tagsString.split(",").map(function(t) return t.trim());
+            return tagsString.split(",").map(function(t) return StringTools.trim(t));
 	}
 	
 static function getUserFromSession(session: Dynamic): User {
@@ -532,7 +532,7 @@ static function getUserFromSession(session: Dynamic): User {
 		};
 		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 		
-		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
+		return LiveView.putFlash(updatedSocket, FlashType.Info, "All todos marked as completed!");
 	}
 	
 	static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -564,7 +564,7 @@ static function getUserFromSession(session: Dynamic): User {
         };
 		
 		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
-		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
+		return LiveView.putFlash(updatedSocket, FlashType.Info, "Completed todos deleted!");
 	}
 	
 	// Additional helper functions with type-safe socket handling
@@ -589,7 +589,7 @@ static function getUserFromSession(session: Dynamic): User {
                 var liveSocket: LiveSocket<TodoLiveAssigns> = updatedSocket;
                 return liveSocket.assign(_.editing_todo, null);
             case Error(_):
-                return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
         }
     }
 
@@ -666,7 +666,7 @@ static function getUserFromSession(session: Dynamic): User {
 				return liveSocket.assign(_.editing_todo, null);
 				
 			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to save todo: " + reason);
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to save todo");
 		}
 	}
 	

@@ -80,15 +80,17 @@ class LocalUnderscoreUsedPromotionTransforms {
     return isUnderscored(name) ? name.substr(1) : name;
   }
   static inline function shouldPromote(name:String):Bool {
-    return isUnderscored(name) && trim(name) == "this";
+    // Promote any underscored local (e.g., _this, _reason) when its trimmed form is used later
+    return isUnderscored(name);
   }
   static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
     var found = false;
+    var trimmed = trim(name);
     // Also consider use inside the same statement RHS
     function scan(n:ElixirAST) {
       if (found || n == null || n.def == null) return;
       switch (n.def) {
-        case EVar(v) if (v == name): found = true;
+        case EVar(v) if (v == name || v == trimmed): found = true;
         case EBinary(_, l, r): scan(l); scan(r);
         case EMatch(_, rhs): scan(rhs);
         case EBlock(ss): for (s in ss) scan(s);
