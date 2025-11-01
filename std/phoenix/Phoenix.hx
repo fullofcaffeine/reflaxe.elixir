@@ -259,11 +259,14 @@ extern class LiveView {
      */
     // Map rich FlashType to Phoenix-supported keys (:info | :error)
     extern inline static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns> {
-        var key = switch (type) {
-            case Info | Success | Warning: "info";
-            case Error | Custom(_): "error";
-        };
-        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', socket, key, message);
+        return untyped __elixir__(
+            'Phoenix.LiveView.put_flash({0}, (case {1} do ' +
+            '  {:info} -> :info; ' +
+            '  {:success} -> :info; ' +
+            '  {:warning} -> :info; ' +
+            '  {:error} -> :error; ' +
+            '  {:custom, _} -> :error ' +
+            'end), {2})', socket, type, message);
     }
     
     /**

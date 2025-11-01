@@ -321,13 +321,15 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @return Updated LiveSocket
 	 */
     extern inline public function putFlash(type: phoenix.Phoenix.FlashType, message: String): LiveSocket<T> {
-        // Map rich FlashType to Phoenix-supported keys (:info | :error)
-        // Info/Success/Warning → :info, Error/Custom → :error
-        var key = switch (type) {
-            case Info | Success | Warning: "info";
-            case Error | Custom(_): "error";
-        };
-        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', this, key, message);
+        // Do mapping in Elixir to avoid pattern gaps during Haxe compilation
+        return untyped __elixir__(
+            'Phoenix.LiveView.put_flash({0}, (case {1} do ' +
+            '  {:info} -> :info; ' +
+            '  {:success} -> :info; ' +
+            '  {:warning} -> :info; ' +
+            '  {:error} -> :error; ' +
+            '  {:custom, _} -> :error ' +
+            'end), {2})', this, type, message);
     }
 	
 	/**
