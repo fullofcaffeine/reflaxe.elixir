@@ -1758,6 +1758,55 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
         });
+        // Generic underscore promotion: _any -> any when used later in the same body
+        passes.push({
+            name: "LocalUnderscoreGenericPromotion",
+            description: "Promote any underscored local binder (_x) to x when referenced",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionTransforms.pass,
+            runAfter: [
+                "ControllerLocalUnusedUnderscore_Final",
+                "MountParamsSideEffectAssignDiscard_Final",
+                "HandleEventBodyAlignToHead_Final",
+                "HandleEventParamsUltraFinal_Last"
+            ]
+        });
+        passes.push({
+            name: "LocalUnderscoreGenericPromotion_UltraFinal",
+            description: "Ultra-final replay: promote underscored local binders when referenced (late shapes)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionFinalTransforms.pass,
+            runAfter: [
+                "QueryVarUltimateNormalize_UltraFinal",
+                "FunctionQueryBinderSynthesis_UltraFinal",
+                "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
+            ]
+        });
+        // Inline one-shot locals in Web/Controller/LiveView bodies late to remove warning temporaries
+        passes.push({
+            name: "InlineLocalAssignUsedOnce_Final",
+            description: "Final (Controller-only): inline name = expr when name is used exactly once later in the same body (disabled)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.InlineLocalAssignUsedOnceTransforms.pass,
+            runAfter: [
+                "ControllerLocalUnusedUnderscore_Final",
+                "LocalUnderscoreGenericPromotion_UltraFinal"
+            ]
+        });
+        // Web-only: underscore unused locals in Web.* modules (LiveView + Controllers)
+        passes.push({
+            name: "WebLocalUnusedUnderscore",
+            description: "In <App>Web.*, underscore local assignment binders unused later in the body",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.WebLocalUnusedUnderscoreTransforms.pass,
+            runAfter: [
+                "MountSessionExtractCleanup_Final",
+                "MountParamsSideEffectAssignDiscard_Final",
+                "HandleEventBodyAlignToHead_Final",
+                "ControllerLocalUnusedUnderscore_Final",
+                "UnderscoreParamPromotion_Final"
+            ]
+        });
 
         // (moved later in pipeline; after functions are finalized)
         // Within a block, prefer consistent underscore references when only underscored binder exists
@@ -2530,8 +2579,20 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreUsedPromotionTransforms.pass
         });
         passes.push({
+            name: "LocalUnderscoreUsedPromotion_Final",
+            description: "Final replay: promote `_this` and similar underscore locals when referenced",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreUsedPromotionTransforms.pass
+        });
+        passes.push({
             name: "InlineUnderscoreTempUsedOnce",
             description: "Inline `_tmp = expr` followed by single-use of `_tmp` in next statement",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineUnderscoreTempUsedOnceTransforms.pass
+        });
+        passes.push({
+            name: "InlineUnderscoreTempUsedOnce_Final",
+            description: "Final replay: inline immediate-use underscore temps inside nested blocks",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.InlineUnderscoreTempUsedOnceTransforms.pass
         });
@@ -3363,7 +3424,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceReduceRewrite",
             description: "Rewrite Presence Enum.each + Reflect.fields to Enum.reduce(Map.values(map), [], ...) with conditional append (early)",
-            enabled: false, // temporarily disable to prevent incorrect accumulator removal; presence already idiomatic
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
         });
         // Presence safety: ensure concat accumulators have [] initialization if removed upstream
@@ -3371,13 +3432,51 @@ class ElixirASTPassRegistry {
             name: "PresenceConcatAccumulatorInit",
             description: "Insert acc=[] when Enum.concat(acc, [...]) appears without prior definition (Presence only)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceConcatAccumulatorInitTransforms.pass
+            pass: reflaxe.elixir.ast.transformers.PresenceConcatAccumulatorInitTransforms.pass,
+            runAfter: [
+                "HeexTrimTrailingBlankLines_Final",
+                "HeexCollapseOverEscapedQuotes_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsForceBodyRewrite_Final",
+                "HandleEventParamsUltraFinal_Last"
+            ]
         });
         passes.push({
             name: "PresenceReduceWhileAccumulatorRepair",
             description: "Inject acc=[] and return acc for reduce_while loops missing initialization (Presence only)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceReduceWhileAccumulatorRepairTransforms.pass
+            pass: reflaxe.elixir.ast.transformers.PresenceReduceWhileAccumulatorRepairTransforms.pass,
+            runAfter: [
+                "PresenceConcatAccumulatorInit",
+                "HeexTrimTrailingBlankLines_Final",
+                "HeexCollapseOverEscapedQuotes_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsForceBodyRewrite_Final",
+                "HandleEventParamsUltraFinal_Last"
+            ]
+        });
+        // Presence finalizer: ensure get_users_editing_todo/2 initializes and returns accumulator
+        passes.push({
+            name: "PresenceInitMetasInGetUsersEditingTodo",
+            description: "Presence-only: insert metas=[]; return metas in get_users_editing_todo/2",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceInitMetasInGetUsersEditingTodoTransforms.pass,
+            runAfter: [
+                "PresenceReduceWhileAccumulatorRepair",
+                "PresenceConcatAccumulatorInit"
+            ]
+        });
+        // Presence final: rewrite get_users_editing_todo/2 to Enum.reduce over Map.values
+        passes.push({
+            name: "PresenceRewriteGetUsersEditingTodoToReduce_Final",
+            description: "Presence-only: rewrite get_users_editing_todo/2 to Enum.reduce(Map.values(...), [], fn entry, acc -> ... end)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PresenceRewriteGetUsersEditingTodoToReduceTransforms.pass,
+            runAfter: [
+                "PresenceInitMetasInGetUsersEditingTodo",
+                "PresenceReduceWhileAccumulatorRepair",
+                "PresenceConcatAccumulatorInit"
+            ]
         });
         passes.push({
             name: "MapConcatEachToMapAssign",
@@ -4980,7 +5079,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "MountParamsUltraFinal",
             description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass,
             runAfter: ["ChainAssignIfPromote_Replay_Last"]
         });
@@ -5061,13 +5160,44 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.pass,
             runAfter: ["DropInvalidMapGetSelfAssign_Final"]
         });
+        // Absolute-final: underscore/discard mount/3 local reassign of params when unused later
+        passes.push({
+            name: "MountParamsUnusedReassignUnderscore_Final",
+            description: "Rename `params = ...` to `_` in mount/3 when unused later (preserve RHS)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MountParamsUnusedReassignUnderscoreTransforms.pass,
+            runAfter: [
+                "MountSessionExtractCleanup_Final",
+                "MountParamsSideEffectAssignDiscard_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsUltraFinal_Last",
+                "VarNameNormalization_Final",
+                "VarRefSuffixParamNormalize_Final",
+                "VarRefSuffixParamNormalize_UltraFinal",
+                "VarRefQueryInlineDowncaseFromSuffixParam_UltraFinal",
+                "QueryVarUltimateNormalize_UltraFinal",
+                "FunctionQueryBinderSynthesis_UltraFinal",
+                "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
+            ]
+        });
         // Absolute final: discard `params = expr` side-effect-only assignments in mount/3
         passes.push({
             name: "MountParamsSideEffectAssignDiscard_Final",
             description: "Drop head-binder reassignments of params in mount/3 when unused later",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MountParamsSideEffectAssignDiscardTransforms.pass,
-            runAfter: ["MountSessionExtractCleanup_Final"]
+            runAfter: [
+                "MountSessionExtractCleanup_Final",
+                "DefParamUnusedUnderscoreGlobalSafe_Final",
+                "ParamUnderscoreArgRefAlign_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsUltraFinal",
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventBodyAlignToHead_Final",
+                "EctoRepoFinalArgFromLatestQueryVar",
+                "EctoQueryBranchSelfAssignUnderscore_Final",
+                "AssignWhereSelfBinderUnderscore_Final"
+            ]
         });
         // Absolute-final replay: underscore unused locals in Controller modules (late shapes)
         passes.push({
@@ -5075,7 +5205,32 @@ class ElixirASTPassRegistry {
             description: "Final replay: underscore unused local assignment binders in controllers",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ControllerLocalUnusedUnderscoreTransforms.pass,
-            runAfter: ["MountSessionExtractCleanup_Final"]
+            runAfter: [
+                "MountSessionExtractCleanup_Final",
+                "VarNameNormalization_Final",
+                "VarRefSuffixParamNormalize_Final",
+                "VarRefSuffixParamNormalize_UltraFinal",
+                "VarRefQueryInlineDowncaseFromSuffixParam_UltraFinal",
+                "QueryVarUltimateNormalize_UltraFinal",
+                "FunctionQueryBinderSynthesis_UltraFinal",
+                "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
+            ]
+        });
+        // Absolute-final: drop pure var-copy assignments in <App>Web.* when binder unused later
+        passes.push({
+            name: "WebDropUnusedPureAssign_Final",
+            description: "Drop `x = y` when x unused later in Web.* modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.WebDropUnusedPureAssignTransforms.pass,
+            runAfter: ["ControllerLocalUnusedUnderscore_Final"]
+        });
+        // Absolute-final: underscore self-assign concat binders to avoid overshadow warnings
+        passes.push({
+            name: "ConcatSelfAssignBinderUnderscore_Final",
+            description: "Rewrite `x = Enum.concat(x, ...)` → `_x = Enum.concat(x, ...)` in blocks",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ConcatSelfAssignBinderUnderscoreTransforms.pass,
+            runAfter: ["WebDropUnusedPureAssign_Final"]
         });
         passes.push({
             name: "EctoQueryBranchSelfAssignUnderscore_Final",

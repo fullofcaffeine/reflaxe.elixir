@@ -2528,6 +2528,23 @@ class ElixirASTPrinter {
                         return app + "." + n;
                     }
                 }
+                // Outside Web.* modules, conservatively qualify well-known Phoenix Web modules
+                // e.g., TodoLive, HTML, CoreComponents, Layouts → <App>Web.<Name>
+                inline function isSingleSegmentCamel(name:String):Bool {
+                    if (name == null || name.length == 0) return false;
+                    return name.indexOf(".") == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
+                }
+                inline function isPhoenixWebRoot(name:String):Bool {
+                    return name == "Routes" || name == "Gettext" || name == "HTML" || name == "CoreComponents" || name == "Components" || name == "Layouts" || StringTools.endsWith(name, "Live");
+                }
+                var appPrefix = observedAppPrefix;
+                if (appPrefix == null && currentModuleName != null) {
+                    var idx2 = currentModuleName.indexOf("Web");
+                    if (idx2 > 0) appPrefix = currentModuleName.substring(0, idx2);
+                }
+                if (appPrefix != null && isSingleSegmentCamel(n) && isPhoenixWebRoot(n)) {
+                    return appPrefix + "Web." + n;
+                }
                 return print(module, 0);
             default:
                 return print(module, 0);
