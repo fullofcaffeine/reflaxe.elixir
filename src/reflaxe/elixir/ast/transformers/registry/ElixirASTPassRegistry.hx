@@ -2613,7 +2613,7 @@ class ElixirASTPassRegistry {
             description: "Align body references (params/_params) to mount/3 head binder (absolute-final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MountBodyAlignToHeadTransforms.pass,
-            runAfter: ["MountParamsUltraFinal"]
+            runAfter: ["MountParamsUltraFinal", "MountParamsPromote"]
         });
         // Drop redundant `session = Map.get(params, "session")` when mount/3 already receives session
         passes.push({
@@ -2621,6 +2621,17 @@ class ElixirASTPassRegistry {
             description: "Remove session extraction from params in mount/3; use real session arg",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.pass
+        });
+        passes.push({
+            name: "MountDropHeadIdentityReassign_Final",
+            description: "Drop trivial head reassignments (session/socket/params) inside mount/3",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.MountDropHeadIdentityReassignTransforms.pass,
+            runAfter: [
+                "MountBodyAlignToHead_Final",
+                "MountSessionExtractCleanup_Final",
+                "MountParamsSideEffectAssignDiscard_Final"
+            ]
         });
         passes.push({
             name: "HandleEventBodyAlignToHead_Final",
@@ -2654,7 +2665,11 @@ class ElixirASTPassRegistry {
             name: "EctoQueryIfAssignSimplify",
             description: "Simplify inner `query =` inside if-branches for Ecto.Query.where",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.EctoQueryIfAssignSimplifyTransforms.pass
+            pass: reflaxe.elixir.ast.transformers.EctoQueryIfAssignSimplifyTransforms.pass,
+            runAfter: [
+                "EctoQueryBranchSelfAssignUnderscore",
+                "AssignWhereSelfBinderUnderscore"
+            ]
         });
         passes.push({
             name: "EctoQueryBranchSelfAssignUnderscore",
@@ -2810,6 +2825,13 @@ class ElixirASTPassRegistry {
             description: "Rewrite `_params` to `params` in defs that have a `params` arg",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignTransforms.pass
+        });
+        passes.push({
+            name: "ParamUnderscoreArgRefAlign_Global",
+            description: "Align body references to underscored head params globally (e.g., v → _v)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignGlobalTransforms.pass,
+            runAfter: ["DefParamUnusedUnderscoreGlobalSafe_Final"]
         });
 
         // Robust inliner: works on render/1 EBlock/EDo, nested parens, any var name
@@ -5159,7 +5181,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscoreGlobalSafe_Final",
             description: "Final replay: underscore unused def params (safe, global) [disabled due to false positives in Web helpers]",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass,
             runAfter: ["ParamUnderscoreGlobalAlign_Final"]
         });
@@ -5297,7 +5319,12 @@ class ElixirASTPassRegistry {
             description: "Rename params→_params in mount/3 & handle_event/3 when body does not reference params",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.pass,
-            runAfter: ["HandleEventParamsForceBodyRewrite_Final"]
+            runAfter: [
+                "MountBodyAlignToHead_Final",
+                "MountSessionExtractCleanup_Final",
+                "MountDropHeadIdentityReassign_Final",
+                "HandleEventParamsForceBodyRewrite_Final"
+            ]
         });
         // Absolute-last: guarantee no `_params` uses remain in handle_event/3
         passes.push({
@@ -5320,6 +5347,19 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreTransforms.pass,
             runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
+        });
+
+        // Absolute final replay to fix any remaining param/body mismatches for underscored head params
+        passes.push({
+            name: "ParamUnderscoreArgRefAlign_Global_Final",
+            description: "Final replay: align body refs (v→_v) when head params are underscored",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignGlobalTransforms.pass,
+            runAfter: [
+                "DefParamUnusedUnderscoreGlobalSafe_Final",
+                "DefParamHeadUnderscoreWhenUnused_Final",
+                "HeexAssignsParamRename_Final"
+            ]
         });
 
         // Filter disabled passes first

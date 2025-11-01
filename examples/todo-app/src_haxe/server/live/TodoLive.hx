@@ -103,47 +103,35 @@ class TodoLive {
 	 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-	public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-        // Avoid noisy runtime logging and DateTime match warnings
-        // var now = Date.now(); // if needed, use server.templates.TodoTemplate.formatDate
-		
-		// Subscribe to todo updates for real-time sync using type-safe PubSub
-		switch (TodoPubSub.subscribe(TodoUpdates)) {
-			case Error(reason):
-				return Error("Failed to subscribe to updates: " + reason);
-			case Ok(_):
-				// Subscription successful, continue
-		}
-		
-		var currentUser = getUserFromSession(session);
-		var todos = loadTodos(currentUser.id);
-		
-		// Track user presence for real-time collaboration
-        // Presence tracking temporarily skipped pending presence module cleanup
-        var presenceSocket = socket;
+    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
+        // Subscribe to updates; on failure, show flash and continue
+        switch (TodoPubSub.subscribe(TodoUpdates)) {
+            case Ok(_):
+            case Error(_):
+                socket = LiveView.putFlash(socket, FlashType.Error, "Failed to subscribe to updates");
+        }
 
-        // Create type-safe assigns structure
+        var currentUser = getUserFromSession(session);
+        var todos = loadTodos(currentUser.id);
+
         var assigns: TodoLiveAssigns = {
             todos: todos,
             filter: shared.TodoTypes.TodoFilter.All,
             sort_by: shared.TodoTypes.TodoSort.Created,
-			current_user: currentUser,
-			editing_todo: null,
-			show_form: false,
-			search_query: "",
-			selected_tags: [],
-			total_todos: todos.length,
-			completed_todos: countCompleted(todos),
-			pending_todos: countPending(todos),
-			// Initialize presence tracking (single map - Phoenix pattern)
-			online_users: new Map()
-		};
-		
-		// Use assign_multiple for bulk assigns (full object)
-		var updatedSocket = LiveView.assignMultiple(presenceSocket, assigns);
-		
-		return Ok(updatedSocket);
-	}
+            current_user: currentUser,
+            editing_todo: null,
+            show_form: false,
+            search_query: "",
+            selected_tags: [],
+            total_todos: todos.length,
+            completed_todos: countCompleted(todos),
+            pending_todos: countPending(todos),
+            online_users: new Map()
+        };
+
+        socket = LiveView.assignMultiple(socket, assigns);
+        return Ok(socket);
+    }
 	
 	/**
 	 * Handle events with fully typed event system.
@@ -266,7 +254,7 @@ class TodoLive {
 				
 				var todos = [todo].concat(socket.assigns.todos);
 				// Use LiveSocket for type-safe assigns manipulation
-				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 				var updatedSocket = liveSocket.merge({
 					todos: todos,
 					show_form: false
