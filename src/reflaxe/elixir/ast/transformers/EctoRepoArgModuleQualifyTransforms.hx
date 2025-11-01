@@ -26,9 +26,9 @@ class EctoRepoArgModuleQualifyTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
-        case ERemoteCall({def: EVar(repoMod)}, fun, args) if (fun == "get" || fun == "one") && args != null && args.length >= 1:
+        case ERemoteCall({def: EVar(repoMod)}, fun, args):
           var app = getAppPrefix();
-          if (app != null && repoMod == app + ".Repo") {
+          if ((fun == "get" || fun == "one") && args != null && args.length >= 1 && app != null && repoMod == app + ".Repo") {
             var first = args[0];
             switch (first.def) {
               case EVar(name) if (isSingleSegmentCamel(name)):
@@ -39,7 +39,9 @@ class EctoRepoArgModuleQualifyTransforms {
               default:
                 n;
             }
-          } else n;
+          } else {
+            n;
+          }
         default:
           n;
       }
@@ -61,4 +63,3 @@ class EctoRepoArgModuleQualifyTransforms {
 }
 
 #end
-
