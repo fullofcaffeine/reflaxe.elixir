@@ -2573,6 +2573,18 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CasePatternUnusedUnderscoreTransforms.pass
         });
         passes.push({
+            name: "CasePatternUnderscorePromotion",
+            description: "Promote `_name` pattern binders to `name` when the body references `name`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.pass
+        });
+        passes.push({
+            name: "CaseBodyAlignToPatternUnderscore",
+            description: "Rewrite body references to match underscored pattern binders in case/with clauses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBodyAlignToPatternUnderscoreTransforms.pass
+        });
+        passes.push({
             name: "LocalUnderscoreUsedPromotion",
             description: "Promote local `_name` binders to `name` when actually used (warnings cleanup)",
             enabled: true,
@@ -2621,7 +2633,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventLocalUnusedUnderscore_Final",
             description: "Rename unused local binders in handle_event/3 to underscore (shape-based)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventLocalUnusedUnderscoreTransforms.pass,
             runAfter: [
                 "HandleEventParamsUltraFinal",
