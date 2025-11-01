@@ -1,4 +1,4 @@
-package test.live;
+package live;
 
 import exunit.TestCase;
 import exunit.Assert.*;
@@ -30,4 +30,3 @@ class TodoLiveDueDateTest extends TestCase {
         assertTrue(html.indexOf("Due:") != -1);
     }
 }
-
