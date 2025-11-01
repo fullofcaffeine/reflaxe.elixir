@@ -5220,7 +5220,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "WebDropUnusedPureAssign_Final",
             description: "Drop `x = y` when x unused later in Web.* modules",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.WebDropUnusedPureAssignTransforms.pass,
             runAfter: ["ControllerLocalUnusedUnderscore_Final"]
         });
