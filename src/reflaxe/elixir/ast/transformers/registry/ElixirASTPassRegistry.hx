@@ -2622,7 +2622,14 @@ class ElixirASTPassRegistry {
             name: "HandleEventLocalUnusedUnderscore_Final",
             description: "Rename unused local binders in handle_event/3 to underscore (shape-based)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventLocalUnusedUnderscoreTransforms.pass
+            pass: reflaxe.elixir.ast.transformers.HandleEventLocalUnusedUnderscoreTransforms.pass,
+            runAfter: [
+                "HandleEventParamsUltraFinal",
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventBodyAlignToHead_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "DefParamHeadUnderscoreWhenUnused_Final"
+            ]
         });
         // Inject @compile nowarn for local Ecto DSL shims (from/3, where/3)
         passes.push({
@@ -5194,6 +5201,7 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal",
                 "HandleEventParamsUltraFinal_Last",
                 "HandleEventBodyAlignToHead_Final",
+                "DefParamHeadUnderscoreWhenUnused_Final",
                 "EctoRepoFinalArgFromLatestQueryVar",
                 "EctoQueryBranchSelfAssignUnderscore_Final",
                 "AssignWhereSelfBinderUnderscore_Final"
