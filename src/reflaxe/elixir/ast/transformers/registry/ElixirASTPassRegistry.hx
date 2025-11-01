@@ -5262,6 +5262,13 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.EctoRepoFinalArgFromLatestQueryVarTransforms.pass,
             runAfter: ["AssignWhereSelfBinderUnderscore_Final"]
         });
+        passes.push({
+            name: "EctoRepoArgModuleQualify_Final",
+            description: "Qualify schema arg in Repo.get/one to <App>.<Name> when bare CamelCase is used",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoRepoArgModuleQualifyTransforms.pass,
+            runAfter: ["EctoRepoFinalArgFromLatestQueryVar"]
+        });
         // Absolute-final: ensure Phoenix component functions using ~H have `assigns` as the first arg
         passes.push({
             name: "HeexAssignsParamRename_Final",
