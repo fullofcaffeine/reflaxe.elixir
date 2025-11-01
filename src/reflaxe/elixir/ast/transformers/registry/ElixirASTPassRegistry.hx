@@ -5198,6 +5198,7 @@ class ElixirASTPassRegistry {
                 "DefParamUnusedUnderscoreGlobalSafe_Final",
                 "ParamUnderscoreArgRefAlign_Final",
                 "ParamUnderscoreGlobalAlign_Final",
+                "MountBodyAlignToHead_Final",
                 "HandleEventParamsUltraFinal",
                 "HandleEventParamsUltraFinal_Last",
                 "HandleEventBodyAlignToHead_Final",
