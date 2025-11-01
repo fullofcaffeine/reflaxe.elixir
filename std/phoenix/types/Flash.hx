@@ -56,6 +56,18 @@ class FlashTypeTools {
             case Error: "error";
         };
     }
+
+    /**
+     * Convert FlashType to Phoenix LiveView flash key.
+     * LiveView officially supports only :info and :error.
+     * Success/Warning map to :info for compatibility.
+     */
+    public static function toPhoenixKey(type: FlashType): String {
+        return switch (type) {
+            case Info | Success | Warning: "info";
+            case Error: "error";
+        };
+    }
     
     /**
      * Parse string to FlashType
