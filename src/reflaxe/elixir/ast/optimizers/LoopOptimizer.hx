@@ -296,19 +296,18 @@ class LoopOptimizer {
 	 * HOW: During AST building, replaces references to the loop variable
 	 * with a standardized name for cleaner output.
 	 */
-	static function buildFromTypedExprWithSubstitution(expr: TypedExpr, loopVar: Null<TVar>): ElixirAST {
-		// This is a placeholder - in the real implementation this would
-		// delegate to the main builder with substitution context
-		switch(expr.expr) {
-			case TLocal(v) if (loopVar != null && v.id == loopVar.id):
-				// Substitute the loop variable
-				return {def: EVar("item"), metadata: {}, pos: expr.pos};
-			default:
-				// For now, return a placeholder
-				// In real implementation, this delegates to the main builder
-				return {def: EVar("_placeholder"), metadata: {}, pos: expr.pos};
-		}
-	}
+    static function buildFromTypedExprWithSubstitution(expr: TypedExpr, loopVar: Null<TVar>): ElixirAST {
+        // Preserve original loop variable name (idiomatic, avoids drift).
+        // When encountering references to the loop var, emit its snake_case name.
+        switch(expr.expr) {
+            case TLocal(v) if (loopVar != null && v.id == loopVar.id):
+                var name = reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(loopVar.name);
+                return {def: EVar(name), metadata: {}, pos: expr.pos};
+            default:
+                // Fallback placeholder retained for non-loop-var nodes in this stub path
+                return {def: EVar("_placeholder"), metadata: {}, pos: expr.pos};
+        }
+    }
 	
 	/**
 	 * Transform variable references in AST

@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ASTUtils;
 
 /**
  * ClauseUnderscoreUsedPromoteTransforms
@@ -36,7 +37,10 @@ class ClauseUnderscoreUsedPromoteTransforms {
                         var binder = extractSingleBinder(cl.pattern);
                         if (binder != null && binder.length > 1 && binder.charAt(0) == '_') {
                             var base = binder.substr(1);
-                            if (bodyUsesVar(cl.body, binder) && !patternHasName(cl.pattern, base)) {
+                            if ((bodyUsesVar(cl.body, binder) || bodyUsesVar(cl.body, base)) && !patternHasName(cl.pattern, base)) {
+                                #if debug_ast_transformer
+                                Sys.println('[ClauseUnderscoreUsedPromote] Promoting binder ' + binder + ' -> ' + base);
+                                #end
                                 var newPattern = renameBinder(cl.pattern, binder, base);
                                 var newBody = replaceVar(cl.body, binder, base);
                                 newClauses.push({ pattern: newPattern, guard: cl.guard, body: newBody });
@@ -62,22 +66,13 @@ class ClauseUnderscoreUsedPromoteTransforms {
 
     static function bodyUsesVar(body: ElixirAST, name: String): Bool {
         var found = false;
-        function walk(e: ElixirAST): Void {
+        ASTUtils.walk(body, function(e: ElixirAST) {
             if (found || e == null || e.def == null) return;
             switch (e.def) {
                 case EVar(v) if (v == name): found = true;
-                case EField(t,_): walk(t);
-                case EBlock(ss): for (s in ss) walk(s);
-                case EIf(c,t,el): walk(c); walk(t); if (el != null) walk(el);
-                case EBinary(_, l, r): walk(l); walk(r);
-                case EMatch(_, rhs): walk(rhs);
-                case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
-                case ERemoteCall(m,_,as): walk(m); for (a in as) walk(a);
-                case ECase(x, cs): walk(x); for (c in cs) walk(c.body);
                 default:
             }
-        }
-        walk(body);
+        });
         return found;
     }
 
@@ -131,4 +126,3 @@ class ClauseUnderscoreUsedPromoteTransforms {
 }
 
 #end
-

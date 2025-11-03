@@ -49,10 +49,9 @@
 # Exclude client code from server compilation
 --macro exclude('client')
 --macro exclude('server.live.UserLive')
---macro exclude('server.controllers.UserController')
 --macro exclude('server.services.UserGenServer')
---macro exclude('contexts.Users')
---macro exclude('contexts')
+## Include controllers and contexts in server build (needed for test WAE)
+## (Removed earlier excludes for server.controllers.UserController and contexts.*)
 
 # Keep Phoenix CoreComponents even if not referenced directly in Haxe
 # WHY: Phoenix imports TodoAppWeb.CoreComponents via `use TodoAppWeb, :html`
@@ -85,6 +84,7 @@ server.infrastructure.Repo
 server.infrastructure.Telemetry
 server.infrastructure.Endpoint
 server.infrastructure.TodoAppWeb
+controllers.UserController
 server.components.CoreComponents
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
@@ -93,3 +93,5 @@ server.infrastructure.GettextUIMessages
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix
 -D exclude-balanced-tree
+
+# Force-keep controllers and contexts so WAE passes apply to their outputs

@@ -85,24 +85,28 @@ class SafeAssigns {
      * Set the filter field using LiveSocket's type-safe assign pattern
      */
     public static function setFilter(socket: Socket<TodoLiveAssigns>, filter: String): Socket<TodoLiveAssigns> {
-        var parsed = switch (filter) {
-            case "active": shared.TodoTypes.TodoFilter.Active;
-            case "completed": shared.TodoTypes.TodoFilter.Completed;
-            case _: shared.TodoTypes.TodoFilter.All;
-        };
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.filter, parsed);
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(
+            _.filter,
+            switch (filter) {
+                case "active": shared.TodoTypes.TodoFilter.Active;
+                case "completed": shared.TodoTypes.TodoFilter.Completed;
+                case _: shared.TodoTypes.TodoFilter.All;
+            }
+        );
     }
     
     /**
      * Set the sortBy field using LiveSocket's type-safe assign pattern
      */
     public static function setSortBy(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        var parsed = switch (sortBy) {
-            case "priority": shared.TodoTypes.TodoSort.Priority;
-            case "due_date": shared.TodoTypes.TodoSort.DueDate;
-            case _: shared.TodoTypes.TodoSort.Created;
-        };
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.sort_by, parsed);
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(
+            _.sort_by,
+            switch (sortBy) {
+                case "priority": shared.TodoTypes.TodoSort.Priority;
+                case "due_date": shared.TodoTypes.TodoSort.DueDate;
+                case _: shared.TodoTypes.TodoSort.Created;
+            }
+        );
     }
 
     /**
@@ -110,20 +114,23 @@ class SafeAssigns {
      * Keeps behavior deterministic for UI tests and user expectations.
      */
     public static function setSortByAndResort(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        var parsed = switch (sortBy) {
-            case "priority": shared.TodoTypes.TodoSort.Priority;
-            case "due_date": shared.TodoTypes.TodoSort.DueDate;
-            case _: shared.TodoTypes.TodoSort.Created;
-        };
-        // Reuse the server helper to ensure identical sort semantics (no module resolution issues)
-        var sorted = TodoLiveNative.filter_and_sort_todos(
-            socket.assigns.todos,
-            socket.assigns.filter,
-            parsed,
-            socket.assigns.search_query
-        );
-        return liveSocket.merge({ sort_by: parsed, todos: sorted });
+        return (cast socket: LiveSocket<TodoLiveAssigns>).merge({
+            sort_by: switch (sortBy) {
+                case "priority": shared.TodoTypes.TodoSort.Priority;
+                case "due_date": shared.TodoTypes.TodoSort.DueDate;
+                case _: shared.TodoTypes.TodoSort.Created;
+            },
+            todos: TodoLiveNative.filter_and_sort_todos(
+                socket.assigns.todos,
+                socket.assigns.filter,
+                switch (sortBy) {
+                    case "priority": shared.TodoTypes.TodoSort.Priority;
+                    case "due_date": shared.TodoTypes.TodoSort.DueDate;
+                    case _: shared.TodoTypes.TodoSort.Created;
+                },
+                socket.assigns.search_query
+            )
+        });
     }
     
     /**

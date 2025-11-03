@@ -45,10 +45,10 @@ class LocalVarReferenceFixTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, args, guards, body):
-                    var newBody = normalizeBody(body);
+                    var newBody = normalizeBody(body, args);
                     makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, args, guards, body):
-                    var newBody = normalizeBody(body);
+                    var newBody = normalizeBody(body, args);
                     makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
                 default:
                     node;
@@ -56,9 +56,17 @@ class LocalVarReferenceFixTransforms {
         });
     }
 
-    static function normalizeBody(body: ElixirAST): ElixirAST {
+    static function normalizeBody(body: ElixirAST, ?fnArgs:Array<EPattern>): ElixirAST {
         // Collect declared names in this function body
         var declared = new Map<String, Bool>();
+        // Include function parameters as declared locals
+        if (fnArgs != null) {
+            for (a in fnArgs) switch (a) {
+                case PVar(n): declared.set(n, true);
+                case PTuple(es) | PList(es): for (e in es) switch (e) { case PVar(n2): declared.set(n2, true); default: }
+                default:
+            }
+        }
 
         function collectPattern(p: EPattern): Void {
             switch (p) {

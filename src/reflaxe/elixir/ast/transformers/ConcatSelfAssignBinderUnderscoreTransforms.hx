@@ -24,8 +24,22 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class ConcatSelfAssignBinderUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+    return rewriteNode(ast);
+  }
+
+  static function rewriteNode(node: ElixirAST): ElixirAST {
+    return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
+        case EDef(name, args, g, body): makeASTWithMeta(EDef(name, args, g, rewriteNode(body)), n.metadata, n.pos);
+        case EDefp(name2, args2, g2, body2): makeASTWithMeta(EDefp(name2, args2, g2, rewriteNode(body2)), n.metadata, n.pos);
+        case EFn(clauses):
+          var outClauses = [];
+          for (cl in clauses) outClauses.push({ args: cl.args, guard: cl.guard, body: rewriteNode(cl.body) });
+          makeASTWithMeta(EFn(outClauses), n.metadata, n.pos);
+        case ECase(expr, clauses):
+          var newClauses = [];
+          for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: rewriteNode(cl.body) });
+          makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
         case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
         default: n;
@@ -62,4 +76,3 @@ class ConcatSelfAssignBinderUnderscoreTransforms {
 }
 
 #end
-
