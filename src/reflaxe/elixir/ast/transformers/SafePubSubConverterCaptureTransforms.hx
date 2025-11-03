@@ -36,11 +36,13 @@ class SafePubSubConverterCaptureTransforms {
                     var captured = switch (parserArg.def) {
                         case ECapture(_, _): parserArg; // already correct
                         case EVar(name):
-                            // &__MODULE__.name/1
-                            makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), name, [])), 1));
+                            // &__MODULE__.snake_name/1
+                            var sname = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+                            makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sname, [])), 1));
                         case ERemoteCall(tgt, pname, _):
-                            // &Module.pname/1
-                            makeAST(ECapture(makeAST(ERemoteCall(tgt, pname, [])), 1));
+                            // &Module.snake_pname/1
+                            var sp = reflaxe.elixir.ast.NameUtils.toSnakeCase(pname);
+                            makeAST(ECapture(makeAST(ERemoteCall(tgt, sp, [])), 1));
                         case EAtom(atomName):
                             // Atoms like :"todo_pub_sub.parse_message_impl" → &__MODULE__.parse_message_impl/1
                             var atomStr = Std.string(atomName);
@@ -72,8 +74,12 @@ class SafePubSubConverterCaptureTransforms {
                     var parserArgLocal = callArgs[1];
                     var capturedParser = switch (parserArgLocal.def) {
                         case ECapture(_, _): parserArgLocal;
-                        case EVar(varName): makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), varName, [])), 1));
-                        case ERemoteCall(targetForCapture, parserFuncName, _): makeAST(ECapture(makeAST(ERemoteCall(targetForCapture, parserFuncName, [])), 1));
+                        case EVar(varName):
+                            var sname2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(varName);
+                            makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sname2, [])), 1));
+                        case ERemoteCall(targetForCapture, parserFuncName, _):
+                            var sp2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(parserFuncName);
+                            makeAST(ECapture(makeAST(ERemoteCall(targetForCapture, sp2, [])), 1));
                         case EAtom(atomValue):
                             var atomString = Std.string(atomValue);
                             var dotIndex = atomString.lastIndexOf(".");
