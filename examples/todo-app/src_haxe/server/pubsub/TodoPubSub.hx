@@ -115,7 +115,8 @@ class TodoPubSub {
      * Manual implementation ensures type safety until macro is available.
      */
     public static function parseMessage(msg: Dynamic): Option<TodoPubSubMessage> {
-        return SafePubSub.parseWithConverter(msg, parseMessageImpl);
+        // Pass an explicit function value to avoid capture/camelCase issues
+        return SafePubSub.parseWithConverter(msg, (m) -> parseMessageImpl(m));
     }
     
     // ========================================================================

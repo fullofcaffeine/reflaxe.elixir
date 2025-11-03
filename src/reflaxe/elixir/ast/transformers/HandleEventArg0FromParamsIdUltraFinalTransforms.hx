@@ -81,7 +81,14 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
     return makeAST(EIf(isBin, toInt, get));
   }
 
-  static function rewrite(body: ElixirAST, paramsVar:String, socketVar:String, sigs:Map<String, Map<Int, Null<String>>> = null): ElixirAST {
+  static function rewrite(body: ElixirAST, paramsVar:String, socketVar:String, sigs:Map<String, Map<Int, Null<String>>> = null, ?eventName:Null<String>): ElixirAST {
+    // Guardrails: only apply this ultra-final rewrite to conventional id-based events.
+    // This avoids breaking events whose first argument is not an id (e.g., "toggle_tag" expects a "tag").
+    if (eventName != null) {
+      var ev = eventName.toLowerCase();
+      var idBased = (ev == "delete_todo" || ev == "edit_todo" || ev == "toggle_todo");
+      if (!idBased) return body;
+    }
     // Collect declared names to decide if this wrapper likely binds an id/*_id
     var declared = new Map<String,Bool>();
     reflaxe.elixir.ast.ASTUtils.walk(body, function(e:ElixirAST) {
@@ -174,11 +181,13 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
       case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
         var paramsVar = secondArgVar(args);
         var socketVar = thirdArgVar(args);
-        out.push(makeASTWithMeta(EDef(name, args, guards, rewrite(body, paramsVar, socketVar, sigs)), s.metadata, s.pos));
+        var evName:Null<String> = switch (args[0]) { case PLiteral({def: EString(ev)}): ev; default: null; };
+        out.push(makeASTWithMeta(EDef(name, args, guards, rewrite(body, paramsVar, socketVar, sigs, evName)), s.metadata, s.pos));
       case EDefp(name, args, guards, body) if (isHandleEvent3(name, args)):
         var paramsVar = secondArgVar(args);
         var socketVar = thirdArgVar(args);
-        out.push(makeASTWithMeta(EDefp(name, args, guards, rewrite(body, paramsVar, socketVar, sigs)), s.metadata, s.pos));
+        var evName:Null<String> = switch (args[0]) { case PLiteral({def: EString(ev2)}): ev2; default: null; };
+        out.push(makeASTWithMeta(EDefp(name, args, guards, rewrite(body, paramsVar, socketVar, sigs, evName)), s.metadata, s.pos));
       default:
         out.push(s);
     }

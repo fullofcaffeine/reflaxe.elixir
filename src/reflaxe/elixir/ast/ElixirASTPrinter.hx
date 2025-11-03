@@ -1035,7 +1035,14 @@ class ElixirASTPrinter {
                     lines.join('\n' + indentStr(indent));
                 } else {
                     // Normal function call
-                    var argStr = [for (a in args) printFunctionArg(a, indent + 1)].join(', ');
+                    var argStr = (function(){
+                        var parts: Array<String> = [];
+                        for (a in args) {
+                            var printed = printFunctionArg(a, indent + 1);
+                            parts.push(sanitizeArgPrinted(printed, indent + 1));
+                        }
+                        return parts.join(', ');
+                    })();
                     if (target != null) {
                         // Fallback: Module.new() -> %<App>.Module{}
                         if (funcName == "new" && args.length == 0) {
@@ -1211,6 +1218,18 @@ class ElixirASTPrinter {
                 // structs for non-schema modules (e.g., BalancedTree). Rely on AST transform stage.
                 // Qualify struct literal in changeset/2 to match remote module
                 var argStr = (function(){
+                    // Aggressive stabilization for Assert boolean assertions: wrap first arg in IIFE to
+                    // guarantee single-expression semantics even when inline expansions introduce multiple statements.
+                    // Shape-agnostic and limited to Assert.is_true/2 and Assert.is_false/2.
+                    switch (module.def) {
+                        case EVar(m) if (m == "Assert" && (funcName == "is_true" || funcName == "is_false") && args.length >= 1):
+                            var parts: Array<String> = [];
+                            var firstPrinted = '(fn -> ' + print(args[0], indent) + ' end).()';
+                            parts.push(firstPrinted);
+                            for (i in 1...args.length) parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
+                            return parts.join(', ');
+                        default:
+                    }
                     if (funcName == "changeset" && args.length >= 1) {
                         var parts: Array<String> = [];
                         // Force first arg to %<RemoteModule>{} when it's a bare struct literal
@@ -1229,7 +1248,7 @@ class ElixirASTPrinter {
                         } else {
                             parts.push(firstPrinted);
                         }
-                        for (i in 1...args.length) parts.push(printFunctionArg(args[i], indent));
+                        for (i in 1...args.length) parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
                         return parts.join(', ');
                     } else {
                         var s: String;
@@ -1243,10 +1262,10 @@ class ElixirASTPrinter {
                             var trimmed = StringTools.trim(firstPrintedRaw);
                             var firstPrinted = StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : '(fn -> ' + firstPrintedRaw + ' end).()';
                             parts.push(firstPrinted);
-                            for (i in 1...args.length) parts.push(printFunctionArg(args[i], indent));
+                            for (i in 1...args.length) parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
                             s = parts.join(', ');
                         } else {
-                            s = [for (a in args) printFunctionArg(a, indent)].join(', ');
+                            s = [for (a in args) sanitizeArgPrinted(printFunctionArg(a, indent), indent)].join(', ');
                         }
                         // Ecto.Query.from(t in :table, ...) -> qualify atom to <App>.CamelCase
                         var mstr = printQualifiedModule(module);
@@ -2488,6 +2507,13 @@ class ElixirASTPrinter {
                 } else {
                     return print(arg, indentLevel);
                 }
+            case ECase(_, _) | ECond(_) | EWith(_,_,_):
+                // Always parenthesize case/cond/with when used as a function argument
+                // to prevent accidental line breaks splitting the call site
+                return '(' + print(arg, indentLevel) + ')';
+            case EBinary(Match, _, _):
+                // Parenthesize assignment when used directly as a function argument
+                return '(' + print(arg, indentLevel) + ')';
                 
             case EBlock(expressions) if (expressions.length > 1):
                 // Multi-statement blocks in function arguments must be wrapped
@@ -2503,6 +2529,21 @@ class ElixirASTPrinter {
             default:
                 return print(arg, indentLevel);
         }
+    }
+
+    // Ensure printed argument is a single safe expression.
+    // If it contains line breaks and is not already wrapped (paren/IIFE),
+    // wrap it in an IIFE to prevent splitting the call site.
+    static function sanitizeArgPrinted(s: String, indent: Int): String {
+        if (s == null) return "";
+        var trimmed = StringTools.trim(s);
+        if (trimmed.length == 0) return s;
+        var hasBreak = (s.indexOf('\n') != -1);
+        var alreadyIIFE = StringTools.startsWith(trimmed, "(fn ->");
+        if (hasBreak && !alreadyIIFE) {
+            return '(fn -> ' + s + ' end).()';
+        }
+        return s;
     }
 
     /**

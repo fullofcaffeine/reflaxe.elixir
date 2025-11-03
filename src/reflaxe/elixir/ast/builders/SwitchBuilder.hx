@@ -891,10 +891,10 @@ class SwitchBuilder {
                     default: return null;
                 }
 
-            case TCall(e, args):
-                // Enum constructor patterns
-                trace('[SwitchBuilder]   Found TCall, checking if enum constructor');
-                if (isEnumConstructor(e)) {
+      case TCall(e, args):
+        // Enum constructor patterns
+        trace('[SwitchBuilder]   Found TCall, checking if enum constructor');
+        if (isEnumConstructor(e)) {
                     trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)');
                     // Prefer body-aware variant so parameter names (todo/id/message) and underscore usage are correct
                     var ef: EnumField = null;
@@ -910,13 +910,19 @@ class SwitchBuilder {
                         return buildEnumPattern(e, args, guardVars, context);
                     }
                 }
-                trace('[SwitchBuilder]     Not an enum constructor');
-                return null;
+        trace('[SwitchBuilder]     Not an enum constructor');
+        return null;
 
-            case TLocal(v):
-                // Variable pattern (binds the value)
-                var varName = VariableAnalyzer.toElixirVarName(v.name);
-                return PVar(varName);
+      case TField(e2, FEnum(_, enumField2)):
+        // Direct reference to enum constructor (no immediate call in AST)
+        // Use body-aware idiomatic generator to pick binder names and usage
+        trace('[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)');
+        return generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context);
+
+      case TLocal(v):
+        // Variable pattern (binds the value)
+        var varName = VariableAnalyzer.toElixirVarName(v.name);
+        return PVar(varName);
 
             default:
                 #if debug_ast_builder
@@ -957,7 +963,27 @@ class SwitchBuilder {
             // Tuple pattern: {:some, value}
             var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
 
-            // Helper: collect lower-case simple names used in the clause body (exclude env names)
+            // Helper: test if a name is considered an environment/function-parameter name (exclude from binders)
+            function isEnvLikeName(n:String):Bool {
+                if (n == null) return false;
+                // Strict minimal set; avoid broad app coupling. These are common function params, not payloads.
+                if (n == "socket" || n == "live_socket" || n == "liveSocket" || n == "conn" || n == "params") return true;
+                // Exclude compiler-introduced temporaries like this, this1, this2, etc.
+                if (StringTools.startsWith(n, "this")) {
+                    var rest = n.substr(4);
+                    var ok = true;
+                    for (i in 0...rest.length) {
+                        var ch = rest.charAt(i);
+                        if (ch < "0" || ch > "9") { ok = false; break; }
+                    }
+                    if (rest.length == 0 || ok) return true;
+                }
+                // Also exclude obvious alias/temp names used around json calls
+                if (n == "json" || n == "data") return true;
+                return false;
+            }
+
+            // Helper: collect lower-case simple names used in the clause body (exclude env-like names)
             function collectUsedLowerLocals(body: TypedExpr): Array<String> {
                 var names = new Map<String,Bool>();
                 function walk(e: TypedExpr): Void {
@@ -967,7 +993,7 @@ class SwitchBuilder {
                             var n = v.name;
                             if (n != null && n.length > 0) {
                                 var c = n.charAt(0);
-                                if (c.toLowerCase() == c && n != "socket" && n != "live_socket" && n != "liveSocket") names.set(n, true);
+                                if (c.toLowerCase() == c && !isEnvLikeName(n)) names.set(n, true);
                             }
                         default:
                     }
@@ -978,16 +1004,6 @@ class SwitchBuilder {
             }
 
             var usedLower = collectUsedLowerLocals(caseBody);
-
-            // Helper: test if a name is considered an environment/function-parameter name (exclude from binders)
-            inline function isEnvLikeName(n:String):Bool {
-                if (n == null) return false;
-                // Strict minimal set; avoid broad app coupling. These are common function params, not payloads.
-                return switch (n) {
-                    case "socket" | "live_socket" | "liveSocket" | "conn": true;
-                    default: false;
-                }
-            }
 
             // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
             function isFunctionParamByName(n:String):Bool {
@@ -1010,15 +1026,19 @@ class SwitchBuilder {
             // Choose a better binder when exactly one parameter and there are lower-case locals used
             function bestUsedLowerName(): Null<String> {
                 if (parameterNames.length != 1 || usedLower.length == 0) return null;
-                // Prefer a non-env, non-param name; pick the first that passes filters
+                // Filter out env-like and function parameters
+                var filtered = [];
                 for (n in usedLower) {
                     var alt = VariableAnalyzer.toElixirVarName(n);
-                    if (!isEnvLikeName(alt) && !isFunctionParamByName(alt)) return alt;
+                    if (!isEnvLikeName(alt) && !isFunctionParamByName(alt)) filtered.push(alt);
                 }
+                // Only choose when exactly one clear candidate remains
+                if (filtered.length == 1) return filtered[0];
                 return null;
             }
             var preferredLower: Null<String> = bestUsedLowerName();
 
+            var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
             for (i in 0...parameterNames.length) {
                 // Select a safe base source name with strict filtering
                 var candidate:Null<String> = null;
@@ -1028,6 +1048,7 @@ class SwitchBuilder {
                 }
 
                 var baseParamName = VariableAnalyzer.toElixirVarName(candidate);
+                if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
 
                 // If only one parameter and we detected lower-case locals in body,
                 // prefer the first safe lower-case local as binder (usage-driven, generic).
@@ -1041,6 +1062,7 @@ class SwitchBuilder {
                 }
                 // If a preferred lower-case local was selected, treat binder as used
                 if (!isUsed && preferredLower != null) isUsed = true;
+                if (!isUsed && isResultCtor) isUsed = true;
 
                 // Apply underscore prefix for unused parameters
                 var paramName = isUsed ? baseParamName : "_" + baseParamName;
@@ -1098,6 +1120,7 @@ class SwitchBuilder {
             return PLiteral(makeAST(EAtom(atomName)));
         }
         var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
+        var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
         for (i in 0...paramCount) {
             // Priority: guard var > TLocal name from arg > enum field param name
             var guardName = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
@@ -1114,7 +1137,9 @@ class SwitchBuilder {
             switch(ef.type) { case TFun(args, _): if (i < args.length) enumParamName = args[i].name; default: }
             var chosen = guardName != null ? guardName : (argLocal != null ? argLocal : enumParamName);
             var baseParamName = VariableAnalyzer.toElixirVarName(chosen);
+            if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
             var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || (chosen != null && EnumHandler.isLocalNameUsed(chosen, caseBody));
+            if (!isUsed && isResultCtor) isUsed = true;
             var finalName = isUsed ? baseParamName : "_" + baseParamName;
             patterns.push(PVar(finalName));
             if (context.currentClauseContext != null) {

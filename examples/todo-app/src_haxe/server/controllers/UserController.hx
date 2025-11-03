@@ -132,21 +132,21 @@ class UserController {
         var result = Users.createUser(params);
         
         return switch(result) {
-            case Ok(user):
+            case Ok(value):
                 conn
                     .putStatus(201)
                     .json({
-                        user: user,
+                        user: value,
                         created: true,
                         message: "User created successfully"
                     });
                     
-            case Error(changeset):
+            case Error(reason):
                 conn
                     .putStatus(422)
                     .json({
                         error: "Failed to create user",
-                        changeset: changeset
+                        changeset: reason
                     });
         }
     }
@@ -179,19 +179,21 @@ class UserController {
         var result = Users.updateUser(user, updateAttrs);
         
         return switch(result) {
-            case Ok(updatedUser):
-                conn.json({
-                    user: updatedUser,
+            case Ok(value):
+                // Use a named local to avoid any intermediate aliasing of the json/2 payload
+                final payload = {
+                    user: value,
                     updated: true,
                     message: 'User ${params.id} updated successfully'
-                });
+                };
+                conn.json(payload);
                 
-            case Error(changeset):
+            case Error(reason):
                 conn
                     .putStatus(422)
                     .json({
                         error: "Failed to update user",
-                        changeset: changeset
+                        changeset: reason
                     });
         }
     }
@@ -217,14 +219,16 @@ class UserController {
         var result = Users.deleteUser(user);
         
         return switch(result) {
-            case Ok(deletedUser):
-                conn.json({
+            case Ok(value):
+                // Use a named local to avoid any intermediate aliasing of the json/2 payload
+                final payload = {
                     deleted: params.id,
                     success: true,
                     message: 'User ${params.id} deleted successfully'
-                });
+                };
+                conn.json(payload);
                 
-            case Error(changeset):
+            case Error(reason):
                 conn
                     .putStatus(500)
                     .json({

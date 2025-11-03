@@ -21,28 +21,11 @@ class WebDropUnusedPureAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
-        case EModule(name, attrs, body) if (isWeb(name)):
-          var out = [for (b in body) applyToDefs(b)];
-          makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
-        case EDefmodule(name2, doBlock) if (isWeb(name2)):
-          makeASTWithMeta(EDefmodule(name2, applyToDefs(doBlock)), n.metadata, n.pos);
-        default: n;
-      }
-    });
-  }
-
-  static inline function isWeb(name:String):Bool {
-    return name != null && name.indexOf("Web.") > 0;
-  }
-
-  static function applyToDefs(node:ElixirAST):ElixirAST {
-    return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
-      return switch (n.def) {
         case EDef(fn, args, guards, body):
           makeASTWithMeta(EDef(fn, args, guards, dropUnused(body)), n.metadata, n.pos);
         case EDefp(fn2, args2, guards2, body2):
           makeASTWithMeta(EDefp(fn2, args2, guards2, dropUnused(body2)), n.metadata, n.pos);
-        default: n;
+        default: dropUnused(n);
       }
     });
   }
@@ -62,14 +45,9 @@ class WebDropUnusedPureAssignTransforms {
       var s = stmts[i];
       var keep = true;
       switch (s.def) {
-        case EBinary(Match, {def: EVar(b)}, {def: EVar(_rhsVar)}) if (!usedLater(stmts, i+1, b)):
-          keep = false; // drop pure var copy
-        case EMatch(PVar(b2), {def: EVar(_rhsVar2)}) if (!usedLater(stmts, i+1, b2)):
-          keep = false;
-        // drop trivial list init like `xs = []` when never referenced later
-        case EBinary(Match, {def: EVar(b3)}, {def: EList(es)}) if (es != null && es.length == 0 && !usedLater(stmts, i+1, b3)):
-          keep = false;
-        case EMatch(PVar(b4), {def: EList(es2)}) if (es2 != null && es2.length == 0 && !usedLater(stmts, i+1, b4)):
+        case EBinary(Match, {def: EVar(b)}, rhs) if (!isSocketBinder(b) && isDropCandidate(rhs) && !usedLater(stmts, i+1, b)):
+          keep = false; // drop pure var copy or empty init
+        case EMatch(PVar(b2), rhs2) if (!isSocketBinder(b2) && isDropCandidate(rhs2) && !usedLater(stmts, i+1, b2)):
           keep = false;
         default:
       }
@@ -86,6 +64,20 @@ class WebDropUnusedPureAssignTransforms {
       });
     }
     return found;
+  }
+
+  static inline function isSocketBinder(name:String): Bool {
+    if (name == null) return false;
+    return name == "socket" || name == "live_socket" || name == "liveSocket" || StringTools.endsWith(name, "_socket");
+  }
+
+  static inline function isDropCandidate(e: ElixirAST): Bool {
+    return switch (e.def) {
+      case EVar(_): true;
+      case EList(es) if (es != null && es.length == 0): true;
+      case ENil: true;
+      default: false;
+    }
   }
 }
 

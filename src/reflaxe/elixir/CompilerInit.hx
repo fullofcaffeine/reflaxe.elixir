@@ -123,6 +123,8 @@ class CompilerInit {
                 RemoveUnnecessaryBlocks,                                 // Remove redundant blocks
                 RemoveReassignedVariableDeclarations,                    // Optimize variable declarations
                 RemoveLocalVariableAliases,                              // Remove unnecessary aliases
+                // IMPORTANT: Fix variable usage detection before marking unused variables
+                Custom(new reflaxe.elixir.preprocessors.FixVariableUsageDetection()),
                 MarkUnusedVariables,                                     // Mark unused variables for removal
                 Custom(new RemoveOrphanedEnumParametersImpl())          // Remove orphaned enum parameter extractions
             ]

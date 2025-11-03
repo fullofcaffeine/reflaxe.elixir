@@ -42,7 +42,7 @@ class InlineUnderscoreTempUsedOnceTransforms {
                 }
               case EBinary(Match, {def: EVar(tmp2)}, rhs2) if (isUnderscore(tmp2) && i + 1 < stmts.length):
                 var next2 = stmts[i+1];
-                if (usedExactlyOnceAsVar(next2, tmp2)) {
+                if (usedExactlyOnceAsVar(next2, tmp2) || isSafeMultiUseInlineContext(next2)) {
                   var inlined2 = substituteVar(next2, tmp2, rhs2);
                   out.push(inlined2); i += 2; continue;
                 } else { out.push(s); i++; }
@@ -67,7 +67,7 @@ class InlineUnderscoreTempUsedOnceTransforms {
                 } else { out2.push(s2); i2++; }
               case EBinary(Match, {def: EVar(tmp2)}, rhs2) if (isUnderscore(tmp2) && i2 + 1 < stmts.length):
                 var next2 = stmts[i2+1];
-                if (usedExactlyOnceAsVar(next2, tmp2)) {
+                if (usedExactlyOnceAsVar(next2, tmp2) || isSafeMultiUseInlineContext(next2)) {
                   var inlined2 = substituteVar(next2, tmp2, rhs2);
                   out2.push(inlined2); i2 += 2; continue;
                 } else { out2.push(s2); i2++; }
@@ -116,6 +116,40 @@ class InlineUnderscoreTempUsedOnceTransforms {
         default: n;
       }
     });
+  }
+
+  // Conservative fallback: allow inlining underscore temps even if referenced
+  // multiple times when the next node is a pure expression context that we know
+  // stays within a single argument or branch (e.g., case/cond, :binary.match, String.at).
+  static function isSafeMultiUseInlineContext(node: ElixirAST): Bool {
+    function argContainsSafe(n: ElixirAST): Bool {
+      return switch (n.def) {
+        case ECase(_, _) | ECond(_): true;
+        case ERemoteCall(mod, fn, _):
+          switch (mod.def) {
+            case EVar(m) if (m == ":binary" && fn == "match"): true;
+            case EVar(m2) if (m2 == "String" && (fn == "at" || fn == "upcase" || fn == "downcase")): true;
+            default: false;
+          }
+        case EBinary(_, left, _):
+          // If the left side is a case or :binary.match, treat as safe
+          switch (left.def) {
+            case ECase(_, _): true;
+            case ERemoteCall(mod2, fn2, _):
+              switch (mod2.def) { case EVar(mm) if (mm == ":binary" && fn2 == "match"): true; default: false; }
+            default: false;
+          }
+        default: false;
+      }
+    }
+    return switch (node.def) {
+      case ECase(_, _) | ECond(_): true;
+      case ERemoteCall(mod, fn, args):
+        if (argContainsSafe(args != null && args.length > 0 ? args[0] : null)) return true; else false;
+      case ECall(_, _, args):
+        if (argContainsSafe(args != null && args.length > 0 ? args[0] : null)) return true; else false;
+      default: false;
+    }
   }
 }
 

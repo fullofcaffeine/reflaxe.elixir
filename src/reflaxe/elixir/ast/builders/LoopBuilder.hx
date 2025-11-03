@@ -2777,7 +2777,36 @@ class LoopBuilder {
                 );
                 
             case "each":
-                var itemVar = "item";
+                // Derive a stable binder name from the body when possible
+                var itemVar = (function(): String {
+                    // Try to find a local used as a field target, e.g., `todo.completed`
+                    var candidate: Null<String> = null;
+                    function scan(e: TypedExpr): Void {
+                        if (e == null) return;
+                        switch (e.expr) {
+                            case TField(obj, _):
+                                switch (obj.expr) {
+                                    case TLocal(v):
+                                        // Prefer user vars (not compiler temps starting with _)
+                                        if (candidate == null && !StringTools.startsWith(v.name, "_")) candidate = v.name;
+                                    default:
+                                }
+                                // Continue scanning nested
+                                scan(obj);
+                            case TLocal(v2):
+                                if (candidate == null && !StringTools.startsWith(v2.name, "_")) candidate = v2.name;
+                            case TCall(f, args):
+                                scan(f); for (a in args) scan(a);
+                            case TBlock(es):
+                                for (ee in es) scan(ee);
+                            case TIf(c,t,el):
+                                scan(c); scan(t); if (el != null) scan(el);
+                            default:
+                        }
+                    }
+                    scan(body);
+                    return candidate != null ? reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(candidate) : "item";
+                })();
                 var action = context.buildFromTypedExpr(body);
                 
                 return ERemoteCall(

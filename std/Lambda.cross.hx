@@ -64,7 +64,7 @@ class Lambda {
      * Returns a new Array by applying function f to all elements.
      */
     public static function map<T, S>(it: Iterable<T>, f: T -> S): Array<S> {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.map({0}, {1})', it, f);
         #else
         var arr = [];
@@ -77,7 +77,7 @@ class Lambda {
      * Returns a new Array containing all elements for which f returns true.
      */
     public static function filter<T>(it: Iterable<T>, f: T -> Bool): Array<T> {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.filter({0}, {1})', it, f);
         #else
         var arr = [];
@@ -94,7 +94,7 @@ class Lambda {
      * and Elixir compatibility, we use a regular two-parameter function.
      */
     public static function fold<T, A>(it: Iterable<T>, f: (T, A) -> A, first: A): A {
-        #if elixir
+        #if (elixir || elixir_output)
         // Elixir's reduce expects (element, accumulator) order
         return untyped __elixir__('Enum.reduce({0}, {1}, {2})', it, first, f);
         #else
@@ -110,7 +110,7 @@ class Lambda {
      * Returns the number of elements in the Iterable.
      */
     public static function count<T>(it: Iterable<T>, ?pred: T -> Bool): Int {
-        #if elixir
+        #if (elixir || elixir_output)
         if (pred == null) {
             return untyped __elixir__('Enum.count({0})', it);
         } else {
@@ -133,7 +133,7 @@ class Lambda {
      * Tells if at least one element of the Iterable satisfies predicate f.
      */
     public static function exists<T>(it: Iterable<T>, f: T -> Bool): Bool {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.any?({0}, {1})', it, f);
         #else
         for (v in it) {
@@ -147,7 +147,7 @@ class Lambda {
      * Tells if all elements of the Iterable satisfy predicate f.
      */
     public static function foreach<T>(it: Iterable<T>, f: T -> Bool): Bool {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.all?({0}, {1})', it, f);
         #else
         for (v in it) {
@@ -161,7 +161,7 @@ class Lambda {
      * Returns the first element for which f returns true.
      */
     public static function find<T>(it: Iterable<T>, f: T -> Bool): Null<T> {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.find({0}, {1})', it, f);
         #else
         for (v in it) {
@@ -175,7 +175,7 @@ class Lambda {
      * Tells if the Iterable does not contain any element.
      */
     public static function empty<T>(it: Iterable<T>): Bool {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.empty?({0})', it);
         #else
         for (_ in it) return false;
@@ -187,7 +187,7 @@ class Lambda {
      * Returns the index of the first element for which f returns true.
      */
     public static function indexOf<T>(it: Iterable<T>, v: T): Int {
-        #if elixir
+        #if (elixir || elixir_output)
         var result = untyped __elixir__('Enum.find_index({0}, fn x -> x == {1} end)', it, v);
         return result == null ? -1 : result;
         #else
@@ -204,7 +204,7 @@ class Lambda {
      * Tells if it contains v.
      */
     public static function has<T>(it: Iterable<T>, v: T): Bool {
-        #if elixir
+        #if (elixir || elixir_output)
         return untyped __elixir__('Enum.member?({0}, {1})', it, v);
         #else
         for (x in it) {
@@ -219,7 +219,7 @@ class Lambda {
      * This is essential for macro compilation compatibility
      */
     public static function iter<T>(it: Iterable<T>, f: T -> Void): Void {
-        #if elixir
+        #if (elixir || elixir_output)
         untyped __elixir__('Enum.each({0}, {1})', it, f);
         #else
         for (x in it) f(x);

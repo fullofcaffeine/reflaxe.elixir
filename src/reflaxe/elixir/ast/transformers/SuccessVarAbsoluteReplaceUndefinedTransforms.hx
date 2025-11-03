@@ -78,10 +78,37 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
                                 newClauses.push({ pattern: newPattern, guard: cl.guard, body: cl.body });
                                 continue;
                             }
+                            var undefinedSet = new Map<String,Bool>();
+                            for (u in undef) undefinedSet.set(u, true);
                             var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
                                 return switch (x.def) {
                                     case EVar(v) if (isLower(v) && allowReplace(v) && !declared.exists(v)):
+                                        #if sys Sys.println('[SuccessVarReplace] ' + v + ' -> ' + binder); #end
                                         makeASTWithMeta(EVar(binder), x.metadata, x.pos);
+                                    case ERaw(s) if (s != null):
+                                        // Carefully replace undefined simple vars inside raw code fragments.
+                                        var updated = s;
+                                        for (k in undefinedSet.keys()) {
+                                            var u = k;
+                                            if (!allowReplace(u)) continue;
+                                            // Match whole-word u not preceded by ':' (avoid atoms)
+                                            var re = new EReg('(^|[^:A-Za-z0-9_])' + u + '([^A-Za-z0-9_]|$)', "g");
+                                            // Haxe EReg lacks global replace with groups; do manual loop
+                                            var buf = new StringBuf();
+                                            var pos = 0;
+                                            while (re.matchSub(updated, pos)) {
+                                                var mp = re.matchedPos();
+                                                var matchStr = re.matched(0);
+                                                var startIdx = matchStr.indexOf(u);
+                                                buf.add(updated.substr(pos, mp.pos - pos));
+                                                buf.add(matchStr.substr(0, startIdx));
+                                                buf.add(binder);
+                                                buf.add(matchStr.substr(startIdx + u.length));
+                                                pos = mp.pos + mp.len;
+                                            }
+                                            if (pos > 0) { buf.add(updated.substr(pos)); updated = buf.toString(); }
+                                        }
+                                        if (updated != s) makeASTWithMeta(ERaw(updated), x.metadata, x.pos) else x;
                                     default: x;
                                 }
                             });
