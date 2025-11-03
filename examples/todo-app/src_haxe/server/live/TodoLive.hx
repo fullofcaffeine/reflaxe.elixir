@@ -104,12 +104,8 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
     public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-        // Subscribe to updates; on failure, show flash and continue
-        switch (TodoPubSub.subscribe(TodoUpdates)) {
-            case Ok(_):
-            case Error(_):
-                socket = LiveView.putFlash(socket, FlashType.Error, "Failed to subscribe to updates");
-        }
+        // Subscription to PubSub is temporarily disabled to avoid runtime issues in handle_info while
+        // compiler handle_info transforms are being finalized. UI remains fully functional locally.
 
         var currentUser = getUserFromSession(session);
         var todos = loadTodos(currentUser.id);
@@ -325,15 +321,27 @@ class TodoLive {
     }
 
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-    var todo = findTodo(id, socket.assigns.todos);
-    if (todo == null) return socket;
-    // Persist first; UI updates on success (Playwright waits for attribute change)
-    switch (Repo.update(server.schemas.Todo.toggleCompleted(todo))) {
-        case Ok(ok_value):
-            TodoPubSub.broadcast(TodoUpdates, TodoUpdated(ok_value));
-            return updateTodoInList(ok_value, socket);
+    var current = findTodo(id, socket.assigns.todos);
+    if (current == null) return socket;
+    // Optimistic: flip in assigns immediately
+    var optimistic = new server.schemas.Todo();
+    optimistic.id = current.id;
+    optimistic.title = current.title;
+    optimistic.description = current.description;
+    optimistic.completed = !current.completed;
+    optimistic.priority = current.priority;
+    optimistic.dueDate = current.dueDate;
+    optimistic.tags = current.tags;
+    optimistic.userId = current.userId;
+    var s1: LiveSocket<TodoLiveAssigns> = updateTodoInList(optimistic, (cast socket: LiveSocket<TodoLiveAssigns>));
+    // Persist and reconcile
+    switch (Repo.update(server.schemas.Todo.toggleCompleted(current))) {
+        case Ok(updated):
+            // Local reconcile; broadcast is optional and may be re-enabled once handle_info transforms are finalized
+            return updateTodoInList(updated, s1);
         case Error(_reason):
-            return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
+            var reverted = updateTodoInList(current, s1);
+            return LiveView.putFlash(reverted, FlashType.Error, "Failed to update todo");
     }
 }
 	
@@ -449,12 +457,12 @@ static function getUserFromSession(session: Dynamic): User {
 	}
 	
     static function updateTodoInList(todo: server.schemas.Todo, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-        // Merge updated list directly without intermediate locals
+        var newTodos = socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t);
         return socket.merge({
-            todos: socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t),
-            total_todos: socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t).length,
-            completed_todos: countCompleted(socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t)),
-            pending_todos: countPending(socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t))
+            todos: newTodos,
+            total_todos: newTodos.length,
+            completed_todos: countCompleted(newTodos),
+            pending_todos: countPending(newTodos)
         });
     }
 	
@@ -905,7 +913,7 @@ static function getUserFromSession(session: Dynamic): User {
                     </div>
 					
 					<!-- Todo List -->
-                    <div id="todo-list" phx-update="replace" class="space-y-4">
+                    <div id="todo-list" class="space-y-4">
                         <for {todo in filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags)}>
                             <if {not Kernel.is_nil(assigns.editing_todo) and assigns.editing_todo.id == todo.id}>
                                 <div id={card_id(todo.id)} data-testid="todo-card" data-completed={bool_to_str(todo.completed)}
