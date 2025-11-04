@@ -61,6 +61,18 @@ class CallExprBuilder {
         }
         #end
 
+        // Normalize common Array operations early (target-idiomatic)
+        if (e != null) {
+            switch (e.expr) {
+                case TField(target, FInstance(_, _, cf)) if (cf.get().name == "concat" && args != null && args.length >= 1):
+                    // Array.concat(other) → list ++ other (list concatenation)
+                    var left = buildExpression(target);
+                    var right = buildExpression(args[0]);
+                    return EBinary(EBinaryOp.Concat, left, right);
+                default:
+            }
+        }
+
         // CRITICAL: Check for __elixir__() injection FIRST, before any other processing
         // This ensures code injection works regardless of other transformations
         if (context.compiler.options.targetCodeInjectionName != null && e != null && args.length > 0) {

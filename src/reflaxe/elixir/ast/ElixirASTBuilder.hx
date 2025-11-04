@@ -1837,6 +1837,7 @@ class ElixirASTBuilder {
                         var isLocalFieldAssign = false;
                         var baseLocalName: Null<String> = null;
                         var fieldNameForPut: Null<String> = null;
+                        var baseIsSchemaStruct: Bool = false;
                         switch (e1.expr) {
                             case TField(baseExpr, fa):
                                 switch (baseExpr.expr) {
@@ -1856,6 +1857,13 @@ class ElixirASTBuilder {
                                                 case FDynamic(s): s;
                                             };
                                             fieldNameForPut = reflaxe.elixir.ast.NameUtils.toSnakeCase(rawFieldName);
+                                            // Detect when base is an Ecto schema struct to prefer struct update syntax
+                                            baseIsSchemaStruct = switch (baseExpr.t) {
+                                                case TInst(c, _):
+                                                    var ct = c.get();
+                                                    ct != null && ct.meta != null && ct.meta.has("schema");
+                                                default: false;
+                                            };
                                         }
                                     default:
                                 }
@@ -1881,17 +1889,27 @@ class ElixirASTBuilder {
                         }
 
                         var rightAST = if (isLocalFieldAssign && baseLocalName != null && fieldNameForPut != null) {
-                            // Build Map.put(base, key, value)
+                            // Prefer struct update syntax when assigning a field on a schema struct;
+                            // otherwise, fall back to Map.put on maps.
                             var valueAST = buildFromTypedExpr(rightIsUnderscoreAssign && flattenedRight != null ? flattenedRight : e2, currentContext);
-                            makeAST(ERemoteCall(
-                                makeAST(EVar("Map")),
-                                "put",
-                                [
+                            if (baseIsSchemaStruct) {
+                                // %{base | field: value}
+                                makeAST(EStructUpdate(
                                     makeAST(EVar(baseLocalName)),
-                                    makeAST(EString(fieldNameForPut)),
-                                    valueAST
-                                ]
-                            ));
+                                    [{ key: fieldNameForPut, value: valueAST }]
+                                ));
+                            } else {
+                                // Map.put(base, "field", value)
+                                makeAST(ERemoteCall(
+                                    makeAST(EVar("Map")),
+                                    "put",
+                                    [
+                                        makeAST(EVar(baseLocalName)),
+                                        makeAST(EString(fieldNameForPut)),
+                                        valueAST
+                                    ]
+                                ));
+                            }
                         } else if (rightIsUnderscoreAssign && flattenedRight != null) {
                             buildFromTypedExpr(flattenedRight, currentContext);
                         } else {
