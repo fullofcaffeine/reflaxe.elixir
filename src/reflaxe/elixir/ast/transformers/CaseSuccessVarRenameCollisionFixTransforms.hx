@@ -104,8 +104,8 @@ class CaseSuccessVarRenameCollisionFixTransforms {
     }
 
     static inline function safeName(colliding: String): String {
-        // Do not produce trailing digits; prefer descriptive alternative
-        return (colliding == "socket") ? "ok_value" : ("ok_" + colliding);
+        // Prefer a neutral, idiomatic binder name without ok_* prefix to avoid leaks
+        return "value";
     }
 
     // No body rewriting: avoid capturing function args like `socket`.

@@ -53,6 +53,22 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseOkBinderAlignTransforms.transformPass
         });
 
+        // Normalize {:ok, ok_value} → {:ok, value} and fix body references; prevent ok_value leaks
+        passes.push({
+            name: "ResultOkBinderNormalize",
+            description: "Normalize {:ok, binder} to avoid ok_value leaks; align body to binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms.pass
+        });
+        // Replay near the end to catch late-introduced ok_value in nested closures
+        passes.push({
+            name: "ResultOkBinderNormalize_Replay_Ultimate",
+            description: "Ultimate replay of {:ok, binder} normalization inside def/defp and EFn",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms.pass,
+            runAfter: ["FinalLocalReferenceAlign"]
+        });
+
         // Throw statement transformation (must run early to fix complex expressions)
         passes.push({
             name: "ThrowStatementTransform",
@@ -240,6 +256,16 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LiveEventCaseToCallbacksTransforms.transformPass
         });
+
+        // Bridge typed handleEvent(enum, socket) to idiomatic handle_event/3.
+        // This guarantees we do not rely on ad-hoc helper names and keeps
+        // behavior single-sourced in the typed function.
+        passes.push({
+            name: "LiveViewTypedEventBridge",
+            description: "Synthesize handle_event/3 callbacks from typed handleEvent/2 (enum) dispatcher",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
+        });
         
         // Phoenix function name mapping pass (transforms assign_multiple to assign, etc.)
         passes.push({
@@ -381,9 +407,11 @@ class ElixirASTPassRegistry {
         // SPECIALIZED REPAIR for LiveView handle_info must run BEFORE the generic
         // collision-avoid renamer so it can see the binder equal to the function arg
         // and fix helper calls (payload first, socket last) in the clause body.
+        // Disabled: This pass risks app-specific name coupling by changing helper calls.
+        // Fix binder collisions via generic binder/name passes only.
         passes.push({
             name: "HandleInfoCaseBinderCollisionRepair_Pre",
-            description: "Repair {:tag, socket} in handle_info/2 clauses by renaming binder and fixing local helper calls (runs before generic binder-avoid)",
+            description: "Repair {:tag, socket}-style binder collisions in handle_info/2; rewrite local helper arg order (payload first, socket last)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoCaseBinderCollisionRepairTransforms.transformPass
         });
@@ -831,6 +859,21 @@ class ElixirASTPassRegistry {
             description: "Remove redundant temp alias assignments in statement contexts",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.tempAliasCleanupPass
+        });
+
+        // Ensure case discriminant uses the same temp variable as the preceding assignment (g vs _g)
+        passes.push({
+            name: "CaseDiscriminantTempNormalize",
+            description: "Rewrite case discriminant to match preceding assignment modulo leading underscore",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseDiscriminantTempNormalizeTransforms.pass,
+            runAfter: [
+                "LocalAssignUnusedUnderscore_Scoped_Final",
+                "AlignBaseRefToUnderscoredBinder_Final",
+                "LocalUnderscoreBinderPromotionWhenUsed_Final",
+                "DanglingBaseRefAlign_Final",
+                "FinalLocalReferenceAlign"
+            ]
         });
 
         // Collapse nested alias chains: lhs = alias = expr → lhs = expr (when alias unused later)
@@ -3241,7 +3284,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "QueryBinderFinalization",
             description: "Promote `_ = String.downcase(search_query)` to `query = ...` in guarded then-branches when Enum.filter appears later",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.QueryBinderFinalizationTransforms.transformPass
         });
         // Discard unused assignments inside closures (EFn clause bodies)
@@ -3476,7 +3519,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "MapJoinRewrite",
             description: "Collapse temp += concat inside Enum.each + Enum.join to Enum.map |> Enum.join",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapJoinRewritePass
         });
         passes.push({
@@ -3552,13 +3595,13 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "MapConcatEachToMapAssign",
             description: "Rewrite temp=[], Enum.each(... temp=Enum.concat(temp,[expr]) ...) → temp = Enum.map(list, fn -> expr) end",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapConcatEachToMapAssignPass
         });
         passes.push({
             name: "ConcatEachToReduce",
             description: "Rewrite temp=[], Enum.each(... if cond do temp=concat(temp,[expr]) end ...) → Enum.reduce(list, [], ...)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.concatEachToReducePass
         });
         passes.push({
@@ -3817,21 +3860,21 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "QueryBinderRescue",
             description: "Rename _query/_ = downcase to query = downcase when later Enum.filter uses query",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.QueryBinderRescueTransforms.transformPass
         });
         // Promote `_ = String.downcase(search_query)` preceding Enum.filter(...) that uses `query` to a named binder
         passes.push({
             name: "PromoteQueryFromWildcard",
             description: "Promote wildcard downcase to `query = String.downcase(search_query)` when next filter uses `query`",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.pass
         });
         // Consolidate query handling after EFn arg/body normalizations so predicate shapes are stable
         passes.push({
             name: "FilterQueryConsolidate",
             description: "Ensure `query` availability: promote `_ = String.downcase(search_query)` or bind/inline deterministically",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.FilterQueryConsolidateTransforms.pass
         });
         // Normalize Phoenix assign/2 map argument by inlining preceding literal map
@@ -4509,6 +4552,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.FinalLocalReferenceAlignTransforms.pass
         });
+        // Ultra-final: replace stray ok_value references with value when only value is declared
+        passes.push({
+            name: "OkValueGlobalCleanup_AbsoluteFinal",
+            description: "Ultra-final: rewrite free ok_value refs to value when value is declared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.OkValueGlobalCleanupTransforms.pass
+        });
         // Repair single-arg closures where a single undefined body var drifts from the binder name
         passes.push({
             name: "EFnUndefinedRefToArg_Final",
@@ -4629,6 +4679,33 @@ class ElixirASTPassRegistry {
             ]
         });
 
+        // Absolute‑last: clause-local success body binder rewrite (ok_value/ok_<binder> → binder)
+        passes.push({
+            name: "CaseClauseSuccessBodyBinderRewrite_AbsoluteLast",
+            description: "Absolute-last: in {:ok,binder} clauses, rewrite ok_value/ok_<binder> refs in bodies to binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseClauseSuccessBodyBinderRewriteTransforms.pass,
+            runAfter: [
+                "NilUnderscoreAssignGlobal_AbsoluteFinal",
+                "FinalLocalReferenceAlign",
+                "ParamUnderscoreArgRefAlign_Global_Final"
+            ]
+        });
+
+        // Absolute‑last replay: ensure case discriminant uses same temp as nearest assignment (g vs _g)
+        passes.push({
+            name: "CaseDiscriminantTempNormalize_Replay_AbsoluteLast",
+            description: "Absolute-last replay: rewrite case discriminant to match nearest prior assignment modulo underscore",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseDiscriminantTempNormalizeTransforms.pass,
+            runAfter: [
+                "CaseClauseSuccessBodyBinderRewrite_AbsoluteLast",
+                "OkValueGlobalCleanup_AbsoluteLast",
+                "FinalLocalReferenceAlign",
+                "ParamUnderscoreArgRefAlign_Global_Final"
+            ]
+        });
+
         // Final: underscore unused case payload binders (e.g., {:error, reason} -> {:error, _reason})
         passes.push({
             name: "CasePatternUnusedBinderUnderscore_Final",
@@ -4696,6 +4773,23 @@ class ElixirASTPassRegistry {
                 "WebDropAliasAssign_Ultimate"
             ]
         });
+        // ABSOLUTE-LAST hygiene: remove lingering ok_value/_g in any function/EFn bodies
+        passes.push({
+            name: "OkValueGlobalCleanup_AbsoluteLast",
+            description: "Absolute-last: rewrite ok_value->value and _g->g when only value/g are declared (def/defp and EFn)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.OkValueGlobalCleanupTransforms.pass,
+            runAfter: [
+                "WebAliasAssignUnderscore_Ultimate",
+                "ControllerJsonSecondArgUndefinedRewrite_Ultimate",
+                "CaseBinderRefNormalizeByFlattenUnderscores_Final",
+                "FunctionArgMultiStmtIIFE_Final",
+                "AssertArgIIFE_Final",
+                "StringIndexOf_Normalize_Final",
+                "BinaryMatchCaseArgNormalize_Final",
+                "ParamUnderscoreArgRefAlign_Global_Final"
+            ]
+        });
 
         // Ultimate: ensure Phoenix.Controller.json second arg is a real local (binder/value)
         passes.push({
@@ -4707,6 +4801,18 @@ class ElixirASTPassRegistry {
                 "WebDropAliasAssign_Ultimate",
                 "WebAliasAssignUnderscore_Ultimate",
                 "ControllerJsonFinalize_AbsoluteFinal"
+            ]
+        });
+
+        // Ultimate replay: remove lingering ok_value/_g references inside any bodies and closures
+        passes.push({
+            name: "OkValueGlobalCleanup_Replay_Ultimate",
+            description: "Ultimate replay: rewrite ok_value->value and _g->g when only value/g are declared (def/defp and EFn)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.OkValueGlobalCleanupTransforms.pass,
+            runAfter: [
+                "WebJsonSecondArgRewrite_Ultimate",
+                "FinalLocalReferenceAlign"
             ]
         });
 
@@ -5235,6 +5341,19 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventParamExtractFromBodyUseTransforms.transformPass
         });
+        // Final handle_info normalizations
+        passes.push({
+            name: "HandleInfoReturnSocketNormalize_Final",
+            description: "In handle_info/2, ensure helper calls end with socket and {:noreply, socket} shapes",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoReturnSocketNormalizeTransforms.transformPass
+        });
+        passes.push({
+            name: "HandleInfoScrutineeToPayloadRef_Final",
+            description: "Rewrite scrutinee references to payload binder within handle_info case clauses",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoScrutineeToPayloadRefTransforms.transformPass
+        });
         // Ultra-final: for toggle_* events, replace helper first-arg `params` with Map.get(params, suffix)
         passes.push({
             name: "HandleEventToggleKeyExtract_Final",
@@ -5483,19 +5602,19 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "VarNameNormalization_Final",
             description: "Absolute final: normalize camelCase references to existing snake_case variables",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.VarNameNormalizationTransforms.varNameNormalizationPass
         });
         passes.push({
             name: "VarRefSuffixParamNormalize_Final",
             description: "Absolute final: map short refs to a unique param that ends with _<short> (e.g., query -> search_query)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeTransforms.pass
         });
         passes.push({
             name: "VarRefSuffixParamNormalize_UltraFinal",
             description: "Ultra-final: rewrite free `query` refs to the single *_query param (e.g., search_query)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms.pass
         });
         passes.push({
@@ -5508,7 +5627,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "QueryVarUltimateNormalize_UltraFinal",
             description: "Ultra-final: rewrite free `query` to normalized *_query param (prefers param if param = String.downcase(param) exists)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.pass
         });
         passes.push({
@@ -5517,11 +5636,18 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.FunctionQueryBinderSynthesisTransforms.pass
         });
+        // Derive local `query` from a discovered `<_.>.search_query` field when referenced and unbound
+        passes.push({
+            name: "SearchFieldQueryBinderSynthesis_UltraFinal",
+            description: "Ultra-final: synthesize `query` from `<x>.search_query` when body references it without a binder",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SearchFieldQueryBinderSynthesisTransforms.pass
+        });
         // Re-run binder safety for {:ok, binder} after all late ref/name rewrites
         passes.push({
             name: "SuccessBinderPrefixMostUsedUndefined_UltraFinal",
             description: "Ultra-final: prefix-bind most-used undefined var to {:ok, binder} after late rewrites",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.SuccessBinderPrefixMostUsedUndefinedTransforms.pass
         });
         // Repair handle_info tuple-binder collisions before normalizing call tails

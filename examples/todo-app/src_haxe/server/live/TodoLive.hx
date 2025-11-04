@@ -82,12 +82,47 @@ typedef TodoLiveAssigns = {
 	var show_form: Bool;
 	var search_query: String;
 	var selected_tags: Array<String>;
+    // Optimistic UI state: ids currently flipped client-first, pending server reconcile
+    var optimistic_toggle_ids: Array<Int>;
+    // Precomputed view rows for HXX (zero-logic rendering)
+    var visible_todos: Array<TodoView>;
 	// Statistics
 	var total_todos: Int;
 	var completed_todos: Int;
 	var pending_todos: Int;
 	// Presence tracking (idiomatic Phoenix pattern: single flat map)
-	var online_users: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
+    var online_users: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
+    // UI convenience fields for zero-logic HXX
+    var visible_count: Int;
+    var filter_btn_all_class: String;
+    var filter_btn_active_class: String;
+    var filter_btn_completed_class: String;
+    var sort_selected_created: Bool;
+    var sort_selected_priority: Bool;
+    var sort_selected_due_date: Bool;
+}
+
+/**
+ * Row view model for HXX zero-logic rendering.
+ * All derived fields are computed in Haxe, so HXX only binds assigns.
+ */
+typedef TodoView = {
+    var id: Int;
+    var title: String;
+    var description: String;
+    var completedForView: Bool;
+    var completedStr: String;
+    var domId: String;
+    var containerClass: String;
+    var titleClass: String;
+    var descClass: String;
+    var priority: String;
+    var hasDue: Bool;
+    var dueDisplay: String;
+    var hasTags: Bool;
+    var hasDescription: Bool;
+    var isEditing: Bool;
+    var tags: Array<String>;
 }
 
 /**
@@ -104,8 +139,12 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
     public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-        // Subscription to PubSub is temporarily disabled to avoid runtime issues in handle_info while
-        // compiler handle_info transforms are being finalized. UI remains fully functional locally.
+        // Subscribe to PubSub for cross-session updates (compiler handle_info passes normalize shapes)
+        switch (TodoPubSub.subscribe(TodoUpdates)) {
+            case Ok(_):
+            case Error(_):
+                socket = LiveView.putFlash(socket, FlashType.Error, "Failed to subscribe to updates");
+        }
 
         var currentUser = getUserFromSession(session);
         var todos = loadTodos(currentUser.id);
@@ -119,6 +158,15 @@ class TodoLive {
             show_form: false,
             search_query: "",
             selected_tags: [],
+            optimistic_toggle_ids: [],
+            visible_todos: [],
+            visible_count: 0,
+            filter_btn_all_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.All),
+            filter_btn_active_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Active),
+            filter_btn_completed_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Completed),
+            sort_selected_created: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Created),
+            sort_selected_priority: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Priority),
+            sort_selected_due_date: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.DueDate),
             total_todos: todos.length,
             completed_todos: countCompleted(todos),
             pending_todos: countPending(todos),
@@ -126,7 +174,8 @@ class TodoLive {
         };
 
         socket = LiveView.assignMultiple(socket, assigns);
-        return Ok(socket);
+        var ls: LiveSocket<TodoLiveAssigns> = recomputeVisible(socket);
+        return Ok(ls);
     }
 	
 	/**
@@ -155,36 +204,42 @@ class TodoLive {
 				saveEditedTodoTyped(params, socket);
 			
             case CancelEdit:
-                // Clear editing state in presence (idiomatic Phoenix pattern)
-                SafeAssigns.setEditingTodo(socket, null);
+                // Clear editing state and recompute view
+                recomputeVisible(SafeAssigns.setEditingTodo(socket, null));
 			
 			// Filtering and sorting
-			case FilterTodos(filter):
-				SafeAssigns.setFilter(socket, filter);
+            case FilterTodos(filter):
+                recomputeVisible(SafeAssigns.setFilter(socket, filter));
 			
             case SortTodos(sortBy):
-                SafeAssigns.setSortByAndResort(socket, sortBy);
+                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy));
 			
-			case SearchTodos(query):
-				SafeAssigns.setSearchQuery(socket, query);
+            case SearchTodos(query):
+                recomputeVisible(SafeAssigns.setSearchQuery(socket, query));
 			
-			case ToggleTag(tag):
-				toggleTagFilter(tag, socket);
+            case ToggleTag(tag):
+                // Inline toggleTagFilter to avoid relying on helper emission ordering
+                // Compute toggled tags list deterministically
+                var currentlySelected = socket.assigns.selected_tags;
+                var newSelected = currentlySelected.contains(tag)
+                    ? currentlySelected.filter(function(t) return t != tag)
+                    : currentlySelected.concat([tag]);
+                recomputeVisible(SafeAssigns.setSelectedTags(socket, newSelected));
 			
 			// Priority management
-			case SetPriority(id, priority):
-				updateTodoPriority(id, priority, socket);
+            case SetPriority(id, priority):
+                updateTodoPriority(id, priority, socket);
 			
 			// UI interactions
-			case ToggleForm:
-                SafeAssigns.setShowForm(socket, !socket.assigns.show_form);
+            case ToggleForm:
+                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
 			
 			// Bulk operations
-			case BulkComplete:
-				completeAllTodos(socket);
+            case BulkComplete:
+                completeAllTodos(socket);
 			
-			case BulkDeleteCompleted:
-				deleteCompletedTodos(socket);
+            case BulkDeleteCompleted:
+                deleteCompletedTodos(socket);
 			
 			// No default case needed - compiler ensures exhaustiveness!
 		};
@@ -198,27 +253,47 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
     public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-        // Return per-branch to avoid intermediate aliasing and ensure clean codegen
+        // Handle PubSub messages with type-safe parsing
         return switch (TodoPubSub.parseMessage(msg)) {
-            case Some(TodoCreated(todo)):
-                // Avoid duplicating our own just-created todo (creator already prepends it)
-                if (todo.userId == socket.assigns.current_user.id) {
-                    NoReply(socket);
-                } else {
-                    NoReply(addTodoToList(todo, socket));
-                }
+            case Some(TodoCreated(_created)):
+                // Reload to ensure consistent state across sessions using a single expression (no locals)
+                NoReply(
+                    recomputeVisible(
+                        (cast socket: LiveSocket<TodoLiveAssigns>)
+                            .merge({ todos: loadTodos(socket.assigns.current_user.id) })
+                    )
+                );
             case Some(TodoUpdated(todo)):
-                NoReply(updateTodoInList(todo, socket));
+                NoReply(recomputeVisible(updateTodoInList(todo, socket)));
             case Some(TodoDeleted(id)):
-                NoReply(removeTodoFromList(id, socket));
+                NoReply(recomputeVisible(removeTodoFromList(id, socket)));
             case Some(BulkUpdate(action)):
-                NoReply(handleBulkUpdate(action, socket));
+                // Inline handleBulkUpdate with single-expression merge to avoid dropped locals
+                switch (action) {
+                    case CompleteAll, DeleteCompleted:
+                        NoReply(
+                            recomputeVisible(
+                                (cast socket: LiveSocket<TodoLiveAssigns>).merge({
+                                    todos: loadTodos(socket.assigns.current_user.id),
+                                    total_todos: loadTodos(socket.assigns.current_user.id).length,
+                                    completed_todos: countCompleted(loadTodos(socket.assigns.current_user.id)),
+                                    pending_todos: countPending(loadTodos(socket.assigns.current_user.id))
+                                })
+                            )
+                        );
+                    case SetPriority(_):
+                        NoReply(socket);
+                    case AddTag(_):
+                        NoReply(socket);
+                    case RemoveTag(_):
+                        NoReply(socket);
+                }
             case Some(UserOnline(_)):
                 NoReply(socket);
             case Some(UserOffline(_)):
                 NoReply(socket);
-            case Some(SystemAlert(_, _)):
-                // Ignore system alerts for this LiveView for now
+            case Some(SystemAlert(_message, _level)):
+                // Non-essential for optimistic path; ignore for now
                 NoReply(socket);
             case None:
                 trace("Received unknown PubSub message: " + msg);
@@ -302,48 +377,48 @@ class TodoLive {
         };
         var cs = ecto.ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
         switch (Repo.insert(cs)) {
-            case Ok(ok_value):
+            case Ok(value):
                 // Best-effort broadcast; ignore result
-                TodoPubSub.broadcast(TodoUpdates, TodoCreated(ok_value));
-                var todos = [ok_value].concat(socket.assigns.todos);
-                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-                var updated = liveSocket.merge({
+                TodoPubSub.broadcast(TodoUpdates, TodoCreated(value));
+                var todos = [value].concat(socket.assigns.todos);
+                var updated = LiveView.assignMultiple(socket, {
                     todos: todos,
                     show_form: false,
                     total_todos: socket.assigns.total_todos + 1,
-                    pending_todos: socket.assigns.pending_todos + (ok_value.completed ? 0 : 1),
-                    completed_todos: socket.assigns.completed_todos + (ok_value.completed ? 1 : 0)
+                    pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
                 });
-                return LiveView.putFlash(updated, FlashType.Success, "Todo created successfully!");
+                var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updated);
+                return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
             case Error(_reason):
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
         }
     }
 
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-    var current = findTodo(id, socket.assigns.todos);
-    if (current == null) return socket;
-    // Optimistic: flip in assigns immediately
-    var optimistic = new server.schemas.Todo();
-    optimistic.id = current.id;
-    optimistic.title = current.title;
-    optimistic.description = current.description;
-    optimistic.completed = !current.completed;
-    optimistic.priority = current.priority;
-    optimistic.dueDate = current.dueDate;
-    optimistic.tags = current.tags;
-    optimistic.userId = current.userId;
-    var s1: LiveSocket<TodoLiveAssigns> = updateTodoInList(optimistic, (cast socket: LiveSocket<TodoLiveAssigns>));
-    // Persist and reconcile
-    switch (Repo.update(server.schemas.Todo.toggleCompleted(current))) {
-        case Ok(updated):
-            // Local reconcile; broadcast is optional and may be re-enabled once handle_info transforms are finalized
-            return updateTodoInList(updated, s1);
-        case Error(_reason):
-            var reverted = updateTodoInList(current, s1);
-            return LiveView.putFlash(reverted, FlashType.Error, "Failed to update todo");
-    }
+    var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+    var ids = s.assigns.optimistic_toggle_ids;
+    var newIds = ids.contains(id) ? ids.filter(function(x) return x != id) : ids.concat([id]);
+    var sOptimistic = s.assign(_.optimistic_toggle_ids, newIds);
+    // Persist in background; reconciliation via PubSub TodoUpdated will clear the id
+    elixir.Task.start(() -> {
+        var db = Repo.get(server.schemas.Todo, id);
+        if (db != null) {
+            // Compute once to avoid compiler-introduced temp discriminants
+            var updateResult = Repo.update(server.schemas.Todo.toggleCompleted(db));
+            switch (updateResult) {
+                case Ok(value):
+                    TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
+                case Error(_):
+                    TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
+            }
+        }
+    });
+    return recomputeVisible(sOptimistic);
 }
+
+// Background reconcile for optimistic toggle
+// Handle in-process persistence request in handleInfo
 	
     static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         trace("[TodoLive] deleteTodo id=" + id + ", before_count=" + socket.assigns.todos.length);
@@ -360,7 +435,7 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
         // Reflect locally, then broadcast best-effort to others
         var updated = removeTodoFromList(id, socket);
         TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id));
-        return updated;
+        return recomputeVisible(updated);
     }
 	
 static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -374,7 +449,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
     var refreshed = Repo.get(server.schemas.Todo, id);
     if (refreshed != null) {
         TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed));
-        return updateTodoInList(refreshed, socket);
+        var s1 = updateTodoInList(refreshed, socket);
+        return recomputeVisible(s1);
     }
     return socket;
 }
@@ -422,9 +498,9 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
     static function parseTags(tagsString: String): Array<String> {
 		if (tagsString == null || tagsString == "") return [];
             return tagsString.split(",").map(function(t) return StringTools.trim(t));
-	}
+    }
 	
-static function getUserFromSession(session: Dynamic): User {
+    static function getUserFromSession(session: Dynamic): User {
     // Robust nil-safe session handling: avoid Map.get on nil
     var uid: Int = if (session == null) {
         1;
@@ -463,6 +539,71 @@ static function getUserFromSession(session: Dynamic): User {
             total_todos: newTodos.length,
             completed_todos: countCompleted(newTodos),
             pending_todos: countPending(newTodos)
+        });
+    }
+
+    /**
+     * Build typed view rows for zero-logic HXX rendering.
+     */
+    static function buildVisibleTodos(a: TodoLiveAssigns): Array<TodoView> {
+        // Build from already-filtered/sorted list to keep map body purely a row constructor
+        var base = filterAndSortTodos(a.todos, a.filter, a.sort_by, a.search_query, a.selected_tags);
+        var optimistic = (a.optimistic_toggle_ids != null) ? a.optimistic_toggle_ids : [];
+        return base.map(function(todoItem) return makeViewRow(a, optimistic, todoItem));
+    }
+
+    // Small, pure helper to keep Enum.map body simple and unambiguous for transforms
+    static inline function makeViewRow(a: TodoLiveAssigns, optimisticIds: Array<Int>, t: server.schemas.Todo): TodoView {
+        var flipped = optimisticIds.contains(t.id);
+        var completedForView = flipped ? !t.completed : t.completed;
+        var border = borderForPriority(t.priority);
+        var containerClass = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
+            + border
+            + (completedForView ? " opacity-60" : "")
+            + " transition-all hover:shadow-xl";
+        var hasDue = (t.dueDate != null);
+        var dueDisplay = hasDue ? format_due_date(t.dueDate) : "";
+        var hasTags = (t.tags != null && t.tags.length > 0);
+        var hasDescription = (t.description != null && t.description != "");
+        var isEditing = (a.editing_todo != null && a.editing_todo.id == t.id);
+        return {
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            completedForView: completedForView,
+            completedStr: completedForView ? "true" : "false",
+            domId: "todo-" + Std.string(t.id),
+            containerClass: containerClass,
+            titleClass: "text-lg font-semibold text-gray-800 dark:text-white" + (completedForView ? " line-through" : ""),
+            descClass: "text-gray-600 dark:text-gray-400 mt-1" + (completedForView ? " line-through" : ""),
+            priority: t.priority,
+            hasDue: hasDue,
+            dueDisplay: dueDisplay,
+            hasTags: hasTags,
+            hasDescription: hasDescription,
+            isEditing: isEditing,
+            tags: (t.tags != null ? t.tags : [])
+        };
+    }
+
+    /**
+     * Recompute and merge visible_todos into assigns; returns a typed LiveSocket.
+     */
+    static function recomputeVisible(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
+        var ls: LiveSocket<TodoLiveAssigns> = socket;
+        var rows = buildVisibleTodos(ls.assigns);
+        // Precompute UI helpers
+        var selected = ls.assigns.sort_by;
+        var filter = ls.assigns.filter;
+        return ls.merge({
+            visible_todos: rows,
+            visible_count: rows.length,
+            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
+            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
+            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
+            sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
+            sort_selected_priority: sortSelected(selected, shared.TodoTypes.TodoSort.Priority),
+            sort_selected_due_date: sortSelected(selected, shared.TodoTypes.TodoSort.DueDate)
         });
     }
 	
@@ -555,14 +696,24 @@ static function getUserFromSession(session: Dynamic): User {
                 ? (cast Reflect.field(params, "title") : String)
                 : todo.title
         }))) {
-            case Ok(ok_value):
+            case Ok(value):
                 // Best-effort broadcast
-                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(ok_value));
-                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(ok_value, (cast socket: LiveSocket<TodoLiveAssigns>));
-                return ls.assign(_.editing_todo, null);
+                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
+                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, socket);
+                ls = ls.assign(_.editing_todo, null);
+                ls = recomputeVisible(ls);
+                return ls;
             case Error(_):
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
         }
+    }
+
+    // Optimistic helpers
+    static inline function is_optimistically_toggled(assigns: TodoLiveAssigns, id: Int): Bool {
+        return assigns.optimistic_toggle_ids != null && assigns.optimistic_toggle_ids.contains(id);
+    }
+    static inline function effective_completed(todo: server.schemas.Todo, assigns: TodoLiveAssigns): Bool {
+        return is_optimistically_toggled(assigns, todo.id) ? !todo.completed : todo.completed;
     }
 
     // Local helpers to bridge typed enums ↔ UI strings
@@ -876,20 +1027,20 @@ static function getUserFromSession(session: Dynamic): User {
                         <!-- Filter Buttons -->
                         <div class="flex space-x-2">
                             <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
-                                class={filter_btn_class(@filter, :all)}>All</button>
+                                class={@filter_btn_all_class}>All</button>
                             <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
-                                class={filter_btn_class(@filter, :active)}>Active</button>
+                                class={@filter_btn_active_class}>Active</button>
                             <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
-                                class={filter_btn_class(@filter, :completed)}>Completed</button>
+                                class={@filter_btn_completed_class}>Completed</button>
                         </div>
 							
 							<!-- Sort Dropdown -->
 							<div>
                             <select phx-change="sort_todos" name="sort_by"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="created" selected={sort_selected(@sort_by, :created)}>Sort by Date</option>
-                                <option value="priority" selected={sort_selected(@sort_by, :priority)}>Sort by Priority</option>
-                                <option value="due_date" selected={sort_selected(@sort_by, :due_date)}>Sort by Due Date</option>
+                                <option value="created" selected={@sort_selected_created}>Sort by Date</option>
+                                <option value="priority" selected={@sort_selected_priority}>Sort by Priority</option>
+                                <option value="due_date" selected={@sort_selected_due_date}>Sort by Due Date</option>
                             </select>
 							</div>
 						</div>
@@ -902,7 +1053,7 @@ static function getUserFromSession(session: Dynamic): User {
                     <!-- Bulk Actions (typed HXX) -->
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
                         <div class="text-sm text-gray-600 dark:text-gray-400">
-                            Showing #{length(filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags))} of #{@total_todos} todos
+                            Showing #{@visible_count} of #{@total_todos} todos
                         </div>
                         <div class="flex space-x-2">
                             <button phx-click="bulk_complete"
@@ -914,15 +1065,15 @@ static function getUserFromSession(session: Dynamic): User {
 					
 					<!-- Todo List -->
                     <div id="todo-list" class="space-y-4">
-                        <for {todo in filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags)}>
-                            <if {not Kernel.is_nil(assigns.editing_todo) and assigns.editing_todo.id == todo.id}>
-                                <div id={card_id(todo.id)} data-testid="todo-card" data-completed={bool_to_str(todo.completed)}
-                                    class={card_class_for2(todo)}>
+                        <for {v in assigns.visible_todos}>
+                            <if {v.is_editing}>
+                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
+                                    class={v.container_class}>
                                     <form phx-submit="save_todo" class="space-y-4">
-                                        <input type="text" name="title" value={todo.title} required data-testid="input-title"
+                                        <input type="text" name="title" value={v.title} required data-testid="input-title"
                                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
                                         <textarea name="description" rows="2"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{todo.description}</textarea>
+                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{v.description}</textarea>
                                         <div class="flex space-x-2">
                                             <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Save</button>
                                             <button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
@@ -930,40 +1081,40 @@ static function getUserFromSession(session: Dynamic): User {
                                     </form>
                                 </div>
                             <else>
-                                <div id={card_id(todo.id)} data-testid="todo-card" data-completed={bool_to_str(todo.completed)}
-                                    class={card_class_for2(todo)}>
+                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
+                                    class={v.container_class}>
                                     <div class="flex items-start space-x-4">
                                         <!-- Checkbox -->
-                                        <button type="button" phx-click="toggle_todo" phx-value-id={todo.id} data-testid="btn-toggle-todo"
+                                        <button type="button" phx-click="toggle_todo" phx-value-id={v.id} data-testid="btn-toggle-todo"
                                             class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
-                                            <if {todo.completed}>
+                                            <if {v.completed_for_view}>
                                                 <span class="text-green-500">✓</span>
                                             </if>
                                         </button>
 
                                         <!-- Content -->
                                         <div class="flex-1">
-                                            <h3 class={title_class(todo.completed)}>
-                                                #{todo.title}
+                                            <h3 class={v.title_class}>
+                                                #{v.title}
                                             </h3>
-                                            <if {not Kernel.is_nil(todo.description) and todo.description != ""}>
-                                                <p class={desc_class(todo.completed)}>
-                                                    #{todo.description}
+                                            <if {v.has_description}>
+                                                <p class={v.desc_class}>
+                                                    #{v.description}
                                                 </p>
                                             </if>
 
                                             <!-- Meta info -->
                                             <div class="flex flex-wrap gap-2 mt-3">
                                                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                    Priority: #{todo.priority}
+                                                    Priority: #{v.priority}
                                                 </span>
-                                                <if {not Kernel.is_nil(todo.due_date)}>
+                                                <if {v.has_due}>
                                                     <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                        Due: #{format_due_date(todo.due_date)}
+                                                        Due: #{v.due_display}
                                                     </span>
                                                 </if>
-                                                <if {not Kernel.is_nil(todo.tags) and length(todo.tags) > 0}>
-                                                    <for {tag in todo.tags}>
+                                                <if {v.has_tags}>
+                                                    <for {tag in v.tags}>
                                                         <button phx-click="search_todos" phx-value-query={tag}
                                                             class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#{tag}</button>
                                                     </for>
@@ -973,9 +1124,9 @@ static function getUserFromSession(session: Dynamic): User {
 
                                         <!-- Actions -->
                                         <div class="flex space-x-2">
-                                            <button type="button" phx-click="edit_todo" phx-value-id={todo.id} data-testid="btn-edit-todo"
+                                            <button type="button" phx-click="edit_todo" phx-value-id={v.id} data-testid="btn-edit-todo"
                                                 class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">✏️</button>
-                                            <button type="button" phx-click="delete_todo" phx-value-id={todo.id} data-testid="btn-delete-todo"
+                                            <button type="button" phx-click="delete_todo" phx-value-id={v.id} data-testid="btn-delete-todo"
                                                 class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">🗑️</button>
                                         </div>
                                     </div>
@@ -1124,11 +1275,11 @@ static function getUserFromSession(session: Dynamic): User {
 						
 						<!-- Actions -->
 						<div class="flex space-x-2">
-                                <button type="button" phx-click="edit_todo" phx-value-id="${todo.id}" data-testid="btn-edit-todo"
+                                            <button type="button" phx-click="edit_todo" phx-value-id="${todo.id}" data-testid="btn-edit-todo"
                                     class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
                                     ✏️
                                 </button>
-                                <button type="button" phx-click="delete_todo" phx-value-id="${todo.id}" data-testid="btn-delete-todo"
+                                            <button type="button" phx-click="delete_todo" phx-value-id="${todo.id}" data-testid="btn-delete-todo"
                                     class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
                                     🗑️
                                 </button>
@@ -1180,8 +1331,10 @@ static function getUserFromSession(session: Dynamic): User {
         if (selectedTags != null && selectedTags.length > 0) {
             filtered = filtered.filter(function(t) {
                 var tags = (t.tags != null) ? t.tags : [];
-                // include if any selected tag is present on the todo
-                return Lambda.exists(selectedTags, function(tag) return Lambda.has(tags, tag));
+                for (sel in selectedTags) {
+                    if (tags.indexOf(sel) != -1) return true;
+                }
+                return false;
             });
         }
         // Delegate sorting to std helper (emitted under app namespace), avoid app __elixir__
