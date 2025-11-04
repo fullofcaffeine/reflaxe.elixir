@@ -27,21 +27,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
   class LocalAssignUnusedUnderscoreScopedTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      // Gate: skip entire LiveView modules; HEEx interpolation and lifted closures can
-      // obscure usage analysis and cause false positives that lead to undefined vars.
-      switch (n.def) {
-        case EModule(_, _, _) | EDefmodule(_, _):
-          if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
-            return n;
-          }
-        default:
-      }
+      // Gate (relaxed for WAE): when inside LiveView modules, only allow on
+      // render_* helpers and handle_event/3 to avoid false positives.
       return switch (n.def) {
         case EDef(name, args, guards, body) if (name != "mount"):
+          if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
+            if (!StringTools.startsWith(name, "render_") && !(name == "handle_event" && args != null && args.length == 3)) return n;
+          }
           var usedInFn = collectUsedVars(body);
           var newBody = rewriteBlocks(body, usedInFn);
           makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (name2 != "mount"):
+          if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
+            if (!StringTools.startsWith(name2, "render_") && !(name2 == "handle_event" && args2 != null && args2.length == 3)) return n;
+          }
           var usedInFn2 = collectUsedVars(body2);
           var newBody2 = rewriteBlocks(body2, usedInFn2);
           makeASTWithMeta(EDefp(name2, args2, guards2, newBody2), n.metadata, n.pos);
