@@ -88,6 +88,18 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
               makeASTWithMeta(ECall(target, funcName, newArgs2), x.metadata, x.pos);
             default: x;
           } else x;
+        case ERaw(code) if (code != null && (code.indexOf("Map.get(value,") != -1)):
+          try {
+            var replaced = StringTools.replace(code, "Map.get(value,", 'Map.get(' + payloadVar + ',');
+            if (replaced != code) {
+              #if debug_handle_event_value
+              #if sys Sys.println('[HandleEventValueVarNormalizeForceFinal] ERaw: Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
+              #end
+              makeASTWithMeta(ERaw(replaced), x.metadata, x.pos);
+            } else x;
+          } catch (_:Dynamic) {
+            x;
+          }
         default: x;
       }
     });
