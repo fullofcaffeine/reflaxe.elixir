@@ -41,7 +41,7 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
       case PList(es): PList([for (e in es) underscoreUnusedInPattern(e, used)]);
       case PCons(h,t): PCons(underscoreUnusedInPattern(h, used), underscoreUnusedInPattern(t, used));
       case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: underscoreUnusedInPattern(kv.value, used) }]);
-      case PStruct(nm, fs): PStruct(nm, [for (f in fs) { name: f.name, value: underscoreUnusedInPattern(f.value, used) }]);
+      case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: underscoreUnusedInPattern(f.value, used) }]);
       case PPin(inner): PPin(underscoreUnusedInPattern(inner, used));
       default: p;
     }
@@ -57,4 +57,3 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 }
 
 #end
-
