@@ -140,12 +140,8 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
     public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-        // Subscribe to PubSub for cross-session updates (compiler handle_info passes normalize shapes)
-        switch (TodoPubSub.subscribe(TodoUpdates)) {
-            case Ok(_):
-            case Error(_):
-                socket = LiveView.putFlash(socket, FlashType.Error, "Failed to subscribe to updates");
-        }
+        // Prepare LiveSocket wrapper
+        var sock: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
 
         var currentUser = getUserFromSession(session);
         var todos = loadTodos(currentUser.id);
@@ -174,8 +170,8 @@ class TodoLive {
             online_users: new Map()
         };
 
-        socket = LiveView.assignMultiple(socket, assigns);
-        var ls: LiveSocket<TodoLiveAssigns> = recomputeVisible(socket);
+        sock = LiveView.assignMultiple(sock, assigns);
+        var ls: LiveSocket<TodoLiveAssigns> = recomputeVisible(sock);
         return Ok(ls);
     }
 	
@@ -399,8 +395,9 @@ class TodoLive {
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
     var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
     var ids = s.assigns.optimistic_toggle_ids;
-    var newIds = if (ids.contains(id)) ids.filter(function(x) return x != id) else ids.concat([id]);
-    var sOptimistic = s.assign(_.optimistic_toggle_ids, newIds);
+    var contains = ids.indexOf(id) != -1;
+    var computedIds = contains ? ids.filter(function(x) return x != id) : [id].concat(ids);
+    var sOptimistic = s.assign(_.optimistic_toggle_ids, computedIds);
     // Also update the local todo immediately for instant visual feedback
     var local = findTodo(id, s.assigns.todos);
     if (local != null) {

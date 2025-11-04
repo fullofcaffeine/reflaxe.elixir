@@ -4588,6 +4588,18 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
         });
+        // Rename underscored locals that are later used in expressions
+        passes.push({
+            name: "UnderscoreVarUsageFix_AbsoluteFinal",
+            description: "Rename _name to name when used in expression context to avoid warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscoreVarUsageFixTransforms.pass,
+            runAfter: [
+                "FinalLocalReferenceAlign",
+                "OkValueGlobalCleanup_AbsoluteFinal",
+                "SuccessVarAbsoluteReplaceUndefined_Replay_Final"
+            ]
+        });
         // Drop any lingering `nil = _var` statements inside case bodies
         passes.push({
             name: "CaseNilAssignCleanup_Final",

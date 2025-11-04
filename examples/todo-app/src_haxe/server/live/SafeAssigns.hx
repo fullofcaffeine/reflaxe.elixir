@@ -110,27 +110,19 @@ class SafeAssigns {
     }
 
     /**
-     * Set sort_by and immediately apply sorting to the visible list.
-     * Keeps behavior deterministic for UI tests and user expectations.
+     * Set sort_by only; caller should trigger recompute_visible afterwards.
+     * This keeps SafeAssigns zero-logic and typed while avoiding
+     * cross-module helper dependencies.
      */
     public static function setSortByAndResort(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-            sort_by: switch (sortBy) {
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(
+            _.sort_by,
+            switch (sortBy) {
                 case "priority": shared.TodoTypes.TodoSort.Priority;
                 case "due_date": shared.TodoTypes.TodoSort.DueDate;
                 case _: shared.TodoTypes.TodoSort.Created;
-            },
-            todos: TodoLiveNative.filter_and_sort_todos(
-                socket.assigns.todos,
-                socket.assigns.filter,
-                switch (sortBy) {
-                    case "priority": shared.TodoTypes.TodoSort.Priority;
-                    case "due_date": shared.TodoTypes.TodoSort.DueDate;
-                    case _: shared.TodoTypes.TodoSort.Created;
-                },
-                socket.assigns.search_query
-            )
-        });
+            }
+        );
     }
     
     /**
