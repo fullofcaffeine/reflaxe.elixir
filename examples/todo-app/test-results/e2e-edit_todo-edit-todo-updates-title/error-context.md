@@ -10,13 +10,13 @@
           - paragraph [ref=e12]: Welcome, Demo User!
         - generic [ref=e13]:
           - generic [ref=e14]:
-            - generic [ref=e15]: "4"
+            - generic [ref=e15]: "6"
             - generic [ref=e16]: Total
           - generic [ref=e17]:
             - generic [ref=e18]: "2"
             - generic [ref=e19]: Completed
           - generic [ref=e20]:
-            - generic [ref=e21]: "2"
+            - generic [ref=e21]: "4"
             - generic [ref=e22]: Pending
       - button "➕ Add New Todo" [ref=e23] [cursor=pointer]
     - generic [ref=e25]:
@@ -32,7 +32,7 @@
         - option "Sort by Priority"
         - option "Sort by Due Date"
     - generic [ref=e36]:
-      - generic [ref=e37]: Showing 4 of 4 todos
+      - generic [ref=e37]: Showing 6 of 6 todos
       - generic [ref=e38]:
         - button "✅ Complete All" [ref=e39] [cursor=pointer]
         - button "🗑️ Delete Completed" [ref=e40] [cursor=pointer]
@@ -40,35 +40,51 @@
       - generic [ref=e43]:
         - button [ref=e44] [cursor=pointer]
         - generic [ref=e45]:
-          - heading "BD-C 1762222047029" [level=3] [ref=e46]
+          - heading "Edit Me 1762222054023" [level=3] [ref=e46]
           - generic [ref=e48]: "Priority: medium"
         - generic [ref=e49]:
-          - button "✏️" [ref=e50] [cursor=pointer]
+          - button "✏️" [active] [ref=e50] [cursor=pointer]
           - button "🗑️" [ref=e51] [cursor=pointer]
       - generic [ref=e53]:
         - button [ref=e54] [cursor=pointer]
         - generic [ref=e55]:
-          - heading "BD-A 1762222047029" [level=3] [ref=e56]
+          - heading "E2E New 1762222053174" [level=3] [ref=e56]
           - generic [ref=e58]: "Priority: medium"
         - generic [ref=e59]:
           - button "✏️" [ref=e60] [cursor=pointer]
           - button "🗑️" [ref=e61] [cursor=pointer]
       - generic [ref=e63]:
-        - button "✓" [ref=e64] [cursor=pointer]:
-          - generic [ref=e65]: ✓
-        - generic [ref=e66]:
-          - heading "BC2 1762222044868" [level=3] [ref=e67]
-          - generic [ref=e69]: "Priority: medium"
-        - generic [ref=e70]:
-          - button "✏️" [ref=e71] [cursor=pointer]
-          - button "🗑️" [ref=e72] [cursor=pointer]
-      - generic [ref=e74]:
-        - button "✓" [ref=e75] [cursor=pointer]:
-          - generic [ref=e76]: ✓
-        - generic [ref=e77]:
-          - heading "BC1 1762222044868" [level=3] [ref=e78]
-          - generic [ref=e80]: "Priority: medium"
-        - generic [ref=e81]:
-          - button "✏️" [ref=e82] [cursor=pointer]
-          - button "🗑️" [ref=e83] [cursor=pointer]
+        - button [ref=e64] [cursor=pointer]
+        - generic [ref=e65]:
+          - heading "BD-C 1762222047029" [level=3] [ref=e66]
+          - generic [ref=e68]: "Priority: medium"
+        - generic [ref=e69]:
+          - button "✏️" [ref=e70] [cursor=pointer]
+          - button "🗑️" [ref=e71] [cursor=pointer]
+      - generic [ref=e73]:
+        - button [ref=e74] [cursor=pointer]
+        - generic [ref=e75]:
+          - heading "BD-A 1762222047029" [level=3] [ref=e76]
+          - generic [ref=e78]: "Priority: medium"
+        - generic [ref=e79]:
+          - button "✏️" [ref=e80] [cursor=pointer]
+          - button "🗑️" [ref=e81] [cursor=pointer]
+      - generic [ref=e83]:
+        - button "✓" [ref=e84] [cursor=pointer]:
+          - generic [ref=e85]: ✓
+        - generic [ref=e86]:
+          - heading "BC2 1762222044868" [level=3] [ref=e87]
+          - generic [ref=e89]: "Priority: medium"
+        - generic [ref=e90]:
+          - button "✏️" [ref=e91] [cursor=pointer]
+          - button "🗑️" [ref=e92] [cursor=pointer]
+      - generic [ref=e94]:
+        - button "✓" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]: ✓
+        - generic [ref=e97]:
+          - heading "BC1 1762222044868" [level=3] [ref=e98]
+          - generic [ref=e100]: "Priority: medium"
+        - generic [ref=e101]:
+          - button "✏️" [ref=e102] [cursor=pointer]
+          - button "🗑️" [ref=e103] [cursor=pointer]
 ```

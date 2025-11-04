@@ -3,6 +3,7 @@ package server.live;
 import HXX; // Import HXX for template rendering
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
+import elixir.Task; // Background work via Task.start
 import haxe.functional.Result; // Import Result type properly
 import phoenix.LiveSocket; // Type-safe socket wrapper
 import phoenix.types.Flash.FlashType;
@@ -400,20 +401,18 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
     var ids = s.assigns.optimistic_toggle_ids;
     var newIds = ids.contains(id) ? ids.filter(function(x) return x != id) : ids.concat([id]);
     var sOptimistic = s.assign(_.optimistic_toggle_ids, newIds);
-    // Persist in background; reconciliation via PubSub TodoUpdated will clear the id
-    elixir.Task.start(() -> {
-        var db = Repo.get(server.schemas.Todo, id);
-        if (db != null) {
-            // Compute once to avoid compiler-introduced temp discriminants
-            var updateResult = Repo.update(server.schemas.Todo.toggleCompleted(db));
-            switch (updateResult) {
-                case Ok(value):
-                    TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
-                case Error(_):
-                    TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
-            }
+    // Persist synchronously; PubSub broadcast will reconcile actual state
+    var db = Repo.get(server.schemas.Todo, id);
+    if (db != null) {
+        var updateResult = Repo.update(server.schemas.Todo.toggleCompleted(db));
+        switch (updateResult) {
+            case Ok(value):
+                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
+            case Error(_):
+                // Best effort: revert optimistic UI by broadcasting current db state
+                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
         }
-    });
+    }
     return recomputeVisible(sOptimistic);
 }
 
