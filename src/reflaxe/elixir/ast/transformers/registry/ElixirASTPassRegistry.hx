@@ -3199,7 +3199,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules",
-            enabled: false, // disabled to avoid false-positives in LiveView helpers
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -3207,7 +3207,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Late sweep: underscore unused def/defp params in Phoenix modules",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -3228,7 +3228,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Ultra-final underscore of unused def/defp params in Web/Live/Presence",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
         // Final: discard top-level nil assignments in function bodies when unused
@@ -5060,6 +5060,41 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.WebParamFinalFixTransforms.transformPass
         });
+        // LiveView handle_info Option Some clause normalization (shape-based)
+        passes.push({
+            name: "HandleInfoSomeClauseNormalize_Final",
+            description: "Normalize {:some, b} clause: drop leading alias, promote binder, and fix noreply payload",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.pass,
+            runAfter: [
+                "WebParamFinalFix",
+                "ListUpdateAndFilterFix",
+                "UnderscoreParamPromotion_Final",
+                "GlobalNumericSentinelCleanup",
+                "DropStandaloneLiteralOne"
+            ]
+        });
+        // As a final generic guard for handle_info/2, normalize _socket usage
+        passes.push({
+            name: "HandleInfoUnderscoreSocketFix_Final",
+            description: "Rewrite _socket refs to socket and alias assignments to discard in handle_info/2",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoUnderscoreSocketFixTransforms.pass
+        });
+        // Generic: if a function has a `socket` param, fix `_socket` refs and alias lines
+        passes.push({
+            name: "UnderscoreToParamSocketFix_Final",
+            description: "In defs with socket param, replace _socket -> socket and alias `x = _socket` -> `_ = socket`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms.pass
+        });
+        // handle_info alias cleanup: drop `alias = _socket` and rewrite noreply payload
+        passes.push({
+            name: "HandleInfoAliasCleanup_Final",
+            description: "In handle_info/2, remove alias lines `x = _socket` and replace `{:noreply, _socket|x}` with `{:noreply, socket}`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoAliasCleanupTransforms.pass
+        });
 
         // Final LiveView message arg normalization for list helpers in {:tag, id} tuples
         passes.push({
@@ -5067,6 +5102,13 @@ class ElixirASTPassRegistry {
             description: "In case msg of {:tag, v}, pass v instead of msg to *_from_list/*_in_list helpers",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
+        });
+        // Late promote of underscored case binders used in body
+        passes.push({
+            name: "CaseUnderscoreBinderPromote_Final",
+            description: "Promote tuple second-element binder _x -> x (when used) and rewrite body references",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteTransforms.pass
         });
 
         // Late: drop self-rebinds inside anonymous functions (avoid warnings)
