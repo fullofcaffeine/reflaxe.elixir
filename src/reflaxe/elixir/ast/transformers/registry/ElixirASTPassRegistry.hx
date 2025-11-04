@@ -6117,6 +6117,19 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.pass,
             runAfter: ["HandleEventValueVarNormalizeForceFinal_Last2", "HandleEventParamsUltraFinal_Last"]
         });
+        passes.push({
+            name: "HandleEventIdExtractNormalize_AbsoluteLast",
+            description: "Normalize id extract branches to use the same params var instead of `value` in handle_event/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventIdExtractNormalizeTransforms.pass,
+            runAfter: [
+                "HandleEventUndefinedValueToParam_AbsoluteLast",
+                "HandleEventValueVarNormalizeForceFinal_Last2",
+                "HandleEventParamExtractFromBodyUse_Final",
+                "HandleEventParamRepair_Final",
+                "HandleEventParamsUltraFinal_Last"
+            ]
+        });
 
         // Filter disabled passes first
         var enabled = passes.filter(p -> p.enabled);
