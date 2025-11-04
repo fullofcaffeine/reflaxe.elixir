@@ -399,8 +399,27 @@ class TodoLive {
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
     var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
     var ids = s.assigns.optimistic_toggle_ids;
-    var newIds = ids.contains(id) ? ids.filter(function(x) return x != id) : ids.concat([id]);
+    var newIds = if (ids.contains(id)) ids.filter(function(x) return x != id) else {
+        var tmp = ids.copy();
+        tmp.push(id);
+        tmp;
+    };
     var sOptimistic = s.assign(_.optimistic_toggle_ids, newIds);
+    // Also update the local todo immediately for instant visual feedback
+    var local = findTodo(id, s.assigns.todos);
+    if (local != null) {
+        var toggled: server.schemas.Todo = {
+            id: local.id,
+            title: local.title,
+            description: local.description,
+            completed: !local.completed,
+            priority: local.priority,
+            dueDate: local.dueDate,
+            tags: local.tags,
+            userId: local.userId
+        };
+        sOptimistic = updateTodoInList(toggled, sOptimistic);
+    }
     // Persist synchronously; PubSub broadcast will reconcile actual state
     var db = Repo.get(server.schemas.Todo, id);
     if (db != null) {
