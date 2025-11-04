@@ -60,6 +60,14 @@ class ConcatSelfAssignBinderUnderscoreTransforms {
             default:
               out.push(s);
           }
+        case EBinary(Match, {def: EVar(b)}, {def: ECall(target, fnName, argsC)}) if (fnName == "concat" && argsC != null && argsC.length >= 1):
+          var isEnum = switch (target.def) { case EVar(m): m == "Enum"; default: false; };
+          if (isEnum) switch (argsC[0].def) {
+            case EVar(b2c) if (b2c == b):
+              out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b)), makeAST(ECall(target, fnName, argsC))), s.metadata, s.pos));
+            default:
+              out.push(s);
+          } else out.push(s);
         case EMatch(PVar(b3), {def: ERemoteCall({def: EVar("Enum")}, "concat", args2)}) if (args2 != null && args2.length >= 1):
           switch (args2[0].def) {
             case EVar(b4) if (b4 == b3):
@@ -67,6 +75,14 @@ class ConcatSelfAssignBinderUnderscoreTransforms {
             default:
               out.push(s);
           }
+        case EMatch(PVar(b3c), {def: ECall(target2, fnName2, args2c)}) if (fnName2 == "concat" && args2c != null && args2c.length >= 1):
+          var isEnum2 = switch (target2.def) { case EVar(m2): m2 == "Enum"; default: false; };
+          if (isEnum2) switch (args2c[0].def) {
+            case EVar(b4c) if (b4c == b3c):
+              out.push(makeASTWithMeta(EMatch(PVar('_' + b3c), makeAST(ECall(target2, fnName2, args2c))), s.metadata, s.pos));
+            default:
+              out.push(s);
+          } else out.push(s);
         default:
           out.push(s);
       }
