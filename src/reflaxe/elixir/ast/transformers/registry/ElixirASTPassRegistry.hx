@@ -6053,7 +6053,14 @@ class ElixirASTPassRegistry {
             description: "Absolute-final: force handle_event/3 second arg to params when referenced; rewrite _params to params in body",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsFinalTransforms.pass,
-            runAfter: ["HandleEventParamsUltraFinal_Last", "HandleEventValueVarNormalizeForceFinal_Last2"]
+            runAfter: [
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventValueVarNormalizeForceFinal_Last2",
+                "LocalAssignUnusedUnderscore_Scoped_Final",
+                "ParamUnderscoreArgRefAlign_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsForceBodyRewrite_Final"
+            ]
         });
         // Absolute-last safety for Map.get(value, …) inside handle_event/3 when no `value` binding exists
         passes.push({
@@ -6116,6 +6123,81 @@ class ElixirASTPassRegistry {
                 "ParamUnderscoreArgRefAlign_Global_Final"
             ]
         });
+        // Re-introduce: ensure head binder is `params` when body uses it, but BEFORE
+        // DefParamHeadUnderscoreWhenUnused_Final so unused flows can still underscore.
+        passes.push({
+            name: "HandleEventParamsUltraForceRewrite_PreUnderscoreFinal",
+            description: "Force handle_event/3 second arg to params and rewrite body (pre-underscore-final)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraForceRewriteAbsoluteFinalTransforms.pass
+        });
+        passes.push({
+            name: "HandleEventMapGetUnderscoreParams_Final",
+            description: "Absolute-last: rewrite Map.get(_params, key) → Map.get(params, key) in handle_event/3 bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventMapGetUnderscoreParamsFinalTransforms.pass,
+            runAfter: [
+                // Ensure the head binder has been promoted decisively to `params`
+                // before rewriting Map.get(_params, …) in the body.
+                "HandleEventParamsHeadToParams_Ultimate",
+                "HandleEventParamsHeadToParams_Final",
+                "HandleEventValueVarNormalize_AbsoluteLast",
+                "HandleEventValueVarNormalizeForceFinal_Last2"
+            ]
+        });
+        // Final: promote handle_info {:some, _x} binder to `payload` and rewrite refs
+        passes.push({
+            name: "HandleInfoUnderscoreBinderPromote_Final",
+            description: "Promote {:some, _x} binder to payload in handle_info/2 and rewrite refs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoUnderscoreBinderPromoteFinalTransforms.pass,
+            runAfter: [
+                "HandleInfoUnderscoreSocketFix_Final",
+                "HandleInfoAliasCleanup_Final",
+                "HandleInfoReturnSocketNormalize_Final",
+                "HandleInfoScrutineeToPayloadRef_Final"
+            ]
+        });
+        // LiveView-only: discard local assignments never read later (var = expr -> _ = expr)
+        passes.push({
+            name: "LocalAssignDiscardIfUnused_LiveView_Final",
+            description: "In <App>Web.Live modules, replace unused local assigns with `_ = expr` (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LocalAssignDiscardIfUnusedLiveViewFinalTransforms.pass,
+            runAfter: [
+                "ListUpdateAndFilterFix",
+                "WebParamFinalFix",
+                "HandleEventParamRepair_Final"
+            ]
+        });
+        // Ultimate: if body references `params`, ensure head binder is params
+        passes.push({
+            name: "HandleEventParamsHeadToParams_Ultimate",
+            description: "Absolute-ultimate: when body uses params, force head binder to params",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsUltimateTransforms.pass,
+            runAfter: [
+                "LocalAssignDiscardIfUnused_LiveView_Final",
+                "ParamUnderscoreArgRefAlign_Global_Final",
+                "HandleEventParamExtractFromBodyUse_Final",
+                "HandleEventParamRepair_Final",
+                "HandleEventParamsUltraFinal",
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventValueVarNormalize_AbsoluteLast",
+                "HandleEventValueVarNormalizeForceFinal_Last2"
+            ]
+        });
+        passes.push({
+            name: "IfBranchDowncaseTempInline_Final",
+            description: "Inline `_tmp = rhs; String.downcase(_tmp)` inside if/else branches",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IfBranchDowncaseTempInlineFinalTransforms.pass,
+            runAfter: [
+                "UnderscoreTempInlineDowncase",
+                "DowncaseInlineFromPriorAssign_Final"
+            ]
+        });
+        // Removed: FunctionParamUnusedUnderscore_Scoped_Final — rely on existing DefParamHeadUnderscoreWhenUnused_Final
         // Penultimate after force Map.get rewrite: replace any remaining bare `value` with param var
         passes.push({
             name: "HandleEventUndefinedValueToParam_AbsoluteLast",
@@ -6137,6 +6219,21 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal_Last"
             ]
         });
+        // Very late: ensure Map.get(<payload>, "value") uses `<payload>` as default when missing (forms)
+        passes.push({
+            name: "HandleEventMapGetValueDefaultToParams_Final",
+            description: "In handle_event/3, rewrite Map.get(params|_params, \"value\") → Map.get(params|_params, \"value\", params|_params)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms.pass,
+            runAfter: [
+                "HandleEventParamsHeadToParams_Ultimate",
+                "HandleEventMapGetUnderscoreParams_Final",
+                "HandleEventValueVarNormalize_AbsoluteLast",
+                "HandleEventValueVarNormalizeForceFinal_Last2",
+                "HandleEventUndefinedValueToParam_AbsoluteLast",
+                "HandleEventIdExtractNormalize_AbsoluteLast"
+            ]
+        });
         passes.push({
             name: "FunctionParamUnusedUnderscore_Final",
             description: "Underscore unused def/defp parameters (absolute-final)",
@@ -6148,6 +6245,19 @@ class ElixirASTPassRegistry {
             description: "In case clauses, underscore unused binders (absolute-final)",
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass
+        });
+        // Absolute-final: clean handle_info clause artifacts (drop socket alias; normalize noreply payload)
+        passes.push({
+            name: "HandleInfoAliasAndNoreply_AbsoluteFinal",
+            description: "Absolute-final: in handle_info/2, drop leading alias to socket and rewrite {:noreply, _socket} → {:noreply, socket}",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoAliasAndNoreplyAbsoluteFinalTransforms.pass,
+            runAfter: [
+                "HandleInfoReturnSocketNormalize_Final",
+                "HandleInfoScrutineeToPayloadRef_Final",
+                "UnderscoreToParamSocketFix_Final",
+                "HandleInfoAliasCleanup_Final"
+            ]
         });
 
         // Filter disabled passes first

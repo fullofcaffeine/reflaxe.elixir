@@ -21,18 +21,29 @@ class HandleEventParamsHeadToParamsFinalTransforms {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
           var usedParams = bodyUsesVar(body, "_params") || bodyUsesVar(body, "params");
           var newArgs = (args != null && args.length >= 2) ? args.copy() : args;
-          if (usedParams && newArgs != null && newArgs.length >= 2) {
-            newArgs[1] = PVar("params");
-            var nb = rewriteBody(body);
-            makeASTWithMeta(EDef(name, newArgs, guards, nb), n.metadata, n.pos);
+          if (newArgs != null && newArgs.length >= 2) {
+            if (usedParams) {
+              newArgs[1] = PVar("params");
+              var nb = rewriteBody(body);
+              makeASTWithMeta(EDef(name, newArgs, guards, nb), n.metadata, n.pos);
+            } else {
+              // Body does not reference params; prefer _params to avoid WAE
+              newArgs[1] = PVar("_params");
+              makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
+            }
           } else n;
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
           var usedParams2 = bodyUsesVar(body2, "_params") || bodyUsesVar(body2, "params");
           var newArgs2 = (args2 != null && args2.length >= 2) ? args2.copy() : args2;
-          if (usedParams2 && newArgs2 != null && newArgs2.length >= 2) {
-            newArgs2[1] = PVar("params");
-            var nb2 = rewriteBody(body2);
-            makeASTWithMeta(EDefp(name2, newArgs2, guards2, nb2), n.metadata, n.pos);
+          if (newArgs2 != null && newArgs2.length >= 2) {
+            if (usedParams2) {
+              newArgs2[1] = PVar("params");
+              var nb2 = rewriteBody(body2);
+              makeASTWithMeta(EDefp(name2, newArgs2, guards2, nb2), n.metadata, n.pos);
+            } else {
+              newArgs2[1] = PVar("_params");
+              makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos);
+            }
           } else n;
         default: n;
       }
@@ -64,4 +75,3 @@ class HandleEventParamsHeadToParamsFinalTransforms {
 }
 
 #end
-

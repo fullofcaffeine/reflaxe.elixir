@@ -105,8 +105,12 @@ class HandleInfoSomeClauseNormalizeTransforms {
 
   static function isAliasOf(stmt: ElixirAST, binder:String): Bool {
     return switch (stmt.def) {
-      case EBinary(Match, {def: EVar(_)}, {def: EVar(v)}) if (v == binder): true;
-      case EMatch(PVar(_), {def: EVar(v2)}) if (v2 == binder): true;
+      // Drop alias lines that bind to the tuple payload binder OR to the
+      // socket variable produced by earlier normalizations. This makes the
+      // cleanup resilient to ordering (e.g., when a pre-pass renames the
+      // binder away from `_socket`).
+      case EBinary(Match, {def: EVar(_)}, {def: EVar(v)}) if (v == binder || v == "_socket" || v == "socket"): true;
+      case EMatch(PVar(_), {def: EVar(v2)}) if (v2 == binder || v2 == "_socket" || v2 == "socket"): true;
       default: false;
     }
   }
@@ -118,7 +122,7 @@ class HandleInfoSomeClauseNormalizeTransforms {
           switch (elems[0].def) {
             case EAtom(a) if (a == ":noreply" || a == "noreply"):
               switch (elems[1].def) {
-                case EVar(v) if (v == binder):
+                case EVar(v) if (v == binder || v == "_socket"):
                   makeASTWithMeta(ETuple([elems[0], makeAST(EVar(socketName))]), z.metadata, z.pos);
                 default: z;
               }
