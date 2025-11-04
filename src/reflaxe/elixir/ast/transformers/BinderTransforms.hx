@@ -391,56 +391,11 @@ class BinderTransforms {
                         default:
                             node;
                     }
-                // Fallback: directly normalize EFn bodies that clearly implement string search
-                case EFn(clauses) if (clauses.length > 0):
-                    var outClauses = [];
-                    for (cl in clauses) {
-                        var tVar: Null<String> = null;
-                        if (cl.args != null && cl.args.length > 0) switch(cl.args[0]) { case PVar(n): tVar = n; default: }
-                        if (tVar != null) {
-                            // Heuristic: only when :binary.match pattern exists in body
-                            var hasMatch = (function(): Bool {
-                                var found = false; function scan(n: ElixirAST): Void {
-                                    if (found || n == null || n.def == null) return; switch(n.def) {
-                                        case ERemoteCall(m, f, _):
-                                            var isBin = switch(m.def) {
-                                                case EVar(nn) if (nn == ":binary"): true;
-                                                case EAtom(a) if (a == ":binary"): true;
-                                                default: false;
-                                            };
-                                            if (isBin && f == "match") found = true;
-                                        case EBlock(es): for (e in es) scan(e);
-                                        case EBinary(_, l, r): scan(l); scan(r);
-                                        case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body);} 
-                                        case ECall(t, _, as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
-                                        // Redundant remote call match removed to avoid unused pattern warning
-                                        default:
-                                    }}; scan(cl.body); return found;
-                            })();
-                            var used = collectUsedLowerVars(cl.body);
-                            var hasTitleOrDesc = containsFieldOfVar(cl.body, tVar, "title") || containsFieldOfVar(cl.body, tVar, "description");
-                            // Be pragmatic: when predicate looks like a string-search (has :binary.match or references
-                            // title/description fields), rewrite to pure boolean using `query` if available, otherwise
-                            // still collapse to contains semantics (query var is expected per our compiler’s pattern).
-                            if (hasMatch || hasTitleOrDesc) {
-                                var tRef = makeAST(EVar(tVar));
-                                var titleField = makeAST(EField(tRef, "title"));
-                                var titleBool = makeIsNotNil(binaryMatch(downcase(titleField), makeAST(EVar("query"))));
-                                var descField = makeAST(EField(tRef, "description"));
-                                var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
-                                var descBool = makeIsNotNil(binaryMatch(downcase(descField), makeAST(EVar("query"))));
-                                var right = makeAST(EBinary(And, descPresent, descBool));
-                                var combined = makeAST(EBinary(Or, titleBool, right));
-                                #if debug_filter_predicate
-                                trace('[FilterNorm] Fallback EFn rewrite to pure boolean');
-                                #end
-                                outClauses.push({ args: cl.args, guard: cl.guard, body: combined });
-                                continue;
-                            }
-                        }
-                        outClauses.push(cl);
-                    }
-                    makeASTWithMeta(EFn(outClauses), node.metadata, node.pos);
+                // IMPORTANT: Do NOT rewrite anonymous functions generically.
+                // The previous fallback that attempted to normalize any EFn that "looked like"
+                // a string-search predicate caused corruption of non-filter closures (e.g., Enum.map
+                // bodies constructing view rows). To preserve semantics and avoid app coupling,
+                // limit normalization strictly to Enum.filter predicates above.
                 default:
                     node;
             }

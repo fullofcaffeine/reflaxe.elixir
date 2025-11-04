@@ -273,6 +273,16 @@ class ElixirASTTransformer {
                 result = passConfig.pass(result);
             }
 
+            #if debug_ast_snapshots
+            // Per‑pass function snapshot: when debug_ast_snapshots_func is set,
+            // dump the target function after each pass to tmp/ast_flow/passes.
+            try {
+                PerPassSnapshot.emitFunctionAfterPass(result, passConfig.name);
+            } catch (e: Dynamic) {
+                #if sys Sys.println('[AST Snapshot] PerPass failed for ' + passConfig.name + ': ' + Std.string(e)); #end
+            }
+            #end
+
             #if debug_pass_metrics
             var __afterPrint: String = null;
             var __changed: Bool = false;
@@ -7488,6 +7498,77 @@ private class AbsoluteFinalSnapshot {
         var full = dir + '/' + file;
         sys.io.File.saveContent(full, content);
         #end
+    }
+}
+#end // debug_ast_snapshots
+
+#if debug_ast_snapshots
+private class PerPassSnapshot {
+    static var passIndex:Int = 0;
+
+    public static function emitFunctionAfterPass(ast: ElixirAST, passName:String):Void {
+        var spec = getDefineString('debug_ast_snapshots_func');
+        if (spec == null || spec == '') return;
+        var targetName = extractFuncName(spec);
+        var targetArity = extractArity(spec);
+        var fnNode: Null<ElixirAST> = null;
+        traverse(ast, function(n) {
+            switch (n.def) {
+                case EDef(name, args, _, _) | EDefp(name, args, _, _):
+                    if (name == targetName && args != null && args.length == targetArity) fnNode = n;
+                default:
+            }
+        });
+        if (fnNode == null) { passIndex++; return; }
+        var code = safePrint(fnNode);
+        var dir = 'tmp/ast_flow/passes';
+        #if sys if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir); #end
+        var file = dir + '/' + Std.string(passIndex) + '_' + sanitize(passName) + '.ex';
+        #if sys sys.io.File.saveContent(file, code); #end
+        passIndex++;
+    }
+
+    static function sanitize(s:String):String {
+        if (s == null) return 'pass';
+        return s.split(' ').join('_').split('/').join('_');
+    }
+    static function getDefineString(name: String): Null<String> {
+        #if macro
+        try return haxe.macro.Context.definedValue(name) catch (_:Dynamic) return null;
+        #else
+        return null;
+        #end
+    }
+    static function extractFuncName(spec: String): String {
+        var idx = spec.lastIndexOf('/');
+        return idx >= 0 ? spec.substr(0, idx) : spec;
+    }
+    static function extractArity(spec: String): Int {
+        var idx = spec.lastIndexOf('/');
+        if (idx < 0) return 0;
+        var s = spec.substr(idx + 1);
+        return Std.parseInt(s);
+    }
+
+    static function traverse(node: ElixirAST, f: ElixirAST -> Void): Void {
+        if (node == null) return;
+        function visitor(n: ElixirAST): Void {
+            if (n == null) return;
+            f(n);
+            ElixirASTTransformer.transformAST(n, function(child) {
+                visitor(child);
+                return child;
+            });
+        }
+        visitor(node);
+    }
+
+    static function safePrint(node: ElixirAST): String {
+        try {
+            return reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0);
+        } catch (e: Dynamic) {
+            return '// <printer error> ' + Std.string(e);
+        }
     }
 }
 #end // debug_ast_snapshots

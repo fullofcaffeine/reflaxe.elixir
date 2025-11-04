@@ -121,8 +121,13 @@ class FinalLocalReferenceAlignTransforms {
       return switch (x.def) {
         case EVar(v) if (v != null):
           var target: Null<String> = null;
+          // Rule A0: _name -> name when base is declared and underscored is not
+          if (v.charAt(0) == '_' && v.length > 1) {
+            var base = v.substr(1);
+            if (has(base) && !has(v)) target = base;
+          }
           // Rule A: name -> _name
-          if (!has(v) && has('_' + v)) target = '_' + v;
+          if (target == null && !has(v) && has('_' + v)) target = '_' + v;
           // Rule B: nameN -> name (numeric suffix)
           if (target == null) {
             var i = v.length - 1;
@@ -132,11 +137,11 @@ class FinalLocalReferenceAlignTransforms {
               if (has(base) && !has(v)) target = base;
             }
           }
-          // Rule C: updated -> ok_* (single candidate)
-          if (target == null && v == "updated") {
-            var okb = findOkBinder();
-            if (okb != null) target = okb;
-          }
+          // Rule C: updated -> ok_* (single candidate) [softened: disabled to avoid ok_* leaks]
+          // if (target == null && v == "updated") {
+          //   var okb = findOkBinder();
+          //   if (okb != null) target = okb;
+          // }
           // Rule D: camelCase -> snake_case when declared contains the snake name
           if (target == null) {
             var snake = toSnakeCase(v);

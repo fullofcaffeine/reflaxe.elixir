@@ -2365,6 +2365,31 @@ typedef TodoLiveAssigns = {
 
 3. **Configuration Keys**: Keep original format when required by frameworks
 
+### HARD RULE: Zero‑Logic HXX (Application Code)
+
+Do not place HEEx/Elixir logic inside HXX `{ … }` expressions. HXX in app code must only bind to assigns (e.g., `{@field}`) or view‑model fields (e.g., `v.completedStr`) that are fully computed in Haxe. All conditionals, conversions, and derivations must be computed in Haxe first.
+
+Allowed in HXX `{ … }`:
+- `{@visible_count}`, `{@filter_btn_all_class}`, `v.domId`, `v.completedStr`, etc. (precomputed assigns or view‑model fields).
+
+Disallowed in HXX `{ … }`:
+- Any Elixir/HEEx logic such as `Kernel.is_nil/1`, `length/1`, atoms (`:created`), pipes (`|>`), `Enum.*`, `Map.*`, anonymous `fn`/`end`, guards, or pattern matching.
+
+Rationale:
+- Preserve Haxe type‑safety, avoid mixing languages, and keep generated HEEx idiomatic while eliminating runtime surprises.
+
+Enforcement pattern:
+- Build a typed view model in Haxe (e.g., `TodoView`) and a helper like `buildVisibleTodos(assigns)` that computes all derived fields (booleans, strings, CSS classes, counts).
+- Iterate over `@visible_todos` in HXX and bind only fields/assigns.
+
+Repo guard (should return empty):
+```bash
+rg -n "\{[^}]*\b(Kernel\.|Enum\.|Map\.|length\(|\|>|:)[^}]*\}" examples/todo-app/src_haxe --no-messages
+```
+
+Exceptions:
+- Direct `{@field}` assigns and HXX control tags (`<if>`, `<for>`) are permitted; the expressions they bind must reference only assigns or precomputed fields, not Elixir library calls.
+
 ### Why This Matters
 
 - **Consistency**: One naming convention throughout Haxe codebase
