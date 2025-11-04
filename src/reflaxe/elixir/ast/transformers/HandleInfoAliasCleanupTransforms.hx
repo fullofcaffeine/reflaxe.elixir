@@ -59,7 +59,8 @@ class HandleInfoAliasCleanupTransforms {
     }
 
     function replaceAlias(e: ElixirAST): ElixirAST {
-      if (aliasName == null) return e;
+      // Always run replacement so `_socket` → `socket` is normalized even when
+      // no alias line is present at the current block level.
       return ElixirASTTransformer.transformNode(e, function(x: ElixirAST): ElixirAST {
         return switch (x.def) {
           case EVar(v) if (v == aliasName || v == "_socket"): makeASTWithMeta(EVar("socket"), x.metadata, x.pos);
@@ -67,7 +68,7 @@ class HandleInfoAliasCleanupTransforms {
             switch (elems[0].def) {
               case EAtom(a) if (a == ":noreply" || a == "noreply"):
                 switch (elems[1].def) {
-                  case EVar(v2) if (v2 == "_socket" || (aliasName != null && v2 == aliasName)):
+                  case EVar(v2) if (v2 == "_socket" || (aliasName != null && v2 == aliasName) || v2 == "socket"):
                     var newElems = [elems[0], makeASTWithMeta(EVar("socket"), x.metadata, x.pos)];
                     makeASTWithMeta(ETuple(newElems), x.metadata, x.pos);
                   default: x;
@@ -95,4 +96,3 @@ class HandleInfoAliasCleanupTransforms {
 }
 
 #end
-

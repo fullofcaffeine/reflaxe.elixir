@@ -1148,7 +1148,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	 * 
 	 * Uses idiomatic Phoenix pattern: single presence map with all user state
 	 */
-    @:keep public static function renderPresencePanel(onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
+    @:keep public static function renderPresencePanel(_onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
         // TEMP: Presence panel disabled pending compiler Map iteration fix.
         // Keeps runtime clean while we finalize Presence iteration transform in AST pipeline.
         return "";
@@ -1200,18 +1200,17 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 			');
 		}
 		
-		var filteredTodos:Array<server.schemas.Todo> = filterAndSortTodos(
-			assigns.todos,
-			assigns.filter,
-			assigns.sort_by,
-			assigns.search_query,
-			assigns.selected_tags
-		);
-		var todoItems = [];
-		for (todo in filteredTodos) {
-			todoItems.push(renderTodoItem(todo, assigns.editing_todo));
-		}
-		return todoItems.join("\n");
+        var filteredTodos:Array<server.schemas.Todo> = filterAndSortTodos(
+            assigns.todos,
+            assigns.filter,
+            assigns.sort_by,
+            assigns.search_query,
+            assigns.selected_tags
+        );
+        var todoItems:Array<String> = filteredTodos.map(function(todo) {
+            return renderTodoItem(todo, assigns.editing_todo);
+        });
+        return todoItems.join("\n");
 	}
 	
 	/**
@@ -1301,11 +1300,11 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 			return "";
 		}
 		
-		var tagElements = [];
-			for (tag in tags) {
-				tagElements.push('<button phx-click="search_todos" phx-value-query="${tag}" class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#${tag}</button>');
-			}
-		return tagElements.join("");
+        var tagsNorm:Array<String> = (tags != null) ? tags : [];
+        var tagElements:Array<String> = tagsNorm.map(function(tag) {
+            return '<button phx-click="search_todos" phx-value-query="${tag}" class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#${tag}</button>';
+        });
+        return tagElements.join("");
 	}
 	
 	/**
