@@ -191,7 +191,7 @@ class TodoLive {
 				toggleTodoStatus(id, socket);
 			
             case DeleteTodo(id):
-                trace('[TodoLive] handleEvent DeleteTodo id=' + id);
+                trace('[TodoLive] handleEvent DeleteTodo');
                 deleteTodo(id, socket);
 			
 			case EditTodo(id):
