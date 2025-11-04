@@ -116,13 +116,20 @@ class HandleEventArg0FromValueToIdUltimateTransforms {
 
   static function buildIdFromNested(paramsVar:String): ElixirAST {
     var inner = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString("value")) ]));
-    var idFallback = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString("id")), makeAST(EVar(paramsVar)) ]));
-    var idRaw = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ inner, makeAST(EString("id")), idFallback ]));
-    var isBin = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [ idRaw ]));
+    var idFromParams = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString("id")), makeAST(EVar(paramsVar)) ]));
+    // if is_map(inner), Map.get(inner, "id", idFromParams)
+    var isMap = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_map", [ inner ]));
+    var idFromInner = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ inner, makeAST(EString("id")), idFromParams ]));
+    // else if is_binary(inner), Map.get(URI.decode_query(inner), "id", idFromParams) else idFromParams
+    var isBin = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [ inner ]));
+    var decoded = makeAST(ERemoteCall(makeAST(EVar("URI")), "decode_query", [ inner ]));
+    var idFromDecoded = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ decoded, makeAST(EString("id")), idFromParams ]));
+    var elseBranch = makeAST(EIf(isBin, idFromDecoded, idFromParams));
+    var idRaw = makeAST(EIf(isMap, idFromInner, elseBranch));
+    var isBinId = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [ idRaw ]));
     var toInt = makeAST(ERemoteCall(makeAST(EVar("String")), "to_integer", [ idRaw ]));
-    return makeAST(EIf(isBin, toInt, idRaw));
+    return makeAST(EIf(isBinId, toInt, idRaw));
   }
 }
 
 #end
-
