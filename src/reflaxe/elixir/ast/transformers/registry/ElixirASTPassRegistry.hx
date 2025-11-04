@@ -6130,6 +6130,26 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal_Last"
             ]
         });
+        passes.push({
+            name: "FunctionParamUnusedUnderscore_Final",
+            description: "Underscore unused def/defp parameters (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass,
+            runAfter: [
+                "HandleEventIdExtractNormalize_AbsoluteLast",
+                "LocalAssignUnusedUnderscore_Scoped_Final"
+            ]
+        });
+        passes.push({
+            name: "CaseClauseUnusedBinderUnderscore_Final",
+            description: "In case clauses, underscore unused binders (absolute-final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
+            runAfter: [
+                "FunctionParamUnusedUnderscore_Final",
+                "ResultOkBinderNormalize_Replay_Ultimate"
+            ]
+        });
 
         // Filter disabled passes first
         var enabled = passes.filter(p -> p.enabled);
