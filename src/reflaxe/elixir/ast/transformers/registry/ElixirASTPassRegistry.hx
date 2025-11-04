@@ -6109,6 +6109,14 @@ class ElixirASTPassRegistry {
                 "ParamUnderscoreArgRefAlign_Global_Final"
             ]
         });
+        // Penultimate after force Map.get rewrite: replace any remaining bare `value` with param var
+        passes.push({
+            name: "HandleEventUndefinedValueToParam_AbsoluteLast",
+            description: "In handle_event/3, if `value` is not declared, rewrite EVar(value) → EVar(params/_params)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.pass,
+            runAfter: ["HandleEventValueVarNormalizeForceFinal_Last2", "HandleEventParamsUltraFinal_Last"]
+        });
 
         // Filter disabled passes first
         var enabled = passes.filter(p -> p.enabled);
