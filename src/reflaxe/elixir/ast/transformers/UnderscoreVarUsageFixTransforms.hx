@@ -31,12 +31,17 @@ class UnderscoreVarUsageFixTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body):
-          makeASTWithMeta(EDef(name, args, guards, rewrite(body)), n.metadata, n.pos);
+          var renamed = renamePatternBinders(args, body);
+          makeASTWithMeta(EDef(name, renamed.args, guards, renamed.body), n.metadata, n.pos);
         case EDefp(name, args, guards, body):
-          makeASTWithMeta(EDefp(name, args, guards, rewrite(body)), n.metadata, n.pos);
+          var renamed2 = renamePatternBinders(args, body);
+          makeASTWithMeta(EDefp(name, renamed2.args, guards, renamed2.body), n.metadata, n.pos);
         case EFn(clauses):
           var newClauses = [];
-          for (cl in clauses) newClauses.push({ args: cl.args, guard: cl.guard, body: rewrite(cl.body) });
+          for (cl in clauses) {
+            var rr = renamePatternBinders(cl.args, cl.body);
+            newClauses.push({ args: rr.args, guard: cl.guard, body: rr.body });
+          }
           makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
         default:
           n;
@@ -131,6 +136,39 @@ class UnderscoreVarUsageFixTransforms {
       }
     }
     return rename(body, false);
+  }
+
+  // Rename leading-underscore binders in patterns (args and case clause patterns) when used in body
+  static function renamePatternBinders(args: Array<EPattern>, body: ElixirAST): { args:Array<EPattern>, body:ElixirAST } {
+    // Collect underscored arg names
+    var underArgs:Array<{name:String, idx:Int}> = [];
+    for (i in 0...args.length) switch (args[i]) {
+      case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
+        underArgs.push({name:n, idx:i});
+      default:
+    }
+    if (underArgs.length == 0) return { args: args, body: rewrite(body) };
+    // Compute safe replacements and perform rename in body and arg list
+    var newArgs = args.copy();
+    var replacements = new Map<String,String>();
+    for (u in underArgs) {
+      var trimmed = u.name.substr(1);
+      var candidate = (trimmed == null || trimmed == "" || trimmed == "_" ? "v" : trimmed);
+      // Avoid accidental collision with common LiveView arg names (socket, params) by picking neutral
+      if (candidate == "socket" || candidate == "params") candidate = "value";
+      replacements.set(u.name, candidate);
+      newArgs[u.idx] = PVar(candidate);
+    }
+    // Apply renames in body occurrences
+    var newBody = ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+      return switch (n.def) {
+        case EVar(v) if (v != null && replacements.exists(v)):
+          makeASTWithMeta(EVar(replacements.get(v)), n.metadata, n.pos);
+        default: n;
+      }
+    });
+    // Continue with regular rewrite to handle remaining expression-context underscore vars
+    return { args: newArgs, body: rewrite(newBody) };
   }
 }
 
