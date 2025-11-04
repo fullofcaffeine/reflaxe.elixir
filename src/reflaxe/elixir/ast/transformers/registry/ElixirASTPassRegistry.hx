@@ -6133,12 +6133,8 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "FunctionParamUnusedUnderscore_Final",
             description: "Underscore unused def/defp parameters (absolute-final)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass,
-            runAfter: [
-                "HandleEventIdExtractNormalize_AbsoluteLast",
-                "LocalAssignUnusedUnderscore_Scoped_Final"
-            ]
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
         });
         passes.push({
             name: "CaseClauseUnusedBinderUnderscore_Final",
