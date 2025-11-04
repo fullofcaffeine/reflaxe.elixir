@@ -1997,6 +1997,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.filterReturnInlineFixPass
         });
 
+        // Normalize Option Some binder to safe identifier when used in body
+        passes.push({
+            name: "CaseSomeBinderNormalize",
+            description: "For {:some, _x} used in body, rename binder to a safe name and rewrite references",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSomeBinderNormalizeTransforms.pass
+        });
+
         // Fix list update/remove logic in structural map/filter shapes (generic, non app-specific)
         passes.push({
             name: "ListMapReplaceFix",
@@ -4588,6 +4596,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessVarAbsoluteReplaceUndefinedTransforms.replacePass
         });
+        // Ultra-late: normalize {:some, _x} binder if used in body
+        passes.push({
+            name: "CaseSomeBinderNormalize_Final",
+            description: "Rename {:some, _x} binder to safe name and rewrite references (late)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseSomeBinderNormalizeTransforms.pass
+        });
         // Rename underscored locals that are later used in expressions
         passes.push({
             name: "UnderscoreVarUsageFix_AbsoluteFinal",
@@ -4600,6 +4615,7 @@ class ElixirASTPassRegistry {
                 "SuccessVarAbsoluteReplaceUndefined_Replay_Final"
             ]
         });
+        // (Removed) StrictBlockDiscardUnused_Final — too aggressive for public defs; handled by earlier scoped passes
         // Drop any lingering `nil = _var` statements inside case bodies
         passes.push({
             name: "CaseNilAssignCleanup_Final",
@@ -5051,6 +5067,14 @@ class ElixirASTPassRegistry {
             description: "In case msg of {:tag, v}, pass v instead of msg to *_from_list/*_in_list helpers",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
+        });
+
+        // Late: drop self-rebinds inside anonymous functions (avoid warnings)
+        passes.push({
+            name: "ClosureSelfRebindDiscard_Final",
+            description: "In anon fns, rewrite binder rebinding to discard (_ = expr)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ClosureSelfRebindDiscardTransforms.pass
         });
         // Late: promote underscored params even when only underscored variant is used in body (duplicate re-run removed)
 
