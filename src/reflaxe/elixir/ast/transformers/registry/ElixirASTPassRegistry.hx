@@ -6071,7 +6071,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LocalAssignUnusedUnderscore_Scoped_Final",
             description: "Final (scoped): underscore local assigns not used later in defs except mount/3",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransforms.pass,
             runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
         });
