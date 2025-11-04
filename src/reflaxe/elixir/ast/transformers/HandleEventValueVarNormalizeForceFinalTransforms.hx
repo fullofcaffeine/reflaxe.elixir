@@ -77,16 +77,17 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
               makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
             default: x;
           }
-        case ECall({def: ESelect({def: EVar("Map")}, "get")}, _, a2) if (a2 != null && a2.length == 2):
-          switch (a2[0].def) {
+        case ECall(target, funcName, a2) if (funcName == "get" && a2 != null && a2.length == 2):
+          var isMap = switch (target.def) { case EVar(m): m == "Map"; default: false; };
+          if (isMap) switch (a2[0].def) {
             case EVar(v2) if (v2 == "value"):
               var newArgs2 = [ makeAST(EVar(payloadVar)), a2[1] ];
               #if debug_handle_event_value
               #if sys Sys.println('[HandleEventValueVarNormalizeForceFinal] call-form Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
               #end
-              makeASTWithMeta(ECall(makeAST(ESelect(makeAST(EVar("Map")), "get")), "get", newArgs2), x.metadata, x.pos);
+              makeASTWithMeta(ECall(target, funcName, newArgs2), x.metadata, x.pos);
             default: x;
-          }
+          } else x;
         default: x;
       }
     });
