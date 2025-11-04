@@ -31,20 +31,12 @@ class HandleEventUndefinedValueToParamTransforms {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
           var paramVar = extractParamsVarName(args);
-          var declared = new Map<String,Bool>();
-          collectDecls(body, declared);
-          if (!declared.exists("value")) {
-            var nb = rewrite(body, paramVar);
-            makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
-          } else n;
+          var nb = rewrite(body, paramVar);
+          makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
           var paramVar2 = extractParamsVarName(args2);
-          var declared2 = new Map<String,Bool>();
-          collectDecls(body2, declared2);
-          if (!declared2.exists("value")) {
-            var nb2 = rewrite(body2, paramVar2);
-            makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
-          } else n;
+          var nb2 = rewrite(body2, paramVar2);
+          makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
         default:
           n;
       }
@@ -70,38 +62,7 @@ class HandleEventUndefinedValueToParamTransforms {
     });
   }
 
-  static function collectDecls(ast: ElixirAST, out: Map<String,Bool>): Void {
-    ASTUtils.walk(ast, function(n: ElixirAST) {
-      if (n == null || n.def == null) return;
-      switch (n.def) {
-        case EMatch(p, _): collectPattern(p, out);
-        case EBinary(Match, l, _): collectLhs(l, out);
-        case ECase(_, cs): for (c in cs) collectPattern(c.pattern, out);
-        default:
-      }
-    });
-  }
-
-  static function collectPattern(p: EPattern, out: Map<String,Bool>): Void {
-    switch (p) {
-      case PVar(n): out.set(n, true);
-      case PTuple(es) | PList(es): for (e in es) collectPattern(e, out);
-      case PCons(h,t): collectPattern(h, out); collectPattern(t, out);
-      case PMap(kvs): for (kv in kvs) collectPattern(kv.value, out);
-      case PStruct(_, fs): for (f in fs) collectPattern(f.value, out);
-      case PPin(inner): collectPattern(inner, out);
-      default:
-    }
-  }
-
-  static function collectLhs(lhs: ElixirAST, out: Map<String,Bool>): Void {
-    switch (lhs.def) {
-      case EVar(n): out.set(n, true);
-      case EBinary(Match, l2, _): collectLhs(l2, out);
-      default:
-    }
-  }
+  // (No declared-guard needed; this is an absolute-last repair scoped to handle_event/3 only.)
 }
 
 #end
-
