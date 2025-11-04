@@ -82,7 +82,7 @@ class UserController {
      * 
      * With Haxe, we get type-safe JSON responses and can refactor safely.
      */
-    public static function index(conn: Conn<IndexParams>, params: IndexParams): Conn<IndexParams> {
+    public static function index(conn: Conn<IndexParams>, _params: IndexParams): Conn<IndexParams> {
         // Fetch all users from database
         var users = Users.listUsers(null);
         return conn.json({users: users});
@@ -219,7 +219,7 @@ class UserController {
         var result = Users.deleteUser(user);
         
         return switch(result) {
-            case Ok(value):
+            case Ok(_value):
                 // Use a named local to avoid any intermediate aliasing of the json/2 payload
                 final payload = {
                     deleted: params.id,
@@ -228,7 +228,7 @@ class UserController {
                 };
                 conn.json(payload);
                 
-            case Error(reason):
+            case Error(_reason):
                 conn
                     .putStatus(500)
                     .json({

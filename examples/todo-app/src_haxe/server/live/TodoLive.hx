@@ -250,48 +250,48 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
     public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-        // Handle PubSub messages with type-safe parsing
+        // Handle PubSub messages with a two-step match to avoid alias churn
         return switch (TodoPubSub.parseMessage(msg)) {
-            case Some(TodoCreated(_created)):
-                // Reload to ensure consistent state across sessions using a single expression (no locals)
-                NoReply(
-                    recomputeVisible(
-                        (cast socket: LiveSocket<TodoLiveAssigns>)
-                            .merge({ todos: loadTodos(socket.assigns.current_user.id) })
-                    )
-                );
-            case Some(TodoUpdated(todo)):
-                NoReply(recomputeVisible(updateTodoInList(todo, socket)));
-            case Some(TodoDeleted(id)):
-                NoReply(recomputeVisible(removeTodoFromList(id, socket)));
-            case Some(BulkUpdate(action)):
-                // Inline handleBulkUpdate with single-expression merge to avoid dropped locals
-                switch (action) {
-                    case CompleteAll, DeleteCompleted:
+            case Some(payload):
+                switch (payload) {
+                    case TodoCreated(_created):
                         NoReply(
                             recomputeVisible(
-                                (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                                    todos: loadTodos(socket.assigns.current_user.id),
-                                    total_todos: loadTodos(socket.assigns.current_user.id).length,
-                                    completed_todos: countCompleted(loadTodos(socket.assigns.current_user.id)),
-                                    pending_todos: countPending(loadTodos(socket.assigns.current_user.id))
-                                })
+                                (cast socket: LiveSocket<TodoLiveAssigns>)
+                                    .merge({ todos: loadTodos(socket.assigns.current_user.id) })
                             )
                         );
-                    case SetPriority(_):
+                    case TodoUpdated(todo):
+                        NoReply(recomputeVisible(updateTodoInList(todo, socket)));
+                    case TodoDeleted(id):
+                        NoReply(recomputeVisible(removeTodoFromList(id, socket)));
+                    case BulkUpdate(action):
+                        switch (action) {
+                            case CompleteAll, DeleteCompleted:
+                                NoReply(
+                                    recomputeVisible(
+                                        (cast socket: LiveSocket<TodoLiveAssigns>).merge({
+                                            todos: loadTodos(socket.assigns.current_user.id),
+                                            total_todos: loadTodos(socket.assigns.current_user.id).length,
+                                            completed_todos: countCompleted(loadTodos(socket.assigns.current_user.id)),
+                                            pending_todos: countPending(loadTodos(socket.assigns.current_user.id))
+                                        })
+                                    )
+                                );
+                            case SetPriority(_):
+                                NoReply(socket);
+                            case AddTag(_):
+                                NoReply(socket);
+                            case RemoveTag(_):
+                                NoReply(socket);
+                        }
+                    case UserOnline(_):
                         NoReply(socket);
-                    case AddTag(_):
+                    case UserOffline(_):
                         NoReply(socket);
-                    case RemoveTag(_):
+                    case SystemAlert(_message, _level):
                         NoReply(socket);
                 }
-            case Some(UserOnline(_)):
-                NoReply(socket);
-            case Some(UserOffline(_)):
-                NoReply(socket);
-            case Some(SystemAlert(_message, _level)):
-                // Non-essential for optimistic path; ignore for now
-                NoReply(socket);
             case None:
                 trace("Received unknown PubSub message: " + msg);
                 NoReply(socket);
