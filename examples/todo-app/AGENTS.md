@@ -117,6 +117,31 @@ return HXX.hxx('<button class={@className} id={@id}>
 
 ### HXX → HEEx Translation Rules
 
+## 🔒 HARD RULE: Zero‑Logic HXX (Todo‑App)
+
+HXX in this app must not contain HEEx/Elixir logic inside `{ … }`. Only bind to assigns or view‑model fields computed in Haxe.
+
+Allowed examples:
+- `id={v.dom_id}`, `data-completed={v.completed_str}`, `class={@filter_btn_all_class}`
+
+Disallowed examples (fix by precomputing in Haxe):
+- `{Kernel.is_nil(v.description)}` → use `v.has_description`
+- `{length(@todos) > 0}` → use `@visible_count > 0`
+- `{sort_selected(@sort_by, :created)}` → use `@sort_selected_created`
+
+Pattern to follow:
+1) Introduce a typed view model (e.g., `TodoView`) with all derived fields (bools/strings/classes).
+2) Build it in Haxe (`buildVisibleTodos(assigns)`) and store in `@visible_todos` + helper assigns:
+   - `@filter_btn_*_class`, `@sort_selected_*`, `@visible_count`, etc.
+3) In HXX, iterate `@visible_todos` and bind only fields/assigns. No `Kernel.*`, `Enum.*`, `Map.*`, atoms (`:created`), pipes (`|>`), or `length()` calls inside braces.
+
+CI/Local Guard (should be empty):
+```bash
+rg -n "\{[^}]*\b(Kernel\.|Enum\.|Map\.|length\(|\|>|:)" examples/todo-app/src_haxe --no-messages
+```
+
+Rationale: keep all logic Haxe‑typed and make HEEx a presentation surface only.
+
 #### 1. Attribute Values: `{@field}` → `{@field}`
 
 ## 🚦 Background Server Validation (Non‑blocking)
