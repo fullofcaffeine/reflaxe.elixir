@@ -51,13 +51,29 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
   }
 
   static function rewriteBody(body: ElixirAST, payloadVar:String): ElixirAST {
+    /**
+     * WHAT
+     * - Absolute-last sweep that forcibly replaces Map.get(value, "…") with
+     *   Map.get(<payloadVar>, "…") inside handle_event/3 bodies.
+     * WHY
+     * - Guarantees no late-introduced `value` leaks survive ordering of earlier
+     *   transforms (e.g., id conversion branches).
+     * HOW
+     * - Matches ERemoteCall(Map.get, [EVar("value"), key]) and rewrites to use
+     *   the actual payload binder. No dependency on body-declared names here.
+     * DEBUG
+     * - Enable logs with `-D debug_handle_event_value` to print each forced
+     *   replacement; these logs are emitted by the compiler, not the app.
+     */
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case ERemoteCall({def: EVar("Map")}, "get", a) if (a != null && a.length == 2):
           switch (a[0].def) {
             case EVar(v) if (v == "value"):
               var newArgs = [ makeAST(EVar(payloadVar)), a[1] ];
-              #if sys Sys.println('[HandleEventValueVarNormalizeForceFinal] Forcing Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
+              #if debug_handle_event_value
+              #if sys Sys.println('[HandleEventValueVarNormalizeForceFinal] Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
+              #end
               makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
             default: x;
           }
@@ -68,4 +84,3 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
 }
 
 #end
-

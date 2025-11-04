@@ -76,13 +76,40 @@ class HandleEventValueVarNormalizeTransforms {
   }
 
   static function rewriteBody(body: ElixirAST, payloadVar:String): ElixirAST {
+    /**
+     * WHAT
+     * - Traverses a handle_event/3 body and replaces Map.get(value, "…") with
+     *   Map.get(<payloadVar>, "…") when no local binding named `value` exists.
+     *
+     * WHY
+     * - Prevents "undefined variable value" compile errors in generated Elixir
+     *   when earlier passes or bridge steps referenced a non-existent `value`.
+     *
+     * HOW
+     * - Matches ERemoteCall(Map.get, [EVar("value"), key]) and rewrites the first
+     *   argument to the actual head binder (`payloadVar` is either `params` or
+     *   `_params`). Also applies a conservative ERaw textual patch for rare raw
+     *   segments that contain the same shape.
+     *
+     * DEBUG
+     * - The following Sys.println is wrapped in `#if debug_handle_event_value` so
+     *   it only logs when you opt in:
+     *     npx haxe build.hxml -D debug_handle_event_value
+     *   It runs in the compiler (macro) process, never in generated Elixir.
+     *
+     * EXAMPLE
+     *   Before: Map.get(value, "id")
+     *   After:  Map.get(params, "id")   // or _params depending on head binder
+     */
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case ERemoteCall({def: EVar("Map")}, "get", a) if (a != null && a.length == 2):
           switch (a[0].def) {
             case EVar(v) if (v == "value"):
               var newArgs = [ makeAST(EVar(payloadVar)), a[1] ];
-              #if sys Sys.println('[HandleEventValueVarNormalize] Rewriting Map.get(value, …) to Map.get(' + payloadVar + ', …)'); #end
+              #if debug_handle_event_value
+              #if sys Sys.println('[HandleEventValueVarNormalize] Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
+              #end
               makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
             default: x;
           }
@@ -92,7 +119,9 @@ class HandleEventValueVarNormalizeTransforms {
             // Conservative textual patch inside raw segments
             replaced = StringTools.replace(replaced, "Map.get(value,", 'Map.get(' + payloadVar + ',');
             if (replaced != code) {
-              #if sys Sys.println('[HandleEventValueVarNormalize] ERaw rewrite applied for Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
+              #if debug_handle_event_value
+              #if sys Sys.println('[HandleEventValueVarNormalize] ERaw: Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
+              #end
               makeASTWithMeta(ERaw(replaced), x.metadata, x.pos);
             } else {
               x;
