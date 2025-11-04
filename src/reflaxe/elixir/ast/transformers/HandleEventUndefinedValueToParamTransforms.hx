@@ -30,10 +30,12 @@ class HandleEventUndefinedValueToParamTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
+          #if sys Sys.println('[HandleEventUndefinedValueToParam] visiting handle_event/3 def'); #end
           var paramVar = extractParamsVarName(args);
           var nb = rewrite(body, paramVar);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
+          #if sys Sys.println('[HandleEventUndefinedValueToParam] visiting handle_event/3 defp'); #end
           var paramVar2 = extractParamsVarName(args2);
           var nb2 = rewrite(body2, paramVar2);
           makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
