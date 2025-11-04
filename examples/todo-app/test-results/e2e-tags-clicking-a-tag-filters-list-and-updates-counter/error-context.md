@@ -10,18 +10,18 @@
           - paragraph [ref=e12]: Welcome, Demo User!
         - generic [ref=e13]:
           - generic [ref=e14]:
-            - generic [ref=e15]: "7"
+            - generic [ref=e15]: "14"
             - generic [ref=e16]: Total
           - generic [ref=e17]:
-            - generic [ref=e18]: "2"
+            - generic [ref=e18]: "5"
             - generic [ref=e19]: Completed
           - generic [ref=e20]:
-            - generic [ref=e21]: "5"
+            - generic [ref=e21]: "9"
             - generic [ref=e22]: Pending
       - button "➕ Add New Todo" [ref=e23] [cursor=pointer]
     - generic [ref=e25]:
       - generic [ref=e27]:
-        - searchbox "Search todos..." [active] [ref=e28]: E2E
+        - searchbox "Search todos..." [ref=e28]: grp-1762228751290
         - generic [ref=e29]: 🔍
       - generic [ref=e30]:
         - button "All" [ref=e31] [cursor=pointer]
@@ -32,25 +32,8 @@
         - option "Sort by Priority"
         - option "Sort by Due Date"
     - generic [ref=e36]:
-      - generic [ref=e37]: Showing 2 of 7 todos
+      - generic [ref=e37]: Showing 0 of 14 todos
       - generic [ref=e38]:
         - button "✅ Complete All" [ref=e39] [cursor=pointer]
         - button "🗑️ Delete Completed" [ref=e40] [cursor=pointer]
-    - generic [ref=e41]:
-      - generic [ref=e43]:
-        - button [ref=e44] [cursor=pointer]
-        - generic [ref=e45]:
-          - heading "E2E 1762228746349" [level=3] [ref=e46]
-          - generic [ref=e48]: "Priority: medium"
-        - generic [ref=e49]:
-          - button "✏️" [ref=e50] [cursor=pointer]
-          - button "🗑️" [ref=e51] [cursor=pointer]
-      - generic [ref=e53]:
-        - button [ref=e54] [cursor=pointer]
-        - generic [ref=e55]:
-          - heading "E2E New 1762228723857" [level=3] [ref=e56]
-          - generic [ref=e58]: "Priority: medium"
-        - generic [ref=e59]:
-          - button "✏️" [ref=e60] [cursor=pointer]
-          - button "🗑️" [ref=e61] [cursor=pointer]
 ```
