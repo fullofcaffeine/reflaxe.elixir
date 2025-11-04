@@ -6061,16 +6061,12 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal_Last"
             ]
         });
-        // Ultra-absolute last: force fix any remaining Map.get(value, …) shapes
+        // Ultra-absolute last (will be re-added at footer with stronger constraints)
         passes.push({
             name: "HandleEventValueVarNormalizeForceFinal_Last",
             description: "Force Map.get(value, …) → Map.get(params/_params, …) in handle_event/3 (last pass)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass,
-            runAfter: [
-                "HandleEventValueVarNormalize_AbsoluteLast",
-                "HandleEventParamsUltraFinal_Last"
-            ]
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass
         });
         passes.push({
             name: "LocalAssignUnusedUnderscore_Scoped_Final",
@@ -6090,6 +6086,27 @@ class ElixirASTPassRegistry {
                 "DefParamUnusedUnderscoreGlobalSafe_Final",
                 "DefParamHeadUnderscoreWhenUnused_Final",
                 "HeexAssignsParamRename_Final"
+            ]
+        });
+
+        // FINAL guard: force fix any Map.get(value, …) that survived all prior passes
+        passes.push({
+            name: "HandleEventValueVarNormalizeForceFinal_Last2",
+            description: "Ultimate guard: Force Map.get(value, …) → Map.get(params/_params, …) inside handle_event/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass,
+            runAfter: [
+                "ChainAssignIfPromote_Replay_Last",
+                "QueryVarUltimateNormalize_Replay_Last",
+                "CaseOkBinderPrefixBindAllUndefined_Replay_Last",
+                "MountParamsUltraFinal",
+                "HandleEventParamsUltraFinal",
+                "ParamUnderscoreArgRefAlign_Final",
+                "ParamUnderscoreGlobalAlign_Final",
+                "HandleEventParamsForceBodyRewrite_Final",
+                "DefParamHeadUnderscoreWhenUnused_Final",
+                "HandleEventParamsUltraFinal_Last",
+                "ParamUnderscoreArgRefAlign_Global_Final"
             ]
         });
 
