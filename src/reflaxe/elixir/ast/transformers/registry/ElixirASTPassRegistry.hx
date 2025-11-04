@@ -6123,6 +6123,18 @@ class ElixirASTPassRegistry {
                 "ParamUnderscoreArgRefAlign_Global_Final"
             ]
         });
+        // Normalize assign_multiple assignment pattern outside mount (late, app-agnostic)
+        passes.push({
+            name: "AssignMultipleNormalize_Final",
+            description: "Rewrite left = (assigns = map); Phoenix.Component.assign(socket, assigns) → left = Phoenix.Component.assign(socket, map)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignMultipleNormalizeTransforms.pass,
+            runAfter: [
+                "HandleEventValueVarNormalizeForceFinal_Last2",
+                "HandleEventParamsHeadToParams_Ultimate",
+                "HandleEventMapGetUnderscoreParams_Final"
+            ]
+        });
         // Re-introduce: ensure head binder is `params` when body uses it, but BEFORE
         // DefParamHeadUnderscoreWhenUnused_Final so unused flows can still underscore.
         passes.push({
@@ -6217,6 +6229,31 @@ class ElixirASTPassRegistry {
                 "HandleEventParamExtractFromBodyUse_Final",
                 "HandleEventParamRepair_Final",
                 "HandleEventParamsUltraFinal_Last"
+            ]
+        });
+        passes.push({
+            name: "HandleEventArg0FromValueToId_Ultimate",
+            description: "When a helper call uses Map.get(params, \"value\", …) as first arg, replace with integer id from nested value map (or params id fallback)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventArg0FromValueToIdUltimateTransforms.pass,
+            runAfter: [
+                "HandleEventParamsHeadToParams_Ultimate",
+                "HandleEventMapGetUnderscoreParams_Final",
+                "HandleEventMapGetValueDefaultToParams_Final",
+                "HandleEventUndefinedValueToParam_AbsoluteLast",
+                "HandleEventIdExtractNormalize_AbsoluteLast",
+                "HandleEventValueVarNormalizeForceFinal_Last2"
+            ]
+        });
+        passes.push({
+            name: "HandleEventDecodeValueQueryIfBinary_Ultimate",
+            description: "Decode Map.get(params, \"value\") when it is a URL-encoded query string (URI.decode_query)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventDecodeValueQueryIfBinaryUltimateTransforms.pass,
+            runAfter: [
+                "HandleEventParamsHeadToParams_Ultimate",
+                "HandleEventMapGetUnderscoreParams_Final",
+                "HandleEventMapGetValueDefaultToParams_Final"
             ]
         });
         // Very late: ensure Map.get(<payload>, "value") uses `<payload>` as default when missing (forms)
