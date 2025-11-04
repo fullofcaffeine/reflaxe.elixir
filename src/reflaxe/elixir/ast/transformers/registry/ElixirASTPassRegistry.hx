@@ -6048,6 +6048,30 @@ class ElixirASTPassRegistry {
                 "AssignWhereSelfBinderUnderscore_Final"
             ]
         });
+        // Absolute-last safety for Map.get(value, …) inside handle_event/3 when no `value` binding exists
+        passes.push({
+            name: "HandleEventValueVarNormalize_AbsoluteLast",
+            description: "Rewrite Map.get(value, key) → Map.get(params/_params, key) when `value` is undefined in handle_event/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeTransforms.pass,
+            runAfter: [
+                "HandleEventParamExtractFromBodyUse_Final",
+                "HandleEventParamRepair_Final",
+                "HandleEventParamsUltraFinal",
+                "HandleEventParamsUltraFinal_Last"
+            ]
+        });
+        // Ultra-absolute last: force fix any remaining Map.get(value, …) shapes
+        passes.push({
+            name: "HandleEventValueVarNormalizeForceFinal_Last",
+            description: "Force Map.get(value, …) → Map.get(params/_params, …) in handle_event/3 (last pass)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass,
+            runAfter: [
+                "HandleEventValueVarNormalize_AbsoluteLast",
+                "HandleEventParamsUltraFinal_Last"
+            ]
+        });
         passes.push({
             name: "LocalAssignUnusedUnderscore_Scoped_Final",
             description: "Final (scoped): underscore local assigns not used later in defs except mount/3",
