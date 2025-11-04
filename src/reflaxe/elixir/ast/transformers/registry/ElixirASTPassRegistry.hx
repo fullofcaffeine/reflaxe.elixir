@@ -6048,6 +6048,13 @@ class ElixirASTPassRegistry {
                 "AssignWhereSelfBinderUnderscore_Final"
             ]
         });
+        passes.push({
+            name: "HandleEventParamsHeadToParams_Final",
+            description: "Absolute-final: force handle_event/3 second arg to params when referenced; rewrite _params to params in body",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsFinalTransforms.pass,
+            runAfter: ["HandleEventParamsUltraFinal_Last", "HandleEventValueVarNormalizeForceFinal_Last2"]
+        });
         // Absolute-last safety for Map.get(value, …) inside handle_event/3 when no `value` binding exists
         passes.push({
             name: "HandleEventValueVarNormalize_AbsoluteLast",
@@ -6139,12 +6146,8 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CaseClauseUnusedBinderUnderscore_Final",
             description: "In case clauses, underscore unused binders (absolute-final)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
-            runAfter: [
-                "FunctionParamUnusedUnderscore_Final",
-                "ResultOkBinderNormalize_Replay_Ultimate"
-            ]
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass
         });
 
         // Filter disabled passes first
