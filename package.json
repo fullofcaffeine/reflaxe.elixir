@@ -69,7 +69,7 @@
     "ci:acceptance": "bash scripts/ci/acceptance_gate.sh",
     "hooks:install": "bash scripts/install-git-hooks.sh",
     "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose",
-    "docs:order:haxe": "haxe -cp src -cp . -D reflaxe_runtime -main tools.RegistryOrderDoc --interp"
+    "docs:order:haxe": "haxe -lib reflaxe -cp src -cp . -D reflaxe_runtime -main tools.RegistryOrderDoc --interp"
   },
   "engines": {
     "node": ">=14.0.0"
