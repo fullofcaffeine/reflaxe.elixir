@@ -20,6 +20,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   map. This pass makes the call sites resilient without app-specific knowledge.
  */
 class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
+  /**
+   * EXAMPLES
+   * Haxe (snapshot: liveview/handle_event_value_decode):
+   *   @:liveview class Main {
+   *     public static function handle_event(event:String, params:Dynamic, socket:Dynamic) {
+   *       switch (event) {
+   *         case "search_todos": performSearch(params.value, socket);
+   *         default:
+   *       }
+   *       return {status: "noreply", socket: socket};
+   *     }
+   *   }
+   * Elixir (before):
+   *   perform_search(Map.get(params, "value"), socket)
+   * Elixir (after):
+   *   perform_search((if Kernel.is_binary(Map.get(params, "value")), do: URI.decode_query(Map.get(params, "value")), else: Map.get(params, "value"))), socket)
+   */
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {

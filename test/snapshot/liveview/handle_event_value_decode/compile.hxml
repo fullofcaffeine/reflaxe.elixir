@@ -1,0 +1,8 @@
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/liveview/handle_event_value_decode
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/src
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=/Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/liveview/handle_event_value_decode/out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main
