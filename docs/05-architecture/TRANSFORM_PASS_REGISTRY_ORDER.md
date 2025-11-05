@@ -1,6 +1,6 @@
 # Transform Pass Registry Order
 
-Generated: 2025-11-05T01:04:30.949Z
+Generated: 2025-11-05T01:36:30.247Z
 
 1. Identity
 2. ResolveClauseLocals
