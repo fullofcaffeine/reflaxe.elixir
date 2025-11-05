@@ -6299,6 +6299,8 @@ class ElixirASTPassRegistry {
 
         // Filter disabled passes first
         var enabled = passes.filter(p -> p.enabled);
+        // Validate current list (unique names, missing deps, cycles report only)
+        enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled);
         // Apply lightweight topological sort based on optional runAfter/runBefore
         enabled = sortPassesByConstraints(enabled);
         return enabled;
