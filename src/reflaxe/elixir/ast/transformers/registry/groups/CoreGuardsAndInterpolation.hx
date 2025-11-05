@@ -19,14 +19,6 @@ class CoreGuardsAndInterpolation {
   public static function build():Array<ElixirASTTransformer.PassConfig> {
     var passes:Array<ElixirASTTransformer.PassConfig> = [];
 
-    // Guard condition grouping pass (must run before other pattern transformations)
-    passes.push({
-      name: "GuardGrouping",
-      description: "Transform multiple case clauses with same pattern and guards into cond",
-      enabled: true,
-      pass: function(ast) return ElixirASTTransformer.alias_guardGroupingPass(ast)
-    });
-
     passes.push({
       name: "CaseListGuardToCons",
       description: "Rewrite [] with non-empty guard → [head|tail] with repaired guard",
@@ -86,4 +78,3 @@ class CoreGuardsAndInterpolation {
   }
 }
 #end
-
