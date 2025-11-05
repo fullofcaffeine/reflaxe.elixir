@@ -35,8 +35,8 @@ class RegistryOrderDoc {
         if (q1 > 0 && q2 > q1) {
           var nm = txt.substr(q1 + 1, q2 - q1 - 1);
           // Search forward for enabled flag in small window
-          var windowEnd = txt.indexOf('}', q2);
-          if (windowEnd < 0) windowEnd = q2 + 200;
+          var windowEnd = txt.indexOf('});', q2);
+          if (windowEnd < 0) windowEnd = q2 + 800; // generous window
           var window = txt.substr(q1, windowEnd - q1);
           if (window.indexOf('enabled: true') >= 0) names.push(nm);
           cursor = q2 + 1;
