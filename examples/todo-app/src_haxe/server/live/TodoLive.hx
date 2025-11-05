@@ -84,6 +84,19 @@ typedef TodoLiveAssigns = {
 	var search_query: String;
 	var selected_tags: Array<String>;
     // Optimistic UI state: ids currently flipped client-first, pending server reconcile
+    /**
+     * optimistic_toggle_ids
+     *
+     * WHAT
+     * - Minimal optimistic state (ids only) for instant checkbox flips.
+     *
+     * WHY
+     * - Keep UX snappy for idempotent single-field toggles without duplicating rows.
+     *
+     * HOW
+     * - On toggle, push id here and recompute rows so completed_for_view reflects the change.
+     *   Persist to DB and reconcile via PubSub broadcast of the authoritative row.
+     */
     var optimistic_toggle_ids: Array<Int>;
     // Precomputed view rows for HXX (zero-logic rendering)
     var visible_todos: Array<TodoView>;
@@ -392,6 +405,20 @@ class TodoLive {
         }
     }
 
+/**
+ * toggleTodoStatus
+ *
+ * WHAT
+ * - Server-driven optimistic toggle with safe reconciliation.
+ *
+ * WHY
+ * - Provide immediate user feedback while keeping LiveView authoritative.
+ *
+ * HOW
+ * - Mark id as optimistic → flip local row → persist (Repo.update) → broadcast TodoUpdated.
+ *   handle_info updates the list with the authoritative record; on error we broadcast the
+ *   current DB row to revert.
+ */
 static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
     var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
     var ids = s.assigns.optimistic_toggle_ids;
