@@ -1,0 +1,8 @@
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-cp /REDACTED_LOCAL_PATH
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=/REDACTED_LOCAL_PATH
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

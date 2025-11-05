@@ -20,165 +20,9 @@ class ElixirASTPassRegistry {
     public static function getEnabledPasses(): Array<ElixirASTTransformer.PassConfig> {
 
         var passes: Array<reflaxe.elixir.ast.ElixirASTTransformer.PassConfig> = [];
-        
-        // Identity pass (always first - ensures pass-through functionality)
-        passes.push({
-            name: "Identity",
-            description: "Pass-through transformation (no changes)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_identityPass
-        });
-        
-        // Resolve clause locals pass (must run very early to fix variable references)
-        passes.push({
-            name: "ResolveClauseLocals",
-            description: "Resolve variable references in case clauses using varIdToName metadata",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.resolveClauseLocalsPass
-        });
 
-        // Remove redundant enum extraction pass (must run early to fix pattern matching)
-        passes.push({
-            name: "RemoveRedundantEnumExtraction",
-            description: "Remove redundant elem() calls after pattern extraction in case clauses",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantEnumExtractionPass
-        });
-
-        // Align {:ok, binder} names to meaningful locals used in body (e.g., `todo`)
-        passes.push({
-            name: "CaseOkBinderAlign",
-            description: "Rename {:ok, var} binder to match body local (todo) and rewrite body refs",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.CaseOkBinderAlignTransforms.transformPass
-        });
-
-        // Normalize {:ok, ok_value} → {:ok, value} and fix body references; prevent ok_value leaks
-        passes.push({
-            name: "ResultOkBinderNormalize",
-            description: "Normalize {:ok, binder} to avoid ok_value leaks; align body to binder",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms.pass
-        });
-        // Replay near the end to catch late-introduced ok_value in nested closures
-        passes.push({
-            name: "ResultOkBinderNormalize_Replay_Ultimate",
-            description: "Ultimate replay of {:ok, binder} normalization inside def/defp and EFn",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms.pass,
-            runAfter: ["FinalLocalReferenceAlign"]
-        });
-
-        // Throw statement transformation (must run early to fix complex expressions)
-        passes.push({
-            name: "ThrowStatementTransform",
-            description: "Transform complex throw expressions to avoid syntax errors",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_throwStatementTransformPass
-        });
-        
-        // Inline expansion fixes (should run very early to fix AST structure)
-        passes.push({
-            name: "InlineMethodCallCombiner",
-            description: "Combine split inline expansion patterns from stdlib",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.inlineMethodCallCombinerPass
-        });
-        
-        // Extract inline assignments from tuple constructors (must run early)
-        passes.push({
-            name: "ExtractTupleInlineAssignments",
-            description: "Extract inline assignments from tuple constructors to fix syntax errors",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractTupleInlineAssignmentsPass
-        });
-        
-        // Extract inline assignments from map/keyword/struct literal values (must run early)
-        passes.push({
-            name: "ExtractLiteralValueInlineAssignments",
-            description: "Hoist inline assignments out of map/keyword/struct literal values to preceding block",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractLiteralValueInlineAssignmentsPass
-        });
-        
-        // Function reference transformation (must run early to add capture operators)
-        passes.push({
-            name: "FunctionReferenceTransform",
-            description: "Transform function references to use capture operator (&Module.func/arity)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_functionReferenceTransformPass
-        });
-        // Normalize def/defp parameter names from camelCase to snake_case and rewrite body refs
-        passes.push({
-            name: "DefParamCamelToSnake",
-            description: "Rename function parameters camelCase→snake_case and update body references",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DefParamCamelToSnakeTransforms.transformPass
-        });
-        // Normalize local declarations camelCase→snake_case and rewrite references
-        passes.push({
-            name: "LocalCamelToSnakeDecl",
-            description: "Rename local EMatch/EVar declarations from camelCase to snake_case and update refs",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.LocalCamelToSnakeDeclTransforms.transformPass
-        });
-        
-        // Bitwise import pass (should run early to add imports)
-        passes.push({
-            name: "BitwiseImport",
-            description: "Add Bitwise import when bitwise operators are used",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_bitwiseImportPass
-        });
-        
-        // Loop transformation pass (convert reduce_while patterns to idiomatic loops)
-        passes.push({
-            name: "LoopTransformation",
-            description: "Transform non-idiomatic loop patterns (reduce_while with Stream.iterate) to idiomatic Enum operations and comprehensions",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_loopTransformationPass
-        });
-
-        // Collapse simple temp-binding blocks in expression contexts
-        passes.push({
-            name: "InlineTempBindingInExpr",
-            description: "Collapse EBlock([tmp = exprA, exprB(tmp)]) to exprB(exprA) in expression positions",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.inlineTempBindingInExprPass
-        });
-
-        // Presence reduce rewrite very early to catch Enum.each over presence maps before other list rewrites
-        passes.push({
-            name: "PresenceReduceRewrite",
-            description: "Rewrite Presence Enum.each + Reflect.fields/Map.get scans to Enum.reduce(Map.values(map), [], ...) with conditional append",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
-        });
-
-        // Debug: XRay map field values that contain EBlock
-        passes.push({
-            name: "XRayMapBlocks",
-            description: "Debug pass to log map fields containing EBlock values",
-            enabled: #if debug_temp_binding true #else false #end,
-            pass: function(ast) {
-                return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node) {
-                    switch(node.def) {
-                        case EMap(pairs):
-                            for (p in pairs) {
-                                switch(p.value.def) {
-                                    case EBlock(exprs):
-                                        trace('[XRayMapBlocks] Found EBlock in map value with ' + exprs.length + ' exprs');
-                                        for (i in 0...exprs.length) trace('  expr[' + i + ']: ' + ElixirASTPrinter.print(exprs[i], 0));
-                                    default:
-                                }
-                            }
-                            return node;
-                        default:
-                            return node;
-                    }
-                });
-            }
-        });
+        // Phase: Early bootstrap (extracted to group, order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.EarlyBootstrap.build());
         
         // Module dependency requires pass (for standalone scripts)
         // NOTE: This is now handled directly in ModuleBuilder.generateRequireStatements
@@ -240,118 +84,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.presenceTransformPass
         });
         
-        // LiveView CoreComponents import pass (should run after Phoenix Component)
-        passes.push({
-            name: "LiveViewCoreComponentsImport",
-            description: "Add CoreComponents import for LiveView modules that use components",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_liveViewCoreComponentsImportPass
-        });
-
-        // Convert non-idiomatic handle_event(event, socket) case-dispatch into
-        // proper handle_event/3 callbacks for LiveView modules.
-        passes.push({
-            name: "LiveEventCaseToCallbacks",
-            description: "Rewrite handle_event/2 case dispatch into multiple handle_event/3 callbacks in LiveViews",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.LiveEventCaseToCallbacksTransforms.transformPass
-        });
-
-        // Bridge typed handleEvent(enum, socket) to idiomatic handle_event/3.
-        // This guarantees we do not rely on ad-hoc helper names and keeps
-        // behavior single-sourced in the typed function.
-        passes.push({
-            name: "LiveViewTypedEventBridge",
-            description: "Synthesize handle_event/3 callbacks from typed handleEvent/2 (enum) dispatcher",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
-        });
+        // Phoenix/LiveView core group (order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
         
-        // Phoenix function name mapping pass (transforms assign_multiple to assign, etc.)
-        passes.push({
-            name: "PhoenixFunctionMapping",
-            description: "Map custom function names to Phoenix conventions",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixFunctionMappingPass
-        });
-
-        // Inject `require Ecto.Query` in modules that call Ecto.Query macros (from/where/order_by/preload)
-        passes.push({
-            name: "EctoQueryRequireInjection",
-            description: "Add `require Ecto.Query` to modules that use Ecto.Query macros",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass
-        });
-        
-        passes.push({
-            name: "ControllerTransform",
-            description: "Transform @:controller modules into Phoenix.Controller structure",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.controllerTransformPass
-        });
-        // Controller local unused binder underscore (shape-based, avoids warnings)
-        passes.push({
-            name: "ControllerLocalUnusedUnderscore",
-            description: "In Controller modules, underscore unused local binders introduced by intermediate chains",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ControllerLocalUnusedUnderscoreTransforms.pass
-        });
-        
-        passes.push({
-            name: "RouterTransform",
-            description: "Transform @:router modules into Phoenix.Router structure",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.routerTransformPass
-        });
-        
-        passes.push({
-            name: "SchemaTransform",
-            description: "Transform @:schema modules into Ecto.Schema structure",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.schemaTransformPass
-        });
-        
-        passes.push({
-            name: "RepoTransform", 
-            description: "Transform @:repo modules into Ecto.Repo structure",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.repoTransformPass
-        });
-
-        passes.push({
-            name: "PostgrexTypesTransform",
-            description: "Transform @:postgrexTypes modules into Postgrex types definition",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.postgrexTypesTransformPass
-        });
-
-        passes.push({
-            name: "DbTypesTransform",
-            description: "Transform @:dbTypes modules into DB adapter types definition",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.dbTypesTransformPass
-        });
-        
-        passes.push({
-            name: "ApplicationTransform",
-            description: "Transform @:application modules into OTP Application structure",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.applicationTransformPass
-        });
-        
-        passes.push({
-            name: "ExUnitTransform",
-            description: "Transform @:exunit modules into ExUnit.Case test structure",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.exunitTransformPass
-        });
-        
-        passes.push({
-            name: "SupervisorTransform",
-            description: "Preserve supervisor functions from dead code elimination",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.supervisorTransformPass
-        });
+        // Phoenix/Ecto annotation-driven group (order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
         
         // Guard condition grouping pass (must run before other pattern transformations)
         passes.push({
@@ -543,77 +280,8 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.InterpolateIIFEWrapTransforms.pass
         });
 
-        // HXX control tag rewrite for ~H content
-        passes.push({
-            name: "HeexControlTagTransforms",
-            description: "Rewrite HXX-style <if>/<else> tags in ~H content to proper HEEx blocks",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
-        });
-
-        // Inline HXX.block(...) calls inside ~H to literal HTML before attribute normalization
-        passes.push({
-            name: "HeexRewriteHxxBlock",
-            description: "Replace <%= HXX.block(\"...\") %> residue in ~H with literal HTML",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
-        });
-
-        // Convert block-if with pure HTML branches into inline-if in ~H content
-        passes.push({
-            name: "HeexBlockIfToInline",
-            description: "Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.transformPass
-        });
-
-        // Normalize over-escaped quotes inside inline-if string branches
-        passes.push({
-            name: "HeexInlineIfQuoteNormalize",
-            description: "Reduce \\\" to \" inside quoted do/else branches of inline-if",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexInlineIfQuoteNormalizeTransforms.transformPass
-        });
-
-        // Collapse over-escaped quotes in ~H content (e.g., \\\" → \")
-        passes.push({
-            name: "HeexCollapseOverEscapedQuotes",
-            description: "Normalize double-escaped quotes inside ~H inline strings",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
-        });
-
-        // Normalize trailing whitespace: collapse multiple trailing blank lines to one
-        passes.push({
-            name: "HeexTrimTrailingBlankLines",
-            description: "Collapse multiple trailing blank lines in ~H content to a single line",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
-        });
-
-        // Remove isolated quote lines introduced by earlier inlining/normalization
-        passes.push({
-            name: "HeexStripDanglingQuoteLines",
-            description: "Drop lines that are solely a quote (' or \" ) inside ~H",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
-        });
-
-        // Normalize attribute-level EEx to HEEx attribute expressions { ... }
-        passes.push({
-            name: "HeexAttributeExprNormalize",
-            description: "Convert name=<%= expr %> and name=<% if ... %>... to name={...} inside ~H",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexAttributeExprNormalizeTransforms.transformPass
-        });
-
-        // Annotate ~H sigils with parsed fragment metadata for analysis (linters)
-        passes.push({
-            name: "HeexSigilFragmentAnnotator",
-            description: "Parse ~H content into lightweight fragment metadata (analysis only)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexSigilFragmentAnnotatorTransforms.transformPass
-        });
+        // HEEx/HXX prelude group (order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
         
         // Loop variable restoration pass (must run after string interpolation)
         passes.push({
@@ -732,65 +400,8 @@ class ElixirASTPassRegistry {
         // Array method transformations are handled in ElixirASTBuilder
         // at the TCall(TField(...)) pattern to generate idiomatic Elixir directly
         
-        // Unrolled loop transformation pass (should run early to fix unrolled patterns)
-        passes.push({
-            name: "UnrolledLoopTransform",
-            description: "Transform unrolled loops (sequential statements) back to Enum.each",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
-        });
-        
-        // Map iterator transformation pass (transforms g.next() patterns to idiomatic Elixir)
-        passes.push({
-            name: "MapIteratorTransform",
-            description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
-        });
-        
-        // Rewrite imperative var.set(key, value) calls to Map.put var rebinding
-        passes.push({
-            name: "MapSetRewrite",
-            description: "Rewrite var.set(key, value) to var = Map.put(var, :key, value)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapSetRewritePass
-        });
-        
-        // Loop to comprehension pass
-        #if !disable_comprehension_conversion
-        passes.push({
-            name: "ComprehensionConversion",
-            description: "Convert imperative loops to comprehensions",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_comprehensionConversionPass
-        });
-        #end
-        
-        // Unrolled comprehension optimization pass (MUST run before effect lifting)
-        // TODO: Fix implementation - functions need to be moved before this reference
-        /*
-        passes.push({
-            name: "UnrolledComprehensionOptimization",
-            description: "Optimize unrolled array comprehensions with bare concatenations",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_unrolledComprehensionOptimizationPass
-        });
-        */
-        
-        // Effect lifting for list literals pass
-        passes.push({
-            name: "ListEffectLifting",
-            description: "Lift side-effecting expressions out of list literals",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_listEffectLiftingPass
-        });
-        // Rewrite simple for-generators used for side effects into Enum.each immediately
-        passes.push({
-            name: "ForToEnumEachSideEffect",
-            description: "Rewrite EFor with side-effect body to Enum.each(collection, fn -> body end)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ForToEnumEachSideEffectTransforms.pass
-        });
+        // Collections and loops group (order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.CollectionsAndLoops.build());
         
         // Immutability transformation pass
         #if !disable_immutability_transform
@@ -3100,12 +2711,8 @@ class ElixirASTPassRegistry {
         // content embedded via <%= helper(...) %> is rendered as HEEx rather than escaped.
         // NOTE: This must run BEFORE any underscore-renaming of the `assigns` parameter,
         // because HEEx requires the parameter to be named exactly `assigns`.
-        passes.push({
-            name: "HeexStringReturnToSigil",
-            description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.transformPass
-        });
+        // HEEx/HXX main group (order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexMain.build());
 
         // After ~H sigils are materialized, rewrite HXX control tags to proper HEEx blocks
         passes.push({
@@ -3116,84 +2723,29 @@ class ElixirASTPassRegistry {
         });
 
         // Strip unnecessary .to_string() inside HEEx interpolations
-        passes.push({
-            name: "HeexStripToStringInSigils",
-            description: "Remove trailing .to_string() in <%= ... %> within ~H",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexStripToStringInSigilsTransforms.transformPass
-        });
 
         // Simplify trivial IIFE wrappers inside HEEx interpolations for readability/snapshots
-        passes.push({
-            name: "HeexSimplifyIIFEInInterpolations",
-            description: "Rewrite <%= (fn -> expr end).() %> → <%= expr %> inside ~H",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexSimplifyIIFEInInterpolations.transformPass
-        });
 
         // Qualify single-segment remote call modules inside Web.* namespaces (AppWeb prefix)
-        passes.push({
-            name: "WebRemoteCallModuleQualification",
-            description: "Rewrite Foo.bar(...) → AppWeb.Foo.bar(...) inside Web modules",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.WebRemoteCallModuleQualificationTransforms.pass
-        });
 
         // Rename `_assigns` parameter to `assigns` when function body contains ~H
-        passes.push({
-            name: "HeexAssignsParamRename",
-            description: "Rename _assigns → assigns in functions that contain ~H",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexAssignsParamRenameTransforms.transformPass
-        });
 
         // After ~H materialization and control-tag normalization, wrap interpolated
         // variables that are HEEx fragments/HTML strings with Phoenix.HTML.raw(var)
-        passes.push({
-            name: "HeexVariableRawWrap",
-            description: "Inside ~H, rewrite <%= var %> to raw(var) when var was bound from ~H or HTML string",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexVariableRawWrapTransforms.transformPass
-        });
 
         // After converting to ~H, ensure `use Phoenix.Component` is present so the
         // sigil is available. This ordering guarantees detection.
-        passes.push({
-            name: "PhoenixComponentImport",
-            description: "Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixComponentImportPass
-        });
 
         // Transitional safety: wrap helper calls inside ~H so they render unescaped while
         // we migrate remaining helpers to return ~H. This pass targets only render_* calls
         // and will be removed once all helpers are ~H (tracked in tasks).
-        passes.push({
-            name: "HeexRenderHelperCallWrap",
-            description: "Wrap <%= render_* %> calls inside ~H with Phoenix.HTML.raw(...) (transitional safety)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms.transformPass
-        });
 
 
         // Final HEEx control tag rewrite removed; handled by main HeexControlTagTransforms earlier
 
         // Assigns type linter: validate @field usage in ~H against typed assigns typedef
-        passes.push({
-            name: "HeexAssignsTypeLinter",
-            description: "Validate @assigns fields and literal comparisons in ~H against the Haxe typedef",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.transformPass,
-            contextualPass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.contextualPass
-        });
 
         // Ensure assigns exists for helpers that contain ~H sigils but lack assigns parameter
-        passes.push({
-            name: "HeexEnsureAssignsForNestedSigils",
-            description: "Wrap functions containing ~H without assigns param with assigns = %{}",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsForNestedSigilsTransforms.transformPass
-        });
 
         // Phoenix-scoped hygiene: underscore unused def/defp parameters in Web/Live/Presence modules
         passes.push({
@@ -3499,19 +3051,8 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachBinderIntegrityPass
         });
 
-        // Ultra-late: collapse over-escaped quotes in ~H content once more after all passes
-        passes.push({
-            name: "HeexCollapseOverEscapedQuotes_Final",
-            description: "Final normalization of escaped quotes inside ~H inline strings",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
-        });
-        passes.push({
-            name: "HeexTrimTrailingBlankLines_Final",
-            description: "Final collapse of trailing blank lines in ~H content to match snapshot style",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
-        });
+        // HEEx final tidy-up
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexFinal.build());
         passes.push({
             name: "CountRewrite",
             description: "Rewrite accumulator-style counting loops to Enum.count(list, &pred/1)",

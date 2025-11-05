@@ -1,0 +1,86 @@
+package reflaxe.elixir.ast.transformers.registry.groups;
+
+#if (macro || reflaxe_runtime)
+import reflaxe.elixir.ast.ElixirASTTransformer;
+
+/**
+ * HeexPrelude
+ *
+ * WHAT
+ * - Early HEEx/HXX rewrites that immediately follow interpolation normalization.
+ *
+ * WHY
+ * - Keep registry modular; preserve exact behavior.
+ */
+class HeexPrelude {
+  public static function build():Array<ElixirASTTransformer.PassConfig> {
+    var passes:Array<ElixirASTTransformer.PassConfig> = [];
+
+    passes.push({
+      name: "HeexControlTagTransforms",
+      description: "Rewrite HXX-style <if>/<else> tags in ~H content to proper HEEx blocks",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexControlTagTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexRewriteHxxBlock",
+      description: "Replace <%= HXX.block(\"...\") %> residue in ~H with literal HTML",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexBlockIfToInline",
+      description: "Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexInlineIfQuoteNormalize",
+      description: "Reduce \\\" to \" inside quoted do/else branches of inline-if",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexInlineIfQuoteNormalizeTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexCollapseOverEscapedQuotes",
+      description: "Normalize double-escaped quotes inside ~H inline strings",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexTrimTrailingBlankLines",
+      description: "Collapse multiple trailing blank lines in ~H content to a single line",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexStripDanglingQuoteLines",
+      description: "Drop lines that are solely a quote (' or \" ) inside ~H",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexAttributeExprNormalize",
+      description: "Convert name=<%= expr %> and name=<% if ... %>... to name={...} inside ~H",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexAttributeExprNormalizeTransforms.transformPass
+    });
+
+    passes.push({
+      name: "HeexSigilFragmentAnnotator",
+      description: "Parse ~H content into lightweight fragment metadata (analysis only)",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexSigilFragmentAnnotatorTransforms.transformPass
+    });
+
+    return passes;
+  }
+}
+#end
+

@@ -30,6 +30,33 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Runs absolute-ultimate in the handle_event cluster.
  */
 class HandleEventArg0FromValueToIdUltimateTransforms {
+  /**
+   * EXAMPLES
+   * Haxe (snapshot: liveview/handle_event_value_to_id):
+   *   @:liveview class Main {
+   *     public static function handle_event(event:String, params:Dynamic, socket:Dynamic) {
+   *       switch (event) {
+   *         case "toggle_todo": toggleTodo(params.value, socket);
+   *         default:
+   *       }
+   *       return {status: "noreply", socket: socket};
+   *     }
+   *   }
+   * Elixir (before):
+   *   toggle_todo(Map.get(params, "value"), socket)
+   * Elixir (after):
+   *   id_raw = (
+   *     case Kernel.is_map(Map.get(params, "value")) do
+   *       true -> Map.get(Map.get(params, "value"), "id", Map.get(params, "id", params))
+   *       false -> case Kernel.is_binary(Map.get(params, "value")) do
+   *         true -> Map.get(URI.decode_query(Map.get(params, "value")), "id", Map.get(params, "id", params))
+   *         false -> Map.get(params, "id", params)
+   *       end
+   *     end
+   *   )
+   *   id = if Kernel.is_binary(id_raw), do: String.to_integer(id_raw), else: id_raw
+   *   toggle_todo(id, socket)
+   */
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
