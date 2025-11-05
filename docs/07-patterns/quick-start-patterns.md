@@ -760,3 +760,8 @@ After using these patterns:
 ---
 
 **These patterns cover 90% of common Reflaxe.Elixir use cases. Copy, paste, and customize as needed!**
+## ⚡ Optimistic Updates (LiveView)
+
+For a copy‑paste ready pattern and an explanation of when to use optimistic vs. server‑first flows, see:
+
+- Optimistic Updates in LiveView (Haxe → Elixir): docs/07-patterns/optimistic-updates-liveview.md
