@@ -1,0 +1,8 @@
+-cp src
+-cp tools
+-main tools.RegistryOrderDoc
+ -js bin/registry_order.js
+ -lib reflaxe
+ 
+ -D reflaxe_runtime
+ -D elixir_runtime
