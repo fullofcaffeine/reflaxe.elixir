@@ -456,33 +456,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass
         });
-        // Early chain assign normalization to catch reduce_while bodies before later rewraps
-        passes.push({
-            name: "AssignChainGenericSimplify_Early",
-            description: "EARLY: split a = (b = rhs) into b = rhs; a = b (reduce_while bodies)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.transformPass
-        });
-        passes.push({
-            name: "AssignAliasIfPromote_Early",
-            description: "EARLY: promote a=b; if cond(a) … else b -> a=if cond(b) …",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AssignAliasIfPromoteTransforms.transformPass
-        });
-        passes.push({
-            name: "ChainAssignIfPromote_Early",
-            description: "EARLY: promote a=(b=rhs); if … else b → b=rhs; a=if … else b",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ChainAssignIfPromoteTransforms.transformPass
-        });
-
-        // Node-level fold for RHS two-statement blocks under assignment
-        passes.push({
-            name: "AssignIfFoldInRhs_Early",
-            description: "EARLY: fold a = (b=rhs; if … else b) into b=rhs; a=if … else b (statement contexts)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.transformPass
-        });
+        // Early chain assign normalization group (order preserved)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.AssignChainEarly.build());
         
         // Struct field update transformation (removes problematic field assignments)
         passes.push({
