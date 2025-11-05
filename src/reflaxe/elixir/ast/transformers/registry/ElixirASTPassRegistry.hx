@@ -213,72 +213,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseScrutineeHoistInAssignTransforms.pass
         });
-        // If an empty-list clause has a guard that implies non-empty (arr[0], length>1),
-        // rewrite the clause to a cons pattern and repair the guard to use head/tail.
-        passes.push({
-            name: "CaseListGuardToCons",
-            description: "Rewrite [] with non-empty guard → [head|tail] with repaired guard",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.CaseListGuardToConsTransforms.pass
-        });
-        // First, rewrite free-var guard references (e.g., [] when arr[0]...) to the scrutinee
-        passes.push({
-            name: "CaseGuardFreeVarToScrutinee",
-            description: "Rewrite guard refs to clause-local free vars → scrutinee var",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.CaseGuardFreeVarToScrutineeTransforms.pass
-        });
-        // Normalize []-with-non-empty guards to [first|rest] before further guard rewrites
-        passes.push({
-            name: "CaseEmptyListGuardNormalize",
-            description: "Rewrite [] guards implying non-empty → [first|rest] with repaired guard",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.CaseEmptyListGuardNormalizeTransforms.pass
-        });
-        // After scrutinee normalization and list-pattern rewrite, repair guards to reference head/tail binders
-        // instead of listVar[0] and length(listVar) > 1.
-        passes.push({
-            name: "ListGuardIndexToHead",
-            description: "Rewrite guards: list[0] → head; length(list) > 1 → tail != []",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ListGuardIndexToHeadTransforms.pass
-        });
-        passes.push({
-            name: "FunctionArgBlockToIIFE_Pre",
-            description: "Wrap multi-statement EBlock arguments in (fn -> ... end).() before interpolation",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FunctionArgBlockToIIFETransforms.pass
-        });
-
-        // Ensure conservative local ref alignment happens before string interpolation, so
-        // variables referenced inside #{...} closures are already resolved to declared binders.
-        passes.push({
-            name: "FinalLocalReferenceAlign_PreInterpolation",
-            description: "Map refs to declared locals (name->_name, nameN->name, camel->snake, updated->ok_*) prior to interpolation",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FinalLocalReferenceAlignTransforms.pass
-        });
-
-        // String interpolation transformation (should run before constant folding)
-        passes.push({
-            name: "StringInterpolation",
-            description: "Convert string concatenation to idiomatic string interpolation",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_stringInterpolationPass
-        });
-        // Post-interpolation: ensure any Enum.join(<block>, sep) inside #{...} is valid
-        passes.push({
-            name: "InterpolateJoinArgSanitize",
-            description: "Wrap Enum.join first arg as IIFE inside interpolation when it contains statements",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InterpolateJoinArgSanitizeTransforms.pass
-        });
-        passes.push({
-            name: "InterpolateIIFEWrap",
-            description: "Force-wrap all #{...} bodies in an IIFE to ensure a single valid expression",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InterpolateIIFEWrapTransforms.pass
-        });
+        // Guard + interpolation prelude (order preserved via group)
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.CoreGuardsAndInterpolation.build());
 
         // HEEx/HXX prelude group (order preserved)
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
