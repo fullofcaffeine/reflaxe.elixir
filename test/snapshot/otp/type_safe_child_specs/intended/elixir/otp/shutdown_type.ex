@@ -1,11 +1,11 @@
 defmodule Elixir.Otp.ShutdownType do
   def brutal() do
-    {0}
+    {:brutal}
   end
   def timeout(arg0) do
-    {1, arg0}
+    {:timeout, arg0}
   end
   def infinity() do
-    {2}
+    {:infinity}
   end
 end

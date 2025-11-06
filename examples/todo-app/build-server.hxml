@@ -64,12 +64,15 @@
 -D reflaxe.elixir=0.1.0
 --macro reflaxe.elixir.CompilerInit.Start()
 
-# Debug specific late passes (temporary, development only)
--D debug_success_unifier
--D debug_presence
+# Debug flags are disabled by default to keep QA builds quiet and fast
+# -D debug_success_unifier
+# -D debug_presence
 
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
+
+# Silence compiler debug traces for QA speed and signal clarity
+-D no-traces
 
 # Main server classes to compile
 TodoApp

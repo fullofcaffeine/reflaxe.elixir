@@ -46,7 +46,7 @@ class CaseScrutineeVarToTupleBinderTransforms {
   static function rewriteClause(cl: ECaseClause, scrutVar:String): ECaseClause {
     var binder: Null<String> = extractSecondBinder(cl.pattern);
     if (binder == null) return cl;
-    #if sys Sys.println('[CaseScrutineeVarToTuple] scrutinee=' + scrutVar + ' -> binder=' + binder); #end
+    #if (sys && debug_ast_transformer) Sys.println('[CaseScrutineeVarToTuple] scrutinee=' + scrutVar + ' -> binder=' + binder); #end
     var newBody = substituteVar(cl.body, scrutVar, binder);
     return { pattern: cl.pattern, guard: cl.guard, body: newBody };
   }

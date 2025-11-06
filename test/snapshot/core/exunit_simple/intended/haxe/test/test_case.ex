@@ -5,10 +5,10 @@ defmodule TestCase do
   def setup_all(struct, context) do
     context
   end
-  def teardown(struct, _context) do
+  def teardown(struct, context) do
     
   end
-  def teardown_all(struct, _context) do
+  def teardown_all(struct, context) do
     
   end
 end

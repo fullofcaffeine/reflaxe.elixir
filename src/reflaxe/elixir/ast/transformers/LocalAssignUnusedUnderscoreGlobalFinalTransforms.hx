@@ -67,11 +67,31 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 
   static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
     var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
+    inline function containsInString(src:String, needle:String):Bool {
+      if (src == null) return false;
+      // quick check: must have interpolation marker
+      if (src.indexOf("#{") < 0) return false;
+      // conservative: substring match on needle inside string
+      return src.indexOf(needle) >= 0;
     }
+    function walk(n:ElixirAST):Void {
+      if (found || n == null || n.def == null) return;
+      switch (n.def) {
+        case EVar(v) if (v == name): found = true;
+        case EString(s) if (containsInString(s, name)): found = true;
+        case ERaw(code) if (containsInString(code, name)): found = true;
+        case EBlock(ss): for (e in ss) walk(e);
+        case EDo(ss2): for (e in ss2) walk(e);
+        case EBinary(_, l, r): walk(l); walk(r);
+        case EMatch(_, rhs): walk(rhs);
+        case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+        case ECase(expr, cs): walk(expr); for (c in cs) walk(c.body);
+        case ECall(t,_,args): if (t != null) walk(t); for (a in args) walk(a);
+        case ERemoteCall(t2,_,args2): walk(t2); for (a in args2) walk(a);
+        default:
+      }
+    }
+    for (j in start...stmts.length) if (!found) walk(stmts[j]);
     return found;
   }
 }

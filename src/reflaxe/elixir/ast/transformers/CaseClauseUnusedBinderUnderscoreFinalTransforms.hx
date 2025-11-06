@@ -49,8 +49,39 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 
   static function collectUsed(ast: ElixirAST): Map<String,Bool> {
     var names = new Map<String,Bool>();
+    // Helper to mark identifiers found inside interpolation blocks
+    inline function markInterpolations(s:String):Void {
+      if (s == null) return;
+      var reBlock = new EReg("\\#\\{([^}]*)\\}", "g");
+      var pos = 0;
+      while (reBlock.matchSub(s, pos)) {
+        var inner = reBlock.matched(1);
+        var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+        var tpos = 0;
+        while (tok.matchSub(inner, tpos)) {
+          var id = tok.matched(0);
+          // Only track lowercase/underscore-start identifiers as potential locals
+          if (id != null && id.length > 0) {
+            var c = id.charAt(0);
+            if (c == c.toLowerCase()) names.set(id, true);
+          }
+          tpos = tok.matchedPos().pos + tok.matchedPos().len;
+        }
+        pos = reBlock.matchedPos().pos + reBlock.matchedPos().len;
+      }
+    }
+
     ASTUtils.walk(ast, function(x: ElixirAST) {
-      switch (x.def) { case EVar(v): names.set(v, true); default: }
+      if (x == null || x.def == null) return;
+      switch (x.def) {
+        case EVar(v):
+          names.set(v, true);
+        case EString(s):
+          markInterpolations(s);
+        case ERaw(code):
+          markInterpolations(code);
+        default:
+      }
     });
     return names;
   }

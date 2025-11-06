@@ -1,56 +1,50 @@
 defmodule Output do
-  @big_endian nil
-  defp set_big_endian(struct, b) do
-    b
-  end
-  def write_byte(struct, _c) do
-    nil
+  def write_byte(struct, c) do
+    
   end
   def write_bytes(struct, b, pos, len) do
-    if (pos < 0 || len < 0 || pos + len > length(b)) do
+    if (pos < 0 or len < 0 or pos + len > length(b)) do
       throw("Invalid parameters")
     end
-    k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
-  if (acc_k > 0) do
-    struct.write_byte(:binary.at(b, pos))
-    acc_pos = acc_pos + 1
-    acc_k = (acc_k - 1)
-    {:cont, {acc_pos, acc_k, acc_state}}
-  else
-    {:halt, {acc_pos, acc_k, acc_state}}
-  end
-end)
+    _ = len
+    _ = Enum.each(k, (fn -> fn item ->
+  item.writeByte(item.get(item))
+  item + 1
+  (item - 1)
+end end).())
     len
   end
   def write(struct, b) do
-    struct.write_bytes(b, 0, b.length)
+    struct.writeBytes(b, 0, length(b))
   end
-  def write_input(struct, _i, bufsize) do
-    if (bufsize == nil) do
+  def write_input(struct, i, bufsize) do
+    if (Kernel.is_nil(bufsize)) do
       bufsize = 4096
     end
-    buf = Bytes.alloc(bufsize)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if true do
-    len = _i.read_bytes(buf, 0, bufsize)
+    _ = MyApp.Bytes.alloc(bufsize)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, (fn -> fn _, acc ->
+  if (true) do
+    len = i.readBytes(buf, 0, bufsize)
     if (len == 0) do
       throw(:break)
     end
-    struct.write_bytes(buf, 0, len)
+    struct.writeBytes(buf, 0, len)
     {:cont, acc}
   else
     {:halt, acc}
   end
-end)
+end end).())
+    _
   end
   def write_string(struct, s) do
-    struct.write((Bytes.of_string(s, nil)))
+    b = MyApp.Bytes.of_string(s, nil)
+    _ = struct.write(b)
+    _
   end
   def flush(struct) do
-    nil
+    
   end
   def close(struct) do
-    nil
+    
   end
 end

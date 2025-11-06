@@ -16,6 +16,9 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_DIR := $(MAKEFILE_DIR)snapshot
 NEGATIVE_DIR := $(TEST_DIR)/negative
 TIMEOUT := 120s
+# Timeout for snapshot updates (reuses TIMEOUT by default)
+UPDATE_TIMEOUT ?= $(TIMEOUT)
+UPDATE_JOBS ?= 4
 OUTPUT_DIR := out
 
 # Pipeline Selection
@@ -155,11 +158,11 @@ neg-%:
 	start=$$(date +%s); \
 	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$.tmp; \
+    echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		exit 1; \
 	else \
 		end=$$(date +%s); duration=$$((end - start)); \
-		echo "NEG-OK $$name ($${duration}s)" | tee -a test-results-$$$.tmp; \
+    echo "NEG-OK $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 	fi; \
 	}
 
@@ -258,19 +261,24 @@ update-intended:
 			echo "❌ Test not found: $(TEST)"; \
 			exit 1; \
 		fi; \
-		echo "Compiling $(TEST) to generate new output..."; \
-		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml 2>/dev/null && \
-		if [ -d $(OUTPUT_DIR) ]; then \
-			rm -rf intended && \
-			cp -r $(OUTPUT_DIR) intended && \
+		echo "Compiling $(TEST) to generate new output via test target (timeout $(UPDATE_TIMEOUT))..."; \
+		test_name=$$(echo "$(TEST)" | sed 's|/|__|g'); \
+		if timeout $(UPDATE_TIMEOUT) $(MAKE) -f $(MAKEFILE_LIST) -j1 test-$$test_name >/dev/null 2>&1 || true; then \
+		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+			rm -rf $$testdir/intended && \
+			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
 			echo "✅ Updated intended output for $(TEST)"; \
 		else \
 			echo "❌ No output generated for $(TEST)"; \
 			exit 1; \
 		fi; \
+		else \
+			echo "❌ Compile timeout/failed for $(TEST) (limit $(UPDATE_TIMEOUT))"; \
+			exit 1; \
+		fi; \
 	else \
 		echo "Updating intended output for all tests (parallel with -j flag)..."; \
-		$(MAKE) -f $(MAKEFILE_LIST) -j8 update-all-parallel; \
+		$(MAKE) -f $(MAKEFILE_LIST) -j$(UPDATE_JOBS) update-all-parallel; \
 	fi
 
 # Parallel update all target
@@ -278,23 +286,63 @@ update-intended:
 update-all-parallel: $(UPDATE_TARGETS)
 	@echo "✅ Finished updating all intended outputs"
 
-# Individual update targets for parallel execution
+# Individual update targets for parallel execution (static list)
 # Converts double underscores back to slashes for nested directories
 $(UPDATE_TARGETS): update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml 2>/dev/null 1>/dev/null && \
-		if [ -d $(OUTPUT_DIR) ]; then \
-			rm -rf intended && \
-			cp -r $(OUTPUT_DIR) intended && \
+		# Direct build for update to avoid nested make quoting issues
+		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+			rm -rf $$testdir/intended && \
+			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
 			echo "✅ $$testname"; \
 		else \
 			echo "❌ $$testname (no output)"; \
 		fi; \
+		else \
+			echo "❌ $$testname (timeout/fail)"; \
+		fi; \
 	else \
 		echo "❌ $$testname (not found)"; \
 	fi
+
+# Generic pattern rule so update-list can spawn arbitrary update-* targets
+update-%:
+	@testname=$$(echo $* | sed 's|__|/|g'); \
+	testdir=$(TEST_DIR)/$$testname; \
+	if [ -f $$testdir/compile.hxml ]; then \
+		# Direct build for update to avoid nested make quoting issues
+		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+			rm -rf $$testdir/intended && \
+			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
+			echo "✅ $$testname"; \
+		else \
+			echo "❌ $$testname (no output)"; \
+		fi; \
+		else \
+			echo "❌ $$testname (timeout/fail)"; \
+		fi; \
+	else \
+		echo "❌ $$testname (not found)"; \
+	fi
+
+# Update a list of tests in parallel: LIST=file with newline-separated snapshot paths
+.PHONY: update-list
+update-list:
+	@if [ -z "$(LIST)" ]; then \
+		echo "Usage: make update-list LIST=path/to/tests.txt [UPDATE_JOBS=4]"; \
+		echo "Each line should be like: core/pattern_matching or phoenix/hxx_template"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "$(LIST)" ]; then \
+		echo "❌ LIST file not found: $(LIST)"; \
+		exit 1; \
+	fi; \
+	TARGETS=$$(sed 's|/|__|g; s|^|update-|g' "$(LIST)" | tr '\n' ' '); \
+	$(MAKE) -f $(MAKEFILE_LIST) -j$(UPDATE_JOBS) $$TARGETS
 
 # Run a single test by name (convenience target)
 # Accepts both formats: stdlib/array_cross_operations or stdlib__array_cross_operations

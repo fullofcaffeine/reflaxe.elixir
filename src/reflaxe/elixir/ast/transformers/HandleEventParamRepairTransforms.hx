@@ -24,7 +24,7 @@ import reflaxe.elixir.ast.ASTUtils;
  */
 class HandleEventParamRepairTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {
-    #if sys Sys.println('[HandleEventRepair] pass start'); #end
+    #if debug_ast_transformer Sys.println('[HandleEventRepair] pass start'); #end
     return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
       return switch (node.def) {
         case EModule(name, attrs, body):
@@ -37,7 +37,7 @@ class HandleEventParamRepairTransforms {
           for (s in stmts) out2.push(transformPass(s));
           makeASTWithMeta(EDefmodule(modName, makeAST(EBlock(out2))), node.metadata, node.pos);
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
-          #if sys Sys.println('[HandleEventRepair] EDef handle_event found'); #end
+          #if debug_ast_transformer Sys.println('[HandleEventRepair] EDef handle_event found'); #end
           var paramVar = extractParamsVarName(args);
           var nb = repair(body, paramVar);
           makeASTWithMeta(EDef(name, args, guards, nb), node.metadata, node.pos);
@@ -46,12 +46,12 @@ class HandleEventParamRepairTransforms {
           if (nameAny == "handle_event") {
             var kinds = [];
             if (argsAny != null) for (a in argsAny) kinds.push(Type.enumConstructor(a));
-            Sys.println('[HandleEventRepair] saw handle_event arity=' + (argsAny != null ? Std.string(argsAny.length) : 'null') + ' argKinds=' + kinds.join('|'));
+            #if debug_ast_transformer Sys.println('[HandleEventRepair] saw handle_event arity=' + (argsAny != null ? Std.string(argsAny.length) : 'null') + ' argKinds=' + kinds.join('|')); #end
           }
           #end
           node;
         case EDefp(name, args, guards, body) if (isHandleEvent3(name, args)):
-          #if sys Sys.println('[HandleEventRepair] EDefp handle_event found'); #end
+          #if debug_ast_transformer Sys.println('[HandleEventRepair] EDefp handle_event found'); #end
           var paramVar2 = extractParamsVarName(args);
           var nb2 = repair(body, paramVar2);
           makeASTWithMeta(EDefp(name, args, guards, nb2), node.metadata, node.pos);
@@ -60,7 +60,7 @@ class HandleEventParamRepairTransforms {
           if (nameAny2 == "handle_event") {
             var kinds2 = [];
             if (argsAny2 != null) for (a2 in argsAny2) kinds2.push(Type.enumConstructor(a2));
-            Sys.println('[HandleEventRepair] saw defp handle_event arity=' + (argsAny2 != null ? Std.string(argsAny2.length) : 'null') + ' argKinds=' + kinds2.join('|'));
+            #if debug_ast_transformer Sys.println('[HandleEventRepair] saw defp handle_event arity=' + (argsAny2 != null ? Std.string(argsAny2.length) : 'null') + ' argKinds=' + kinds2.join('|')); #end
           }
           #end
           node;
@@ -155,9 +155,15 @@ class HandleEventParamRepairTransforms {
       // visibility: log discarded Map.get keys as we traverse
       switch (n.def) {
         case EBinary(Match, {def: EVar("_")}, rhsD):
-          var k = extractMapGetKey(rhsD); if (k != null) #if sys Sys.println('[HandleEventRepair] seen _ = Map.get(..., \'' + k + '\')'); #end
+          var k = extractMapGetKey(rhsD);
+          #if debug_ast_transformer
+          if (k != null) Sys.println('[HandleEventRepair] seen _ = Map.get(..., ' + k + ')');
+          #end
         case EMatch(PVar("_"), rhsD2):
-          var k2 = extractMapGetKey(rhsD2); if (k2 != null) #if sys Sys.println('[HandleEventRepair] seen _ <- Map.get(..., \'' + k2 + '\')'); #end
+          var k2 = extractMapGetKey(rhsD2);
+          #if debug_ast_transformer
+          if (k2 != null) Sys.println('[HandleEventRepair] seen _ <- Map.get(..., ' + k2 + ')');
+          #end
         default:
       }
       return rewriteUnderscoreAssign(n, need);

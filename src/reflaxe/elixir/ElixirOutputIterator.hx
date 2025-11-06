@@ -133,18 +133,6 @@ class ElixirOutputIterator {
         
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
-        trace('[ElixirOutputIterator] AST data type: ${astData.data.def}');
-        trace('[ElixirOutputIterator] AST metadata: ${astData.data.metadata}');
-        // Check if it's a module and print the exact metadata fields
-        switch(astData.data.def) {
-            case EDefmodule(name, _):
-                trace('[ElixirOutputIterator] Module name: $name');
-                if (astData.data.metadata != null) {
-                    trace('[ElixirOutputIterator] Module metadata.isExunit: ${astData.data.metadata.isExunit}');
-                    trace('[ElixirOutputIterator] Module metadata fields: ${Reflect.fields(astData.data.metadata)}');
-                }
-            default:
-        }
         #end
         
         // Apply transformation passes to the AST
@@ -153,9 +141,7 @@ class ElixirOutputIterator {
         // Pass the context to ensure metadata is available to transformation passes
         final transformedAST = ElixirASTTransformer.transform(astData.data, context);
 
-        #if debug_output_iterator
-        trace('[ElixirOutputIterator] Transformation complete');
-        #end
+        #if debug_output_iterator trace('[ElixirOutputIterator] Transformation complete'); #end
 
         // Generic gating: suppress emission of compile-time-only empty modules
         // WHAT: Avoid generating `.ex` files for modules that have no runtime content
@@ -170,14 +156,9 @@ class ElixirOutputIterator {
         var output = ElixirASTPrinter.print(transformedAST, 0);
 
         // Debug: Check if we're getting empty output
-        if (output == null || output.length == 0) {
-            trace('[ElixirOutputIterator ERROR] Empty output for module!');
-            trace('[ElixirOutputIterator] AST def: ${transformedAST.def}');
-        }
+        if (output == null || output.length == 0) { /* silent by default */ }
         
-        #if debug_output_iterator
-        trace('[ElixirOutputIterator] Generated ${output.length} characters of output');
-        #end
+        #if debug_output_iterator trace('[ElixirOutputIterator] Generated ${output.length} characters of output'); #end
         
         // Inline-deterministic strategy: inject requires + Module.main() into the
         // module file AFTER compilation using the full dependency graph.

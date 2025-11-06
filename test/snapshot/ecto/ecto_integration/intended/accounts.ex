@@ -1,18 +1,20 @@
 defmodule Accounts do
   def list_users() do
-    MyApp.Repo.all(:user)
+    MyApp.Repo.all(User)
   end
   def get_user(id) do
-    MyApp.Repo.get(:user, id)
+    MyApp.Repo.get(MyApp.User, id)
   end
   def create_user(attrs) do
-    user = %user{}
-    changeset = MyApp.UserChangeset.changeset(user, attrs)
-    MyApp.Repo.insert(changeset)
+    _ = %user{}
+    _ = MyApp.UserChangeset.changeset(user, attrs)
+    _ = MyApp.Repo.insert(changeset)
+    _
   end
   def update_user(user, attrs) do
-    changeset = MyApp.UserChangeset.changeset(user, attrs)
-    MyApp.Repo.update(changeset)
+    _ = MyApp.UserChangeset.changeset(user, attrs)
+    _ = MyApp.Repo.update(changeset)
+    _
   end
   def delete_user(user) do
     MyApp.Repo.delete(user)

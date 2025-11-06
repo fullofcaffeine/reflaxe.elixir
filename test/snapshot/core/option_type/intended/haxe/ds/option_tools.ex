@@ -1,202 +1,138 @@
 defmodule OptionTools do
-  def map(_option, transform) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        transform.(value)
-      {:none} ->
-        :none
-    end
+  def map(option, transform) do
+    (case option do
+      {:some, value} ->
+        value.(value)
+      {:none} -> {:none}
+    end)
   end
-  def then(_option, transform) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        transform.(value)
-      {:none} ->
-        :none
-    end
+  def then(option, transform) do
+    (case option do
+      {:some, value} ->
+        value.(value)
+      {:none} -> {:none}
+    end)
   end
   def flat_map(option, transform) do
     then(option, transform)
   end
-  def flatten(_option) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        inner = g
-        inner
-      {:none} ->
-        :none
-    end
+  def flatten(option) do
+    (case option do
+      {:some, inner} -> inner
+      {:none} -> {:none}
+    end)
   end
-  def filter(_option, predicate) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        if (predicate.(value)), do: value, else: :none
-      {:none} ->
-        :none
-    end
+  def filter(option, predicate) do
+    (case option do
+      {:some, value} when predicate.(value) -> value
+      {:some, payload} -> {:none}
+      {:none} -> {:none}
+    end)
   end
-  def unwrap(_option, default_value) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        value
-      {:none} ->
-        default_value
-    end
+  def unwrap(option, default_value) do
+    (case option do
+      {:some, value} -> default_value
+      {:none} -> default_value
+    end)
   end
-  def lazy_unwrap(_option, fn_param) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        value
+  def lazy_unwrap(option, fn_param) do
+    (case option do
+      {:some, value} -> value
       {:none} ->
         fn_param.()
-    end
+    end)
   end
   def or_fn(first, second) do
-    case (first) do
-      {:some, g} ->
-        _g = elem(first, 1)
-        first
-      {:none} ->
-        second
-    end
+    (case first do
+      {:some, value} -> value
+      {:none} -> second
+    end)
   end
   def lazy_or(first, fn_param) do
-    case (first) do
-      {:some, g} ->
-        _g = elem(first, 1)
-        first
+    (case first do
+      {:some, value} -> value
       {:none} ->
         fn_param.()
-    end
+    end)
   end
-  def is_some(_option) do
-    case (_option) do
-      {:some, g} ->
-        _g = elem(_option, 1)
-        true
-      {:none} ->
-        false
-    end
+  def is_some(option) do
+    (case option do
+      {:some, value} -> true
+      {:none} -> false
+    end)
   end
-  def is_none(_option) do
-    case (_option) do
-      {:some, g} ->
-        _g = elem(_option, 1)
-        false
-      {:none} ->
-        true
-    end
+  def is_none(option) do
+    (case option do
+      {:some, value} -> false
+      {:none} -> true
+    end)
   end
   def all(options) do
     values = []
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
-  if (acc_g < length(acc_options)) do
-    option = acc_options[acc_g]
-    acc_g = acc_g + 1
-    nil
-    {:cont, {acc_options, acc_g, acc_state}}
-  else
-    {:halt, {acc_options, acc_g, acc_state}}
-  end
-end)
+    _ = Enum.each(options, (fn -> fn item ->
+    (case item do
+    {:some, value} ->
+      item = Enum.concat(item, [item])
+    {:none} -> {:none}
+  end)
+end end).())
     {:some, values}
   end
   def values(options) do
-    result = []
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
-  if (acc_g < length(acc_options)) do
-    option = acc_options[acc_g]
-    acc_g = acc_g + 1
-    nil
-    {:cont, {acc_options, acc_g, acc_state}}
-  else
-    {:halt, {acc_options, acc_g, acc_state}}
+    _ = Enum.each(options, (fn -> fn item ->
+    (case item do
+    {:some, value} ->
+      item = Enum.concat(item, [item])
+    {:none} -> nil
+  end)
+end end).())
+    []
   end
-end)
-    result
+  def to_result(option, error) do
+    (case option do
+      {:some, value} -> value
+      {:none} -> error
+    end)
   end
-  def to_result(_option, error) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        value
-      {:none} ->
-        error
-    end
-  end
-  def from_result(_result) do
-    case (_result) do
-      {:ok, g} ->
-        g = elem(_result, 1)
-        value = g
-        value
-      {:error, g} ->
-        _g = elem(_result, 1)
-        :none
-    end
+  def from_result(result) do
+    (case result do
+      {:ok, value} -> value
+      {:error, value} -> {:none}
+    end)
   end
   def from_nullable(value) do
-    if (value != nil), do: value, else: :none
+    if (not Kernel.is_nil(value)), do: {:some, value}, else: {:none}
   end
-  def to_nullable(_option) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        value
-      {:none} ->
-        nil
-    end
+  def to_nullable(option) do
+    (case option do
+      {:some, value} -> value
+      {:none} -> nil
+    end)
   end
-  def to_reply(_option) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        %{:reply => value, :status => "ok"}
-      {:none} ->
-        %{:reply => nil, :status => "none"}
-    end
+  def to_reply(option) do
+    (case option do
+      {:some, value} -> %{:reply => value, :status => "ok"}
+      {:none} -> %{:reply => nil, :status => "none"}
+    end)
   end
-  def expect(_option, _message) do
-    case (_option) do
-      {:some, g} ->
-        g = elem(_option, 1)
-        value = g
-        value
-      {:none} ->
-        throw("Expected Some value but got None: " <> _message)
-    end
+  def expect(option, message) do
+    (case option do
+      {:some, value} -> value
+      {:none} -> throw("Expected Some value but got None: " <> message)
+    end)
   end
   def some(value) do
     {:some, value}
   end
   def none() do
-    :none
+    {:none}
   end
   def apply(option, fn_param) do
-    case (option) do
-      {:some, g} ->
-        g = elem(option, 1)
-        value = g
-        fn_param.(value)
-      {:none} ->
-        nil
-    end
+    (case option do
+      {:some, fn_param} ->
+        fn_param.(fn_param)
+      {:none} -> nil
+    end)
     option
   end
 end

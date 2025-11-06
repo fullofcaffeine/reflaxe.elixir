@@ -1,6 +1,5 @@
 defmodule MyComplexWorker do
-  @config nil
-  def start_link(_args) do
+  def start_link(args) do
     {"ok", "complex_worker_pid"}
   end
 end

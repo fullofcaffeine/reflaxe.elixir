@@ -47,9 +47,35 @@ class CasePatternUnusedBinderUnderscoreTransforms {
     }
     if (name == null) return cl;
     var used = false;
+    // Detect direct AST variable references
     reflaxe.elixir.ast.ASTUtils.walk(cl.body, function(n:ElixirAST){
       switch (n.def) { case EVar(v) if (v == name): used = true; default: }
     });
+    // Also detect references inside string/raw interpolations: #{...}
+    inline function markInterpolations(s:String):Void {
+      if (used || s == null) return;
+      var reBlock = new EReg("\\#\\{([^}]*)\\}", "g");
+      var pos = 0;
+      while (!used && reBlock.matchSub(s, pos)) {
+        var inner = reBlock.matched(1);
+        var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+        var tpos = 0;
+        while (!used && tok.matchSub(inner, tpos)) {
+          if (tok.matched(0) == name) used = true;
+          tpos = tok.matchedPos().pos + tok.matchedPos().len;
+        }
+        pos = reBlock.matchedPos().pos + reBlock.matchedPos().len;
+      }
+    }
+    switch (cl.body.def) {
+      case EString(s): markInterpolations(s);
+      case ERaw(code): markInterpolations(code);
+      default:
+        // Walk subtree for nested strings/raw
+        reflaxe.elixir.ast.ASTUtils.walk(cl.body, function(n2:ElixirAST){
+          switch (n2.def) { case EString(s2): markInterpolations(s2); case ERaw(code2): markInterpolations(code2); default: }
+        });
+    }
     if (used) return cl;
     // Rewrite binder to _name if not already underscored
     var newPat = switch (cl.pattern) {
@@ -67,4 +93,3 @@ class CasePatternUnusedBinderUnderscoreTransforms {
 }
 
 #end
-

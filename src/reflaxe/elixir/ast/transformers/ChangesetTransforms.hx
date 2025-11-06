@@ -343,7 +343,7 @@ class ChangesetTransforms {
     }
 
     static function normalizeBody(body: ElixirAST): ElixirAST {
-        #if sys
+        #if debug_changeset_transforms
         Sys.println('[ChangesetTransforms] normalizeBody invoked');
         #end
         // Early exit: preserve pure expression bodies that directly return a Changeset pipeline

@@ -1,11 +1,11 @@
 defmodule Elixir.Otp.RestartType do
   def permanent() do
-    {0}
+    {:permanent}
   end
   def temporary() do
-    {1}
+    {:temporary}
   end
   def transient() do
-    {2}
+    {:transient}
   end
 end

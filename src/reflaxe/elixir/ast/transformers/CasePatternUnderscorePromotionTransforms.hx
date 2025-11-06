@@ -80,10 +80,36 @@ class CasePatternUnderscorePromotionTransforms {
 
   static function collectUsedVars(body:ElixirAST, guard:Null<ElixirAST>):Map<String,Bool> {
     var s = new Map<String,Bool>();
+    // Ingest builder metadata if present
+    try {
+      var meta:Dynamic = body != null ? body.metadata : null;
+      if (meta != null && untyped meta.usedLocalsFromTyped != null) {
+        var arr:Array<String> = untyped meta.usedLocalsFromTyped;
+        for (n in arr) if (n != null && n.length > 0) s.set(n, true);
+      }
+    } catch (e:Dynamic) {}
+    function markTextInterps(str:String):Void {
+      if (str == null) return;
+      var re = new EReg("\\#\\{([^}]*)\\}", "g");
+      var pos = 0;
+      while (re.matchSub(str, pos)) {
+        var inner = re.matched(1);
+        var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+        var tpos = 0;
+        while (tok.matchSub(inner, tpos)) {
+          var id = tok.matched(0);
+          if (id != null && id.length > 0 && id.charAt(0) != '_') s.set(id, true);
+          tpos = tok.matchedPos().pos + tok.matchedPos().len;
+        }
+        pos = re.matchedPos().pos + re.matchedPos().len;
+      }
+    }
     function collect(n:ElixirAST) {
       if (n == null || n.def == null) return;
       switch (n.def) {
         case EVar(v): if (v != null && v.length > 0 && v.charAt(0) != '_') s.set(v, true);
+        case EString(sv): markTextInterps(sv);
+        case ERaw(code): markTextInterps(code);
         case EBinary(_, l, r): collect(l); collect(r);
         case EMatch(_, rhs): collect(rhs);
         case EBlock(ss): for (x in ss) collect(x);
@@ -99,7 +125,17 @@ class CasePatternUnderscorePromotionTransforms {
       }
     }
     collect(body);
-    if (guard != null) collect(guard);
+    if (guard != null) {
+      // Include guard metadata and interpolation scan
+      try {
+        var gmeta:Dynamic = guard.metadata;
+        if (gmeta != null && untyped gmeta.usedLocalsFromTyped != null) {
+          var garr:Array<String> = untyped gmeta.usedLocalsFromTyped;
+          for (n in garr) if (n != null && n.length > 0) s.set(n, true);
+        }
+      } catch (e:Dynamic) {}
+      collect(guard);
+    }
     return s;
   }
 }
