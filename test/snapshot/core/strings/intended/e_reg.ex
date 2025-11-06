@@ -1,14 +1,14 @@
 defmodule EReg do
-  def match(struct, _s) do
+  def match(struct, s) do
     false
   end
-  def matched(struct, _n) do
+  def matched(struct, n) do
     nil
   end
   def matched_right(struct) do
     nil
   end
-  def replace(struct, _s, _by) do
+  def replace(struct, s, by) do
     nil
   end
 end

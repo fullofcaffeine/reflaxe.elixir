@@ -9,9 +9,7 @@ defmodule Main do
   end
   def get_value(opt, default_value) do
     (case opt do
-      {:some, value} ->
-        default_value = default_value
-        default_value
+      {:some, v} -> v
       {:none} -> default_value
     end)
   end
@@ -38,23 +36,23 @@ defmodule Main do
   end
   def compare_trees(t1, t2) do
     (case t1 do
-      {:leaf, value} when t2 == 0 -> value == value
-      {:leaf, _value} -> false
+      {:leaf, v2} when t2 == 0 -> v2 == v2
+      {:leaf, v1} -> false
       {:node, l1, l2} when t2 == 1 -> compare_trees(l1, l2) and compare_trees(r1, r2)
       {:node, l1, l2} -> false
     end)
   end
   def main() do
     color = {:rgb, 255, 128, 0}
-    Log.trace(color_to_string(color), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(color_to_string(color), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
     some = {:some, "Hello"}
     none = {:none}
-    Log.trace(get_value(some, "default"), %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "main"})
-    Log.trace(get_value(none, "default"), %{:file_name => "Main.hx", :line_number => 85, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(get_value(some, "default"), %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(get_value(none, "default"), %{:file_name => "Main.hx", :line_number => 85, :class_name => "Main", :method_name => "main"})
     tree = {:node, {:leaf, 1}, {:node, {:leaf, 2}, {:leaf, 3}}}
-    Log.trace(tree_sum(tree), %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "main"})
-    Log.trace(describe_rgb({:rgb, 250, 10, 10}), %{:file_name => "Main.hx", :line_number => 95, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(tree_sum(tree), %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(describe_rgb({:rgb, 250, 10, 10}), %{:file_name => "Main.hx", :line_number => 95, :class_name => "Main", :method_name => "main"})
     tree = {:node, {:leaf, 1}, {:node, {:leaf, 2}, {:leaf, 3}}}
-    Log.trace(compare_trees(tree, tree2), %{:file_name => "Main.hx", :line_number => 99, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(compare_trees(tree, tree2), %{:file_name => "Main.hx", :line_number => 99, :class_name => "Main", :method_name => "main"})
   end
 end

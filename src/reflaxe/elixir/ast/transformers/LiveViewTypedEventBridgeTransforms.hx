@@ -56,17 +56,17 @@ class LiveViewTypedEventBridgeTransforms {
 
     // Entry point
     public static function transformPass(ast: ElixirAST): ElixirAST {
-        #if sys Sys.println('[TypedEventBridge] pass start'); #end
+        #if (sys && debug_ast_transformer) Sys.println('[TypedEventBridge] pass start'); #end
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
                     var out = synthesizeCallbacks(body, n.metadata, n.pos);
-                    #if sys Sys.println('[TypedEventBridge] module=' + name + ' callbacks=' + Std.string(countHandleEvent(out))); #end
+                    #if (sys && debug_ast_transformer) Sys.println('[TypedEventBridge] module=' + name + ' callbacks=' + Std.string(countHandleEvent(out))); #end
                     makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
                 case EDefmodule(modName, doBlock):
                     var stmts = switch (doBlock.def) { case EDo(s): s; case EBlock(s2): s2; default: []; };
                     var out = synthesizeCallbacks(stmts, n.metadata, n.pos);
-                    #if sys Sys.println('[TypedEventBridge] defmodule=' + modName + ' callbacks=' + Std.string(countHandleEvent(out))); #end
+                    #if (sys && debug_ast_transformer) Sys.println('[TypedEventBridge] defmodule=' + modName + ' callbacks=' + Std.string(countHandleEvent(out))); #end
                     makeASTWithMeta(EDefmodule(modName, makeAST(EBlock(out))), n.metadata, n.pos);
                 default:
                     n;

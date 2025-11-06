@@ -5,8 +5,7 @@ defmodule Log do
     str
   end
   def trace(v, infos) do
-    (
-
+    
             case infos do
               nil -> IO.inspect(v)
               infos ->
@@ -23,6 +22,5 @@ defmodule Log do
                 if label != nil, do: IO.inspect(v, label: label), else: IO.inspect(v)
             end
             
-)
   end
 end

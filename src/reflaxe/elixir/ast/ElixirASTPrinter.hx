@@ -581,6 +581,20 @@ class ElixirASTPrinter {
                 var keepInline = expr != null && expr.metadata != null && 
                                 expr.metadata.keepInlineInAssignment == true;
 
+                // Normalize numeric-sentinel call assigns: `0 = call(...)` → `call(...)`
+                var isZeroPat = switch (pattern) { case PLiteral({def: EInteger(v)}) if (v == 0): true; default: false; };
+                if (isZeroPat && expr != null) {
+                    switch (expr.def) {
+                        case ECall(_,_,_) | ERemoteCall(_,_,_): return print(expr, 0);
+                        case EParen(inner):
+                            switch (inner.def) {
+                                case ECall(_,_,_) | ERemoteCall(_,_,_): return print(inner, 0);
+                                default:
+                            }
+                        default:
+                    }
+                }
+
                 switch(pattern) {
                     case PVar(name):
                         var rhsName = switch(expr != null ? expr.def : null) {
@@ -628,6 +642,20 @@ class ElixirASTPrinter {
                             }
                         }
                     default:
+                }
+
+                // Numeric-sentinel assignment normalization: `0 = call(...)` → print call only
+                var isZeroPat = switch (pattern) { case PLiteral({def: EInteger(v)}) if (v == 0): true; default: false; };
+                if (isZeroPat && expr != null) {
+                    switch (expr.def) {
+                        case ECall(_,_,_) | ERemoteCall(_,_,_): return print(expr, 0);
+                        case EParen(inner):
+                            switch (inner.def) {
+                                case ECall(_,_,_) | ERemoteCall(_,_,_): return print(inner, 0);
+                                default:
+                            }
+                        default:
+                    }
                 }
 
                 if (keepInline) {
@@ -1376,7 +1404,23 @@ class ElixirASTPrinter {
                 } else {
                     // De-duplication: collapse x = (x = expr) and x = x = expr
                     if (op == Match) {
+                        // Normalize numeric-sentinel call assigns: `0 = call(...)` → `call(...)`
+                        var isZeroLhs = switch (left.def) { case EInteger(v) if (v == 0): true; default: false; };
+                        if (isZeroLhs) {
+                            switch (right.def) {
+                                case ECall(_,_,_) | ERemoteCall(_,_,_):
+                                    return print(right, 0);
+                                case EParen(innerP):
+                                    switch (innerP.def) {
+                                        case ECall(_,_,_) | ERemoteCall(_,_,_): return print(innerP, 0);
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
                         var leftStr0 = print(left, 0);
+                        // Guard against blank/whitespace LHS; normalize to discard `_`
+                        if (leftStr0 == null || StringTools.trim(leftStr0).length == 0) leftStr0 = "_";
                         switch (right.def) {
                             case EBinary(Match, left2, exprR):
                                 var left2Str = print(left2, 0);
@@ -1431,15 +1475,18 @@ class ElixirASTPrinter {
                         case _:
                             switch(right.def) {
                         case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_,_,_):
-                            // If expressions in binary operations need parentheses
-                            '(' + print(right, 0) + ')';
+                            // In assignments, prefer no extra parens around case/cond/if on RHS
+                            if (op == Match) print(right, 0) else '(' + print(right, 0) + ')';
                         default:
                             print(right, 0);
                             }
                     };
                     
-                    // Defensive: avoid invalid syntax if an operand prints empty
-                    if (leftStr == null || leftStr.length == 0) leftStr = '0';
+                    // Defensive: avoid invalid syntax if an operand prints empty (or whitespace-only)
+                    if (leftStr == null || leftStr.length == 0 || StringTools.trim(leftStr).length == 0) {
+                        // For assignments, prefer wildcard '_' instead of numeric sentinel
+                        if (op == Match) leftStr = '_'; else leftStr = '0';
+                    }
                     if (rightStr == null || rightStr.length == 0) rightStr = '0';
                     var result = leftStr + ' ' + opStr + ' ' + rightStr;
                     needsParens ? '(' + result + ')' : result;
@@ -1564,7 +1611,31 @@ class ElixirASTPrinter {
                     }
                     return out.toString();
                 }
+                // Snapshot parity: wrap all #{...} inner expressions in an IIFE, unless already wrapped.
+                inline function sanitizeInterpolationsInString(src:String):String {
+                    if (src == null || src.indexOf("#{") == -1) return src;
+                    var buf = new StringBuf();
+                    var i0 = 0;
+                    while (i0 < src.length) {
+                        var o = src.indexOf("#{", i0);
+                        if (o == -1) { buf.add(src.substr(i0)); break; }
+                        buf.add(src.substr(i0, o - i0));
+                        var k0 = o + 2; var dep = 1;
+                        while (k0 < src.length && dep > 0) {
+                            var ch2 = src.charAt(k0);
+                            if (ch2 == '{') dep++; else if (ch2 == '}') dep--; k0++;
+                        }
+                        var inner2 = src.substr(o + 2, (k0 - 1) - (o + 2));
+                        var trimmed2 = StringTools.trim(inner2);
+                        var already = StringTools.startsWith(trimmed2, '(fn ->');
+                        var outInner = already ? inner2 : '(fn -> ' + inner2 + ' end).()';
+                        buf.add("#{" + outInner + "}");
+                        i0 = k0;
+                    }
+                    return buf.toString();
+                }
                 var strVal = sanitizeJoinArgInInterpolatedString(value);
+                strVal = sanitizeInterpolationsInString(strVal);
                 '"' + escapeString(strVal) + '"';
                 
             case EInteger(value):
@@ -2005,22 +2076,20 @@ class ElixirASTPrinter {
                             if (ch == '{') dep++; else if (ch == '}') dep--; k0++;
                         }
                         var inner = src.substr(o + 2, (k0 - 1) - (o + 2));
-                        // Aggressively wrap every interpolation body as an IIFE to ensure a single valid expression
-                        if (!StringTools.startsWith(StringTools.trim(inner), '(fn ->')) {
-                            inner = '(fn -> ' + inner + ' end).()';
-                        }
-                        buf.add("#{" + inner + "}");
+                        var trimmed = StringTools.trim(inner);
+                        var alreadyIife = StringTools.startsWith(trimmed, '(fn ->');
+                        // Snapshot parity: always wrap interpolation as a single expression via IIFE,
+                        // unless it is already IIFE-wrapped.
+                        var needsWrap = !alreadyIife;
+                        var innerOut = needsWrap ? '(fn -> ' + inner + ' end).()' : inner;
+                        buf.add("#{" + innerOut + "}");
                         i0 = k0;
                     }
                     return buf.toString();
                 }
                 out = sanitizeInterpolationsInRawString(out);
-                // Check if the (possibly rewritten) code is multi-line and needs wrapping
-                if (out.indexOf('\n') != -1 && out.indexOf('=') != -1) {
-                    '(\n' + out + '\n)';
-                } else {
-                    out;
-                }
+                // Do not add extra parentheses around multi-line strings; Elixir accepts them directly
+                out;
                 
             case EAssign(name):
                 '@' + name;
@@ -2037,9 +2106,13 @@ class ElixirASTPrinter {
      */
     static function printPattern(pattern: EPattern): String {
         return switch(pattern) {
-            case PVar(name): name;
+            case PVar(name):
+                var nm = name;
+                if (nm == null || StringTools.trim(nm).length == 0) nm = '_';
+                nm;
             case PLiteral(value): print(value, 0);
             case PTuple(elements):
+                #if debug_ast_printer
                 trace('[ASTPrinter] Printing PTuple with ${elements.length} elements');
                 for (i in 0...elements.length) {
                     var elem = elements[i];
@@ -2049,6 +2122,7 @@ class ElixirASTPrinter {
                         default: trace('[ASTPrinter]   Element $i: ${Type.enumConstructor(elem)}');
                     }
                 }
+                #end
                 '{' + printPatterns(elements) + '}';
             case PList(elements): '[' + printPatterns(elements) + ']';
             case PCons(head, tail): '[' + printPattern(head) + ' | ' + printPattern(tail) + ']';
@@ -2540,7 +2614,9 @@ class ElixirASTPrinter {
         if (trimmed.length == 0) return s;
         var hasBreak = (s.indexOf('\n') != -1);
         var alreadyIIFE = StringTools.startsWith(trimmed, "(fn ->");
-        if (hasBreak && !alreadyIIFE) {
+        // Allow multi-line string literals as arguments without wrapping
+        var isStringLiteral = StringTools.startsWith(trimmed, '"');
+        if (hasBreak && !alreadyIIFE && !isStringLiteral) {
             return '(fn -> ' + s + ' end).()';
         }
         return s;

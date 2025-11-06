@@ -36,6 +36,8 @@ class ClauseUnderscoreUsedPromoteTransforms {
                     for (cl in clauses) {
                         var binder = extractSingleBinder(cl.pattern);
                         if (binder != null && binder.length > 1 && binder.charAt(0) == '_') {
+                            // Preserve canonical {:tag, _value} + alias lines; do not promote _value
+                            if (binder == "_value") { newClauses.push(cl); continue; }
                             var base = binder.substr(1);
                             if ((bodyUsesVar(cl.body, binder) || bodyUsesVar(cl.body, base)) && !patternHasName(cl.pattern, base)) {
                                 #if debug_ast_transformer
@@ -66,14 +68,39 @@ class ClauseUnderscoreUsedPromoteTransforms {
 
     static function bodyUsesVar(body: ElixirAST, name: String): Bool {
         var found = false;
+        // AST-level variable reads
         ASTUtils.walk(body, function(e: ElixirAST) {
             if (found || e == null || e.def == null) return;
             switch (e.def) {
                 case EVar(v) if (v == name): found = true;
+                case EString(s):
+                    if (!found && containsInterpolatedIdent(s, name)) found = true;
+                case ERaw(code):
+                    if (!found && containsInterpolatedIdent(code, name)) found = true;
                 default:
             }
         });
         return found;
+    }
+
+    static function containsInterpolatedIdent(src:String, ident:String):Bool {
+        if (src == null || ident == null || ident.length == 0) return false;
+        // Scan #{...} blocks and look for the identifier token inside
+        var reBlock = new EReg("\\#\\{([^}]*)\\}", "g");
+        var pos = 0;
+        while (reBlock.matchSub(src, pos)) {
+            var inner = reBlock.matched(1);
+            // token scan
+            var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+            var tpos = 0;
+            while (tok.matchSub(inner, tpos)) {
+                var id = tok.matched(0);
+                if (id == ident) return true;
+                tpos = tok.matchedPos().pos + tok.matchedPos().len;
+            }
+            pos = reBlock.matchedPos().pos + reBlock.matchedPos().len;
+        }
+        return false;
     }
 
     static function patternHasName(p: EPattern, name: String): Bool {

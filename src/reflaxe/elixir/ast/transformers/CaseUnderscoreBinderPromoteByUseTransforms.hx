@@ -29,7 +29,9 @@ class CaseUnderscoreBinderPromoteByUseTransforms {
                         var binders = collectPatternBinders(cl.pattern);
                         var patNames = new Map<String,Bool>();
                         for (b in binders) patNames.set(b, true);
-                        var newPat = promoteBinders(cl.pattern, used, patNames);
+                        // Try usage-driven rename for underscored second binder in tuples with additional fields.
+                        var rewritten = usageDrivenRenameSecondBinder(cl.pattern, used, patNames);
+                        var newPat = promoteBinders(rewritten, used, patNames);
                         newClauses.push({pattern: newPat, guard: cl.guard, body: cl.body});
                     }
                     makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
@@ -63,6 +65,60 @@ class CaseUnderscoreBinderPromoteByUseTransforms {
         return used;
     }
 
+    static inline function toSnake(s:String):String {
+        if (s == null || s.length == 0) return s;
+        var buf = new StringBuf();
+        for (i in 0...s.length) {
+            var c = s.substr(i, 1);
+            var lower = c.toLowerCase();
+            var upper = c.toUpperCase();
+            if (c == upper && c != lower) {
+                if (i != 0) buf.add("_");
+                buf.add(lower);
+            } else {
+                buf.add(c);
+            }
+        }
+        return buf.toString();
+    }
+
+    // If pattern is a tuple with at least two elements and the second element is an underscored
+    // variable, and the clause body uses exactly one undefined local name U (lowercase), rename the
+    // binder to snake(U). This is shape-based and avoids tag/name heuristics.
+    static function usageDrivenRenameSecondBinder(p:EPattern, used:Map<String,Bool>, patNames:Map<String,Bool>):EPattern {
+        return switch (p) {
+            case PTuple(es) if (es.length >= 2):
+                var changed = false;
+                var es2 = es.copy();
+                // Try to rename the second element if it's an underscored PVar
+                // Only for common tagged tuples like {:ok, v} or {:error, v, ctx}
+                var firstIsTag = switch (es2[0]) { case PLiteral(_): true; default: false; };
+                switch (es2[1]) {
+                    case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
+                        if (firstIsTag) {
+                            var undefined:Array<String> = [];
+                            for (k in used.keys()) if (!patNames.exists(k) && k.charAt(0).toLowerCase() == k.charAt(0)) undefined.push(k);
+                            undefined = undefined.filter(k -> k != "socket" && !StringTools.endsWith(k, "socket") && !StringTools.endsWith(k, "Socket"));
+                            if (undefined.length == 1) {
+                                var target = toSnake(undefined[0]);
+                                // Avoid collision with an existing pattern name
+                                if (!patNames.exists(target)) { es2[1] = PVar(target); changed = true; }
+                            }
+                        }
+                    default:
+                        // Do not recurse on the second element to avoid accidental renames
+                        es2[1] = es2[1];
+                }
+                PTuple(es2);
+            case PList(items): PList([for (e in items) usageDrivenRenameSecondBinder(e, used, patNames)]);
+            case PCons(h, t): PCons(usageDrivenRenameSecondBinder(h, used, patNames), usageDrivenRenameSecondBinder(t, used, patNames));
+            case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: usageDrivenRenameSecondBinder(kv.value, used, patNames) }]);
+            case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: usageDrivenRenameSecondBinder(f.value, used, patNames) }]);
+            case PPin(inner): PPin(usageDrivenRenameSecondBinder(inner, used, patNames));
+            default: p;
+        }
+    }
+
     static function markInterpolations(s:String, used:Map<String,Bool>):Void {
         // Heuristic: collect words following "#{" up to non-identifier
         var i = 0;
@@ -78,7 +134,12 @@ class CaseUnderscoreBinderPromoteByUseTransforms {
                 if (!isIdent) break;
                 name += ch; j++;
             }
-            if (name != null && name.length > 0) used.set(name, true);
+            if (name != null && name.length > 0) {
+                var k = j;
+                while (k < s.length && StringTools.isSpace(s, k)) k++;
+                var isCall = (k < s.length && s.charAt(k) == '(');
+                if (!isCall) used.set(name, true);
+            }
             i = j + 1;
         }
     }

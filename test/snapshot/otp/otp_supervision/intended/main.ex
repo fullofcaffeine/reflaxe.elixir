@@ -1,220 +1,124 @@
 defmodule Main do
-  def main() do
-    test_supervisor()
-    test_task()
-    test_task_supervisor()
-    test_supervision_tree()
-  end
-
   defp test_supervisor() do
-    children = [
-      %{
-        :id => "worker1",
-        :start => {MyWorker, :start_link, [%{:name => "worker1"}]},
-        :restart => :permanent,
-        :type => :worker
-      },
-      %{
-        :id => "worker2",
-        :start => {MyWorker, :start_link, [%{:name => "worker2"}]},
-        :restart => :temporary,
-        :type => :worker
-      },
-      %{
-        :id => "sub_supervisor",
-        :start => {SubSupervisor, :start_link, [%{}]},
-        :restart => :permanent,
-        :type => :supervisor
-      }
-    ]
-
-    options = [strategy: :one_for_one, max_restarts: 5, max_seconds: 10]
-    {:ok, supervisor} = Supervisor.start_link(children, options)
-
-    _children_list = Supervisor.which_children(supervisor)
-    _counts = Supervisor.count_children(supervisor)
-
-    Supervisor.restart_child(supervisor, "worker1")
-    Supervisor.terminate_child(supervisor, "worker2")
-    Supervisor.delete_child(supervisor, "worker2")
-
-    new_child = %{
-      :id => "dynamic",
-      :start => {DynamicWorker, :start_link, [%{}]},
-      :restart => :transient,
-      :type => :worker
-    }
-    Supervisor.start_child(supervisor, new_child)
-
-    stats = Supervisor.count_children(supervisor)
-    Log.trace("Active workers: #{stats.workers}, Supervisors: #{stats.supervisors}",
-              %{:file_name => "Main.hx", :line_number => 89, :class_name => "Main", :method_name => "testSupervisor"})
-
-    if Process.alive?(supervisor) do
-      Log.trace("Supervisor is running",
-                %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testSupervisor"})
+    _ = [%{:id => "worker1", :start => {MyWorker, :start_link, [%{:name => "worker1"}]}, :restart => {:permanent}, :type => {:worker}}, %{:id => "worker2", :start => {MyWorker, :start_link, [%{:name => "worker2"}]}, :restart => {:temporary}, :type => {:worker}}, %{:id => "sub_supervisor", :start => {SubSupervisor, :start_link, [%{}]}, :restart => {:permanent}, :type => {:supervisor}}]
+    _ = [strategy: :one_for_one, max_restarts: 5, max_seconds: 10]
+    _ = Supervisor.start_link(children, options)
+    _ = Supervisor.which_children(result)
+    _ = Supervisor.count_children(result)
+    _ = Supervisor.restart_child(result, "worker1")
+    _ = Supervisor.terminate_child(result, "worker2")
+    _ = Supervisor.delete_child(result, "worker2")
+    _ = %{:id => "dynamic", :start => {DynamicWorker, :start_link, [%{}]}, :restart => {:transient}, :type => {:worker}}
+    _ = Supervisor.start_child(result, new_child)
+    _ = Supervisor.count_children(result)
+    _ = Log.trace("Active workers: #{(fn -> stats.workers end).()}, Supervisors: #{(fn -> stats.supervisors end).()}", %{:file_name => "Main.hx", :line_number => 89, :class_name => "Main", :method_name => "testSupervisor"})
+    if (Process.process.alive?(result)) do
+      Log.trace("Supervisor is running", %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testSupervisor"})
     end
-
-    Process.exit(supervisor, :normal)
+    _ = Process.process.exit(result, "normal")
+    _
   end
-
   defp test_task() do
-    task = Task.async(fn ->
-      Process.sleep(100)
+    _ = Task.task.async((fn -> fn ->
+      Process.process.sleep(100)
       42
-    end)
-
-    result = Task.await(task)
-    Log.trace("Async result: #{result}",
-              %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "testTask"})
-
-    slow_task = Task.async(fn ->
-      Process.sleep(5000)
+    end end).())
+    _ = Task.task.await(task)
+    _ = Log.trace("Async result: #{(fn -> result end).()}", %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "testTask"})
+    _ = Task.task.async((fn -> fn ->
+      Process.process.sleep(5000)
       "slow"
-    end)
-
-    yield_result = Task.yield(slow_task, 100)
-    if yield_result == nil do
-      Log.trace("Task timed out",
-                %{:file_name => "Main.hx", :line_number => 123, :class_name => "Main", :method_name => "testTask"})
-      Task.shutdown(slow_task)
+    end end).())
+    _ = Task.task.yield(slow_task, 100)
+    if (Kernel.is_nil(yield_result)) do
+      _ = Log.trace("Task timed out", %{:file_name => "Main.hx", :line_number => 123, :class_name => "Main", :method_name => "testTask"})
+      _ = Task.task.shutdown(slow_task)
     end
-
-    Task.start(fn ->
-      Log.trace("Background task running",
-                %{:file_name => "Main.hx", :line_number => 129, :class_name => "Main", :method_name => "testTask"})
-    end)
-
-    Task.start_link(fn ->
-      Log.trace("Linked task running",
-                %{:file_name => "Main.hx", :line_number => 134, :class_name => "Main", :method_name => "testTask"})
-    end)
-
-    tasks = [
-      Task.async(fn -> 1 end),
-      Task.async(fn -> 2 end),
-      Task.async(fn -> 3 end)
-    ]
-
-    results = Task.yield_many(tasks)
-
-    # Process task results using Enum
-    Enum.each(results, fn {_task, result} ->
-      if result != nil do
-        Log.trace("Task result: #{inspect(result)}",
-                  %{:file_name => "Main.hx", :line_number => 148, :class_name => "Main", :method_name => "testTask"})
-      end
-    end)
-
-    quick_task = Task.async(fn -> "quick" end)
-    _quick_result = Task.await(quick_task)
-
-    # Create and await multiple tasks
-    funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
-    tasks = Enum.map(funs, &Task.async/1)
-    _concurrent_results = Enum.map(tasks, &Task.await/1)
-
-    # Timed task with yield
-    timed_task = Task.async(fn ->
-      Process.sleep(50)
+    _ = Task.task.start(fn -> Log.trace("Background task running", %{:file_name => "Main.hx", :line_number => 129, :class_name => "Main", :method_name => "testTask"}) end)
+    _ = Task.task.start_link(fn -> Log.trace("Linked task running", %{:file_name => "Main.hx", :line_number => 134, :class_name => "Main", :method_name => "testTask"}) end)
+    _ = [Task.task.async(fn ->  end), Task.task.async(fn -> 2 end), Task.task.async(fn -> 3 end)]
+    _ = Task.task.yield_many(tasks)
+    _ = Enum.each(results, (fn -> fn item ->
+    if (item.result != nil) do
+    Log.trace("Task result: " <> inspect(item.result), %{:file_name => "Main.hx", :line_number => 148, :class_name => "Main", :method_name => "testTask"})
+  end
+end end).())
+    _ = Task.task.async(fn -> "quick" end)
+    _ = Task.task.await(task2)
+    _ = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
+    _ = Enum.each(funs, (fn -> fn item ->
+    [].push(Task.task.async(item))
+end end).())
+    []
+    _ = Enum.each(tasks2, (fn -> fn item ->
+    [].push(Task.task.await(item))
+end end).())
+    []
+    _ = Task.task.async((fn -> fn ->
+      Process.process.sleep(50)
       "timed"
-    end)
-
-    timed_result = case Task.yield(timed_task, 100) do
-      {:ok, value} -> value
-      {:exit, _reason} -> nil
-      nil ->
-        Task.shutdown(timed_task)
-        nil
+    end end).())
+    result2 = Task.task.yield(task2, 100)
+    if (Kernel.is_nil(result2)) do
+      _ = Task.task.shutdown(task2)
+      nil
+    else
+      (case result2 do
+        0 ->
+          value = elem(result2, 1)
+          value
+        1 -> nil
+      end)
     end
-
-    Task.start(fn ->
-      Log.trace("Fire and forget",
-                %{:file_name => "Main.hx", :line_number => 169, :class_name => "Main", :method_name => "testTask"})
-    end)
-
-    _stream = Task.async_stream([1, 2, 3, 4, 5], fn x -> x * 2 end)
+    _ = Task.task.start(fn -> Log.trace("Fire and forget", %{:file_name => "Main.hx", :line_number => 169, :class_name => "Main", :method_name => "testTask"}) end)
+    _ = Task.task.async_stream([1, 2, 3, 4, 5], fn x -> x * 2 end)
   end
-
   defp test_task_supervisor() do
-    case Task.Supervisor.start_link() do
-      {:ok, supervisor} ->
-        task = Task.Supervisor.async(supervisor, fn -> "supervised" end)
-        result = Task.await(task)
-        Log.trace("Supervised task result: #{result}",
-                  %{:file_name => "Main.hx", :line_number => 192, :class_name => "Main", :method_name => "testTaskSupervisor"})
-
-        nolink_task = Task.Supervisor.async_nolink(supervisor, fn -> "not linked" end)
-        Task.await(nolink_task)
-
-        Task.Supervisor.start_child(supervisor, fn ->
-          Log.trace("Supervised child task",
-                    %{:file_name => "Main.hx", :line_number => 202, :class_name => "Main", :method_name => "testTaskSupervisor"})
-        end)
-
-        children = Task.Supervisor.children(supervisor)
-        Log.trace("Supervised tasks count: #{length(children)}",
-                  %{:file_name => "Main.hx", :line_number => 207, :class_name => "Main", :method_name => "testTaskSupervisor"})
-
-        _stream = Task.Supervisor.async_stream(supervisor, [10, 20, 30], fn x -> x + 1 end)
-
-        helper_task = Task.Supervisor.async(supervisor, fn -> "helper result" end)
-        _supervised_result = Task.await(helper_task)
-
-        # Create and await multiple supervised tasks
-        funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
-        tasks = Enum.map(funs, fn fun -> Task.Supervisor.async(supervisor, fun) end)
-        _concurrent_results = Enum.map(tasks, &Task.await/1)
-
-        Task.Supervisor.start_child(supervisor, fn ->
-          Log.trace("Background supervised task",
-                    %{:file_name => "Main.hx", :line_number => 228, :class_name => "Main", :method_name => "testTaskSupervisor"})
-        end)
-
-      _ ->
-        Log.trace("Failed to start task supervisor",
-                  %{:file_name => "Main.hx", :line_number => 230, :class_name => "Main", :method_name => "testTaskSupervisor"})
+    _ = Supervisor.task.supervisor.start_link()
+    if (supervisor_result._0 == "ok") do
+      supervisor = supervisor_result._1
+      _ = Supervisor.task.supervisor.async(supervisor, fn -> "supervised" end)
+      _ = Task.task.await(task)
+      _ = Log.trace("Supervised task result: #{(fn -> result end).()}", %{:file_name => "Main.hx", :line_number => 192, :class_name => "Main", :method_name => "testTaskSupervisor"})
+      _ = Supervisor.task.supervisor.async_nolink(supervisor, fn -> "not linked" end)
+      _ = Task.task.await(nolink_task)
+      _ = Supervisor.task.supervisor.start_child(supervisor, fn -> Log.trace("Supervised child task", %{:file_name => "Main.hx", :line_number => 202, :class_name => "Main", :method_name => "testTaskSupervisor"}) end)
+      _ = Supervisor.task.supervisor.children(supervisor)
+      _ = Log.trace("Supervised tasks count: #{(fn -> length(children) end).()}", %{:file_name => "Main.hx", :line_number => 207, :class_name => "Main", :method_name => "testTaskSupervisor"})
+      _ = Supervisor.task.supervisor.async_stream(supervisor, [10, 20, 30], fn x -> x + 1 end)
+      _ = Supervisor.task.supervisor.async(supervisor, fn -> "helper result" end)
+      _ = Task.task.await(task2)
+      _ = supervisor
+      _ = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
+      _ = 0
+      _ = Enum.map(funs, (fn -> fn item ->
+  fun = funs[_g1]
+  _g1 + 1
+  _g = Enum.concat(_g, [Supervisor.task.supervisor.async(supervisor2, fun)])
+end end).())
+      []
+      _ = 0
+      _ = Enum.map(tasks, (fn -> fn item ->
+  task2 = tasks[_g1]
+  _g1 + 1
+  _g = Enum.concat(_g, [Task.task.await(task2)])
+end end).())
+      []
+      _ = Supervisor.task.supervisor.start_child(supervisor, fn -> Log.trace("Background supervised task", %{:file_name => "Main.hx", :line_number => 228, :class_name => "Main", :method_name => "testTaskSupervisor"}) end)
     end
   end
-
   defp test_supervision_tree() do
-    children = [
-      %{
-        :id => "worker1",
-        :start => {Worker1, :start_link, [%{}]},
-        :restart => :permanent,
-        :type => :worker
-      },
-      %{
-        :id => "worker2",
-        :start => {Worker2, :start_link, [%{}]},
-        :restart => :temporary,
-        :type => :worker
-      },
-      %{
-        :id => "worker3",
-        :start => {Worker3, :start_link, [%{}]},
-        :restart => :transient,
-        :type => :worker
-      }
-    ]
-
-    options = [strategy: :one_for_all, max_restarts: 10, max_seconds: 60]
-    {:ok, supervisor} = Supervisor.start_link(children, options)
-
-    stats = Supervisor.count_children(supervisor)
-    Log.trace("Supervisor - Workers: #{stats.workers}, Supervisors: #{stats.supervisors}",
-              %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "testSupervisionTree"})
-
-    children_list = Supervisor.which_children(supervisor)
-
-    # Process children list using Enum
-    Enum.each(children_list, fn {id, _pid, type, _modules} ->
-      Log.trace("Child: #{inspect(id)}, Type: #{inspect(type)}",
-                %{:file_name => "Main.hx", :line_number => 276, :class_name => "Main", :method_name => "testSupervisionTree"})
-    end)
-
-    Supervisor.restart_child(supervisor, "worker1")
-    Supervisor.stop(supervisor, :normal)
+    _ = [%{:id => "worker1", :start => {Worker1, :start_link, [%{}]}, :restart => {:permanent}, :type => {:worker}}, %{:id => "worker2", :start => {Worker2, :start_link, [%{}]}, :restart => {:temporary}, :type => {:worker}}, %{:id => "worker3", :start => {Worker3, :start_link, [%{}]}, :restart => {:transient}, :type => {:worker}}]
+    _ = [strategy: :one_for_all, max_restarts: 10, max_seconds: 60]
+    _ = Supervisor.start_link(children, options)
+    _ = Supervisor.count_children(result)
+    _ = Log.trace("Supervisor - Workers: #{(fn -> stats.workers end).()}, Supervisors: #{(fn -> stats.supervisors end).()}", %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "testSupervisionTree"})
+    _ = Supervisor.which_children(result)
+    _ = Enum.each(children_list, (fn -> fn item ->
+    Log.trace("Child: " <> inspect(Map.get(item, :_0)) <> ", Type: " <> inspect(Map.get(item, :_2)), %{:file_name => "Main.hx", :line_number => 276, :class_name => "Main", :method_name => "testSupervisionTree"})
+end end).())
+    _ = Supervisor.restart_child(result, "worker1")
+    _ = Supervisor.terminate_child(result, "normal")
+    _
   end
 end

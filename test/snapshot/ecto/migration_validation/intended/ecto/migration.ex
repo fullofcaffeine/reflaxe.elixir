@@ -2,25 +2,25 @@ defmodule Migration do
   def create_table(struct, name, options) do
     MyApp.TableBuilder.new(name, options)
   end
-  def drop_table(struct, _name, _options) do
+  def drop_table(struct, name, options) do
     
   end
   def alter_table(struct, name) do
     MyApp.AlterTableBuilder.new(name)
   end
-  def create_index(struct, _table, _columns, _options) do
+  def create_index(struct, table, columns, options) do
     
   end
-  def drop_index(struct, _table, _columns) do
+  def drop_index(struct, table, columns) do
     
   end
-  def execute(struct, _sql) do
+  def execute(struct, sql) do
     
   end
-  def create_constraint(struct, _table, _name, _check) do
+  def create_constraint(struct, table, name, check) do
     
   end
-  def drop_constraint(struct, _table, _name) do
+  def drop_constraint(struct, table, name) do
     
   end
 end

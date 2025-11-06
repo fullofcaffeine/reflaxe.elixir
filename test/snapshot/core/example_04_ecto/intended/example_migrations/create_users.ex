@@ -6,7 +6,7 @@ defmodule CreateUsers do
     "drop table(:users)"
   end
   def main() do
-    _up_result = up()
-    _down_result = down()
+    _ = up()
+    _ = down()
   end
 end

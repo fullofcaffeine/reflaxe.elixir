@@ -65,20 +65,22 @@ class CaseSuccessVarUnifier {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(expr, clauses):
-                    Sys.println('[CaseSuccessVarUnifier] Inspecting ECase with ' + clauses.length + ' clauses');
+                    #if debug_success_unifier
+                    #if debug_ast_transformer Sys.println('[CaseSuccessVarUnifier] Inspecting ECase with ' + clauses.length + ' clauses'); #end
+                    #end
                     var newClauses = [];
                     for (c in clauses) {
                         var successVar = extractOkVar(c.pattern);
-#if debug_success_unifier
-                        if (successVar != null) Sys.println('[CaseSuccessVarUnifier] Found {:ok, ' + successVar + '} pattern');
-#end
+                        #if debug_success_unifier
+                        #if debug_ast_transformer if (successVar != null) Sys.println('[CaseSuccessVarUnifier] Found {:ok, ' + successVar + '} pattern'); #end
+                        #end
                         if (successVar != null) {
                             // Promote underscore binder when body uses the trimmed name
                             var pat2 = promoteUnderscoreBinder(c.pattern, c.body);
                             var effectiveVar = extractOkVar(pat2);
-#if debug_success_unifier
-                            Sys.println('[CaseSuccessVarUnifier] Effective success var: ' + effectiveVar);
-#end
+                        #if debug_success_unifier
+                            #if debug_ast_transformer Sys.println('[CaseSuccessVarUnifier] Effective success var: ' + effectiveVar); #end
+                        #end
                             var newBody = rewritePlaceholders(c.body, effectiveVar, funcDefined);
                             newClauses.push({ pattern: pat2, guard: c.guard, body: newBody });
                         } else newClauses.push(c);
@@ -158,7 +160,7 @@ class CaseSuccessVarUnifier {
         var undefined = [for (k in referenced.keys()) if (!declared.exists(k) && !funcDefined.exists(k)) k];
         #if debug_success_unifier
         if (undefined.length > 0) {
-            Sys.println('[CaseSuccessVarUnifier] Rewriting ' + undefined.join(',') + ' -> ' + successVar);
+            #if debug_ast_transformer Sys.println('[CaseSuccessVarUnifier] Rewriting ' + undefined.join(',') + ' -> ' + successVar); #end
         }
         #end
         if (undefined.length == 0) return body;

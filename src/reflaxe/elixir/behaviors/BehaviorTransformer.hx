@@ -97,17 +97,13 @@ class BehaviorTransformer {
             };
             
             if (behaviorName != null) {
-                #if debug_behavior_transformer
-                trace('[BehaviorTransformer.checkAndActivateBehavior] Found behavior: ${behaviorName}');
-                #end
+                #if debug_behavior_transformer trace('[BehaviorTransformer.checkAndActivateBehavior] Found behavior: ${behaviorName}'); #end
                 activeBehavior = behaviorName;
                 return behaviorName;
             }
         }
         
-        #if debug_behavior_transformer
-        trace('[BehaviorTransformer.checkAndActivateBehavior] No behavior found');
-        #end
+        #if debug_behavior_transformer trace('[BehaviorTransformer.checkAndActivateBehavior] No behavior found'); #end
         
         return null;
     }

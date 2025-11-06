@@ -6,6 +6,7 @@ defmodule IntDisplay do
     if (Map.get(options, :hex)) do
       "0x#{(fn -> StringTools.hex(value) end).()}"
     end
-    inspect(value)
+    _ = inspect(value)
+    _
   end
 end

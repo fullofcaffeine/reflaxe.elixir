@@ -178,16 +178,16 @@ class ReduceWhileAccumulatorTransform {
                 var hasReturnTuple = containsReturnTuple(thenBranch) ||
                                      (elseBranch != null && containsReturnTuple(elseBranch));
 
-                trace('[DEBUG] EIf processing - hasReturnTuple: $hasReturnTuple');
-                trace('[DEBUG] thenBranch containsReturnTuple: ${containsReturnTuple(thenBranch)}');
+                #if debug_ast_transformer trace('[DEBUG] EIf processing - hasReturnTuple: $hasReturnTuple'); #end
+                #if debug_ast_transformer trace('[DEBUG] thenBranch containsReturnTuple: ${containsReturnTuple(thenBranch)}'); #end
                 if (elseBranch != null) {
-                    trace('[DEBUG] elseBranch containsReturnTuple: ${containsReturnTuple(elseBranch)}');
+                    #if debug_ast_transformer trace('[DEBUG] elseBranch containsReturnTuple: ${containsReturnTuple(elseBranch)}'); #end
                 }
 
                 if (hasReturnTuple) {
                     // This if-expression is the lambda's main control flow
                     // Preserve it and recursively transform branches WITHOUT removing assignments
-                    trace('[XRay ReduceWhile] Preserving if-expression with return tuples (main control flow)');
+                    #if debug_ast_transformer trace('[XRay ReduceWhile] Preserving if-expression with return tuples (main control flow)'); #end
 
                     var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy(), true);
                     var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy(), true) : null;
