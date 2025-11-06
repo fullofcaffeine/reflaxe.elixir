@@ -48,10 +48,9 @@ class InterpolateIIFEWrapTransforms {
             }
             var inner = src.substr(open + 2, (k - 1) - (open + 2));
             var trimmed = StringTools.trim(inner);
-            if (!StringTools.startsWith(trimmed, '(fn ->')) {
-                inner = '(fn -> ' + inner + ' end).()';
-            }
-            out.add("#{" + inner + "}");
+            var alreadyIife = StringTools.startsWith(trimmed, '(fn ->');
+            var body = alreadyIife ? inner : '(fn -> ' + inner + ' end).()';
+            out.add("#{" + body + "}");
             i = k;
         }
         return out.toString();
@@ -59,4 +58,3 @@ class InterpolateIIFEWrapTransforms {
 }
 
 #end
-

@@ -23,17 +23,18 @@ defmodule UserQueries do
     from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_active_posters(min_posts) do
-    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> MyApp.StringBuf.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
+    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Kernel.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_top_users() do
     subquery = from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})
-    from("users", "u", %{:join => %{:table => subquery, :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
+    _ = from("users", "u", %{:join => %{:table => subquery, :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
+    _
   end
   def get_users_with_associations() do
     from("users", "u", %{:preload => ["posts", "profile", "comments"], :select => "u"})
   end
   def deactivate_old_users(days) do
-    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> MyApp.StringBuf.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
+    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> Kernel.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
   end
   def delete_inactive_users() do
     from("users", "u", %{:where => %{:active => false}, :delete_all => true})
@@ -57,10 +58,10 @@ defmodule UserQueries do
     end
     query
   end
-  defp from(_table, _alias_param, _opts) do
+  defp from(table, alias_param, opts) do
     nil
   end
-  defp where(_query, _alias_param, _condition) do
+  defp where(query, alias_param, condition) do
     nil
   end
 end

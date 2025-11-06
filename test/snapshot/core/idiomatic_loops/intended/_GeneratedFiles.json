@@ -4,6 +4,7 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
+  "main.ex",
   "lambda.ex",
   "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",

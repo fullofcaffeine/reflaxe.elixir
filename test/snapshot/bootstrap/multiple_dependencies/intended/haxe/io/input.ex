@@ -1,69 +1,71 @@
 defmodule Input do
-  @big_endian nil
-  defp set_big_endian(struct, b) do
-    b
-  end
   def read_byte(struct) do
     -1
   end
   def read_bytes(struct, b, pos, len) do
-    if (pos < 0 || len < 0 || pos + len > length(b)) do
+    if (pos < 0 or len < 0 or pos + len > length(b)) do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
-  if (acc_k > 0) do
-    byte = struct.read_byte()
-    if (byte < 0) do
-      throw(:break)
-    end
-    b.set(acc_pos, byte)
-    acc_pos = acc_pos + 1
-    acc_k = (acc_k - 1)
-    {:cont, {acc_pos, acc_k, acc_state}}
-  else
-    {:halt, {acc_pos, acc_k, acc_state}}
+    _ = Enum.each(k, (fn -> fn item ->
+  byte = item.readByte()
+  if (item < 0) do
+    throw(:break)
   end
-end)
+  item.set(item, item)
+  item + 1
+  (item - 1)
+end end).())
     (len - k)
   end
   def read_all(struct, bufsize) do
-    if (bufsize == nil) do
+    if (Kernel.is_nil(bufsize)) do
       bufsize = 4096
     end
-    buf = Bytes.alloc(bufsize)
-    total = Bytes.alloc(0)
-    len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} -> nil end)
-    total
-  end
-  def read_string(struct, len) do
-    b = Bytes.alloc(len)
-    actual = struct.read_bytes(b, 0, len)
-    if (actual < len) do
-      smaller = Bytes.alloc(actual)
-      smaller.blit(0, b, 0, actual)
-      b = smaller
-    end
-    b.to_string()
-  end
-  def read_line(struct) do
-    buf = StringBuf.new()
-    last = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last, :ok}, fn _, {acc_last, acc_state} ->
-  if (acc_last >= 0) do
-    if (acc_last == 10) do
+    _ = MyApp.Bytes.alloc(bufsize)
+    _ = 0
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len}, (fn -> fn _, {total, len} ->
+  if (true) do
+    n = struct.readBytes(buf, 0, bufsize)
+    if (n == 0) do
       throw(:break)
     end
-    if (acc_last != 13), do: buf.add_char(acc_last)
-    {:cont, {struct.read_byte(), acc_state}}
+    new_total = Bytes.alloc(len + n)
+    new_total.blit(0, total, 0, len)
+    new_total.blit(len, buf, 0, n)
+    total = new_total
+    len = len + n
+    {:cont, {total, len}}
   else
-    {:halt, {struct.read_byte(), acc_state}}
+    {:halt, {total, len}}
   end
-end)
-    IO.iodata_to_binary(buf)
+end end).())
+    MyApp.Bytes.alloc(0)
+  end
+  def read_string(struct, len) do
+    b = MyApp.Bytes.alloc(len)
+    actual = struct.readBytes(b, 0, len)
+    if (actual < len) do
+      smaller = MyApp.Bytes.alloc(actual)
+      _ = smaller.blit(0, b, 0, actual)
+      _ = smaller
+    end
+    _ = StringBuf.to_string(b)
+    _
+  end
+  def read_line(struct) do
+    _ = %StringBuf{}
+    _ = nil
+    _ = Enum.each(last, (fn -> fn item ->
+  if (item == 10) do
+    throw(:break)
+  end
+  if (item != 13), do: item.addChar(item)
+end end).())
+    _ = StringBuf.to_string(buf)
+    _
   end
   def close(struct) do
-    nil
+    
   end
 end

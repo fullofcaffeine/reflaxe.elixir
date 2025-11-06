@@ -6,7 +6,7 @@ defmodule CallbackResultBuilder do
     {:reply, reply, state}
   end
   def noreply(state) do
-    {:no_reply, state}
+    {:noreply, state}
   end
   def stop_normal(state) do
     {:stop, :normal, state}

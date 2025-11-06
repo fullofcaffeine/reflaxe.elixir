@@ -56,6 +56,8 @@ class CaseSuccessVarUnifyTransforms {
                 case ECase(expr, clauses):
                     var newClauses = [];
                     for (cl in clauses) {
+                        // Skip if payload binder is locked/canonicalized to _value
+                        if (isLockedPayload(cl)) { newClauses.push(cl); continue; }
                         // Collect names used in body
                         var used = new Map<String, Bool>();
                         collectNames(cl.body, used);
@@ -87,6 +89,25 @@ class CaseSuccessVarUnifyTransforms {
                     n;
             }
         });
+    }
+
+    static inline function isLockedPayload(cl: ECaseClause): Bool {
+        var isTwo = false;
+        var secondIsValue = false;
+        switch (cl.pattern) {
+            case PTuple(parts) if (parts.length == 2):
+                isTwo = true;
+                switch (parts[1]) { case PVar(b) if (b == "_value"): secondIsValue = true; default: }
+            default:
+        }
+        if (!isTwo) return false;
+        if (secondIsValue) return true;
+        // Also honor explicit lock flag on the body, if present
+        var locked = false;
+        try {
+            locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true));
+        } catch (e:Dynamic) {}
+        return locked;
     }
 
     static function collectNames(node: ElixirAST, acc: Map<String, Bool>): Void {

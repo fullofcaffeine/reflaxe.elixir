@@ -1,20 +1,22 @@
 defmodule UserRepository do
   def get_all_users() do
-    MyApp.Repo.all(:user)
+    MyApp.Repo.all(User)
   end
   def get_user(id) do
-    MyApp.Repo.get(:user, id)
+    MyApp.Repo.get(MyApp.User, id)
   end
   def get_user_bang(id) do
-    MyApp.Repo.get!(:user, id)
+    MyApp.Repo.get!(User, id)
   end
   def create_user(attrs) do
-    changeset = MyApp.UserChangeset.changeset(nil, attrs)
-    MyApp.Repo.insert(changeset)
+    _ = MyApp.UserChangeset.changeset(nil, attrs)
+    _ = MyApp.Repo.insert(changeset)
+    _
   end
   def update_user(user, attrs) do
-    changeset = MyApp.UserChangeset.changeset(user, attrs)
-    MyApp.Repo.update(changeset)
+    _ = MyApp.UserChangeset.changeset(user, attrs)
+    _ = MyApp.Repo.update(changeset)
+    _
   end
   def delete_user(user) do
     MyApp.Repo.delete(user)
@@ -23,9 +25,9 @@ defmodule UserRepository do
     MyApp.Repo.preload(user, ["posts"])
   end
   def count_users() do
-    MyApp.Repo.aggregate(:user, "count")
+    MyApp.Repo.aggregate(User, "count")
   end
   def get_first_user() do
-    MyApp.Repo.one(:user)
+    MyApp.Repo.one(MyApp.User)
   end
 end

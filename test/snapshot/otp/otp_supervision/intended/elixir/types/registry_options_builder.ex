@@ -6,18 +6,20 @@ defmodule RegistryOptionsBuilder do
     %{:keys => {:duplicate}, :name => String.to_atom(name)}
   end
   def with_partitions(options, partitions) do
-    partitions = partitions
+    options = Map.put(options, "partitions", partitions)
     options
   end
   def with_compression(options) do
-    compressed = true
+    options = Map.put(options, "compressed", true)
     options
   end
   def with_meta(options, key, value) do
-    if (Map.get(options, :meta) == nil) do
-      meta = []
+    options = if (Kernel.is_nil(options.meta)) do
+      Map.put(options, "meta", [])
+    else
+      options
     end
-    options.meta ++ [%{:key => key, :value => value}]
+    _ = options.meta.push(%{:key => key, :value => value})
     options
   end
 end

@@ -1,6 +1,6 @@
 defmodule TableBuilder do
   def add_column(struct, name, type, options) do
-    columns = columns ++ [%{:name => name, :type => type, :options => options}]
+    _ = columns ++ [%{:name => name, :type => type, :options => options}]
     struct
   end
   def add_id(struct, name, type) do
@@ -11,8 +11,8 @@ defmodule TableBuilder do
     end
   end
   def add_timestamps(struct) do
-    struct = struct.addColumn("inserted_at", {:date_time}, %{:nullable => false})
-    struct = struct.addColumn("updated_at", {:date_time}, %{:nullable => false})
+    _ = struct.addColumn("inserted_at", {:date_time}, %{:nullable => false})
+    _ = struct.addColumn("updated_at", {:date_time}, %{:nullable => false})
     struct
   end
   def add_reference(struct, column_name, referenced_table, options) do
@@ -20,22 +20,22 @@ defmodule TableBuilder do
     if (not Kernel.is_nil(options)) do
       column_options = %{:nullable => false, :on_delete => options.on_delete, :on_update => options.on_update}
     end
-    struct = struct.addColumn(column_name, {:references, referenced_table}, column_options)
+    _ = struct.addColumn(column_name, {:references, referenced_table}, column_options)
     struct
   end
   def add_foreign_key(struct, column_name, referenced_table, options) do
     struct.addReference(column_name, referenced_table, options)
   end
   def add_index(struct, columns, options) do
-    indexes = indexes ++ [%{:columns => columns, :options => options}]
+    _ = indexes ++ [%{:columns => columns, :options => options}]
     struct
   end
   def add_unique_constraint(struct, columns, name) do
-    constraints = constraints ++ [%{:type => {:unique}, :columns => columns, :name => name, :expression => nil}]
+    _ = constraints ++ [%{:type => {:unique}, :columns => columns, :name => name, :expression => nil}]
     struct
   end
   def add_check_constraint(struct, name, expression) do
-    constraints = constraints ++ [%{:type => {:check}, :name => name, :expression => expression, :columns => nil}]
+    _ = constraints ++ [%{:type => {:check}, :name => name, :expression => expression, :columns => nil}]
     struct
   end
 end

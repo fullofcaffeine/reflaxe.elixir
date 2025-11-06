@@ -637,7 +637,7 @@ class LoopTransforms {
         if (stmts.length < 4) return null; // Need at least 2 pairs
         
         #if debug_loop_unrolling
-        trace('[XRay LoopTransforms] detectNestedUnrolledLoop: Checking ${stmts.length} statements for alternating pattern');
+        #if debug_ast_transformer Sys.println('[XRay LoopTransforms] detectNestedUnrolledLoop: Checking ${stmts.length} statements for alternating pattern'); #end
         #end
         
         // Check if we have alternating pattern: statement, Enum.each, statement, Enum.each...
@@ -2162,7 +2162,9 @@ class LoopTransforms {
     static function detectUnrolledLoop(stmts: Array<ElixirAST>): Null<ElixirAST> {
         if (stmts.length < 2) return null;
         
-        trace('[XRay LoopTransforms] detectUnrolledLoop: Analyzing ' + stmts.length + ' statements for unrolled patterns');
+        #if debug_ast_transformer
+        Sys.println('[XRay LoopTransforms] detectUnrolledLoop: Analyzing ' + stmts.length + ' statements for unrolled patterns');
+        #end
         
         // Try to find groups of similar consecutive statements
         var i = 0;
@@ -2174,7 +2176,7 @@ class LoopTransforms {
             var wrappedComprehension = detectComprehensionInReduceWhile(stmts[i]);
 
             if (wrappedComprehension != null) {
-                trace('[XRay LoopTransforms] ✅ Found wrapped comprehension at position $i');
+                #if debug_ast_transformer Sys.println('[XRay LoopTransforms] ✅ Found wrapped comprehension at position $i'); #end
                 transformedStmts.push(wrappedComprehension);
                 i++;
                 continue;
@@ -2185,7 +2187,7 @@ class LoopTransforms {
             var comprehensionResult = detectComprehensionPattern(stmts, i);
 
             if (comprehensionResult != null) {
-                trace('[XRay LoopTransforms] ✅ Found comprehension pattern at position $i consuming ${comprehensionResult.count} statements');
+                #if debug_ast_transformer Sys.println('[XRay LoopTransforms] ✅ Found comprehension pattern at position $i consuming ${comprehensionResult.count} statements'); #end
                 transformedStmts.push(comprehensionResult.transformed);
                 i += comprehensionResult.count;
                 continue;
@@ -2195,7 +2197,7 @@ class LoopTransforms {
             var loopGroup = detectLoopGroup(stmts, i);
 
             if (loopGroup != null) {
-                trace('[XRay LoopTransforms] ✅ Found loop group at position $i with ${loopGroup.count} iterations');
+                #if debug_ast_transformer Sys.println('[XRay LoopTransforms] ✅ Found loop group at position $i with ${loopGroup.count} iterations'); #end
                 transformedStmts.push(loopGroup.transformed);
                 i += loopGroup.count;
             } else {
@@ -2207,11 +2209,10 @@ class LoopTransforms {
         
         // If we transformed anything, return a new block
         if (transformedStmts.length != stmts.length) {
-            trace('[XRay LoopTransforms] Transformed block: ${stmts.length} statements → ${transformedStmts.length} statements');
+            #if debug_ast_transformer Sys.println('[XRay LoopTransforms] Transformed block: ${stmts.length} statements → ${transformedStmts.length} statements'); #end
             return makeAST(EBlock(transformedStmts));
         }
-        
-        trace('[XRay LoopTransforms] No unrolled loops detected in block');
+        #if debug_ast_transformer Sys.println('[XRay LoopTransforms] No unrolled loops detected in block'); #end
         return null;
     }
     
@@ -2222,17 +2223,17 @@ class LoopTransforms {
     static function detectLoopGroup(stmts: Array<ElixirAST>, startIdx: Int): Null<{transformed: ElixirAST, count: Int}> {
         if (startIdx >= stmts.length) return null;
         
-        trace('[XRay LoopTransforms] detectLoopGroup: Called with startIdx=$startIdx, total stmts=${stmts.length}');
+        #if debug_ast_transformer Sys.println('[XRay LoopTransforms] detectLoopGroup: Called with startIdx=$startIdx, total stmts=${stmts.length}'); #end
         
         var firstCall = extractFunctionCall(stmts[startIdx]);
         if (firstCall == null) {
-            trace('[XRay LoopTransforms]   No function call at index $startIdx');
+            #if debug_ast_transformer Sys.println('[XRay LoopTransforms]   No function call at index $startIdx'); #end
             return null;
         }
         
-        trace('[XRay LoopTransforms] detectLoopGroup: Checking from index $startIdx, first call: ${firstCall.module}.${firstCall.func}');
+        #if debug_ast_transformer Sys.println('[XRay LoopTransforms] detectLoopGroup: Checking from index $startIdx, first call: ${firstCall.module}.${firstCall.func}'); #end
         if (firstCall.args.length > 0) {
-            trace('[XRay LoopTransforms]   First arg type: ' + firstCall.args[0].def);
+            #if debug_ast_transformer Sys.println('[XRay LoopTransforms]   First arg type: ' + firstCall.args[0].def); #end
         }
         
         // Count how many consecutive statements match the pattern

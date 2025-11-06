@@ -6,7 +6,7 @@ defmodule Bytes do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
-    slice = :binary.part(struct.b, pos, len)
+    _ = :binary.part(struct.b, pos, len)
     :unicode.characters_to_list(slice, :utf8)
   end
   def to_string(struct) do
@@ -22,12 +22,12 @@ defmodule Bytes do
     if (pos < 0 or pos >= length(struct)) do
       throw("Out of bounds")
     end
-    before_part = if (pos > 0) do
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos < (length(struct) - 1)) do
+    _ = if (pos < (length(struct) - 1)) do
       :binary.part(struct.b, pos + 1, ((length(struct) - pos) - 1))
     else
       <<>>
@@ -38,13 +38,13 @@ defmodule Bytes do
     if (pos < 0 or srcpos < 0 or len < 0 or pos + len > length(struct) or srcpos + len > length(src)) do
       throw("Out of bounds")
     end
-    src_slice = :binary.part(src.b, srcpos, len)
-    before_part = if (pos > 0) do
+    _ = :binary.part(src.b, srcpos, len)
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + len < length(struct)) do
+    _ = if (pos + len < length(struct)) do
       :binary.part(struct.b, pos + len, ((length(struct) - pos) - len))
     else
       <<>>
@@ -56,19 +56,20 @@ defmodule Bytes do
       throw("Out of bounds")
     end
     sub_binary = :binary.part(struct.b, pos, len)
-    MyApp.Bytes.new(len, sub_binary)
+    _ = MyApp.Bytes.new(len, sub_binary)
+    _
   end
   def fill(struct, pos, len, value) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
-    fill_bytes = :binary.copy(<<value::8>>, len)
-    before_part = if (pos > 0) do
+    _ = :binary.copy(<<value::8>>, len)
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + len < length(struct)) do
+    _ = if (pos + len < length(struct)) do
       :binary.part(struct.b, pos + len, ((length(struct) - pos) - len))
     else
       <<>>
@@ -95,12 +96,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
-    before_part = if (pos > 0) do
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + 8 < length(struct)) do
+    _ = if (pos + 8 < length(struct)) do
       :binary.part(struct.b, pos + 8, ((length(struct) - pos) - 8))
     else
       <<>>
@@ -117,12 +118,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
-    before_part = if (pos > 0) do
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + 4 < length(struct)) do
+    _ = if (pos + 4 < length(struct)) do
       :binary.part(struct.b, pos + 4, ((length(struct) - pos) - 4))
     else
       <<>>
@@ -139,12 +140,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 2 > length(struct)) do
       throw("Out of bounds")
     end
-    before_part = if (pos > 0) do
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + 2 < length(struct)) do
+    _ = if (pos + 2 < length(struct)) do
       :binary.part(struct.b, pos + 2, ((length(struct) - pos) - 2))
     else
       <<>>
@@ -161,12 +162,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
-    before_part = if (pos > 0) do
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + 4 < length(struct)) do
+    _ = if (pos + 4 < length(struct)) do
       :binary.part(struct.b, pos + 4, ((length(struct) - pos) - 4))
     else
       <<>>
@@ -183,12 +184,12 @@ defmodule Bytes do
     if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
-    before_part = if (pos > 0) do
+    _ = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
     else
       <<>>
     end
-    after_part = if (pos + 8 < length(struct)) do
+    _ = if (pos + 8 < length(struct)) do
       :binary.part(struct.b, pos + 8, ((length(struct) - pos) - 8))
     else
       <<>>
@@ -203,12 +204,14 @@ defmodule Bytes do
   end
   def alloc(length) do
     b2 = :binary.copy(<<0>>, length)
-    MyApp.Bytes.new(length, b2)
+    _ = MyApp.Bytes.new(length, b2)
+    _
   end
-  def of_string(s, _encoding) do
+  def of_string(s, encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length2 = byte_size(binary)
-    MyApp.Bytes.new(length2, binary)
+    encoding = MyApp.Bytes.new(length2, binary)
+    encoding
   end
   def fast_get(b, pos) do
     :binary.at(b, pos)
@@ -216,10 +219,12 @@ defmodule Bytes do
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
     length2 = byte_size(binary)
-    MyApp.Bytes.new(length2, binary)
+    _ = MyApp.Bytes.new(length2, binary)
+    _
   end
   def of_data(b) do
     length2 = byte_size(b)
-    MyApp.Bytes.new(length2, b)
+    _ = MyApp.Bytes.new(length2, b)
+    _
   end
 end

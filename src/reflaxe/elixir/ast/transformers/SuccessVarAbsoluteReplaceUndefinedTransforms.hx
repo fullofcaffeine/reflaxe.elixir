@@ -48,6 +48,8 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
                 case ECase(target, clauses):
                     var newClauses = [];
                     for (cl in clauses) {
+                        // Respect canonical payload binder lock
+                        if (isLockedPayload(cl)) { newClauses.push(cl); continue; }
                         var binder = extractOkBinder(cl.pattern);
                         if (binder != null) {
                             var declared = new Map<String,Bool>();
@@ -122,6 +124,22 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
                     n;
             }
         });
+    }
+
+    static inline function isLockedPayload(cl: ECaseClause): Bool {
+        // If second slot is exactly _value or body flagged lock, skip
+        var secondIsValue = false;
+        switch (cl.pattern) {
+            case PTuple(parts) if (parts.length == 2):
+                switch (parts[1]) { case PVar(b) if (b == "_value"): secondIsValue = true; default: }
+            default:
+        }
+        if (secondIsValue) return true;
+        var locked = false;
+        try {
+            locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true));
+        } catch (e:Dynamic) {}
+        return locked;
     }
 
     static function extractOkBinder(p: EPattern): Null<String> {

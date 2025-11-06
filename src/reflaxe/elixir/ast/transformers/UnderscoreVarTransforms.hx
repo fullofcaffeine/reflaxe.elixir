@@ -78,10 +78,12 @@ class UnderscoreVarTransforms {
         referenced = VariableUsageCollector.referencedInFunctionScope(body);
 
         // Build rename map: _name -> name when name is referenced OR _name is referenced, and name is not declared
+        // Guard: never rename the canonical case-payload binder `_value` (set by payload canonicalization)
         var rename = new Map<String, String>();
         for (k in declared.keys()) {
             if (k.length > 1 && k.charAt(0) == "_") {
                 var base = k.substr(1);
+                if (k == "_value") continue; // preserve canonical payload binder
                 if ((referenced.exists(base) || referenced.exists(k)) && !declared.exists(base)) {
                     rename.set(k, base);
                 }

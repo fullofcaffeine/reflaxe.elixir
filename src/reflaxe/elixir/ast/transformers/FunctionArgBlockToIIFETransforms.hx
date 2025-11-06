@@ -29,11 +29,21 @@ class FunctionArgBlockToIIFETransforms {
             return switch (n.def) {
                 case ECall(target, name, args):
                     var newArgs = [];
-                    for (a in args) if (shouldWrap(a)) newArgs.push(makeIIFE(unwrapParens(a))) else newArgs.push(a);
+                    for (a in args) if (shouldWrap(a)) {
+                        #if debug_iife
+                        trace('[FunctionArgBlockToIIFE] wrapping arg for ' + (name == null ? '<anon>' : name));
+                        #end
+                        newArgs.push(makeIIFE(unwrapParens(a)));
+                    } else newArgs.push(a);
                     if (newArgs != args) makeAST(ECall(target, name, newArgs)) else n;
                 case ERemoteCall(mod, name2, args2):
                     var newArgs2 = [];
-                    for (a2 in args2) if (shouldWrap(a2)) newArgs2.push(makeIIFE(unwrapParens(a2))) else newArgs2.push(a2);
+                    for (a2 in args2) if (shouldWrap(a2)) {
+                        #if debug_iife
+                        trace('[FunctionArgBlockToIIFE] wrapping arg for remote ' + name2);
+                        #end
+                        newArgs2.push(makeIIFE(unwrapParens(a2)));
+                    } else newArgs2.push(a2);
                     if (newArgs2 != args2) makeAST(ERemoteCall(mod, name2, newArgs2)) else n;
                 default:
                     n;
@@ -48,14 +58,33 @@ class FunctionArgBlockToIIFETransforms {
         }
     }
 
+    static inline function isNumericSentinel(e: ElixirAST): Bool {
+        return switch (e.def) {
+            case EInteger(v) if (v == 0 || v == 1): true;
+            case EFloat(f) if (f == 0.0): true;
+            default: false;
+        }
+    }
+
     static inline function shouldWrap(a: ElixirAST): Bool {
+        function needsWrapFor(sts:Array<ElixirAST>):Bool {
+            if (sts == null) return false;
+            // Ignore bare numeric sentinels often emitted by earlier passes
+            var filtered = [];
+            for (s in sts) if (!isNumericSentinel(s)) filtered.push(s);
+            // If any top-level element is already an anonymous function, don't wrap
+            for (s in filtered) switch (s.def) { case EFn(_): return false; default: }
+            // Otherwise, wrap only if there are multiple meaningful statements
+            return filtered.length > 1;
+        }
+
         return switch (a.def) {
-            case EBlock(sts) if (sts != null && sts.length > 1): true;
-            case EDo(sts2) if (sts2 != null && sts2.length > 1): true;
+            case EBlock(sts): needsWrapFor(sts);
+            case EDo(sts2): needsWrapFor(sts2);
             case EParen(inner):
                 switch (inner.def) {
-                    case EBlock(es) if (es != null && es.length > 1): true;
-                    case EDo(es2) if (es2 != null && es2.length > 1): true;
+                    case EBlock(es): needsWrapFor(es);
+                    case EDo(es2): needsWrapFor(es2);
                     default: false;
                 }
             default: false;

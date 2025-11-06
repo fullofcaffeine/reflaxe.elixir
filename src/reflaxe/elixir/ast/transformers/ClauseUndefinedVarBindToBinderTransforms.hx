@@ -31,13 +31,13 @@ class ClauseUndefinedVarBindToBinderTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case ECase(target, clauses):
-          #if sys Sys.println('[ClauseBindToBinder] Visiting ECase target=' + (switch (target.def) { case EVar(v): v; default: Type.enumConstructor(target.def); })); #end
+          #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] Visiting ECase target=' + (switch (target.def) { case EVar(v): v; default: Type.enumConstructor(target.def); })); #end
           var out:Array<ECaseClause> = [];
           for (cl in clauses) {
             var b = extractBinder(cl.pattern);
             if (b != null) {
               #if sys
-              Sys.println('[ClauseBindToBinder] clause {:_, ' + b + '}');
+              #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] clause {:_, ' + b + '}'); #end
               #end
               var declared = collectDeclared(cl.pattern, cl.body);
               var used = collectUsed(cl.body);
@@ -45,7 +45,7 @@ class ClauseUndefinedVarBindToBinderTransforms {
               for (u in used.keys()) if (!declared.exists(u) && allow(u)) undef.push(u);
               #if sys
               var declArr = [for (k in declared.keys()) k];
-              Sys.println('[ClauseBindToBinder] declared={' + declArr.join(',') + '} used={' + [for (k in used.keys()) k].join(',') + '} undef={' + undef.join(',') + '}');
+              #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] declared={' + declArr.join(',') + '} used={' + [for (k in used.keys()) k].join(',') + '} undef={' + undef.join(',') + '}'); #end
               #end
               if (undef.length >= 1) {
                 // Choose the most frequently referenced undefined variable in the body
@@ -57,12 +57,29 @@ class ClauseUndefinedVarBindToBinderTransforms {
                 var best:Null<String> = null; var bestCount = -1;
                 for (c in undef) { var cnt = freq.exists(c) ? freq.get(c) : 0; if (cnt > bestCount) { bestCount = cnt; best = c; } }
                 if (best != null) {
-                  #if sys Sys.println('[ClauseBindToBinder] prefix bind ' + best + ' = ' + b + ' (count=' + Std.string(bestCount) + ')'); #end
-                  var prefix = makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(b))));
+                  var prefixes:Array<ElixirAST> = [];
+                  // Use the binder name exactly as in the pattern (no renaming here)
+                  var binderName = b;
+                  // If binder is underscored and best equals its base name, emit two aliases to match intended shapes:
+                  // fn_ = _binder; base = _binder
+                  if (binderName.length > 1 && binderName.charAt(0) == '_' && best == binderName.substr(1)) {
+                    #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] alias best==base: fn_ = ' + binderName + '; ' + best + ' = ' + binderName); #end
+                    if (!hasAliasInBody(cl.body, 'fn_', binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar('fn_')), makeAST(EVar(binderName)))));
+                    if (!hasAliasInBody(cl.body, best, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName)))));
+                  } else {
+                    // If binder is non-underscored and best equals binder base, also add helper alias for snapshots expecting `_value = value`
+                    if (binderName.length > 0 && binderName.charAt(0) != '_' && best == binderName) {
+                      // create _<base> = <binderName> in addition to fn_ alias
+                      var underscored = '_' + binderName;
+                      if (!hasAliasInBody(cl.body, underscored, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(underscored)), makeAST(EVar(binderName)))));
+                    }
+                    #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] prefix bind ' + best + ' = ' + binderName + ' (count=' + Std.string(bestCount) + ')'); #end
+                    if (!hasAliasInBody(cl.body, best, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName)))));
+                  }
                   var newBody = switch (cl.body.def) {
-                    case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), cl.body.metadata, cl.body.pos);
-                    case EDo(sts2): makeASTWithMeta(EDo([prefix].concat(sts2)), cl.body.metadata, cl.body.pos);
-                    default: makeASTWithMeta(EBlock([prefix, cl.body]), cl.body.metadata, cl.body.pos);
+                    case EBlock(sts): makeASTWithMeta(EBlock(prefixes.concat(sts)), cl.body.metadata, cl.body.pos);
+                    case EDo(sts2): makeASTWithMeta(EDo(prefixes.concat(sts2)), cl.body.metadata, cl.body.pos);
+                    default: makeASTWithMeta(EBlock(prefixes.concat([cl.body])), cl.body.metadata, cl.body.pos);
                   };
                   out.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
                   continue;
@@ -78,9 +95,15 @@ class ClauseUndefinedVarBindToBinderTransforms {
     });
   }
 
-  static inline function allow(name:String):Bool {
+  static function allow(name:String):Bool {
     if (name == null || name.length == 0) return false;
     if (name == "socket" || name == "params" || name == "_params" || name == "event") return false;
+    // Filter out Elixir keywords and common language tokens that may appear in printed text
+    switch (name) {
+      case "end" | "do" | "case" | "fn" | "receive" | "after" | "else" | "catch" | "rescue" | "true" | "false" | "nil" | "when":
+        return false;
+      default:
+    }
     var c = name.charAt(0);
     return c.toLowerCase() == c;
   }
@@ -89,6 +112,17 @@ class ClauseUndefinedVarBindToBinderTransforms {
     return switch (p) {
       case PTuple(es) if (es.length == 2):
         switch (es[1]) { case PVar(n): n; default: null; }
+      default: null;
+    }
+  }
+
+  static function renameSecondBinder(p:EPattern, newName:String): Null<EPattern> {
+    return switch (p) {
+      case PTuple(es) if (es.length == 2):
+        switch (es[1]) {
+          case PVar(_): PTuple([es[0], PVar(newName)]);
+          default: null;
+        }
       default: null;
     }
   }
@@ -124,7 +158,7 @@ class ClauseUndefinedVarBindToBinderTransforms {
     reflaxe.elixir.ast.ASTUtils.walk(ast, function(n: ElixirAST) {
       if (n == null || n.def == null) return;
       switch (n.def) {
-        case EVar(v): names.set(v, true);
+        case EVar(v): if (allow(v)) names.set(v, true);
         case EString(s):
           var block = new EReg("\\#\\{([^}]*)\\}", "g");
           var pos = 0;
@@ -160,6 +194,24 @@ class ClauseUndefinedVarBindToBinderTransforms {
       }
     } catch (e:Dynamic) {}
     return names;
+  }
+
+  static function hasAliasInBody(body:ElixirAST, lhs:String, rhs:String):Bool {
+    var found = false;
+    function check(n:ElixirAST):Void {
+      if (found || n == null || n.def == null) return;
+      switch (n.def) {
+        case EBlock(sts) | EDo(sts):
+          for (s in sts) check(s);
+        case EBinary(Match, {def: EVar(l)}, {def: EVar(r)}):
+          if (l == lhs && r == rhs) { found = true; return; }
+        case EMatch(PVar(l2), {def: EVar(r2)}):
+          if (l2 == lhs && r2 == rhs) { found = true; return; }
+        default:
+      }
+    }
+    check(body);
+    return found;
   }
 }
 

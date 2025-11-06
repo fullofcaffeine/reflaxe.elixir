@@ -15,8 +15,7 @@ defmodule Sys do
     :standard_error
   end
   def get_char(echo) do
-    ((
-
+    
             # Save current terminal settings
             {:ok, old_settings} = :io.getopts(:standard_io)
             
@@ -37,17 +36,15 @@ defmodule Sys do
                 _ -> 0
             end
         
-))
   end
   def environment() do
-    env = %{}
-    elixir_env = System.get_env()
+    _ = System.get_env()
     
             Enum.each(elixir_env, fn {k, v} -> 
                 env.set(k, v)
                 nil
             end)
-    env
+    %{}
   end
   def get_env(s) do
     System.get_env(s)
@@ -68,7 +65,7 @@ defmodule Sys do
     System.halt(code)
   end
   def command(cmd, args) do
-    if (args == nil || length(args) == 0) do
+    if (Kernel.is_nil(args) or length(args) == 0) do
       
                 case System.cmd("sh", ["-c", cmd]) do
                     {_, 0} -> 0
@@ -86,15 +83,13 @@ defmodule Sys do
     System.system_time(:second)
   end
   def cpu_time() do
-    (
-
+    
             {total, _} = :erlang.statistics(:runtime)
             total / 1000.0
         
-)
   end
   def sleep(seconds) do
-    milliseconds = Std.int(seconds * 1000)
+    _ = trunc.(seconds * 1000)
     Process.sleep(milliseconds)
   end
   def system_name() do

@@ -91,6 +91,40 @@ class RefDeclAlignmentTransforms {
 
         // Collect references (closure-aware)
         referenced = VariableUsageCollector.referencedInFunctionScope(body);
+        // Augment references with identifiers found in string/ERaw interpolations
+        function allowIdent(id:String):Bool {
+            if (id == null || id.length == 0) return false;
+            // Exclude atoms, module names are not present here; keep simple lowercase names
+            var c = id.charAt(0);
+            return c.toLowerCase() == c && c != '_';
+        }
+        function collectTokensFromString(src:String, out:Map<String,Bool>):Void {
+            if (src == null || src.indexOf("#{") == -1) return;
+            var re = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+            var pos = 0;
+            while (re.matchSub(src, pos)) {
+                var id = re.matched(0);
+                if (allowIdent(id)) out.set(id, true);
+                pos = re.matchedPos().pos + re.matchedPos().len;
+            }
+        }
+        function addStringRefs(n:ElixirAST):Void {
+            if (n == null || n.def == null) return;
+            switch (n.def) {
+                case EString(s):
+                    if (s != null) collectTokensFromString(s, referenced);
+                case ERaw(code):
+                    if (code != null) collectTokensFromString(code, referenced);
+                case EBlock(ss): for (e in ss) addStringRefs(e);
+                case EDo(ss2): for (e in ss2) addStringRefs(e);
+                case EIf(c,t,e): addStringRefs(c); addStringRefs(t); if (e != null) addStringRefs(e);
+                case ECase(expr, cs): addStringRefs(expr); for (c in cs) addStringRefs(c.body);
+                case ECall(tgt,_,args): if (tgt != null) addStringRefs(tgt); for (a in args) addStringRefs(a);
+                case ERemoteCall(tgt2,_,args2): addStringRefs(tgt2); for (a in args2) addStringRefs(a);
+                default:
+            }
+        }
+        addStringRefs(body);
 
         // Build groups by base name: base -> [declared variants]
         var groups = new Map<String, Array<String>>();
@@ -115,7 +149,9 @@ class RefDeclAlignmentTransforms {
             if (hasPlainRef) {
                 pick = base;
             } else if (numericDecls.length == 1 && referenced.exists(base)) {
-                pick = numericDecls[0];
+                // Avoid promoting to numeric-suffixed locals (violates naming rules).
+                // Prefer plain base when referenced; fall back to underscore form otherwise.
+                pick = base;
             } else if (hasUnderscoreDecl && (referenced.exists(base) || referenced.exists("_" + base))) {
                 pick = base;
             }

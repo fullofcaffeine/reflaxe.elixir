@@ -362,6 +362,7 @@ class SwitchBuilder {
             };
         }
 
+        #if enable_nested_switch_flatten
         // Attempt flattening when matching Option.Some(var) and body switches on that var
         var someInfo = isOptionSomeCall(value);
         if (someInfo.isSome) {
@@ -404,6 +405,7 @@ class SwitchBuilder {
                 }
             }
         }
+        #end
 
         // CRITICAL FIX: Extract variable names from CASE BODY, not pattern or guard!
         // After TEnumIndex optimization: pattern=TConst(0), NO variable names!

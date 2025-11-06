@@ -30,18 +30,19 @@ defmodule Main do
         e ->
           Log.trace("Caught string: " <> e, %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "multipleCatch"})
         e ->
-          Log.trace("Caught int: " <> e.to_string(), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "multipleCatch"})
+          Log.trace("Caught int: " <> Kernel.to_string(e), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "multipleCatch"})
         e ->
           Log.trace("Caught exception: " <> e.get_message(), %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "multipleCatch"})
         e ->
           Log.trace("Caught dynamic: " <> inspect(e), %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "multipleCatch"})
       end
     end
-    test_error.(1)
-    test_error.(2)
-    test_error.(3)
-    test_error.(4)
-    test_error.(0)
+    _ = test_error.(1)
+    _ = test_error.(2)
+    _ = test_error.(3)
+    _ = test_error.(4)
+    _ = test_error.(0)
+    _
   end
   def try_catch_finally() do
     _ = "resource"
@@ -58,7 +59,8 @@ defmodule Main do
       e ->
         
     end
-    Log.trace("After try-catch block", %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "tryCatchFinally"})
+    _ = Log.trace("After try-catch block", %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "tryCatchFinally"})
+    _
   end
   def nested_try_catch() do
     try do
@@ -81,7 +83,7 @@ defmodule Main do
       throw(CustomException.new("Custom error", 404))
     rescue
       e ->
-        Log.trace("Custom exception: " <> e.get_message() <> ", code: " <> e.code.to_string(), %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "customException"})
+        Log.trace("Custom exception: " <> e.get_message() <> ", code: " <> Kernel.to_string(e.code), %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "customException"})
     end
   end
   def divide(a, b) do
@@ -93,7 +95,7 @@ defmodule Main do
   def test_division() do
     try do
       result = divide(10, 2)
-      Log.trace("10 / 2 = " <> result.to_string(), %{:file_name => "Main.hx", :line_number => 117, :class_name => "Main", :method_name => "testDivision"})
+      Log.trace("10 / 2 = " <> Kernel.to_string(result), %{:file_name => "Main.hx", :line_number => 117, :class_name => "Main", :method_name => "testDivision"})
       result = divide(10, 0)
       Log.trace("This won't execute", %{:file_name => "Main.hx", :line_number => 120, :class_name => "Main", :method_name => "testDivision"})
     rescue
@@ -132,39 +134,41 @@ defmodule Main do
     end
   end
   def try_as_expression() do
-    value = try do
+    _ = try do
       String.to_integer("123")
     rescue
       e ->
         0
     end
-    Log.trace("Parsed value: #{(fn -> value end).()}", %{:file_name => "Main.hx", :line_number => 169, :class_name => "Main", :method_name => "tryAsExpression"})
-    value2 = try do
+    _ = Log.trace("Parsed value: #{(fn -> value end).()}", %{:file_name => "Main.hx", :line_number => 169, :class_name => "Main", :method_name => "tryAsExpression"})
+    _ = try do
       String.to_integer("not a number")
     rescue
       e ->
         -1
     end
-    Log.trace("Failed parse value: #{(fn -> value2 end).()}", %{:file_name => "Main.hx", :line_number => 176, :class_name => "Main", :method_name => "tryAsExpression"})
+    _ = Log.trace("Failed parse value: #{(fn -> value2 end).()}", %{:file_name => "Main.hx", :line_number => 176, :class_name => "Main", :method_name => "tryAsExpression"})
+    _
   end
   def main() do
-    Log.trace("=== Basic Try-Catch ===", %{:file_name => "Main.hx", :line_number => 180, :class_name => "Main", :method_name => "main"})
-    basic_try_catch()
-    Log.trace("\n=== Multiple Catch ===", %{:file_name => "Main.hx", :line_number => 183, :class_name => "Main", :method_name => "main"})
-    multiple_catch()
-    Log.trace("\n=== Try-Catch-Finally ===", %{:file_name => "Main.hx", :line_number => 186, :class_name => "Main", :method_name => "main"})
-    try_catch_finally()
-    Log.trace("\n=== Nested Try-Catch ===", %{:file_name => "Main.hx", :line_number => 189, :class_name => "Main", :method_name => "main"})
-    nested_try_catch()
-    Log.trace("\n=== Custom Exception ===", %{:file_name => "Main.hx", :line_number => 192, :class_name => "Main", :method_name => "main"})
-    custom_exception()
-    Log.trace("\n=== Division Test ===", %{:file_name => "Main.hx", :line_number => 195, :class_name => "Main", :method_name => "main"})
-    test_division()
-    Log.trace("\n=== Rethrow Example ===", %{:file_name => "Main.hx", :line_number => 198, :class_name => "Main", :method_name => "main"})
-    rethrow_example()
-    Log.trace("\n=== Stack Trace Example ===", %{:file_name => "Main.hx", :line_number => 201, :class_name => "Main", :method_name => "main"})
-    stack_trace_example()
-    Log.trace("\n=== Try as Expression ===", %{:file_name => "Main.hx", :line_number => 204, :class_name => "Main", :method_name => "main"})
-    try_as_expression()
+    _ = Log.trace("=== Basic Try-Catch ===", %{:file_name => "Main.hx", :line_number => 180, :class_name => "Main", :method_name => "main"})
+    _ = basic_try_catch()
+    _ = Log.trace("\n=== Multiple Catch ===", %{:file_name => "Main.hx", :line_number => 183, :class_name => "Main", :method_name => "main"})
+    _ = multiple_catch()
+    _ = Log.trace("\n=== Try-Catch-Finally ===", %{:file_name => "Main.hx", :line_number => 186, :class_name => "Main", :method_name => "main"})
+    _ = try_catch_finally()
+    _ = Log.trace("\n=== Nested Try-Catch ===", %{:file_name => "Main.hx", :line_number => 189, :class_name => "Main", :method_name => "main"})
+    _ = nested_try_catch()
+    _ = Log.trace("\n=== Custom Exception ===", %{:file_name => "Main.hx", :line_number => 192, :class_name => "Main", :method_name => "main"})
+    _ = custom_exception()
+    _ = Log.trace("\n=== Division Test ===", %{:file_name => "Main.hx", :line_number => 195, :class_name => "Main", :method_name => "main"})
+    _ = test_division()
+    _ = Log.trace("\n=== Rethrow Example ===", %{:file_name => "Main.hx", :line_number => 198, :class_name => "Main", :method_name => "main"})
+    _ = rethrow_example()
+    _ = Log.trace("\n=== Stack Trace Example ===", %{:file_name => "Main.hx", :line_number => 201, :class_name => "Main", :method_name => "main"})
+    _ = stack_trace_example()
+    _ = Log.trace("\n=== Try as Expression ===", %{:file_name => "Main.hx", :line_number => 204, :class_name => "Main", :method_name => "main"})
+    _ = try_as_expression()
+    _
   end
 end

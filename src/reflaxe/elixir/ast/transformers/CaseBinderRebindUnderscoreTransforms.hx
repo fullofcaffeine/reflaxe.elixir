@@ -63,7 +63,10 @@ class CaseBinderRebindUnderscoreTransforms {
                             Sys.println('[CaseBinderRebindUnderscore] binder=' + b + ' rebindIdx=' + rebindIdx + ' useIdx=' + useIdx);
                             #end
                             if (rebindIdx >= 0 && (useIdx == -1 || rebindIdx < useIdx)) {
-                                toUnderscore.push(b);
+                                // Do not underscore when the immediate rebind is a clause‑local alias of the form b = _b
+                                if (!isAliasFromUnderscoredBinder(bodyStmts[rebindIdx], b)) {
+                                    toUnderscore.push(b);
+                                }
                             }
                         }
                         #if debug_hygiene
@@ -120,6 +123,14 @@ class CaseBinderRebindUnderscoreTransforms {
             default:
         }
         return -1;
+    }
+
+    static function isAliasFromUnderscoredBinder(stmt: ElixirAST, name:String): Bool {
+        return switch (stmt.def) {
+            case EBinary(Match, {def: EVar(lhs)}, {def: EVar(rhs)}) if (lhs == name && rhs == '_' + name): true;
+            case EMatch(PVar(p), {def: EVar(rhs2)}) if (p == name && rhs2 == '_' + name): true;
+            default: false;
+        };
     }
 
     static function firstUseIndex(stmts:Array<ElixirAST>, name:String):Int {

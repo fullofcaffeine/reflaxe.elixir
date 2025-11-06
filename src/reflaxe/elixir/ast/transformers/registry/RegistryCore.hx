@@ -21,25 +21,33 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class RegistryCore {
   public static function validate(passes:Array<ElixirASTTransformer.PassConfig>):Array<ElixirASTTransformer.PassConfig> {
-    // Unique names
+    // Unique names (dedupe by first occurrence to avoid double-running a pass)
     var seen = new Map<String,Bool>();
+    var duplicateNames:Array<String> = [];
+    var deduped:Array<ElixirASTTransformer.PassConfig> = [];
     for (p in passes) {
       if (p == null || p.name == null) continue;
       if (seen.exists(p.name)) {
-        #if sys Sys.println('[RegistryCore] Duplicate pass name: ' + p.name); #end
-      } else seen.set(p.name, true);
+        duplicateNames.push(p.name);
+        continue; // drop subsequent occurrences
+      }
+      seen.set(p.name, true);
+      deduped.push(p);
     }
     // Missing dependencies
     var names = new Map<String,Bool>();
-    for (p in passes) if (p != null && p.name != null) names.set(p.name, true);
-    for (p in passes) if (p != null && p.runAfter != null) {
+    for (p in deduped) if (p != null && p.name != null) names.set(p.name, true);
+    var missingDeps = new Map<String, Array<String>>(); // dep -> [users]
+    for (p in deduped) if (p != null && p.runAfter != null) {
       for (dep in p.runAfter) if (!names.exists(dep)) {
-        #if sys Sys.println('[RegistryCore] Missing runAfter dependency: ' + dep + ' (referenced by ' + p.name + ')'); #end
+        var users = missingDeps.exists(dep) ? missingDeps.get(dep) : [];
+        users.push(p.name);
+        missingDeps.set(dep, users);
       }
     }
     // Cycle detection (best-effort):
     var graph = new Map<String, Array<String>>();
-    for (p in passes) {
+    for (p in deduped) {
       if (p == null || p.name == null) continue;
       graph.set(p.name, p.runAfter == null ? [] : p.runAfter.copy());
     }
@@ -48,7 +56,7 @@ class RegistryCore {
     function dfs(n:String, path:Array<String>):Void {
       if (visited.exists(n)) return;
       if (visiting.exists(n)) {
-        #if sys Sys.println('[RegistryCore] Cycle detected: ' + (path.concat([n]).join(' -> '))); #end
+        #if (sys && debug_pass_order) Sys.println('[RegistryCore] Cycle detected: ' + (path.concat([n]).join(' -> '))); #end
         return;
       }
       visiting.set(n, true);
@@ -58,9 +66,21 @@ class RegistryCore {
       visited.set(n, true);
     }
     for (k in graph.keys()) dfs(k, []);
-    // Return as-is to preserve exact ordering (no behavior change)
-    return passes;
+
+    // Emit compact diagnostics only when explicitly requested
+    #if (sys && debug_pass_order)
+    if (duplicateNames.length > 0) {
+      Sys.println('[RegistryCore] Duplicate pass names (deduped): ' + duplicateNames.join(', '));
+    }
+    if (missingDeps.keys().hasNext()) {
+      for (dep in missingDeps.keys()) {
+        var users = missingDeps.get(dep);
+        Sys.println('[RegistryCore] Missing runAfter dependency: ' + dep + ' (referenced by ' + users.join(', ') + ')');
+      }
+    }
+    #end
+    // Return deduped list to prevent duplicate pass side-effects
+    return deduped;
   }
 }
 #end
-

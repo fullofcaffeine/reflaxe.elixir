@@ -1,27 +1,24 @@
 defmodule UserService do
   def find_user(name) do
-    g = 0
-    g1 = UserService.users
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < length(acc_g1)) do
-    user = acc_g1[acc_g]
-    acc_g = acc_g + 1
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, (fn -> fn _, acc ->
+  if (0 < length(UserService.users)) do
+    user = UserService.users[0]
     if (user.name == name), do: {:some, user}
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, acc}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, acc}
   end
-end)
-    :none
+end end).())
+    {:none}
   end
   def get_user_email(name) do
-    OptionTools.then(find_user(name), fn user -> user.email end)
+    MyApp.OptionTools.then(find_user(name), fn user -> user.email end)
   end
-  def notify_user(name, _message) do
-    OptionTools.unwrap(OptionTools.map(get_user_email(name), fn email -> send_email(email, _message) end), false)
+  def notify_user(name, message) do
+    MyApp.OptionTools.unwrap(OptionTools.map(get_user_email(name), fn email -> send_email(email, message) end), false)
   end
   defp send_email(email, message) do
-    Log.trace("Sending email to " <> email <> ": " <> message, %{:file_name => "Main.hx", :line_number => 225, :class_name => "UserService", :method_name => "sendEmail"})
+    _ = Log.trace("Sending email to #{(fn -> email end).()}: #{(fn -> message end).()}", %{:file_name => "Main.hx", :line_number => 226, :class_name => "UserService", :method_name => "sendEmail"})
     true
   end
 end

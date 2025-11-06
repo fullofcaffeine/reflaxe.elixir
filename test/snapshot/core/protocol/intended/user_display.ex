@@ -6,6 +6,7 @@ defmodule UserDisplay do
     if (Map.get(options, :verbose)) do
       "User: #{(fn -> user.name end).()}, Age: #{(fn -> user.age end).()}"
     end
-    display(user)
+    _ = display(user)
+    _
   end
 end

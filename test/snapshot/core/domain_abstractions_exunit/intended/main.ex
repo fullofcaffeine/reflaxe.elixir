@@ -8,14 +8,14 @@ defmodule Main do
     valid_email = Email_Impl_.parse("user@example.com")
     assert match?({:ok, _}, valid_email)
     (case valid_email do
-      {:ok, valid_email} ->
+      {:ok, value} ->
         assert actual == "example.com"
         assert actual == "user"
         assert condition
         assert not condition
         normalized = Email_Impl_.normalize(email)
         assert actual == "user@example.com"
-      {:error, valid_email} -> flunk("Valid email should not fail: " <> reason)
+      {:error, reason} -> flunk("Valid email should not fail: " <> reason)
     end)
     invalid_email = Email_Impl_.parse("not-an-email")
     assert match?({:error, _}, invalid_email)
@@ -26,12 +26,12 @@ defmodule Main do
     user_id = UserId_Impl_.parse("User123")
     assert match?({:ok, _}, user_id)
     (case user_id do
-      {:ok, user_id} ->
+      {:ok, value} ->
         assert actual == "user123"
         assert condition
         assert condition
         assert actual == 7
-      {:error, user_id} -> flunk("Valid user ID should not fail: " <> reason)
+      {:error, reason} -> flunk("Valid user ID should not fail: " <> reason)
     end)
     empty_user_id = UserId_Impl_.parse("")
     assert match?({:error, _}, empty_user_id)
@@ -56,7 +56,7 @@ defmodule Main do
             diff = PositiveInt_Impl_.safe_sub(a, b)
             assert match?({:ok, _}, diff)
             (case diff do
-              {:ok, result} -> assert actual == 2
+              {:ok, value} -> assert actual == 2
               {:error, reason} -> flunk("Subtraction should not fail: " <> reason)
             end)
             invalid_diff = PositiveInt_Impl_.safe_sub(b, a)
@@ -74,12 +74,12 @@ defmodule Main do
     str = NonEmptyString_Impl_.parse("  hello world  ")
     assert match?({:ok, _}, str)
     (case str do
-      {:ok, upper} ->
+      {:ok, value} ->
         trimmed = NonEmptyString_Impl_.safe_trim(s)
         assert match?({:ok, _}, trimmed)
         (case trimmed do
-          {:ok, trimmed_str} -> assert actual == "hello world"
-          {:error, trimmed} -> flunk("Trim should not fail: " <> reason)
+          {:ok, value} -> assert actual == "hello world"
+          {:error, reason} -> flunk("Trim should not fail: " <> reason)
         end)
         upper = NonEmptyString_Impl_.to_upper_case(s)
         actual = NonEmptyString_Impl_.to_string(upper)
@@ -89,14 +89,14 @@ defmodule Main do
         assert actual == "  hello world  "
         actual = NonEmptyString_Impl_.length(s)
         assert actual == 15
-      {:error, str} -> flunk("Valid non-empty string should not fail: " <> reason)
+      {:error, reason} -> flunk("Valid non-empty string should not fail: " <> reason)
     end)
     empty = NonEmptyString_Impl_.parse("")
     assert match?({:error, _}, empty)
     whitespace_only = NonEmptyString_Impl_.parse("   ")
     assert match?({:ok, _}, whitespace_only)
     (case whitespace_only do
-      {:ok, ws} ->
+      {:ok, value} ->
         trimmed = NonEmptyString_Impl_.safe_trim(ws)
         assert match?({:error, _}, trimmed)
       {:error, whitespace_only} -> flunk("Whitespace-only should parse")
@@ -106,7 +106,7 @@ defmodule Main do
     domain_result = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@example.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:ok, _}, domain_result)
     (case domain_result do
-      {:ok, domain_result} -> assert domain == "example.com"
+      {:ok, value} -> assert domain == "example.com"
       {:error, reason} -> flunk("Domain extraction should not fail: " <> reason)
     end)
     failed_filter = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@wrong.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
@@ -117,7 +117,7 @@ defmodule Main do
     email_option = ResultTools.to_option(email_result)
     assert match?({:some, _}, email_option)
     (case email_option do
-      {:some, email_option} -> assert actual == "example.com"
+      {:some, actual} -> assert actual == "example.com"
       {:none} -> flunk("Valid email should not be None")
     end)
     invalid_email_result = Email_Impl_.parse("invalid")
@@ -128,12 +128,12 @@ defmodule Main do
     invalid_email = Email_Impl_.parse("invalid-email")
     (case invalid_email do
       {:ok, invalid_email} -> flunk("Invalid email should not parse")
-      {:error, message} -> assert condition
+      {:error, reason} -> assert condition
     end)
     large_int = PositiveInt_Impl_.parse(1000000)
     assert match?({:ok, _}, large_int)
     (case large_int do
-      {:ok, large_int} ->
+      {:ok, value} ->
         doubled = PositiveInt_Impl_.multiply(large, large)
         assert condition
       {:error, large_int} -> flunk("Large integer should parse")

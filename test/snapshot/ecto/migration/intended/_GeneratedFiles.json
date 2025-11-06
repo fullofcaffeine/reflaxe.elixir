@@ -3,7 +3,6 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "create_users.ex"
 ],

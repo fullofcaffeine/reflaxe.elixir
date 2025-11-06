@@ -80,12 +80,16 @@ class SuccessBinderAlignByBodyUseTransforms {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
-                    #if sys Sys.println('[SuccessBinderAlign] Inspecting ECase with ' + clauses.length + ' clauses'); #end
+                    #if (sys && debug_ast_transformer) Sys.println('[SuccessBinderAlign] Inspecting ECase with ' + clauses.length + ' clauses'); #end
                     var newClauses = [];
                     for (cl in clauses) {
                         var okBinder = extractOkBinder(cl.pattern);
-                        #if sys if (okBinder != null) Sys.println('[SuccessBinderAlign] Found {:ok, ' + okBinder + '}'); #end
+                        #if (sys && debug_ast_transformer) if (okBinder != null) Sys.println('[SuccessBinderAlign] Found {:ok, ' + okBinder + '}'); #end
                         if (okBinder != null) {
+                            // Respect canonical payload locking: keep {:ok, _value} + aliases intact
+                            var locked = false;
+                            try { locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true)); } catch (e:Dynamic) {}
+                            if (okBinder == "_value" || locked) { newClauses.push(cl); continue; }
                             // Collect declared names inside clause body (pattern LHS and matches)
                             var clauseDeclared: Map<String,Bool> = new Map();
                             collectPatternDecls(cl.pattern, clauseDeclared);
@@ -94,7 +98,7 @@ class SuccessBinderAlignByBodyUseTransforms {
                             if (fnDeclared != null) for (k in fnDeclared.keys()) clauseDeclared.set(k, true);
                             // Collect used names in clause body
                             var used = collectUsedNames(cl.body);
-                            #if sys {
+                            #if (sys && debug_ast_transformer) {
                                 var declArr = [for (k in clauseDeclared.keys()) k];
                                 var usedArr = [for (k in used.keys()) k];
                                 Sys.println('[SuccessBinderAlign] declared=' + declArr.join(',') + ' used=' + usedArr.join(','));
@@ -102,7 +106,7 @@ class SuccessBinderAlignByBodyUseTransforms {
                             // Find exactly one undefined, excluding env names
                             var undef = [];
                             for (u in used.keys()) if (!clauseDeclared.exists(u) && u != okBinder && allowUndefined(u)) undef.push(u);
-                            #if sys if (undef.length > 0) Sys.println('[SuccessBinderAlign] undefined candidates: ' + undef.join(',')); #end
+                            #if (sys && debug_ast_transformer) if (undef.length > 0) Sys.println('[SuccessBinderAlign] undefined candidates: ' + undef.join(',')); #end
                             if (undef.length == 1) {
                                 var newName = undef[0];
                                 // Guard: never rename binder to a reserved env name
@@ -110,12 +114,7 @@ class SuccessBinderAlignByBodyUseTransforms {
                                     newClauses.push(cl);
                                     continue;
                                 }
-#if debug_success_unifier
-                                Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName);
-#end
-                                #if sys
-                                Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName);
-                                #end
+                                #if (sys && debug_ast_transformer) Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName); #end
                                 // Rewrite pattern binder to newName
                                 var newPattern = rewriteOkBinder(cl.pattern, newName);
                                 // Rewrite old binder references in body to newName

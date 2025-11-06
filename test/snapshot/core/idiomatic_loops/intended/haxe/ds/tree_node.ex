@@ -3,8 +3,7 @@ defmodule TreeNode do
     struct._height
   end
   def to_string(struct) do
-    (
-"#{(fn -> if (struct.left == nil) do
+    "#{(fn -> if (struct.left == nil) do
   ""
 else
   "#{(fn -> struct.left.toString() end).()}, "
@@ -13,6 +12,5 @@ end end).()}#{(fn -> inspect(struct.key) end).()} => #{(fn -> inspect(struct.val
 else
   ", #{(fn -> struct.right.toString() end).()}"
 end end).()}"
-)
   end
 end

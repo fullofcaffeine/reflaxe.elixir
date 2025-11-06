@@ -1,6 +1,6 @@
 defmodule Std do
   def string(value) do
-    to_string(value)
+    inspect(value)
   end
   def parse_int(str) do
     
@@ -19,8 +19,7 @@ defmodule Std do
         
   end
   def is(value, type) do
-    (
-
+    
             # Convert type to string for comparison
             type_str = to_string(type)
             
@@ -43,7 +42,9 @@ defmodule Std do
                     end
             end
         
-)
+  end
+  def is_of_type(value, type) do
+    is(value, type)
   end
   def random() do
     :rand.uniform()

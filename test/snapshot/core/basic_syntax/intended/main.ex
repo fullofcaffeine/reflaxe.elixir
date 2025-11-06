@@ -11,24 +11,24 @@ defmodule Main do
   end
   def sum_range(struct, start, end_param) do
     sum = 0
-    Enum.each(0..(end_param - 1), fn item ->
-      i = item + 1
-      sum = sum + i
-    end)
+    _ = Enum.each(0..(end_param - 1), (fn -> fn item ->
+  i = item + 1
+  sum = sum + i
+end end).())
     sum
   end
   def factorial(struct, n) do
     result = 1
     i = n
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i}, fn _, {result, i} ->
-      if (i > 1) do
-        result = result * i
-        (i - 1)
-        {:cont, {result, i}}
-      else
-        {:halt, {result, i}}
-      end
-    end)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i}, (fn -> fn _, {result, i} ->
+  if (i > 1) do
+    result = result * i
+    (i - 1)
+    {:cont, {result, i}}
+  else
+    {:halt, {result, i}}
+  end
+end end).())
     result
   end
   def day_name(struct, day) do
@@ -48,11 +48,11 @@ defmodule Main do
   end
   def main() do
     instance = MyApp.Main.new(10)
-    Log.trace(greet("World"), %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "main"})
-    Log.trace(instance.calculate(5, 3), %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "main"})
-    Log.trace(instance.checkValue(-5), %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "main"})
-    Log.trace(instance.sumRange(1, 10), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
-    Log.trace(instance.factorial(5), %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "main"})
-    Log.trace(instance.dayName(3), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(greet("World"), %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(instance.calculate(5, 3), %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(instance.checkValue(-5), %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(instance.sumRange(1, 10), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(instance.factorial(5), %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "main"})
+    _ = Log.trace(instance.dayName(3), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "main"})
   end
 end

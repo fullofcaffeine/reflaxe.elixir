@@ -171,6 +171,13 @@ class FinalLocalReferenceAlignTransforms {
           } else {
             x;
           }
+        // Align variable names that appear inside string interpolations #{...}
+        case EString(s) if (s != null && s.indexOf("#{") != -1):
+          var rewritten = rewriteInterpolationVars(s, declared, declaredCanonToName);
+          if (rewritten != s) makeASTWithMeta(EString(rewritten), x.metadata, x.pos) else x;
+        case ERaw(code) if (code != null && code.indexOf("#{") != -1):
+          var rewritten2 = rewriteInterpolationVars(code, declared, declaredCanonToName);
+          if (rewritten2 != code) makeASTWithMeta(ERaw(rewritten2), x.metadata, x.pos) else x;
         default: x;
       }
     });
@@ -191,6 +198,89 @@ class FinalLocalReferenceAlignTransforms {
       }
     }
     return buf.toString();
+  }
+
+  /**
+   * Rewrite variable tokens inside #{...} placeholders to their declared canonical names.
+   * - Maps camelCase → snake_case when the snake variant is a declared local and unique.
+   * - Uses canonical (snake without underscores) uniqueness map as a fallback.
+   * - Only rewrites identifier tokens that start with lowercase letter/underscore.
+   */
+  static function rewriteInterpolationVars(src:String, declared:Map<String,Bool>, declaredCanonToName:Map<String,String>):String {
+    if (src == null || src.indexOf("#{") == -1) return src;
+    inline function toSnake(name:String):String {
+      if (name == null) return name;
+      var buf = new StringBuf();
+      for (i in 0...name.length) {
+        var ch = name.charAt(i);
+        var up = ch.toUpperCase();
+        var low = ch.toLowerCase();
+        if (ch == up && ch != low) {
+          if (i > 0) buf.add("_");
+          buf.add(low);
+        } else buf.add(ch);
+      }
+      return buf.toString();
+    }
+    inline function canon(s:String):String {
+      if (s == null) return s;
+      var snake = toSnake(s);
+      var b = new StringBuf();
+      for (i in 0...snake.length) { var c = snake.charAt(i); if (c != "_") b.add(c); }
+      return b.toString();
+    }
+
+    var out = new StringBuf();
+    var i = 0;
+    while (i < src.length) {
+      var o = src.indexOf("#{", i);
+      if (o == -1) { out.add(src.substr(i)); break; }
+      out.add(src.substr(i, o - i));
+      var k = o + 2; var dep = 1;
+      while (k < src.length && dep > 0) {
+        var ch = src.charAt(k);
+        if (ch == '{') dep++; else if (ch == '}') dep--; k++;
+      }
+      var inner = src.substr(o + 2, (k - 1) - (o + 2));
+      // Tokenize identifiers and apply rewrite rules
+      var buf = new StringBuf();
+      var j = 0;
+      while (j < inner.length) {
+        var c = inner.charAt(j);
+        var isIdStart = ~/^[a-z_]$/.match(c);
+        if (!isIdStart) { buf.add(c); j++; continue; }
+        // read identifier
+        var start = j;
+        j++;
+        while (j < inner.length) {
+          var c2 = inner.charAt(j);
+          if (!~/^[A-Za-z0-9_]$/.match(c2)) break;
+          j++;
+        }
+        var id = inner.substr(start, j - start);
+        // Skip function identifiers like inspect(...) — if next non-space char is '(' then keep as-is
+        var k2 = j;
+        while (k2 < inner.length && StringTools.isSpace(inner, k2)) k2++;
+        var isCall = (k2 < inner.length && inner.charAt(k2) == '(');
+        if (isCall) { buf.add(id); continue; }
+        var repl: Null<String> = null;
+        // Prefer direct snake-case match
+        var snake = toSnake(id);
+        if (snake != id && declared.exists(snake) && !declared.exists(id)) repl = snake;
+        // Fallback to canonical unique match
+        if (repl == null) {
+          var ck = canon(id);
+          if (declaredCanonToName.exists(ck)) {
+            var uniq = declaredCanonToName.get(ck);
+            if (uniq != null && uniq != id) repl = uniq;
+          }
+        }
+        buf.add(repl != null ? repl : id);
+      }
+      out.add("#{" + buf.toString() + "}");
+      i = k;
+    }
+    return out.toString();
   }
 
   static function collectPatternNames(p:EPattern, acc:Map<String,Bool>):Void {

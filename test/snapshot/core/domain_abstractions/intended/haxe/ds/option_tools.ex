@@ -1,15 +1,15 @@
 defmodule OptionTools do
   def map(option, transform) do
     (case option do
-      {:some, transform} ->
-        transform.(transform)
+      {:some, value} ->
+        value.(value)
       {:none} -> {:none}
     end)
   end
   def then(option, transform) do
     (case option do
-      {:some, transform} ->
-        transform.(transform)
+      {:some, value} ->
+        value.(value)
       {:none} -> {:none}
     end)
   end
@@ -18,22 +18,20 @@ defmodule OptionTools do
   end
   def flatten(option) do
     (case option do
-      {:some, value} -> value
+      {:some, inner} -> inner
       {:none} -> {:none}
     end)
   end
   def filter(option, predicate) do
     (case option do
       {:some, value} when predicate.(value) -> value
-      {:some, value} -> {:none}
+      {:some, payload} -> {:none}
       {:none} -> {:none}
     end)
   end
   def unwrap(option, default_value) do
     (case option do
-      {:some, value} ->
-        default_value = default_value
-        default_value
+      {:some, value} -> default_value
       {:none} -> default_value
     end)
   end
@@ -46,17 +44,13 @@ defmodule OptionTools do
   end
   def or_fn(first, second) do
     (case first do
-      {:some, value} ->
-        first = value
-        first
+      {:some, value} -> value
       {:none} -> second
     end)
   end
   def lazy_or(first, fn_param) do
     (case first do
-      {:some, value} ->
-        first = value
-        first
+      {:some, value} -> value
       {:none} ->
         fn_param.()
     end)
@@ -74,21 +68,24 @@ defmodule OptionTools do
     end)
   end
   def all(options) do
-    Enum.reduce(options, [], fn item, acc ->
-      acc = Enum.concat(acc, [item])
-  {:none} -> {:none}
-end)
-      acc
-    end)
+    values = []
+    _ = Enum.each(options, (fn -> fn item ->
+    (case item do
+    {:some, value} ->
+      item = Enum.concat(item, [item])
+    {:none} -> {:none}
+  end)
+end end).())
+    {:some, values}
   end
   def values(options) do
-    Enum.each(options, fn item ->
-            (case item do
-        {:some, result} ->
-          item = Enum.concat(item, [item])
-        {:none} -> nil
-      end)
-    end)
+    _ = Enum.each(options, (fn -> fn item ->
+    (case item do
+    {:some, value} ->
+      item = Enum.concat(item, [item])
+    {:none} -> nil
+  end)
+end end).())
     []
   end
   def to_result(option, error) do

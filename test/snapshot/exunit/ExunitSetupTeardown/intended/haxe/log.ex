@@ -1,26 +1,26 @@
 defmodule Log do
   def format_output(v, infos) do
-    str = Std.string(v)
-    if (infos == nil), do: str
-    pstr = infos.fileName <> ":" <> infos.lineNumber
-    if (infos.customParams != nil) do
-      g = 0
-      g1 = infos.customParams
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, str, g1, :ok}, fn _, {acc_g, acc_str, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
-    v = g1[g]
-    acc_g = acc_g + 1
-    acc_str = acc_str <> ", " <> Std.string(v)
-    {:cont, {acc_g, acc_str, acc_g1, acc_state}}
-  else
-    {:halt, {acc_g, acc_str, acc_g1, acc_state}}
-  end
-end)
-    end
-    pstr <> ": " <> str
+    str = inspect(v)
+    if (Kernel.is_nil(infos)), do: str
+    str
   end
   def trace(v, infos) do
-    str = format_output(v, infos)
-    Sys.println(str)
+    
+            case infos do
+              nil -> IO.inspect(v)
+              infos ->
+                file = Map.get(infos, :fileName)
+                line = Map.get(infos, :lineNumber)
+                base = if file != nil and line != nil, do: "#{(fn -> file end).()}:#{(fn -> line end).()}", else: nil
+                class = Map.get(infos, :className)
+                method = Map.get(infos, :methodName)
+                label = cond do
+                  class != nil and method != nil and base != nil -> "#{(fn -> class end).()}.#{(fn -> method end).()} - #{(fn -> base end).()}"
+                  base != nil -> base
+                  true -> nil
+                end
+                if label != nil, do: IO.inspect(v, label: label), else: IO.inspect(v)
+            end
+            
   end
 end

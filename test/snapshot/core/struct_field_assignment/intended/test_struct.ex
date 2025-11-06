@@ -1,9 +1,9 @@
 defmodule TestStruct do
   def write(struct, value) do
-    _ = ((case typeof.(value) do
-  {:t_null} -> field = "#{(fn -> struct.field end).()}null"
-  {:t_int} -> field = "#{(fn -> struct.field end).()}#{(fn -> inspect(value) end).()}"
-  _ -> field = "#{(fn -> struct.field end).()}other"
-end))
+    (case typeof.(value) do
+      {:t_null} -> field = "#{(fn -> struct.field end).()}null"
+      {:t_int} -> field = "#{(fn -> struct.field end).()}#{(fn -> inspect(value) end).()}"
+      _ -> field = "#{(fn -> struct.field end).()}other"
+    end)
   end
 end

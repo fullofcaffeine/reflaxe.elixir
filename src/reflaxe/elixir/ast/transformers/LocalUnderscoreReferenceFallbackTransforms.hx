@@ -67,28 +67,10 @@ class LocalUnderscoreReferenceFallbackTransforms {
                     for (cl in clauses) for (a in cl.args) collectPattern(a, declared);
                 case ERaw(code):
                     // Heuristic: mark base names referenced when they appear in raw code
-                    // Scan only for declared bases to avoid false positives
-                    for (dk in declared.keys()) {
-                        var base = StringTools.startsWith(dk, "_") && dk.length > 1 ? dk.substr(1) : dk;
-                        // Word boundary heuristic: base not surrounded by identifier chars
-                        // Build a simple search by splitting on non-identifier characters
-                        // to avoid regex dependency in build contexts.
-                        if (code != null && code.indexOf(base) != -1) {
-                            // Quick boundary checks (best-effort, avoids heavy regex):
-                            var idx = code.indexOf(base);
-                            var isBoundary = true;
-                            if (idx > 0) {
-                                var prev = code.charAt(idx - 1);
-                                if (isIdent(prev)) isBoundary = false;
-                            }
-                            var endIdx = idx + base.length;
-                            if (endIdx < code.length) {
-                                var nxt = code.charAt(endIdx);
-                                if (isIdent(nxt)) isBoundary = false;
-                            }
-                            if (isBoundary) referenced.set(base, true);
-                        }
-                    }
+                    for (dk in declared.keys()) markBaseReferenceInString(referenced, dk, code);
+                case EString(s):
+                    // Also handle string-literal interpolations (#{...})
+                    for (dk in declared.keys()) markBaseReferenceInString(referenced, dk, s);
                 default:
             }
         });
@@ -146,6 +128,11 @@ class LocalUnderscoreReferenceFallbackTransforms {
                     makeASTWithMeta(EMatch(renamePattern(p), rhs), n.metadata, n.pos);
                 case EBinary(Match, left, rhs):
                     makeASTWithMeta(EBinary(Match, renameLhs(left), rhs), n.metadata, n.pos);
+                // Case clauses: normalize patterns within each clause
+                case ECase(expr, clauses):
+                    var cls:Array<ElixirAST.ECaseClause> = [];
+                    for (cl in clauses) cls.push({ pattern: renamePattern(cl.pattern), guard: cl.guard, body: tx(cl.body) });
+                    makeASTWithMeta(ECase(tx(expr), cls), n.metadata, n.pos);
                 // References: fallback name -> _name when only _name declared
                 case EVar(v) if (refFallback.exists(v)):
                     makeASTWithMeta(EVar(refFallback.get(v)), n.metadata, n.pos);
@@ -161,6 +148,29 @@ class LocalUnderscoreReferenceFallbackTransforms {
         var c = ch.charCodeAt(0);
         // a..z, A..Z, 0..9, underscore
         return (c >= 'a'.code && c <= 'z'.code) || (c >= 'A'.code && c <= 'Z'.code) || (c >= '0'.code && c <= '9'.code) || c == '_'.code;
+    }
+
+    static inline function baseOf(declaredName:String): String {
+        return (StringTools.startsWith(declaredName, "_") && declaredName.length > 1) ? declaredName.substr(1) : declaredName;
+    }
+
+    static function markBaseReferenceInString(referenced: Map<String,Bool>, declaredName:String, code:String): Void {
+        var base = baseOf(declaredName);
+        if (code == null || base == null || base.length == 0) return;
+        if (code.indexOf(base) == -1) return;
+        // Quick boundary checks to reduce false positives
+        var idx = code.indexOf(base);
+        var isBoundary = true;
+        if (idx > 0) {
+            var prev = code.charAt(idx - 1);
+            if (isIdent(prev)) isBoundary = false;
+        }
+        var endIdx = idx + base.length;
+        if (endIdx < code.length) {
+            var nxt = code.charAt(endIdx);
+            if (isIdent(nxt)) isBoundary = false;
+        }
+        if (isBoundary) referenced.set(base, true);
     }
 
     static function collectPattern(p: EPattern, declared: Map<String, Bool>): Void {

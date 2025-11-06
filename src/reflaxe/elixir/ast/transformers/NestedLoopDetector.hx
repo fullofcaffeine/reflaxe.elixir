@@ -60,7 +60,7 @@ class NestedLoopDetector {
                 if (patterns != null) {
                     var dimensions = analyzeDimensions(patterns);
                     if (dimensions != null && dimensions.length >= 2) {
-                        trace('[NestedLoopDetector] ✅ Detected ${dimensions.length}D nested loop: ${dimensions}');
+                        #if debug_ast_transformer trace('[NestedLoopDetector] ✅ Detected ${dimensions.length}D nested loop: ${dimensions}'); #end
                         
                         // Analyze all statements to infer expressions
                         var expressionInfo = analyzeExpressionPatterns(subset, patterns, dimensions);
@@ -130,7 +130,7 @@ class NestedLoopDetector {
                 };
                 
                 if (moduleName == "Log" && func == "trace" && args.length > 0) {
-                    trace('[NestedLoopDetector] Found Log.trace call with ${args.length} args');
+                    #if debug_ast_transformer trace('[NestedLoopDetector] Found Log.trace call with ${args.length} args'); #end
                     // First argument should be the string with interpolation
                     return extractIndicesFromArg(args[0]);
                 }
@@ -151,7 +151,7 @@ class NestedLoopDetector {
     static function extractIndicesFromArg(arg: ElixirAST): Null<Array<Int>> {
         switch(arg.def) {
             case ERaw(s):
-                trace('[NestedLoopDetector] Checking ERaw string: "$s"');
+                #if debug_ast_transformer trace('[NestedLoopDetector] Checking ERaw string: "$s"'); #end
                 
                 // Find all #{N} patterns and extract the numbers
                 // Also handle #{i}, #{j} patterns which might be variables
@@ -184,23 +184,23 @@ class NestedLoopDetector {
                     }
                     
                     if (indices.length > 0) {
-                        trace('[NestedLoopDetector] Found bracket notation indices: $indices');
+                        #if debug_ast_transformer trace('[NestedLoopDetector] Found bracket notation indices: $indices'); #end
                     }
                 }
                 
                 if (indices.length > 0) {
-                    trace('[NestedLoopDetector] Found indices: $indices');
+                    #if debug_ast_transformer trace('[NestedLoopDetector] Found indices: $indices'); #end
                 }
                 
                 return indices.length > 0 ? indices : null;
                 
             case EString(s):
                 // Sometimes the string is already an EString
-                trace('[NestedLoopDetector] Checking EString: "$s"');
+                #if debug_ast_transformer trace('[NestedLoopDetector] Checking EString: "$s"'); #end
                 return extractIndicesFromArg(makeAST(ERaw(s)));
                 
             default:
-                trace('[NestedLoopDetector] Unknown arg type: ${arg.def}');
+                #if debug_ast_transformer trace('[NestedLoopDetector] Unknown arg type: ${arg.def}'); #end
                 return null;
         }
     }
@@ -235,13 +235,13 @@ class NestedLoopDetector {
         }
         
         if (patterns.length != expectedCount) {
-            trace('[NestedLoopDetector] Pattern incomplete: expected $expectedCount, got ${patterns.length}');
+            #if debug_ast_transformer trace('[NestedLoopDetector] Pattern incomplete: expected $expectedCount, got ${patterns.length}'); #end
             return null;
         }
         
         // Verify the pattern follows nested loop order (inner index changes fastest)
         if (!verifyNestedOrder(patterns, dimensions)) {
-            trace('[NestedLoopDetector] Patterns not in nested loop order');
+            #if debug_ast_transformer trace('[NestedLoopDetector] Patterns not in nested loop order'); #end
             return null;
         }
         
@@ -460,19 +460,19 @@ class NestedLoopDetector {
             // Replace indices with variable names or reconstructed expressions
             var transformedArg = switch(firstArg.def) {
                 case ERaw(s):
-                    trace('[NestedLoopDetector] Original string: "$s"');
-                    trace('[NestedLoopDetector] Variable names: $varNames');
+                    #if debug_ast_transformer trace('[NestedLoopDetector] Original string: "$s"'); #end
+                    #if debug_ast_transformer trace('[NestedLoopDetector] Variable names: $varNames'); #end
                     
                     var result = s;
                     
                     // Check if we have metadata with original expressions
                     var hasOriginalExpression = false;
                     if (firstArg.metadata != null) {
-                        trace('[NestedLoopDetector] Found metadata: ${firstArg.metadata}');
+                        #if debug_ast_transformer trace('[NestedLoopDetector] Found metadata: ${firstArg.metadata}'); #end
                         
                         // Check for original loop expression in metadata
                         if (firstArg.metadata.originalLoopExpression != null) {
-                            trace('[NestedLoopDetector] Using preserved expression: ${firstArg.metadata.originalLoopExpression}');
+                            #if debug_ast_transformer trace('[NestedLoopDetector] Using preserved expression: ${firstArg.metadata.originalLoopExpression}'); #end
                             result = firstArg.metadata.originalLoopExpression;
                             hasOriginalExpression = true;
                             
@@ -488,12 +488,12 @@ class NestedLoopDetector {
                     // If we didn't find originalLoopExpression, try reconstruction
                     if (!hasOriginalExpression) {
                         // Fallback to reconstructing from patterns
-                        trace('[NestedLoopDetector] No original expression in metadata, attempting reconstruction from patterns');
+                        #if debug_ast_transformer trace('[NestedLoopDetector] No original expression in metadata, attempting reconstruction from patterns'); #end
                         
                         // First try to detect and reconstruct expressions
-                        trace('[NestedLoopDetector] Attempting reconstruction with string: "$s" and varNames: $varNames');
+                        #if debug_ast_transformer trace('[NestedLoopDetector] Attempting reconstruction with string: "$s" and varNames: $varNames'); #end
                         var reconstructed = reconstructExpressions(s, varNames);
-                        trace('[NestedLoopDetector] Reconstruction result: "$reconstructed"');
+                        #if debug_ast_transformer trace('[NestedLoopDetector] Reconstruction result: "$reconstructed"'); #end
                         
                         if (reconstructed != s) {
                             result = reconstructed;
@@ -504,7 +504,7 @@ class NestedLoopDetector {
                                 // Handle both parentheses notation: (#{0}, #{1})
                                 var pattern = '#{' + i + '}';
                                 var replacement = '#{' + varNames[i] + '}';
-                                trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"');
+                                #if debug_ast_transformer trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"'); #end
                                 result = StringTools.replace(result, pattern, replacement);
                                 
                                 // Also handle bracket notation: [#{0}][#{1}]
@@ -515,7 +515,7 @@ class NestedLoopDetector {
                         }
                     }
                     
-                    trace('[NestedLoopDetector] Final string: "$result"');
+                    #if debug_ast_transformer trace('[NestedLoopDetector] Final string: "$result"'); #end
                     makeAST(ERaw(result));
                     
                 default:

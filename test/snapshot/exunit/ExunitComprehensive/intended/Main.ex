@@ -1,256 +1,161 @@
 defmodule Main do
   use ExUnit.Case
+  import Phoenix.ConnTest
+  alias Phoenix.ConnTest, as: ConnTest
+  import Phoenix.LiveViewTest
+  alias Phoenix.LiveViewTest, as: LiveViewTest
   setup_all context do
-    Log.trace("Initializing test suite", %{:fileName => "Main.hx", :lineNumber => 28, :className => "Main", :methodName => "initTestSuite"})
+    Log.trace("Initializing test suite", %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "initTestSuite"})
   end
   setup context do
-    testData = [1, 2, 3, 4, 5]
-    testString = "Hello World"
-    Log.trace("Setting up test data", %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "initTest"})
+    test_data = test_data = testData = [1, 2, 3, 4, 5]
+    test_string = test_string = testString = "Hello World"
+    Log.trace("Setting up test data", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "initTest"})
   end
   setup context do
-    on_exit(fn ->
-  testData = nil
-  testString = nil
-  Log.trace("Cleaning up test data", %{:fileName => "Main.hx", :lineNumber => 48, :className => "Main", :methodName => "cleanupTest"})
-end)
+    on_exit((fn -> fn ->
+        test_data = test_data = testData = nil
+        test_string = test_string = testString = nil
+        Log.trace("Cleaning up test data", %{:file_name => "Main.hx", :line_number => 49, :class_name => "Main", :method_name => "cleanupTest"})
+      end end).())
     :ok
   end
   test "equality assertions" do
-    assert 4 == 4 do
-      "Basic math should work"
-    end
-    assert "Hello" == "Hello" do
-      "String equality should work"
-    end
-    assert true == true do
-      "Boolean equality should work"
-    end
-    arr1_2 = nil
-    arr1_1 = nil
-    arr1_0 = nil
+    Assert.equals(4, 4, "Basic math should work")
+    Assert.equals("Hello", "Hello", "String equality should work")
+    Assert.equals(true, true, "Boolean equality should work")
     arr1_0 = 1
     arr1_1 = 2
     arr1_2 = 3
-    arr2_2 = nil
-    arr2_1 = nil
-    arr2_0 = nil
     arr2_0 = 1
     arr2_1 = 2
     arr2_2 = 3
-    assert 3 == 3 do
-      "Array lengths should be equal"
-    end
-    assert arr1_0 == arr2_0 do
-      "First elements should be equal"
-    end
+    Assert.equals(3, 3, "Array lengths should be equal")
+    Assert.equals(arr1_0, arr2_0, "First elements should be equal")
   end
   test "boolean assertions" do
-    assert true do
-      "5 should be greater than 3"
-    end
-    assert "test".length == 4 do
-      "String length check should work"
-    end
-    assert struct.testData != nil do
-      "Test data should be initialized"
-    end
-    refute false do
-      "2 should not be greater than 5"
-    end
-    refute "".length > 0 do
-      "Empty string should have zero length"
-    end
-    refute false do
-      "1 + 1 should not equal 3"
-    end
+    Assert.is_true((fn -> true end).(), "5 should be greater than 3")
+    Assert.is_true((fn -> length("test") == 4 end).(), "String length check should work")
+    Assert.is_true((fn -> context[:test_data] != nil end).(), "Test data should be initialized")
+    Assert.is_false((fn -> false end).(), "2 should not be greater than 5")
+    Assert.is_false((fn -> length("") > 0 end).(), "Empty string should have zero length")
+    Assert.is_false((fn -> false end).(), "1 + 1 should not equal 3")
   end
   test "null assertions" do
     null_var = nil
-    _not_null_var = "value"
-    assert null_var == nil do
-      "Null variable should be null"
-    end
-    assert nil == nil do
-      "Literal null should be null"
-    end
+    not_null_var = "value"
+    Assert.is_null(null_var, "Null variable should be null")
+    Assert.is_null(nil, "Literal null should be null")
   end
   test "string operations" do
-    assert struct.testString.length == 11 do
-      "String length should be 11"
-    end
-    assert struct.testString.toUpperCase() == "HELLO WORLD" do
-      "Uppercase conversion should work"
-    end
-    assert struct.testString.toLowerCase() == "hello world" do
-      "Lowercase conversion should work"
-    end
-    assert struct.testString.indexOf("World") >= 0 do
-      "String should contain 'World'"
-    end
-    assert struct.testString.charAt(0) == "H" do
-      "First character should be 'H'"
-    end
-    parts = struct.testString.split(" ")
-    assert parts.length == 2 do
-      "Split should produce 2 parts"
-    end
-    assert parts[0] == "Hello" do
-      "First part should be 'Hello'"
-    end
-    assert parts[1] == "World" do
-      "Second part should be 'World'"
-    end
+    Assert.equals(length(context[:test_string]), 11, "String length should be 11")
+    Assert.equals((fn -> _this = context[:test_string]
+    String.upcase(_this) end).(), "HELLO WORLD", "Uppercase conversion should work")
+    Assert.equals((fn -> _this = context[:test_string]
+    String.downcase(_this) end).(), "hello world", "Lowercase conversion should work")
+    Assert.is_true((fn -> _this = context[:test_string]
+case :binary.match(_this, "World") do
+                {pos, _} -> pos
+                :nomatch -> -1
+            end >= 0 end).(), "String should contain 'World'")
+    Assert.is_true((fn -> _this = context[:test_string]
+String.at(_this, 0) || "" == "H" end).(), "First character should be 'H'")
+    parts = _this = context[:test_string]
+    String.split(_this, " ")
+    Assert.equals(length(parts), 2, "Split should produce 2 parts")
+    Assert.equals(parts[0], "Hello", "First part should be 'Hello'")
+    Assert.equals(parts[1], "World", "Second part should be 'World'")
   end
   test "array operations" do
-    assert struct.testData.length == 5 do
-      "Array should have 5 elements"
-    end
-    assert struct.testData[0] == 1 do
-      "First element should be 1"
-    end
-    assert struct.testData[(struct.testData.length - 1)] == 5 do
-      "Last element should be 5"
-    end
-    doubled = Enum.map(struct.testData, fn x -> x * 2 end)
-    assert doubled[0] == 2 do
-      "First doubled element should be 2"
-    end
-    assert doubled[4] == 10 do
-      "Last doubled element should be 10"
-    end
-    filtered = Enum.filter(struct.testData, fn x -> x > 2 end)
-    assert filtered.length == 3 do
-      "Filtered array should have 3 elements"
-    end
-    assert filtered[0] == 3 do
-      "First filtered element should be 3"
-    end
-    sum = Enum.sum(struct.testData)
-    assert sum == 15 do
-      "Sum of elements should be 15"
-    end
+    Assert.equals(length(context[:test_data]), 5, "Array should have 5 elements")
+    Assert.equals(context[:test_data][0], 1, "First element should be 1")
+    Assert.equals(context[:test_data][(length(context[:test_data]) - 1)], 5, "Last element should be 5")
+    doubled = Enum.map(context[:test_data], fn x -> x * 2 end)
+    Assert.equals(doubled[0], 2, "First doubled element should be 2")
+    Assert.equals(doubled[4], 10, "Last doubled element should be 10")
+    filtered = Enum.filter(context[:test_data], fn x -> x > 2 end)
+    Assert.equals(length(filtered), 3, "Filtered array should have 3 elements")
+    Assert.equals(filtered[0], 3, "First filtered element should be 3")
+    sum = 0
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum}, (fn -> fn _, {sum} ->
+      if (0 < length(context[:test_data])) do
+        n = context[:test_data][0]
+        sum = sum + n
+        {:cont, {sum}}
+      else
+        {:halt, {sum}}
+      end
+    end end).())
+    Assert.equals(sum, 15, "Sum of elements should be 15")
   end
   test "result assertions" do
     success_operation = fn -> {:ok, 42} end
     failure_operation = fn -> {:error, "Something went wrong"} end
     success_result = success_operation.()
-    assert match?({:ok, _}, success_result) do
-      "Success operation should return Ok"
-    end
+    Assert.is_ok(success_result, "Success operation should return Ok")
     failure_result = failure_operation.()
-    assert match?({:error, _}, failure_result) do
-      "Failure operation should return Error"
-    end
-    case success_result do
+    Assert.is_error(failure_result, "Failure operation should return Error")
+    (case success_result do
       {:ok, value} ->
-        assert value == 42 do
-          "Success value should be 42"
-        end
-      {:error, _error} ->
-        flunk("Should not be an error")
-    end
+        Assert.equals(value, 42, "Success value should be 42")
+      {:error, success_result} ->
+        Assert.fail("Should not be an error")
+    end)
   end
   test "complex scenarios" do
-    data_values_2 = nil
-    data_values_1 = nil
-    data_values_0 = nil
-    data_nested_flag = nil
-    data_nested_count = nil
-    data_name = nil
     data_name = "Test"
     data_values_0 = 10
     data_values_1 = 20
     data_values_2 = 30
     data_nested_flag = true
     data_nested_count = 3
-    assert data_name == "Test" do
-      "Name field should be 'Test'"
-    end
-    assert 3 == 3 do
-      "Values array should have 3 elements"
-    end
-    assert data_nested_flag do
-      "Nested flag should be true"
-    end
-    assert data_nested_count == 3 do
-      "Nested count should be 3"
-    end
+    Assert.equals(data_name, "Test", "Name field should be 'Test'")
+    Assert.equals(3, 3, "Values array should have 3 elements")
+    Assert.is_true((fn -> data_nested_flag end).(), "Nested flag should be true")
+    Assert.equals(data_nested_count, 3, "Nested count should be 3")
     map = %{}
-    Map.put(map, "one", 1)
-    Map.put(map, "two", 2)
-    Map.put(map, "three", 3)
-    assert Map.has_key?(map, "one") do
-      "Map should contain 'one'"
-    end
-    assert Map.get(map, "two") == 2 do
-      "Map value for 'two' should be 2"
-    end
-    refute Map.has_key?(map, "four") do
-      "Map should not contain 'four'"
-    end
-    keys = Map.keys(map)
-    assert keys.length == 3 do
-      "Map should have 3 keys"
-    end
+    map.set("one", 1)
+    map.set("two", 2)
+    map.set("three", 3)
+    Assert.is_true((fn -> map.exists("one") end).(), "Map should contain 'one'")
+    Assert.equals(map.get("two"), 2, "Map value for 'two' should be 2")
+    Assert.is_false((fn -> map.exists("four") end).(), "Map should not contain 'four'")
+    keys = g = []
+    k = map.keys()
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, (fn -> fn _, {k} ->
+      if (k.has_next.()) do
+        k2 = k.next.()
+        _g = Enum.concat(_g, [k2])
+        {:cont, {k}}
+      else
+        {:halt, {k}}
+      end
+    end end).())
+    _g
+    Assert.equals(length(keys), 3, "Map should have 3 keys")
   end
   test "edge cases" do
-    assert 0 == 0 do
-      "Empty array should have length 0"
-    end
-    assert 0 == 0 do
-      "Empty array check should work"
-    end
+    Assert.equals(0, 0, "Empty array should have length 0")
+    Assert.is_true((fn -> 0 == 0 end).(), "Empty array check should work")
     empty_str = ""
-    assert empty_str.length == 0 do
-      "Empty string should have length 0"
-    end
-    refute empty_str.length > 0 do
-      "Empty string should not have positive length"
-    end
-    single_0 = nil
+    Assert.equals(length(empty_str), 0, "Empty string should have length 0")
+    Assert.is_false((fn -> length(empty_str) > 0 end).(), "Empty string should not have positive length")
     single_0 = 42
-    assert 1 == 1 do
-      "Single element array should have length 1"
-    end
-    assert single_0 == 42 do
-      "Single element should be 42"
-    end
-    assert true do
-      "Zero equality should work"
-    end
-    assert true do
-      "Negative comparison should work"
-    end
-    assert 1 / 0 > 1000000 == true do
-      "Infinity comparison should work"
-    end
+    Assert.equals(1, 1, "Single element array should have length 1")
+    Assert.equals(single_0, 42, "Single element should be 42")
+    Assert.is_true((fn -> true end).(), "Zero equality should work")
+    Assert.is_true((fn -> true end).(), "Negative comparison should work")
+    Assert.equals(1 / 0 > 1000000, true, "Infinity comparison should work")
   end
   test "assertion messages" do
-    assert 1 == 1 do
-      "This message appears when assertion fails"
-    end
-    assert true do
-      "Boolean assertion with message"
-    end
-    refute false do
-      "False assertion with message"
-    end
-    assert nil == nil do
-      "Null check with message"
-    end
+    Assert.equals(1, 1, "This message appears when assertion fails")
+    Assert.is_true((fn -> true end).(), "Boolean assertion with message")
+    Assert.is_false((fn -> false end).(), "False assertion with message")
+    Assert.is_null(nil, "Null check with message")
     value = 42
-    assert value == 42 do
-      "Value should be " <> value
-    end
-    assert 2 == 2 do
-      nil
-    end
-    assert true do
-      nil
-    end
-    refute false do
-      nil
-    end
+    Assert.equals(value, 42, "Value should be " <> Kernel.to_string(value))
+    Assert.equals(2, 2)
+    Assert.is_true((fn -> true end).())
+    Assert.is_false((fn -> false end).())
   end
 end

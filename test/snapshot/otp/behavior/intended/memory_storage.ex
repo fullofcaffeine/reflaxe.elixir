@@ -1,33 +1,26 @@
 defmodule MemoryStorage do
-  @data nil
-  def init(struct, _config) do
+  def init(struct, config) do
     %{:ok => struct}
   end
   def get(struct, key) do
     this1 = struct.data
-    Map.get(this1, key)
+    _ = this1.get(key)
+    _
   end
   def put(struct, key, value) do
-    this1 = struct.data
-    this1 = Map.put(this1, key, value)
+    _ = struct.data
+    _ = Map.put(this1, key, value)
     true
   end
   def delete(struct, key) do
     this1 = struct.data
-    Map.delete(this1, key)
+    _ = this1.remove(key)
+    _
   end
   def list(struct) do
-    g = []
-    this1 = struct.data
-    k = Map.keys(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
-  if (acc_k.has_next()) do
-    g = g ++ [(acc_k.next())]
-    {:cont, {acc_k, acc_state}}
-  else
-    {:halt, {acc_k, acc_state}}
-  end
-end)
-    g
+    _ = this1 = struct.data
+    _ = this1.keys()
+    _ = Enum.each(k, fn item -> [].push(item) end)
+    []
   end
 end

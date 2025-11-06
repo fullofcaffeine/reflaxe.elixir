@@ -183,6 +183,11 @@ jobs:
       run: |
         bash scripts/lint/name-heuristics-guard.sh
 
+    - name: Verify registry order doc is up to date (Haxe eval)
+      run: |
+        npm run docs:order:haxe
+        git diff --exit-code docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md
+
   acceptance:
     name: 1.0 Acceptance Gates
     runs-on: ubuntu-latest

@@ -5,7 +5,7 @@ defmodule UserQueries do
   def users_with_posts() do
     nil
   end
-  def users_by_organization(_org_id) do
+  def users_by_organization(org_id) do
     nil
   end
 end
