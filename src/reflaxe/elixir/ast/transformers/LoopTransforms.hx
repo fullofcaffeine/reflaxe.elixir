@@ -103,6 +103,14 @@ typedef ComprehensionInfo = {
  * TODO: Investigate Reflaxe initialization timing vs Haxe optimizer timing
  */
 class LoopTransforms {
+
+    #if no_traces
+    static inline function trace(msg:Dynamic, ?pos:haxe.PosInfos) {}
+    #else
+    static inline function trace(msg:Dynamic, ?pos:haxe.PosInfos) {
+        haxe.Log.trace(msg, pos);
+    }
+    #end
     
     /**
      * Helper function to manually transform children of an AST node
@@ -291,7 +299,7 @@ class LoopTransforms {
         // Use Sys.println to ensure output is visible
         #if sys
         #if debug_loop_transforms
-        Sys.println('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============');
+        #if !no_traces Sys.println('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============'); #end
         #end
         #end
         

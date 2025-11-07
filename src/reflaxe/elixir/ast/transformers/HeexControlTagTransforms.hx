@@ -92,9 +92,17 @@ class HeexControlTagTransforms {
     /** Public helper to rewrite control tags in-place (builder-time use). */
     public static function rewrite(content:String):String {
         if (content == null) return content;
+        #if hxx_instrument
+        var t0 = haxe.Timer.stamp();
+        #end
         var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
         if (lowered.indexOf("<if") == -1) return lowered;
-        return rewriteControlTags(lowered);
+        var out = rewriteControlTags(lowered);
+        #if hxx_instrument
+        var dt = Std.int((haxe.Timer.stamp() - t0) * 1000);
+        trace('[HXX-INSTR] controlTags: ms=' + dt + ' len=' + (content != null ? content.length : 0));
+        #end
+        return out;
     }
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
@@ -132,11 +140,15 @@ class HeexControlTagTransforms {
         });
     }
 
-    static function rewriteControlTags(s:String):String {
+    public static function rewriteControlTags(s:String):String {
         if (s == null || s.indexOf("<if") == -1) return s;
         var out = new StringBuf();
         var i = 0;
+        #if hxx_instrument
+        var iters = 0;
+        #end
         while (i < s.length) {
+            #if hxx_instrument iters++; #end
             var idx = s.indexOf("<if", i);
             if (idx == -1) { out.add(s.substr(i)); break; }
             // copy prefix
@@ -200,6 +212,9 @@ class HeexControlTagTransforms {
             var afterClose = s.indexOf('>', closeIdx + 1);
             i = (afterClose == -1) ? s.length : afterClose + 1;
         }
+        #if hxx_instrument
+        trace('[HXX-INSTR] controlTags.loopIters=' + iters + ' len=' + (s != null ? s.length : 0));
+        #end
         return out.toString();
     }
 }
