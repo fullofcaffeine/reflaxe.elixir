@@ -357,6 +357,7 @@ class TemplateHelpers {
         var out = new StringBuf();
         var i = 0;
         while (i < s.length) {
+            var prev = i;
             var j = s.indexOf("<%", i);
             if (j == -1) { out.add(s.substr(i)); break; }
             // Robust attribute-context detection:
@@ -431,6 +432,8 @@ class TemplateHelpers {
                     out.add(s.substr(i, j - i)); i = j + 2; continue;
                 }
             }
+            // Forward-progress guard: ensure loop advances even on unexpected shapes
+            if (i <= prev) i = prev + 1;
         }
         return out.toString();
     }
@@ -454,6 +457,7 @@ class TemplateHelpers {
         var out = new StringBuf();
         var i = 0;
         while (i < s.length) {
+            var prev = i;
             var j = s.indexOf("${", i);
             if (j == -1) { out.add(s.substr(i)); break; }
             // Attempt to detect an attribute assignment immediately preceding ${
@@ -540,6 +544,7 @@ class TemplateHelpers {
             }
             // Advance index
             i = p;
+            if (i <= prev) i = prev + 1;
         }
         return out.toString();
     }
