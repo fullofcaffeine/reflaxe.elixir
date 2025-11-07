@@ -2208,6 +2208,10 @@ class LoopTransforms {
      * Now handles partial matches - identifies consecutive similar statements with incrementing indices
      */
     static function detectUnrolledLoop(stmts: Array<ElixirAST>): Null<ElixirAST> {
+        #if no_traces
+        // Under test/QA modes we avoid heavy loop detection to keep compiles bounded.
+        return null;
+        #end
         checkIndexBudget = CHECK_INDEX_BUDGET_DEFAULT; // reset per call
         if (stmts.length < 2) return null;
         // Fast bail-out for huge HTML/string concat blocks to avoid pathological scans
