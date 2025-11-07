@@ -113,10 +113,10 @@ class LoopTransforms {
     #end
 
     // Bounded complexity guard for index scanning across large concatenations
-    static inline var CHECK_INDEX_BUDGET_DEFAULT = 20000; // reasonable upper bound for node visits
+    static inline var CHECK_INDEX_BUDGET_DEFAULT = 500; // conservative to avoid pathological scans
     static var checkIndexBudget:Int = CHECK_INDEX_BUDGET_DEFAULT;
 
-    static inline var STRING_COMPLEXITY_THRESHOLD = 5000;
+    static inline var STRING_COMPLEXITY_THRESHOLD = 300;
 
     static function estimateStringComplexity(stmts:Array<ElixirAST>):Int {
         var score = 0;
