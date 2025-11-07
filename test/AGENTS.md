@@ -230,9 +230,10 @@ Some tests in the suite compile to JavaScript instead of Elixir. These are part 
 ### Primary Test Commands (Updated 2025)
 
 ```bash
-# Run all tests (parallel by default with -j8)
-npm test                       # Recommended - uses make with 8-way parallelization
-make -C test -j8              # Direct make command (same as npm test)
+# Run all tests (bounded + parallel chunks)
+npm test                       # Recommended – bounded chunks (8-way, 15m total)
+scripts/test-chunks.sh         # Same defaults as npm test
+make -C test -j8              # Raw run (parallel); prefer npm test for deadline guard
 
 # Run specific test categories
 npm run test:core             # Core language features only
@@ -783,6 +784,7 @@ Based on architectural review, these refinements are recommended:
 #### Portability Considerations
 - Requires GNU Make (macOS users need `/usr/bin/make`)
 - `timeout` command varies by platform (macOS needs `gtimeout`)
+- Use `scripts/util/with-timeout.sh` for cross‑platform deadlines (auto‑selects gtimeout/timeout or a portable fallback)
 - Bash 4+ recommended for associative arrays in test runner
 
 ### Architectural Notes
@@ -865,3 +867,14 @@ Based on architectural review, these refinements are recommended:
 ---
 
 **Remember**: Tests are documentation. A good test explains what the compiler should do, validates it does it correctly, and prevents regressions.
+
+## ⏱️ Bounded Test Execution (Hard Rule)
+
+To prevent long, opaque runs (>30 minutes), all full-suite executions must be bounded and chunked.
+
+- Default: `npm test` runs categories sequentially via `scripts/test-chunks.sh` with per‑chunk deadline 900s and per‑test timeout 120s.
+- Manual: `scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120`.
+- Single chunk: `scripts/test-runner.sh --category phoenix --parallel 8 --timeout 120 --deadline 600`.
+- Full raw Make is allowed for local debugging, but CI and shared workflows MUST use the bounded runner.
+
+Rationale: Ensures quick feedback, prevents blocking terminals, and surfaces which chunk stalls. This follows root AGENTS.md guidance to keep all validation non‑blocking and bounded.

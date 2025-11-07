@@ -140,11 +140,13 @@ class Main extends TestCase {
         
         // Test with arrays
         var list = [1, 2, 3];
+        // Haxe does not support array rest patterns in switch; emulate the intent
         switch (list) {
             case []:
                 Assert.fail("Should not be empty");
-            case [head, ...tail]:
+            case [head, second, third]:
                 Assert.equals(1, head, "Head should be 1");
+                var tail = [second, third];
                 Assert.equals(2, tail.length, "Tail should have 2 elements");
             default:
                 Assert.fail("Should match list pattern");

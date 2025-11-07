@@ -56,8 +56,9 @@ class HeexBlockIfToInlineTransforms {
                 var thenHtml = s.substr(thenStart, thenEnd - thenStart);
                 var elseHtml: Null<String> = (elseTag != -1 && elseTag < endTag)
                     ? s.substr(elseTag + 10, endTag - (elseTag + 10)) : "";
-                // Ensure no nested EEx in branches
-                if (thenHtml.indexOf("<%") == -1 && (elseHtml == null || elseHtml.indexOf("<%") == -1)) {
+                // Ensure no nested EEx AND branches are not HTML tags (avoid attribute/quote pitfalls)
+                var branchesArePlainText = (thenHtml.indexOf('<') == -1 && (elseHtml == null || elseHtml.indexOf('<') == -1));
+                if (thenHtml.indexOf("<%") == -1 && (elseHtml == null || elseHtml.indexOf("<%") == -1) && branchesArePlainText) {
                     out.add('<%= if ' + cond + ', do: ' + toQuoted(thenHtml) + ', else: ' + toQuoted(elseHtml) + ' %>');
                     i = endTag + 9;
                     continue;
@@ -82,4 +83,3 @@ class HeexBlockIfToInlineTransforms {
 }
 
 #end
-

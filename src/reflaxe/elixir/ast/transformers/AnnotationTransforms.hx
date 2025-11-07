@@ -1582,17 +1582,16 @@ class AnnotationTransforms {
             statements.push(makeAST(EUse("ExUnit.Case", [])));
         }
 
-        // Inject Phoenix.ConnTest helpers and alias for convenience.
-        // Import brings functions like build_conn/0 into scope; alias supports ConnTest.* calls.
-        statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
-        statements.push(makeAST(EAlias("Phoenix.ConnTest", "ConnTest")));
-        // Inject Phoenix.LiveViewTest helpers and alias for LiveViewTest.* calls
-        statements.push(makeAST(EImport("Phoenix.LiveViewTest", null, null)));
-        statements.push(makeAST(EAlias("Phoenix.LiveViewTest", "LiveViewTest")));
-
-        // If app_name is provided (via -D app_name=MyApp), set @endpoint for ConnTest
+        // Optional Phoenix test helpers: only inject when app_name is defined (indicates Phoenix app context)
         var appName = Context.definedValue("app_name");
         if (appName != null && appName.length > 0) {
+            // Import brings functions like build_conn/0 into scope; alias supports ConnTest.* calls.
+            statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
+            statements.push(makeAST(EAlias("Phoenix.ConnTest", "ConnTest")));
+            // Inject Phoenix.LiveViewTest helpers and alias for LiveViewTest.* calls
+            statements.push(makeAST(EImport("Phoenix.LiveViewTest", null, null)));
+            statements.push(makeAST(EAlias("Phoenix.LiveViewTest", "LiveViewTest")));
+            // Set @endpoint for ConnTest when app_name is provided
             var endpointModule = appName + "Web.Endpoint";
             statements.push(makeAST(EModuleAttribute("endpoint", makeAST(EVar(endpointModule)))));
         }

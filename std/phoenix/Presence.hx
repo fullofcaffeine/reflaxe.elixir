@@ -159,6 +159,7 @@ typedef Topic = String;
  * @param TMeta The type of metadata attached to each presence. Can be any type including
  *              Dynamic for untyped metadata, or a custom typedef/class for type-safe access.
  */
+
 typedef PresenceEntry<TMeta> = {
     var metas: Array<TMeta>;
 };
@@ -383,29 +384,6 @@ extern class Presence {
  * Helper functions for working with presence data
  * Note: These are utility functions you can implement in your application
  */
-class PresenceHelpers {
-    /**
-     * Simple list all unique presence keys for a topic
-     * Utility function to get just the keys without metadata
-     */
-    public static function simpleList(presences: PresenceList): Array<PresenceKey> {
-        // Map.keys returns list of binary keys for Presence maps
-        return untyped __elixir__('Map.keys({0})', presences);
-    }
-    
-    /**
-     * Check if a key is present in the presence list
-     */
-    public static function isPresent(presences: PresenceList, key: PresenceKey): Bool {
-        // Presence keys are strings; Map.has_key? supports binary keys
-        return untyped __elixir__('Map.has_key?({0}, {1})', presences, key);
-    }
-    
-    /**
-     * Count total number of presences
-     */
-    public static function count(presences: PresenceList): Int {
-        // map_size/1 returns number of entries
-        return untyped __elixir__('map_size({0})', presences);
-    }
-}
+#if (reflaxe_runtime)
+// Runtime helpers moved to std/_std to avoid macro-time __elixir__ references
+#end

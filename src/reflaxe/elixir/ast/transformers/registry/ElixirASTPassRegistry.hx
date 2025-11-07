@@ -1508,6 +1508,14 @@ class ElixirASTPassRegistry {
             }
         });
 
+        // Suppress runtime emission of HXX module (compile-time only; functions are inline)
+        passes.push({
+            name: "SuppressHXXRuntimeModule",
+            description: "Mark HXX module as suppressEmission to avoid generating hxx.ex",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.SuppressHXXRuntimeModuleTransforms.pass
+        });
+
         // Late string search predicate normalization to sanitize any residual inline expansion
         // in Enum.filter predicates or anonymous functions (produces pure boolean expressions)
         passes.push({
@@ -2604,6 +2612,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.transformPass
         });
+        // Final safety: flatten nested ~H sigils that may remain inside ~H content
+        passes.push({
+            name: "HeexNestedSigilFlattenFinal",
+            description: "Flatten `<%= ~H... %>` inside ~H content to avoid invalid heredoc nesting (final)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexNestedSigilFlattenFinalTransforms.transformPass
+        });
         // After inlining captured ~H content, some earlier inline-if constructs may have
         // been converted to block-if by upstream conversions. Run the block→inline pass
         // again late to normalize simple HTML branches back to inline form, matching
@@ -3007,20 +3022,23 @@ class ElixirASTPassRegistry {
 
         // Inline ~H content by replacing Phoenix.HTML.raw(content) with the actual string literal
         // assigned to `content` earlier in render(assigns), removing the intermediate var.
+        // Duplicate registration removed: HeexContentInline already ran earlier.
+        // Keep disabled here to avoid interfering with HXX interpolation conversion.
         passes.push({
-            name: "HeexContentInline",
-            description: "Inline ~H content to avoid accessing local variables inside templates",
-            enabled: true,
+            name: "HeexContentInline (dup)",
+            description: "(disabled duplicate) Inline ~H content",
+            enabled: false,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
         });
 
         // Robust inliner: supports arbitrary variable names (raw(var|@var)), EBlock/EDo bodies,
         // nested parentheses, and ERaw(~H ...) forms. Runs after legacy simple inliner and
         // before fallback/validator passes.
+        // Duplicate registration removed: keep single robust inliner earlier in the pipeline.
         passes.push({
-            name: "HeexInlineCapturedContent",
-            description: "Inline ~H raw(var|@var) using last string assignment to that var; drop scaffolding",
-            enabled: true,
+            name: "HeexInlineCapturedContent (dup)",
+            description: "(disabled duplicate) Robust HXX/HEEx content inliner",
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HeexInlineCapturedContentTransforms.transformPass
         });
 

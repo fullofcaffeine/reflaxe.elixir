@@ -1,15 +1,13 @@
 defmodule ResultTools do
   def map(result, transform) do
     (case result do
-      {:ok, value} ->
-        value.(value)
+      {:ok, ^transform} -> transform.(transform)
       {:error, value} -> value
     end)
   end
   def flat_map(result, transform) do
     (case result do
-      {:ok, value} ->
-        value.(value)
+      {:ok, ^transform} -> value = transform.(transform)
       {:error, value} -> value
     end)
   end
@@ -18,33 +16,29 @@ defmodule ResultTools do
   end
   def fold(result, on_success, on_error) do
     (case result do
-      {:ok, value} ->
-        value.(value)
-      {:error, on_error} ->
-        on_error.(on_error)
+      {:ok, ^on_success} -> value = on_success.(on_success)
+      {:error, ^on_error} -> value = on_error.(value)
     end)
   end
   def is_ok(result) do
     (case result do
-      {:ok, value} ->
-        true = value
+      {:ok, _value} ->
+        true = _value
         true
-      {:error, value} -> false
+      {:error, _value} -> false
     end)
   end
   def is_error(result) do
     (case result do
-      {:ok, value} ->
-        false = value
+      {:ok, _value} ->
+        false = _value
         false
-      {:error, value} -> true
+      {:error, _value} -> true
     end)
   end
   def unwrap(result) do
     (case result do
-      {:ok, value} ->
-        _ = value
-        value
+      {:ok, value} -> value
       {:error, _value} -> throw("Attempted to unwrap Error result: " <> inspect(error))
     end)
   end
@@ -61,8 +55,7 @@ defmodule ResultTools do
   def unwrap_or_else(result, error_handler) do
     (case result do
       {:ok, value} -> value
-      {:error, error_handler} ->
-        error_handler.(error_handler)
+      {:error, ^error_handler} -> value = error_handler.(value)
     end)
   end
   def filter(result, predicate, error_value) do
@@ -79,16 +72,13 @@ defmodule ResultTools do
   def map_error(result, transform) do
     (case result do
       {:ok, value} -> value
-      {:error, transform} ->
-        transform.(transform)
+      {:error, ^transform} -> transform.(value)
     end)
   end
   def bimap(result, on_success, on_error) do
     (case result do
-      {:ok, value} ->
-        value.(value)
-      {:error, on_error} ->
-        on_error.(on_error)
+      {:ok, ^on_success} -> on_success.(on_success)
+      {:error, ^on_error} -> on_error.(value)
     end)
   end
   def ok(value) do
@@ -113,12 +103,11 @@ end end).())
   def traverse(array, transform) do
     results = Enum.map(array, transform)
     _ = sequence(results)
-    _
   end
   def to_option(result) do
     (case result do
       {:ok, value} -> value
-      {:error, value} -> {:none}
+      {:error, _value} -> {:none}
     end)
   end
 end

@@ -24,8 +24,8 @@ class ControllerAliasAssignDropTransforms {
         case EModule(name, attrs, body) if (isController(name)):
           var out = [for (b in body) cleanse(b)];
           makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
-        case EDefmodule(name2, doBlock) if (isController(name2)):
-          makeASTWithMeta(EDefmodule(name2, cleanse(doBlock)), n.metadata, n.pos);
+        case EDefmodule(moduleName, doBlock) if (isController(moduleName)):
+          makeASTWithMeta(EDefmodule(moduleName, cleanse(doBlock)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -38,8 +38,8 @@ class ControllerAliasAssignDropTransforms {
   static function cleanse(node: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
-        case EDef(fn, args, g, body): makeASTWithMeta(EDef(fn, args, g, drop(body)), n.metadata, n.pos);
-        case EDefp(fn2, args2, g2, body2): makeASTWithMeta(EDefp(fn2, args2, g2, drop(body2)), n.metadata, n.pos);
+        case EDef(functionName, parameters, guards, body): makeASTWithMeta(EDef(functionName, parameters, guards, drop(body)), n.metadata, n.pos);
+        case EDefp(functionName, parameters, guards, body): makeASTWithMeta(EDefp(functionName, parameters, guards, drop(body)), n.metadata, n.pos);
         case ECase(expr, clauses):
           var newClauses = [];
           for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: drop(cl.body) });
@@ -64,7 +64,7 @@ class ControllerAliasAssignDropTransforms {
   static function isAssignTo(stmt: ElixirAST, name:String): Bool {
     return switch (stmt.def) {
       case EBinary(Match, {def:EVar(nm)}, _): nm == name;
-      case EMatch(PVar(nm2), _): nm2 == name;
+      case EMatch(PVar(binderName), _): binderName == name;
       default: false;
     }
   }
@@ -81,4 +81,3 @@ class ControllerAliasAssignDropTransforms {
 }
 
 #end
-

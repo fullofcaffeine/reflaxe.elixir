@@ -9,7 +9,6 @@ defmodule CreateProductsTable do
       struct.addColumn("products", "inventory_count", "integer")
     end
     _ = struct.timestamps()
-    _
   end
   def down(struct) do
     struct.dropTable("products")
