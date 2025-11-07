@@ -61,7 +61,7 @@ defmodule EnhancedPatternMatchingTest do
     end)
   end
   def chain_result_operations(input) do
-    step1 = validate_input(input)
+    _ = validate_input(input)
     (case ((case step1 do
   {:success, validated} ->
     process_data(validated)
@@ -79,7 +79,7 @@ end)) do
       {:error, reason, context} ->
         error = reason
         context = reason
-        context2 = context
+        _ = context
         if (Kernel.is_nil(context2)) do
           context2 = ""
         end

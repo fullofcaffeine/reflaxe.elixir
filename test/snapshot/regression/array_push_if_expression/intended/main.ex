@@ -1,44 +1,44 @@
 defmodule Main do
   def main() do
-    test_simple_if_push()
-    test_if_else_push()
-    test_conditional_accumulation()
-    test_nested_if_push()
+    _ = test_simple_if_push()
+    _ = test_if_else_push()
+    _ = test_conditional_accumulation()
+    _ = test_nested_if_push()
   end
   defp test_simple_if_push() do
     errors = []
     has_error = true
-    if has_error do
+    if (has_error) do
       errors = errors ++ ["Error occurred"]
     end
-    Log.trace("Simple if push result: #{inspect(errors)}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testSimpleIfPush"})
+    _ = Log.trace("Simple if push result: #{(fn -> inspect(errors) end).()}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testSimpleIfPush"})
   end
   defp test_if_else_push() do
     messages = []
     success = false
-    if success do
+    if (success) do
       messages = messages ++ ["Success!"]
     else
       messages = messages ++ ["Failed!"]
     end
-    Log.trace("If-else push result: #{inspect(messages)}", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testIfElsePush"})
+    _ = Log.trace("If-else push result: #{(fn -> inspect(messages) end).()}", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testIfElsePush"})
   end
   defp test_conditional_accumulation() do
     errors = []
-    errors = errors ++ ["Error 1"]
-    errors = errors ++ ["Error 3"]
-    Log.trace("Conditional accumulation: #{inspect(errors)}", %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testConditionalAccumulation"})
+    _ = errors ++ ["Error 1"]
+    _ = errors ++ ["Error 3"]
+    _ = Log.trace("Conditional accumulation: #{(fn -> inspect(errors) end).()}", %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testConditionalAccumulation"})
   end
   defp test_nested_if_push() do
     results = []
     level1 = true
     level2 = true
-    if level1 do
-      results = results ++ ["Level 1"]
-      if level2 do
+    if (level1) do
+      _ = results ++ ["Level 1"]
+      if (level2) do
         results = results ++ ["Level 2"]
       end
     end
-    Log.trace("Nested if push: #{inspect(results)}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testNestedIfPush"})
+    _ = Log.trace("Nested if push: #{(fn -> inspect(results) end).()}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testNestedIfPush"})
   end
 end

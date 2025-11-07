@@ -226,22 +226,22 @@ end end).())
   end
   def nested_in_expression() do
     sum = 0
-    _ = [] ++ [(fn ->
-  _ = [] ++ [0]
-  _ = [] ++ [1]
-  _ = [] ++ [2]
+    data = _ = [(fn ->
+  _ = [0]
+  _ = [1]
+  _ = [2]
   []
 end).()]
-    _ = [] ++ [(fn ->
-  _ = [] ++ [1]
-  _ = [] ++ [2]
-  _ = [] ++ [3]
+    _ = [(fn ->
+  _ = [1]
+  _ = [2]
+  _ = [3]
   []
 end).()]
-    _ = [] ++ [(fn ->
-  _ = [] ++ [2]
-  _ = [] ++ [3]
-  _ = [] ++ [4]
+    _ = [(fn ->
+  _ = [2]
+  _ = [3]
+  _ = [4]
   []
 end).()]
     []
@@ -293,7 +293,7 @@ end).()]
     [g, [10, 20, 30], g]
   end
   def comprehension_from_iterable() do
-    _ = [1, 2, 3]
+    source = [1, 2, 3]
     _ = Log.trace("From iterable: #{(fn -> inspect(from_array) end).()}", %{:file_name => "Main.hx", :line_number => 123, :class_name => "Main", :method_name => "comprehensionFromIterable"})
     g = []
     _ = Enum.map(source, (fn -> fn item ->
@@ -339,6 +339,5 @@ end).()]
     _ = empty_comprehensions()
     _ = single_element_nested()
     _ = Log.trace("=== All nested comprehension tests complete ===", %{:file_name => "Main.hx", :line_number => 159, :class_name => "Main", :method_name => "main"})
-    _
   end
 end

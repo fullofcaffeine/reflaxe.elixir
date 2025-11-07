@@ -1,162 +1,57 @@
 defmodule Lambda do
   def array(it) do
-    arr = []
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    arr = arr ++ [(acc_v.next())]
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    arr
+    v = it.iterator.()
+    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
+    []
   end
   def list(it) do
-    arr = []
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    arr = arr ++ [(acc_v.next())]
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    arr
+    v = it.iterator.()
+    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
+    []
   end
   def concat(a, b) do
-    arr = []
-    v = a.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    arr = arr ++ [(acc_v.next())]
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    v = b.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    arr = arr ++ [(acc_v.next())]
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    arr
+    v = a.iterator.()
+    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
+    v = b.iterator.()
+    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
+    []
   end
   def map(it, f) do
-    arr = []
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    arr = arr ++ [f.((acc_v.next()))]
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    arr
+    Enum.map(it, f)
   end
   def filter(it, f) do
-    arr = []
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    if (f.(acc_v)) do
-      arr = arr ++ [(acc_v.next())]
-    end
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    arr
+    Enum.filter(it, f)
   end
   def fold(it, f, first) do
-    acc = first
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc, v, :ok}, fn _, {acc_acc, acc_v, acc_state} -> nil end)
-    acc
+    Enum.reduce(it, first, f)
   end
-  def count(_it, pred) do
-    n = 0
-    if (pred == nil) do
-      item = _it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, item, :ok}, fn _, {acc_n, acc_item, acc_state} ->
-  if (acc_item.has_next()) do
-    _item = acc_item.next()
-    acc_n = acc_n + 1
-    {:cont, {acc_n, acc_item, acc_state}}
-  else
-    {:halt, {acc_n, acc_item, acc_state}}
-  end
-end)
+  def count(it, pred) do
+    if (Kernel.is_nil(pred)) do
+      Enum.count(it)
     else
-      v = _it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} -> nil end)
+      Enum.count(it, pred)
     end
-    n
   end
   def exists(it, f) do
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} -> nil end)
-    false
+    Enum.any?(it, f)
   end
   def foreach(it, f) do
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} -> nil end)
-    true
+    Enum.all?(it, f)
   end
   def find(it, f) do
-    v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    if (f.(acc_v)) do
-      (acc_v.next())
-    end
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
-    nil
+    Enum.find(it, f)
   end
   def empty(it) do
-    item = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {item, :ok}, fn _, {acc_item, acc_state} ->
-  if (acc_item.has_next()) do
-    _item = acc_item.next()
-    false
-    {:cont, {acc_item, acc_state}}
-  else
-    {:halt, {acc_item, acc_state}}
-  end
-end)
-    true
+    Enum.empty?(it)
   end
   def index_of(it, v) do
-    i = 0
-    x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, x, :ok}, fn _, {acc_i, acc_x, acc_state} -> nil end)
-    -1
+    result = Enum.find_index(it, fn x -> x == v end)
+    if (Kernel.is_nil(result)), do: -1, else: result
   end
   def has(it, v) do
-    x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, :ok}, fn _, {acc_x, acc_state} -> nil end)
-    false
+    Enum.member?(it, v)
   end
   def iter(it, f) do
-    x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, :ok}, fn _, {acc_x, acc_state} ->
-  if (acc_x.has_next()) do
-    f.((acc_x.next()))
-    {:cont, {acc_x, acc_state}}
-  else
-    {:halt, {acc_x, acc_state}}
-  end
-end)
+    Enum.each(it, f)
   end
 end

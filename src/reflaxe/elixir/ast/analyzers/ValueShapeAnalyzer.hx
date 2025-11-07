@@ -61,7 +61,7 @@ class ValueShapeAnalyzer {
                 case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
                 case ECase(expr, cs): visit(expr); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body); }
                 case ECall(t, _, as): if (t != null) visit(t); if (as != null) for (a in as) visit(a);
-                case ERemoteCall(t2, _, as2): visit(t2); if (as2 != null) for (a in as2) visit(a);
+                case ERemoteCall(targetExpr, _, argsList): visit(targetExpr); if (argsList != null) for (a in argsList) visit(a);
                 case EList(els): for (el in els) visit(el);
                 case ETuple(els): for (el in els) visit(el);
                 case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }
@@ -84,4 +84,3 @@ class ValueShapeAnalyzer {
 }
 
 #end
-

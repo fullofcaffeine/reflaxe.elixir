@@ -1,92 +1,78 @@
 defmodule Main do
-  def main() do
-    test_basic_enum()
-    test_multiple_parameters()
-    test_empty_cases()
-    test_fall_through()
-    test_nested_enums()
-    test_mixed_cases()
-  end
   defp test_basic_enum() do
-    msg = {:created, "item"}
-    case (msg) do
+    msg = (case {:created, "item"} do
       {:created, content} ->
-        Log.trace("Created: #{content}", %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "testBasicEnum"})
-      {:updated, id, content} ->
-        Log.trace("Updated #{id}: #{content}", %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "testBasicEnum"})
+        Log.trace("Created: #{(fn -> content end).()}", %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "testBasicEnum"})
+      {:updated, id, content} -> _ = Log.trace("Updated #{(fn -> id end).()}: #{(fn -> content end).()}", %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "testBasicEnum"})
       {:deleted, id} ->
-        Log.trace("Deleted: #{id}", %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "testBasicEnum"})
+        Log.trace("Deleted: #{(fn -> id end).()}", %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "testBasicEnum"})
       {:empty} ->
         Log.trace("Empty message", %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "testBasicEnum"})
-    end
+    end)
   end
   defp test_multiple_parameters() do
-    action = {:move, 10, 20, 30}
-    case (action) do
+    action = (case {:move, 10, 20, 30} do
       {:move, x, y, z} ->
-        Log.trace("Moving to (#{x}, #{y}, #{z})", %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testMultipleParameters"})
+        Log.trace("Moving to (#{(fn -> x end).()}, #{(fn -> y end).()}, #{(fn -> z end).()})", %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testMultipleParameters"})
       {:rotate, angle, axis} ->
-        Log.trace("Rotating #{angle} degrees on #{axis}", %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "testMultipleParameters"})
+        Log.trace("Rotating #{(fn -> angle end).()} degrees on #{(fn -> axis end).()}", %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "testMultipleParameters"})
       {:scale, factor} ->
-        Log.trace("Scaling by #{factor}", %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "testMultipleParameters"})
-    end
+        Log.trace("Scaling by #{(fn -> factor end).()}", %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "testMultipleParameters"})
+    end)
   end
   defp test_empty_cases() do
-    event = {:click, 100, 200}
-    case (event) do
-      {:click, _x, _y} ->
-        nil
-      {:hover, _x, _y} ->
-        nil
-      {:key_press, _key} ->
-        nil
-    end
-    Log.trace("Empty cases handled", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "testEmptyCases"})
+    event = (case {:click, 100, 200} do
+      {:click, x, _y} ->
+        y = x
+      {:hover, x, _y} ->
+        y = x
+      {:key_press, g} -> key = g
+    end)
+    _ = Log.trace("Empty cases handled", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "testEmptyCases"})
   end
   defp test_fall_through() do
     state = {:loading, 50}
     description = ""
-    case (state) do
-      {:loading, _progress} ->
-        nil
-      {:processing, progress} ->
-        description = "Progress: #{progress}%"
-      {:complete, result} ->
-        description = "Done: #{result}"
+    (case state do
+      {:loading, _progress} -> nil
+      {:processing, _description} ->
+        progress = _description
+        description = "Progress: #{(fn -> progress end).()}%"
+      {:complete, result} -> description = "Done: #{(fn -> result end).()}"
       {:error, msg} ->
-        description = "Error: #{msg}"
-    end
-    Log.trace(description, %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testFallThrough"})
+        msg = value
+        description = "Error: #{(fn -> msg end).()}"
+    end)
+    value = Log.trace(description, %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testFallThrough"})
+    value
   end
   defp test_nested_enums() do
-    container = {:box, {:text, "Hello"}}
-    case (container) do
+    container = (case {:box, {:text, "Hello"}} do
       {:box, content} ->
-        case (content) do
+        n = content
+        str = content
+        (case content do
           {:text, str} ->
-            Log.trace("Box contains text: #{str}", %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testNestedEnums"})
+            Log.trace("Box contains text: #{(fn -> str end).()}", %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testNestedEnums"})
           {:number, n} ->
-            Log.trace("Box contains number: #{n}", %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "testNestedEnums"})
+            Log.trace("Box contains number: #{(fn -> n end).()}", %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "testNestedEnums"})
           {:empty} ->
             Log.trace("Box is empty", %{:file_name => "Main.hx", :line_number => 107, :class_name => "Main", :method_name => "testNestedEnums"})
-        end
+        end)
       {:list, items} ->
-        Log.trace("List with #{length(items)} items", %{:file_name => "Main.hx", :line_number => 110, :class_name => "Main", :method_name => "testNestedEnums"})
+        length = items
+        Log.trace("List with #{(fn -> length(items) end).()} items", %{:file_name => "Main.hx", :line_number => 110, :class_name => "Main", :method_name => "testNestedEnums"})
       {:empty} ->
         Log.trace("Container is empty", %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "testNestedEnums"})
-    end
+    end)
   end
   defp test_mixed_cases() do
-    result = {:success, "Done", 42}
-    case (result) do
-      {:success, msg, code} ->
-        Log.trace("Success: #{msg} (code: #{code})", %{:file_name => "Main.hx", :line_number => 121, :class_name => "Main", :method_name => "testMixedCases"})
-      {:warning, _msg} ->
-        nil
-      {:error, msg, code} ->
-        Log.trace("Error: #{msg} (code: #{code})", %{:file_name => "Main.hx", :line_number => 125, :class_name => "Main", :method_name => "testMixedCases"})
+    result = (case {:success, "Done", 42} do
+      {:success, msg, code} -> _ = Log.trace("Success: #{(fn -> msg end).()} (code: #{(fn -> code end).()})", %{:file_name => "Main.hx", :line_number => 121, :class_name => "Main", :method_name => "testMixedCases"})
+      {:warning, _message} -> nil
+      {:error, _reason, code} -> _ = Log.trace("Error: #{(fn -> msg end).()} (code: #{(fn -> code end).()})", %{:file_name => "Main.hx", :line_number => 125, :class_name => "Main", :method_name => "testMixedCases"})
       {:pending} ->
         Log.trace("Still pending...", %{:file_name => "Main.hx", :line_number => 127, :class_name => "Main", :method_name => "testMixedCases"})
-    end
+    end)
   end
 end

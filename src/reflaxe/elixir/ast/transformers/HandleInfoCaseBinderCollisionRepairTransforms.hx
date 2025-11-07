@@ -56,11 +56,11 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
           var socketVar = secondArgVar(args);
           var repaired = rewriteCaseClauses(body, socketVar);
           makeASTWithMeta(EDef(name, args, guards, repaired), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2) if (isHandleInfo2(name2, args2)):
+        case EDefp(privateName, privateArgs, privateGuards, privateBody) if (isHandleInfo2(privateName, privateArgs)):
           #if (sys && debug_ast_transformer) Sys.println('[HandleInfoBinderRepair] pass start in defp handle_info/2'); #end
-          var socketVar2 = secondArgVar(args2);
-          var repaired2 = rewriteCaseClauses(body2, socketVar2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, repaired2), n.metadata, n.pos);
+          var socketVar2 = secondArgVar(privateArgs);
+          var repaired2 = rewriteCaseClauses(privateBody, socketVar2);
+          makeASTWithMeta(EDefp(privateName, privateArgs, privateGuards, repaired2), n.metadata, n.pos);
         default:
           n;
       }
@@ -111,7 +111,7 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
           case PVar(n) if (n == socketVar): PTuple([ items[0], PVar("payload") ]);
           case PPin(inner):
             switch (inner) {
-              case PVar(n2) if (n2 == socketVar): PTuple([ items[0], PVar("payload") ]);
+              case PVar(binderName) if (binderName == socketVar): PTuple([ items[0], PVar("payload") ]);
               default: null;
             }
           default: null;

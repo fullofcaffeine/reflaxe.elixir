@@ -120,13 +120,13 @@ class VarUseAnalyzer {
                     // For non-match binary operators, both sides are expressions
                     walk(leftAny, false);
                     walk(rightAny, false);
-                case EMatch(pat, rhs2):
+                case EMatch(pat, rhsExpr):
                     // Only RHS can reference the name in expression position
-                    walk(rhs2, false);
+                    walk(rhsExpr, false);
                 case EBlock(ss):
                     for (s in ss) walk(s, false);
-                case EDo(ss2):
-                    for (s in ss2) walk(s, false);
+                case EDo(statements):
+                    for (s in statements) walk(s, false);
                 case EIf(c,t,e):
                     walk(c, false); walk(t, false); if (e != null) walk(e, false);
                 case ECase(expr, clauses):
@@ -143,13 +143,13 @@ class VarUseAnalyzer {
                 case ECall(tgt, _, args):
                     if (tgt != null) walk(tgt, false);
                     for (a in args) walk(a, false);
-                case ERemoteCall(tgt2, _, args2):
-                    walk(tgt2, false);
-                    for (a in args2) walk(a, false);
+                case ERemoteCall(targetExpr, _, argsList):
+                    walk(targetExpr, false);
+                    for (a in argsList) walk(a, false);
                 case EField(obj, _):
                     walk(obj, false);
-                case EAccess(tgt3, key):
-                    walk(tgt3, false); walk(key, false);
+                case EAccess(objectExpr, key):
+                    walk(objectExpr, false); walk(key, false);
                 case EKeywordList(pairs):
                     for (p in pairs) walk(p.value, false);
                 case EMap(pairs):

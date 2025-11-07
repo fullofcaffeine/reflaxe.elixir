@@ -77,22 +77,22 @@ class EFnAliasConcatToAccTransforms {
                                     });
                                     makeASTWithMeta(EBinary(Match, replLeft, newRight), stmt.metadata, stmt.pos);
                                 } else stmt;
-                            case EMatch(pat, rhs2):
-                                var lhs2:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
-                                if (lhs2 != null && isSelfAppend(rhs2, lhs2)) {
+                            case EMatch(pat, rhsExpr):
+                                var lhsName:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
+                                if (lhsName != null && isSelfAppend(rhsExpr, lhsName)) {
                                     var newLeft = makeAST(EVar(accName));
-                                    var newRight2 = ElixirASTTransformer.transformNode(rhs2, function(t2: ElixirAST): ElixirAST {
-                                        return switch (t2.def) {
-                                            case ERemoteCall(_, "concat", c2) if (c2.length == 2):
-                                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), c2[1]]), t2.metadata, t2.pos);
-                                            case ECall(_, "concat", cc2) if (cc2.length == 2):
-                                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cc2[1]]), t2.metadata, t2.pos);
-                                            case EBinary(Concat, _, r2):
-                                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), r2]), t2.metadata, t2.pos);
-                                            default: t2;
+                                    var rewrittenRight = ElixirASTTransformer.transformNode(rhsExpr, function(node: ElixirAST): ElixirAST {
+                                        return switch (node.def) {
+                                            case ERemoteCall(_, "concat", args) if (args.length == 2):
+                                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), args[1]]), node.metadata, node.pos);
+                                            case ECall(_, "concat", argsCall) if (argsCall.length == 2):
+                                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), argsCall[1]]), node.metadata, node.pos);
+                                            case EBinary(Concat, _, right):
+                                                makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), right]), node.metadata, node.pos);
+                                            default: node;
                                         }
                                     });
-                                    makeASTWithMeta(EBinary(Match, newLeft, newRight2), stmt.metadata, stmt.pos);
+                                    makeASTWithMeta(EBinary(Match, newLeft, rewrittenRight), stmt.metadata, stmt.pos);
                                 } else stmt;
                             default:
                                 stmt;

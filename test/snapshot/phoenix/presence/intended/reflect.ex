@@ -20,14 +20,14 @@ defmodule Reflect do
   def copy(o) do
     o
   end
-  def call_method(_o, func, args) do
+  def call_method(o, func, args) do
     apply(func, args)
   end
   def compare(a, b) do
-    if inspect(a) < inspect(b) do
+    if (inspect(a) < inspect(b)) do
       -1
     else
-      if inspect(a) > inspect(b), do: 1, else: 0
+      if (inspect(a) > inspect(b)), do: 1, else: 0
     end
   end
   def is_enum_value(v) do

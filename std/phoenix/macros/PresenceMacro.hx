@@ -261,15 +261,19 @@ class PresenceMacro {
 			newFields.push(generateSimpleList(classTopic));
 		}
 		
-		// Generate chainable socket methods
-		newFields.push(generateTrackWithSocket());
-		newFields.push(generateUpdateWithSocket());
-		newFields.push(generateUntrackWithSocket());
-		
-            // Do not generate external wrappers; rely on functions injected by `use Phoenix.Presence`.
-		
-		return fields.concat(newFields);
-	}
+            // Generate chainable socket methods
+            newFields.push(generateTrackWithSocket());
+            newFields.push(generateUpdateWithSocket());
+            newFields.push(generateUntrackWithSocket());
+            // Generate external wrappers and utility accessors for compile-time typing
+            newFields.push(generateExternalTrack());
+            newFields.push(generateExternalUpdate());
+            newFields.push(generateExternalUntrack());
+            newFields.push(generateListWrapper());
+            newFields.push(generateGetByKeyWrapper());
+            
+            return fields.concat(newFields);
+        }
 	
 	/**
 	 * Generate internal track method that works with any socket type.
@@ -382,10 +386,11 @@ class PresenceMacro {
 					{name: "meta", type: macro : M}
 				],
 				ret: macro : T,
-				expr: macro {
-					// External usage - call Phoenix.Presence directly
-					return untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2})', socket, key, meta);
-				}
+                expr: macro {
+                    // External usage - call phoenix.Presence extern directly, then return socket (fluent)
+                    phoenix.Presence.track(socket, key, meta);
+                    return socket;
+                }
 			}),
 			access: [APublic, AStatic, AExtern, AInline],
 			doc: "Track presence externally (from LiveViews). Calls Phoenix.Presence.track.",
@@ -412,10 +417,10 @@ class PresenceMacro {
 					{name: "meta", type: macro : M}
 				],
 				ret: macro : T,
-				expr: macro {
-					// Call the actual Phoenix.Presence module, not local function
-					return untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2})', socket, key, meta);
-				}
+                expr: macro {
+                    phoenix.Presence.update(socket, key, meta);
+                    return socket;
+                }
 			}),
 			access: [APublic, AStatic, AExtern, AInline],
 			doc: "Update presence externally (from LiveViews). Calls Phoenix.Presence.update.",
@@ -440,30 +445,67 @@ class PresenceMacro {
 					{name: "key", type: macro : String}
 				],
 				ret: macro : T,
-				expr: macro {
-					// Call the actual Phoenix.Presence module, not local function
-					return untyped __elixir__('Phoenix.Presence.untrack({0}, {1})', socket, key);
-				}
-			}),
-			access: [APublic, AStatic, AExtern, AInline],
-			doc: "Untrack presence externally (from LiveViews). Calls Phoenix.Presence.untrack.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
+                expr: macro {
+                    phoenix.Presence.untrack(socket, key);
+                    return socket;
+                }
+            }),
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "Untrack presence externally (from LiveViews). Calls Phoenix.Presence.untrack.",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
 	
 	/**
 	 * Generate list method for querying presences.
 	 * Works both internally and externally.
 	 * Uses generic types for socket and metadata.
 	 */
-    // Removed: external list wrapper. Use __MODULE__.list/1 injected by `use Phoenix.Presence`.
+    static function generateListWrapper(): Field {
+        return {
+            name: "list",
+            pos: Context.currentPos(),
+            kind: FFun({
+                args: [
+                    {name: "socketOrTopic", type: macro : Dynamic}
+                ],
+                ret: macro : Dynamic,
+                expr: macro {
+                    return phoenix.Presence.list(socketOrTopic);
+                }
+            }),
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "List presences via phoenix.Presence extern (typing-friendly wrapper).",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
 	
 	/**
 	 * Generate getByKey method for querying specific presence.
 	 * Works both internally and externally.
 	 * Uses generic types for full type safety.
 	 */
-    // Removed: external getByKey wrapper. Use __MODULE__.get_by_key/2 injected by `use Phoenix.Presence`.
+    static function generateGetByKeyWrapper(): Field {
+        return {
+            name: "getByKey",
+            pos: Context.currentPos(),
+            kind: FFun({
+                params: [ {name: "M"} ],
+                args: [
+                    {name: "socketOrTopic", type: macro : Dynamic},
+                    {name: "key", type: macro : String}
+                ],
+                ret: macro : Null<phoenix.PresenceEntry<M>>,
+                expr: macro {
+                    var entries = phoenix.Presence.getByKey(socketOrTopic, key);
+                    return (entries != null && entries.length > 0) ? entries[0] : null;
+                }
+            }),
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "Get presence entries by key via phoenix.Presence extern (typing-friendly wrapper).",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
 	
 	
 	/**

@@ -6,8 +6,9 @@ defmodule Circle do
     struct.move(struct.velocity.x * dt, struct.velocity.y * dt)
   end
   def set_velocity(struct, vx, vy) do
-    _ = vx
-    _ = vy
+    x = vx
+    y = vy
+    y
   end
   def create_unit() do
     MyApp.Circle.new(0, 0, 1)

@@ -41,13 +41,13 @@ class LocalAssignUnusedToWildcardFinalTransforms {
       var s = stmts[i];
       switch (s.def) {
         case EBinary(Match, {def: EVar(lhs)}, rhs):
-          if (!isUsedLater(lhs, stmts, i + 1)) {
+          if ((lhs != null && lhs.length > 0 && lhs.charAt(0) == '_') && !isUsedLater(lhs, stmts, i + 1)) {
             out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), rhs), s.metadata, s.pos));
           } else {
             out.push(s);
           }
         case EMatch(PVar(lhs2), rhs2):
-          if (!isUsedLater(lhs2, stmts, i + 1)) {
+          if ((lhs2 != null && lhs2.length > 0 && lhs2.charAt(0) == '_') && !isUsedLater(lhs2, stmts, i + 1)) {
             out.push(makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos));
           } else {
             out.push(s);

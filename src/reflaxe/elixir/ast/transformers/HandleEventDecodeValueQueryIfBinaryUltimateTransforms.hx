@@ -90,10 +90,10 @@ class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
     switch (node.def) {
       case ERemoteCall({def: EVar("Map")}, "get", a) if (a != null && a.length >= 2):
         if (isParamsVar(a[0], paramsVar) && isValueKey(a[1])) inner = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", a));
-      case ECall(tgt, "get", a2):
+      case ECall(tgt, "get", argsList):
         var isMap = switch (tgt.def) { case EVar(m): m == "Map"; default: false; };
-        if (isMap && a2 != null && a2.length >= 2) {
-          if (isParamsVar(a2[0], paramsVar) && isValueKey(a2[1])) inner = makeAST(ECall(tgt, "get", a2));
+        if (isMap && argsList != null && argsList.length >= 2) {
+          if (isParamsVar(argsList[0], paramsVar) && isValueKey(argsList[1])) inner = makeAST(ECall(tgt, "get", argsList));
         }
       default:
     }

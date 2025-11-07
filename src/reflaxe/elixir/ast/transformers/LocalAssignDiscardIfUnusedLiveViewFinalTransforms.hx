@@ -47,9 +47,9 @@ class LocalAssignDiscardIfUnusedLiveViewFinalTransforms {
       var s2 = s;
       switch (s.def) {
         case EBinary(Match, {def: EVar(b)}, rhs):
-          if (b != "children" && !usedLater(stmts, i+1, b)) s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
+          if (b != null && b.length > 0 && b.charAt(0) == '_' && !usedLater(stmts, i+1, b)) s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
         case EMatch(PVar(b2), rhs2):
-          if (b2 != "children" && !usedLater(stmts, i+1, b2)) s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
+          if (b2 != null && b2.length > 0 && b2.charAt(0) == '_' && !usedLater(stmts, i+1, b2)) s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
         default:
       }
       out.push(s2);

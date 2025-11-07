@@ -1,56 +1,41 @@
 defmodule Main do
-  defp main() do
-    test_end("hello", "world")
-    test_after(100)
-    test_rescue("exception")
-    test_def("definition")
-    test_defp("private")
-    test_defmodule("MyModule")
-    test_alias("MyAlias")
-    test_receive("message")
-    test_quote("expression")
-    test_unquote("value")
-    test_require("library")
-    test_use("framework")
-    test_multiple("start", "middle", "result")
-  end
   defp test_end(start, end_param) do
-    "#{start} to #{end_param}"
+    "#{(fn -> start end).()} to #{(fn -> end_param end).()}"
   end
   defp test_after(after_param) do
     after_param + 1
   end
   defp test_rescue(rescue_param) do
-    "rescued: #{rescue_param}"
+    "rescued: #{(fn -> rescue_param end).()}"
   end
   defp test_def(def_param) do
-    "def: #{def_param}"
+    "def: #{(fn -> def_param end).()}"
   end
   defp test_defp(defp_param) do
-    "defp: #{defp_param}"
+    "defp: #{(fn -> defp_param end).()}"
   end
   defp test_defmodule(defmodule_param) do
-    "module: #{defmodule_param}"
+    "module: #{(fn -> defmodule_param end).()}"
   end
   defp test_alias(alias_param) do
-    "alias: #{alias_param}"
+    "alias: #{(fn -> alias_param end).()}"
   end
   defp test_receive(receive_param) do
-    "received: #{receive_param}"
+    "received: #{(fn -> receive_param end).()}"
   end
   defp test_quote(quote_param) do
-    "quoted: #{quote_param}"
+    "quoted: #{(fn -> quote_param end).()}"
   end
   defp test_unquote(unquote_param) do
-    "unquoted: #{unquote_param}"
+    "unquoted: #{(fn -> unquote_param end).()}"
   end
   defp test_require(require_param) do
-    "required: #{require_param}"
+    "required: #{(fn -> require_param end).()}"
   end
   defp test_use(use_param) do
-    "using: #{use_param}"
+    "using: #{(fn -> use_param end).()}"
   end
   defp test_multiple(start, end_param, after_param) do
-    "#{start} -> #{end_param} (after: #{after_param})"
+    "#{(fn -> start end).()} -> #{(fn -> end_param end).()} (after: #{(fn -> after_param end).()})"
   end
 end

@@ -22,8 +22,8 @@ end end).())
     if (Kernel.is_nil(bufsize)) do
       bufsize = 4096
     end
-    _ = MyApp.Bytes.alloc(bufsize)
-    _ = 0
+    buf = MyApp.Bytes.alloc(bufsize)
+    len = 0
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len}, (fn -> fn _, {total, len} ->
   if (true) do
     n = struct.readBytes(buf, 0, bufsize)
@@ -48,13 +48,12 @@ end end).())
     if (actual < len) do
       smaller = MyApp.Bytes.alloc(actual)
       _ = smaller.blit(0, b, 0, actual)
-      _ = smaller
+      b = smaller
     end
     _ = StringBuf.to_string(b)
-    _
   end
   def read_line(struct) do
-    _ = %StringBuf{}
+    buf = %StringBuf{}
     _ = nil
     _ = Enum.each(last, (fn -> fn item ->
   if (item == 10) do
@@ -63,7 +62,6 @@ end end).())
   if (item != 13), do: item.addChar(item)
 end end).())
     _ = StringBuf.to_string(buf)
-    _
   end
   def close(struct) do
     

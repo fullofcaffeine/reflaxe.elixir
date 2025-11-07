@@ -9,11 +9,8 @@
   "my_app_web/special_presence.ex",
   "my_app_web/normal_module.ex",
   "my_app_web/chat_presence.ex",
-  "main.ex",
-  "int_iterator.ex",
   "haxe/log.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/i_map.ex"
+  "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,
   "wasCached": false,

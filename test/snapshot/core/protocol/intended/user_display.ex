@@ -7,6 +7,5 @@ defmodule UserDisplay do
       "User: #{(fn -> user.name end).()}, Age: #{(fn -> user.age end).()}"
     end
     _ = display(user)
-    _
   end
 end

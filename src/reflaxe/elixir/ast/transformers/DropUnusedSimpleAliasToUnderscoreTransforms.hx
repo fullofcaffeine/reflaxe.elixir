@@ -72,11 +72,46 @@ class DropUnusedSimpleAliasToUnderscoreTransforms {
     if (name == null || name == "_") return false;
     var found = false;
     for (j in from...stmts.length) if (!found) {
+      // AST walk for EVar occurrences
       reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(n: ElixirAST) {
         switch (n.def) { case EVar(v) if (v == name): found = true; default: }
       });
+      // Interpolation and ERaw token scan
+      if (!found) {
+        scanStringsAndRaw(stmts[j], name, function(){ found = true; });
+      }
     }
     return found;
+  }
+
+  static inline function scanStringsAndRaw(n: ElixirAST, target:String, hit: Void->Void):Void {
+    function visit(x:ElixirAST):Void {
+      if (x == null || x.def == null) return;
+      switch (x.def) {
+        case EString(s) if (s != null):
+          var i = 0;
+          while (i < s.length) {
+            var idx = s.indexOf("#{", i);
+            if (idx == -1) break;
+            var j = s.indexOf('}', idx + 2);
+            if (j == -1) break;
+            var inner = s.substr(idx + 2, j - (idx + 2));
+            if (inner.indexOf(target) != -1) { hit(); return; }
+            i = j + 1;
+          }
+        case ERaw(code) if (code != null):
+          if (code.indexOf(target) != -1) { hit(); return; }
+        case EBlock(ss): for (y in ss) visit(y);
+        case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
+        case ECase(expr, cs): visit(expr); for (c in cs) visit(c.body);
+        case EBinary(_, l, r): visit(l); visit(r);
+        case EMatch(_, rhs): visit(rhs);
+        case ECall(t,_,as): if (t != null) visit(t); if (as != null) for (a in as) visit(a);
+        case ERemoteCall(t2,_,as2): visit(t2); if (as2 != null) for (a in as2) visit(a);
+        default:
+      }
+    }
+    visit(n);
   }
 }
 
