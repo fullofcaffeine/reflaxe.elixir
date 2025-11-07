@@ -194,7 +194,7 @@ test-%:
 			duration=$$((end - start)); \
 			echo "❌ $$testname - Compilation failed (special handling) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
-	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe --no-traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
@@ -293,7 +293,7 @@ $(UPDATE_TARGETS): update-%:
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
 		# Direct build for update to avoid nested make quoting issues
-		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
@@ -314,7 +314,7 @@ update-%:
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
 		# Direct build for update to avoid nested make quoting issues
-		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
