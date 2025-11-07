@@ -2619,6 +2619,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexNestedSigilFlattenFinalTransforms.transformPass
         });
+        // Bounded normalization to guarantee termination of late ~H rewrites
+        passes.push({
+            name: "HeexStabilizeFinal",
+            description: "Final ~H stabilization (bounded, idempotent sequence)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexStabilizeFinalPass.transformPass
+        });
         // After inlining captured ~H content, some earlier inline-if constructs may have
         // been converted to block-if by upstream conversions. Run the block→inline pass
         // again late to normalize simple HTML branches back to inline form, matching
