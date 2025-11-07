@@ -322,7 +322,11 @@ class TemplateHelpers {
     public static function rewriteForBlocks(src:String):String {
         var out = new StringBuf();
         var i = 0;
+        #if hxx_instrument
+        var localIters = 0;
+        #end
         while (i < src.length) {
+            #if hxx_instrument localIters++; #end
             var start = src.indexOf('<for {', i);
             if (start == -1) { out.add(src.substr(i)); break; }
             out.add(src.substr(i, start - i));
@@ -349,6 +353,9 @@ class TemplateHelpers {
             out.add('<% end %>');
             i = closeTag + 6;
         }
+        #if hxx_instrument
+        trace('[HXX-INSTR] forBlocks: iters=' + localIters + ' len=' + (src != null ? src.length : 0));
+        #end
         return out.toString();
     }
 
@@ -356,7 +363,11 @@ class TemplateHelpers {
     static function rewriteAttributeEexInterpolations(s:String):String {
         var out = new StringBuf();
         var i = 0;
+        #if hxx_instrument
+        var localIters = 0;
+        #end
         while (i < s.length) {
+            #if hxx_instrument localIters++; #end
             var prev = i;
             var j = s.indexOf("<%", i);
             if (j == -1) { out.add(s.substr(i)); break; }
@@ -435,6 +446,9 @@ class TemplateHelpers {
             // Forward-progress guard: ensure loop advances even on unexpected shapes
             if (i <= prev) i = prev + 1;
         }
+        #if hxx_instrument
+        trace('[HXX-INSTR] attrEex: iters=' + localIters + ' len=' + (s != null ? s.length : 0));
+        #end
         return out.toString();
     }
 
