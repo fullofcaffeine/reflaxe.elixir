@@ -105,6 +105,22 @@ class BlockUnusedAssignmentDiscardTransforms {
                     }
                     return found;
                 }
+                // Helper to conservatively detect string interpolation that references a name
+                function interpolationReferencesFrom(start:Int, name:String):Bool {
+                    var hit = false;
+                    if (name == null || name.length == 0) return false;
+                    for (k in start...stmts.length) {
+                        switch (stmts[k].def) {
+                            case EString(s) if (s != null && s.indexOf("#{") != -1 && s.indexOf(name) != -1):
+                                hit = true;
+                            case ERaw(code) if (code != null && code.indexOf("#{") != -1 && code.indexOf(name) != -1):
+                                hit = true;
+                            default:
+                        }
+                        if (hit) break;
+                    }
+                    return hit;
+                }
                 for (i in 0...stmts.length) {
                     var s = stmts[i];
                     switch (s.def) {
@@ -128,7 +144,12 @@ class BlockUnusedAssignmentDiscardTransforms {
                                             && !exprReferencesName(rhs, nm)
                                             && !hasPinnedVarInEctoWhere(stmts, i + 1, nm, s.metadata != null ? s.metadata.varId : null)
                                             && !repoCallUsesVarLater(stmts, i + 1, nm)
-                                            && !hasPinnedVarInBlock(stmts, i + 1, nm)) {
+                                            && !hasPinnedVarInBlock(stmts, i + 1, nm)
+                                            && !interpolationReferencesFrom(i + 1, nm)
+                                            && (nm.length > 0 && nm.charAt(0) == '_')
+                                            // Do not discard underscored binders if their non-underscored
+                                            // form is referenced later via string interpolation or raw
+                                            && !(nm.length > 1 && (interpolationReferencesFrom(i + 1, nm.substr(1)) || rawIdentifierUsedLater(stmts, i + 1, nm.substr(1)))) ) {
                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
                                     } else out.push(s);
                                 default: out.push(s);
@@ -148,7 +169,10 @@ class BlockUnusedAssignmentDiscardTransforms {
                                             && !exprReferencesName(rhs2, nm2)
                                             && !hasPinnedVarInEctoWhere(stmts, i + 1, nm2, s.metadata != null ? s.metadata.varId : null)
                                             && !repoCallUsesVarLater(stmts, i + 1, nm2)
-                                            && !hasPinnedVarInBlock(stmts, i + 1, nm2)) {
+                                            && !hasPinnedVarInBlock(stmts, i + 1, nm2)
+                                            && !interpolationReferencesFrom(i + 1, nm2)
+                                            && (nm2.length > 0 && nm2.charAt(0) == '_')
+                                            && !(nm2.length > 1 && (interpolationReferencesFrom(i + 1, nm2.substr(1)) || rawIdentifierUsedLater(stmts, i + 1, nm2.substr(1)))) ) {
                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s.metadata, s.pos));
                                     } else out.push(s);
                                 default: out.push(s);
@@ -161,6 +185,21 @@ class BlockUnusedAssignmentDiscardTransforms {
             case EDo(stmts2):
                 // Treat EDo like EBlock for hygiene
                 var out2:Array<ElixirAST> = [];
+                function interpolationReferencesFromDo(start:Int, name:String):Bool {
+                    var hit = false;
+                    if (name == null || name.length == 0) return false;
+                    for (k in start...stmts2.length) {
+                        switch (stmts2[k].def) {
+                            case EString(s) if (s != null && s.indexOf("#{") != -1 && s.indexOf(name) != -1):
+                                hit = true;
+                            case ERaw(code) if (code != null && code.indexOf("#{") != -1 && code.indexOf(name) != -1):
+                                hit = true;
+                            default:
+                        }
+                        if (hit) break;
+                    }
+                    return hit;
+                }
                 for (i in 0...stmts2.length) {
                     var s2 = stmts2[i];
                     switch (s2.def) {
@@ -177,10 +216,30 @@ class BlockUnusedAssignmentDiscardTransforms {
                                             !(inChangeset && rhsContainsChangesetCall(rhs2))
                                             && !VarUseAnalyzer.usedLater(stmts2, i + 1, nm2)
                                             && !rawIdentifierUsedLater(stmts2, i + 1, nm2)
-                                            && !exprReferencesName(rhs2, nm2)) {
+                                            && !exprReferencesName(rhs2, nm2)
+                                            && !interpolationReferencesFromDo(i + 1, nm2)
+                                            && (nm2.length > 0 && nm2.charAt(0) == '_')
+                                            && !(nm2.length > 1 && (interpolationReferencesFromDo(i + 1, nm2.substr(1)) || rawIdentifierUsedLater(stmts2, i + 1, nm2.substr(1)))) ) {
+                                        // Only discard underscore-prefixed locals in EDo context as well
                                         out2.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s2.metadata, s2.pos));
                                     } else out2.push(s2);
                                 default: out2.push(s2);
+                            }
+                        case EMatch(pat2, rhsDo):
+                            switch (pat2) {
+                                case PVar(nmDo):
+                                    if (
+                                        !(inChangeset && rhsContainsChangesetCall(rhsDo))
+                                        && !VarUseAnalyzer.usedLater(stmts2, i + 1, nmDo)
+                                        && !rawIdentifierUsedLater(stmts2, i + 1, nmDo)
+                                        && !exprReferencesName(rhsDo, nmDo)
+                                        && !interpolationReferencesFromDo(i + 1, nmDo)
+                                        && (nmDo.length > 0 && nmDo.charAt(0) == '_')
+                                    ) {
+                                        out2.push(makeASTWithMeta(EMatch(PWildcard, rhsDo), s2.metadata, s2.pos));
+                                    } else out2.push(s2);
+                                default:
+                                    out2.push(s2);
                             }
                         default:
                             out2.push(s2);

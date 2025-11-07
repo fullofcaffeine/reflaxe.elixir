@@ -41,9 +41,9 @@ class DropInvalidMapGetSelfAssignTransforms {
         case EDef(name, args, guards, body):
           var nb = filterBody(body);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2):
-          var nb2 = filterBody(body2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+        case EDefp(privateName, privateArgs, privateGuards, privateBody):
+          var newBody = filterBody(privateBody);
+          makeASTWithMeta(EDefp(privateName, privateArgs, privateGuards, newBody), n.metadata, n.pos);
         default:
           n;
       }
@@ -56,10 +56,10 @@ class DropInvalidMapGetSelfAssignTransforms {
         var out:Array<ElixirAST> = [];
         for (s in stmts) if (!isSelfAssignMapGet(s)) out.push(s);
         makeASTWithMeta(EBlock(out), body.metadata, body.pos);
-      case EDo(stmts2):
-        var out2:Array<ElixirAST> = [];
-        for (s2 in stmts2) if (!isSelfAssignMapGet(s2)) out2.push(s2);
-        makeASTWithMeta(EDo(out2), body.metadata, body.pos);
+      case EDo(statements):
+        var out:Array<ElixirAST> = [];
+        for (stmt in statements) if (!isSelfAssignMapGet(stmt)) out.push(stmt);
+        makeASTWithMeta(EDo(out), body.metadata, body.pos);
       default:
         body;
     }
@@ -81,14 +81,13 @@ class DropInvalidMapGetSelfAssignTransforms {
         var isMap = switch (mod.def) { case EVar(m): m == "Map"; default: false; };
         if (isMap && name == "get" && args != null && args.length >= 2)
           switch (args[1].def) { case EString(s): s; default: null; } else null;
-      case ECall(target, funcName, args2):
+      case ECall(target, funcName, argsList):
         var isMapGet = (funcName == "get") && (target != null) && switch (target.def) { case EVar(m2): m2 == "Map"; default: false; };
-        if (isMapGet && args2 != null && args2.length >= 2)
-          switch (args2[1].def) { case EString(s2): s2; default: null; } else null;
+        if (isMapGet && argsList != null && argsList.length >= 2)
+          switch (argsList[1].def) { case EString(key): key; default: null; } else null;
       default: null;
     }
   }
 }
 
 #end
-

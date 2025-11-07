@@ -101,14 +101,14 @@ class EFnUnusedArgUnderscoreTransforms {
                         }
                     }
                 case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s in ss2) walk(s);
+                case EDo(statements): for (s in statements) walk(s);
                 case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
                 case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
                 case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
                 case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
-                case ERemoteCall(t2,_,as2): walk(t2); for (a2 in as2) walk(a2);
+                case ERemoteCall(targetExpr,_,argsList): walk(targetExpr); for (argNode in argsList) walk(argNode);
                 case EField(obj,_): walk(obj);
-                case EAccess(obj2,key): walk(obj2); walk(key);
+                case EAccess(objectExpr,key): walk(objectExpr); walk(key);
                 case EKeywordList(pairs): for (p in pairs) walk(p.value);
                 case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
                 case EStructUpdate(base,fs): walk(base); for (f in fs) walk(f.value);
@@ -137,12 +137,12 @@ class EFnUnusedArgUnderscoreTransforms {
                 case EMatch(_, rhs):
                     walk(rhs);
                 case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s in ss2) walk(s);
+                case EDo(statements): for (s in statements) walk(s);
                 case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
                 case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
                 case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
                 case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
-                case ERemoteCall(t2,_,as2): walk(t2); for (a2 in as2) walk(a2);
+                case ERemoteCall(targetExpr,_,argsList): walk(targetExpr); for (argNode in argsList) walk(argNode);
                 case EField(obj,_): walk(obj);
                 case EAccess(obj2,key): walk(obj2); walk(key);
                 case EKeywordList(pairs): for (p in pairs) walk(p.value);

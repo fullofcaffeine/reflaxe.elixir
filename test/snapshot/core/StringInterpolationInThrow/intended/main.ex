@@ -1,6 +1,6 @@
 defmodule Main do
   defp test_simple_interpolation() do
-    _ = 404
+    error_code = 404
     try do
       throw("Error code: " <> Kernel.to_string(error_code))
     rescue
@@ -9,7 +9,7 @@ defmodule Main do
     end
   end
   defp test_complex_conditional() do
-    _ = %{:errors => ["name is required", "email is invalid"]}
+    changeset = %{:errors => ["name is required", "email is invalid"]}
     try do
       errors = get_errors_map(changeset)
       throw("Changeset has errors: " <> if (errors != nil), do: errors.to_string.(), else: "null")
@@ -19,7 +19,7 @@ defmodule Main do
     end
   end
   defp test_nested_function_calls() do
-    _ = %{:id => 123, :name => "Test"}
+    data = %{:id => 123, :name => "Test"}
     try do
       throw("Failed to process: " <> format_data(process_data(data)))
     rescue
@@ -28,9 +28,9 @@ defmodule Main do
     end
   end
   defp test_multiple_interpolations() do
-    _ = "Alice"
-    _ = "delete"
-    _ = "post"
+    user = "Alice"
+    action = "delete"
+    resource = "post"
     try do
       throw("User " <> user <> " cannot " <> action <> " resource " <> resource)
     rescue
@@ -48,8 +48,8 @@ defmodule Main do
     end
   end
   defp test_in_raise() do
-    _ = "UserController"
-    _ = "show"
+    module = "UserController"
+    func = "show"
     try do
       throw(CustomError.new("Error in " <> module <> "." <> func))
     rescue

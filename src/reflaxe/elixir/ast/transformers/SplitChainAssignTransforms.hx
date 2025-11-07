@@ -27,7 +27,7 @@ class SplitChainAssignTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
+        case EDo(statements): makeASTWithMeta(EDo(rewrite(statements)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -48,12 +48,12 @@ class SplitChainAssignTransforms {
               splitDone = true;
             default:
           }
-        case EMatch(PVar(a2), rhsAny2):
+        case EMatch(PVar(leftVar), rhsAny2):
           if (!splitDone) {
             switch (rhsAny2.def) {
-              case EBinary(Match, {def: EVar(b2)}, rhs2):
-                out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
-                out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+              case EBinary(Match, {def: EVar(rightVar)}, rhsExpr):
+                out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(rightVar), s.metadata, s.pos), rhsExpr), s.metadata, s.pos));
+                out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(leftVar), s.metadata, s.pos), makeASTWithMeta(EVar(rightVar), s.metadata, s.pos)), s.metadata, s.pos));
                 splitDone = true;
               default:
             }
@@ -68,4 +68,3 @@ class SplitChainAssignTransforms {
 }
 
 #end
-

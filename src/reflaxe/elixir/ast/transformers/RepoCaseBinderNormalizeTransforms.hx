@@ -173,7 +173,7 @@ class RepoCaseBinderNormalizeTransforms {
                 case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
-                case ERemoteCall(t2,_,as2): scan(t2); if (as2 != null) for (a in as2) scan(a);
+                case ERemoteCall(targetExpr,_,argsList): scan(targetExpr); if (argsList != null) for (a in argsList) scan(a);
                 case EList(items): for (i in items) scan(i);
                 case ETuple(items): for (i in items) scan(i);
                 case EMap(pairs): for (p in pairs) { scan(p.key); scan(p.value); }

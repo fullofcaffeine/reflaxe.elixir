@@ -74,27 +74,41 @@ class AssignAliasIfPromoteTransforms {
             i++;
           }
           makeASTWithMeta(EBlock(out), n.metadata, n.pos);
-        case EDo(stmts2):
-          var out2:Array<ElixirAST> = [];
-          var j = 0;
-          while (j < stmts2.length) {
-            if (j + 1 < stmts2.length) {
-              switch (stmts2[j].def) {
-                case EBinary(Match, {def: EVar(a2)}, {def: EVar(b2)}):
-                  switch (stmts2[j + 1].def) {
-                    case EIf(cond2, then2, else2):
-                      var elseIsB2 = switch (else2.def) { case EVar(bb2) if (bb2 == b2): true; default: false; };
-                      if (elseIsB2) {
-                        var condHasA2 = false;
-                        ElixirASTTransformer.transformNode(cond2, function(x: ElixirAST): ElixirAST {
-                          switch (x.def) { case EVar(v) if (v == a2): condHasA2 = true; default: }
+        case EDo(statements):
+          var output:Array<ElixirAST> = [];
+          var index = 0;
+          while (index < statements.length) {
+            if (index + 1 < statements.length) {
+              switch (statements[index].def) {
+                case EBinary(Match, {def: EVar(leftVar)}, {def: EVar(rightVar)}):
+                  switch (statements[index + 1].def) {
+                    case EIf(condExpr, thenExpr, elseExpr):
+                      var elseIsRightVar = switch (elseExpr.def) { case EVar(ev) if (ev == rightVar): true; default: false; };
+                      if (elseIsRightVar) {
+                        var condReferencesLeftVar = false;
+                        ElixirASTTransformer.transformNode(condExpr, function(x: ElixirAST): ElixirAST {
+                          switch (x.def) { case EVar(v) if (v == leftVar): condReferencesLeftVar = true; default: }
                           return x;
                         });
-                        if (condHasA2) {
-                          var newCond2 = replaceVar(cond2, a2, b2);
-                          var newThen2 = replaceVar(then2, a2, b2);
-                          out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), stmts2[j].metadata, stmts2[j].pos), makeASTWithMeta(EIf(newCond2, newThen2, else2), stmts2[j + 1].metadata, stmts2[j + 1].pos)), stmts2[j].metadata, stmts2[j].pos));
-                          j += 2;
+                        if (condReferencesLeftVar) {
+                          var rewrittenCond = replaceVar(condExpr, leftVar, rightVar);
+                          var rewrittenThen = replaceVar(thenExpr, leftVar, rightVar);
+                          output.push(
+                            makeASTWithMeta(
+                              EBinary(
+                                Match,
+                                makeASTWithMeta(EVar(leftVar), statements[index].metadata, statements[index].pos),
+                                makeASTWithMeta(
+                                  EIf(rewrittenCond, rewrittenThen, elseExpr),
+                                  statements[index + 1].metadata,
+                                  statements[index + 1].pos
+                                )
+                              ),
+                              statements[index].metadata,
+                              statements[index].pos
+                            )
+                          );
+                          index += 2;
                           continue;
                         }
                       }
@@ -103,10 +117,10 @@ class AssignAliasIfPromoteTransforms {
                 default:
               }
             }
-            out2.push(stmts2[j]);
-            j++;
+            output.push(statements[index]);
+            index++;
           }
-          makeASTWithMeta(EDo(out2), n.metadata, n.pos);
+          makeASTWithMeta(EDo(output), n.metadata, n.pos);
         default:
           n;
       }

@@ -53,7 +53,11 @@ class ClosureUnusedAssignmentDiscardTransforms {
                                         case EBinary(Match, left, rhs):
                                             switch (left.def) {
                                                 case EVar(name):
-                                                    if (!futureUsesName(stmts, i + 1, name) && !exprReferencesName(rhs, name)) {
+                                                    if (
+                                                        (name != null && name.length > 0 && name.charAt(0) == '_')
+                                                        && !futureUsesName(stmts, i + 1, name)
+                                                        && !exprReferencesName(rhs, name)
+                                                    ) {
                                                         out.push(makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos));
                                                         replaced = true;
                                                     }

@@ -71,14 +71,14 @@ class VariableUsageCollector {
             // Do not treat LHS as reference; only RHS can reference
             case EBinary(Match, left, rhs):
                 walk(rhs, shadowed, refs);
-            case EMatch(_, rhs2):
-                walk(rhs2, shadowed, refs);
+            case EMatch(_, rhsExpr):
+                walk(rhsExpr, shadowed, refs);
 
             // Blocks / groups
             case EBlock(stmts):
                 for (s in stmts) walk(s, shadowed, refs);
-            case EDo(stmts2):
-                for (s in stmts2) walk(s, shadowed, refs);
+            case EDo(statements):
+                for (s in statements) walk(s, shadowed, refs);
             case EParen(e):
                 walk(e, shadowed, refs);
             case EPipe(l, r):
@@ -140,13 +140,13 @@ class VariableUsageCollector {
             case ECall(tgt, _, args):
                 if (tgt != null) walk(tgt, shadowed, refs);
                 for (a in args) walk(a, shadowed, refs);
-            case ERemoteCall(tgt2, _, args2):
-                walk(tgt2, shadowed, refs);
-                for (a in args2) walk(a, shadowed, refs);
+            case ERemoteCall(targetExpr, _, argsList):
+                walk(targetExpr, shadowed, refs);
+                for (a in argsList) walk(a, shadowed, refs);
             case EField(obj, _):
                 walk(obj, shadowed, refs);
-            case EAccess(obj2, key):
-                walk(obj2, shadowed, refs); walk(key, shadowed, refs);
+            case EAccess(objectExpr, key):
+                walk(objectExpr, shadowed, refs); walk(key, shadowed, refs);
             case EKeywordList(pairs):
                 for (p in pairs) walk(p.value, shadowed, refs);
             case EMap(pairs):

@@ -42,10 +42,9 @@ defmodule Main do
     _ = test_error.(3)
     _ = test_error.(4)
     _ = test_error.(0)
-    _
   end
   def try_catch_finally() do
-    _ = "resource"
+    resource = "resource"
     try do
       Log.trace("Acquiring resource", %{:file_name => "Main.hx", :line_number => 61, :class_name => "Main", :method_name => "tryCatchFinally"})
       throw("Error during operation")
@@ -60,7 +59,6 @@ defmodule Main do
         
     end
     _ = Log.trace("After try-catch block", %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "tryCatchFinally"})
-    _
   end
   def nested_try_catch() do
     try do
@@ -104,8 +102,8 @@ defmodule Main do
     end
   end
   def rethrow_example() do
-    _ = fn -> throw(Exception.new("Original error")) end
-    _ = fn ->
+    inner_function = fn -> throw(Exception.new("Original error")) end
+    middle_function = fn ->
       try do
         inner_function.()
       rescue
@@ -134,21 +132,20 @@ defmodule Main do
     end
   end
   def try_as_expression() do
-    _ = try do
+    value = try do
       String.to_integer("123")
     rescue
       e ->
         0
     end
     _ = Log.trace("Parsed value: #{(fn -> value end).()}", %{:file_name => "Main.hx", :line_number => 169, :class_name => "Main", :method_name => "tryAsExpression"})
-    _ = try do
+    value2 = try do
       String.to_integer("not a number")
     rescue
       e ->
         -1
     end
     _ = Log.trace("Failed parse value: #{(fn -> value2 end).()}", %{:file_name => "Main.hx", :line_number => 176, :class_name => "Main", :method_name => "tryAsExpression"})
-    _
   end
   def main() do
     _ = Log.trace("=== Basic Try-Catch ===", %{:file_name => "Main.hx", :line_number => 180, :class_name => "Main", :method_name => "main"})
@@ -169,6 +166,5 @@ defmodule Main do
     _ = stack_trace_example()
     _ = Log.trace("\n=== Try as Expression ===", %{:file_name => "Main.hx", :line_number => 204, :class_name => "Main", :method_name => "main"})
     _ = try_as_expression()
-    _
   end
 end

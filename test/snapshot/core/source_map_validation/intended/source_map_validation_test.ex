@@ -14,17 +14,16 @@ defmodule SourceMapValidationTest do
     _ = Log.trace("Loop iteration: #{(fn -> 2 end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
     _ = Log.trace("Loop iteration: #{(fn -> 3 end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
     _ = Log.trace("Loop iteration: #{(fn -> 4 end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
-    _ = [1, 2, 3, 4, 5]
+    array = [1, 2, 3, 4, 5]
     _ = Enum.each(array, (fn -> fn item ->
     process_item(item)
 end end).())
-    _ = "Test"
-    _ = 100
-    _ = "nested value"
+    obj_name = "Test"
+    obj_value = 100
+    obj_nested_field = "nested value"
     instance = MyApp.TestClass.new("example")
     _ = instance.doSomething()
     _ = Log.trace("=== Test Complete ===", %{:file_name => "SourceMapValidationTest.hx", :line_number => 53, :class_name => "SourceMapValidationTest", :method_name => "main"})
-    _
   end
   defp test_function(str, num) do
     Log.trace("Testing with: #{(fn -> str end).()} and #{(fn -> num end).()}", %{:file_name => "SourceMapValidationTest.hx", :line_number => 57, :class_name => "SourceMapValidationTest", :method_name => "testFunction"})

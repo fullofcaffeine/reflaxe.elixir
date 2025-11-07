@@ -2016,8 +2016,8 @@ class ElixirASTTransformer {
                             rewriteIfIncrements(thenB);
                     };
                     var newElse = if (elseB != null) switch (elseB.def) {
-                        case EBinary(Add, {def: EVar(v2)}, rhs2):
-                            makeAST(EMatch(PVar(v2), makeAST(EBinary(Add, makeAST(EVar(v2)), rewriteIfIncrements(rhs2)))));
+                        case EBinary(Add, {def: EVar(varName)}, rhsExpr):
+                            makeAST(EMatch(PVar(varName), makeAST(EBinary(Add, makeAST(EVar(varName)), rewriteIfIncrements(rhsExpr)))));
                         case EBinary(Add, l2, r2) if (isNumericLiteral(l2) && isNumericLiteral(r2)):
                             makeAST(ENil);
                         default:
@@ -2649,14 +2649,14 @@ class ElixirASTTransformer {
                                                 }
                                                 if (newArgs != args) makeAST(ECall(t, name, newArgs)) else x;
                                             case ERemoteCall(mod, fname, rargs):
-                                                var newRArgs = [];
-                                                for (a2 in rargs) switch (a2.def) {
-                                                    case EBlock(sts2) if (sts2 != null && sts2.length > 1):
-                                                        newRArgs.push(makeAST(ECall(makeAST(EFn([{ args: [], guard: null, body: a2 }])), "", [])));
+                                                var rewrittenArgs = [];
+                                                for (argNode in rargs) switch (argNode.def) {
+                                                    case EBlock(statements) if (statements != null && statements.length > 1):
+                                                        rewrittenArgs.push(makeAST(ECall(makeAST(EFn([{ args: [], guard: null, body: argNode }])), "", [])));
                                                     default:
-                                                        newRArgs.push(a2);
+                                                        rewrittenArgs.push(argNode);
                                                 }
-                                                if (newRArgs != rargs) makeAST(ERemoteCall(mod, fname, newRArgs)) else x;
+                                                if (rewrittenArgs != rargs) makeAST(ERemoteCall(mod, fname, rewrittenArgs)) else x;
                                             default:
                                                 x;
                                         }

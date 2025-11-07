@@ -1,37 +1,46 @@
 defmodule Main do
-  def main() do
-    test_simple_while_loop("test", 5)
-    result = binary_search([1, 3, 5, 7, 9], 5)
-    Log.trace("Found: #{result}", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "main"})
-    process_items(["a", "b", "c"], 10, true)
-  end
   defp test_simple_while_loop(key, limit) do
-    Enum.each(0..(limit-1), fn count ->
-      if key == "test", do: "Found: #{key}"
-    end)
+    count = 0
+    _ = Enum.each(0..(limit - 1), (fn -> fn count ->
+  if (count == "test"), do: "Found: " <> count
+  count + 1
+end end).())
     "Not found"
   end
   defp binary_search(arr, target) do
-    binary_search_recursive(arr, target, 0, length(arr) - 1)
-  end
-
-  defp binary_search_recursive(arr, target, left, right) when left <= right do
-    mid = div(left + right, 2)
+    left = 0
+    right = (length(arr) - 1)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {left, right}, (fn -> fn _, {left, right} ->
+  if (left <= right) do
+    mid = trunc.(left + right / 2)
     cond do
-      Enum.at(arr, mid) == target -> true
-      Enum.at(arr, mid) < target -> binary_search_recursive(arr, target, mid + 1, right)
-      true -> binary_search_recursive(arr, target, left, mid - 1)
+      arr[mid] == target -> true
+      arr[mid] < target -> left = mid + 1
+      :true -> right = (mid - 1)
     end
+    {:cont, {left, right}}
+  else
+    {:halt, {left, right}}
   end
-  defp binary_search_recursive(_arr, _target, _left, _right), do: false
+end end).())
+    false
+  end
   defp process_items(items, max_count, verbose) do
-    items
-    |> Enum.take(max_count)
-    |> Enum.each(fn item ->
-      if verbose do
-        Log.trace("Processing: #{item}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "processItems"})
-      end
-    end)
-    Log.trace("Processed #{processed} items out of max #{max_count}", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "processItems"})
+    processed = 0
+    index = 0
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items, max_count, processed, index}, (fn -> fn _, {items, max_count, processed, index} ->
+  if (index < length(items) and processed < max_count) do
+    item = items[index]
+    if (verbose) do
+      Log.trace("Processing: " <> item, %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "processItems"})
+    end
+    processed + 1
+    index + 1
+    {:cont, {items, max_count, processed, index}}
+  else
+    {:halt, {items, max_count, processed, index}}
+  end
+end end).())
+    _ = Log.trace("Processed #{(fn -> processed end).()} items out of max #{(fn -> max_count end).()}", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "processItems"})
   end
 end

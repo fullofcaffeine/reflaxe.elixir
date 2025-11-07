@@ -10,6 +10,25 @@
 
 import reflaxe.elixir.macros.HXX;
 
+// Typed assigns for HXX (required by linter) — keep fields minimal and task-focused
+typedef ComponentAssigns = {
+    var className: String;
+    var title: String;
+    var content: String;
+}
+
+typedef ButtonAssigns = {
+    var type: String;
+    var disabled: Bool;
+    var label: String;
+}
+
+typedef LiveAssigns = {
+    // In app code this would be an Ecto.Changeset or proper form struct; typed here to satisfy linter
+    var form: Dynamic;
+    var show_modal: Bool;
+}
+
 // Test 1: Bitwise operations should trigger Bitwise import
 class BitwiseOperations {
     public static function testBitwise(): Int {
@@ -40,7 +59,7 @@ class BitwiseOperations {
 // Test 2: HXX templates should trigger Phoenix.Component import
 @:native("TestAppWeb.TestComponent")
 class TestComponent {
-    public static function render(assigns: Dynamic): String {
+    public static function template(assigns: ComponentAssigns): String {
         // This should generate ~H sigil and trigger use Phoenix.Component
         return HXX.hxx('
             <div class={@className}>
@@ -50,7 +69,7 @@ class TestComponent {
         ');
     }
     
-    public static function button(assigns: Dynamic): String {
+    public static function button(assigns: ButtonAssigns): String {
         return HXX.hxx('
             <button type={@type || "button"} disabled={@disabled}>
                 <%= @label %>
@@ -70,7 +89,7 @@ class TestLive {
         };
     }
     
-    public static function render(assigns: Dynamic): String {
+    public static function render(assigns: LiveAssigns): String {
         // Component usage should trigger CoreComponents import
         return HXX.hxx('
             <div>
@@ -113,7 +132,7 @@ class Main {
             label: "Click me"
         };
         
-        TestComponent.render(assigns);
+        TestComponent.template(assigns);
         TestComponent.button(assigns);
         
         trace("Implicit imports test compiled successfully");

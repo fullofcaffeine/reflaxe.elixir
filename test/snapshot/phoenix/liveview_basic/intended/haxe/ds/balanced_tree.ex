@@ -13,27 +13,27 @@ defmodule BalancedTree do
   end
   def exists(struct, key) do
     node = struct.root
-    Enum.each(node, fn _ ->
-      cond do
-        c == 0 -> true
-        c < 0 -> node = node.left
-        :true -> node = node.right
-      end
-    end)
+    _ = Enum.each(node, (fn -> fn _ ->
+  cond do
+    c == 0 -> true
+    c < 0 -> node = node.left
+    :true -> node = node.right
+  end
+end end).())
     false
   end
   def iterator(struct) do
     ret = []
-    struct.iteratorLoop(struct.root, ret)
-    MyApp.ArrayIterator.new(ret)
+    _ = struct.iteratorLoop(struct.root, ret)
+    _ = MyApp.ArrayIterator.new(ret)
   end
   def key_value_iterator(struct) do
     MyApp.MapKeyValueIterator.new(struct)
   end
   def keys(struct) do
     ret = []
-    struct.keysLoop(struct.root, ret)
-    MyApp.ArrayIterator.new(ret)
+    _ = struct.keysLoop(struct.root, ret)
+    _ = MyApp.ArrayIterator.new(ret)
   end
   def copy(struct) do
     copied = MyApp.BalancedTree.new()

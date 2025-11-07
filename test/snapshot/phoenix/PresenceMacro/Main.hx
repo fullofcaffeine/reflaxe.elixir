@@ -45,8 +45,8 @@ class TestPresence implements PresenceBehavior {
 
 	// Custom method that uses the generated update method
 	public static function updateStatus(socket: Socket, userId: String, newStatus: String): Socket {
-		// Get current metadata using generated list method
-		var presences = list(TOPIC);
+            // Get current metadata using macro-generated wrapper
+            var presences = TestPresence.list(TOPIC);
 
 		if (Reflect.hasField(presences, userId)) {
 			var entry: PresenceEntry<TestMeta> = Reflect.field(presences, userId);
@@ -95,9 +95,9 @@ class ExternalCaller {
 		// External untrack (should call Phoenix.Presence.untrack)
 		TestPresence.untrack(TOPIC, "external_user");
 
-		// List and getByKey should work externally too
-		var allPresences = TestPresence.list(TOPIC);
-		var userPresence = TestPresence.getByKey(TOPIC, "external_user");
+            // List and getByKey should work externally too
+            var allPresences = TestPresence.list(TOPIC);
+            var userPresence = TestPresence.getByKey(TOPIC, "external_user");
 
 		// Type safety check - should be able to access typed metadata
 		if (userPresence != null && userPresence.metas.length > 0) {

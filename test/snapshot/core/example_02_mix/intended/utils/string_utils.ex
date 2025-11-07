@@ -4,7 +4,7 @@ defmodule StringUtils do
   end
   def format_display_name(name) do
     if (Kernel.is_nil(name) or length(StringTools.ltrim(StringTools.rtrim(name))) == 0), do: "Anonymous User"
-    _ = StringTools.ltrim(StringTools.rtrim(name))
+    parts = _this = StringTools.ltrim(StringTools.rtrim(name))
     String.split(_this, " ")
     formatted = []
     _ = Enum.each(parts, (fn -> fn item ->
@@ -21,7 +21,6 @@ String.downcase(_this)
   end
 end end).())
     _ = Enum.join((fn -> " " end).())
-    _
   end
   def process_email(email) do
     if (Kernel.is_nil(email)), do: %{:valid => false, :error => "Email is required"}
@@ -36,17 +35,17 @@ end end).())
   def truncate(text, max_length) do
     if (Kernel.is_nil(text)), do: ""
     if (length(text) <= max_length), do: text
-    truncated = _ = (max_length - 3)
+    truncated = len = (max_length - 3)
     if (Kernel.is_nil(len)) do
       String.slice(text, 0..-1)
     else
       String.slice(text, 0, len)
     end
-    last_space = _ = nil
+    last_space = start_index = nil
     if (Kernel.is_nil(start_index)) do
       start_index = length(truncated)
     end
-    _ = String.slice(truncated, 0, start_index)
+    sub = String.slice(truncated, 0, start_index)
     case String.split(sub, " ") do
             parts when length(parts) > 1 ->
                 String.length(Enum.join(Enum.slice(parts, 0..-2), " "))
@@ -64,7 +63,7 @@ end end).())
   def mask_sensitive_info(text, visible_chars) do
     if (Kernel.is_nil(text) or length(text) <= visible_chars) do
       result = ""
-      _ = if (not Kernel.is_nil(text)), do: length(text), else: 4
+      repeat_count = if (not Kernel.is_nil(text)), do: length(text), else: 4
       _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {repeat_count, result}, (fn -> fn _, {repeat_count, result} ->
   if (0 < repeat_count) do
     i = 1
@@ -76,13 +75,13 @@ end end).())
 end end).())
       result
     end
-    _ = if (Kernel.is_nil(visible_chars)) do
+    visible = if (Kernel.is_nil(visible_chars)) do
       String.slice(text, 0..-1)
     else
       String.slice(text, 0, visible_chars)
     end
-    _ = (length(text) - visible_chars)
-    _ = ""
+    masked_count = (length(text) - visible_chars)
+    masked = ""
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {masked_count, masked}, (fn -> fn _, {masked_count, masked} ->
   if (0 < masked_count) do
     i = 1
@@ -100,8 +99,8 @@ end end).())
                 :nomatch -> -1
             end
     if (at_index > 0) do
-      _ = at_index + 1
-      _ = nil
+      pos = at_index + 1
+      len = nil
       if (Kernel.is_nil(len)) do
         String.slice(email, pos..-1)
       else

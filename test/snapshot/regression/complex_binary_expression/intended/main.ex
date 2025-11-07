@@ -1,26 +1,19 @@
 defmodule Main do
-  import Bitwise
-  def main() do
-    test_complex_assignment_with_binary()
-    test_method_call_in_binary_expression()
-  end
+  @import :Bitwise
+
   defp test_complex_assignment_with_binary() do
     c = 60000
     i = 0
     index = 0
-    index = i + 1
-    c = (c - 55232) <<< 10 ||| index
-    Log.trace("c: #{c}, index: #{index}", %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "testComplexAssignmentWithBinary"})
+    c = Bitwise.bor(Bitwise.bsl((c - 55232), 10), index = i + 1)
+    _ = Log.trace("c: #{(fn -> c end).()}, index: #{(fn -> index end).()}", %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "testComplexAssignmentWithBinary"})
   end
   defp test_method_call_in_binary_expression() do
-    s = TestString.new("test")
+    s = MyApp.TestString.new("test")
     i = 0
     index = 0
-    c = 0
-    index = i + 1
-    c = s.cca(index)
-    index = i + 1
-    c = if (c > 55296), do: (c - 55232) <<< 10 ||| s.cca(index) &&& 1023, else: c
-    Log.trace("final c: #{c}", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMethodCallInBinaryExpression"})
+    c = s.cca(index = i + 1)
+    c = if (c > 55296), do: Bitwise.bor(Bitwise.bsl((c - 55232), 10), Bitwise.band(s.cca(index = i + 1), 1023)), else: c
+    _ = Log.trace("final c: #{(fn -> c end).()}", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMethodCallInBinaryExpression"})
   end
 end

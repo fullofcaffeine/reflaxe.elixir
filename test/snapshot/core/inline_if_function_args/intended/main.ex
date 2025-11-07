@@ -1,11 +1,10 @@
 defmodule Main do
   defp test_map_put() do
     map = %{}
-    _ = true
-    _ = 42
+    condition = true
+    value = 42
     map = Map.put(map, :bool_key, (if (condition), do: "true", else: "false"))
     _ = map
-    _
   end
   defp test_function_calls() do
     flag = true
@@ -13,7 +12,6 @@ defmodule Main do
     _ = process_string((if (flag), do: "yes", else: "no"))
     _ = process_two("first", (if (count > 3), do: "many", else: "few"))
     _ = process_two((if (flag), do: "enabled", else: "disabled"), "second")
-    _
   end
   defp test_multiple_inline_ifs() do
     a = true
@@ -21,14 +19,13 @@ defmodule Main do
     c = 10
     _ = process_three((if (a), do: "a_true", else: "a_false"), (if (b), do: "b_true", else: "b_false"), (if (c > 5), do: "c_high", else: "c_low"))
     _ = process_mixed("regular", (if (a), do: "conditional", else: "alternative"), 42, (if (b), do: 1, else: 0))
-    _
   end
   defp test_nested_calls() do
     enabled = true
     level = 7
-    _ = wrap_string((if (enabled), do: get_value("on"), else: get_value("off")))
-    _ = process_string(wrap_string((if (level > 5), do: "high", else: "low")))
-    _ = process_string((if (enabled), do: compute_value(10), else: compute_value(5)))
+    result = wrap_string((if (enabled), do: get_value("on"), else: get_value("off")))
+    nested = process_string(wrap_string((if (level > 5), do: "high", else: "low")))
+    complex = process_string((if (enabled), do: compute_value(10), else: compute_value(5)))
   end
   defp test_complex_conditions() do
     x = 10
@@ -42,7 +39,6 @@ defmodule Main do
   end end).())
     str = "test"
     _ = process_string((if (length(str) > 3), do: "long", else: "short"))
-    _
   end
   defp process_string(s) do
     "Processed: #{(fn -> s end).()}"

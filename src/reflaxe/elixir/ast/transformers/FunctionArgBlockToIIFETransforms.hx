@@ -36,15 +36,15 @@ class FunctionArgBlockToIIFETransforms {
                         newArgs.push(makeIIFE(unwrapParens(a)));
                     } else newArgs.push(a);
                     if (newArgs != args) makeAST(ECall(target, name, newArgs)) else n;
-                case ERemoteCall(mod, name2, args2):
-                    var newArgs2 = [];
-                    for (a2 in args2) if (shouldWrap(a2)) {
+                case ERemoteCall(mod, fnName, argsList):
+                    var rewrittenArgs = [];
+                    for (argNode in argsList) if (shouldWrap(argNode)) {
                         #if debug_iife
-                        trace('[FunctionArgBlockToIIFE] wrapping arg for remote ' + name2);
+                        trace('[FunctionArgBlockToIIFE] wrapping arg for remote ' + fnName);
                         #end
-                        newArgs2.push(makeIIFE(unwrapParens(a2)));
-                    } else newArgs2.push(a2);
-                    if (newArgs2 != args2) makeAST(ERemoteCall(mod, name2, newArgs2)) else n;
+                        rewrittenArgs.push(makeIIFE(unwrapParens(argNode)));
+                    } else rewrittenArgs.push(argNode);
+                    if (rewrittenArgs != argsList) makeAST(ERemoteCall(mod, fnName, rewrittenArgs)) else n;
                 default:
                     n;
             }
@@ -80,11 +80,11 @@ class FunctionArgBlockToIIFETransforms {
 
         return switch (a.def) {
             case EBlock(sts): needsWrapFor(sts);
-            case EDo(sts2): needsWrapFor(sts2);
+            case EDo(statements): needsWrapFor(statements);
             case EParen(inner):
                 switch (inner.def) {
                     case EBlock(es): needsWrapFor(es);
-                    case EDo(es2): needsWrapFor(es2);
+                    case EDo(exprs): needsWrapFor(exprs);
                     default: false;
                 }
             default: false;

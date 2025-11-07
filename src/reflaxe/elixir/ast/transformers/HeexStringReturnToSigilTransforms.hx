@@ -69,10 +69,14 @@ class HeexStringReturnToSigilTransforms {
                 if (thenHtml == null && elseHtml == null) {
                     out.add('<%= ' + mapAssigns(expr) + ' %>');
                 } else {
-                    // Prefer inline-if when branches are HTML strings (safer for attribute contexts too)
-                    var thenQ = (thenHtml != null) ? reflaxe.elixir.ast.TemplateHelpers.toQuoted(thenHtml) : '""';
-                    var elseQ = (elseHtml != null && elseHtml != "") ? reflaxe.elixir.ast.TemplateHelpers.toQuoted(elseHtml) : '""';
-                    out.add('<%= if ' + cond + ', do: ' + thenQ + ', else: ' + elseQ + ' %>');
+                    // Emit block HEEx to avoid quoting/attribute breakage
+                    out.add('<%= if ' + cond + ' do %>');
+                    if (thenHtml != null) out.add(thenHtml);
+                    if (elseHtml != null && elseHtml != "") {
+                        out.add('<% else %>');
+                        out.add(elseHtml);
+                    }
+                    out.add('<% end %>');
                 }
             } else {
                 out.add('<%= ' + mapAssigns(expr) + ' %>');
@@ -80,9 +84,10 @@ class HeexStringReturnToSigilTransforms {
             i = k;
         }
         var res = out.toString();
-        // Post-process any fallback inline ternary that slipped through as <%= expr %>
+        // Post-process any fallback inline ternary and inline-if(do:/else:) that slipped through as <%= ... %>
         res = rewriteInlineTernaryToBlock(res);
-        // Keep inline-if as-is for readability and stable snapshot shapes
+        res = rewriteInlineIfDoToBlock(res);
+        // Keep other inline cases as-is for readability
         return res;
     }
 
@@ -237,41 +242,38 @@ class HeexStringReturnToSigilTransforms {
             var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
             if (StringTools.startsWith(inner, "if ")) {
                 var rest = StringTools.trim(inner.substr(3));
-                // Split on first ", do:" at top-level
-                var cond:String = null;
-                var doPart:String = null;
-                var elsePart:String = null;
-                var idxDo = indexOfTopLevel(rest, ", do:");
+                var idxDo = rest.indexOf(", do: \"");
+                var quote = '"';
+                if (idxDo == -1) { idxDo = rest.indexOf(", do: '\'"); quote = '\''; }
                 if (idxDo != -1) {
-                    cond = StringTools.trim(rest.substr(0, idxDo));
-                    var afterDo = StringTools.trim(rest.substr(idxDo + 5));
-                    // afterDo starts with quoted string; extract quoted token
-                    var qv = extractQuoted(afterDo);
-                    if (qv != null) {
-                        doPart = qv.value;
-                        var rem = StringTools.trim(afterDo.substr(qv.length));
-                        if (StringTools.startsWith(rem, ",")) rem = StringTools.trim(rem.substr(1));
-                        if (StringTools.startsWith(rem, "else:")) {
-                            var afterElse = StringTools.trim(rem.substr(5));
-                            var qv2 = extractQuoted(afterElse);
-                            if (qv2 != null) elsePart = qv2.value;
+                    var cond = StringTools.trim(rest.substr(0, idxDo));
+                    var afterDo = rest.substr(idxDo + 7);
+                    if (rest.substr(idxDo, 8) == ", do: '\'") afterDo = rest.substr(idxDo + 7);
+                    var needle = (quote == '"') ? '\"' : "'";
+                    var endMark = needle + ", else:";
+                    var endIdx = afterDo.indexOf(endMark);
+                    var thenHtml:String = null;
+                    var elseHtml:String = null;
+                    if (endIdx != -1) {
+                        thenHtml = afterDo.substr(0, endIdx);
+                        var afterElse = afterDo.substr(endIdx + endMark.length);
+                        if (afterElse.length >= 1 && afterElse.charAt(0) == quote) {
+                            afterElse = afterElse.substr(1);
+                            var endElse = afterElse.indexOf(needle);
+                            elseHtml = (endElse != -1) ? afterElse.substr(0, endElse) : null;
                         }
                     }
-                }
-                if (cond != null && doPart != null) {
-                    out.add('<%= if ' + mapAssigns(cond) + ' do %>');
-                    out.add(doPart);
-                    if (elsePart != null && elsePart != "") {
-                        out.add('<% else %>');
-                        out.add(elsePart);
+                    if (thenHtml != null) {
+                        out.add('<%= if ' + mapAssigns(cond) + ' do %>');
+                        out.add(thenHtml);
+                        if (elseHtml != null && elseHtml != "") { out.add('<% else %>' + elseHtml); }
+                        out.add('<% end %>');
+                        i = endTag + 2;
+                        continue;
                     }
-                    out.add('<% end %>');
-                } else {
-                    out.add(s.substr(start, (endTag + 2) - start));
                 }
-            } else {
-                out.add(s.substr(start, (endTag + 2) - start));
             }
+            out.add(s.substr(start, (endTag + 2) - start));
             i = endTag + 2;
         }
         return out.toString();
@@ -285,11 +287,11 @@ class HeexStringReturnToSigilTransforms {
         var i = 1;
         while (i < s.length) {
             var ch = s.charAt(i);
-            if (ch == quote) {
+            var prev = s.charAt(i - 1);
+            if (ch == quote && prev != '\\') {
                 var val = s.substr(1, i - 1);
                 return { value: val, length: i + 1 };
             }
-            // naive skip; no escape handling for simplicity
             i++;
         }
         return null;
@@ -328,6 +330,8 @@ class HeexStringReturnToSigilTransforms {
         switch (cur.def) {
             case EString(s) if (looksLikeHtml(s)):
                 var conv = convertInterpolations(s);
+                // Flatten any nested ~H sigils introduced by helper conversions
+                conv = flattenNestedHeexSigil(conv);
                 var rebuilt: ElixirAST = makeAST(ESigil("H", conv, ""));
                 while (parens-- > 0) rebuilt = makeAST(EParen(rebuilt));
                 return makeASTWithMeta(rebuilt.def, node.metadata, node.pos);
@@ -484,6 +488,40 @@ class HeexStringReturnToSigilTransforms {
             default:
         }
         return null;
+    }
+
+    // Replace `<%= ~H""" ... """ %>` with the inner body to avoid nested ~H inside ~H
+    static function flattenNestedHeexSigil(s:String):String {
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var open = s.indexOf("<%=", i);
+            if (open == -1) { out.add(s.substr(i)); break; }
+            out.add(s.substr(i, open - i));
+            var close = s.indexOf("%>", open + 3);
+            if (close == -1) { out.add(s.substr(open)); break; }
+            var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
+            if (StringTools.startsWith(inner, "~H\"\"\"")) {
+                var start = inner.indexOf("\"\"\"");
+                if (start != -1) {
+                    var bodyStart = start + 3;
+                    var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
+                    if (bodyEnd != -1) {
+                        var body = inner.substr(bodyStart, bodyEnd - bodyStart);
+                        out.add(body);
+                        i = close + 2;
+                        continue;
+                    }
+                }
+            }
+            out.add(s.substr(open, (close + 2) - open));
+            i = close + 2;
+        }
+        // Also normalize inline-if do/else into block form after flattening
+        var flat = out.toString();
+        flat = rewriteInlineTernaryToBlock(flat);
+        flat = rewriteInlineIfDoToBlock(flat);
+        return flat;
     }
 
     static function extractString(n: ElixirAST): Null<String> {

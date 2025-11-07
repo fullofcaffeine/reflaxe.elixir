@@ -1,27 +1,18 @@
 defmodule Main do
-  def main() do
-    test_function("TodoApp", 42, true)
-    test_optional("MyApp")
-    test_optional("MyApp", 8080)
-    result = build_name("Phoenix", "App")
-    Log.trace(result, %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    processed = process_config(%{:name => "test"})
-    Log.trace(processed, %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
-  end
   defp test_function(app_name, port, enabled) do
-    config = "#{app_name}.Config"
-    url = "http://localhost:#{port}"
-    status = if enabled, do: "active", else: "inactive"
-    "#{config} at #{url} is #{status}"
+    config = "#{(fn -> app_name end).()}.Config"
+    url = "http://localhost:#{(fn -> port end).()}"
+    status = if (enabled), do: "active", else: "inactive"
+    "#{(fn -> config end).()} at #{(fn -> url end).()} is #{(fn -> status end).()}"
   end
   defp test_optional(app_name, port) do
-    actual_port = if (port != nil), do: port, else: 4000
-    "#{app_name} on port #{actual_port}"
+    actual_port = if (not Kernel.is_nil(port)), do: port, else: 4000
+    "#{(fn -> app_name end).()} on port #{(fn -> actual_port end).()}"
   end
   defp build_name(prefix, suffix) do
-    "#{prefix}.#{suffix}"
+    "#{(fn -> prefix end).()}.#{(fn -> suffix end).()}"
   end
   defp process_config(config) do
-    Std.string(config.name)
+    config.name
   end
 end

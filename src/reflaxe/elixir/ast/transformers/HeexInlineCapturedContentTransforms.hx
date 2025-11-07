@@ -48,6 +48,15 @@ class HeexInlineCapturedContentTransforms {
             switch (cur.def) {
                 case EString(s): return s;
                 case EParen(inner): cur = inner;
+                case ECall(target, func, args):
+                    // Detect HXX.hxx('...') calls and extract the raw template string
+                    var isHxx = (func == "hxx");
+                    if (!isHxx && target != null) {
+                        switch (target.def) { case EVar(mod) if (mod.toLowerCase().indexOf("hxx") != -1): isHxx = true; default: }
+                    }
+                    if (isHxx && args != null && args.length > 0) {
+                        switch (args[0].def) { case EString(s): return s; case EParen(p): cur = p; default: return null; }
+                    } else return null;
                 case ERaw(code):
                     // Attempt to extract a plain string literal from raw code like: ("...") or "..."
                     var s = code;
@@ -282,8 +291,14 @@ class HeexInlineCapturedContentTransforms {
         var i = 1;
         while (i < s.length) {
             var ch = s.charAt(i);
-            if (ch == quote) {
-                return { value: s.substr(1, i - 1), length: i + 1 };
+            var prev = s.charAt(i - 1);
+            if (ch == quote && prev != '\\') {
+                var val = s.substr(1, i - 1);
+                // Unescape common sequences
+                val = StringTools.replace(val, "\\\"", '"');
+                val = StringTools.replace(val, "\\'", "'");
+                val = StringTools.replace(val, "\\\\", "\\");
+                return { value: val, length: i + 1 };
             }
             i++;
         }
@@ -321,6 +336,8 @@ class HeexInlineCapturedContentTransforms {
         #end
         if (assign.html == null) return { changed:false, out: stmts };
         var html = convertInterpolations(assign.html);
+        // Normalize inline-if do/else to block form to produce valid HEEx
+        html = rewriteInlineIfDoToBlock(html);
         var assignsIdx = -1;
         for (i in 0...stmts.length) if (isAssignsCaptureOfVar(stmts[i], sig.varName)) { assignsIdx = i; break; }
         #if debug_heex_inline

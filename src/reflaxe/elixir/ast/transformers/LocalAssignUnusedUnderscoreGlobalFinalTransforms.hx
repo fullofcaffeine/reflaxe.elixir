@@ -58,9 +58,12 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
   }
 
   static function shouldUnderscore(name:String): Bool {
-    // Exclude common, semantically meaningful binders that may be read later via patterns we don’t detect well
+    // Only operate on names that are already intentional throwaways
+    if (name == null || name.length == 0) return false;
+    if (name.charAt(0) != '_') return false;
+    // Exclude some common binders even if underscored (safety)
     return switch (name) {
-      case "socket" | "conn" | "children" | "live" | "live_socket" | "parsed" | "next_sort": false;
+      case "_socket" | "_conn" | "_children": false;
       default: true;
     }
   }

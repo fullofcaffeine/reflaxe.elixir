@@ -41,10 +41,10 @@ class IfInnerAssignSimplifyTransforms {
                         var last = stmts[stmts.length - 1];
                         var replacement:Null<ElixirAST> = null;
                         switch (last.def) {
-                            case EMatch(pat2, inner2) if (isSameVar(pat2, lhs)):
-                                replacement = inner2;
-                            case EBinary(Match, left2, inner3):
-                                switch (left2.def) { case EVar(name2) if (name2 == lhs): replacement = inner3; default: }
+                            case EMatch(innerPattern, innerExpr) if (isSameVar(innerPattern, lhs)):
+                                replacement = innerExpr;
+                            case EBinary(Match, leftExpr, innerRhs):
+                                switch (leftExpr.def) { case EVar(name) if (name == lhs): replacement = innerRhs; default: }
                             default:
                         }
                         if (replacement != null) {
@@ -82,11 +82,11 @@ class IfInnerAssignSimplifyTransforms {
                             n;
                     }
                 // Also handle binary match form: left = rhs
-                case EBinary(Match, left, rhs2):
+                case EBinary(Match, left, rhsExpr):
                     switch (left.def) {
-                        case EVar(lhs2):
-                            var simplified2 = simplifyIfForVar(lhs2, rhs2);
-                            if (simplified2 != rhs2) makeASTWithMeta(EBinary(Match, left, simplified2), n.metadata, n.pos) else n;
+                        case EVar(lhsName):
+                            var simplifiedRhs = simplifyIfForVar(lhsName, rhsExpr);
+                            if (simplifiedRhs != rhsExpr) makeASTWithMeta(EBinary(Match, left, simplifiedRhs), n.metadata, n.pos) else n;
                         default:
                             n;
                     }

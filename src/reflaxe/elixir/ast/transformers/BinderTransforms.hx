@@ -1029,29 +1029,29 @@ class BinderTransforms {
                                     makeASTWithMeta(ERemoteCall(mod, func, a), n.metadata, n.pos);
                                 } else n;
                             case ECall(target, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
-                                var a2 = args.copy();
-                                a2[2] = qualifyFnBody(a2[2], app);
-                                makeASTWithMeta(ECall(target, func, a2), n.metadata, n.pos);
+                                var copiedArgs = args.copy();
+                                copiedArgs[2] = qualifyFnBody(copiedArgs[2], app);
+                                makeASTWithMeta(ECall(target, func, copiedArgs), n.metadata, n.pos);
                             default:
                                 n;
                         }
                     }));
                     makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
                 case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
-                    var app2 = deriveAppPrefix(name);
+                    var appPrefix = deriveAppPrefix(name);
                     var newDo = ElixirASTTransformer.transformNode(doBlock, function(n: ElixirAST): ElixirAST {
                         return switch (n.def) {
                             case ERemoteCall(mod, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
-                                var isEnum2 = switch (mod.def) { case EVar(m) if (m == "Enum"): true; default: false; };
-                                if (isEnum2) {
-                                    var a3 = args.copy();
-                                    a3[2] = qualifyFnBody(a3[2], app2);
-                                    makeASTWithMeta(ERemoteCall(mod, func, a3), n.metadata, n.pos);
+                                var isEnumModule = switch (mod.def) { case EVar(m) if (m == "Enum"): true; default: false; };
+                                if (isEnumModule) {
+                                    var copiedArgs = args.copy();
+                                    copiedArgs[2] = qualifyFnBody(copiedArgs[2], appPrefix);
+                                    makeASTWithMeta(ERemoteCall(mod, func, copiedArgs), n.metadata, n.pos);
                                 } else n;
                             case ECall(target, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
-                                var a4 = args.copy();
-                                a4[2] = qualifyFnBody(a4[2], app2);
-                                makeASTWithMeta(ECall(target, func, a4), n.metadata, n.pos);
+                                var copiedArgs = args.copy();
+                                copiedArgs[2] = qualifyFnBody(copiedArgs[2], appPrefix);
+                                makeASTWithMeta(ECall(target, func, copiedArgs), n.metadata, n.pos);
                             default:
                                 n;
                         }

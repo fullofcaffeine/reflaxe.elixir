@@ -22,6 +22,7 @@ optional_watchers =
   end
 
 all_watchers = base_watchers ++ optional_watchers
+disable_watchers = System.get_env("DISABLE_WATCHERS") == "1"
 
 # Configure the database
 config :todo_app, TodoApp.Repo,
@@ -56,7 +57,7 @@ config :todo_app, TodoAppWeb.Endpoint,
   # Prefer env in dev when provided, otherwise use a stable, non-sensitive fallback
   secret_key_base: System.get_env("DEV_SECRET_KEY_BASE") ||
     "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
-  watchers: all_watchers
+  watchers: (if disable_watchers, do: [], else: all_watchers)
 
 # Watch static and templates for browser reloading.
 config :todo_app, TodoAppWeb.Endpoint,

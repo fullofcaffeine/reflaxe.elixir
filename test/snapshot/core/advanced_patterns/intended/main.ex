@@ -234,7 +234,7 @@ defmodule Main do
              >= 0) do
       "primary color"
     else
-      _ = color
+      c2 = color
       if (
                 case Enum.find_index(secondary_colors, fn item -> item == c2 end) do
                     nil -> -1

@@ -1,8 +1,18 @@
 defmodule TestAppWeb.TestComponent do
-  def render(_assigns) do
-    "\n            <div class={@className}>\n                <h1><%= @title %></h1>\n                <p><%= @content %></p>\n            </div>\n        "
+  use Phoenix.Component
+  def template(assigns) do
+    ~H"""
+<div class={@className}>
+    <h1><%= @title %></h1>
+    <p><%= @content %></p>
+</div>
+"""
   end
-  def button(_assigns) do
-    "\n            <button type={@type || \"button\"} disabled={@disabled}>\n                <%= @label %>\n            </button>\n        "
+  def button(assigns) do
+    ~H"""
+<button type={@type || "button"} disabled={@disabled}>
+    <%= @label %>
+</button>
+"""
   end
 end

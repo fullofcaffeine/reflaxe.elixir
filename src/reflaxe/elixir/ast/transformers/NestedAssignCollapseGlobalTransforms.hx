@@ -37,19 +37,38 @@ class NestedAssignCollapseGlobalTransforms {
             return switch (n.def) {
                 case EBinary(Match, left, rhs):
                     // Unwrap a single level of parentheses to catch shapes like outer = (_ = expr)
-                    var r = switch (rhs.def) { case EParen(inner): inner; default: rhs; };
-                    switch (r.def) {
+                    var rhsUnwrapped = switch (rhs.def) { case EParen(inner): inner; default: rhs; };
+                    switch (rhsUnwrapped.def) {
                         case EBinary(Match, _, expr):
                             #if debug_hygiene
                             Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(inner=expr)');
                             #end
                             makeASTWithMeta(EBinary(Match, left, expr), n.metadata, n.pos);
-                        case EMatch(_, expr2):
+                        case EMatch(_, innerExprForMatch):
                             #if debug_hygiene
                             Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(PVar inner=expr)');
                             #end
-                            makeASTWithMeta(EBinary(Match, left, expr2), n.metadata, n.pos);
+                            makeASTWithMeta(EBinary(Match, left, innerExprForMatch), n.metadata, n.pos);
                         default: n;
+                    }
+                case EMatch(patLeft, rhsMatch):
+                    // Collapse nested match on RHS for pattern-match form as well:
+                    //   pat = (inner = expr)  →  pat = expr
+                    //   pat = (PVar(inner) = expr) → pat = expr
+                    var rhsMatchUnwrapped = switch (rhsMatch.def) { case EParen(innerParen): innerParen; default: rhsMatch; };
+                    switch (rhsMatchUnwrapped.def) {
+                        case EBinary(Match, _, expr):
+                            #if debug_hygiene
+                            Sys.println('[NestedAssignCollapseGlobal] collapsing EMatch pat=(inner=expr)');
+                            #end
+                            makeASTWithMeta(EMatch(patLeft, expr), n.metadata, n.pos);
+                        case EMatch(_, innerExprForPat):
+                            #if debug_hygiene
+                            Sys.println('[NestedAssignCollapseGlobal] collapsing EMatch pat=(PVar inner=expr)');
+                            #end
+                            makeASTWithMeta(EMatch(patLeft, innerExprForPat), n.metadata, n.pos);
+                        default:
+                            n;
                     }
                 default:
                     n;

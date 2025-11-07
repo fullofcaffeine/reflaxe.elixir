@@ -135,12 +135,9 @@ class LocalAssignUnderscoreLateTransforms {
                     var newLeft = left;
                     if (leftName != null && leftName == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                         // keep as named binder
-                    } else if (leftName != null
-                        && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName)
-                        && !referencesVar(newRhs, leftName) // preserve x = f(x) shape
-                        && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName, s.metadata != null ? s.metadata.varId : null)
-                        && !hasPinnedVarInBlock(stmts, i + 1, leftName)) {
-                        newLeft = makeASTWithMeta(EVar('_' + leftName), left.metadata, left.pos);
+                    } else {
+                        // Conservative: do not rename non-underscore binders here. Leave to dedicated underscore passes.
+                        newLeft = left;
                     }
                     if (collapse && collapsedExpr != null) {
                         #if debug_hygiene
@@ -151,37 +148,33 @@ class LocalAssignUnderscoreLateTransforms {
                         out.push(makeASTWithMeta(EBinary(Match, newLeft, newRhs), s.metadata, s.pos));
                     }
                 case EMatch(pat, rhs):
-                    var collapse2 = false;
-                    var collapsedExpr2:Null<ElixirAST> = null;
-                    var newRhs2 = switch (rhs.def) {
-                        case EBinary(Match, leftInner2, expr2):
-                            var innerName2:Null<String> = switch (leftInner2.def) { case EVar(n): n; default: null; };
-                            if (innerName2 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName2)) {
-                                collapse2 = true; collapsedExpr2 = expr2; rhs;
+                    var collapseNested = false;
+                    var collapsedExprInner:Null<ElixirAST> = null;
+                    var newRhsInner = switch (rhs.def) {
+                        case EBinary(Match, innerLeft, rhsExprInner):
+                            var innerName:Null<String> = switch (innerLeft.def) { case EVar(n): n; default: null; };
+                            if (innerName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName)) {
+                                collapseNested = true; collapsedExprInner = rhsExprInner; rhs;
                             } else rhs;
-                        case EMatch(patInner2, expr3):
-                            var innerName3:Null<String> = switch (patInner2) { case PVar(n3): n3; default: null; };
-                            if (innerName3 != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName3)) {
-                                collapse2 = true; collapsedExpr2 = expr3; rhs;
+                        case EMatch(innerPattern, rhsExprCandidate):
+                            var innerNameCandidate:Null<String> = switch (innerPattern) { case PVar(n3): n3; default: null; };
+                            if (innerNameCandidate != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerNameCandidate)) {
+                                collapseNested = true; collapsedExprInner = rhsExprCandidate; rhs;
                             } else rhs;
                         default: rhs;
                     };
-                    var leftName2:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
+                    var leftPatternName:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
                     var newPat = pat;
-                    if (leftName2 != null && leftName2 == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
+                    if (leftPatternName != null && leftPatternName == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                         // keep as named binder
-                    } else if (leftName2 != null
-                        && !VarUseAnalyzer.usedLater(stmts, i + 1, leftName2)
-                        && !referencesVar(newRhs2, leftName2) // preserve x = f(x) pattern
-                        && !hasPinnedVarInEctoWhere(stmts, i + 1, leftName2, s.metadata != null ? s.metadata.varId : null)
-                        && !hasPinnedVarInBlock(stmts, i + 1, leftName2)
-                        && leftName2.charAt(0) != '_') {
-                        newPat = PVar('_' + leftName2);
-                    }
-                    if (collapse2 && collapsedExpr2 != null) {
-                        out.push(makeASTWithMeta(EMatch(newPat, collapsedExpr2), s.metadata, s.pos));
                     } else {
-                        out.push(makeASTWithMeta(EMatch(newPat, newRhs2), s.metadata, s.pos));
+                        // Conservative: no rename of non-underscore binders at this stage.
+                        newPat = pat;
+                    }
+                    if (collapseNested && collapsedExprInner != null) {
+                        out.push(makeASTWithMeta(EMatch(newPat, collapsedExprInner), s.metadata, s.pos));
+                    } else {
+                        out.push(makeASTWithMeta(EMatch(newPat, newRhsInner), s.metadata, s.pos));
                     }
                 default:
                     out.push(s);

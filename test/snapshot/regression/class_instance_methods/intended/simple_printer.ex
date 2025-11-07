@@ -1,6 +1,5 @@
 defmodule SimplePrinter do
-  @prefix nil
   def print(struct, suffix) do
-    struct.prefix <> suffix
+    "#{(fn -> struct.prefix end).()}#{(fn -> suffix end).()}"
   end
 end

@@ -69,14 +69,14 @@ class SafePubSubAliasInjectTransforms {
                     if (tgt != null) switch (tgt.def) { case EVar(m) if (m == "SafePubSub"): found = true; default: }
                 case ERaw(code): if (code != null && code.indexOf("SafePubSub.") != -1) found = true;
                 case EDef(_, _, _, b): scan(b);
-                case EDefp(_, _, _, b2): scan(b2);
+                case EDefp(_, _, _, privateBody): scan(privateBody);
                 case EBlock(stmts): for (s in stmts) scan(s);
                 case EIf(c,t,el): scan(c); scan(t); if (el != null) scan(el);
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case EBinary(_, l, r): scan(l); scan(r);
                 case EMatch(_, rhs): scan(rhs);
                 case ECall(tgt, _, args): if (tgt != null) scan(tgt); for (a in args) scan(a);
-                case ERemoteCall(tgt2, _, args2): scan(tgt2); for (a2 in args2) scan(a2);
+                case ERemoteCall(remoteTarget, _, remoteArgs): scan(remoteTarget); for (arg in remoteArgs) scan(arg);
                 default:
             }
         }
@@ -91,17 +91,17 @@ class SafePubSubAliasInjectTransforms {
             switch (e.def) {
                 case ERemoteCall(mod, _, _):
                     switch (mod.def) { case EVar(m) if (m == moduleName): used = true; default: }
-                case ECall(tgt, _, _): if (tgt != null) switch (tgt.def) { case EVar(m2) if (m2 == moduleName): used = true; default: }
+                case ECall(tgt, _, _): if (tgt != null) switch (tgt.def) { case EVar(moduleVar) if (moduleVar == moduleName): used = true; default: }
                 case ERaw(code): if (code != null && code.indexOf(moduleName + ".") != -1) used = true;
                 case EDef(_, _, _, b): scan(b);
-                case EDefp(_, _, _, b2): scan(b2);
+                case EDefp(_, _, _, privateBody): scan(privateBody);
                 case EBlock(stmts): for (s in stmts) scan(s);
                 case EIf(c,t,el): scan(c); scan(t); if (el != null) scan(el);
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case EBinary(_, l, r): scan(l); scan(r);
                 case EMatch(_, rhs): scan(rhs);
                 case ERemoteCall(m,_,args): scan(m); if (args != null) for (a in args) scan(a);
-                case ECall(t,_,args2): if (t != null) scan(t); if (args2 != null) for (a in args2) scan(a);
+                case ECall(t,_,argsList): if (t != null) scan(t); if (argsList != null) for (a in argsList) scan(a);
                 default:
             }
         }

@@ -12,15 +12,14 @@ defmodule Main do
     _ = circle.setVelocity(1, 2)
     _ = circle.update(1.5)
     _ = Log.trace(circle.draw(), %{:file_name => "Main.hx", :line_number => 156, :class_name => "Main", :method_name => "main"})
-    _ = MyApp.Circle.create_unit()
+    unit_circle = MyApp.Circle.create_unit()
     _ = Log.trace(unit_circle.draw(), %{:file_name => "Main.hx", :line_number => 160, :class_name => "Main", :method_name => "main"})
     container = %container{}
     _ = StringBuf.add(container, "Hello")
     _ = StringBuf.add(container, "World")
     _ = Log.trace(container.get(0), %{:file_name => "Main.hx", :line_number => 166, :class_name => "Main", :method_name => "main"})
     _ = Log.trace(container.size(), %{:file_name => "Main.hx", :line_number => 167, :class_name => "Main", :method_name => "main"})
-    _ = Enum.map(container, fn s -> length(s) end)
+    lengths = Enum.map(container, fn s -> length(s) end)
     _ = Log.trace(lengths.get(0), %{:file_name => "Main.hx", :line_number => 171, :class_name => "Main", :method_name => "main"})
-    _
   end
 end

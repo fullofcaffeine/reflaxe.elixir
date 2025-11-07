@@ -40,11 +40,11 @@ class InlineUnderscoreTempUsedOnceTransforms {
                 } else {
                   out.push(s); i++;
                 }
-              case EBinary(Match, {def: EVar(tmp2)}, rhs2) if (isUnderscore(tmp2) && i + 1 < stmts.length):
-                var next2 = stmts[i+1];
-                if (usedExactlyOnceAsVar(next2, tmp2) || isSafeMultiUseInlineContext(next2)) {
-                  var inlined2 = substituteVar(next2, tmp2, rhs2);
-                  out.push(inlined2); i += 2; continue;
+              case EBinary(Match, {def: EVar(tmpVar)}, rhsExpr) if (isUnderscore(tmpVar) && i + 1 < stmts.length):
+                var nextStmt = stmts[i+1];
+                if (usedExactlyOnceAsVar(nextStmt, tmpVar) || isSafeMultiUseInlineContext(nextStmt)) {
+                  var inlined = substituteVar(nextStmt, tmpVar, rhsExpr);
+                  out.push(inlined); i += 2; continue;
                 } else { out.push(s); i++; }
               default:
                 out.push(s); i++;
@@ -53,29 +53,29 @@ class InlineUnderscoreTempUsedOnceTransforms {
           makeASTWithMeta(EBlock(out), n.metadata, n.pos);
         // Also handle do-blocks (EDo) the same way
         case EDo(stmts) if (stmts.length >= 2):
-          var out2:Array<ElixirAST> = [];
-          var i2 = 0;
-          while (i2 < stmts.length) {
-            var s2 = stmts[i2];
-            switch (s2.def) {
-              case EMatch(PVar(tmp), rhs) if (isUnderscore(tmp) && i2 + 1 < stmts.length):
-                var next = stmts[i2+1];
+          var output:Array<ElixirAST> = [];
+          var index = 0;
+          while (index < stmts.length) {
+            var cur = stmts[index];
+            switch (cur.def) {
+              case EMatch(PVar(tmp), rhs) if (isUnderscore(tmp) && index + 1 < stmts.length):
+                var next = stmts[index+1];
                 if (usedExactlyOnceAsVar(next, tmp)) {
                   var inlined = substituteVar(next, tmp, rhs);
-                  out2.push(inlined);
-                  i2 += 2; continue;
-                } else { out2.push(s2); i2++; }
-              case EBinary(Match, {def: EVar(tmp2)}, rhs2) if (isUnderscore(tmp2) && i2 + 1 < stmts.length):
-                var next2 = stmts[i2+1];
-                if (usedExactlyOnceAsVar(next2, tmp2) || isSafeMultiUseInlineContext(next2)) {
-                  var inlined2 = substituteVar(next2, tmp2, rhs2);
-                  out2.push(inlined2); i2 += 2; continue;
-                } else { out2.push(s2); i2++; }
+                  output.push(inlined);
+                  index += 2; continue;
+                } else { output.push(cur); index++; }
+              case EBinary(Match, {def: EVar(tmpVar)}, rhsExpr) if (isUnderscore(tmpVar) && index + 1 < stmts.length):
+                var nextStmt = stmts[index+1];
+                if (usedExactlyOnceAsVar(nextStmt, tmpVar) || isSafeMultiUseInlineContext(nextStmt)) {
+                  var inlined = substituteVar(nextStmt, tmpVar, rhsExpr);
+                  output.push(inlined); index += 2; continue;
+                } else { output.push(cur); index++; }
               default:
-                out2.push(s2); i2++;
+                output.push(cur); index++;
             }
           }
-          makeASTWithMeta(EDo(out2), n.metadata, n.pos);
+          makeASTWithMeta(EDo(output), n.metadata, n.pos);
         default:
           n;
       }
@@ -95,13 +95,13 @@ class InlineUnderscoreTempUsedOnceTransforms {
         case EBinary(_, l, r): walk(l); walk(r);
         case EMatch(_, rhs): walk(rhs);
         case EBlock(ss): for (s in ss) walk(s);
-        case EDo(ss2): for (s in ss2) walk(s);
+        case EDo(statements): for (s in statements) walk(s);
         case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
         case ECase(expr, cs): walk(expr); for (c in cs) { if (c.guard != null) walk(c.guard); walk(c.body); }
         case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
-        case ERemoteCall(t2,_,as2): walk(t2); if (as2 != null) for (a2 in as2) walk(a2);
+        case ERemoteCall(targetExpr,_,argsList): walk(targetExpr); if (argsList != null) for (argNode in argsList) walk(argNode);
         case EField(obj,_): walk(obj);
-        case EAccess(obj2,key): walk(obj2); walk(key);
+        case EAccess(objectExpr,key): walk(objectExpr); walk(key);
         default:
       }
     }

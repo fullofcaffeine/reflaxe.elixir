@@ -120,7 +120,7 @@ class CaseSuccessVarUnifyTransforms {
             case EBinary(_, l, r): collectNames(l, acc); collectNames(r, acc);
             case EMatch(p, rhs): collectNames(rhs, acc);
             case ECall(tgt, _, args): if (tgt != null) collectNames(tgt, acc); for (a in args) collectNames(a, acc);
-            case ERemoteCall(tgt2, _, args2): collectNames(tgt2, acc); for (a2 in args2) collectNames(a2, acc);
+            case ERemoteCall(targetExpr, _, argsList): collectNames(targetExpr, acc); for (argNode in argsList) collectNames(argNode, acc);
             case EList(els): for (e in els) collectNames(e, acc);
             case ETuple(els): for (e in els) collectNames(e, acc);
             case EMap(kvs): for (kv in kvs) { collectNames(kv.key, acc); collectNames(kv.value, acc); }

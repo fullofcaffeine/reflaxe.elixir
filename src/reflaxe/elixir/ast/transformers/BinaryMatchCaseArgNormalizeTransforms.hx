@@ -58,9 +58,9 @@ class BinaryMatchCaseArgNormalizeTransforms {
     // Only for two-statement blocks
     var stmts: Array<ElixirAST> = switch (candidate.def) {
       case EBlock(ss) if (ss.length >= 2): ss;
-      case EDo(ss2) if (ss2.length >= 2): ss2;
-      case EParen(inner2):
-        switch (inner2.def) { case EBlock(ss3) if (ss3.length >= 2): ss3; case EDo(ss4) if (ss4.length >= 2): ss4; default: null; }
+      case EDo(statements) if (statements.length >= 2): statements;
+      case EParen(innerExpr):
+        switch (innerExpr.def) { case EBlock(ss3) if (ss3.length >= 2): ss3; case EDo(ss4) if (ss4.length >= 2): ss4; default: null; }
       default: null;
     }
     if (stmts == null) return arg;
@@ -69,7 +69,7 @@ class BinaryMatchCaseArgNormalizeTransforms {
     var rhsExpr: Null<ElixirAST> = null;
     switch (stmts[0].def) {
       case EBinary(Match, {def: EVar(v)}, rhs): varName = v; rhsExpr = rhs;
-      case EMatch(PVar(v2), rhs2): varName = v2; rhsExpr = rhs2;
+      case EMatch(PVar(binderName), rhsAssigned): varName = binderName; rhsExpr = rhsAssigned;
       default:
     }
     if (varName == null || rhsExpr == null) return arg;

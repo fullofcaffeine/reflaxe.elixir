@@ -7,6 +7,5 @@ defmodule IntDisplay do
       "0x#{(fn -> StringTools.hex(value) end).()}"
     end
     _ = inspect(value)
-    _
   end
 end

@@ -1,4 +1,9 @@
 defmodule TestAppWeb do
+  @compile {:nowarn_unused_function, [html_helpers: 0]}
+
+  def static_paths() do
+    ["assets", "fonts", "images", "favicon.ico", "robots.txt"]
+  end
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end
@@ -21,7 +26,6 @@ defmodule TestAppWeb do
     quote do
       use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
       unquote(html_helpers())
-      _ = nil
     end
   end
   def live_component() do
@@ -48,7 +52,7 @@ defmodule TestAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, endpoint: :"test_app_web.endpoint", router: :"test_app_web.router", statics: TestAppWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: TestAppWeb.Endpoint, router: TestAppWeb.Router, statics: TestAppWeb.static_paths()
     end
   end
   def channel() do

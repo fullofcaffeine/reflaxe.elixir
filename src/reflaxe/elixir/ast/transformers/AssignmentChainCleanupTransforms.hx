@@ -36,37 +36,55 @@ class AssignmentChainCleanupTransforms {
                         var s = stmts[i];
                         switch (s.def) {
                             case EBinary(Match, leftOuter, rightOuter):
-                                var aliasName:Null<String> = null;
-                                var innerExpr:Null<ElixirAST> = null;
+                                var innerAliasName:Null<String> = null;
+                                var innerRightExpr:Null<ElixirAST> = null;
+                                var innerIsWildcard:Bool = false;
                                 switch (rightOuter.def) {
-                                    case EBinary(Match, leftInner, deepExpr):
-                                        switch (leftInner.def) { case EVar(a): aliasName = a; default: }
-                                        innerExpr = deepExpr;
-                                    case EMatch(patInner, deepExpr2):
-                                        switch (patInner) { case PVar(a2): aliasName = a2; default: }
-                                        innerExpr = deepExpr2;
+                                    case EBinary(Match, leftInner, innerExpr):
+                                        switch (leftInner.def) {
+                                            case EVar(varName): innerAliasName = varName;
+                                            case EUnderscore: innerIsWildcard = true;
+                                            default:
+                                        }
+                                        innerRightExpr = innerExpr;
+                                    case EMatch(innerPattern, innerPatExpr):
+                                        switch (innerPattern) {
+                                            case PVar(variableName): innerAliasName = variableName;
+                                            case PWildcard: innerIsWildcard = true;
+                                            default:
+                                        }
+                                        innerRightExpr = innerPatExpr;
                                     default:
                                 }
-                                if (aliasName != null && innerExpr != null && !nameUsedLater(stmts, i+1, aliasName)) {
-                                    // Rewrite to lhs = innerExpr
-                                    out.push(makeASTWithMeta(EBinary(Match, leftOuter, innerExpr), s.metadata, s.pos));
+                                if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i+1, innerAliasName))) && innerRightExpr != null) {
+                                    // Rewrite to leftOuter = innerRightExpr (underscore or unused alias)
+                                    out.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExpr), s.metadata, s.pos));
                                 } else {
                                     out.push(s);
                                 }
                             case EMatch(patOuter, rhsOuter):
-                                var alias2:Null<String> = null;
-                                var deep2:Null<ElixirAST> = null;
+                                var innerAliasName:Null<String> = null;
+                                var innerRightExpr:Null<ElixirAST> = null;
+                                var innerIsWildcard:Bool = false;
                                 switch (rhsOuter.def) {
-                                    case EBinary(Match, leftI2, expr2):
-                                        switch (leftI2.def) { case EVar(a): alias2 = a; default: }
-                                        deep2 = expr2;
-                                    case EMatch(patI2, expr3):
-                                        switch (patI2) { case PVar(a2): alias2 = a2; default: }
-                                        deep2 = expr3;
+                                    case EBinary(Match, aliasLeft, aliasRightExpr):
+                                        switch (aliasLeft.def) {
+                                            case EVar(variableName): innerAliasName = variableName;
+                                            case EUnderscore: innerIsWildcard = true;
+                                            default:
+                                        }
+                                        innerRightExpr = aliasRightExpr;
+                                    case EMatch(matchPattern, matchExpr):
+                                        switch (matchPattern) {
+                                            case PVar(variableName): innerAliasName = variableName;
+                                            case PWildcard: innerIsWildcard = true;
+                                            default:
+                                        }
+                                        innerRightExpr = matchExpr;
                                     default:
                                 }
-                                if (alias2 != null && deep2 != null && !nameUsedLater(stmts, i+1, alias2)) {
-                                    out.push(makeASTWithMeta(EMatch(patOuter, deep2), s.metadata, s.pos));
+                                if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i+1, innerAliasName))) && innerRightExpr != null) {
+                                    out.push(makeASTWithMeta(EMatch(patOuter, innerRightExpr), s.metadata, s.pos));
                                 } else {
                                     out.push(s);
                                 }
@@ -76,50 +94,50 @@ class AssignmentChainCleanupTransforms {
                     }
                     makeASTWithMeta(EBlock(out), node.metadata, node.pos);
                 case EDo(stmts):
-                    var out2:Array<ElixirAST> = [];
-                    var n2 = stmts.length;
-                    for (i in 0...n2) {
+                    var doOut:Array<ElixirAST> = [];
+                    var doCount = stmts.length;
+                    for (i in 0...doCount) {
                         var s = stmts[i];
                         switch (s.def) {
                             case EBinary(Match, leftOuter, rightOuter):
-                                var aliasName:Null<String> = null;
-                                var innerExpr:Null<ElixirAST> = null;
+                                var innerAliasNameDo:Null<String> = null;
+                                var innerRightExprDo:Null<ElixirAST> = null;
                                 switch (rightOuter.def) {
-                                    case EBinary(Match, leftInner, deepExpr):
-                                        switch (leftInner.def) { case EVar(a): aliasName = a; default: }
-                                        innerExpr = deepExpr;
-                                    case EMatch(patInner, deepExpr2):
-                                        switch (patInner) { case PVar(a2): aliasName = a2; default: }
-                                        innerExpr = deepExpr2;
+                                    case EBinary(Match, leftInner, innerExpr):
+                                        switch (leftInner.def) { case EVar(variableName): innerAliasNameDo = variableName; default: }
+                                        innerRightExprDo = innerExpr;
+                                    case EMatch(innerPattern, innerMatchExpr):
+                                        switch (innerPattern) { case PVar(variableName): innerAliasNameDo = variableName; default: }
+                                        innerRightExprDo = innerMatchExpr;
                                     default:
                                 }
-                                if (aliasName != null && innerExpr != null && !nameUsedLater(stmts, i+1, aliasName)) {
-                                    out2.push(makeASTWithMeta(EBinary(Match, leftOuter, innerExpr), s.metadata, s.pos));
+                                if (innerAliasNameDo != null && innerRightExprDo != null && !nameUsedLater(stmts, i+1, innerAliasNameDo)) {
+                                    doOut.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExprDo), s.metadata, s.pos));
                                 } else {
-                                    out2.push(s);
+                                    doOut.push(s);
                                 }
                             case EMatch(patOuter, rhsOuter):
-                                var alias2:Null<String> = null;
-                                var deep2:Null<ElixirAST> = null;
+                                var innerAliasNameDoMatch:Null<String> = null;
+                                var innerRightExprDoMatch:Null<ElixirAST> = null;
                                 switch (rhsOuter.def) {
-                                    case EBinary(Match, leftI2, expr2):
-                                        switch (leftI2.def) { case EVar(a): alias2 = a; default: }
-                                        deep2 = expr2;
-                                    case EMatch(patI2, expr3):
-                                        switch (patI2) { case PVar(a2): alias2 = a2; default: }
-                                        deep2 = expr3;
+                                    case EBinary(Match, aliasLeft, aliasRightExpr):
+                                        switch (aliasLeft.def) { case EVar(variableName): innerAliasNameDoMatch = variableName; default: }
+                                        innerRightExprDoMatch = aliasRightExpr;
+                                    case EMatch(matchPattern, matchExpr):
+                                        switch (matchPattern) { case PVar(variableName): innerAliasNameDoMatch = variableName; default: }
+                                        innerRightExprDoMatch = matchExpr;
                                     default:
                                 }
-                                if (alias2 != null && deep2 != null && !nameUsedLater(stmts, i+1, alias2)) {
-                                    out2.push(makeASTWithMeta(EMatch(patOuter, deep2), s.metadata, s.pos));
+                                if (innerAliasNameDoMatch != null && innerRightExprDoMatch != null && !nameUsedLater(stmts, i+1, innerAliasNameDoMatch)) {
+                                    doOut.push(makeASTWithMeta(EMatch(patOuter, innerRightExprDoMatch), s.metadata, s.pos));
                                 } else {
-                                    out2.push(s);
+                                    doOut.push(s);
                                 }
                             default:
-                                out2.push(s);
+                                doOut.push(s);
                         }
                     }
-                    makeASTWithMeta(EDo(out2), node.metadata, node.pos);
+                    makeASTWithMeta(EDo(doOut), node.metadata, node.pos);
                 default:
                     node;
             }
@@ -143,7 +161,7 @@ class AssignmentChainCleanupTransforms {
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
                 case ECall(t,_,as): if (t != null) visit(t); if (as != null) for (a in as) visit(a);
-                case ERemoteCall(t2,_,as2): visit(t2); if (as2 != null) for (a2 in as2) visit(a2);
+                case ERemoteCall(remoteTarget,_,remoteArgs): visit(remoteTarget); if (remoteArgs != null) for (arg in remoteArgs) visit(arg);
                 case EFn(clauses): for (cl in clauses) visit(cl.body);
                 case ERaw(code):
                     if (code != null && code.indexOf("#{" + name) != -1) used = true;
