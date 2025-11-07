@@ -105,57 +105,57 @@ class ReduceWhileThenBranchNormalizeTransforms {
           i++;
         }
         makeASTWithMeta(EBlock(out), block.metadata, block.pos);
-      case EDo(stmts2):
+      case EDo(statements):
         // debug removed
-        var out2:Array<ElixirAST> = [];
-        var j = 0;
-        while (j < stmts2.length) {
-          if (j + 1 < stmts2.length) {
-            switch (stmts2[j].def) {
+        var output:Array<ElixirAST> = [];
+        var index = 0;
+        while (index < statements.length) {
+          if (index + 1 < statements.length) {
+            switch (statements[index].def) {
               case EBinary(Match, {def: EVar(a)}, {def: EBinary(Match, {def: EVar(b)}, rhs)}):
-                switch (stmts2[j + 1].def) {
-                  case EIf(cond2, then2, else2):
-                    var elseIsB = switch (else2.def) { case EVar(bb) if (bb == b): true; default: false; };
+                switch (statements[index + 1].def) {
+                  case EIf(condExpr, thenExpr, elseExpr):
+                    var elseIsB = switch (elseExpr.def) { case EVar(bb) if (bb == b): true; default: false; };
                     if (elseIsB) {
-                      out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), stmts2[j].metadata, stmts2[j].pos), rhs), stmts2[j].metadata, stmts2[j].pos));
-                      out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), stmts2[j].metadata, stmts2[j].pos), makeASTWithMeta(EIf(cond2, then2, else2), stmts2[j + 1].metadata, stmts2[j + 1].pos)), stmts2[j].metadata, stmts2[j].pos));
-                      j += 2; continue;
+                      output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), statements[index].metadata, statements[index].pos), rhs), statements[index].metadata, statements[index].pos));
+                      output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(condExpr, thenExpr, elseExpr), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+                      index += 2; continue;
                     }
                   default:
                 }
               case EMatch(PVar(aM), {def: EBinary(Match, {def: EVar(bM)}, rhsM)}):
-                switch (stmts2[j + 1].def) {
+                switch (statements[index + 1].def) {
                   case EIf(condM, thenM, elseM):
                     var elseIsBM = switch (elseM.def) { case EVar(bbM) if (bbM == bM): true; default: false; };
                     if (elseIsBM) {
-                      out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM), stmts2[j].metadata, stmts2[j].pos), rhsM), stmts2[j].metadata, stmts2[j].pos));
-                      out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), stmts2[j].metadata, stmts2[j].pos), makeASTWithMeta(EIf(condM, thenM, elseM), stmts2[j + 1].metadata, stmts2[j + 1].pos)), stmts2[j].metadata, stmts2[j].pos));
-                      j += 2; continue;
+                      output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM), statements[index].metadata, statements[index].pos), rhsM), statements[index].metadata, statements[index].pos));
+                      output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(condM, thenM, elseM), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+                      index += 2; continue;
                     }
                   default:
                 }
               case EMatch(PVar(aM2), {def: EMatch(PVar(bM2), rhsM2)}):
-                switch (stmts2[j + 1].def) {
+                switch (statements[index + 1].def) {
                   case EIf(condM2, thenM2, elseM2):
                     var elseIsBM2 = switch (elseM2.def) { case EVar(bbM2) if (bbM2 == bM2): true; default: false; };
                     if (elseIsBM2) {
-                      out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM2), stmts2[j].metadata, stmts2[j].pos), rhsM2), stmts2[j].metadata, stmts2[j].pos));
-                      out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM2), stmts2[j].metadata, stmts2[j].pos), makeASTWithMeta(EIf(condM2, thenM2, elseM2), stmts2[j + 1].metadata, stmts2[j + 1].pos)), stmts2[j].metadata, stmts2[j].pos));
-                      j += 2; continue;
+                      output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM2), statements[index].metadata, statements[index].pos), rhsM2), statements[index].metadata, statements[index].pos));
+                      output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM2), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(condM2, thenM2, elseM2), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+                      index += 2; continue;
                     }
                   default:
                 }
               default:
                 // Additional window: a = (b <- rhs); if ... else b end
-                switch (stmts2[j].def) {
-                  case EBinary(Match, {def: EVar(a2)}, {def: EMatch(PVar(b2), rhs2)}):
-                    switch (stmts2[j + 1].def) {
+                switch (statements[index].def) {
+                  case EBinary(Match, {def: EVar(leftVar)}, {def: EMatch(PVar(rightVar), rhsExpr)}):
+                    switch (statements[index + 1].def) {
                       case EIf(condX, thenX, elseX):
-                        var elseIsBX = switch (elseX.def) { case EVar(bbX) if (bbX == b2): true; default: false; };
+                        var elseIsBX = switch (elseX.def) { case EVar(bbX) if (bbX == rightVar): true; default: false; };
                         if (elseIsBX) {
-                          out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), stmts2[j].metadata, stmts2[j].pos), rhs2), stmts2[j].metadata, stmts2[j].pos));
-                          out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), stmts2[j].metadata, stmts2[j].pos), makeASTWithMeta(EIf(condX, thenX, elseX), stmts2[j + 1].metadata, stmts2[j + 1].pos)), stmts2[j].metadata, stmts2[j].pos));
-                          j += 2; continue;
+                          output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(rightVar), statements[index].metadata, statements[index].pos), rhsExpr), statements[index].metadata, statements[index].pos));
+                          output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(leftVar), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(condX, thenX, elseX), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+                          index += 2; continue;
                         }
                       default:
                     }
@@ -163,10 +163,10 @@ class ReduceWhileThenBranchNormalizeTransforms {
                 }
             }
           }
-          out2.push(stmts2[j]);
-          j++;
+          output.push(statements[index]);
+          index++;
         }
-        makeASTWithMeta(EDo(out2), block.metadata, block.pos);
+        makeASTWithMeta(EDo(output), block.metadata, block.pos);
       default:
         block;
     }

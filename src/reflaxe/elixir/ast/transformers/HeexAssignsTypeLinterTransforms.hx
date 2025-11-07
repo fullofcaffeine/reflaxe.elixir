@@ -99,7 +99,10 @@ class HeexAssignsTypeLinterTransforms {
                 try fileContent = sys.io.File.getContent(hxPath) catch (e: Dynamic) fileContent = null;
                 if (fileContent == null) return;
 
-                var assignsType = extractAssignsTypeName(fileContent);
+                var nearLine: Null<Int> = findMinSourceLine(body);
+                var assignsType = (nearLine != null)
+                    ? extractAssignsTypeNameBefore(fileContent, nearLine)
+                    : extractAssignsTypeName(fileContent);
 #if debug_assigns_linter
                 trace('[HeexAssignsTypeLinter] assigns type=' + assignsType);
 #end
@@ -156,6 +159,17 @@ class HeexAssignsTypeLinterTransforms {
             }
             return x;
         });
+    }
+
+    static function findMinSourceLine(node: ElixirAST): Null<Int> {
+        var minLine: Null<Int> = null;
+        ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
+            if (x.metadata != null && x.metadata.sourceLine != null) {
+                if (minLine == null || x.metadata.sourceLine < minLine) minLine = x.metadata.sourceLine;
+            }
+            return x;
+        });
+        return minLine;
     }
 
     static function containsHeexOrFragments(node: ElixirAST): Bool {
@@ -409,6 +423,23 @@ class HeexAssignsTypeLinterTransforms {
         // Look for: function render(assigns: TypeName)
         var re = ~/function\s+render\s*\(\s*assigns\s*:\s*([A-Za-z0-9_\.]+)/;
         return re.match(hx) ? re.matched(1) : null;
+    }
+
+    static function extractAssignsTypeNameBefore(hx: String, nearLine: Int): Null<String> {
+        // Scan line-by-line and pick the nearest render(assigns: Type) defined at or before nearLine
+        var lines = hx.split("\n");
+        var bestName: Null<String> = null;
+        var bestLine = -1;
+        var re = ~/function\s+render\s*\([^)]*assigns\s*:\s*([A-Za-z0-9_\.]+)/;
+        for (idx in 0...lines.length) {
+            var line = lines[idx];
+            if (re.match(line)) {
+                var name = re.matched(1);
+                var lineNo = idx + 1;
+                if (lineNo <= nearLine && lineNo > bestLine) { bestLine = lineNo; bestName = name; }
+            }
+        }
+        return bestName;
     }
 
     static function extractAssignsFields(typeName: String, hx: String): Map<String, String> {

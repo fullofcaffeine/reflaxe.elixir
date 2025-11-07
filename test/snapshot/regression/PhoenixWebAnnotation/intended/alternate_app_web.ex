@@ -1,4 +1,9 @@
 defmodule AlternateAppWeb do
+  @compile {:nowarn_unused_function, [html_helpers: 0]}
+
+  def static_paths() do
+    ["css", "js", "img"]
+  end
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end
@@ -21,7 +26,6 @@ defmodule AlternateAppWeb do
     quote do
       use Phoenix.LiveView, layout: {AlternateAppWeb.Layouts, :app}
       unquote(html_helpers())
-      _ = nil
     end
   end
   def live_component() do
@@ -48,7 +52,7 @@ defmodule AlternateAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, endpoint: :"alternate_app_web.endpoint", router: :"alternate_app_web.router", statics: AlternateAppWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: AlternateAppWeb.Endpoint, router: AlternateAppWeb.Router, statics: AlternateAppWeb.static_paths()
     end
   end
   def channel() do

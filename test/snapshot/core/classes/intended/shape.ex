@@ -6,9 +6,10 @@ defmodule Shape do
     struct.position
   end
   def move(struct, dx, dy) do
-    _ = struct.position
-    _ = fh.x + dx
-    _ = struct.position
-    _ = fh2.y + dy
+    fh = struct.position
+    x = fh.x + dx
+    fh2 = struct.position
+    y = fh2.y + dy
+    y
   end
 end

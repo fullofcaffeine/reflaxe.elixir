@@ -77,7 +77,6 @@
 # Main server classes to compile
 TodoApp
 TodoAppRouter
-TestInjection
 server.live.TodoLive
 server.schemas.Todo
 server.migrations.CreateTodos

@@ -6,33 +6,31 @@ defmodule Main do
     _ = test_beam_integration()
     _ = test_null_safety()
     _ = test_collection_operations()
-    _
   end
   defp test_option_construction() do
-    _ = "hello"
-    _ = {:none}
-    _ = "world"
-    _ = nil
-    _ = MyApp.OptionTools.from_nullable(name)
-    _ = MyApp.OptionTools.from_nullable(nullable_name)
-    _ = Alice
-    _ = {:none}
+    some_value = "hello"
+    none_value = {:none}
+    name = "world"
+    nullable_name = nil
+    option_from_value = MyApp.OptionTools.from_nullable(name)
+    option_from_null = MyApp.OptionTools.from_nullable(nullable_name)
+    some_person = Alice
+    no_person = {:none}
   end
   defp test_pattern_matching() do
-    _ = Bob
-    _ = ((case user do
+    user = Bob
+    result = ((case user do
   {:some, name} -> "Hello, #{(fn -> name end).()}"
   {:none} -> "Hello, anonymous"
 end))
-    _ = [1, 2, 3]
-    _ = ((case scores do
+    scores = [1, 2, 3]
+    total = ((case scores do
   {:some, score_list} ->
     length(scoreList)
   {:none} -> 0
 end))
     _ = process_user({:some, "Charlie"})
     _ = process_user({:none})
-    _
   end
   defp process_user(user) do
     (case user do
@@ -43,46 +41,45 @@ end))
     end)
   end
   defp test_functional_operations() do
-    _ = David
-    _ = MyApp.OptionTools.map(user, fn name -> String.upcase(name) end)
-    _ = MyApp.OptionTools.filter(user, fn name -> not Kernel.is_nil(:binary.match(String.downcase(name.title), query)) or name.description != nil and not Kernel.is_nil(:binary.match(String.downcase(name.description), query)) end)
-    _ = MyApp.OptionTools.then(user, (fn -> fn name ->
+    user = David
+    upper_name = MyApp.OptionTools.map(user, fn name -> String.upcase(name) end)
+    long_name = MyApp.OptionTools.filter(user, fn name -> not Kernel.is_nil(:binary.match(String.downcase(name.title), query)) or name.description != nil and not Kernel.is_nil(:binary.match(String.downcase(name.description), query)) end)
+    processed_user = MyApp.OptionTools.then(user, (fn -> fn name ->
       if (length(name) > 0), do: name <> "!", else: {:none}
     end end).())
-    _ = MyApp.OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
-    _ = MyApp.OptionTools.unwrap(user, "Anonymous")
-    _ = MyApp.OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
-    _ = First
-    _ = {:none}
-    _ = MyApp.OptionTools.or_(first, second)
-    _ = MyApp.OptionTools.lazy_or(first, fn -> {:some, "Lazy second"} end)
+    final_result = MyApp.OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
+    greeting = MyApp.OptionTools.unwrap(user, "Anonymous")
+    expensive_default = MyApp.OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
+    second = {:none}
+    combined = MyApp.OptionTools.or_(first, second)
+    lazy_second = MyApp.OptionTools.lazy_or(first, fn -> {:some, "Lazy second"} end)
   end
   defp test_beam_integration() do
-    _ = Eve
-    _ = MyApp.OptionTools.to_result(user, "User not found")
-    _ = Frank
-    _ = "Not found"
-    _ = MyApp.OptionTools.from_result(ok_result)
-    _ = MyApp.OptionTools.from_result(error_result)
-    _ = MyApp.OptionTools.to_reply(user)
-    _ = Grace
-    _ = MyApp.OptionTools.expect(valid_user, "Expected valid user")
+    user = Eve
+    user_result = MyApp.OptionTools.to_result(user, "User not found")
+    ok_result = Frank
+    error_result = "Not found"
+    option_from_ok = MyApp.OptionTools.from_result(ok_result)
+    option_from_error = MyApp.OptionTools.from_result(error_result)
+    reply = MyApp.OptionTools.to_reply(user)
+    valid_user = Grace
+    confirmed_user = MyApp.OptionTools.expect(valid_user, "Expected valid user")
   end
   defp test_null_safety() do
-    _ = nil
-    _ = MyApp.OptionTools.from_nullable(maybe_null)
-    _ = MyApp.OptionTools.unwrap(OptionTools.map(safe_option, fn s -> length(s) end), 0)
-    _ = MyApp.OptionTools.is_some(safe_option)
-    _ = MyApp.OptionTools.is_none(safe_option)
-    _ = MyApp.OptionTools.to_nullable(safe_option)
+    maybe_null = nil
+    safe_option = MyApp.OptionTools.from_nullable(maybe_null)
+    result = MyApp.OptionTools.unwrap(OptionTools.map(safe_option, fn s -> length(s) end), 0)
+    has_value = MyApp.OptionTools.is_some(safe_option)
+    is_empty = MyApp.OptionTools.is_none(safe_option)
+    back_to_nullable = MyApp.OptionTools.to_nullable(safe_option)
   end
   defp test_collection_operations() do
     options = [1, {:none}, 3, 4, {:none}]
-    _ = MyApp.OptionTools.values(options)
-    _ = [1, 2, 3]
-    _ = MyApp.OptionTools.all(all_options)
-    _ = [1, {:none}, 3]
-    _ = MyApp.OptionTools.all(mixed_options)
-    _ = Enum.filter(Enum.map(options, fn opt -> MyApp.OptionTools.map(opt, fn x -> x * 2 end) end), fn opt -> MyApp.OptionTools.is_some(opt) end)
+    values = MyApp.OptionTools.values(options)
+    all_options = [1, 2, 3]
+    combined = MyApp.OptionTools.all(all_options)
+    mixed_options = [1, {:none}, 3]
+    failed_combine = MyApp.OptionTools.all(mixed_options)
+    processed_values = Enum.filter(Enum.map(options, fn opt -> MyApp.OptionTools.map(opt, fn x -> x * 2 end) end), fn opt -> MyApp.OptionTools.is_some(opt) end)
   end
 end

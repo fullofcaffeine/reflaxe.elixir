@@ -54,13 +54,13 @@ class EctoRequireHoistTransforms {
                         default: inner;
                     };
                     out.push(makeAST(EDef(name, args, guards, newInner)));
-                case EDefp(name2, args2, guards2, inner2):
-                    var newInner2 = switch (inner2.def) {
+                case EDefp(privateName, privateArgs, privateGuards, inner):
+                    var newInner = switch (inner.def) {
                         case EBlock(ss3): makeAST( EBlock([for (s in ss3) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)) );
                         case EDo(ss4): makeAST( EDo([for (s in ss4) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)) );
-                        default: inner2;
+                        default: inner;
                     };
-                    out.push(makeAST(EDefp(name2, args2, guards2, newInner2)));
+                    out.push(makeAST(EDefp(privateName, privateArgs, privateGuards, newInner)));
                 default:
                     out.push(b);
             }

@@ -2,17 +2,17 @@ defmodule CounterLive do
   use Phoenix.Component
   use CounterLiveWeb, :live_view
   require Ecto.Query
-  def mount(struct, _params, socket, socket) do
+  def mount(_params, session, socket) do
     socket = Phoenix.Component.assign(socket, "count", 0)
     %{:ok => socket}
     {:ok, socket}
   end
-  def handle_event_increment(struct, _params, socket) do
+  def handle_event_increment(struct, value, socket) do
     count = socket.assigns.count
     socket = Phoenix.Component.assign(socket, "count", count + 1)
     %{:noreply => socket}
   end
-  def handle_event_decrement(struct, _params, socket) do
+  def handle_event_decrement(struct, value, socket) do
     count = socket.assigns.count
     socket = Phoenix.Component.assign(socket, "count", (count - 1))
     %{:noreply => socket}

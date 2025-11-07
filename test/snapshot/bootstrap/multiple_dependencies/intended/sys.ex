@@ -38,7 +38,7 @@ defmodule Sys do
         
   end
   def environment() do
-    _ = System.get_env()
+    elixir_env = System.get_env()
     
             Enum.each(elixir_env, fn {k, v} -> 
                 env.set(k, v)
@@ -89,7 +89,7 @@ defmodule Sys do
         
   end
   def sleep(seconds) do
-    _ = trunc.(seconds * 1000)
+    milliseconds = trunc.(seconds * 1000)
     Process.sleep(milliseconds)
   end
   def system_name() do

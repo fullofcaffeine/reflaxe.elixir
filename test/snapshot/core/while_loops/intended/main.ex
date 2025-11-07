@@ -1,18 +1,18 @@
 defmodule Main do
   def main() do
-    _ = 0
+    i = 0
     _ = Enum.each(i, fn item -> item + 1 end)
-    _ = 0
+    j = 0
     _ = Enum.each(j, fn item -> item + 1 end)
-    _ = 10
+    counter = 10
     _ = Enum.each(counter, (fn -> fn item ->
   counter = (item - 2)
   if (item == 4) do
     throw(:break)
   end
 end end).())
-    _ = 0
-    _ = []
+    k = 0
+    evens = []
     _ = Enum.each(0..(10 - 1), (fn -> fn k ->
   k + 1
   if (rem(k, 2) != 0) do
@@ -20,7 +20,7 @@ end end).())
   end
   k = Enum.concat(k, [k])
 end end).())
-    _ = 0
+    count = 0
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, (fn -> fn _, acc ->
   if (true) do
     count + 1
@@ -32,7 +32,7 @@ end end).())
     {:halt, acc}
   end
 end end).())
-    _ = 0
+    outer = 0
     _ = Enum.each(0..(3 - 1), (fn -> fn outer ->
   inner = 0
   Enum.reduce_while(Stream.iterate(0, fn n -> outer + 1 end), {inner}, (fn -> fn _, {inner} ->
@@ -46,8 +46,8 @@ end end).())
   end end).())
   outer + 1
 end end).())
-    _ = 0
-    _ = 10
+    a = 0
+    b = 10
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {a, b}, (fn -> fn _, {a, b} ->
   if (a < 5 and b > 5) do
     a + 1
@@ -57,7 +57,7 @@ end end).())
     {:halt, {a, b}}
   end
 end end).())
-    _ = 0
+    x = 0
     _ = Enum.each(0..(10 - 1), (fn -> fn x ->
   x + 1
   if (x == 5) do
@@ -71,6 +71,5 @@ end end).())
     _ = Log.trace("Count from infinite: #{(fn -> count end).()}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "main"})
     _ = Log.trace("Complex condition result: a=#{(fn -> a end).()}, b=#{(fn -> b end).()}", %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "main"})
     _ = Log.trace("Do-while with break: x=#{(fn -> x end).()}", %{:file_name => "Main.hx", :line_number => 74, :class_name => "Main", :method_name => "main"})
-    _
   end
 end

@@ -86,7 +86,7 @@ class EFnLocalAssignDiscardTransforms {
             return switch (x.def) {
                 case EBinary(Match, left, rhs):
                     switch (left.def) {
-                        case EVar(name) if (dead.exists(name)):
+                        case EVar(name) if (dead.exists(name) && name != null && name.length > 0 && name.charAt(0) == '_'):
                             // SAFETY: Do not discard accumulator initializations (e.g., g = [])
                             // These are often used by subsequent concatenations in nested list-building
                             // patterns and turning them into `_ = []` yields invalid code later.
@@ -139,7 +139,7 @@ class EFnLocalAssignDiscardTransforms {
                             case EBinary(Match, left2, rhs2):
                                 switch (left2.def) {
                                     case EVar(name2):
-                                        if (!nameUsedLater(stmts2, i+1, name2)) {
+                                        if ((name2 != null && name2.length > 0 && name2.charAt(0) == '_') && !nameUsedLater(stmts2, i+1, name2)) {
                                             out2.push(makeASTWithMeta(EMatch(PWildcard, rhs2), s2.metadata, s2.pos));
                                             replaced2 = true;
                                         }

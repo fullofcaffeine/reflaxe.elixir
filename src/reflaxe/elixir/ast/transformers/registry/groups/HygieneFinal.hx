@@ -54,6 +54,22 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.CaseBinderRebindUnderscoreTransforms.pass
     });
 
+    // Pin existing bindings in case patterns to avoid shadowing
+    passes.push({
+      name: "CaseClausePinExistingBindings",
+      description: "Pin variables in case clause patterns when matching existing in-scope bindings",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pass
+    });
+
+    // Normalize list concat into direct list literal for nested match patterns
+    passes.push({
+      name: "ConcatListLiteralNormalize",
+      description: "Rewrite lhs = _ = [] ++ [expr] and lhs = [] ++ [expr] into lhs = [expr]",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.ConcatListLiteralNormalizeTransforms.pass
+    });
+
     // Numeric sentinel and temp-nil cleanup
     passes.push({
       name: "DropStandaloneLiteralOne",
@@ -107,10 +123,11 @@ class HygieneFinal {
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.pass
     });
+    // Move NestedAssignCollapseGlobal to the very end to catch any reintroduced chains
     passes.push({
       name: "NestedAssignCollapseGlobal",
-      description: "Collapse nested chain assignments outer=(inner=expr) → outer=expr",
-      enabled: true,
+      description: "(disabled here; re-added at end) Collapse nested chain assignments outer=(inner=expr) → outer=expr",
+      enabled: false,
       pass: reflaxe.elixir.ast.transformers.NestedAssignCollapseGlobalTransforms.pass
     });
     passes.push({
@@ -344,6 +361,7 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.UnderscoreTempInlineDowncaseTransforms.pass,
       runAfter: ["LocalUnderscoreBinderPromotionWhenUsed_Final"]
     });
+    // (Concat identity normalization folded into existing loop transforms; no extra pass here)
     passes.push({
       name: "DowncaseInlineFromPriorAssign_Final",
       description: "Inline prior assignments into String.downcase(var) and drop the assignment when safe",
@@ -359,8 +377,15 @@ class HygieneFinal {
       runAfter: ["DowncaseInlineFromPriorAssign_Final"]
     });
 
+    // Re-add NestedAssignCollapseGlobal as absolute-final cleanup
+    passes.push({
+      name: "NestedAssignCollapseGlobal_Final",
+      description: "Absolute-final: collapse nested assignments outer=(inner=expr) → outer=expr across all nodes",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.NestedAssignCollapseGlobalTransforms.pass
+    });
+
     return passes;
   }
 }
 #end
-

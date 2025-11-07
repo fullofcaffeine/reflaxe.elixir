@@ -2522,17 +2522,17 @@ class ElixirASTBuilder {
                             }
                         }
                         if (declIdx != -1 && declVar != null && declInit != null) {
-                            var varName2 = VariableAnalyzer.toElixirVarName(declVar.name);
-                            var initAST2 = buildFromTypedExpr(declInit, currentContext);
+                            var varName = VariableAnalyzer.toElixirVarName(declVar.name);
+                            var initAST = buildFromTypedExpr(declInit, currentContext);
                             var stmts: Array<ElixirAST> = [];
-                            if (initAST2 != null) stmts.push({def: EMatch(PVar(varName2), initAST2), metadata: {}, pos: null});
+                            if (initAST != null) stmts.push({def: EMatch(PVar(varName), initAST), metadata: {}, pos: null});
                             // Emit every statement except the original declaration and the last return
                             for (i in 0...el.length - 1) if (i != declIdx) {
-                                var mid2 = buildFromTypedExpr(el[i], currentContext);
-                                if (mid2 != null) stmts.push(mid2);
+                                var midNode = buildFromTypedExpr(el[i], currentContext);
+                                if (midNode != null) stmts.push(midNode);
                             }
                             // Return variable
-                            stmts.push({def: EVar(varName2), metadata: {}, pos: null});
+                            stmts.push({def: EVar(varName), metadata: {}, pos: null});
                             return EBlock(stmts);
                         }
                     }

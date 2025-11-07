@@ -187,11 +187,11 @@ end).(), ",") end).()}"
       "Both match"
     else
       v2 = test_value
-      n2 = test_name
+      _ = test_name
       if (v2 == expected_value) do
         "Value matches, name different"
       else
-        v3 = test_value
+        _ = test_value
         n3 = test_name
         if (n3 == expected_name), do: "Name matches, value different", else: "Neither matches"
       end
@@ -208,27 +208,27 @@ end).(), ",") end).()}"
     if (t > 20 and t < 25 and h >= 60 and h <= 70) do
       "Perfect conditions"
     else
-      t2 = temperature
-      h2 = humidity
-      p2 = pressure
+      _ = temperature
+      _ = humidity
+      _ = pressure
       if (t > 30 or h > 80) do
         "Too hot or humid"
       else
-        t3 = temperature
-        h3 = humidity
-        p3 = pressure
+        _ = temperature
+        _ = humidity
+        _ = pressure
         if (t < 10 or h < 30) do
           "Too cold or dry"
         else
-          t4 = temperature
-          h4 = humidity
-          p4 = pressure
+          _ = temperature
+          _ = humidity
+          _ = pressure
           if (p < 1000 or p > 1020) do
             "Abnormal pressure"
           else
-            t5 = temperature
-            h5 = humidity
-            p5 = pressure
+            _ = temperature
+            _ = humidity
+            _ = pressure
             if (t >= 15 and t <= 25 and h >= 40 and h <= 75 and p >= 1000 and p <= 1020), do: "Acceptable conditions", else: "Unknown conditions"
           end
         end
@@ -280,23 +280,23 @@ end).(), ",") end).()}"
     if (s >= 90 and s <= 100) do
       "Grade A (90-100)"
     else
-      s2 = score
+      _ = score
       if (s >= 80 and s < 90) do
         "Grade B (80-89)"
       else
-        s3 = score
+        _ = score
         if (s >= 70 and s < 80) do
           "Grade C (70-79)"
         else
-          s4 = score
+          _ = score
           if (s >= 60 and s < 70) do
             "Grade D (60-69)"
           else
-            s5 = score
+            _ = score
             if (s >= 0 and s < 60) do
               "Grade F (0-59)"
             else
-              s6 = score
+              _ = score
               if (s < 0 or s > 100), do: "Invalid score", else: "Unknown score"
             end
           end
@@ -315,9 +315,9 @@ end).(), ",") end).()}"
   3 -> "Error"
   _ -> "Unknown status"
 end))
-    arr_0 = 1
-    arr_1 = 2
-    arr_2 = 3
+    _ = 1
+    _ = 2
+    _ = 3
     array_result = ((case 3 do
   0 -> "Empty"
   1 -> "Single: #{(fn -> x end).()}"
@@ -335,29 +335,29 @@ end))
     data_user_name = "Alice"
     data_user_age = 28
     data_user_active = true
-    data_permissions_0 = "read"
-    data_permissions_1 = "write"
+    _ = "read"
+    _ = "write"
     data_last_login = 1640995200
     _g = data_user_age
-    g1 = 2
-    g2 = data_user_active
+    _ = 2
+    _ = data_user_active
     active = arr_length
     if (data_user_age >= 18 and data_user_age < 25 and perms > 0 and active) do
       "Young adult with permissions"
     else
-      active2 = arr_length
+      _ = arr_length
       if (age2 >= 25 and age2 < 65 and perms2 >= 2 and data_user_active) do
         "Adult with full permissions"
       else
-        active3 = arr_length
+        _ = arr_length
         if (age3 >= 65 and data_user_active) do
           "Senior user"
         else
-          active4 = arr_length
+          _ = arr_length
           if (not data_user_active) do
             "Inactive user"
           else
-            active5 = arr_length
+            _ = arr_length
             if (perms5 == 0), do: "User without permissions", else: "Other user type"
           end
         end
@@ -370,26 +370,26 @@ end))
     metrics_disk = 23.1
     metrics_network = 12.8
     _g = metrics_cpu
-    g1 = metrics_memory
-    g2 = metrics_disk
-    g3 = metrics_network
+    _ = metrics_memory
+    _ = metrics_disk
+    _ = metrics_network
     disk = arr_length
     net = arr_length
     if (metrics_cpu > 80 or mem > 90 or disk > 90 or net > 80) do
       "Critical resource usage"
     else
-      disk2 = arr_length
-      net2 = arr_length
+      _ = arr_length
+      _ = arr_length
       if (cpu2 > 60 or mem2 > 75 or metrics_disk > 75 or net > 60) do
         "High resource usage"
       else
-        disk3 = arr_length
-        net3 = arr_length
+        _ = arr_length
+        _ = arr_length
         if (cpu3 > 40 and mem3 > 50 and metrics_disk > 50 and net > 30) do
           "Moderate resource usage"
         else
-          disk4 = arr_length
-          net4 = arr_length
+          _ = arr_length
+          _ = arr_length
           if (cpu4 <= 40 and mem4 <= 50 and metrics_disk <= 50 and net <= 30), do: "Low resource usage", else: "Unknown resource state"
         end
       end

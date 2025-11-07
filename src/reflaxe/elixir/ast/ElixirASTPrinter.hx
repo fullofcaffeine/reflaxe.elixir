@@ -168,13 +168,13 @@ class ElixirASTPrinter {
                                     case EVar(v) if (v == "SafePubSub"): needs = true;
                                     case ERaw(code): if (code != null && code.indexOf("SafePubSub.") != -1) needs = true;
                                     case EDef(_, _, _, b): scan(b);
-                                    case EDefp(_, _, _, b2): scan(b2);
+                                    case EDefp(_, _, _, privateBody): scan(privateBody);
                                     case EBlock(es): for (e in es) scan(e);
                                     case EIf(c, t, e): scan(c); scan(t); if (e != null) scan(e);
                                     case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
                                     case EBinary(_, l, r): scan(l); scan(r);
                                     case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
-                                    case ECall(t,_,as2): if (t != null) scan(t); if (as2 != null) for (a in as2) scan(a);
+                                    case ECall(t,_,argsList): if (t != null) scan(t); if (argsList != null) for (a in argsList) scan(a);
                                     default:
                                 }
                             }
@@ -303,13 +303,13 @@ class ElixirASTPrinter {
                                 case EVar(v) if (v == 'SafePubSub'): needs = true;
                                 case ERaw(code): if (code != null && code.indexOf('SafePubSub.') != -1) needs = true;
                                 case EDef(_, _, _, b): scan(b);
-                                case EDefp(_, _, _, b2): scan(b2);
+                                case EDefp(_, _, _, privateBody): scan(privateBody);
                                 case EBlock(es): for (e in es) scan(e);
                                 case EIf(c, t, e): scan(c); scan(t); if (e != null) scan(e);
                                 case ECase(e, cs): scan(e); for (cl in cs) { if (cl.guard != null) scan(cl.guard); scan(cl.body); }
                                 case EBinary(_, l, r): scan(l); scan(r);
                                 case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
-                                case ECall(t,_,as2): if (t != null) scan(t); if (as2 != null) for (a in as2) scan(a);
+                                case ECall(t,_,argsList): if (t != null) scan(t); if (argsList != null) for (a in argsList) scan(a);
                                 default:
                             }
                         }
@@ -357,7 +357,7 @@ class ElixirASTPrinter {
                                     case EBinary(_, l, r): scan(l); scan(r);
                                     case EFn(cs): for (cl in cs) scan(cl.body);
                                     case EDef(_,_,_,b): scan(b);
-                                    case EDefp(_,_,_,b2): scan(b2);
+                                    case EDefp(_,_,_,privateBody): scan(privateBody);
                                     default:
                                 }
                             }
@@ -622,13 +622,13 @@ class ElixirASTPrinter {
                     case PVar(name):
                         if (expr != null) {
                             switch (expr.def) {
-                                case EBinary(Match, left2, exprRhs):
-                                    var left2Str = print(left2, 0);
-                                    if (left2Str == name) {
-                                        return name + ' = ' + print(exprRhs, indent);
-                                    }
-                                case EMatch(patInner2, exprRhs2):
-                                    switch (patInner2) { case PVar(nm2) if (nm2 == name): return name + ' = ' + print(exprRhs2, indent); default: }
+                        case EBinary(Match, innerLeft, rhsExpr):
+                            var innerLeftStr = print(innerLeft, 0);
+                            if (innerLeftStr == name) {
+                                return name + ' = ' + print(rhsExpr, indent);
+                            }
+                        case EMatch(innerPattern, rhsExpr2):
+                            switch (innerPattern) { case PVar(innerName) if (innerName == name): return name + ' = ' + print(rhsExpr2, indent); default: }
                                 default:
                             }
                             var rhsPrinted = print(expr, indent);
@@ -817,7 +817,7 @@ class ElixirASTPrinter {
                             // Detect initializer: acc = [] or acc <- []
                             switch (stmts[0].def) {
                                 case EBinary(Match, {def: EVar(v)}, {def: EList(initEls)}) if (initEls.length == 0): accName = v;
-                                case EMatch(PVar(v2), {def: EList(initEls2)}) if (initEls2.length == 0): accName = v2;
+                                case EMatch(PVar(varName), {def: EList(initElems)}) if (initElems.length == 0): accName = varName;
                                 default:
                             }
                             if (accName == null) return null;
@@ -838,10 +838,10 @@ class ElixirASTPrinter {
                                                         }
                                                     default:
                                                 }
-                                            case EBinary(Add, {def: EVar(v2)}, rhs2) if (normalizeName(v2) == accNorm):
-                                                switch (rhs2.def) {
-                                                    case EList(listElts2) if (listElts2.length == 1):
-                                                        outVals.push(listElts2[0]);
+                                            case EBinary(Add, {def: EVar(accVar)}, rhsExpr) if (normalizeName(accVar) == accNorm):
+                                                switch (rhsExpr.def) {
+                                                    case EList(listElements) if (listElements.length == 1):
+                                                        outVals.push(listElements[0]);
                                                     default:
                                                 }
                                             default:
@@ -1422,15 +1422,15 @@ class ElixirASTPrinter {
                         // Guard against blank/whitespace LHS; normalize to discard `_`
                         if (leftStr0 == null || StringTools.trim(leftStr0).length == 0) leftStr0 = "_";
                         switch (right.def) {
-                            case EBinary(Match, left2, exprR):
-                                var left2Str = print(left2, 0);
-                                if (left2Str == leftStr0) {
-                                    return leftStr0 + ' = ' + print(exprR, 0);
+                            case EBinary(Match, innerLeft, rhsExpr):
+                                var innerLeftStr = print(innerLeft, 0);
+                                if (innerLeftStr == leftStr0) {
+                                    return leftStr0 + ' = ' + print(rhsExpr, 0);
                                 }
-                            case EMatch(patInner, exprR2):
-                                var lhsName: Null<String> = switch (patInner) { case PVar(nm): nm; default: null; };
+                            case EMatch(innerPattern, rhsExpr2):
+                                var lhsName: Null<String> = switch (innerPattern) { case PVar(nm): nm; default: null; };
                                 if (lhsName != null && lhsName == leftStr0) {
-                                    return leftStr0 + ' = ' + print(exprR2, 0);
+                                    return leftStr0 + ' = ' + print(rhsExpr2, 0);
                                 }
                             default:
                         }
@@ -2012,7 +2012,64 @@ class ElixirASTPrinter {
                     }
                     return out.toString();
                 }
+                inline function flattenNestedHeex(s:String):String {
+                    if (s == null || s.indexOf("<%=") == -1) return s;
+                    var out = new StringBuf(); var i = 0;
+                    while (i < s.length) {
+                        var o = s.indexOf("<% =".replace(" ",""), i); // '<%='
+                        if (o == -1) { out.add(s.substr(i)); break; }
+                        out.add(s.substr(i, o - i));
+                        var c = s.indexOf("%>", o + 3); if (c == -1) { out.add(s.substr(o)); break; }
+                        var inner = StringTools.trim(s.substr(o + 3, c - (o + 3)));
+                        if (StringTools.startsWith(inner, "~H\"\"\"")) {
+                            var st = inner.indexOf("\"\"\""); if (st != -1) {
+                                var bs = st + 3; var be = inner.indexOf("\"\"\"", bs);
+                                if (be != -1) { out.add(inner.substr(bs, be - bs)); i = c + 2; continue; }
+                            }
+                        }
+                        // inline-if do/else normalization inside ~H
+                        out.add(s.substr(o, (c + 2) - o)); i = c + 2;
+                    }
+                    return out.toString();
+                }
+                inline function rewriteInlineIfDoToBlock(s:String):String {
+                    if (s == null || s.indexOf(", do:") == -1) return s;
+                    var i = 0; var out = new StringBuf();
+                    while (i < s.length) {
+                        var o = s.indexOf("<% =".replace(" ",""), i); if (o == -1) { out.add(s.substr(i)); break; }
+                        out.add(s.substr(i, o - i));
+                        var c = s.indexOf("%>", o + 3); if (c == -1) { out.add(s.substr(o)); break; }
+                        var inner = StringTools.trim(s.substr(o + 3, c - (o + 3)));
+                        if (StringTools.startsWith(inner, "if ")) {
+                            var rest = StringTools.trim(inner.substr(3));
+                            var idx = rest.indexOf(", do: \""); var q = '"';
+                            if (idx == -1) { idx = rest.indexOf(", do: '\'"); q = '\''; }
+                            if (idx != -1) {
+                            var cond = StringTools.trim(rest.substr(0, idx));
+                            var after = rest.substr(idx + 7); if (q == '\'') after = rest.substr(idx + 7);
+                                var endMark = (q == '"') ? '\"' + ", else:" : "'" + ", else:";
+                                var ei = after.indexOf(endMark);
+                                if (ei != -1) {
+                                    var th = after.substr(0, ei);
+                                    var rem = after.substr(ei + endMark.length);
+                                    var el: String = null;
+                                    if (rem.length >= 1 && rem.charAt(0) == q) {
+                                        rem = rem.substr(1); var e2 = rem.indexOf((q == '"') ? '\"' : "'");
+                                        if (e2 != -1) el = rem.substr(0, e2);
+                                    }
+                                    out.add('<%= if ' + cond + ' do %>'); out.add(th);
+                                    if (el != null && el != "") { out.add('<% else %>' + el); }
+                                    out.add('<% end %>'); i = c + 2; continue;
+                                }
+                            }
+                        }
+                        out.add(s.substr(o, (c + 2) - o)); i = c + 2;
+                    }
+                    return out.toString();
+                }
                 var normalized = normalizeHeexIndent(content);
+                normalized = flattenNestedHeex(normalized);
+                normalized = rewriteInlineIfDoToBlock(normalized);
                 '~' + type + '"""' + '\n' + normalized + '\n' + '"""' + modifiers;
                 
             case ERaw(code):

@@ -39,7 +39,7 @@ class ControllerLocalAssignUnusedUnderscoreTransforms {
     return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), x.metadata, x.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), x.metadata, x.pos);
+        case EDo(statements): makeASTWithMeta(EDo(rewrite(statements)), x.metadata, x.pos);
         default: x;
       }
     });
@@ -53,8 +53,8 @@ class ControllerLocalAssignUnusedUnderscoreTransforms {
       var s1 = switch (s.def) {
         case EBinary(Match, {def: EVar(b)}, rhs) if (!usedLater(stmts, i+1, b) && isSimple(rhs)):
           makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b)), rhs), s.metadata, s.pos);
-        case EMatch(PVar(b2), rhs2) if (!usedLater(stmts, i+1, b2) && isSimple(rhs2)):
-          makeASTWithMeta(EMatch(PVar('_' + b2), rhs2), s.metadata, s.pos);
+        case EMatch(PVar(binderName), rhsExpr) if (!usedLater(stmts, i+1, binderName) && isSimple(rhsExpr)):
+          makeASTWithMeta(EMatch(PVar('_' + binderName), rhsExpr), s.metadata, s.pos);
         default: s;
       }
       out.push(s1);

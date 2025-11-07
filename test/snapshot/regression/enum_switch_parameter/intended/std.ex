@@ -19,8 +19,7 @@ defmodule Std do
         
   end
   def is(value, type) do
-    (
-
+    
             # Convert type to string for comparison
             type_str = to_string(type)
             
@@ -43,7 +42,6 @@ defmodule Std do
                     end
             end
         
-)
   end
   def is_of_type(value, type) do
     is(value, type)

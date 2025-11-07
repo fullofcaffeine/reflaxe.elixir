@@ -2273,6 +2273,14 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass
         });
+        // Repair malformed mount heads to canonical arity and names prior to ultra-final param normalization
+        passes.push({
+            name: "LiveMountArityRepair",
+            description: "Coerce mount heads to arity-3 and rename binders to params/_session/socket",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LiveMountArityRepairTransforms.pass,
+            runAfter: ["MountParamsPromote"]
+        });
         // Ensure inline if inside containers are parenthesized to avoid parser ambiguity
         passes.push({
             name: "IfInlineInContainerParen",
