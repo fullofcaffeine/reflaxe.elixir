@@ -388,7 +388,7 @@ class TemplateHelpers {
             while (k >= i && s.charAt(k) != '=') k--;
             var nameEnd = k - 1; while (nameEnd >= i && ~/^\s$/.match(s.charAt(nameEnd))) nameEnd--;
             var nameStart = nameEnd; while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--; nameStart++;
-            if (nameStart > nameEnd) { out.add(s.substr(i, j - i)); i = j; continue; }
+            if (nameStart > nameEnd) { out.add(s.substr(i, j - i)); i = j + 2; continue; }
             var attrName = s.substr(nameStart, nameEnd - nameStart + 1);
             // Copy prefix up to attribute name
             out.add(s.substr(i, nameStart - i)); out.add(attrName); out.add("=");
@@ -396,7 +396,7 @@ class TemplateHelpers {
             var vpos = k + 1; while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
             var quote: Null<String> = null; if (vpos < s.length && (s.charAt(vpos) == "\"" || s.charAt(vpos) == "'")) { quote = s.charAt(vpos); vpos++; }
             // We expect vpos == j (start of <% ... %>)
-            if (vpos != j) { out.add(s.substr(k + 1, j - (k + 1))); i = j; continue; }
+            if (vpos != j) { out.add(s.substr(k + 1, j - (k + 1))); i = j + 2; continue; }
             // Determine if this is a simple <%= expr %> or a conditional block
             if (j + 3 <= s.length && s.charAt(j + 2) == "=") {
                 // Simple EEx interpolation: <%= expr %>
@@ -427,8 +427,8 @@ class TemplateHelpers {
                     var p2 = endOpen + 9; if (quote != null && p2 < s.length && s.charAt(p2) == quote) p2++;
                     i = p2;
                 } else {
-                    // Unknown block; emit verbatim
-                    out.add(s.substr(i, j - i)); i = j; continue;
+                    // Unknown block; emit verbatim and advance past '<%'
+                    out.add(s.substr(i, j - i)); i = j + 2; continue;
                 }
             }
         }
