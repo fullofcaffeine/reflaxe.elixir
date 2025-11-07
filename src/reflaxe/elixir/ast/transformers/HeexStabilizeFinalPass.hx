@@ -35,10 +35,8 @@ class HeexStabilizeFinalPass {
           var iter = 0;
           while (iter++ < MAX_ITERS) {
             var before = cur;
-            // Safe, idempotent normalizations
-            cur = HeexRewriteHxxBlockTransforms.rewrite(cur);
-            cur = HeexNestedSigilFlattenFinalTransforms.flattenNestedHeex(cur);
-            cur = HeexControlTagTransforms.rewriteControlTags(cur);
+            // Conservative: only rerun control-tag rewrite (string-level, public API)
+            cur = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(cur);
             if (cur == before) break;
           }
           if (cur != content) makeASTWithMeta(ESigil(type, cur, modifiers), n.metadata, n.pos) else n;
@@ -50,4 +48,3 @@ class HeexStabilizeFinalPass {
 }
 
 #end
-
