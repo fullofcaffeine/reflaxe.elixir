@@ -116,6 +116,34 @@ class LoopTransforms {
     static inline var CHECK_INDEX_BUDGET_DEFAULT = 20000; // reasonable upper bound for node visits
     static var checkIndexBudget:Int = CHECK_INDEX_BUDGET_DEFAULT;
 
+    static inline var STRING_COMPLEXITY_THRESHOLD = 5000;
+
+    static function estimateStringComplexity(stmts:Array<ElixirAST>):Int {
+        var score = 0;
+        function walk(n:ElixirAST):Void {
+            if (n == null || n.def == null) return;
+            switch (n.def) {
+                case EString(_): score++;
+                case EBinary(StringConcat, l, r): score += 2; walk(l); walk(r);
+                case EBlock(ss): for (s in ss) walk(s);
+                case EDo(ss): for (s in ss) walk(s);
+                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case EMatch(_, rhs): walk(rhs);
+                case ECase(e, cs): walk(e); for (c in cs) walk(c.body);
+                case EList(el): for (e in el) walk(e);
+                case ETuple(el): for (e in el) walk(e);
+                case EMap(kvs): for (kv in kvs) { walk(kv.key); walk(kv.value); }
+                case EStruct(_, fs): for (f in fs) walk(f.value);
+                case EParen(inner): walk(inner);
+                case ERemoteCall(m, _, as): walk(m); for (a in as) walk(a);
+                case ECall(t, _, as): if (t != null) walk(t); for (a in as) walk(a);
+                default:
+            }
+        }
+        for (s in stmts) walk(s);
+        return score;
+    }
+
     #if no_traces
     static inline function debugPrint(_s:String) {}
     #else
@@ -2182,6 +2210,9 @@ class LoopTransforms {
     static function detectUnrolledLoop(stmts: Array<ElixirAST>): Null<ElixirAST> {
         checkIndexBudget = CHECK_INDEX_BUDGET_DEFAULT; // reset per call
         if (stmts.length < 2) return null;
+        // Fast bail-out for huge HTML/string concat blocks to avoid pathological scans
+        var complexity = estimateStringComplexity(stmts);
+        if (complexity > STRING_COMPLEXITY_THRESHOLD) return null;
         
         #if debug_ast_transformer
         Sys.println('[XRay LoopTransforms] detectUnrolledLoop: Analyzing ' + stmts.length + ' statements for unrolled patterns');
