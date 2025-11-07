@@ -73,25 +73,25 @@ class PresenceWithSocketAssignNormalizeTransforms {
                     }
                     out.push(stmts[stmts.length - 1]);
                     makeASTWithMeta(EBlock(out), x.metadata, x.pos);
-                case EDo(stmts) if (stmts.length >= 2):
-                    var lastIsSocket2 = switch (stmts[stmts.length - 1].def) { case EVar(v2) if (v2 == "socket"): true; default: false; };
-                    if (!lastIsSocket2) return x;
-                    var out2:Array<ElixirAST> = [];
-                    for (i in 0...stmts.length - 1) {
-                        var s2 = stmts[i];
-                        switch (s2.def) {
-                            case ERemoteCall(mod2, func2, args2) if (isPresenceEffect(mod2, func2)):
-                                out2.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), s2), s2.metadata, s2.pos));
+                case EDo(statements) if (statements.length >= 2):
+                    var lastIsSocket = switch (statements[statements.length - 1].def) { case EVar(variable) if (variable == "socket"): true; default: false; };
+                    if (!lastIsSocket) return x;
+                    var normalized:Array<ElixirAST> = [];
+                    for (i in 0...statements.length - 1) {
+                        var stmt = statements[i];
+                        switch (stmt.def) {
+                            case ERemoteCall(moduleExpr, functionName, arguments) if (isPresenceEffect(moduleExpr, functionName)):
+                                normalized.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), stmt), stmt.metadata, stmt.pos));
                                 continue;
-                            case EMatch(PWildcard, rhs2) if (isPresenceEffectExpr(rhs2)):
-                                out2.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), rhs2), s2.metadata, s2.pos));
+                            case EMatch(PWildcard, rhs) if (isPresenceEffectExpr(rhs)):
+                                normalized.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), rhs), stmt.metadata, stmt.pos));
                                 continue;
                             default:
                         }
-                        out2.push(s2);
+                        normalized.push(stmt);
                     }
-                    out2.push(stmts[stmts.length - 1]);
-                    makeASTWithMeta(EDo(out2), x.metadata, x.pos);
+                    normalized.push(statements[statements.length - 1]);
+                    makeASTWithMeta(EDo(normalized), x.metadata, x.pos);
                 default:
                     x;
             }

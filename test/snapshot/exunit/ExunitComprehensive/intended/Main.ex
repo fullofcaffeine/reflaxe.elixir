@@ -1,9 +1,5 @@
 defmodule Main do
   use ExUnit.Case
-  import Phoenix.ConnTest
-  alias Phoenix.ConnTest, as: ConnTest
-  import Phoenix.LiveViewTest
-  alias Phoenix.LiveViewTest, as: LiveViewTest
   setup_all context do
     Log.trace("Initializing test suite", %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "initTestSuite"})
   end

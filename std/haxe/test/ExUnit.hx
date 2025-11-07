@@ -37,49 +37,7 @@ package haxe.test;
  * to ExUnit test modules with proper setup and teardown handling.
  */
 @:autoBuild(reflaxe.elixir.helpers.ExUnitBuilder.build())
-class TestCase {
-    /**
-     * Setup method called before each test.
-     * Override to provide test-specific setup.
-     * 
-     * @param context Test context (usually includes conn for web tests)
-     * @return Modified context passed to test methods
-     */
-    public function setup(context: Dynamic): Dynamic {
-        return context;
-    }
-    
-    /**
-     * Setup method called once before all tests in the module.
-     * Override for expensive setup that can be shared across tests.
-     * 
-     * @param context Test context
-     * @return Modified context
-     */
-    public function setupAll(context: Dynamic): Dynamic {
-        return context;
-    }
-    
-    /**
-     * Teardown method called after each test.
-     * Override to provide test-specific cleanup.
-     * 
-     * @param context Test context
-     */
-    public function teardown(context: Dynamic): Void {
-        // Default: no teardown
-    }
-    
-    /**
-     * Teardown method called once after all tests in the module.
-     * Override for cleanup of shared resources.
-     * 
-     * @param context Test context
-     */
-    public function teardownAll(context: Dynamic): Void {
-        // Default: no teardown
-    }
-}
+class TestCase {}
 
 /**
  * Test configuration options that can be applied to individual tests

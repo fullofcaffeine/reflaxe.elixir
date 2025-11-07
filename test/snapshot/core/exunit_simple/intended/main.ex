@@ -1,9 +1,5 @@
 defmodule Main do
   use ExUnit.Case
-  import Phoenix.ConnTest
-  alias Phoenix.ConnTest, as: ConnTest
-  import Phoenix.LiveViewTest
-  alias Phoenix.LiveViewTest, as: LiveViewTest
   test "basic assertions" do
     Assert.is_true((fn -> true end).(), "True should be true")
     Assert.is_false((fn -> false end).(), "False should be false")

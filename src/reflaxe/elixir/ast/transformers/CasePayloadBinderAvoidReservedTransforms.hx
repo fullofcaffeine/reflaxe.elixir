@@ -47,7 +47,7 @@ class CasePayloadBinderAvoidReservedTransforms {
           for (cl in clauses) {
             var binder = extractPayloadBinder(cl.pattern);
             if (binder != null && isReserved(binder)) {
-              #if sys Sys.println('[CasePayloadAvoidReserved] reserved binder ' + binder + ' detected'); #end
+          #if (sys && !no_traces) Sys.println('[CasePayloadAvoidReserved] reserved binder ' + binder + ' detected'); #end
               var declared = new Map<String,Bool>();
               collectPatternVars(cl.pattern, declared);
               collectLhsVarsInBody(cl.body, declared);
@@ -63,7 +63,7 @@ class CasePayloadBinderAvoidReservedTransforms {
                 chosen = cands[0];
               }
               if (chosen != null) {
-                #if sys Sys.println('[CasePayloadAvoidReserved] renaming binder ' + binder + ' -> ' + chosen); #end
+                #if (sys && !no_traces) Sys.println('[CasePayloadAvoidReserved] renaming binder ' + binder + ' -> ' + chosen); #end
                 var newName = chosen;
                 var newPat = rewritePayloadBinder(cl.pattern, newName);
                 if (newPat != null) {

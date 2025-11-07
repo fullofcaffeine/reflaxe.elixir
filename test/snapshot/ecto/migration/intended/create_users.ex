@@ -13,7 +13,6 @@ defmodule CreateUsers do
     _ = struct.addIndex("users", ["email"], %{:unique => true})
     _ = struct.addIndex("users", ["name", "active"])
     _ = struct.addCheckConstraint("users", "age_check", "age >= 0 AND age <= 150")
-    _
   end
   def down(struct) do
     struct.dropTable("users")

@@ -8,7 +8,6 @@ defmodule CreateUsersTable do
     _ = struct.addColumn("users", "age", "integer")
     _ = struct.addIndex("users", ["email"])
     _ = struct.timestamps()
-    _
   end
   def down(struct) do
     struct.dropTable("users")

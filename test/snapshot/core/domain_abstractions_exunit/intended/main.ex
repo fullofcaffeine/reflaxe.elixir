@@ -1,9 +1,5 @@
 defmodule Main do
   use ExUnit.Case
-  import Phoenix.ConnTest
-  alias Phoenix.ConnTest, as: ConnTest
-  import Phoenix.LiveViewTest
-  alias Phoenix.LiveViewTest, as: LiveViewTest
   test "email validation" do
     valid_email = Email_Impl_.parse("user@example.com")
     assert match?({:ok, _}, valid_email)

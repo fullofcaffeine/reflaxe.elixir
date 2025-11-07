@@ -4,7 +4,6 @@
   "string_buf.ex",
   "std.ex",
   "main.ex",
-  "haxe/test/test_case.ex",
   "haxe/test/assert.ex",
   "haxe/iterators/array_iterator.ex"
 ],

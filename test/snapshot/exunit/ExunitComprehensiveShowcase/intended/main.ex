@@ -1,9 +1,5 @@
 defmodule Main do
   use ExUnit.Case, async: :true
-  import Phoenix.ConnTest
-  alias Phoenix.ConnTest, as: ConnTest
-  import Phoenix.LiveViewTest
-  alias Phoenix.LiveViewTest, as: LiveViewTest
   setup_all context do
     module_state = module_state = moduleState = "initialized"
     %{:shared_resource => "database_connection", :test_environment => "test"}

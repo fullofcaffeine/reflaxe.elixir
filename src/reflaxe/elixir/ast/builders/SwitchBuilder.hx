@@ -777,10 +777,10 @@ class SwitchBuilder {
                     var out:Array<ElixirAST> = [];
                     for (s in stmts) out.push(rewriteInnerCaseScrutinee(s, oldName, newName));
                     { def: EBlock(out), metadata: n.metadata, pos: n.pos };
-                case EDo(stmts2):
-                    var out2:Array<ElixirAST> = [];
-                    for (s in stmts2) out2.push(rewriteInnerCaseScrutinee(s, oldName, newName));
-                    { def: EDo(out2), metadata: n.metadata, pos: n.pos };
+                case EDo(statements):
+                    var outDo:Array<ElixirAST> = [];
+                    for (s in statements) outDo.push(rewriteInnerCaseScrutinee(s, oldName, newName));
+                    { def: EDo(outDo), metadata: n.metadata, pos: n.pos };
                 case EIf(c,t,e):
                     { def: EIf(rewriteInnerCaseScrutinee(c, oldName, newName), rewriteInnerCaseScrutinee(t, oldName, newName), e == null ? null : rewriteInnerCaseScrutinee(e, oldName, newName)), metadata: n.metadata, pos: n.pos };
                 case EBinary(op, l, r):
@@ -791,10 +791,10 @@ class SwitchBuilder {
                     var nt = tgt == null ? null : rewriteInnerCaseScrutinee(tgt, oldName, newName);
                     var nargs = [for (a in args) rewriteInnerCaseScrutinee(a, oldName, newName)];
                     { def: ECall(nt, fnm, nargs), metadata: n.metadata, pos: n.pos };
-                case ERemoteCall(mod, fnm2, args2):
-                    var nmod = rewriteInnerCaseScrutinee(mod, oldName, newName);
-                    var nargs2 = [for (a in args2) rewriteInnerCaseScrutinee(a, oldName, newName)];
-                    { def: ERemoteCall(nmod, fnm2, nargs2), metadata: n.metadata, pos: n.pos };
+                case ERemoteCall(moduleExpr, functionName, remoteArgs):
+                    var nmod = rewriteInnerCaseScrutinee(moduleExpr, oldName, newName);
+                    var nargs = [for (a in remoteArgs) rewriteInnerCaseScrutinee(a, oldName, newName)];
+                    { def: ERemoteCall(nmod, functionName, nargs), metadata: n.metadata, pos: n.pos };
                 default:
                     n;
             }
@@ -820,10 +820,10 @@ class SwitchBuilder {
                     var out:Array<ElixirAST> = [];
                     for (s in stmts) out.push(rewriteInnerCaseScrutineeInfra(s, newName));
                     { def: EBlock(out), metadata: n.metadata, pos: n.pos };
-                case EDo(stmts2):
-                    var out2:Array<ElixirAST> = [];
-                    for (s in stmts2) out2.push(rewriteInnerCaseScrutineeInfra(s, newName));
-                    { def: EDo(out2), metadata: n.metadata, pos: n.pos };
+                case EDo(statements):
+                    var outDo:Array<ElixirAST> = [];
+                    for (s in statements) outDo.push(rewriteInnerCaseScrutineeInfra(s, newName));
+                    { def: EDo(outDo), metadata: n.metadata, pos: n.pos };
                 case EIf(c,t,e):
                     { def: EIf(rewriteInnerCaseScrutineeInfra(c, newName), rewriteInnerCaseScrutineeInfra(t, newName), e == null ? null : rewriteInnerCaseScrutineeInfra(e, newName)), metadata: n.metadata, pos: n.pos };
                 case EBinary(op, l, r):
@@ -834,10 +834,10 @@ class SwitchBuilder {
                     var nt = tgt == null ? null : rewriteInnerCaseScrutineeInfra(tgt, newName);
                     var nargs = [for (a in args) rewriteInnerCaseScrutineeInfra(a, newName)];
                     { def: ECall(nt, fnm, nargs), metadata: n.metadata, pos: n.pos };
-                case ERemoteCall(mod, fnm2, args2):
-                    var nmod = rewriteInnerCaseScrutineeInfra(mod, newName);
-                    var nargs2 = [for (a in args2) rewriteInnerCaseScrutineeInfra(a, newName)];
-                    { def: ERemoteCall(nmod, fnm2, nargs2), metadata: n.metadata, pos: n.pos };
+                case ERemoteCall(moduleExpr, functionName, remoteArgs):
+                    var nmod = rewriteInnerCaseScrutineeInfra(moduleExpr, newName);
+                    var nargs = [for (a in remoteArgs) rewriteInnerCaseScrutineeInfra(a, newName)];
+                    { def: ERemoteCall(nmod, functionName, nargs), metadata: n.metadata, pos: n.pos };
                 default:
                     n;
             }
@@ -855,19 +855,19 @@ class SwitchBuilder {
      * @param caseBody - The case body expression for usage analysis (determines underscore prefixes)
      */
     static function buildPattern(value: TypedExpr, targetVarName: String, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): Null<EPattern> {
-        trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}');
+        #if debug_switch_builder trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}'); #end
         switch(value.expr) {
             case TConst(c):
                 // Constant patterns
-                trace('[SwitchBuilder]   Found constant pattern');
+                #if debug_switch_builder trace('[SwitchBuilder]   Found constant pattern'); #end
                 switch(c) {
                     case TInt(i):
-                        trace('[SwitchBuilder]     Integer constant: $i');
+                        #if debug_switch_builder trace('[SwitchBuilder]     Integer constant: $i'); #end
 
                         // CRITICAL: Check if this is a TEnumIndex case
                         if (context.currentClauseContext != null && context.currentClauseContext.enumType != null) {
                             var enumType = context.currentClauseContext.enumType;
-                            trace('[SwitchBuilder]     *** Mapping integer $i to enum constructor ***');
+                            #if debug_switch_builder trace('[SwitchBuilder]     *** Mapping integer $i to enum constructor ***'); #end
 
                             var constructor = getEnumConstructorByIndex(enumType, i);
                             if (constructor != null) {
@@ -959,7 +959,7 @@ class SwitchBuilder {
 
         if (parameterNames.length == 0) {
             // Simple tagged tuple with single atom: {:none}
-            trace('[SwitchBuilder]     Generated pattern: {:${atomName}}');
+            #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}}'); #end
             return PTuple([PLiteral(makeAST(EAtom(atomName)))]);
         } else {
             // Tuple pattern: {:some, value}
