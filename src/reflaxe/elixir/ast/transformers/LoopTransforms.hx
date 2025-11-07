@@ -2176,6 +2176,7 @@ class LoopTransforms {
      * Now handles partial matches - identifies consecutive similar statements with incrementing indices
      */
     static function detectUnrolledLoop(stmts: Array<ElixirAST>): Null<ElixirAST> {
+        checkIndexBudget = CHECK_INDEX_BUDGET_DEFAULT; // reset per call
         if (stmts.length < 2) return null;
         
         #if debug_ast_transformer
@@ -2315,6 +2316,8 @@ class LoopTransforms {
      * HOW: Uses exact string matching first, then handles interpolation and binary concatenation
      */
     static function checkForIndex(ast: ElixirAST, expectedIndex: Int): Bool {
+        if (checkIndexBudget <= 0) return false;
+        checkIndexBudget--;
         #if !no_traces trace('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def); #end
         
         switch (ast.def) {
@@ -2661,3 +2664,6 @@ class LoopTransforms {
 }
 
 #end
+    // Bounded complexity guard for index scanning across large concatenations
+    static inline var CHECK_INDEX_BUDGET_DEFAULT = 20000; // reasonable upper bound for node visits
+    static var checkIndexBudget:Int = CHECK_INDEX_BUDGET_DEFAULT;
