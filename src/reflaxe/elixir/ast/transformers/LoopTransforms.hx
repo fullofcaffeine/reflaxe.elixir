@@ -111,6 +111,14 @@ class LoopTransforms {
         haxe.Log.trace(msg, pos);
     }
     #end
+
+    #if no_traces
+    static inline function debugPrint(_s:String) {}
+    #else
+    static inline function debugPrint(s:String) {
+        Sys.println(s);
+    }
+    #end
     
     /**
      * Helper function to manually transform children of an AST node
@@ -299,7 +307,7 @@ class LoopTransforms {
         // Use Sys.println to ensure output is visible
         #if sys
         #if debug_loop_transforms
-        #if !no_traces Sys.println('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============'); #end
+        debugPrint('[XRay LoopTransforms] ============ UNROLLED LOOP TRANSFORM STARTED ============');
         #end
         #end
         
@@ -2307,42 +2315,42 @@ class LoopTransforms {
      * HOW: Uses exact string matching first, then handles interpolation and binary concatenation
      */
     static function checkForIndex(ast: ElixirAST, expectedIndex: Int): Bool {
-        trace('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def);
+        #if !no_traces trace('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def); #end
         
         switch (ast.def) {
             case EString(s):
                 // First try exact string match
                 var exactPattern = 'Iteration ' + expectedIndex;
                 if (s == exactPattern) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT match found: "' + s + '"');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT match found: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check for interpolation pattern (exact match)
                 var interpolationPattern = 'Iteration #{' + expectedIndex + '}';
                 if (s == interpolationPattern) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT interpolation match: "' + s + '"');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT interpolation match: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check for just the index placeholder
                 var placeholderPattern = '#{' + expectedIndex + '}';
                 if (s == placeholderPattern) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT placeholder match: "' + s + '"');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT placeholder match: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check if string is just the index number
                 var indexStr = Std.string(expectedIndex);
                 if (s == indexStr) {
-                    trace('[XRay LoopTransforms]   ✓ EXACT index string match: "' + s + '"');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT index string match: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check for "Index: " pattern specifically (for Log.trace cases)
                 var indexPattern = 'Index: ' + expectedIndex;
                 if (s == indexPattern || s.indexOf(indexPattern) != -1) {
-                    trace('[XRay LoopTransforms]   ✓ Found "Index: ' + expectedIndex + '" pattern in: "' + s + '"');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ Found "Index: ' + expectedIndex + '" pattern in: "' + s + '"'); #end
                     return true;
                 }
                 
@@ -2351,11 +2359,11 @@ class LoopTransforms {
                 if (s.indexOf(exactPattern) != -1 || 
                     s.indexOf(interpolationPattern) != -1 ||
                     s.indexOf(placeholderPattern) != -1) {
-                    trace('[XRay LoopTransforms]   ✓ Found index via contains fallback in: "' + s + '"');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ Found index via contains fallback in: "' + s + '"'); #end
                     return true;
                 }
                 
-                trace('[XRay LoopTransforms]   ✗ No match in string: "' + s + '"');
+                #if !no_traces trace('[XRay LoopTransforms]   ✗ No match in string: "' + s + '"'); #end
                 return false;
                 
             case EBinary(StringConcat, left, right):
@@ -2364,7 +2372,7 @@ class LoopTransforms {
                 var leftHas = checkForIndex(left, expectedIndex);
                 var rightHas = checkForIndex(right, expectedIndex);
                 if (leftHas || rightHas) {
-                    trace('[XRay LoopTransforms]   ✓ Found index in binary concat');
+                    #if !no_traces trace('[XRay LoopTransforms]   ✓ Found index in binary concat'); #end
                 }
                 return leftHas || rightHas;
                 
