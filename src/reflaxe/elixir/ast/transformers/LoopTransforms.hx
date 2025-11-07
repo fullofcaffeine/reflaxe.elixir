@@ -112,6 +112,10 @@ class LoopTransforms {
     }
     #end
 
+    // Bounded complexity guard for index scanning across large concatenations
+    static inline var CHECK_INDEX_BUDGET_DEFAULT = 20000; // reasonable upper bound for node visits
+    static var checkIndexBudget:Int = CHECK_INDEX_BUDGET_DEFAULT;
+
     #if no_traces
     static inline function debugPrint(_s:String) {}
     #else
@@ -2664,6 +2668,3 @@ class LoopTransforms {
 }
 
 #end
-    // Bounded complexity guard for index scanning across large concatenations
-    static inline var CHECK_INDEX_BUDGET_DEFAULT = 20000; // reasonable upper bound for node visits
-    static var checkIndexBudget:Int = CHECK_INDEX_BUDGET_DEFAULT;
