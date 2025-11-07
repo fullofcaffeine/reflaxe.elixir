@@ -17,6 +17,9 @@ defmodule Assert do
   def is_not_null(value, message) do
     throw("Assert.isNotNull should be compiled by ExUnitCompiler")
   end
+  def not_null(value, message) do
+    is_not_null(value, message)
+  end
   def is_some(option, message) do
     throw("Assert.isSome should be compiled by ExUnitCompiler")
   end

@@ -33,7 +33,6 @@ class HeexRewriteHxxBlockTransforms {
                 case ERaw(code):
                     if (code != null && code.indexOf("~H\"\"\"") != -1) {
                         var updatedCode = replaceNestedHeexSigil(code);
-                        updatedCode = rewriteInlineIfDoToBlock(updatedCode);
                         if (updatedCode != code) return makeASTWithMeta(ERaw(updatedCode), n.metadata, n.pos);
                     }
                     n;
@@ -50,7 +49,7 @@ class HeexRewriteHxxBlockTransforms {
         out = replaceBlock(out, "hxx.HXX.block");
         // Also strip nested ~H sigils rendered inside ~H: <%= ~H"""...""" %> -> inline body
         out = replaceNestedHeexSigil(out);
-        out = rewriteInlineIfDoToBlock(out);
+        // Avoid inline-if regex rewrites; rely on structured conversions
         return out;
     }
 
@@ -127,58 +126,8 @@ class HeexRewriteHxxBlockTransforms {
         return res.toString();
     }
 
-    // Rewrite `<%= if cond, do: "...", else: "..." %>` to block HEEx inside ~H content
-    static function rewriteInlineIfDoToBlock(s:String):String {
-        var i = 0;
-        var out = new StringBuf();
-        while (i < s.length) {
-            var open = s.indexOf("<%=", i);
-            if (open == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, open - i));
-            var close = s.indexOf("%>", open + 3);
-            if (close == -1) { out.add(s.substr(open)); break; }
-            var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
-            if (StringTools.startsWith(inner, "if ")) {
-                var rest = StringTools.trim(inner.substr(3));
-                var idxDo = rest.indexOf(", do: \"");
-                var quote = '"';
-                if (idxDo == -1) { idxDo = rest.indexOf(", do: '\'"); quote = '\''; }
-                if (idxDo != -1) {
-                    var cond = StringTools.trim(rest.substr(0, idxDo));
-                    // Skip exactly over ", do: \"" or ", do: '\'"
-                    var afterDo = rest.substr(idxDo + 7);
-                    if (rest.substr(idxDo, 8) == ", do: '\'") { afterDo = rest.substr(idxDo + 7); }
-                    // Find end of quoted HTML by looking for quote + ", else:" sequence
-                    var needle = (quote == '"') ? '\"' : "'";
-                    var endMark = needle + ", else:";
-                    var endIdx = afterDo.indexOf(endMark);
-                    var thenHtml:String = null;
-                    var elseHtml:String = null;
-                    if (endIdx != -1) {
-                        thenHtml = afterDo.substr(0, endIdx);
-                        var afterElse = afterDo.substr(endIdx + endMark.length);
-                        // Expect opening quote for else branch
-                        if (afterElse.length >= 1 && afterElse.charAt(0) == quote) {
-                            afterElse = afterElse.substr(1);
-                            var endElse = afterElse.indexOf(needle);
-                            elseHtml = (endElse != -1) ? afterElse.substr(0, endElse) : null;
-                        }
-                    }
-                    if (thenHtml != null) {
-                        out.add('<%= if ' + cond + ' do %>');
-                        out.add(thenHtml);
-                        if (elseHtml != null && elseHtml != "") { out.add('<% else %>' + elseHtml); }
-                        out.add('<% end %>');
-                        i = close + 2;
-                        continue;
-                    }
-                }
-            }
-            out.add(s.substr(open, (close + 2) - open));
-            i = close + 2;
-        }
-        return out.toString();
-    }
+    // Note: Do not rewrite inline-if forms inside ~H here; canonical snapshots
+    // expect the inline `, do:` syntax to remain unchanged.
 
     static function indexOfTopLevel(s:String, token:String):Int {
         var depth = 0;

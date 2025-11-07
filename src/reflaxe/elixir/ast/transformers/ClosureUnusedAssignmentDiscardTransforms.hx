@@ -88,7 +88,7 @@ class ClosureUnusedAssignmentDiscardTransforms {
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
                 case ECall(t, _, args): if (t != null) visit(t); if (args != null) for (a in args) visit(a);
-                case ERemoteCall(m, _, args2): visit(m); if (args2 != null) for (a in args2) visit(a);
+                case ERemoteCall(moduleExpr, _, remoteArgs): visit(moduleExpr); if (remoteArgs != null) for (argument in remoteArgs) visit(argument);
                 case EBlock(ss): for (s in ss) visit(s);
                 case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
                 case ECase(cond, cs): visit(cond); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
@@ -116,8 +116,8 @@ class ClosureUnusedAssignmentDiscardTransforms {
                 case ECase(expr, cs): visit(expr); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
+                case ECall(target, _, arguments): if (target != null) visit(target); for (argument in arguments) visit(argument);
+                case ERemoteCall(remoteTarget, _, remoteArgs): visit(remoteTarget); for (argument in remoteArgs) visit(argument);
                 case EList(els): for (el in els) visit(el);
                 case ETuple(els): for (el in els) visit(el);
                 case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }

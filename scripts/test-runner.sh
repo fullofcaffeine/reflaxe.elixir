@@ -20,7 +20,7 @@ RESULTS_FILE="$CACHE_DIR/last-run.json"
 MAKEFILE="$TEST_DIR/Makefile"
 
 # Default values
-PARALLEL=4
+PARALLEL=8
 CATEGORY=""
 PATTERN=""
 UPDATE=false
@@ -30,6 +30,7 @@ VERBOSE=false
 WATCH=false
 SERVER=false
 TIMEOUT=120
+DEADLINE=1800
 
 # Ensure cache directory exists
 mkdir -p "$CACHE_DIR"
@@ -50,6 +51,7 @@ show_help() {
     echo "  --verbose              Show detailed output"
     echo "  --server               Use Haxe compilation server for faster compilation"
     echo "  --timeout <seconds>    Test timeout in seconds (default: 120)"
+    echo "  --deadline <seconds>   Overall run deadline in seconds (default: 1800)"
     echo "  --help                 Show this help message"
     echo ""
     echo "Examples:"
@@ -97,6 +99,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --timeout)
             TIMEOUT="$2"
+            shift 2
+            ;;
+        --deadline)
+            DEADLINE="$2"
             shift 2
             ;;
         --help)
@@ -245,7 +251,7 @@ run_tests() {
     
     # Run the tests
     cd "$TEST_DIR"
-    echo -e "${BLUE}Executing: make -f Makefile $make_args $make_target${RESET}"
+    echo -e "${BLUE}Executing (deadline ${DEADLINE}s): make -f Makefile $make_args $make_target${RESET}"
     # Ensure fresh results file for accurate summary
     rm -f test-results*.tmp 2>/dev/null || true
     
@@ -268,7 +274,7 @@ run_tests() {
     else
         if [ "$aggregate_mode" = true ]; then
             # Aggregated targets (all/categories) return proper exit codes
-            if make -f Makefile $make_args $make_target; then
+            if "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_target; then
                 echo -e "${GREEN}All tests passed! ✅${RESET}"
                 exit 0
             else
@@ -280,7 +286,7 @@ run_tests() {
         else
             # Non-aggregated targets (pattern/changed/failed): decide based on result files and make status
             set +e
-            make -f Makefile $make_args $make_target
+            "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_target
             make_status=$?
             set -e
 

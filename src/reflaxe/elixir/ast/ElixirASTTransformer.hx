@@ -1636,6 +1636,8 @@ class ElixirASTTransformer {
                 case EModule(name, attributes, body):
                     // Handle module nodes constructed via EModule (ModuleBuilder default)
                     // Inject `use Phoenix.Component` at the top of the body when ~H is present
+                    // Skip Layouts modules which should prefer `use <App>Web, :html`
+                    if (name != null && StringTools.endsWith(name, ".Layouts")) return node;
                     var hasImport = false;
                     // Scan existing body for EUse/EImport Phoenix.Component
                     for (stmt in body) switch (stmt.def) {
@@ -1940,6 +1942,13 @@ class ElixirASTTransformer {
                                 }
                             }
                             if (contentHtml == null) return node;
+                            // Safety gate: Only inline when the captured string has no HXX/Haxe-style
+                            // interpolations. Robust inlining (with interpolation conversion) is handled
+                            // later by HeexInlineCapturedContentTransforms. This pass should avoid
+                            // interfering with HXX templates.
+                            if (contentHtml.indexOf("${") != -1 || contentHtml.indexOf("#{") != -1 || contentHtml.indexOf("HXX.") != -1 || contentHtml.indexOf("hxx.") != -1) {
+                                return node;
+                            }
                             // Find ~H that references Phoenix.HTML.raw(content) (allow EParen wrapping)
                             var sigilIdx: Int = -1;
                             for (i in 0...stmts.length) {

@@ -2933,17 +2933,29 @@ class ElixirASTBuilder {
                     currentContext.variableUsageMap = functionUsageMap;
                 }
 
+                #if (debug_ast_builder && !no_traces)
+                #if !no_traces
                 trace('[TFunction DEBUG] BEFORE body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
+                #end
                 if (currentContext.tempVarRenameMap.keys().hasNext()) {
+                    #if !no_traces
                     trace('[TFunction DEBUG] Map contents:');
+                    #end
                     for (k in currentContext.tempVarRenameMap.keys()) {
+                        #if !no_traces
                         trace('[TFunction DEBUG]   "$k" -> "${currentContext.tempVarRenameMap.get(k)}"');
+                        #end
                     }
                 }
+                #end
 
                 var body = buildFromTypedExpr(f.expr, currentContext);
 
+                #if (debug_ast_builder && !no_traces)
+                #if !no_traces
                 trace('[TFunction DEBUG] AFTER body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
+                #end
+                #end
                 
                 // Restore the original map and clean up function parameter tracking
                 currentContext.tempVarRenameMap = oldTempVarRenameMap;

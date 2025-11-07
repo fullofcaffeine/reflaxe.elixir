@@ -68,7 +68,7 @@ class CaseClauseAliasFromUnderscoreBinderTransforms {
     var used = collectUsedLowerNames(cl.body);
     var patHasUnderscored: Map<String,Bool> = collectUnderscoredBinders(cl.pattern);
 
-    #if sys
+    #if (sys && !no_traces)
     // Debug snapshot for this clause
     var declArr = [for (k in declared.keys()) k].join(',');
     var usedArr = [for (k in used.keys()) k].join(',');
@@ -125,7 +125,7 @@ class CaseClauseAliasFromUnderscoreBinderTransforms {
     }
     if (prefix.length == 0) return cl;
 
-    #if sys
+    #if (sys && !no_traces)
     for (a in aliases) Sys.println('[CaseAliasUnderscore] prefix ' + a.u + ' = ' + a.from);
     #end
     var newBody = switch (cl.body.def) {

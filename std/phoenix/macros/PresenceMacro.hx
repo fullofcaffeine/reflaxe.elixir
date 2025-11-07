@@ -5,6 +5,8 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 using haxe.macro.Tools;
+// Ensure typedefs used in return types are loaded in macro context
+import phoenix.Presence.PresenceEntry;
 #end
 
 /**
@@ -495,7 +497,7 @@ class PresenceMacro {
                     {name: "socketOrTopic", type: macro : Dynamic},
                     {name: "key", type: macro : String}
                 ],
-                ret: macro : Null<phoenix.PresenceEntry<M>>,
+                ret: macro : Null<phoenix.Presence.PresenceEntry<M>>,
                 expr: macro {
                     var entries = phoenix.Presence.getByKey(socketOrTopic, key);
                     return (entries != null && entries.length > 0) ? entries[0] : null;

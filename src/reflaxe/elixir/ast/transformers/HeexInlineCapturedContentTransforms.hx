@@ -41,6 +41,35 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   """
  */
 class HeexInlineCapturedContentTransforms {
+    static function flattenNestedHeexInContent(s:String):String {
+        if (s == null || s.indexOf("<%=") == -1) return s;
+        var out = new StringBuf();
+        var i = 0;
+        while (i < s.length) {
+            var open = s.indexOf("<%=", i);
+            if (open == -1) { out.add(s.substr(i)); break; }
+            out.add(s.substr(i, open - i));
+            var close = s.indexOf("%>", open + 3);
+            if (close == -1) { out.add(s.substr(open)); break; }
+            var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
+            if (StringTools.startsWith(inner, "~H\"\"\"")) {
+                var start = inner.indexOf("\"\"\"");
+                if (start != -1) {
+                    var bodyStart = start + 3;
+                    var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
+                    if (bodyEnd != -1) {
+                        var body = inner.substr(bodyStart, bodyEnd - bodyStart);
+                        out.add(body);
+                        i = close + 2;
+                        continue;
+                    }
+                }
+            }
+            out.add(s.substr(open, (close + 2) - open));
+            i = close + 2;
+        }
+        return out.toString();
+    }
     static function extractStringLiteral(e: ElixirAST): Null<String> {
         var cur = e;
         var guard = 0;
@@ -48,6 +77,9 @@ class HeexInlineCapturedContentTransforms {
             switch (cur.def) {
                 case EString(s): return s;
                 case EParen(inner): cur = inner;
+                case ESigil(type, content, _mods) if (type == "H"):
+                    // If helper already returned ~H, inline just the body rather than nested ~H
+                    return content;
                 case ECall(target, func, args):
                     // Detect HXX.hxx('...') calls and extract the raw template string
                     var isHxx = (func == "hxx");
@@ -211,31 +243,9 @@ class HeexInlineCapturedContentTransforms {
         }
     }
 
-    // Helper: convert #{...}/${...} to <%= ... %> and assigns.* to @*
-    static function convertInterpolations(s:String):String {
-        var out = new StringBuf();
-        var i2 = 0;
-        while (i2 < s.length) {
-            var j1 = s.indexOf("#{", i2);
-            var j2 = s.indexOf("${", i2);
-            var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
-            if (j == -1) { out.add(s.substr(i2)); break; }
-            out.add(s.substr(i2, j - i2));
-            var k = j + 2;
-            var depth = 1;
-            while (k < s.length && depth > 0) {
-                var ch = s.charAt(k);
-                if (ch == '{') depth++;
-                else if (ch == '}') depth--;
-                k++;
-            }
-            var expr = s.substr(j + 2, (k - 1) - (j + 2));
-            expr = StringTools.trim(expr);
-            expr = StringTools.replace(expr, "assigns.", "@");
-            out.add('<%= ' + expr + ' %>');
-            i2 = k;
-        }
-        return out.toString();
+    // Helper: robust interpolation + HXX handling using shared TemplateHelpers
+    static inline function convertInterpolations(s:String):String {
+        return reflaxe.elixir.ast.TemplateHelpers.rewriteInterpolations(s);
     }
 
     // Rewrite inline if-do/else inside <%= ... %> to block HEEx to avoid quoted HTML issues
@@ -336,8 +346,7 @@ class HeexInlineCapturedContentTransforms {
         #end
         if (assign.html == null) return { changed:false, out: stmts };
         var html = convertInterpolations(assign.html);
-        // Normalize inline-if do/else to block form to produce valid HEEx
-        html = rewriteInlineIfDoToBlock(html);
+        html = flattenNestedHeexInContent(html);
         var assignsIdx = -1;
         for (i in 0...stmts.length) if (isAssignsCaptureOfVar(stmts[i], sig.varName)) { assignsIdx = i; break; }
         #if debug_heex_inline
@@ -363,21 +372,19 @@ class HeexInlineCapturedContentTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body) if (name == "render"):
-                    #if sys
+                    #if (sys && !no_traces)
                     Sys.println('[HeexInlineCapturedContent] Scanning render/1');
-                    #else
-                    trace('[HeexInlineCapturedContent] Scanning render/1');
                     #end
                     switch (body.def) {
                         case EBlock(stmts):
                             var r1 = inlineCaptured(stmts);
-                            #if debug_heex_inline
+                            #if (debug_heex_inline && !no_traces)
                             if (r1.changed) trace('[HeexInlineCapturedContent] Inlined EBlock in render/1'); else trace('[HeexInlineCapturedContent] No-op EBlock');
                             #end
                             if (r1.changed) makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(r1.out))), n.metadata, n.pos) else n;
                         case EDo(stmts):
                             var r2 = inlineCaptured(stmts);
-                            #if debug_heex_inline
+                            #if (debug_heex_inline && !no_traces)
                             if (r2.changed) trace('[HeexInlineCapturedContent] Inlined EDo in render/1'); else trace('[HeexInlineCapturedContent] No-op EDo');
                             #end
                             if (r2.changed) makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(r2.out))), n.metadata, n.pos) else n;

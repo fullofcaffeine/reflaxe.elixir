@@ -21,10 +21,10 @@ class WebDropUnusedPureAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
-        case EDef(fn, args, guards, body):
-          makeASTWithMeta(EDef(fn, args, guards, dropUnused(body)), n.metadata, n.pos);
-        case EDefp(fn2, args2, guards2, body2):
-          makeASTWithMeta(EDefp(fn2, args2, guards2, dropUnused(body2)), n.metadata, n.pos);
+        case EDef(functionName, parameters, guards, body):
+          makeASTWithMeta(EDef(functionName, parameters, guards, dropUnused(body)), n.metadata, n.pos);
+        case EDefp(functionName, parameters, guards, body):
+          makeASTWithMeta(EDefp(functionName, parameters, guards, dropUnused(body)), n.metadata, n.pos);
         default: dropUnused(n);
       }
     });
@@ -32,8 +32,8 @@ class WebDropUnusedPureAssignTransforms {
 
   static function dropUnused(body:ElixirAST):ElixirAST {
     return switch (body.def) {
-      case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), body.metadata, body.pos);
-      case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), body.metadata, body.pos);
+      case EBlock(statements): makeASTWithMeta(EBlock(rewrite(statements)), body.metadata, body.pos);
+      case EDo(statements): makeASTWithMeta(EDo(rewrite(statements)), body.metadata, body.pos);
       default: body;
     }
   }
@@ -47,7 +47,7 @@ class WebDropUnusedPureAssignTransforms {
       switch (s.def) {
         case EBinary(Match, {def: EVar(b)}, rhs) if (!isSocketBinder(b) && isDropCandidate(rhs) && !usedLater(stmts, i+1, b)):
           keep = false; // drop pure var copy or empty init
-        case EMatch(PVar(b2), rhs2) if (!isSocketBinder(b2) && isDropCandidate(rhs2) && !usedLater(stmts, i+1, b2)):
+        case EMatch(PVar(binder), rhs) if (!isSocketBinder(binder) && isDropCandidate(rhs) && !usedLater(stmts, i+1, binder)):
           keep = false;
         default:
       }

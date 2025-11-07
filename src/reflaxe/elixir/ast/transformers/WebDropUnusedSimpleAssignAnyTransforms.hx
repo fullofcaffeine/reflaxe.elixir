@@ -26,8 +26,8 @@ class WebDropUnusedSimpleAssignAnyTransforms {
         case EModule(name, attrs, body) if (isWeb(name)):
           var out = [for (b in body) cleanse(b)];
           makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
-        case EDefmodule(name2, doBlock) if (isWeb(name2)):
-          makeASTWithMeta(EDefmodule(name2, cleanse(doBlock)), n.metadata, n.pos);
+        case EDefmodule(moduleName, doBlock) if (isWeb(moduleName)):
+          makeASTWithMeta(EDefmodule(moduleName, cleanse(doBlock)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -40,8 +40,8 @@ class WebDropUnusedSimpleAssignAnyTransforms {
   static function cleanse(node: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
-        case EDef(fn, args, g, body): makeASTWithMeta(EDef(fn, args, g, drop(body)), n.metadata, n.pos);
-        case EDefp(fn2, args2, g2, body2): makeASTWithMeta(EDefp(fn2, args2, g2, drop(body2)), n.metadata, n.pos);
+        case EDef(functionName, parameters, guards, body): makeASTWithMeta(EDef(functionName, parameters, guards, drop(body)), n.metadata, n.pos);
+        case EDefp(functionName, parameters, guards, body): makeASTWithMeta(EDefp(functionName, parameters, guards, drop(body)), n.metadata, n.pos);
         case ECase(expr, clauses):
           var newClauses = [];
           for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: drop(cl.body) });
@@ -53,8 +53,8 @@ class WebDropUnusedSimpleAssignAnyTransforms {
 
   static function drop(body: ElixirAST): ElixirAST {
     return switch (body.def) {
-      case EBlock(stmts): makeASTWithMeta(EBlock(filter(stmts)), body.metadata, body.pos);
-      case EDo(stmts2): makeASTWithMeta(EDo(filter(stmts2)), body.metadata, body.pos);
+      case EBlock(statements): makeASTWithMeta(EBlock(filter(statements)), body.metadata, body.pos);
+      case EDo(statements): makeASTWithMeta(EDo(filter(statements)), body.metadata, body.pos);
       default: body;
     }
   }
@@ -65,9 +65,9 @@ class WebDropUnusedSimpleAssignAnyTransforms {
     for (i in 0...stmts.length) {
       var s = stmts[i];
       switch (s.def) {
-        case EBinary(Match, {def:EVar(nm)}, rhs) if (isPure(rhs) && !usedLater(stmts, i+1, nm)):
+        case EBinary(Match, {def:EVar(binder)}, rhs) if (isPure(rhs) && !usedLater(stmts, i+1, binder)):
           // drop
-        case EMatch(PVar(nm2), rhs2) if (isPure(rhs2) && !usedLater(stmts, i+1, nm2)):
+        case EMatch(PVar(binder), rhs) if (isPure(rhs) && !usedLater(stmts, i+1, binder)):
           // drop
         default:
           out.push(s);
@@ -97,4 +97,3 @@ class WebDropUnusedSimpleAssignAnyTransforms {
 }
 
 #end
-

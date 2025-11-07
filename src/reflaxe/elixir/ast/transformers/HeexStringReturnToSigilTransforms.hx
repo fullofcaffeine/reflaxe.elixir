@@ -84,9 +84,8 @@ class HeexStringReturnToSigilTransforms {
             i = k;
         }
         var res = out.toString();
-        // Post-process any fallback inline ternary and inline-if(do:/else:) that slipped through as <%= ... %>
+        // Post-process any fallback inline ternary
         res = rewriteInlineTernaryToBlock(res);
-        res = rewriteInlineIfDoToBlock(res);
         // Keep other inline cases as-is for readability
         return res;
     }
@@ -231,53 +230,10 @@ class HeexStringReturnToSigilTransforms {
 
     // Rewrite occurrences of <%= if cond, do: "...", else: "..." %> into a block if
     static function rewriteInlineIfDoToBlock(s:String):String {
-        var out = new StringBuf();
-        var i = 0;
-        while (i < s.length) {
-            var start = s.indexOf("<%=", i);
-            if (start == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, start - i));
-            var endTag = s.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(s.substr(start)); break; }
-            var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
-            if (StringTools.startsWith(inner, "if ")) {
-                var rest = StringTools.trim(inner.substr(3));
-                var idxDo = rest.indexOf(", do: \"");
-                var quote = '"';
-                if (idxDo == -1) { idxDo = rest.indexOf(", do: '\'"); quote = '\''; }
-                if (idxDo != -1) {
-                    var cond = StringTools.trim(rest.substr(0, idxDo));
-                    var afterDo = rest.substr(idxDo + 7);
-                    if (rest.substr(idxDo, 8) == ", do: '\'") afterDo = rest.substr(idxDo + 7);
-                    var needle = (quote == '"') ? '\"' : "'";
-                    var endMark = needle + ", else:";
-                    var endIdx = afterDo.indexOf(endMark);
-                    var thenHtml:String = null;
-                    var elseHtml:String = null;
-                    if (endIdx != -1) {
-                        thenHtml = afterDo.substr(0, endIdx);
-                        var afterElse = afterDo.substr(endIdx + endMark.length);
-                        if (afterElse.length >= 1 && afterElse.charAt(0) == quote) {
-                            afterElse = afterElse.substr(1);
-                            var endElse = afterElse.indexOf(needle);
-                            elseHtml = (endElse != -1) ? afterElse.substr(0, endElse) : null;
-                        }
-                    }
-                    if (thenHtml != null) {
-                        out.add('<%= if ' + mapAssigns(cond) + ' do %>');
-                        out.add(thenHtml);
-                        if (elseHtml != null && elseHtml != "") { out.add('<% else %>' + elseHtml); }
-                        out.add('<% end %>');
-                        i = endTag + 2;
-                        continue;
-                    }
-                }
-            }
-            out.add(s.substr(start, (endTag + 2) - start));
-            i = endTag + 2;
-        }
-        return out.toString();
+        return s;
     }
+
+    // NOTE: Avoid regex-based inline-if rewrites; block-if is emitted structurally above.
 
     // Return {value, length} for first quoted token in s (single or double quotes)
     static function extractQuoted(s:String):Null<{value:String, length:Int}> {
@@ -517,11 +473,9 @@ class HeexStringReturnToSigilTransforms {
             out.add(s.substr(open, (close + 2) - open));
             i = close + 2;
         }
-        // Also normalize inline-if do/else into block form after flattening
-        var flat = out.toString();
-        flat = rewriteInlineTernaryToBlock(flat);
-        flat = rewriteInlineIfDoToBlock(flat);
-        return flat;
+        // Keep inline-if forms intact to match idiomatic HEEx and snapshot intent.
+        // Only flatten nested ~H sigils here; do not rewrite inline-if/ternary.
+        return out.toString();
     }
 
     static function extractString(n: ElixirAST): Null<String> {

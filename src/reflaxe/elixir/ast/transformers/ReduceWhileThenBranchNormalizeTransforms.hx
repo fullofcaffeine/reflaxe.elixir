@@ -84,15 +84,15 @@ class ReduceWhileThenBranchNormalizeTransforms {
                   default:
                 }
               default:
-              // Additional windows: a = (b <- rhs); if ... else b end
+              // Additional window: a = (b <- rhs); if ... else b end
               switch (stmts[i].def) {
-                case EBinary(Match, {def: EVar(a2)}, {def: EMatch(PVar(b2), rhs2)}):
+                case EBinary(Match, {def: EVar(leftVar)}, {def: EMatch(PVar(boundVar), rhsExpr)}):
                   switch (stmts[i + 1].def) {
                     case EIf(condX, thenX, elseX):
-                      var elseIsBX = switch (elseX.def) { case EVar(bbX) if (bbX == b2): true; default: false; };
-                      if (elseIsBX) {
-                        out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), stmts[i].metadata, stmts[i].pos), rhs2), stmts[i].metadata, stmts[i].pos));
-                        out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), stmts[i].metadata, stmts[i].pos), makeASTWithMeta(EIf(condX, thenX, elseX), stmts[i + 1].metadata, stmts[i + 1].pos)), stmts[i].metadata, stmts[i].pos));
+                      var elseIsBound = switch (elseX.def) { case EVar(varName) if (varName == boundVar): true; default: false; };
+                      if (elseIsBound) {
+                        out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(boundVar), stmts[i].metadata, stmts[i].pos), rhsExpr), stmts[i].metadata, stmts[i].pos));
+                        out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(leftVar), stmts[i].metadata, stmts[i].pos), makeASTWithMeta(EIf(condX, thenX, elseX), stmts[i + 1].metadata, stmts[i + 1].pos)), stmts[i].metadata, stmts[i].pos));
                         i += 2; continue;
                       }
                     default:

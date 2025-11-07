@@ -40,14 +40,14 @@ class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
-        case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
-          var paramsVar = secondArg(args);
-          var nb = rewrite(body, paramsVar);
-          makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
-          var paramsVar2 = secondArg(args2);
-          var nb2 = rewrite(body2, paramsVar2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+        case EDef(functionName, parameters, guards, body) if (isHandleEvent3(functionName, parameters)):
+          var paramsParam = secondArg(parameters);
+          var newBody = rewrite(body, paramsParam);
+          makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
+        case EDefp(functionName, parameters, guards, body) if (isHandleEvent3(functionName, parameters)):
+          var paramsParam = secondArg(parameters);
+          var newBody = rewrite(body, paramsParam);
+          makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
         default:
           n;
       }
@@ -62,12 +62,12 @@ class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
   static function rewrite(body: ElixirAST, paramsVar:String): ElixirAST {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
-        case ECall(target, fname, args) if (args != null && args.length > 0):
-          var newArgs = mapArgs(args, paramsVar);
-          if (newArgs == null) x else makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);
-        case ERemoteCall(target2, fname2, args2) if (args2 != null && args2.length > 0):
-          var newArgs2 = mapArgs(args2, paramsVar);
-          if (newArgs2 == null) x else makeASTWithMeta(ERemoteCall(target2, fname2, newArgs2), x.metadata, x.pos);
+        case ECall(target, functionName, callArgs) if (callArgs != null && callArgs.length > 0):
+          var remapped = mapArgs(callArgs, paramsVar);
+          if (remapped == null) x else makeASTWithMeta(ECall(target, functionName, remapped), x.metadata, x.pos);
+        case ERemoteCall(remoteTarget, functionName, remoteArgs) if (remoteArgs != null && remoteArgs.length > 0):
+          var remapped = mapArgs(remoteArgs, paramsVar);
+          if (remapped == null) x else makeASTWithMeta(ERemoteCall(remoteTarget, functionName, remapped), x.metadata, x.pos);
         default:
           x;
       }

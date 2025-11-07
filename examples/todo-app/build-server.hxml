@@ -72,7 +72,9 @@
 -D hxx_string_to_sigil
 
 # Silence compiler debug traces for QA speed and signal clarity
+# Provide both hyphenated and underscored defines for preprocessor gating compatibility
 -D no-traces
+-D no_traces
 
 # Main server classes to compile
 TodoApp

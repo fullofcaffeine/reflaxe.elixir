@@ -35,19 +35,19 @@ class CountEachToEnumCountTransforms {
                 case EMatch(pat, rhs):
                     var rewritten: Null<ElixirAST> = null;
                     switch (rhs.def) {
-                        case ERemoteCall(mod2, func2, args2) if (isEnumEach(mod2, func2, args2)):
-                            rewritten = rewriteEachToCount(rhs, mod2, func2, args2);
+                        case ERemoteCall(remoteModule, remoteFunction, remoteArgs) if (isEnumEach(remoteModule, remoteFunction, remoteArgs)):
+                            rewritten = rewriteEachToCount(rhs, remoteModule, remoteFunction, remoteArgs);
                         default:
                     }
                     rewritten == null ? n : makeASTWithMeta(EMatch(pat, rewritten), n.metadata, n.pos);
-                case EBinary(Match, left, rhs2):
-                    var rewritten2: Null<ElixirAST> = null;
-                    switch (rhs2.def) {
-                        case ERemoteCall(mod3, func3, args3) if (isEnumEach(mod3, func3, args3)):
-                            rewritten2 = rewriteEachToCount(rhs2, mod3, func3, args3);
+                case EBinary(Match, left, rhsExpr):
+                    var rewrittenRight: Null<ElixirAST> = null;
+                    switch (rhsExpr.def) {
+                        case ERemoteCall(remoteModule, remoteFunction, remoteArgs) if (isEnumEach(remoteModule, remoteFunction, remoteArgs)):
+                            rewrittenRight = rewriteEachToCount(rhsExpr, remoteModule, remoteFunction, remoteArgs);
                         default:
                     }
-                    rewritten2 == null ? n : makeASTWithMeta(EBinary(Match, left, rewritten2), n.metadata, n.pos);
+                    rewrittenRight == null ? n : makeASTWithMeta(EBinary(Match, left, rewrittenRight), n.metadata, n.pos);
                 default:
                     n;
             }

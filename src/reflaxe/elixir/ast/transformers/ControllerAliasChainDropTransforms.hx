@@ -29,8 +29,8 @@ class ControllerAliasChainDropTransforms {
         case EModule(name, attrs, body) if (isController(name)):
           var out = [for (b in body) cleanse(b)];
           makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
-        case EDefmodule(name2, doBlock) if (isController(name2)):
-          makeASTWithMeta(EDefmodule(name2, cleanse(doBlock)), n.metadata, n.pos);
+        case EDefmodule(moduleName, doBlock) if (isController(moduleName)):
+          makeASTWithMeta(EDefmodule(moduleName, cleanse(doBlock)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -43,8 +43,8 @@ class ControllerAliasChainDropTransforms {
   static function cleanse(node: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
-        case EDef(fn, args, g, body): makeASTWithMeta(EDef(fn, args, g, cleanBody(body)), n.metadata, n.pos);
-        case EDefp(fn2, args2, g2, body2): makeASTWithMeta(EDefp(fn2, args2, g2, cleanBody(body2)), n.metadata, n.pos);
+        case EDef(functionName, parameters, guards, body): makeASTWithMeta(EDef(functionName, parameters, guards, cleanBody(body)), n.metadata, n.pos);
+        case EDefp(functionName, parameters, guards, body): makeASTWithMeta(EDefp(functionName, parameters, guards, cleanBody(body)), n.metadata, n.pos);
         case ECase(expr, clauses):
           var newClauses = [];
           for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: cleanBody(cl.body) });
@@ -56,8 +56,8 @@ class ControllerAliasChainDropTransforms {
 
   static function cleanBody(b: ElixirAST): ElixirAST {
     return switch (b.def) {
-      case EBlock(stmts): makeASTWithMeta(EBlock(dropChains(stmts)), b.metadata, b.pos);
-      case EDo(stmts2): makeASTWithMeta(EDo(dropChains(stmts2)), b.metadata, b.pos);
+      case EBlock(statements): makeASTWithMeta(EBlock(dropChains(statements)), b.metadata, b.pos);
+      case EDo(statements): makeASTWithMeta(EDo(dropChains(statements)), b.metadata, b.pos);
       default: b;
     }
   }
@@ -68,8 +68,8 @@ class ControllerAliasChainDropTransforms {
 
   static function isAssignAlias(stmt: ElixirAST): { ok:Bool, name:String, rhs:Null<String> } {
     return switch (stmt.def) {
-      case EBinary(Match, {def:EVar(nm)}, {def:EVar(rv)}): { ok: isAliasName(nm), name: nm, rhs: rv };
-      case EMatch(PVar(nm2), {def:EVar(rv2)}): { ok: isAliasName(nm2), name: nm2, rhs: rv2 };
+      case EBinary(Match, {def:EVar(name)}, {def:EVar(rhsVar)}): { ok: isAliasName(name), name: name, rhs: rhsVar };
+      case EMatch(PVar(name), {def:EVar(rhsVar)}): { ok: isAliasName(name), name: name, rhs: rhsVar };
       default: { ok:false, name:null, rhs:null };
     }
   }

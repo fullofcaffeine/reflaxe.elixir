@@ -90,6 +90,13 @@ class Assert {
     public static function isNotNull<T>(value: T, ?message: String): Void {
         throw "Assert.isNotNull should be compiled by ExUnitCompiler";
     }
+
+    /**
+     * Backwards-compatible alias for isNotNull
+     */
+    public static inline function notNull<T>(value: T, ?message: String): Void {
+        isNotNull(value, message);
+    }
     
     /**
      * Assert that an Option contains a value (is Some).

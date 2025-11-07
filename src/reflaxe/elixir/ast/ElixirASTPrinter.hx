@@ -1981,7 +1981,7 @@ class ElixirASTPrinter {
             // Phoenix/Framework Specific
             // ================================================================
             case ESigil(type, content, modifiers):
-                // HEEx indentation normalization
+                // HEEx indentation normalization (quiet when no-traces)
                 inline function normalizeHeexIndent(s: String): String {
                     if (s == null || s.length == 0) return s;
                     // Split lines
@@ -2030,7 +2030,13 @@ class ElixirASTPrinter {
                         // inline-if do/else normalization inside ~H
                         out.add(s.substr(o, (c + 2) - o)); i = c + 2;
                     }
-                    return out.toString();
+                    var flattened = out.toString();
+                    // Fallback: aggressively strip any residual `<%= ~H"""` and trailing `""" %>`
+                    if (flattened.indexOf('<%= ~H"""') != -1) {
+                        flattened = flattened.split('<%= ~H"""').join('');
+                        flattened = flattened.split('""" %>').join('');
+                    }
+                    return flattened;
                 }
                 inline function rewriteInlineIfDoToBlock(s:String):String {
                     if (s == null || s.indexOf(", do:") == -1) return s;
@@ -2069,7 +2075,7 @@ class ElixirASTPrinter {
                 }
                 var normalized = normalizeHeexIndent(content);
                 normalized = flattenNestedHeex(normalized);
-                normalized = rewriteInlineIfDoToBlock(normalized);
+                // Preserve inline-if forms inside ~H; avoid rewriting to block form here.
                 '~' + type + '"""' + '\n' + normalized + '\n' + '"""' + modifiers;
                 
             case ERaw(code):

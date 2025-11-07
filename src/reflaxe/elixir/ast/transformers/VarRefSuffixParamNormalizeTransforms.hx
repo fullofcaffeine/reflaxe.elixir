@@ -22,22 +22,22 @@ class VarRefSuffixParamNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
-        case EDef(name, args, guards, body):
-          var suffixMap = collectUniqueSuffixParams(args);
-          #if sys {
-            var ks = [for (k in suffixMap.keys()) k].join(",");
-            if (ks.length > 0) Sys.println('[VarRefSuffixParamNormalize] def ' + name + ' suffixes={' + ks + '}');
+        case EDef(functionName, parameters, guards, body):
+          var suffixMap = collectUniqueSuffixParams(parameters);
+          #if (sys && !no_traces) {
+            var keys = [for (k in suffixMap.keys()) k].join(",");
+            if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] def ' + functionName + ' suffixes={' + keys + '}');
           } #end
-          var nb = rewriteRefsScoped(body, suffixMap);
-          makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2):
-          var suffixMap2 = collectUniqueSuffixParams(args2);
-          #if sys {
-            var ks2 = [for (k in suffixMap2.keys()) k].join(",");
-            if (ks2.length > 0) Sys.println('[VarRefSuffixParamNormalize] defp ' + name2 + ' suffixes={' + ks2 + '}');
+          var newBody = rewriteRefsScoped(body, suffixMap);
+          makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
+        case EDefp(functionName, parameters, guards, body):
+          var suffixMap = collectUniqueSuffixParams(parameters);
+          #if (sys && !no_traces) {
+            var keys = [for (k in suffixMap.keys()) k].join(",");
+            if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] defp ' + functionName + ' suffixes={' + keys + '}');
           } #end
-          var nb2 = rewriteRefsScoped(body2, suffixMap2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+          var newBody = rewriteRefsScoped(body, suffixMap);
+          makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
         default:
           n;
       }
@@ -92,7 +92,7 @@ class VarRefSuffixParamNormalizeTransforms {
                 return switch (y.def) {
                   case EVar(v) if (suff.exists(v) && !declared.exists(v)):
                     var full = suff.get(v);
-                    #if sys Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
+                    #if (sys && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
                     #end
                     makeASTWithMeta(EVar(full), y.metadata, y.pos);
                   default: y;
@@ -106,7 +106,7 @@ class VarRefSuffixParamNormalizeTransforms {
             var topDeclared = collectDeclared(body);
             if (suff.exists(nm) && !topDeclared.exists(nm)) {
               var fullTop = suff.get(nm);
-              #if sys Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
+              #if (sys && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
               #end
               makeASTWithMeta(EVar(fullTop), x.metadata, x.pos);
             } else x;

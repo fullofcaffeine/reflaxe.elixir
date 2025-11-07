@@ -5,7 +5,6 @@
   "std.ex",
   "reflect.ex",
   "main.ex",
-  "haxe/test/test_case.ex",
   "haxe/test/assert.ex",
   "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
