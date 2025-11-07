@@ -157,7 +157,7 @@ class HeexControlTagTransforms {
             var braceEnd = j - 1;
             // skip whitespace to '>'
             while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
-            if (j >= s.length || s.charAt(j) != '>') { out.add(s.substr(idx, j - idx)); i = j; continue; }
+            if (j >= s.length || s.charAt(j) != '>') { out.add(s.substr(idx, j - idx)); i = j + 1; continue; }
             var openEnd = j + 1;
             var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
             cond = StringTools.replace(cond, "assigns.", "@");
