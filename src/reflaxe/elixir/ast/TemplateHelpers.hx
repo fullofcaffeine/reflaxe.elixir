@@ -378,8 +378,10 @@ class TemplateHelpers {
                 return (inSingle || inDouble) && eqBeforeQuote;
             }
             if (!isInsideAttrValue(s, j)) {
+                // Not an attribute context; copy through and advance past '<%'
                 out.add(s.substr(i, j - i));
-                i = j; continue;
+                i = j + 2; // skip '<%'
+                continue;
             }
             // Attribute name
             var k = j - 1;
