@@ -6,6 +6,10 @@
 -cp ../../std
 -lib reflaxe
 
+# Ensure a stable entrypoint to satisfy Haxe's main resolution for custom targets.
+# A minimal Main class is provided under src_haxe/Main.hx and is not emitted.
+-main Main
+
 # Source directories
 -cp src_haxe
 -cp src_haxe/server
