@@ -248,7 +248,26 @@ class PresenceMacro {
 			}
 		}
 		
-		// Generate internal methods (with self())
+        // Determine fully-qualified module name for this presence module
+        var fqModule:String = (function() {
+            if (localClass != null) {
+                var ct = localClass.get();
+                if (ct.meta.has(":native")) {
+                    var m = ct.meta.extract(":native");
+                    if (m.length > 0 && m[0].params != null && m[0].params.length > 0) {
+                        switch (m[0].params[0].expr) {
+                            case EConst(CString(s, _)): return s;
+                            default:
+                        }
+                    }
+                }
+                var parts = ct.pack.copy(); parts.push(ct.name);
+                return parts.join(".");
+            }
+            return "__MODULE__";
+        })();
+
+        // Generate internal methods (with self())
 		newFields.push(generateInternalTrack());
 		newFields.push(generateInternalUpdate());
 		newFields.push(generateInternalUntrack());
@@ -261,12 +280,17 @@ class PresenceMacro {
 			newFields.push(generateSimpleList(classTopic));
 		}
 		
-		// Generate chainable socket methods
-		newFields.push(generateTrackWithSocket());
-		newFields.push(generateUpdateWithSocket());
-		newFields.push(generateUntrackWithSocket());
-		
-            // Do not generate external wrappers; rely on functions injected by `use Phoenix.Presence`.
+        // Generate chainable socket methods
+        newFields.push(generateTrackWithSocket());
+        newFields.push(generateUpdateWithSocket());
+        newFields.push(generateUntrackWithSocket());
+
+        // Generate external topic-based wrappers expected by snapshots:
+        newFields.push(generateExternalList(fqModule));
+        newFields.push(generateExternalGetByKey());
+        newFields.push(generateExternalTrackTopic());
+        newFields.push(generateExternalUpdateTopic());
+        newFields.push(generateExternalUntrackTopic());
 		
 		return fields.concat(newFields);
 	}
@@ -548,7 +572,7 @@ class PresenceMacro {
 	 * Generate simple list method that uses class-level topic.
 	 * Returns all presences for the configured topic.
 	 */
-	static function generateSimpleList(topic: String): Field {
+    static function generateSimpleList(topic: String): Field {
 		return {
 			name: "listSimple",
 			pos: Context.currentPos(),
@@ -559,17 +583,115 @@ class PresenceMacro {
                     // Use presence module's list/1 with the class-level topic
                     return untyped __elixir__('{0}.list({1})', untyped __elixir__('__MODULE__'), $v{topic});
                 }
-			}),
-			access: [APublic, AStatic, AInline],
-			doc: "List all presences for the class-level topic.",
-			meta: [{name: ":doc", pos: Context.currentPos()}]
-		};
-	}
-	
-	/**
-	 * Generate chainable track method that returns the socket.
-	 * Useful for LiveView's socket chaining pattern.
-	 */
+            }),
+            access: [APublic, AStatic, AInline],
+            doc: "List all presences for the class-level topic.",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
+
+    /**
+     * Generate external list(topic) wrapper always available.
+     */
+    static function generateExternalList(fqModule:String): Field {
+        return {
+            name: "list",
+            pos: Context.currentPos(),
+            kind: FFun({
+                args: [ {name: "topic", type: macro : String} ],
+                ret: macro : Dynamic,
+                expr: macro {
+                    // Emit <FQModule>.list(topic)
+                    return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{fqModule}), topic);
+                }
+            }),
+            access: [APublic, AStatic, AInline],
+            doc: "List presences for a topic via __MODULE__.list/1",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
+
+    /**
+     * Generate external getByKey(topic, key) wrapper.
+     */
+    static function generateExternalGetByKey(): Field {
+        return {
+            name: "getByKey",
+            pos: Context.currentPos(),
+            kind: FFun({
+                args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String} ],
+                ret: macro : Dynamic,
+                expr: macro {
+                    return untyped __elixir__('Phoenix.Presence.get_by_key({0}, {1})', topic, key);
+                }
+            }),
+            access: [APublic, AStatic, AInline],
+            doc: "Get a presence entry by key via __MODULE__.get_by_key/2",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
+
+    /** Topic-based external track wrapper: track(topic, key, meta) */
+    static function generateExternalTrackTopic(): Field {
+        return {
+            name: "track",
+            pos: Context.currentPos(),
+            kind: FFun({
+                params: [ {name: "M"} ],
+                args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String}, {name: "meta", type: macro : M} ],
+                ret: macro : Void,
+                expr: macro {
+                    // Call Phoenix.Presence directly for external usage
+                    untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2})', topic, key, meta);
+                }
+            }),
+            access: [APublic, AStatic, AInline],
+            doc: "External track wrapper using topic; injects self()",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
+
+    /** Topic-based external update wrapper: update(topic, key, meta) */
+    static function generateExternalUpdateTopic(): Field {
+        return {
+            name: "update",
+            pos: Context.currentPos(),
+            kind: FFun({
+                params: [ {name: "M"} ],
+                args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String}, {name: "meta", type: macro : M} ],
+                ret: macro : Void,
+                expr: macro {
+                    untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2})', topic, key, meta);
+                }
+            }),
+            access: [APublic, AStatic, AInline],
+            doc: "External update wrapper using topic; injects self()",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
+
+    /** Topic-based external untrack wrapper: untrack(topic, key) */
+    static function generateExternalUntrackTopic(): Field {
+        return {
+            name: "untrack",
+            pos: Context.currentPos(),
+            kind: FFun({
+                args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String} ],
+                ret: macro : Void,
+                expr: macro {
+                    untyped __elixir__('Phoenix.Presence.untrack({0}, {1})', topic, key);
+                }
+            }),
+            access: [APublic, AStatic, AInline],
+            doc: "External untrack wrapper using topic; injects self()",
+            meta: [{name: ":doc", pos: Context.currentPos()}]
+        };
+    }
+
+    /**
+     * Generate chainable track method that returns the socket.
+     * Useful for LiveView's socket chaining pattern.
+     */
         static function generateTrackWithSocket(): Field {
             return {
                 name: "trackWithSocket",
