@@ -1,9 +1,9 @@
 # Haxe→Elixir compilation for Phoenix LiveView server-side code
 # Generates idiomatic Elixir code for the BEAM VM
 
-# Bring in Reflaxe.Elixir via library, avoid repo-level classpaths to prevent
-# shadowing stdlib and slowing compilation. The library hxml wires macros.
+# Use packaged libraries; do not pull repo-level classpaths (keeps compile fast and isolated)
 -lib reflaxe
+-lib reflaxe.elixir
 
 # Ensure a stable entrypoint to satisfy Haxe's main resolution for custom targets.
 # A minimal Main class is provided under src_haxe/Main.hx and is not emitted.
@@ -26,38 +26,80 @@
 # Application-specific configuration
 -D app_name=TodoApp
 
+# Enable dead code elimination to remove unused functions
+# 
+# DCE (Dead Code Elimination) is CRITICAL for abstract types with operator overloads.
+# Without DCE, ALL @:op annotated methods in abstracts (like Date's comparison operators)
+# are compiled to helper functions in the _Impl_ module, even if never used.
+# 
+# Example: Date abstract defines lt, lte, gt, gte, eq, neq operators
+# - Without DCE: All 6 functions generated in Date_Impl_, causing "unused function" warnings
+# - With DCE full: Only used functions are kept, eliminating warnings
+#
+# DCE levels:
+# - no: Disable DCE (causes unused function warnings)
+# - std: Remove unused std library classes only
+# - full: Remove all unreachable code (RECOMMENDED for production)
+#
+# Note: Reflaxe.Elixir correctly respects DCE - eliminated code is removed before
+# transpilation, resulting in cleaner and smaller Elixir output.
+-dce full
+
 # (Optional) Debug traces for dynamic assignment fix
 # Disabled by default to avoid noisy generation in some modules
 # -D debug_dynamic_assignment
 
-# Exclude client code from server compilation
+# Exclude non-server packs
 --macro exclude('client')
+--macro exclude('test')
+--macro exclude('server.live.UserLive')
+--macro exclude('server.services.UserGenServer')
+--macro exclude('test')
+## Include controllers and contexts in server build (needed for test WAE)
+## (Removed earlier excludes for server.controllers.UserController and contexts.*)
 
-# Define library version and initialize compiler
+# Keep Phoenix CoreComponents even if not referenced directly in Haxe
+# WHY: Phoenix imports TodoAppWeb.CoreComponents via `use TodoAppWeb, :html`
+# which Haxe DCE cannot see. Force-keep to ensure the module is emitted.
+--macro keep('server.components.CoreComponents')
+--macro keep('phoenix.DateFormat')
+--macro keep('phoenix.Sorting')
+
+# Define library version and initialize compiler (via -lib reflaxe.elixir)
 -D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
+
+# (Keep debug flags off for app builds)
+# -D debug_success_unifier
+# -D debug_presence
+
+# Enable deterministic render string → ~H conversion
+-D hxx_string_to_sigil
+
+# Silence compiler debug traces for QA speed and signal clarity
+# Provide both hyphenated and underscored defines for preprocessor gating compatibility
+-D no-traces
+-D no_traces
 
 # Main server classes to compile
 TodoApp
 TodoAppRouter
-TestInjection
 server.live.TodoLive
 server.schemas.Todo
 server.migrations.CreateTodos
-server.live.UserLive
 server.presence.TodoPresence
-controllers.UserController
 server.layouts.Layouts
 server.infrastructure.Repo
 server.infrastructure.Telemetry
 server.infrastructure.Endpoint
 server.infrastructure.TodoAppWeb
+controllers.UserController
 server.components.CoreComponents
-server.infrastructure.Gettext
-server.infrastructure.TranslationBindings
+server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 # PostgrexTypes is now auto-generated from Repo, not a separate class
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix
 -D exclude-balanced-tree
+
+# Force-keep controllers and contexts so WAE passes apply to their outputs
