@@ -278,7 +278,9 @@ class ElixirASTTransformer {
 
             #if hxx_instrument_sys
             var __pelapsed = Std.int((haxe.Timer.stamp() - __pt0) * 1000);
-            #if sys Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + __pelapsed); #end
+            #if macro haxe.macro.Context.warning('[PassTiming] name=' + passConfig.name + ' ms=' + __pelapsed, haxe.macro.Context.currentPos());
+            #elseif sys Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + __pelapsed);
+            #end
             #end
 
             #if debug_ast_snapshots
