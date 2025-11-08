@@ -48,9 +48,14 @@ class InterpolateIIFEWrapTransforms {
             }
             var inner = src.substr(open + 2, (k - 1) - (open + 2));
             var trimmed = StringTools.trim(inner);
-            var alreadyIife = StringTools.startsWith(trimmed, '(fn ->');
-            var body = alreadyIife ? inner : '(fn -> ' + inner + ' end).()';
-            out.add("#{" + body + "}");
+            // Heuristic: don't wrap trivial identifiers or simple dotted fields
+            var isIdent = ~/^[A-Za-z_][A-Za-z0-9_]*$/;
+            var isDotted = ~/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+            var trivial = isIdent.match(trimmed) || isDotted.match(trimmed);
+            if (!trivial && !StringTools.startsWith(trimmed, '(fn ->')) {
+                inner = '(fn -> ' + inner + ' end).()';
+            }
+            out.add("#{" + inner + "}");
             i = k;
         }
         return out.toString();
