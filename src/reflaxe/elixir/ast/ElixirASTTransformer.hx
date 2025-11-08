@@ -2659,11 +2659,22 @@ class ElixirASTTransformer {
                                         }
                                     });
                                 }
+                                // Avoid wrapping trivial expressions (vars, literals, simple field chains)
+                                function isTrivialForInterpolation(x: ElixirAST, depth:Int = 0): Bool {
+                                    if (x == null || depth > 4) return false;
+                                    return switch (x.def) {
+                                        case EVar(_): true;
+                                        case EInteger(_)|EFloat(_)|EBoolean(_)|ENil|EString(_)|EAtom(_): true;
+                                        case EField(obj, _): isTrivialForInterpolation(obj, depth + 1);
+                                        default: false;
+                                    }
+                                }
                                 var sanitizedExpr = sanitizeForInterpolation(exprToInterpolate);
                                 var exprStr = ElixirASTPrinter.printAST(sanitizedExpr);
-                                // If the printed expression contains newlines or standalone assignments,
-                                // wrap it in an IIFE so interpolation remains a single valid expression.
-                                var needsWrapIife = (exprStr.indexOf('\n') != -1) || (exprStr.indexOf(' = ') != -1 && exprStr.indexOf('==') == -1);
+                                var trivial = isTrivialForInterpolation(sanitizedExpr);
+                                // Only wrap when non-trivial and the printed expression clearly spans multiple
+                                // statements or contains a standalone assignment (not a comparison).
+                                var needsWrapIife = !trivial && ((exprStr.indexOf('\n') != -1) || (exprStr.indexOf(' = ') != -1 && exprStr.indexOf('==') == -1));
                                 var printable = needsWrapIife ? '(fn -> ' + exprStr + ' end).()' : exprStr;
                                 result += '#{' + printable + '}';
                             }
