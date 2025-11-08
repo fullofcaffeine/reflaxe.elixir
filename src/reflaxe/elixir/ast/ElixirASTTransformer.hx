@@ -207,9 +207,6 @@ class ElixirASTTransformer {
         var result = ast;
         
         for (passConfig in passes) {
-            #if hxx_instrument_sys
-            var __pt0 = haxe.Timer.stamp();
-            #end
             #if debug_ast_transformer
             #if sys
             Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');
@@ -275,13 +272,6 @@ class ElixirASTTransformer {
 
                 result = passConfig.pass(result);
             }
-
-            #if hxx_instrument_sys
-            var __pelapsed = Std.int((haxe.Timer.stamp() - __pt0) * 1000);
-            #if macro haxe.macro.Context.warning('[PassTiming] name=' + passConfig.name + ' ms=' + __pelapsed, haxe.macro.Context.currentPos());
-            #elseif sys Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + __pelapsed);
-            #end
-            #end
 
             #if debug_ast_snapshots
             // Per‑pass function snapshot: when debug_ast_snapshots_func is set,
@@ -955,7 +945,7 @@ class ElixirASTTransformer {
      */
     static function removeRedundantEnumExtractionPass(ast: ElixirAST): ElixirAST {
         #if debug_redundant_extraction
-        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Debug mode enabled'); #end
+        trace('[RemoveRedundantEnumExtraction] Debug mode enabled');
         #end
 
         // Track the case target variable name for nested detection
@@ -976,13 +966,13 @@ class ElixirASTTransformer {
                         default: 'complex expression';
                     };
                     #if debug_redundant_extraction
-                    #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Processing ECase with ${clauses.length} clauses, target: $targetDebug'); #end
+                    trace('[RemoveRedundantEnumExtraction] Processing ECase with ${clauses.length} clauses, target: $targetDebug');
                     #end
                     // Check if this case has an enum binding plan
                     currentCaseHasBindingPlan = node.metadata != null && node.metadata.hasEnumBindingPlan == true;
                     #if debug_enum_extraction
                     if (currentCaseHasBindingPlan) {
-                        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Found ECase with hasEnumBindingPlan flag'); #end
+                        trace('[RemoveRedundantEnumExtraction] Found ECase with hasEnumBindingPlan flag');
                     }
                     #end
 
@@ -1022,7 +1012,7 @@ class ElixirASTTransformer {
                                 '{${elemStrs.join(", ")}}';
                             default: 'other pattern';
                         };
-                        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Clause $i pattern: $patternDebug'); #end
+                        trace('[RemoveRedundantEnumExtraction] Clause $i pattern: $patternDebug');
 
                         // Propagate the binding plan flag to the clause body
                         if (currentCaseHasBindingPlan && body != null) {
@@ -1052,7 +1042,7 @@ class ElixirASTTransformer {
                                     if (expr.metadata != null && expr.metadata.redundantEnumExtraction == true) {
                                         isRedundant = true;
                                         #if debug_redundant_extraction
-                                                #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Found node marked as redundant via metadata'); #end
+                                        trace('[RemoveRedundantEnumExtraction] Found node marked as redundant via metadata');
                                         #end
                                     }
 
@@ -1067,11 +1057,11 @@ class ElixirASTTransformer {
                                                     default: Type.enumConstructor(rhs.def);
                                                 };
                                                 #if debug_redundant_extraction
-                                                #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)'); #end
+                                                trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
                                                 #end
                                             } else {
                                                 #if debug_redundant_extraction
-                                                #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = null (skipped assignment)'); #end
+                                                trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = null (skipped assignment)');
                                                 #end
                                                 // Mark this as redundant since it has no RHS
                                                 isRedundant = true;
@@ -1084,14 +1074,14 @@ class ElixirASTTransformer {
                                         }) {
                                             isRedundant = true;
                                             #if debug_redundant_extraction
-                                            #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Removing self-assignment: $varName = $varName'); #end
+                                            trace('[RemoveRedundantEnumExtraction] Removing self-assignment: $varName = $varName');
                                             #end
                                         }
                                         // Check if the target variable itself is a temp pattern var
                                         else if (reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(varName)) {
                                             isRedundant = true;
                                             #if debug_redundant_extraction
-                                            #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Removing temp-var assignment: $varName = ...'); #end
+                                            trace('[RemoveRedundantEnumExtraction] Removing temp-var assignment: $varName = ...');
                                             #end
                                         }
                                         // Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
@@ -1113,7 +1103,7 @@ class ElixirASTTransformer {
                                                     if (v == "g" || v == "_g") {
                                                         isRedundant = true;
                                                         #if debug_redundant_extraction
-                                                        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent temp var)'); #end
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent temp var)');
                                                         #end
                                                     }
                                                     // Check for numbered temp vars in RHS: g1, g2, etc.
@@ -1121,7 +1111,7 @@ class ElixirASTTransformer {
                                                              v.length == 2 && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
                                                         isRedundant = true;
                                                         #if debug_redundant_extraction
-                                                        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent numbered temp var)'); #end
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent numbered temp var)');
                                                         #end
                                                     }
                                                     // Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
@@ -1129,7 +1119,7 @@ class ElixirASTTransformer {
                                                              v.charAt(2) >= '0' && v.charAt(2) <= '9') {
                                                         isRedundant = true;
                                                         #if debug_redundant_extraction
-                                                        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent underscore temp var)'); #end
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent underscore temp var)');
                                                         #end
                                                     }
                                                     // Also check for "g = result" pattern where result is case target
@@ -1146,26 +1136,26 @@ class ElixirASTTransformer {
                                                              varName.charAt(2) <= '9')) {
                                                             isRedundant = true;
                                                             #if debug_redundant_extraction
-                                                            #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Removing incorrect assignment: $varName = $v (pattern already extracted value)'); #end
+                                                            trace('[RemoveRedundantEnumExtraction] Removing incorrect assignment: $varName = $v (pattern already extracted value)');
                                                             #end
                                                         }
                                                     }
 
                                                 case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
                                                     #if debug_redundant_extraction
-                                                    #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction]   - Found elem() call'); #end
+                                                    trace('[RemoveRedundantEnumExtraction]   - Found elem() call');
                                                     #end
                                                     // Check if elem is extracting from the case target
                                                     var isTargetMatch = switch(targetExpr.def) {
                                                         case EVar(v):
                                                             #if debug_redundant_extraction
-                                                            #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction]   - elem() target: $v, case target: $caseTargetVar'); #end
+                                                            trace('[RemoveRedundantEnumExtraction]   - elem() target: $v, case target: $caseTargetVar');
                                                             #end
                                                             // Check if this matches the case target variable
                                                             v == caseTargetVar;
                                                         default:
                                                             #if debug_redundant_extraction
-                                                            #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction]   - elem() target is not a simple variable'); #end
+                                                            trace('[RemoveRedundantEnumExtraction]   - elem() target is not a simple variable');
                                                             #end
                                                             false;
                                                     };
@@ -1181,12 +1171,12 @@ class ElixirASTTransformer {
                                                             #end
                                                         } else {
                                                             #if debug_redundant_extraction
-                                                            #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] Not redundant - varName: $varName does not match g pattern'); #end
+                                                            trace('[RemoveRedundantEnumExtraction] Not redundant - varName: $varName does not match g pattern');
                                                             #end
                                                         }
                                                     } else {
                                                         #if debug_redundant_extraction
-                                                        #if debug_ast_transformer trace('[RemoveRedundantEnumExtraction] elem() not extracting from case target'); #end
+                                                        trace('[RemoveRedundantEnumExtraction] elem() not extracting from case target');
                                                         #end
                                                     }
                                                 default:
@@ -1646,8 +1636,6 @@ class ElixirASTTransformer {
                 case EModule(name, attributes, body):
                     // Handle module nodes constructed via EModule (ModuleBuilder default)
                     // Inject `use Phoenix.Component` at the top of the body when ~H is present
-                    // Skip Layouts modules which should prefer `use <App>Web, :html`
-                    if (name != null && StringTools.endsWith(name, ".Layouts")) return node;
                     var hasImport = false;
                     // Scan existing body for EUse/EImport Phoenix.Component
                     for (stmt in body) switch (stmt.def) {
@@ -1952,13 +1940,6 @@ class ElixirASTTransformer {
                                 }
                             }
                             if (contentHtml == null) return node;
-                            // Safety gate: Only inline when the captured string has no HXX/Haxe-style
-                            // interpolations. Robust inlining (with interpolation conversion) is handled
-                            // later by HeexInlineCapturedContentTransforms. This pass should avoid
-                            // interfering with HXX templates.
-                            if (contentHtml.indexOf("${") != -1 || contentHtml.indexOf("#{") != -1 || contentHtml.indexOf("HXX.") != -1 || contentHtml.indexOf("hxx.") != -1) {
-                                return node;
-                            }
                             // Find ~H that references Phoenix.HTML.raw(content) (allow EParen wrapping)
                             var sigilIdx: Int = -1;
                             for (i in 0...stmts.length) {
@@ -2035,8 +2016,8 @@ class ElixirASTTransformer {
                             rewriteIfIncrements(thenB);
                     };
                     var newElse = if (elseB != null) switch (elseB.def) {
-                        case EBinary(Add, {def: EVar(varName)}, rhsExpr):
-                            makeAST(EMatch(PVar(varName), makeAST(EBinary(Add, makeAST(EVar(varName)), rewriteIfIncrements(rhsExpr)))));
+                        case EBinary(Add, {def: EVar(v2)}, rhs2):
+                            makeAST(EMatch(PVar(v2), makeAST(EBinary(Add, makeAST(EVar(v2)), rewriteIfIncrements(rhs2)))));
                         case EBinary(Add, l2, r2) if (isNumericLiteral(l2) && isNumericLiteral(r2)):
                             makeAST(ENil);
                         default:
@@ -2623,14 +2604,11 @@ class ElixirASTTransformer {
                                 // First recursively transform the expression
                                 var transformedExpr = transform(part.expr);
                                 
-                                // Strip unnecessary to_string calls since interpolation auto-converts
+                                // Strip unnecessary .to_string() calls since Elixir auto-converts in interpolation
                                 var exprToInterpolate = switch(transformedExpr.def) {
                                     case ECall(target, "to_string", []) if (target != null):
-                                        // instance.to_string() → instance
+                                        // Remove the .to_string() wrapper, use the target directly
                                         target;
-                                    case ERemoteCall({def: EVar("Kernel")}, "to_string", [arg]) if (arg != null):
-                                        // Kernel.to_string(arg) → arg
-                                        arg;
                                     default:
                                         transformedExpr;
                                 };
@@ -2668,26 +2646,35 @@ class ElixirASTTransformer {
                                                 }
                                                 if (newArgs != args) makeAST(ECall(t, name, newArgs)) else x;
                                             case ERemoteCall(mod, fname, rargs):
-                                                var rewrittenArgs = [];
-                                                for (argNode in rargs) switch (argNode.def) {
-                                                    case EBlock(statements) if (statements != null && statements.length > 1):
-                                                        rewrittenArgs.push(makeAST(ECall(makeAST(EFn([{ args: [], guard: null, body: argNode }])), "", [])));
+                                                var newRArgs = [];
+                                                for (a2 in rargs) switch (a2.def) {
+                                                    case EBlock(sts2) if (sts2 != null && sts2.length > 1):
+                                                        newRArgs.push(makeAST(ECall(makeAST(EFn([{ args: [], guard: null, body: a2 }])), "", [])));
                                                     default:
-                                                        rewrittenArgs.push(argNode);
+                                                        newRArgs.push(a2);
                                                 }
-                                                if (rewrittenArgs != rargs) makeAST(ERemoteCall(mod, fname, rewrittenArgs)) else x;
+                                                if (newRArgs != rargs) makeAST(ERemoteCall(mod, fname, newRArgs)) else x;
                                             default:
                                                 x;
                                         }
                                     });
                                 }
+                                // Avoid wrapping trivial expressions (vars, literals, simple field chains)
+                                function isTrivialForInterpolation(x: ElixirAST, depth:Int = 0): Bool {
+                                    if (x == null || depth > 4) return false;
+                                    return switch (x.def) {
+                                        case EVar(_): true;
+                                        case EInteger(_)|EFloat(_)|EBoolean(_)|ENil|EString(_)|EAtom(_): true;
+                                        case EField(obj, _): isTrivialForInterpolation(obj, depth + 1);
+                                        default: false;
+                                    }
+                                }
                                 var sanitizedExpr = sanitizeForInterpolation(exprToInterpolate);
                                 var exprStr = ElixirASTPrinter.printAST(sanitizedExpr);
-                                // Wrap only when the printed expression likely contains multiple statements
-                                // (assignments or explicit separators). Multi-line expressions like case/cond
-                                // are valid in interpolation and should not be wrapped just for newlines.
-                                var hasSemicolon = (exprStr.indexOf(';') != -1);
-                                var needsWrapIife = hasSemicolon;
+                                var trivial = isTrivialForInterpolation(sanitizedExpr);
+                                // Only wrap when non-trivial and the printed expression clearly spans multiple
+                                // statements or contains a standalone assignment (not a comparison).
+                                var needsWrapIife = !trivial && ((exprStr.indexOf('\n') != -1) || (exprStr.indexOf(' = ') != -1 && exprStr.indexOf('==') == -1));
                                 var printable = needsWrapIife ? '(fn -> ' + exprStr + ' end).()' : exprStr;
                                 result += '#{' + printable + '}';
                             }
