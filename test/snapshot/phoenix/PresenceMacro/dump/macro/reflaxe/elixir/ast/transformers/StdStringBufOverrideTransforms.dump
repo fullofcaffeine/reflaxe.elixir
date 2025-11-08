@@ -1,0 +1,79 @@
+class reflaxe.elixir.ast.transformers.StdStringBufOverrideTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (name == "StringBuf"):
+		var blk = bodyBlock(n.metadata, n.pos);
+		makeASTWithMeta(EModule(name, attrs, [blk]), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if (name == "StringBuf"):
+		makeASTWithMeta(EDefmodule(name, bodyBlock(n.metadata, n.pos)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "StringBuf") {
+								var blk = {
+									var meta = cast n.metadata;
+									var pos = n.pos;
+									var code = ("  defstruct parts: []\n" + "  def add(struct, x) do\n" + "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" + "    %{struct | parts: struct.parts ++ [str]}\n" + "  end\n" + "  def add_char(struct, c) do\n" + "    %{struct | parts: struct.parts ++ [<<c::utf8>>]}\n" + "  end\n" + "  def add_sub(struct, s, pos, len) do\n" + "    if Kernel.is_nil(s), do: nil\n" + "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" + "    %{struct | parts: struct.parts ++ [substr]}\n" + "  end\n" + "  def to_string(struct) do\n" + "    IO.iodata_to_binary(struct.parts)\n" + "  end\n");
+									var raw = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(code), metadata : {}, pos : pos};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, [blk]), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name == "StringBuf") {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, {
+									var meta = cast n.metadata;
+									var pos = n.pos;
+									var code = "  defstruct parts: []\n" + "  def add(struct, x) do\n" + "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" + "    %{struct | parts: struct.parts ++ [str]}\n" + "  end\n" + "  def add_char(struct, c) do\n" + "    %{struct | parts: struct.parts ++ [<<c::utf8>>]}\n" + "  end\n" + "  def add_sub(struct, s, pos, len) do\n" + "    if Kernel.is_nil(s), do: nil\n" + "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" + "    %{struct | parts: struct.parts ++ [substr]}\n" + "  end\n" + "  def to_string(struct) do\n" + "    IO.iodata_to_binary(struct.parts)\n" + "  end\n";
+									var raw = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(code), metadata : {}, pos : pos};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+								}), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function bodyBlock(meta:Dynamic, pos:haxe.macro.Position) {
+		var code = ("  defstruct parts: []\n" + "  def add(struct, x) do\n" + "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" + "    %{struct | parts: struct.parts ++ [str]}\n" + "  end\n" + "  def add_char(struct, c) do\n" + "    %{struct | parts: struct.parts ++ [<<c::utf8>>]}\n" + "  end\n" + "  def add_sub(struct, s, pos, len) do\n" + "    if Kernel.is_nil(s), do: nil\n" + "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" + "    %{struct | parts: struct.parts ++ [substr]}\n" + "  end\n" + "  def to_string(struct) do\n" + "    IO.iodata_to_binary(struct.parts)\n" + "  end\n");
+		var raw = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(code), metadata : {}, pos : pos};
+		};
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+	}
+}

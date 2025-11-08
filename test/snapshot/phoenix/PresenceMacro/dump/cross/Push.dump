@@ -1,0 +1,5 @@
+@:realPath("phoenix.Push") @:native("Push")
+extern class Push {
+
+	function receive(status:String, callback:Dynamic -> Void):Push;
+}

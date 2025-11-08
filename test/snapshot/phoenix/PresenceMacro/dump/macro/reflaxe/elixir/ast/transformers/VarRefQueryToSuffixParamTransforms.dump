@@ -1,0 +1,188 @@
+class reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var p = detect(args);
+		if (p == null) n else {
+			{
+				var hasQuery = containsQuery(body);
+				if (hasQuery) Sys.println("[VarRefQueryToSuffixParam] def " + name + " has free query; param=" + p);
+			};
+			makeASTWithMeta(EDef(name, args, guards, rewrite(body, p)), n.metadata, n.pos);
+		};	
+	case EDefp(name2, args2, guards2, body2):
+		var p2 = detect(args2);
+		if (p2 == null) n else {
+			{
+				var hasQuery2 = containsQuery(body2);
+				if (hasQuery2) Sys.println("[VarRefQueryToSuffixParam] defp " + name2 + " has free query; param=" + p2);
+			};
+			makeASTWithMeta(EDefp(name2, args2, guards2, rewrite(body2, p2)), n.metadata, n.pos);
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var p = reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.detect(args);
+								if (p == null) {
+									n;
+								} else {
+									{
+										var hasQuery = reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.containsQuery(body);
+										if (hasQuery) {
+											Sys.println("[VarRefQueryToSuffixParam] def " + name + " has free query; param=" + p);
+										};
+									};
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.rewrite(body, p));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var p2 = reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.detect(args2);
+								if (p2 == null) {
+									n;
+								} else {
+									{
+										var hasQuery2 = reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.containsQuery(body2);
+										if (hasQuery2) {
+											Sys.println("[VarRefQueryToSuffixParam] defp " + name2 + " has free query; param=" + p2);
+										};
+									};
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.rewrite(body2, p2));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function detect(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var one = null;
+		var cnt = 0;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(n) if (StringTools.endsWith(n, "_query")):
+		one = n;
+		cnt++;	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var n = `;
+						if (StringTools.endsWith(n, "_query")) {
+							one = n;
+							cnt ++;
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return if (cnt == 1) {
+			one;
+		} else {
+			null;
+		};
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST, param:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(nm) if (nm == "query"):
+		Sys.println("[VarRefQueryToSuffixParam] query -> " + param);
+		makeASTWithMeta(EVar(param), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == "query") {
+							Sys.println("[VarRefQueryToSuffixParam] query -> " + param);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(param), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function containsQuery(ast:reflaxe.elixir.ast.ElixirAST) {
+		var found = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0]) {
+				return x;
+			};
+			@:ast(switch (x.def) {
+	case EVar(nm) if (nm == "query"):
+		found = true;	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == "query") {
+							found[0] = true;
+						} else {};
+					};
+				} else {};
+			};
+			return x;
+		});
+		return found[0];
+	}
+}

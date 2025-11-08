@@ -1,0 +1,69 @@
+class reflaxe.elixir.ast.transformers.LiveNoreplyAtomFixTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ETuple(items) if (items != null && items.length >= 1):
+		var first = items[0];
+		switch (first.def) {
+			case EAtom(atom) if (atom == "no_reply"):
+				var newItems = items.copy();
+				newItems[0] = makeAST(EAtom("noreply"));
+				makeASTWithMeta(ETuple(newItems), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 16) {
+					var ` = `[0];
+					{
+						var items = `;
+						if (items != null && items.length >= 1) {
+							var first = items[0];
+							@:ast(switch (first.def) {
+	case EAtom(atom) if (atom == "no_reply"):
+		var newItems = items.copy();
+		newItems[0] = makeAST(EAtom("noreply"));
+		makeASTWithMeta(ETuple(newItems), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = first.def;
+								if (enumIndex ` == 31) {
+									var ` = `[0];
+									{
+										var atom = `;
+										if (atom == "no_reply") {
+											var newItems = items.copy();
+											newItems[0] = {
+												var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+													var this;
+													this = reflaxe.elixir.ast.NameUtils.toSnakeCase("noreply");
+													cast this;
+												});
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.ETuple(newItems), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

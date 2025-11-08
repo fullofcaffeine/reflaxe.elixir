@@ -1,0 +1,43 @@
+class reflaxe.helpers.SyntaxHelper {
+
+	@:value({ tabCount : 1 })
+	public static function tab(s:String, tabCount:Int = 1) {
+		var tabStr = "\t";
+		if (tabCount > 1) {
+			{
+				var ` = 1;
+				var ` = tabCount;
+				while (` < `) {
+					var i = ` ++;
+					tabStr += "\t";
+				};
+			};
+		};
+		var lines = s.split("\n");
+		{
+			var ` = 0;
+			var ` = lines.length;
+			while (` < `) {
+				var i = ` ++;
+				if (lines[i].length > 0 && ! reflaxe.helpers.SyntaxHelper.isOnlySpaces(lines[i])) {
+					lines[i] = tabStr + lines[i];
+				};
+			};
+		};
+		return lines.join("\n");
+	}
+
+	static function isOnlySpaces(s:String) {
+		{
+			var ` = 0;
+			var ` = s.length;
+			while (` < `) {
+				var i = ` ++;
+				if (! StringTools.isSpace(s, i)) {
+					return false;
+				};
+			};
+		};
+		return true;
+	}
+}

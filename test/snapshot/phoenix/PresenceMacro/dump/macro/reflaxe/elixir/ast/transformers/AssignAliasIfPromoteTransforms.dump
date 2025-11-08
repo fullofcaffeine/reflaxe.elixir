@@ -1,0 +1,576 @@
+class reflaxe.elixir.ast.transformers.AssignAliasIfPromoteTransforms {
+
+	static inline function replaceVar(n:reflaxe.elixir.ast.ElixirAST, from:String, to:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == from) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var i = 0;
+		while (i < stmts.length) {
+			if (i + 1 < stmts.length) {
+				switch (stmts[i].def) {
+					case EBinary(Match, { def : EVar(a) }, { def : EVar(b) }):
+						switch (stmts[i + 1].def) {
+							case EIf(cond, thenE, elseE):
+								var elseIsB = switch (elseE.def) {
+									case EVar(bb) if (bb == b):
+										true;									
+									default:
+										false;									
+								};
+								if (elseIsB) {
+									var condHasA = false;
+									ElixirASTTransformer.transformNode(cond, function(x:ElixirAST):ElixirAST {
+										switch (x.def) {
+											case EVar(v) if (v == a):
+												condHasA = true;											
+											default:
+										};
+										return x;
+									});
+									if (condHasA) {
+										var newCond = replaceVar(cond, a, b);
+										var newThen = replaceVar(thenE, a, b);
+										out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), stmts[i].metadata, stmts[i].pos), makeASTWithMeta(EIf(newCond, newThen, elseE), stmts[i + 1].metadata, stmts[i + 1].pos)), stmts[i].metadata, stmts[i].pos));
+										i += 2;
+										continue;
+									};
+								};							
+							default:
+						};					
+					default:
+				};
+			};
+			out.push(stmts[i]);
+			i++;
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(statements):
+		var output:Array<ElixirAST> = [];
+		var index = 0;
+		while (index < statements.length) {
+			if (index + 1 < statements.length) {
+				switch (statements[index].def) {
+					case EBinary(Match, { def : EVar(leftVar) }, { def : EVar(rightVar) }):
+						switch (statements[index + 1].def) {
+							case EIf(condExpr, thenExpr, elseExpr):
+								var elseIsRightVar = switch (elseExpr.def) {
+									case EVar(ev) if (ev == rightVar):
+										true;									
+									default:
+										false;									
+								};
+								if (elseIsRightVar) {
+									var condReferencesLeftVar = false;
+									ElixirASTTransformer.transformNode(condExpr, function(x:ElixirAST):ElixirAST {
+										switch (x.def) {
+											case EVar(v) if (v == leftVar):
+												condReferencesLeftVar = true;											
+											default:
+										};
+										return x;
+									});
+									if (condReferencesLeftVar) {
+										var rewrittenCond = replaceVar(condExpr, leftVar, rightVar);
+										var rewrittenThen = replaceVar(thenExpr, leftVar, rightVar);
+										output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(leftVar), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(rewrittenCond, rewrittenThen, elseExpr), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+										index += 2;
+										continue;
+									};
+								};							
+							default:
+						};					
+					default:
+				};
+			};
+			output.push(statements[index]);
+			index++;
+		};
+		makeASTWithMeta(EDo(output), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								var i = 0;
+								while (i < stmts.length) {
+									if (i + 1 < stmts.length) {
+										@:ast(switch (stmts[i].def) {
+	case EBinary(Match, { def : EVar(a) }, { def : EVar(b) }):
+		switch (stmts[i + 1].def) {
+			case EIf(cond, thenE, elseE):
+				var elseIsB = switch (elseE.def) {
+					case EVar(bb) if (bb == b):
+						true;					
+					default:
+						false;					
+				};
+				if (elseIsB) {
+					var condHasA = false;
+					ElixirASTTransformer.transformNode(cond, function(x:ElixirAST):ElixirAST {
+						switch (x.def) {
+							case EVar(v) if (v == a):
+								condHasA = true;							
+							default:
+						};
+						return x;
+					});
+					if (condHasA) {
+						var newCond = replaceVar(cond, a, b);
+						var newThen = replaceVar(thenE, a, b);
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), stmts[i].metadata, stmts[i].pos), makeASTWithMeta(EIf(newCond, newThen, elseE), stmts[i + 1].metadata, stmts[i + 1].pos)), stmts[i].metadata, stmts[i].pos));
+						i += 2;
+						continue;
+					};
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = stmts[i].def;
+											if (enumIndex ` == 26) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var b = `;
+																		var a = `;
+																		{
+																			@:ast(switch (stmts[i + 1].def) {
+	case EIf(cond, thenE, elseE):
+		var elseIsB = switch (elseE.def) {
+			case EVar(bb) if (bb == b):
+				true;			
+			default:
+				false;			
+		};
+		if (elseIsB) {
+			var condHasA = false;
+			ElixirASTTransformer.transformNode(cond, function(x:ElixirAST):ElixirAST {
+				switch (x.def) {
+					case EVar(v) if (v == a):
+						condHasA = true;					
+					default:
+				};
+				return x;
+			});
+			if (condHasA) {
+				var newCond = replaceVar(cond, a, b);
+				var newThen = replaceVar(thenE, a, b);
+				out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), stmts[i].metadata, stmts[i].pos), makeASTWithMeta(EIf(newCond, newThen, elseE), stmts[i + 1].metadata, stmts[i + 1].pos)), stmts[i].metadata, stmts[i].pos));
+				i += 2;
+				continue;
+			};
+		};	
+	default:
+}) {
+																				var ` = stmts[i + 1].def;
+																				if (enumIndex ` == 10) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					var ` = `[2];
+																					{
+																						var cond = `;
+																						var thenE = `;
+																						var elseE = `;
+																						{
+																							var elseIsB = @:ast(switch (elseE.def) {
+	case EVar(bb) if (bb == b):
+		true;	
+	default:
+		false;	
+}) {
+																								var ` = elseE.def;
+																								if (enumIndex ` == 38) {
+																									var ` = `[0];
+																									{
+																										var bb = `;
+																										if (bb == b) {
+																											true;
+																										} else {
+																											false;
+																										};
+																									};
+																								} else {
+																									false;
+																								};
+																							};
+																							if (elseIsB) {
+																								var condHasA = [false];
+																								reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cond, function(x:reflaxe.elixir.ast.ElixirAST) {
+																									@:ast(switch (x.def) {
+	case EVar(v) if (v == a):
+		condHasA = true;	
+	default:
+}) {
+																										var ` = x.def;
+																										if (enumIndex ` == 38) {
+																											var ` = `[0];
+																											{
+																												var v = `;
+																												if (v == a) {
+																													condHasA[0] = true;
+																												} else {};
+																											};
+																										} else {};
+																									};
+																									return x;
+																								});
+																								if (condHasA[0]) {
+																									var newCond = {
+																										var from = a;
+																										var to = b;
+																										reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cond, function(x:reflaxe.elixir.ast.ElixirAST) {
+																											return @:ast(switch (x.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																												var ` = x.def;
+																												if (enumIndex ` == 38) {
+																													var ` = `[0];
+																													{
+																														var v = `;
+																														if (v == from) {
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+																														} else {
+																															x;
+																														};
+																													};
+																												} else {
+																													x;
+																												};
+																											};
+																										});
+																									};
+																									var newThen = {
+																										var from = a;
+																										var to = b;
+																										reflaxe.elixir.ast.ElixirASTTransformer.transformNode(thenE, function(x:reflaxe.elixir.ast.ElixirAST) {
+																											return @:ast(switch (x.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																												var ` = x.def;
+																												if (enumIndex ` == 38) {
+																													var ` = `[0];
+																													{
+																														var v = `;
+																														if (v == from) {
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+																														} else {
+																															x;
+																														};
+																													};
+																												} else {
+																													x;
+																												};
+																											};
+																										});
+																									};
+																									out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a), metadata : stmts[i].metadata, pos : stmts[i].pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(newCond, newThen, elseE), metadata : stmts[i + 1].metadata, pos : stmts[i + 1].pos}), metadata : stmts[i].metadata, pos : stmts[i].pos});
+																									i += 2;
+																									continue;
+																								};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											} else {};
+										};
+									};
+									out.push(stmts[i]);
+									i ++;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var statements = `;
+							{
+								var output = [];
+								var index = 0;
+								while (index < statements.length) {
+									if (index + 1 < statements.length) {
+										@:ast(switch (statements[index].def) {
+	case EBinary(Match, { def : EVar(leftVar) }, { def : EVar(rightVar) }):
+		switch (statements[index + 1].def) {
+			case EIf(condExpr, thenExpr, elseExpr):
+				var elseIsRightVar = switch (elseExpr.def) {
+					case EVar(ev) if (ev == rightVar):
+						true;					
+					default:
+						false;					
+				};
+				if (elseIsRightVar) {
+					var condReferencesLeftVar = false;
+					ElixirASTTransformer.transformNode(condExpr, function(x:ElixirAST):ElixirAST {
+						switch (x.def) {
+							case EVar(v) if (v == leftVar):
+								condReferencesLeftVar = true;							
+							default:
+						};
+						return x;
+					});
+					if (condReferencesLeftVar) {
+						var rewrittenCond = replaceVar(condExpr, leftVar, rightVar);
+						var rewrittenThen = replaceVar(thenExpr, leftVar, rightVar);
+						output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(leftVar), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(rewrittenCond, rewrittenThen, elseExpr), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+						index += 2;
+						continue;
+					};
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = statements[index].def;
+											if (enumIndex ` == 26) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var rightVar = `;
+																		var leftVar = `;
+																		{
+																			@:ast(switch (statements[index + 1].def) {
+	case EIf(condExpr, thenExpr, elseExpr):
+		var elseIsRightVar = switch (elseExpr.def) {
+			case EVar(ev) if (ev == rightVar):
+				true;			
+			default:
+				false;			
+		};
+		if (elseIsRightVar) {
+			var condReferencesLeftVar = false;
+			ElixirASTTransformer.transformNode(condExpr, function(x:ElixirAST):ElixirAST {
+				switch (x.def) {
+					case EVar(v) if (v == leftVar):
+						condReferencesLeftVar = true;					
+					default:
+				};
+				return x;
+			});
+			if (condReferencesLeftVar) {
+				var rewrittenCond = replaceVar(condExpr, leftVar, rightVar);
+				var rewrittenThen = replaceVar(thenExpr, leftVar, rightVar);
+				output.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(leftVar), statements[index].metadata, statements[index].pos), makeASTWithMeta(EIf(rewrittenCond, rewrittenThen, elseExpr), statements[index + 1].metadata, statements[index + 1].pos)), statements[index].metadata, statements[index].pos));
+				index += 2;
+				continue;
+			};
+		};	
+	default:
+}) {
+																				var ` = statements[index + 1].def;
+																				if (enumIndex ` == 10) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					var ` = `[2];
+																					{
+																						var condExpr = `;
+																						var thenExpr = `;
+																						var elseExpr = `;
+																						{
+																							var elseIsRightVar = @:ast(switch (elseExpr.def) {
+	case EVar(ev) if (ev == rightVar):
+		true;	
+	default:
+		false;	
+}) {
+																								var ` = elseExpr.def;
+																								if (enumIndex ` == 38) {
+																									var ` = `[0];
+																									{
+																										var ev = `;
+																										if (ev == rightVar) {
+																											true;
+																										} else {
+																											false;
+																										};
+																									};
+																								} else {
+																									false;
+																								};
+																							};
+																							if (elseIsRightVar) {
+																								var condReferencesLeftVar = [false];
+																								reflaxe.elixir.ast.ElixirASTTransformer.transformNode(condExpr, function(x:reflaxe.elixir.ast.ElixirAST) {
+																									@:ast(switch (x.def) {
+	case EVar(v) if (v == leftVar):
+		condReferencesLeftVar = true;	
+	default:
+}) {
+																										var ` = x.def;
+																										if (enumIndex ` == 38) {
+																											var ` = `[0];
+																											{
+																												var v = `;
+																												if (v == leftVar) {
+																													condReferencesLeftVar[0] = true;
+																												} else {};
+																											};
+																										} else {};
+																									};
+																									return x;
+																								});
+																								if (condReferencesLeftVar[0]) {
+																									var rewrittenCond = {
+																										var from = leftVar;
+																										var to = rightVar;
+																										reflaxe.elixir.ast.ElixirASTTransformer.transformNode(condExpr, function(x:reflaxe.elixir.ast.ElixirAST) {
+																											return @:ast(switch (x.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																												var ` = x.def;
+																												if (enumIndex ` == 38) {
+																													var ` = `[0];
+																													{
+																														var v = `;
+																														if (v == from) {
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+																														} else {
+																															x;
+																														};
+																													};
+																												} else {
+																													x;
+																												};
+																											};
+																										});
+																									};
+																									var rewrittenThen = {
+																										var from = leftVar;
+																										var to = rightVar;
+																										reflaxe.elixir.ast.ElixirASTTransformer.transformNode(thenExpr, function(x:reflaxe.elixir.ast.ElixirAST) {
+																											return @:ast(switch (x.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																												var ` = x.def;
+																												if (enumIndex ` == 38) {
+																													var ` = `[0];
+																													{
+																														var v = `;
+																														if (v == from) {
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+																														} else {
+																															x;
+																														};
+																													};
+																												} else {
+																													x;
+																												};
+																											};
+																										});
+																									};
+																									output.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(leftVar), metadata : statements[index].metadata, pos : statements[index].pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(rewrittenCond, rewrittenThen, elseExpr), metadata : statements[index + 1].metadata, pos : statements[index + 1].pos}), metadata : statements[index].metadata, pos : statements[index].pos});
+																									index += 2;
+																									continue;
+																								};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											} else {};
+										};
+									};
+									output.push(statements[index]);
+									index ++;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(output), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

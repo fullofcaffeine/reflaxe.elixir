@@ -1,0 +1,191 @@
+class reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(scrut, clauses):
+		var scrutVar:Null<String> = switch (scrut.def) {
+			case EVar(v):
+				v;			
+			default:
+				null;			
+		};
+		if (scrutVar == null) return n;
+		var out:Array<ECaseClause> = [];
+		for (cl  in  clauses) out.push(rewriteClause(cl, scrutVar));
+		makeASTWithMeta(ECase(scrut, out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var scrut = `;
+						var clauses = `;
+						{
+							var scrutVar = @:ast(switch (scrut.def) {
+	case EVar(v):
+		v;	
+	default:
+		null;	
+}) {
+								var ` = scrut.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v = `;
+										{
+											v;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							if (scrutVar == null) {
+								return n;
+							};
+							var out = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									out.push(reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.rewriteClause(cl, scrutVar));
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(scrut, out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewriteClause(cl:reflaxe.elixir.ast.ECaseClause, scrutVar:String) {
+		var binder = reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.extractSecondBinder(cl.pattern);
+		if (binder == null) {
+			return cl;
+		};
+		var newBody = reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.substituteVar(cl.body, scrutVar, binder);
+		return {pattern : cl.pattern, guard : cl.guard, body : newBody};
+	}
+
+	static function extractSecondBinder(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PTuple(items) if (items.length == 2):
+		switch (items[1]) {
+			case PVar(n):
+				n;			
+			case PPin(inner):
+				switch (inner) {
+					case PVar(n2):
+						n2;					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var items = `;
+				if (items.length == 2) {
+					@:ast(switch (items[1]) {
+	case PVar(n):
+		n;	
+	case PPin(inner):
+		switch (inner) {
+			case PVar(n2):
+				n2;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+						var ` = items[1];
+						switch (enumIndex `) {
+							case 0: {
+								var ` = `[0];
+								{
+									var n = `;
+									{
+										n;
+									};
+								};
+							};
+							case 7: {
+								var ` = `[0];
+								{
+									var inner = `;
+									{
+										@:ast(switch (inner) {
+	case PVar(n2):
+		n2;	
+	default:
+		null;	
+}) if (enumIndex inner == 0) {
+											var ` = inner[0];
+											{
+												var n2 = `;
+												{
+													n2;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+								};
+							};
+							default: {
+								null;
+							}
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+
+	static function substituteVar(body:reflaxe.elixir.ast.ElixirAST, from:String, to:String) {
+		if (from == to) {
+			return body;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == from) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

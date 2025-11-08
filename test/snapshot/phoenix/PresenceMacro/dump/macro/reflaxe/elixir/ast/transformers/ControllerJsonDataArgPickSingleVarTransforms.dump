@@ -1,0 +1,268 @@
+class reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (isController(name)):
+		var out = [for (b  in  body) cleanse(b)];
+		makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock) if (isController(name2)):
+		makeASTWithMeta(EDefmodule(name2, cleanse(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name != null && name.indexOf("Web.", null) > 0 && StringTools.endsWith(name, "Controller")) {
+								var out = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.cleanse(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, out), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							if (name2 != null && name2.indexOf("Web.", null) > 0 && StringTools.endsWith(name2, "Controller")) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.cleanse(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isController(name:String) {
+		return name != null && name.indexOf("Web.", null) > 0 && StringTools.endsWith(name, "Controller");
+	}
+
+	static function cleanse(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(fn, args, g, body):
+		makeASTWithMeta(EDef(fn, args, g, rewriteInBody(body)), n.metadata, n.pos);	
+	case EDefp(fn2, args2, g2, body2):
+		makeASTWithMeta(EDefp(fn2, args2, g2, rewriteInBody(body2)), n.metadata, n.pos);	
+	case ECase(expr, clauses):
+		var newClauses = [];
+		for (cl  in  clauses) newClauses.push({ pattern : cl.pattern, guard : cl.guard, body : rewriteInBody(cl.body) });
+		makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fn = `;
+							var args = `;
+							var g = `;
+							var body = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDef(fn, args, g, reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.rewriteInBody(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fn2 = `;
+							var args2 = `;
+							var g2 = `;
+							var body2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(fn2, args2, g2, reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.rewriteInBody(body2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										newClauses.push({pattern : cl.pattern, guard : cl.guard, body : reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.rewriteInBody(cl.body)});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteInBody(body:reflaxe.elixir.ast.ElixirAST) {
+		var used = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case EVar(v):
+		if (isCandidate(v)) used.set(v, true);	
+	default:
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							if (if (v == null || v.length == 0) {
+								false;
+							} else {
+								if (v == "conn" || v == "params" || v == "socket" || v == "live_socket") {
+									false;
+								} else {
+									var c = v.charAt(0);
+									c.toLowerCase() == c;
+								};
+							}) {
+								{
+									used.set(v, true);
+								};
+							};
+						};
+					};
+				} else {};
+			};
+		});
+		var cands = [];
+		for (k in used.keys()) {
+			cands.push(k);
+		};
+		if (cands.length != 1) {
+			return body;
+		};
+		var varName = cands[0];
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(t, fnName, args) if (fnName == "json" && args != null && args.length == 2):
+		switch (args[1].def) {
+			case EVar(v) if (v == "data"):
+				makeASTWithMeta(ERemoteCall(t, fnName, [args[0], makeAST(EVar(varName))]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t = `;
+						var fnName = `;
+						var args = `;
+						if (fnName == "json" && args != null && args.length == 2) {
+							@:ast(switch (args[1].def) {
+	case EVar(v) if (v == "data"):
+		makeASTWithMeta(ERemoteCall(t, fnName, [args[0], makeAST(EVar(varName))]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = args[1].def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v = `;
+										if (v == "data") {
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(t, fnName, [args[0], {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+											}]), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function isCandidate(v:String) {
+		if (v == null || v.length == 0) {
+			return false;
+		};
+		if (v == "conn" || v == "params" || v == "socket" || v == "live_socket") {
+			return false;
+		};
+		var c = v.charAt(0);
+		return c.toLowerCase() == c;
+	}
+}

@@ -1,0 +1,218 @@
+class reflaxe.elixir.ast.transformers.StringBinaryMatchContainsRewriteTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EUnary(Not, inner):
+		switch (inner.def) {
+			case ERemoteCall(target, "is_nil", [arg]):
+				var isKernel = switch (target) {
+					case null:
+						true;					
+					case { def : EVar(k) } if (k == "Kernel"):
+						true;					
+					case { def : EAtom(k2) } if (k2 == "Kernel"):
+						true;					
+					default:
+						false;					
+				};
+				if (!isKernel) return n;
+				switch (arg.def) {
+					case ERemoteCall(modNode, "match", [a, b]):
+						if (!isBinaryModule(modNode)) return n;
+						makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "contains?", [a, b]), n.metadata, n.pos);					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 27) {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						{
+							var inner = `;
+							{
+								@:ast(switch (inner.def) {
+	case ERemoteCall(target, "is_nil", [arg]):
+		var isKernel = switch (target) {
+			case null:
+				true;			
+			case { def : EVar(k) } if (k == "Kernel"):
+				true;			
+			case { def : EAtom(k2) } if (k2 == "Kernel"):
+				true;			
+			default:
+				false;			
+		};
+		if (!isKernel) return n;
+		switch (arg.def) {
+			case ERemoteCall(modNode, "match", [a, b]):
+				if (!isBinaryModule(modNode)) return n;
+				makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "contains?", [a, b]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+									var ` = inner.def;
+									if (enumIndex ` == 24) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (` == "is_nil") {
+											if (`.length == 1) {
+												var ` = `[0];
+												{
+													var arg = `;
+													var target = `;
+													{
+														var isKernel = @:ast(switch (target) {
+	case null:
+		true;	
+	case { def : EVar(k) } if (k == "Kernel"):
+		true;	
+	case { def : EAtom(k2) } if (k2 == "Kernel"):
+		true;	
+	default:
+		false;	
+}) if (target == null) {
+															true;
+														} else {
+															var ` = target.def;
+															var ` = target.metadata;
+															var ` = target.pos;
+															switch (enumIndex `) {
+																case 31: {
+																	var ` = `[0];
+																	{
+																		var k2 = `;
+																		if (k2 == "Kernel") {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																};
+																case 38: {
+																	var ` = `[0];
+																	{
+																		var k = `;
+																		if (k == "Kernel") {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																};
+																default: {
+																	false;
+																}
+															};
+														};
+														if (! isKernel) {
+															return n;
+														};
+														@:ast(switch (arg.def) {
+	case ERemoteCall(modNode, "match", [a, b]):
+		if (!isBinaryModule(modNode)) return n;
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "contains?", [a, b]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+															var ` = arg.def;
+															if (enumIndex ` == 24) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (` == "match") {
+																	if (`.length == 2) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var a = `;
+																			var b = `;
+																			var modNode = `;
+																			{
+																				if (! @:ast(switch (modNode.def) {
+	case EAtom(m):
+		(m == "binary" || m == ":binary");	
+	case EVar(m2):
+		(m2 == "binary" || m2 == ":binary");	
+	default:
+		false;	
+}) {
+																					var ` = modNode.def;
+																					switch (enumIndex `) {
+																						case 31: {
+																							var ` = `[0];
+																							{
+																								var m = `;
+																								{
+																									(m == "binary" || m == ":binary");
+																								};
+																							};
+																						};
+																						case 38: {
+																							var ` = `[0];
+																							{
+																								var m2 = `;
+																								{
+																									(m2 == "binary" || m2 == ":binary");
+																								};
+																							};
+																						};
+																						default: {
+																							false;
+																						}
+																					};
+																				}) {
+																					return n;
+																				};
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+																				}, "contains?", [a, b]), metadata : n.metadata, pos : n.pos};
+																			};
+																		};
+																	} else {
+																		n;
+																	};
+																} else {
+																	n;
+																};
+															} else {
+																n;
+															};
+														};
+													};
+												};
+											} else {
+												n;
+											};
+										} else {
+											n;
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						};
+					} else {
+						n;
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

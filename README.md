@@ -3,14 +3,16 @@
 [![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
-[![Tests](https://img.shields.io/badge/tests-240%2B%2F240%2B%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
 **Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
 
-> **Future Vision**: See [VISION.md](VISION.md) for long-term plans including AI tooling and universal platform support  
-> **Current Status**: Production-ready Haxe→Elixir compilation with full Phoenix/LiveView/Ecto support
+> Status (November 2025)
+> - AST‑only pipeline (no legacy string generation).
+> - Core and negative suites are green.
+> - Phoenix snapshot parity is in final polish (Presence, Router DSL normalization, HEEx interpolation cleanup).
+> - Use the QA Sentinel for non‑blocking runtime checks and optional Playwright smoke tests (see “QA & Testing”).
 
 ## Why Reflaxe.Elixir?
 
@@ -194,6 +196,28 @@ mix compile.haxe
 # Start Phoenix with Haxe compilation
 mix phx.server
 ```
+
+### QA & Testing
+
+- Non‑blocking end‑to‑end check (build Haxe → mix compile → boot Phoenix in background → readiness probe → GET / → log scan):
+  - Quick: `npm run qa:sentinel`
+  - Async (recommended): `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
+  - Keep alive for manual browsing: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
+  - Inspect logs without blocking: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
+  - Stop: `kill -TERM $QA_SENTINEL_PID`
+
+- Optional Playwright smoke (when the sentinel reports readiness):
+  1) `npm -C examples/todo-app install --no-audit --no-fund && npx -C examples/todo-app playwright install`
+  2) Run minimal spec: `BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/basic.spec.ts`
+
+- Snapshot tests (bounded, do not hang):
+  - Single test: `TIMEOUT=120s make -C test -j1 single TEST=phoenix/PresenceMacro`
+  - Phoenix summary: `TIMEOUT=120s make -C test -j1 summary`
+
+Notes
+- Never run `mix phx.server` in the foreground during validation; always use the sentinel lifecycle.
+- Elixir target must not use `-D analyzer-optimize`.
+- Runtime artifacts are source‑of‑truth’ed in `std/_std/*.hx`, `std/*.cross.hx`, and `src/reflaxe/elixir/**` — do not edit generated `.ex` files.
 
 ### File Organization
 

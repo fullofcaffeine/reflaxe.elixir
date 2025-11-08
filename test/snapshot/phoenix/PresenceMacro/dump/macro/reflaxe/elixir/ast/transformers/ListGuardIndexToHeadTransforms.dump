@@ -1,0 +1,268 @@
+class reflaxe.elixir.ast.transformers.ListGuardIndexToHeadTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(scrutinee, clauses):
+		var newClauses:Array<ECaseClause> = [];
+		for (cl  in  clauses) {
+			var headName:Null<String> = null;
+			var tailName:Null<String> = null;
+			switch (cl.pattern) {
+				case PCons(PVar(hn), PVar(tn)):
+					headName = hn;
+					tailName = tn;				
+				case PCons(PVar(hn2), _):
+					headName = hn2;				
+				default:
+			};
+			var guardRewritten = (cl.guard != null && (headName != null || tailName != null)) ? rewriteGuard(cl.guard, "", headName, tailName) : cl.guard;
+			newClauses.push({ pattern : cl.pattern, guard : guardRewritten, body : cl.body });
+		};
+		makeASTWithMeta(ECase(scrutinee, newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var scrutinee = `;
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var headName = null;
+									var tailName = null;
+									@:ast(switch (cl.pattern) {
+	case PCons(PVar(hn), PVar(tn)):
+		headName = hn;
+		tailName = tn;	
+	case PCons(PVar(hn2), _):
+		headName = hn2;	
+	default:
+}) {
+										var ` = cl.pattern;
+										if (enumIndex ` == 4) {
+											var ` = `[0];
+											var ` = `[1];
+											if (enumIndex ` == 0) {
+												var ` = `[0];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var tn = `;
+														var hn = `;
+														{
+															headName = hn;
+															tailName = tn;
+														};
+													};
+												} else {
+													var hn2 = `;
+													{
+														headName = hn2;
+													};
+												};
+											} else {};
+										} else {};
+									};
+									var guardRewritten = if ((cl.guard != null && (headName != null || tailName != null))) {
+										reflaxe.elixir.ast.transformers.ListGuardIndexToHeadTransforms.rewriteGuard(cl.guard, "", headName, tailName);
+									} else {
+										cl.guard;
+									};
+									newClauses.push({pattern : cl.pattern, guard : guardRewritten, body : cl.body});
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(scrutinee, newClauses), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewriteGuard(guard:reflaxe.elixir.ast.ElixirAST, listVar:String, headName:Null<String>, tailName:Null<String>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(guard, function(g:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (g.def) {
+	case EAccess({ def : EVar(_) }, { def : EInteger(0) }) if (headName != null):
+		makeAST(EVar(headName));	
+	case EBinary(Greater, { def : ERemoteCall({ def : EVar(m) }, "length", [_]) }, { def : EInteger(1) }) if (tailName != null && (m == "Kernel" || m == "Enum")):
+		makeAST(EBinary(NotEqual, makeAST(EVar(tailName)), makeAST(EList([]))));	
+	case EBinary(Greater, { def : ECall(null, "length", [_]) }, { def : EInteger(1) }) if (tailName != null):
+		makeAST(EBinary(NotEqual, makeAST(EVar(tailName)), makeAST(EList([]))));	
+	default:
+		g;	
+}) {
+				var ` = g.def;
+				switch (enumIndex `) {
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 11) {
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								switch (enumIndex `) {
+									case 22: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (` == null) if (` == "length") {
+											if (`.length == 1) {
+												var ` = `[0];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 33) {
+														var ` = `[0];
+														if (` == 1) {
+															if (tailName != null) {
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tailName), metadata : {}, pos : pos};
+																	}, {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+																	}), metadata : {}, pos : pos};
+																};
+															} else {
+																g;
+															};
+														} else {
+															g;
+														};
+													} else {
+														g;
+													};
+												};
+											} else {
+												g;
+											};
+										} else {
+											g;
+										} else {
+											g;
+										};
+									};
+									case 24: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												if (` == "length") {
+													if (`.length == 1) {
+														var ` = `[0];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 33) {
+																var ` = `[0];
+																if (` == 1) {
+																	{
+																		var m = `;
+																		if (tailName != null && (m == "Kernel" || m == "Enum")) {
+																			{
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, {
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tailName), metadata : {}, pos : pos};
+																				}, {
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+																				}), metadata : {}, pos : pos};
+																			};
+																		} else {
+																			g;
+																		};
+																	};
+																} else {
+																	g;
+																};
+															} else {
+																g;
+															};
+														};
+													} else {
+														g;
+													};
+												} else {
+													g;
+												};
+											} else {
+												g;
+											};
+										};
+									};
+									default: {
+										g;
+									}
+								};
+							};
+						} else {
+							g;
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 33) {
+										var ` = `[0];
+										if (` == 0) {
+											if (headName != null) {
+												{
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(headName), metadata : {}, pos : pos};
+												};
+											} else {
+												g;
+											};
+										} else {
+											g;
+										};
+									} else {
+										g;
+									};
+								};
+							} else {
+								g;
+							};
+						};
+					};
+					default: {
+						g;
+					}
+				};
+			};
+		});
+	}
+}

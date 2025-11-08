@@ -1,0 +1,53 @@
+class reflaxe.elixir.ast.transformers.EmptyModulePruneTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDefmodule(_name, doBlock):
+		switch (doBlock.def) {
+			case EBlock(stmts) if (stmts.length == 0):
+				makeASTWithMeta(EBlock([]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var _name = `;
+						var doBlock = `;
+						{
+							@:ast(switch (doBlock.def) {
+	case EBlock(stmts) if (stmts.length == 0):
+		makeASTWithMeta(EBlock([]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = doBlock.def;
+								if (enumIndex ` == 53) {
+									var ` = `[0];
+									{
+										var stmts = `;
+										if (stmts.length == 0) {
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([]), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

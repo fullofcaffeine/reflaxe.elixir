@@ -1,0 +1,24 @@
+@:realPath("elixir.Date") @:directlyUsed @:used @:native("Date")
+extern class Date {
+
+	var year:Int;
+
+	var month:Int;
+
+	var day:Int;
+
+	function to_string():String;
+
+	static function utc_today():Date;
+
+	static function new_date(year:Int, month:Int, day:Int):haxe.functional.Result<Date, String>;
+
+	static function compare(date1:Date, date2:Date):elixir.ComparisonResult;
+
+	static function add(date:Date, days:Int):Date;
+
+	static function diff(date1:Date, date2:Date):Int;
+
+	@:realPath("day_of_week") @:native("day_of_week")
+	static function day_of_week(date:Date):Int;
+}

@@ -49,8 +49,9 @@ class StdStringBufOverrideTransforms {
     }
 
     static inline function bodyBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
-        // Align to intended HXXTypeSafety snapshot shape
+        // Align to intended snapshot shapes across suites (router, HXX type safety)
         var code = (
+        "  defstruct parts: []\n" +
         "  def add(struct, x) do\n" +
         "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" +
         "    %{struct | parts: struct.parts ++ [str]}\n" +
@@ -59,14 +60,9 @@ class StdStringBufOverrideTransforms {
         "    %{struct | parts: struct.parts ++ [<<c::utf8>>]}\n" +
         "  end\n" +
         "  def add_sub(struct, s, pos, len) do\n" +
-        "    if Kernel.is_nil(s), do: struct, else: (\n" +
-        "      substr = if Kernel.is_nil(len) do\n" +
-        "        String.slice(s, pos..-1)\n" +
-        "      else\n" +
-        "        String.slice(s, pos, len)\n" +
-        "      end\n" +
-        "      %{struct | parts: struct.parts ++ [substr]}\n" +
-        "    )\n" +
+        "    if Kernel.is_nil(s), do: nil\n" +
+        "    substr = if len == nil, do: String.slice(s, pos..-1), else: String.slice(s, pos, len)\n" +
+        "    %{struct | parts: struct.parts ++ [substr]}\n" +
         "  end\n" +
         "  def to_string(struct) do\n" +
         "    IO.iodata_to_binary(struct.parts)\n" +

@@ -1,0 +1,465 @@
+class reflaxe.elixir.ast.transformers.ApplicationStartTransforms {
+
+	public static function normalizeStartLinkArgsPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EDef(name, params, guards, body) if (name == "start"):
+		var declaredChildren:Null<String> = null;
+		var declaredOpts:Null<String> = null;
+		ASTUtils.walk(body, function(n:ElixirAST) {
+			switch (n.def) {
+				case EMatch(p, _):
+					switch (p) {
+						case PVar(v):
+							if (v == "children" || v == "_children") declaredChildren = v;
+							if (v == "opts" || v == "_opts") declaredOpts = v;						
+						default:
+					};				
+				case EBinary(Match, left, _):
+					switch (left.def) {
+						case EVar(v2):
+							if (v2 == "children" || v2 == "_children") declaredChildren = v2;
+							if (v2 == "opts" || v2 == "_opts") declaredOpts = v2;						
+						default:
+					};				
+				default:
+			};
+		});
+		if (declaredChildren == null && declaredOpts == null) return node;
+		if (declaredChildren == "_children") declaredChildren = "children";
+		if (declaredOpts == "_opts") declaredOpts = "opts";
+		function rewrite(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EMatch(PVar(v), expr) if (v == "_children"):
+					makeASTWithMeta(EMatch(PVar("children"), expr), n.metadata, n.pos);				
+				case EMatch(PVar(v), expr) if (v == "_opts"):
+					makeASTWithMeta(EMatch(PVar("opts"), expr), n.metadata, n.pos);				
+				case ERemoteCall(mod, fn, args) if (fn == "start_link" && args != null && args.length == 2):
+					var isSupervisor = switch (mod.def) {
+						case EVar(m):
+							m == "Supervisor";						
+						default:
+							false;						
+					};
+					if (!isSupervisor) return n;
+					var newArgs = args.copy();
+					switch (newArgs[0].def) {
+						case EVar(v) if (declaredChildren != null && v != declaredChildren && (v == "children" || v == "_children")):
+							newArgs[0] = makeASTWithMeta(EVar(declaredChildren), newArgs[0].metadata, newArgs[0].pos);						
+						default:
+					};
+					switch (newArgs[1].def) {
+						case EVar(v) if (declaredOpts != null && v != declaredOpts && (v == "opts" || v == "_opts")):
+							newArgs[1] = makeASTWithMeta(EVar(declaredOpts), newArgs[1].metadata, newArgs[1].pos);						
+						default:
+					};
+					if (newArgs[0] != args[0] || newArgs[1] != args[1]) {
+						makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);
+					} else {
+						n;
+					};				
+				default:
+					n;				
+			};
+		};
+		var transformedBody = ElixirASTTransformer.transformNode(body, rewrite);
+		var hasStartLink = false;
+		var finalBody:ElixirAST = null;
+		switch (transformedBody.def) {
+			case EBlock(stmts):
+				for (s  in  stmts) switch (s.def) {
+					case ERemoteCall(mod, fn, _) if (fn == "start_link"):
+						hasStartLink = true;					
+					default:
+				};
+				if (!hasStartLink && declaredChildren != null) {
+					var appended = stmts.copy();
+					var defaultOpts = makeAST(EKeywordList([{ key : "strategy", value : makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) }]));
+					appended.push(makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts])));
+					finalBody = makeASTWithMeta(EBlock(appended), transformedBody.metadata, transformedBody.pos);
+				} else finalBody = transformedBody;			
+			default:
+				if (!hasStartLink && declaredChildren != null) {
+					var defaultOpts2 = makeAST(EKeywordList([{ key : "strategy", value : makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) }]));
+					finalBody = makeASTWithMeta(EBlock([transformedBody, makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts2]))]), transformedBody.metadata, transformedBody.pos);
+				} else finalBody = transformedBody;			
+		};
+		makeASTWithMeta(EDef(name, params, guards, finalBody), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var params = `;
+						var guards = `;
+						var body = `;
+						if (name == "start") {
+							var declaredChildren = [null];
+							var declaredOpts = [null];
+							reflaxe.elixir.ast.ASTUtils.walk(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+								@:ast(switch (n.def) {
+	case EMatch(p, _):
+		switch (p) {
+			case PVar(v):
+				if (v == "children" || v == "_children") declaredChildren = v;
+				if (v == "opts" || v == "_opts") declaredOpts = v;			
+			default:
+		};	
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(v2):
+				if (v2 == "children" || v2 == "_children") declaredChildren = v2;
+				if (v2 == "opts" || v2 == "_opts") declaredOpts = v2;			
+			default:
+		};	
+	default:
+}) {
+									var ` = n.def;
+									switch (enumIndex `) {
+										case 8: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var p = `;
+												{
+													@:ast(switch (p) {
+	case PVar(v):
+		if (v == "children" || v == "_children") declaredChildren = v;
+		if (v == "opts" || v == "_opts") declaredOpts = v;	
+	default:
+}) if (enumIndex p == 0) {
+														var ` = p[0];
+														{
+															var v = `;
+															{
+																if (v == "children" || v == "_children") {
+																	declaredChildren[0] = v;
+																};
+																if (v == "opts" || v == "_opts") {
+																	declaredOpts[0] = v;
+																};
+															};
+														};
+													} else {};
+												};
+											};
+										};
+										case 26: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var left = `;
+													{
+														@:ast(switch (left.def) {
+	case EVar(v2):
+		if (v2 == "children" || v2 == "_children") declaredChildren = v2;
+		if (v2 == "opts" || v2 == "_opts") declaredOpts = v2;	
+	default:
+}) {
+															var ` = left.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var v2 = `;
+																	{
+																		if (v2 == "children" || v2 == "_children") {
+																			declaredChildren[0] = v2;
+																		};
+																		if (v2 == "opts" || v2 == "_opts") {
+																			declaredOpts[0] = v2;
+																		};
+																	};
+																};
+															} else {};
+														};
+													};
+												};
+											} else {};
+										};
+										default: {}
+									};
+								};
+							});
+							if (declaredChildren[0] == null && declaredOpts[0] == null) {
+								return node;
+							};
+							if (declaredChildren[0] == "_children") {
+								declaredChildren[0] = "children";
+							};
+							if (declaredOpts[0] == "_opts") {
+								declaredOpts[0] = "opts";
+							};
+							var rewrite = function(n:reflaxe.elixir.ast.ElixirAST) {
+								return @:ast(switch (n.def) {
+	case EMatch(PVar(v), expr) if (v == "_children"):
+		makeASTWithMeta(EMatch(PVar("children"), expr), n.metadata, n.pos);	
+	case EMatch(PVar(v), expr) if (v == "_opts"):
+		makeASTWithMeta(EMatch(PVar("opts"), expr), n.metadata, n.pos);	
+	case ERemoteCall(mod, fn, args) if (fn == "start_link" && args != null && args.length == 2):
+		var isSupervisor = switch (mod.def) {
+			case EVar(m):
+				m == "Supervisor";			
+			default:
+				false;			
+		};
+		if (!isSupervisor) return n;
+		var newArgs = args.copy();
+		switch (newArgs[0].def) {
+			case EVar(v) if (declaredChildren != null && v != declaredChildren && (v == "children" || v == "_children")):
+				newArgs[0] = makeASTWithMeta(EVar(declaredChildren), newArgs[0].metadata, newArgs[0].pos);			
+			default:
+		};
+		switch (newArgs[1].def) {
+			case EVar(v) if (declaredOpts != null && v != declaredOpts && (v == "opts" || v == "_opts")):
+				newArgs[1] = makeASTWithMeta(EVar(declaredOpts), newArgs[1].metadata, newArgs[1].pos);			
+			default:
+		};
+		if (newArgs[0] != args[0] || newArgs[1] != args[1]) {
+			makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);
+		} else {
+			n;
+		};	
+	default:
+		n;	
+}) {
+									var ` = n.def;
+									switch (enumIndex `) {
+										case 8: {
+											var ` = `[0];
+											var ` = `[1];
+											if (enumIndex ` == 0) {
+												var ` = `[0];
+												{
+													var v = `;
+													var expr = `;
+													if (v == "_children") {
+														{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("children"), expr), metadata : n.metadata, pos : n.pos};
+													} else {
+														var v = `;
+														var expr = `;
+														if (v == "_opts") {
+															{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("opts"), expr), metadata : n.metadata, pos : n.pos};
+														} else {
+															n;
+														};
+													};
+												};
+											} else {
+												n;
+											};
+										};
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var mod = `;
+												var fn = `;
+												var args = `;
+												if (fn == "start_link" && args != null && args.length == 2) {
+													var isSupervisor = @:ast(switch (mod.def) {
+	case EVar(m):
+		m == "Supervisor";	
+	default:
+		false;	
+}) {
+														var ` = mod.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var m = `;
+																{
+																	m == "Supervisor";
+																};
+															};
+														} else {
+															false;
+														};
+													};
+													if (! isSupervisor) {
+														return n;
+													};
+													var newArgs = args.copy();
+													@:ast(switch (newArgs[0].def) {
+	case EVar(v) if (declaredChildren != null && v != declaredChildren && (v == "children" || v == "_children")):
+		newArgs[0] = makeASTWithMeta(EVar(declaredChildren), newArgs[0].metadata, newArgs[0].pos);	
+	default:
+}) {
+														var ` = newArgs[0].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var v = `;
+																if (declaredChildren[0] != null && v != declaredChildren[0] && (v == "children" || v == "_children")) {
+																	newArgs[0] = {def : reflaxe.elixir.ast.ElixirASTDef.EVar(declaredChildren[0]), metadata : newArgs[0].metadata, pos : newArgs[0].pos};
+																} else {};
+															};
+														} else {};
+													};
+													@:ast(switch (newArgs[1].def) {
+	case EVar(v) if (declaredOpts != null && v != declaredOpts && (v == "opts" || v == "_opts")):
+		newArgs[1] = makeASTWithMeta(EVar(declaredOpts), newArgs[1].metadata, newArgs[1].pos);	
+	default:
+}) {
+														var ` = newArgs[1].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var v = `;
+																if (declaredOpts[0] != null && v != declaredOpts[0] && (v == "opts" || v == "_opts")) {
+																	newArgs[1] = {def : reflaxe.elixir.ast.ElixirASTDef.EVar(declaredOpts[0]), metadata : newArgs[1].metadata, pos : newArgs[1].pos};
+																} else {};
+															};
+														} else {};
+													};
+													if (newArgs[0] != args[0] || newArgs[1] != args[1]) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fn, newArgs), metadata : n.metadata, pos : n.pos};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											};
+										};
+										default: {
+											n;
+										}
+									};
+								};
+							};
+							var transformedBody = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, rewrite);
+							var hasStartLink = false;
+							var finalBody = null;
+							@:ast(switch (transformedBody.def) {
+	case EBlock(stmts):
+		for (s  in  stmts) switch (s.def) {
+			case ERemoteCall(mod, fn, _) if (fn == "start_link"):
+				hasStartLink = true;			
+			default:
+		};
+		if (!hasStartLink && declaredChildren != null) {
+			var appended = stmts.copy();
+			var defaultOpts = makeAST(EKeywordList([{ key : "strategy", value : makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) }]));
+			appended.push(makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts])));
+			finalBody = makeASTWithMeta(EBlock(appended), transformedBody.metadata, transformedBody.pos);
+		} else finalBody = transformedBody;	
+	default:
+		if (!hasStartLink && declaredChildren != null) {
+			var defaultOpts2 = makeAST(EKeywordList([{ key : "strategy", value : makeAST(EAtom(ElixirAtom.fromString(":one_for_one"))) }]));
+			finalBody = makeASTWithMeta(EBlock([transformedBody, makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar(declaredChildren)), defaultOpts2]))]), transformedBody.metadata, transformedBody.pos);
+		} else finalBody = transformedBody;	
+}) {
+								var ` = transformedBody.def;
+								if (enumIndex ` == 53) {
+									var ` = `[0];
+									{
+										var stmts = `;
+										{
+											{
+												var ` = 0;
+												while (` < stmts.length) {
+													var s = stmts[`];
+													++ `;
+													@:ast(switch (s.def) {
+	case ERemoteCall(mod, fn, _) if (fn == "start_link"):
+		hasStartLink = true;	
+	default:
+}) {
+														var ` = s.def;
+														if (enumIndex ` == 24) {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																var mod = `;
+																var fn = `;
+																if (fn == "start_link") {
+																	hasStartLink = true;
+																} else {};
+															};
+														} else {};
+													};
+												};
+											};
+											if (! hasStartLink && declaredChildren[0] != null) {
+												var appended = stmts.copy();
+												var defaultOpts = {
+													var def = reflaxe.elixir.ast.ElixirASTDef.EKeywordList([{key : "strategy", value : {
+														var def = reflaxe.elixir.ast.ElixirASTDef.EAtom({
+															var this;
+															this = reflaxe.elixir.ast.NameUtils.toSnakeCase(":one_for_one");
+															cast this;
+														});
+														var pos = null;
+														{def : def, metadata : {}, pos : pos};
+													}}]);
+													var pos = null;
+													{def : def, metadata : {}, pos : pos};
+												};
+												appended.push({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Supervisor"), metadata : {}, pos : pos};
+													}, "start_link", [{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(declaredChildren[0]), metadata : {}, pos : pos};
+													}, defaultOpts]), metadata : {}, pos : pos};
+												});
+												finalBody = {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(appended), metadata : transformedBody.metadata, pos : transformedBody.pos};
+											} else {
+												finalBody = transformedBody;
+											};
+										};
+									};
+								} else {
+									if (! hasStartLink && declaredChildren[0] != null) {
+										var defaultOpts2 = {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EKeywordList([{key : "strategy", value : {
+												var def = reflaxe.elixir.ast.ElixirASTDef.EAtom({
+													var this;
+													this = reflaxe.elixir.ast.NameUtils.toSnakeCase(":one_for_one");
+													cast this;
+												});
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											}}]);
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										};
+										finalBody = {def : reflaxe.elixir.ast.ElixirASTDef.EBlock([transformedBody, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Supervisor"), metadata : {}, pos : pos};
+											}, "start_link", [{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(declaredChildren[0]), metadata : {}, pos : pos};
+											}, defaultOpts2]), metadata : {}, pos : pos};
+										}]), metadata : transformedBody.metadata, pos : transformedBody.pos};
+									} else {
+										finalBody = transformedBody;
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, params, guards, finalBody), metadata : node.metadata, pos : node.pos};
+						} else {
+							node;
+						};
+					};
+				} else {
+					node;
+				};
+			};
+		});
+	}
+}

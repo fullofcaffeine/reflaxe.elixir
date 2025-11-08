@@ -1,0 +1,271 @@
+class reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl {
+
+	@:value({ parent : null })
+	public function new(el:Array<haxe.macro.TypedExpr>, parent:Null<reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl> = null) {
+		this.el = el;
+		this.parent = parent;
+		this.aliases = {
+			{};
+			new haxe.ds.IntMap();
+		};
+	}
+
+	var el:Array<haxe.macro.TypedExpr>;
+
+	var parent:Null<reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl>;
+
+	var aliases:Map<Int, haxe.macro.TypedExpr>;
+
+	function isCopyType(t:haxe.macro.Type) {
+		var innerType = reflaxe.helpers.Context.followWithAbstracts(t, null);
+		return @:ast(switch (innerType) {
+	case TAbstract(_.get() => abs, []):
+		abs.hasMeta(":runtimeValue");	
+	case _ if (innerType.getMeta().maybeHas(":copyValue")):
+		true;	
+	case _ if (innerType.isString()):
+		true;	
+	case _:
+		false;	
+}) if (enumIndex innerType == 8) {
+			var ` = innerType[0];
+			var ` = innerType[1];
+			if (`.length == 0) {
+				{
+					var _hx_tmp;
+					{
+						var abs = (_hx_tmp = `.get());
+						{
+							reflaxe.helpers.NameMetaHelper.hasMeta(abs, ":runtimeValue");
+						};
+					};
+				};
+			} else if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(reflaxe.helpers.TypeHelper.getMeta(innerType), ":copyValue")) {
+				true;
+			} else if (reflaxe.helpers.TypeHelper.isString(innerType)) {
+				true;
+			} else {
+				false;
+			};
+		} else if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(reflaxe.helpers.TypeHelper.getMeta(innerType), ":copyValue")) {
+			true;
+		} else if (reflaxe.helpers.TypeHelper.isString(innerType)) {
+			true;
+		} else {
+			false;
+		};
+	}
+
+	function removeAliases() {
+		var result = [];
+		{
+			var ` = 0;
+			var ` = this.el;
+			while (` < `.length) {
+				var expr = `[`];
+				++ `;
+				var skipExpr = @:ast(switch (expr.expr) {
+	case TVar(declTVar, ogVarExpr) if (ogVarExpr != null && !isCopyType(declTVar.t)):
+		{
+			switch (ogVarExpr.unwrapUnsafeCasts().expr) {
+				case TLocal(tvar):
+					{
+						var skip = false;
+						if (declTVar.t.equals(tvar.t)) {
+							var ogNameLen = tvar.name.length;
+							var aliasNameLen = declTVar.name.length;
+							if (ogNameLen <= aliasNameLen + 10) {
+								var newVarExpr = if (aliases.exists(tvar.id)) {
+									aliases.get(tvar.id).trustMe();
+								} else {
+									ogVarExpr.trustMe();
+								};
+								aliases.set(declTVar.id, newVarExpr);
+								skip = true;
+							};
+						};
+						skip;
+					};				
+				case _:
+					false;				
+			};
+		};	
+	case TBlock(blockExprs):
+		{
+			result.push(expr.copy(TBlock(process(blockExprs))));
+			true;
+		};	
+	case _:
+		false;	
+}) {
+					var ` = expr.expr;
+					switch (enumIndex `) {
+						case 13: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var declTVar = `;
+								var ogVarExpr = `;
+								if (ogVarExpr != null && ! this.isCopyType(declTVar.t)) {
+									{
+										@:ast(switch (ogVarExpr.unwrapUnsafeCasts().expr) {
+	case TLocal(tvar):
+		{
+			var skip = false;
+			if (declTVar.t.equals(tvar.t)) {
+				var ogNameLen = tvar.name.length;
+				var aliasNameLen = declTVar.name.length;
+				if (ogNameLen <= aliasNameLen + 10) {
+					var newVarExpr = if (aliases.exists(tvar.id)) {
+						aliases.get(tvar.id).trustMe();
+					} else {
+						ogVarExpr.trustMe();
+					};
+					aliases.set(declTVar.id, newVarExpr);
+					skip = true;
+				};
+			};
+			skip;
+		};	
+	case _:
+		false;	
+}) {
+											var ` = reflaxe.helpers.TypedExprHelper.unwrapUnsafeCasts(ogVarExpr).expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var tvar = `;
+													{
+														{
+															var skip = false;
+															if (reflaxe.helpers.TypeHelper.equals(declTVar.t, tvar.t)) {
+																var ogNameLen = tvar.name.length;
+																var aliasNameLen = declTVar.name.length;
+																if (ogNameLen <= aliasNameLen + 10) {
+																	var newVarExpr = if ({
+																		var this = this.aliases;
+																		var key = tvar.id;
+																		cast this.exists(key);
+																	}) {
+																		{
+																			var maybe = {
+																				var this = this.aliases;
+																				var key = tvar.id;
+																				cast this.get(key);
+																			};
+																			cast {
+																				if (maybe == null) {
+																					throw "Trusted on null value.";
+																				};
+																				@:nullSafety(Off) maybe;
+																			};
+																		};
+																	} else {
+																		cast cast {
+																			if (ogVarExpr == null) {
+																				throw "Trusted on null value.";
+																			};
+																			@:nullSafety(Off) ogVarExpr;
+																		};
+																	};
+																	{
+																		var this = this.aliases;
+																		var key = declTVar.id;
+																		cast this.set(key, newVarExpr);
+																	};
+																	skip = true;
+																};
+															};
+															skip;
+														};
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						};
+						case 14: {
+							var ` = `[0];
+							{
+								var blockExprs = `;
+								{
+									{
+										result.push(reflaxe.helpers.TypedExprHelper.copy(expr, haxe.macro.TypedExprDef.TBlock(reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl.process(blockExprs))));
+										true;
+									};
+								};
+							};
+						};
+						default: {
+							false;
+						}
+					};
+				};
+				if (! skipExpr) {
+					result.push(expr);
+				};
+			};
+		};
+		return {
+			var f = this.replaceAliases;
+			{
+				var ` = [];
+				{
+					var ` = 0;
+					var ` = result;
+					while (` < `.length) {
+						var v = `[`];
+						++ `;
+						`.push(f(v));
+					};
+				};
+				`;
+			};
+		};
+	}
+
+	function replaceAliases(e:haxe.macro.TypedExpr) {
+		@:ast(switch (e.expr) {
+	case TLocal(tvar):
+		{
+			var newExpr = aliases.get(tvar.id);
+			if (newExpr != null) {
+				return newExpr;
+			};
+		};	
+	case _:
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var tvar = `;
+					{
+						{
+							var newExpr = {
+								var this = this.aliases;
+								var key = tvar.id;
+								cast this.get(key);
+							};
+							if (newExpr != null) {
+								return newExpr;
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		return haxe.macro.TypedExprTools.map(e, this.replaceAliases);
+	}
+
+	public static function process(el:Array<haxe.macro.TypedExpr>) {
+		var uvar = new reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl(el, null);
+		return uvar.removeAliases();
+	}
+}

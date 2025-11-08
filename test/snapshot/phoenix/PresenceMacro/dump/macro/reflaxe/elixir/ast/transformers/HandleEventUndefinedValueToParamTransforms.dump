@@ -1,0 +1,253 @@
+class reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
+		Sys.println("[HandleEventUndefinedValueToParam] visiting handle_event/3 def");
+		var paramVar = extractParamsVarName(args);
+		var nb = rewrite(body, paramVar);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
+		Sys.println("[HandleEventUndefinedValueToParam] visiting handle_event/3 defp");
+		var paramVar2 = extractParamsVarName(args2);
+		var nb2 = rewrite(body2, paramVar2);
+		makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (if (name != "handle_event" || args == null || args.length != 3) {
+								false;
+							} else {
+								@:ast(switch (args[0]) {
+	case PLiteral({ def : EString(_) }):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 32) {
+												var ` = `[0];
+												{
+													true;
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							}) {
+								Sys.println("[HandleEventUndefinedValueToParam] visiting handle_event/3 def");
+								var paramVar = if (args == null || args.length < 2) {
+									"params";
+								} else {
+									@:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"params";	
+}) {
+										var ` = args[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var nm = `;
+												{
+													nm;
+												};
+											};
+										} else {
+											"params";
+										};
+									};
+								};
+								var nb = reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.rewrite(body, paramVar);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (if (name2 != "handle_event" || args2 == null || args2.length != 3) {
+								false;
+							} else {
+								@:ast(switch (args[0]) {
+	case PLiteral({ def : EString(_) }):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = args2[0];
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 32) {
+												var ` = `[0];
+												{
+													true;
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							}) {
+								Sys.println("[HandleEventUndefinedValueToParam] visiting handle_event/3 defp");
+								var paramVar2 = if (args2 == null || args2.length < 2) {
+									"params";
+								} else {
+									@:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"params";	
+}) {
+										var ` = args2[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var nm = `;
+												{
+													nm;
+												};
+											};
+										} else {
+											"params";
+										};
+									};
+								};
+								var nb2 = reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.rewrite(body2, paramVar2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isHandleEvent3(name:String, args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (name != "handle_event" || args == null || args.length != 3) {
+			return false;
+		};
+		return @:ast(switch (args[0]) {
+	case PLiteral({ def : EString(_) }):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = args[0];
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 32) {
+						var ` = `[0];
+						{
+							true;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function extractParamsVarName(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null || args.length < 2) {
+			return "params";
+		};
+		return @:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"params";	
+}) {
+			var ` = args[1];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var nm = `;
+					{
+						nm;
+					};
+				};
+			} else {
+				"params";
+			};
+		};
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST, paramVar:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == "value"):
+		makeASTWithMeta(EVar(paramVar), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == "value") {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(paramVar), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

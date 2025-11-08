@@ -1,0 +1,348 @@
+class reflaxe.elixir.ast.transformers.CaseScrutineeHoistInAssignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(Match, { def : EVar(lhs) }, rhs):
+		var rhsCaseInfo:Null<{ var scrut : ElixirAST; var clauses : Array<ECaseClause>}> = switch (rhs.def) {
+			case ECase(caseScrutinee, caseClauses):
+				{ scrut : caseScrutinee, clauses : caseClauses };			
+			case EParen({ def : ECase(parenScrutinee, parenClauses) }):
+				{ scrut : parenScrutinee, clauses : parenClauses };			
+			default:
+				null;			
+		};
+		if (rhsCaseInfo == null) n else {
+			var caseScrutinee = rhsCaseInfo.scrut;
+			var caseClauses = rhsCaseInfo.clauses;
+			var scrutineeIsListOrBinary = switch (caseScrutinee.def) {
+				case EList(_) | EBitstring(_):
+					true;				
+				default:
+					false;				
+			};
+			if (!scrutineeIsListOrBinary) n else {
+				var hoistedVarName = (switch (caseScrutinee.def) {
+					case EBitstring(_):
+						"bin_value";					
+					default:
+						"list_value";					
+				});
+				var assignHoisted = makeASTWithMeta(EBinary(Match, makeAST(EVar(hoistedVarName)), caseScrutinee), n.metadata, n.pos);
+				var repairedClauses = CaseListScrutineeHoistTransforms.rewriteGuardsToListVar(caseClauses, hoistedVarName);
+				var assignToLhs = makeASTWithMeta(EBinary(Match, makeAST(EVar(lhs)), makeAST(ECase(makeAST(EVar(hoistedVarName)), repairedClauses))), n.metadata, n.pos);
+				makeASTWithMeta(EBlock([assignHoisted, assignToLhs]), n.metadata, n.pos);
+			};
+		};	
+	case EMatch(PVar(lhsName), rhsMatched):
+		var rhsCaseInfoInner:Null<{ var scrut : ElixirAST; var clauses : Array<ECaseClause>}> = switch (rhsMatched.def) {
+			case ECase(caseScrutineeInner, caseClausesInner):
+				{ scrut : caseScrutineeInner, clauses : caseClausesInner };			
+			case EParen({ def : ECase(parenScrutineeInner, parenClausesInner) }):
+				{ scrut : parenScrutineeInner, clauses : parenClausesInner };			
+			default:
+				null;			
+		};
+		if (rhsCaseInfoInner == null) n else {
+			var caseScrutineeInner = rhsCaseInfoInner.scrut;
+			var caseClausesInner = rhsCaseInfoInner.clauses;
+			var scrutineeIsListOrBinaryInner = switch (caseScrutineeInner.def) {
+				case EList(_) | EBitstring(_):
+					true;				
+				default:
+					false;				
+			};
+			if (!scrutineeIsListOrBinaryInner) n else {
+				var hoistedVarNameInner = (switch (caseScrutineeInner.def) {
+					case EBitstring(_):
+						"bin_value";					
+					default:
+						"list_value";					
+				});
+				var assignHoistedInner = makeASTWithMeta(EBinary(Match, makeAST(EVar(hoistedVarNameInner)), caseScrutineeInner), n.metadata, n.pos);
+				var repairedClausesInner = CaseListScrutineeHoistTransforms.rewriteGuardsToListVar(caseClausesInner, hoistedVarNameInner);
+				var assignToLhsInner = makeASTWithMeta(EBinary(Match, makeAST(EVar(lhsName)), makeAST(ECase(makeAST(EVar(hoistedVarNameInner)), repairedClausesInner))), n.metadata, n.pos);
+				makeASTWithMeta(EBlock([assignHoistedInner, assignToLhsInner]), n.metadata, n.pos);
+			};
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var lhsName = `;
+								var rhsMatched = `;
+								{
+									var rhsCaseInfoInner = @:ast(switch (rhsMatched.def) {
+	case ECase(caseScrutineeInner, caseClausesInner):
+		{ scrut : caseScrutineeInner, clauses : caseClausesInner };	
+	case EParen({ def : ECase(parenScrutineeInner, parenClausesInner) }):
+		{ scrut : parenScrutineeInner, clauses : parenClausesInner };	
+	default:
+		null;	
+}) {
+										var ` = rhsMatched.def;
+										switch (enumIndex `) {
+											case 6: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var caseScrutineeInner = `;
+													var caseClausesInner = `;
+													{
+														{scrut : caseScrutineeInner, clauses : caseClausesInner};
+													};
+												};
+											};
+											case 54: {
+												var ` = `[0];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 6) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var parenScrutineeInner = `;
+															var parenClausesInner = `;
+															{
+																{scrut : parenScrutineeInner, clauses : parenClausesInner};
+															};
+														};
+													} else {
+														null;
+													};
+												};
+											};
+											default: {
+												null;
+											}
+										};
+									};
+									if (rhsCaseInfoInner == null) {
+										n;
+									} else {
+										var caseScrutineeInner = rhsCaseInfoInner.scrut;
+										var caseClausesInner = rhsCaseInfoInner.clauses;
+										var scrutineeIsListOrBinaryInner = @:ast(switch (caseScrutineeInner.def) {
+	case EList(_) | EBitstring(_):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = caseScrutineeInner.def;
+											switch (enumIndex `) {
+												case 15: {
+													var ` = `[0];
+													{
+														true;
+													};
+												};
+												case 21: {
+													var ` = `[0];
+													{
+														true;
+													};
+												};
+												default: {
+													false;
+												}
+											};
+										};
+										if (! scrutineeIsListOrBinaryInner) {
+											n;
+										} else {
+											var hoistedVarNameInner = (@:ast(switch (caseScrutineeInner.def) {
+	case EBitstring(_):
+		"bin_value";	
+	default:
+		"list_value";	
+}) {
+												var ` = caseScrutineeInner.def;
+												if (enumIndex ` == 21) {
+													var ` = `[0];
+													{
+														"bin_value";
+													};
+												} else {
+													"list_value";
+												};
+											});
+											var assignHoistedInner = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(hoistedVarNameInner), metadata : {}, pos : pos};
+											}, caseScrutineeInner), metadata : n.metadata, pos : n.pos};
+											var repairedClausesInner = reflaxe.elixir.ast.transformers.CaseListScrutineeHoistTransforms.rewriteGuardsToListVar(caseClausesInner, hoistedVarNameInner);
+											var assignToLhsInner = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhsName), metadata : {}, pos : pos};
+											}, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(hoistedVarNameInner), metadata : {}, pos : pos};
+												}, repairedClausesInner), metadata : {}, pos : pos};
+											}), metadata : n.metadata, pos : n.pos};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([assignHoistedInner, assignToLhsInner]), metadata : n.metadata, pos : n.pos};
+										};
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var lhs = `;
+										var rhs = `;
+										{
+											var rhsCaseInfo = @:ast(switch (rhs.def) {
+	case ECase(caseScrutinee, caseClauses):
+		{ scrut : caseScrutinee, clauses : caseClauses };	
+	case EParen({ def : ECase(parenScrutinee, parenClauses) }):
+		{ scrut : parenScrutinee, clauses : parenClauses };	
+	default:
+		null;	
+}) {
+												var ` = rhs.def;
+												switch (enumIndex `) {
+													case 6: {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var caseScrutinee = `;
+															var caseClauses = `;
+															{
+																{scrut : caseScrutinee, clauses : caseClauses};
+															};
+														};
+													};
+													case 54: {
+														var ` = `[0];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 6) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var parenScrutinee = `;
+																	var parenClauses = `;
+																	{
+																		{scrut : parenScrutinee, clauses : parenClauses};
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+													};
+													default: {
+														null;
+													}
+												};
+											};
+											if (rhsCaseInfo == null) {
+												n;
+											} else {
+												var caseScrutinee = rhsCaseInfo.scrut;
+												var caseClauses = rhsCaseInfo.clauses;
+												var scrutineeIsListOrBinary = @:ast(switch (caseScrutinee.def) {
+	case EList(_) | EBitstring(_):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = caseScrutinee.def;
+													switch (enumIndex `) {
+														case 15: {
+															var ` = `[0];
+															{
+																true;
+															};
+														};
+														case 21: {
+															var ` = `[0];
+															{
+																true;
+															};
+														};
+														default: {
+															false;
+														}
+													};
+												};
+												if (! scrutineeIsListOrBinary) {
+													n;
+												} else {
+													var hoistedVarName = (@:ast(switch (caseScrutinee.def) {
+	case EBitstring(_):
+		"bin_value";	
+	default:
+		"list_value";	
+}) {
+														var ` = caseScrutinee.def;
+														if (enumIndex ` == 21) {
+															var ` = `[0];
+															{
+																"bin_value";
+															};
+														} else {
+															"list_value";
+														};
+													});
+													var assignHoisted = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(hoistedVarName), metadata : {}, pos : pos};
+													}, caseScrutinee), metadata : n.metadata, pos : n.pos};
+													var repairedClauses = reflaxe.elixir.ast.transformers.CaseListScrutineeHoistTransforms.rewriteGuardsToListVar(caseClauses, hoistedVarName);
+													var assignToLhs = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhs), metadata : {}, pos : pos};
+													}, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(hoistedVarName), metadata : {}, pos : pos};
+														}, repairedClauses), metadata : {}, pos : pos};
+													}), metadata : n.metadata, pos : n.pos};
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([assignHoisted, assignToLhs]), metadata : n.metadata, pos : n.pos};
+												};
+											};
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

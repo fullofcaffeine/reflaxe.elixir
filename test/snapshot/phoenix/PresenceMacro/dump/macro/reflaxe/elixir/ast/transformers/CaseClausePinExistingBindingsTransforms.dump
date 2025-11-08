@@ -1,0 +1,486 @@
+class reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var declared:Map<String,Bool> = new Map();
+		for (p  in  args) collectPatternDecls(p, declared);
+		var newBody = rewriteBody(body, declared);
+		makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						{
+							var declared = {
+								{};
+								new haxe.ds.StringMap();
+							};
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var p = args[`];
+									++ `;
+									reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(p, declared);
+								};
+							};
+							var newBody = reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.rewriteBody(body, declared);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewriteBody(body:reflaxe.elixir.ast.ElixirAST, declared:Map<String, Bool>) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (stmt  in  stmts) {
+			var s = stmt;
+			switch (s.def) {
+				case ECase(expr, clauses):
+					var rewrittenClauses = [];
+					for (cl  in  clauses) {
+						var pat = pinPatternIfDeclared(cl.pattern, declared);
+						rewrittenClauses.push({ pattern : pat, guard : cl.guard, body : cl.body });
+					};
+					s = makeASTWithMeta(ECase(expr, rewrittenClauses), s.metadata, s.pos);				
+				case EWith(clauses, doBlock, elseBlock):
+					var rewrittenWithClauses = [];
+					for (wc  in  clauses) {
+						var pat = pinPatternIfDeclared(wc.pattern, declared);
+						rewrittenWithClauses.push({ pattern : pat, expr : wc.expr });
+					};
+					var newDo = rewriteBody(doBlock, declared);
+					var newElse = elseBlock != null ? rewriteBody(elseBlock, declared) : null;
+					s = makeASTWithMeta(EWith(rewrittenWithClauses, newDo, newElse), s.metadata, s.pos);				
+				case EBinary(Match, left, _):
+					collectPatternDeclsFromLeft(left, declared);				
+				case EMatch(pat, _):
+					collectPatternDecls(pat, declared);				
+				default:
+			};
+			out.push(s);
+		};
+		makeASTWithMeta(EBlock(out), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					{
+						var out = [];
+						{
+							var ` = 0;
+							while (` < stmts.length) {
+								var stmt = stmts[`];
+								++ `;
+								var s = stmt;
+								@:ast(switch (s.def) {
+	case ECase(expr, clauses):
+		var rewrittenClauses = [];
+		for (cl  in  clauses) {
+			var pat = pinPatternIfDeclared(cl.pattern, declared);
+			rewrittenClauses.push({ pattern : pat, guard : cl.guard, body : cl.body });
+		};
+		s = makeASTWithMeta(ECase(expr, rewrittenClauses), s.metadata, s.pos);	
+	case EWith(clauses, doBlock, elseBlock):
+		var rewrittenWithClauses = [];
+		for (wc  in  clauses) {
+			var pat = pinPatternIfDeclared(wc.pattern, declared);
+			rewrittenWithClauses.push({ pattern : pat, expr : wc.expr });
+		};
+		var newDo = rewriteBody(doBlock, declared);
+		var newElse = elseBlock != null ? rewriteBody(elseBlock, declared) : null;
+		s = makeASTWithMeta(EWith(rewrittenWithClauses, newDo, newElse), s.metadata, s.pos);	
+	case EBinary(Match, left, _):
+		collectPatternDeclsFromLeft(left, declared);	
+	case EMatch(pat, _):
+		collectPatternDecls(pat, declared);	
+	default:
+}) {
+									var ` = s.def;
+									switch (enumIndex `) {
+										case 6: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var expr = `;
+												var clauses = `;
+												{
+													var rewrittenClauses = [];
+													{
+														var ` = 0;
+														while (` < clauses.length) {
+															var cl = clauses[`];
+															++ `;
+															var pat = reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(cl.pattern, declared);
+															rewrittenClauses.push({pattern : pat, guard : cl.guard, body : cl.body});
+														};
+													};
+													s = {def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, rewrittenClauses), metadata : s.metadata, pos : s.pos};
+												};
+											};
+										};
+										case 8: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var pat = `;
+												{
+													reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(pat, declared);
+												};
+											};
+										};
+										case 9: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var clauses = `;
+												var doBlock = `;
+												var elseBlock = `;
+												{
+													var rewrittenWithClauses = [];
+													{
+														var ` = 0;
+														while (` < clauses.length) {
+															var wc = clauses[`];
+															++ `;
+															var pat = reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(wc.pattern, declared);
+															rewrittenWithClauses.push({pattern : pat, expr : wc.expr});
+														};
+													};
+													var newDo = reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.rewriteBody(doBlock, declared);
+													var newElse = if (elseBlock != null) {
+														reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.rewriteBody(elseBlock, declared);
+													} else {
+														null;
+													};
+													s = {def : reflaxe.elixir.ast.ElixirASTDef.EWith(rewrittenWithClauses, newDo, newElse), metadata : s.metadata, pos : s.pos};
+												};
+											};
+										};
+										case 26: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var left = `;
+													{
+														reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDeclsFromLeft(left, declared);
+													};
+												};
+											} else {};
+										};
+										default: {}
+									};
+								};
+								out.push(s);
+							};
+						};
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : body.metadata, pos : body.pos};
+					};
+				};
+			} else {
+				body;
+			};
+		};
+	}
+
+	static function collectPatternDeclsFromLeft(left:reflaxe.elixir.ast.ElixirAST, declared:Map<String, Bool>) {
+		@:ast(switch (left.def) {
+	case EVar(name):
+		declared.set(name, true);	
+	default:
+}) {
+			var ` = left.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var name = `;
+					{
+						{
+							declared.set(name, true);
+						};
+					};
+				};
+			} else {};
+		};
+	}
+
+	static function collectPatternDecls(p:reflaxe.elixir.ast.EPattern, declared:Map<String, Bool>) {
+		@:ast(switch (p) {
+	case PVar(name):
+		declared.set(name, true);	
+	case PTuple(ps) | PList(ps):
+		for (pp  in  ps) collectPatternDecls(pp, declared);	
+	case PCons(h, t):
+		collectPatternDecls(h, declared);
+		collectPatternDecls(t, declared);	
+	case PMap(kvs):
+		for (kv  in  kvs) collectPatternDecls(kv.value, declared);	
+	case PStruct(_, fs):
+		for (f  in  fs) collectPatternDecls(f.value, declared);	
+	case PPin(inner):
+		collectPatternDecls(inner, declared);	
+	default:
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var name = `;
+					{
+						{
+							declared.set(name, true);
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var ps = `;
+					{
+						{
+							var ` = 0;
+							while (` < ps.length) {
+								var pp = ps[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(pp, declared);
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var ps = `;
+					{
+						{
+							var ` = 0;
+							while (` < ps.length) {
+								var pp = ps[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(pp, declared);
+							};
+						};
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(h, declared);
+						reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(t, declared);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(kv.value, declared);
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(f.value, declared);
+							};
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.collectPatternDecls(inner, declared);
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	static function pinPatternIfDeclared(p:reflaxe.elixir.ast.EPattern, declared:Map<String, Bool>) {
+		return @:ast(switch (p) {
+	case PVar(name) if (declared.exists(name)):
+		PPin(PVar(name));	
+	case PTuple(ps):
+		PTuple([for (pp  in  ps) pinPatternIfDeclared(pp, declared)]);	
+	case PList(ps):
+		PList([for (pp  in  ps) pinPatternIfDeclared(pp, declared)]);	
+	case PCons(h, t):
+		PCons(pinPatternIfDeclared(h, declared), pinPatternIfDeclared(t, declared));	
+	case PMap(kvs):
+		PMap([for (kv  in  kvs) { key : kv.key, value : pinPatternIfDeclared(kv.value, declared) }]);	
+	case PStruct(mod, fs):
+		PStruct(mod, [for (f  in  fs) { key : f.key, value : pinPatternIfDeclared(f.value, declared) }]);	
+	case PPin(inner):
+		PPin(pinPatternIfDeclared(inner, declared));	
+	default:
+		p;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var name = `;
+					if (declared.exists(name)) {
+						reflaxe.elixir.ast.EPattern.PPin(reflaxe.elixir.ast.EPattern.PVar(name));
+					} else {
+						p;
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var ps = `;
+					{
+						reflaxe.elixir.ast.EPattern.PTuple({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < ps.length) {
+									var pp = ps[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(pp, declared));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var ps = `;
+					{
+						reflaxe.elixir.ast.EPattern.PList({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < ps.length) {
+									var pp = ps[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(pp, declared));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.EPattern.PCons(reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(h, declared), reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(t, declared));
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PMap({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < kvs.length) {
+									var kv = kvs[`];
+									++ `;
+									`.push({key : kv.key, value : reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(kv.value, declared)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var mod = `;
+					var fs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PStruct(mod, {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fs.length) {
+									var f = fs[`];
+									++ `;
+									`.push({key : f.key, value : reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(f.value, declared)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.EPattern.PPin(reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pinPatternIfDeclared(inner, declared));
+					};
+				};
+			};
+			default: {
+				p;
+			}
+		};
+	}
+}

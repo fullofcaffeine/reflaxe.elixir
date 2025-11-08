@@ -1,0 +1,343 @@
+class reflaxe.elixir.macros.RepoDiscovery {
+
+	@:value([])
+	static var discovered:Array<String> = [];
+
+	public static function run() {
+		if (reflaxe.elixir.macros.RepoDiscovery.discovered.length > 0) {
+			return;
+		};
+		try {
+			var app = null;
+			try {
+				app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			if (app != null && app.length > 0) {
+				var repoMod = app + ".Repo";
+				try {
+					haxe.macro.Context.getType(repoMod);
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(repoMod, null) == -1) {
+					reflaxe.elixir.macros.RepoDiscovery.discovered.push(repoMod);
+				};
+				var presenceMod = app + "Web.Presence";
+				try {
+					haxe.macro.Context.getType(presenceMod);
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(presenceMod, null) == -1) {
+					reflaxe.elixir.macros.RepoDiscovery.discovered.push(presenceMod);
+				};
+				var telemetryMod = app + "Web.Telemetry";
+				try {
+					haxe.macro.Context.getType(telemetryMod);
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(telemetryMod, null) == -1) {
+					reflaxe.elixir.macros.RepoDiscovery.discovered.push(telemetryMod);
+				};
+				var endpointMod = app + "Web.Endpoint";
+				try {
+					haxe.macro.Context.getType(endpointMod);
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(endpointMod, null) == -1) {
+					reflaxe.elixir.macros.RepoDiscovery.discovered.push(endpointMod);
+				};
+				var routerMod = app + "Web.Router";
+				try {
+					haxe.macro.Context.getType(routerMod);
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(routerMod, null) == -1) {
+					reflaxe.elixir.macros.RepoDiscovery.discovered.push(routerMod);
+				};
+				var webMod = app + "Web";
+				try {
+					haxe.macro.Context.getType(webMod);
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(webMod, null) == -1) {
+					reflaxe.elixir.macros.RepoDiscovery.discovered.push(webMod);
+				};
+			};
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{};
+			} else throw `;
+		};
+		try {
+			var thisFile = haxe.macro.Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
+			var d0 = haxe.io.Path.directory(thisFile);
+			var d1 = haxe.io.Path.directory(d0);
+			var d2 = haxe.io.Path.directory(d1);
+			var repoRoot = haxe.io.Path.directory(d2);
+			var roots = reflaxe.elixir.macros.RepoDiscovery.findDirsNamed(repoRoot, "src_haxe", 4);
+			{
+				var ` = 0;
+				while (` < roots.length) {
+					var dir = roots[`];
+					++ `;
+					reflaxe.elixir.macros.RepoDiscovery.walkDir(dir);
+				};
+			};
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{};
+			} else throw `;
+		};
+	}
+
+	public static function getDiscovered() {
+		return reflaxe.elixir.macros.RepoDiscovery.discovered;
+	}
+
+	static function isProjectPath(p:String) {
+		if (p == null) {
+			return false;
+		};
+		var lp = p.toLowerCase();
+		if (lp.indexOf("/std", null) != -1) {
+			return false;
+		};
+		if (lp.indexOf("/vendor", null) != -1) {
+			return false;
+		};
+		if (lp.indexOf("node_modules", null) != -1) {
+			return false;
+		};
+		if (lp.indexOf("/haxe_libraries", null) != -1) {
+			return false;
+		};
+		return true;
+	}
+
+	static function walkDir(dir:String) {
+		try {
+			{
+				var ` = 0;
+				var ` = sys.FileSystem.readDirectory(dir);
+				while (` < `.length) {
+					var entry = `[`];
+					++ `;
+					var path = haxe.io.Path.join([dir, entry]);
+					if (sys.FileSystem.isDirectory(path)) {
+						reflaxe.elixir.macros.RepoDiscovery.walkDir(path);
+					} else {
+						if (StringTools.endsWith(entry, ".hx")) {
+							reflaxe.elixir.macros.RepoDiscovery.processHxFile(path);
+						};
+					};
+				};
+			};
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{};
+			} else throw `;
+		};
+	}
+
+	static function findDirsNamed(root:String, name:String, maxDepth:Int) {
+		var out = [];
+		var loop = [null];
+		loop[0] = function(dir:String, depth:Int) {
+			if (depth < 0) {
+				return;
+			};
+			var entries = [];
+			try {
+				entries = sys.FileSystem.readDirectory(dir);
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			{
+				var ` = 0;
+				while (` < entries.length) {
+					var e = entries[`];
+					++ `;
+					var p = haxe.io.Path.join([dir, e]);
+					if (! sys.FileSystem.exists(p)) {
+						continue;
+					};
+					if (sys.FileSystem.isDirectory(p)) {
+						if (e == name) {
+							out.push(p);
+						};
+						loop[0](p, depth - 1);
+					};
+				};
+			};
+		};
+		loop[0](root, maxDepth);
+		return out;
+	}
+
+	static function processHxFile(filePath:String) {
+		try {
+			var content = sys.io.File.getContent(filePath);
+			if (content == null) {
+				return;
+			};
+			if (content.indexOf("@:repo(", null) == -1 && content.indexOf("@:presence", null) == -1 && content.indexOf("@:endpoint", null) == -1 && content.indexOf("@:router", null) == -1 && content.indexOf("@:phoenixWeb", null) == -1 && content.indexOf("@:phoenixWebModule", null) == -1 && (content.indexOf("@:native(", null) == -1 || (content.indexOf("Web.Telemetry", null) == -1 && content.indexOf("Web.Endpoint", null) == -1 && content.indexOf("Web.Router", null) == -1 && (content.indexOf("TodoAppWeb", null) == -1 && content.indexOf("Web\")", null) == -1)))) {
+				return;
+			};
+			var hasRepo = false;
+			var hasPresence = false;
+			var hasEndpoint = false;
+			var hasRouter = false;
+			var hasPhoenixWeb = false;
+			var hasPhoenixWebModule = false;
+			var hasTelemetryNative = false;
+			var inBlock = false;
+			var pkg = "";
+			var cls = null;
+			{
+				var ` = 0;
+				var ` = content.split("\n");
+				while (` < `.length) {
+					var line = `[`];
+					++ `;
+					var raw = line;
+					var t = StringTools.trim(raw);
+					if (inBlock) {
+						if (t.indexOf("*/", null) != -1) {
+							inBlock = false;
+						};
+						continue;
+					};
+					if (StringTools.startsWith(t, "/*")) {
+						if (t.indexOf("*/", null) == -1) {
+							inBlock = true;
+						};
+						continue;
+					};
+					if (StringTools.startsWith(t, "//")) {
+						continue;
+					};
+					if (! hasRepo && t.indexOf("@:repo(", null) != -1) {
+						hasRepo = true;
+					};
+					if (! hasPresence && t.indexOf("@:presence", null) != -1) {
+						hasPresence = true;
+					};
+					if (! hasEndpoint && t.indexOf("@:endpoint", null) != -1) {
+						hasEndpoint = true;
+					};
+					if (! hasRouter && t.indexOf("@:router", null) != -1) {
+						hasRouter = true;
+					};
+					if (! hasPhoenixWeb && t.indexOf("@:phoenixWeb", null) != -1) {
+						hasPhoenixWeb = true;
+					};
+					if (! hasPhoenixWebModule && t.indexOf("@:phoenixWebModule", null) != -1) {
+						hasPhoenixWebModule = true;
+					};
+					if (! hasTelemetryNative && t.indexOf("@:native(", null) != -1 && (t.indexOf("Web.Telemetry", null) != -1 || t.indexOf("Web.Endpoint", null) != -1 || t.indexOf("Web.Router", null) != -1 || t.indexOf("TodoAppWeb", null) != -1)) {
+						hasTelemetryNative = true;
+					};
+					if (pkg == "" && StringTools.startsWith(t, "package ")) {
+						var semi = t.indexOf(";", null);
+						pkg = if (semi > 0) {
+							t.substr(8, semi - 8);
+						} else {
+							t.substr(8, null);
+						};
+						pkg = StringTools.trim(pkg);
+					};
+					if (cls == null) {
+						var re = new EReg("^(?:extern\\s+)?class\\s+([A-Za-z0-9_]+)", "");
+						if (re.match(t)) {
+							cls = re.matched(1);
+						};
+					};
+				};
+			};
+			if (! (hasRepo || hasPresence || hasEndpoint || hasRouter || hasPhoenixWeb || hasPhoenixWebModule || hasTelemetryNative) || cls == null) {
+				return;
+			};
+			var mod = if ((pkg != null && pkg.length > 0)) {
+				(pkg + "." + cls);
+			} else {
+				cls;
+			};
+			try {
+				haxe.macro.Context.getType(mod);
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			if (reflaxe.elixir.macros.RepoDiscovery.discovered.indexOf(mod, null) == -1) {
+				reflaxe.elixir.macros.RepoDiscovery.discovered.push(mod);
+			};
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{};
+			} else throw `;
+		};
+	}
+}

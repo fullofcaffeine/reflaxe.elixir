@@ -1,0 +1,2 @@
+@:used @:enum
+abstract elixir.TimePrecision to String {}

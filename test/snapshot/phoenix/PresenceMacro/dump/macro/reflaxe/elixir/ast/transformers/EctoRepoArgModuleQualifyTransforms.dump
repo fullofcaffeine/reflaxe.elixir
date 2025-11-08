@@ -1,0 +1,129 @@
+class reflaxe.elixir.ast.transformers.EctoRepoArgModuleQualifyTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall({ def : EVar(repoMod) }, fun, args):
+		var app = getAppPrefix();
+		if ((fun == "get" || fun == "one") && args != null && args.length >= 1 && app != null && repoMod == app + ".Repo") {
+			var first = args[0];
+			switch (first.def) {
+				case EVar(name) if (isSingleSegmentCamel(name)):
+					var qualified = makeAST(EVar(app + "." + name));
+					var newArgs = args.copy();
+					newArgs[0] = qualified;
+					makeASTWithMeta(ERemoteCall(makeAST(EVar(repoMod)), fun, newArgs), n.metadata, n.pos);				
+				default:
+					n;				
+			};
+		} else {
+			n;
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var repoMod = `;
+								var fun = `;
+								var args = `;
+								{
+									var app = cast try {
+										reflaxe.elixir.PhoenixMapper.getAppModuleName();
+									} catch (`:Dynamic) {
+										{};
+										{};
+										if (true) {
+											{};
+											{
+												null;
+											};
+										} else throw `;
+									};
+									if ((fun == "get" || fun == "one") && args != null && args.length >= 1 && app != null && repoMod == app + ".Repo") {
+										var first = args[0];
+										@:ast(switch (first.def) {
+	case EVar(name) if (isSingleSegmentCamel(name)):
+		var qualified = makeAST(EVar(app + "." + name));
+		var newArgs = args.copy();
+		newArgs[0] = qualified;
+		makeASTWithMeta(ERemoteCall(makeAST(EVar(repoMod)), fun, newArgs), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+											var ` = first.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var name = `;
+													if (if (name == null || name.length == 0) {
+														false;
+													} else {
+														name.indexOf(".", null) == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
+													}) {
+														var qualified = {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(app + "." + name), metadata : {}, pos : pos};
+														};
+														var newArgs = args.copy();
+														newArgs[0] = qualified;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(repoMod), metadata : {}, pos : pos};
+														}, fun, newArgs), metadata : n.metadata, pos : n.pos};
+													} else {
+														n;
+													};
+												};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function isSingleSegmentCamel(name:String) {
+		if (name == null || name.length == 0) {
+			return false;
+		};
+		return name.indexOf(".", null) == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
+	}
+
+	static inline function getAppPrefix() {
+		try {
+			return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{
+					return null;
+				};
+			} else throw `;
+		};
+	}
+}

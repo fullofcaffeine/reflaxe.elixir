@@ -1,0 +1,197 @@
+class reflaxe.elixir.ast.transformers.AlignBaseRefToUnderscoredBinderTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.AlignBaseRefToUnderscoredBinderTransforms.rewrite(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.AlignBaseRefToUnderscoredBinderTransforms.rewrite(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		var underscored = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var defined = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				@:ast(switch (s.def) {
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(n) if (n.length > 1 && n.charAt(0) == "_"):
+				var base = n.substr(1);
+				if (!defined.exists(base)) underscored.set(base, n);
+				defined.set(n, true);			
+			case EVar(n2):
+				defined.set(n2, true);			
+			default:
+		};	
+	case EMatch(pat, _):
+		switch (pat) {
+			case PVar(pn):
+				defined.set(pn, true);			
+			default:
+		};	
+	default:
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var pat = `;
+								{
+									@:ast(switch (pat) {
+	case PVar(pn):
+		defined.set(pn, true);	
+	default:
+}) if (enumIndex pat == 0) {
+										var ` = pat[0];
+										{
+											var pn = `;
+											{
+												{
+													defined.set(pn, true);
+												};
+											};
+										};
+									} else {};
+								};
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									{
+										@:ast(switch (left.def) {
+	case EVar(n) if (n.length > 1 && n.charAt(0) == "_"):
+		var base = n.substr(1);
+		if (!defined.exists(base)) underscored.set(base, n);
+		defined.set(n, true);	
+	case EVar(n2):
+		defined.set(n2, true);	
+	default:
+}) {
+											var ` = left.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var n = `;
+													if (n.length > 1 && n.charAt(0) == "_") {
+														var base = n.substr(1, null);
+														if (! defined.exists(base)) {
+															{
+																underscored.set(base, n);
+															};
+														};
+														{
+															defined.set(n, true);
+														};
+													} else {
+														var n2 = `;
+														{
+															{
+																defined.set(n2, true);
+															};
+														};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				var rewritten = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(s, function(x:reflaxe.elixir.ast.ElixirAST) {
+					return @:ast(switch (x.def) {
+	case EVar(v) if (!defined.exists(v) && underscored.exists(v)):
+		makeASTWithMeta(EVar(underscored.get(v)), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+						var ` = x.def;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var v = `;
+								if (! defined.exists(v) && underscored.exists(v)) {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EVar(underscored.get(v));
+										var meta = x.metadata;
+										var pos = x.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								} else {
+									x;
+								};
+							};
+						} else {
+							x;
+						};
+					};
+				});
+				out.push(rewritten);
+			};
+		};
+		return out;
+	}
+}

@@ -1,0 +1,142 @@
+class reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms {
+
+	public static function discardPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out = [];
+		for (s  in  stmts) switch (s.def) {
+			case EMatch(pat, rhs):
+				switch (pat) {
+					case PTuple(els) if (els != null && els.length == 1):
+						out.push(makeASTWithMeta(rhs.def, rhs.metadata, rhs.pos));					
+					default:
+						out.push(s);					
+				};			
+			case EBinary(Match, left, rhs2):
+				switch (left.def) {
+					case ETuple(els2) if (els2 != null && els2.length == 1):
+						out.push(makeASTWithMeta(rhs2.def, rhs2.metadata, rhs2.pos));					
+					default:
+						out.push(s);					
+				};			
+			default:
+				out.push(s);			
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < stmts.length) {
+									var s = stmts[`];
+									++ `;
+									@:ast(switch (s.def) {
+	case EMatch(pat, rhs):
+		switch (pat) {
+			case PTuple(els) if (els != null && els.length == 1):
+				out.push(makeASTWithMeta(rhs.def, rhs.metadata, rhs.pos));			
+			default:
+				out.push(s);			
+		};	
+	case EBinary(Match, left, rhs2):
+		switch (left.def) {
+			case ETuple(els2) if (els2 != null && els2.length == 1):
+				out.push(makeASTWithMeta(rhs2.def, rhs2.metadata, rhs2.pos));			
+			default:
+				out.push(s);			
+		};	
+	default:
+		out.push(s);	
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													var rhs = `;
+													{
+														@:ast(switch (pat) {
+	case PTuple(els) if (els != null && els.length == 1):
+		out.push(makeASTWithMeta(rhs.def, rhs.metadata, rhs.pos));	
+	default:
+		out.push(s);	
+}) if (enumIndex pat == 2) {
+															var ` = pat[0];
+															{
+																var els = `;
+																if (els != null && els.length == 1) {
+																	out.push({def : rhs.def, metadata : rhs.metadata, pos : rhs.pos});
+																} else {
+																	out.push(s);
+																};
+															};
+														} else {
+															out.push(s);
+														};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var rhs2 = `;
+														{
+															@:ast(switch (left.def) {
+	case ETuple(els2) if (els2 != null && els2.length == 1):
+		out.push(makeASTWithMeta(rhs2.def, rhs2.metadata, rhs2.pos));	
+	default:
+		out.push(s);	
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 16) {
+																	var ` = `[0];
+																	{
+																		var els2 = `;
+																		if (els2 != null && els2.length == 1) {
+																			out.push({def : rhs2.def, metadata : rhs2.metadata, pos : rhs2.pos});
+																		} else {
+																			out.push(s);
+																		};
+																	};
+																} else {
+																	out.push(s);
+																};
+															};
+														};
+													};
+												} else {
+													out.push(s);
+												};
+											};
+											default: {
+												out.push(s);
+											}
+										};
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

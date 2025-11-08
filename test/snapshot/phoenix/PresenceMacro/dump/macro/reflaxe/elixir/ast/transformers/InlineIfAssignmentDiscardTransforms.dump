@@ -1,0 +1,113 @@
+class reflaxe.elixir.ast.transformers.InlineIfAssignmentDiscardTransforms {
+
+	public static function fixPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EIf(cond, thenBr, elseBr):
+		var newThen = thenBr;
+		switch (thenBr.def) {
+			case EBinary(Match, left, rhs):
+				switch (left.def) {
+					case EVar(_):
+						newThen = makeASTWithMeta(EMatch(PWildcard, rhs), thenBr.metadata, thenBr.pos);					
+					default:
+				};			
+			case EMatch(pat, rhs2):
+				switch (pat) {
+					case PVar(_):
+						newThen = makeASTWithMeta(EMatch(PWildcard, rhs2), thenBr.metadata, thenBr.pos);					
+					default:
+				};			
+			default:
+		};
+		makeASTWithMeta(EIf(cond, newThen, elseBr), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 10) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenBr = `;
+						var elseBr = `;
+						{
+							var newThen = thenBr;
+							@:ast(switch (thenBr.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(_):
+				newThen = makeASTWithMeta(EMatch(PWildcard, rhs), thenBr.metadata, thenBr.pos);			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(_):
+				newThen = makeASTWithMeta(EMatch(PWildcard, rhs2), thenBr.metadata, thenBr.pos);			
+			default:
+		};	
+	default:
+}) {
+								var ` = thenBr.def;
+								switch (enumIndex `) {
+									case 8: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var pat = `;
+											var rhs2 = `;
+											{
+												@:ast(switch (pat) {
+	case PVar(_):
+		newThen = makeASTWithMeta(EMatch(PWildcard, rhs2), thenBr.metadata, thenBr.pos);	
+	default:
+}) if (enumIndex pat == 0) {
+													var ` = pat[0];
+													{
+														newThen = {def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PWildcard, rhs2), metadata : thenBr.metadata, pos : thenBr.pos};
+													};
+												} else {};
+											};
+										};
+									};
+									case 26: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (enumIndex ` == 27) {
+											{
+												var left = `;
+												var rhs = `;
+												{
+													@:ast(switch (left.def) {
+	case EVar(_):
+		newThen = makeASTWithMeta(EMatch(PWildcard, rhs), thenBr.metadata, thenBr.pos);	
+	default:
+}) {
+														var ` = left.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																newThen = {def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PWildcard, rhs), metadata : thenBr.metadata, pos : thenBr.pos};
+															};
+														} else {};
+													};
+												};
+											};
+										} else {};
+									};
+									default: {}
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, newThen, elseBr), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -178,9 +178,20 @@ defmodule HaxeCompiler do
     env = build_haxe_env()
     
     # Change to the directory containing the hxml file so relative paths work
+    # Bound execution time to avoid hangs during mix compile / phx.server
+    timeout_ms =
+      case System.get_env("HAXE_TIMEOUT_MS") do
+        nil ->
+          case System.get_env("HAXE_TIMEOUT_SECS") do
+            nil -> 300_000
+            secs -> String.to_integer(secs) * 1000
+          end
+        ms -> String.to_integer(ms)
+      end
+
     cmd_opts = case Path.dirname(hxml_file) do
-      "." -> [stderr_to_stdout: true, env: env]
-      dir -> [cd: dir, stderr_to_stdout: true, env: env]
+      "." -> [stderr_to_stdout: true, env: env, timeout: timeout_ms]
+      dir -> [cd: dir, stderr_to_stdout: true, env: env, timeout: timeout_ms]
     end
     
     # Use just the filename if we're changing directory
@@ -199,12 +210,18 @@ defmodule HaxeCompiler do
         # Parse structured error information from Haxe output
         structured_errors = parse_haxe_errors(output)
         store_compilation_errors(structured_errors)
-        
+
         {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
     end
   rescue
     error ->
-      {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
+      # Convert timeout exits into a clear, actionable message
+      message = Exception.message(error)
+      if String.contains?(message, "timed out") do
+        {:error, "Haxe compilation timed out after #{div(timeout_ms, 1000)}s. Set HAXE_TIMEOUT_MS to adjust."}
+      else
+        {:error, "Failed to execute Haxe: #{message}"}
+      end
   end
   
   defp find_generated_elixir_files(target_dir) do

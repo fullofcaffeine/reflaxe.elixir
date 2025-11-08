@@ -1,0 +1,1353 @@
+class reflaxe.elixir.ast.transformers.EctoERawTransforms {
+
+	static inline function toSnakeAtom(s:String) {
+		if (s == null || s.length == 0) {
+			return s;
+		};
+		var out = new StringBuf();
+		{
+			var ` = 0;
+			var ` = s.length;
+			while (` < `) {
+				var i = ` ++;
+				var ch = s.charAt(i);
+				var isUpper = ch.toUpperCase() == ch && ch.toLowerCase() != ch;
+				if (isUpper && i > 0) {
+					out.add("_");
+				};
+				out.add(ch.toLowerCase());
+			};
+		};
+		return out.toString();
+	}
+
+	static function atomizeValidateRequired(code:String) {
+		var out = new StringBuf();
+		var i = 0;
+		while (i < code.length) {
+			var idx = code.indexOf("Enum.map([", i);
+			if (idx == -1) {
+				out.add(code.substr(i, null));
+				break;
+			};
+			out.add(code.substr(i, idx - i));
+			var start = idx + "Enum.map([".length;
+			var endBracket = code.indexOf("]", start);
+			if (endBracket == -1) {
+				out.add(code.substr(idx, null));
+				break;
+			};
+			var limit = endBracket + 40;
+			if (limit > code.length) {
+				limit = code.length;
+			};
+			var afterList = code.substring(endBracket + 1, limit);
+			if (afterList.indexOf("&String.to_atom/1", null) == -1 && afterList.indexOf("&String.to_existing_atom/1", null) == -1) {
+				out.add(code.substr(idx, endBracket + 1 - idx));
+				i = endBracket + 1;
+				continue;
+			};
+			var listStr = code.substring(start, endBracket);
+			var items = [];
+			var p = 0;
+			while (p < listStr.length) {
+				var ch = listStr.charAt(p);
+				if (ch == " " || ch == ",") {
+					p ++;
+					continue;
+				};
+				if (ch == "\"") {
+					var j = p + 1;
+					var buf = new StringBuf();
+					while (j < listStr.length) {
+						var c = listStr.charAt(j);
+						if (c == "\"") {
+							break;
+						};
+						buf.add(c);
+						j ++;
+					};
+					items.push(":" + {
+						var s = buf.toString();
+						if (s == null || s.length == 0) {
+							s;
+						} else {
+							var out = new StringBuf();
+							{
+								var ` = 0;
+								var ` = s.length;
+								while (` < `) {
+									var i = ` ++;
+									var ch = s.charAt(i);
+									var isUpper = ch.toUpperCase() == ch && ch.toLowerCase() != ch;
+									if (isUpper && i > 0) {
+										out.add("_");
+									};
+									out.add(ch.toLowerCase());
+								};
+							};
+							out.toString();
+						};
+					});
+					p = j + 1;
+				} else {
+					items = null;
+					break;
+				};
+			};
+			if (items == null) {
+				out.add(code.substr(idx, endBracket + 1 - idx));
+				i = endBracket + 1;
+				continue;
+			};
+			var close = code.indexOf(")", endBracket);
+			if (close == -1) {
+				out.add(code.substr(idx, null));
+				break;
+			};
+			out.add("[" + items.join(", ") + "]");
+			i = close + 1;
+		};
+		return out.toString();
+	}
+
+	static function atomizeStringToAtomCalls(code:String) {
+		var out = new StringBuf();
+		var i = 0;
+		while (i < code.length) {
+			if (i + 17 < code.length && code.substr(i, 17) == "String.to_atom(\"") {
+				var j = i + 17;
+				var buf = new StringBuf();
+				while (j < code.length) {
+					var c = code.charAt(j);
+					if (c == "\"") {
+						break;
+					};
+					buf.add(c);
+					j ++;
+				};
+				if (j < code.length && code.charAt(j) == "\"") {
+					var val = ":" + {
+						var s = buf.toString();
+						if (s == null || s.length == 0) {
+							s;
+						} else {
+							var out = new StringBuf();
+							{
+								var ` = 0;
+								var ` = s.length;
+								while (` < `) {
+									var i = ` ++;
+									var ch = s.charAt(i);
+									var isUpper = ch.toUpperCase() == ch && ch.toLowerCase() != ch;
+									if (isUpper && i > 0) {
+										out.add("_");
+									};
+									out.add(ch.toLowerCase());
+								};
+							};
+							out.toString();
+						};
+					};
+					var k = j + 2;
+					out.add(val);
+					i = k;
+					continue;
+				};
+			};
+			out.add(code.charAt(i));
+			i ++;
+		};
+		return out.toString();
+	}
+
+	static function normalizeOptsComparisons(code:String) {
+		var out = new StringBuf();
+		var i = 0;
+		{};
+		while (i < code.length) {
+			if (i + 5 < code.length && code.substr(i, 5) == "opts.") {
+				var j = i + 5;
+				var key = new StringBuf();
+				if (j < code.length && (new EReg("^[A-Za-z_]$", "").match(code.charAt(j)))) {
+					while (j < code.length && {
+						var c = code.charAt(j);
+						new EReg("^[A-Za-z0-9_]$", "").match(c);
+					}) {
+						key.add(code.charAt(j));
+						j ++;
+					};
+					var k = key.toString();
+					var look = StringTools.ltrim(code.substr(j, null));
+					if (StringTools.startsWith(look, "== nil")) {
+						out.add("Kernel.is_nil(Map.get(opts, :" + k + "))");
+						var skip = j - i;
+						i += skip;
+						var t = i;
+						while (t < code.length) {
+							var ch = code.charAt(t);
+							if (ch == " " || ch == "\n" || ch == "\t" || ch == "\r") {
+								t ++;
+							} else {
+								break;
+							};
+						};
+						if (t + 6 <= code.length && code.substr(t, 6) == "== nil") {
+							i = t + 6;
+						} else {
+							i = t;
+						};
+						continue;
+					} else {
+						if (StringTools.startsWith(look, "!= nil")) {
+							out.add("not Kernel.is_nil(Map.get(opts, :" + k + "))");
+							var skip2 = j - i;
+							i += skip2;
+							var t2 = i;
+							while (t2 < code.length) {
+								var ch2 = code.charAt(t2);
+								if (ch2 == " " || ch2 == "\n" || ch2 == "\t" || ch2 == "\r") {
+									t2 ++;
+								} else {
+									break;
+								};
+							};
+							if (t2 + 6 <= code.length && code.substr(t2, 6) == "!= nil") {
+								i = t2 + 6;
+							} else {
+								i = t2;
+							};
+							continue;
+						} else {
+							out.add("Map.get(opts, :" + k + ")");
+							i = j;
+							continue;
+						};
+					};
+				};
+			};
+			if (i + 6 < code.length && code.substr(i, 6) == "opts:[") {
+				var j2 = i + 6;
+				if (j2 < code.length && code.charAt(j2) == ":") {
+					j2 ++;
+				};
+				var key2 = new StringBuf();
+				while (j2 < code.length && {
+					var c = code.charAt(j2);
+					new EReg("^[A-Za-z0-9_]$", "").match(c);
+				}) {
+					key2.add(code.charAt(j2));
+					j2 ++;
+				};
+				if (j2 < code.length && code.charAt(j2) == "]") {
+					j2 ++;
+					var k2 = key2.toString();
+					var look2 = StringTools.ltrim(code.substr(j2, null));
+					if (StringTools.startsWith(look2, "== nil")) {
+						out.add("Kernel.is_nil(Map.get(opts, :" + k2 + "))");
+						i = j2;
+						var t3 = i;
+						while (t3 < code.length) {
+							var ch3 = code.charAt(t3);
+							if (ch3 == " " || ch3 == "\n" || ch3 == "\t" || ch3 == "\r") {
+								t3 ++;
+							} else {
+								break;
+							};
+						};
+						if (t3 + 6 <= code.length && code.substr(t3, 6) == "== nil") {
+							i = t3 + 6;
+						} else {
+							i = t3;
+						};
+						continue;
+					} else {
+						if (StringTools.startsWith(look2, "!= nil")) {
+							out.add("not Kernel.is_nil(Map.get(opts, :" + k2 + "))");
+							i = j2;
+							var t4 = i;
+							while (t4 < code.length) {
+								var ch4 = code.charAt(t4);
+								if (ch4 == " " || ch4 == "\n" || ch4 == "\t" || ch4 == "\r") {
+									t4 ++;
+								} else {
+									break;
+								};
+							};
+							if (t4 + 6 <= code.length && code.substr(t4, 6) == "!= nil") {
+								i = t4 + 6;
+							} else {
+								i = t4;
+							};
+							continue;
+						} else {
+							out.add("Map.get(opts, :" + k2 + ")");
+							i = j2;
+							continue;
+						};
+					};
+				};
+			};
+			out.add(code.charAt(i));
+			i ++;
+		};
+		return out.toString();
+	}
+
+	static function atomizeValidateLengthFieldArg(code:String) {
+		var out = new StringBuf();
+		var i = 0;
+		{};
+		while (i < code.length) {
+			var idx = code.indexOf("validate_length(", i);
+			if (idx == -1) {
+				out.add(code.substr(i, null));
+				break;
+			};
+			out.add(code.substr(i, idx - i));
+			out.add("validate_length(");
+			var j = idx + "validate_length(".length;
+			var depth = 0;
+			var consumed = new StringBuf();
+			var doneFirst = false;
+			while (j < code.length && ! doneFirst) {
+				var ch = code.charAt(j);
+				if (ch == "(") {
+					depth ++;
+				};
+				if (ch == ")") {
+					depth --;
+				};
+				if (ch == "," && depth == 0) {
+					doneFirst = true;
+					j ++;
+					break;
+				};
+				consumed.add(ch);
+				j ++;
+			};
+			out.add(consumed.toString());
+			out.add(", ");
+			while (j < code.length) {
+				var sch = code.charAt(j);
+				if (sch == " " || sch == "\n" || sch == "\t" || sch == "\r") {
+					j ++;
+				} else {
+					break;
+				};
+			};
+			if (j < code.length && code.charAt(j) == "\"") {
+				var q = j + 1;
+				var sb = new StringBuf();
+				while (q < code.length) {
+					var c = code.charAt(q);
+					if (c == "\"") {
+						break;
+					};
+					sb.add(c);
+					q ++;
+				};
+				var lit = ":" + {
+					var s = sb.toString();
+					var b = new StringBuf();
+					{
+						var ` = 0;
+						var ` = s.length;
+						while (` < `) {
+							var k = ` ++;
+							var ch = s.charAt(k);
+							var isUpper = ch.toUpperCase() == ch && ch.toLowerCase() != ch;
+							if (isUpper && k > 0) {
+								b.add("_");
+							};
+							b.add(ch.toLowerCase());
+						};
+					};
+					b.toString();
+				};
+				out.add(lit);
+				j = q + 1;
+			} else {
+				out.add(code.charAt(j));
+				j ++;
+			};
+			i = j;
+		};
+		return out.toString();
+	}
+
+	public static function erawEctoFromQualificationPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var app = (function() {
+			try {
+				var d = haxe.macro.Compiler.getDefine("app_name");
+				if (d != null && d.length > 0) return d;
+			} catch(e:Dynamic) { };
+			return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		})();
+		var newBody:Array<ElixirAST> = [];
+		for (b  in  body) newBody.push(ElixirASTTransformer.transformNode(b, function(x) {
+			return switch (x.def) {
+				case ERaw(code):
+					var q = qualify(code, app);
+					q != code ? makeASTWithMeta(ERaw(q), x.metadata, x.pos) : x;				
+				default:
+					x;				
+			};
+		}));
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var app = (function() {
+			try {
+				var d = haxe.macro.Compiler.getDefine("app_name");
+				if (d != null && d.length > 0) return d;
+			} catch(e:Dynamic) { };
+			return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		})();
+		var newDo = ElixirASTTransformer.transformNode(doBlock, function(x) {
+			return switch (x.def) {
+				case ERaw(code):
+					var q = qualify(code, app);
+					q != code ? makeASTWithMeta(ERaw(q), x.metadata, x.pos) : x;				
+				default:
+					x;				
+			};
+		});
+		makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var app = (function() {
+									try {
+										var d = haxe.macro.Compiler.getDefine("app_name");
+										if (d != null && d.length > 0) {
+											return d;
+										};
+									} catch (`:Dynamic) {
+										{};
+										{};
+										if (true) {
+											{};
+											{};
+										} else throw `;
+									};
+									return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+								})();
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.ElixirASTTransformer.transformNode(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+											return @:ast(switch (x.def) {
+	case ERaw(code):
+		var q = qualify(code, app);
+		q != code ? makeASTWithMeta(ERaw(q), x.metadata, x.pos) : x;	
+	default:
+		x;	
+}) {
+												var ` = x.def;
+												if (enumIndex ` == 62) {
+													var ` = `[0];
+													{
+														var code = `;
+														{
+															var q = if (code.indexOf("Ecto.Query.from(", null) == -1) {
+																code;
+															} else {
+																var out = new StringBuf();
+																var i = 0;
+																while (i < code.length) {
+																	if (i + 5 < code.length && code.substr(i, 5) == " in :") {
+																		var j = i + 5;
+																		var name = new StringBuf();
+																		while (j < code.length) {
+																			var ch = code.charAt(j);
+																			var isAlnum = new EReg("^[A-Za-z0-9_]$", "").match(ch);
+																			if (! isAlnum) {
+																				break;
+																			};
+																			name.add(ch);
+																			j ++;
+																		};
+																		var raw = name.toString();
+																		if (raw.length > 0) {
+																			var parts = raw.split("_");
+																			var pas = [];
+																			{
+																				var ` = 0;
+																				while (` < parts.length) {
+																					var p = parts[`];
+																					++ `;
+																					if (p.length > 0) {
+																						pas.push(p.charAt(0).toUpperCase() + p.substr(1, null));
+																					};
+																				};
+																			};
+																			out.add(" in ");
+																			out.add(app);
+																			out.add(".");
+																			out.add(pas.join(""));
+																			i = j;
+																			continue;
+																		};
+																	};
+																	out.add(code.charAt(i));
+																	i ++;
+																};
+																out.toString();
+															};
+															if (q != code) {
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(q), metadata : x.metadata, pos : x.pos};
+															} else {
+																x;
+															};
+														};
+													};
+												} else {
+													x;
+												};
+											};
+										}));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var app = (function() {
+									try {
+										var d = haxe.macro.Compiler.getDefine("app_name");
+										if (d != null && d.length > 0) {
+											return d;
+										};
+									} catch (`:Dynamic) {
+										{};
+										{};
+										if (true) {
+											{};
+											{};
+										} else throw `;
+									};
+									return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+								})();
+								var newDo = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(doBlock, function(x:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (x.def) {
+	case ERaw(code):
+		var q = qualify(code, app);
+		q != code ? makeASTWithMeta(ERaw(q), x.metadata, x.pos) : x;	
+	default:
+		x;	
+}) {
+										var ` = x.def;
+										if (enumIndex ` == 62) {
+											var ` = `[0];
+											{
+												var code = `;
+												{
+													var q = if (code.indexOf("Ecto.Query.from(", null) == -1) {
+														code;
+													} else {
+														var out = new StringBuf();
+														var i = 0;
+														while (i < code.length) {
+															if (i + 5 < code.length && code.substr(i, 5) == " in :") {
+																var j = i + 5;
+																var name = new StringBuf();
+																while (j < code.length) {
+																	var ch = code.charAt(j);
+																	var isAlnum = new EReg("^[A-Za-z0-9_]$", "").match(ch);
+																	if (! isAlnum) {
+																		break;
+																	};
+																	name.add(ch);
+																	j ++;
+																};
+																var raw = name.toString();
+																if (raw.length > 0) {
+																	var parts = raw.split("_");
+																	var pas = [];
+																	{
+																		var ` = 0;
+																		while (` < parts.length) {
+																			var p = parts[`];
+																			++ `;
+																			if (p.length > 0) {
+																				pas.push(p.charAt(0).toUpperCase() + p.substr(1, null));
+																			};
+																		};
+																	};
+																	out.add(" in ");
+																	out.add(app);
+																	out.add(".");
+																	out.add(pas.join(""));
+																	i = j;
+																	continue;
+																};
+															};
+															out.add(code.charAt(i));
+															i ++;
+														};
+														out.toString();
+													};
+													if (q != code) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(q), metadata : x.metadata, pos : x.pos};
+													} else {
+														x;
+													};
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								});
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	public static function erawEctoValidateAtomNormalizePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERaw(code):
+		var c1 = atomizeValidateRequired(code);
+		var c2 = atomizeStringToAtomCalls(c1);
+		var c2b = atomizeValidateLengthFieldArg(c2);
+		var c3 = normalizeOptsComparisons(c2b);
+		c3 != code ? makeASTWithMeta(ERaw(c3), n.metadata, n.pos) : n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 62) {
+					var ` = `[0];
+					{
+						var code = `;
+						{
+							var c1 = reflaxe.elixir.ast.transformers.EctoERawTransforms.atomizeValidateRequired(code);
+							var c2 = reflaxe.elixir.ast.transformers.EctoERawTransforms.atomizeStringToAtomCalls(c1);
+							var c2b = reflaxe.elixir.ast.transformers.EctoERawTransforms.atomizeValidateLengthFieldArg(c2);
+							var c3 = reflaxe.elixir.ast.transformers.EctoERawTransforms.normalizeOptsComparisons(c2b);
+							if (c3 != code) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(c3), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	public static function erawEctoOptsAccessNormalizePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERaw(code):
+		var c = normalize(code);
+		c != code ? makeASTWithMeta(ERaw(c), n.metadata, n.pos) : n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 62) {
+					var ` = `[0];
+					{
+						var code = `;
+						{
+							var c = {
+								var out = code;
+								out = StringTools.replace(out, "min: opts.min", "min: Map.get(opts, :min)");
+								out = StringTools.replace(out, "max: opts.max", "max: Map.get(opts, :max)");
+								out = StringTools.replace(out, "is: opts.is", "is: Map.get(opts, :is)");
+								out;
+							};
+							if (c != code) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(c), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	public static function erawEctoQueryableToSchemaPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var app = name != null && name.indexOf("Web") > 0 ? name.substring(0, name.indexOf("Web")) : reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		var newBody = [for (b  in  body) ElixirASTTransformer.transformNode(b, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case ERaw(code):
+					var out = code;
+					var pattern = "Ecto.Queryable.to_query(:";
+					var idx = out.indexOf(pattern);
+					if (idx != -1 && app != null) {
+						var start = idx + pattern.length;
+						var j = start;
+						var nameBuf = new StringBuf();
+						while (j < out.length) {
+							var ch = out.charAt(j);
+							if (!~/^[A-Za-z0-9_]$/.match(ch)) break;
+							nameBuf.add(ch);
+							j++;
+						};
+						if (j < out.length && out.charAt(j) == ")") {
+							var atom = nameBuf.toString();
+							var repl = "Ecto.Queryable.to_query(" + app + "." + camelize(atom) + ")";
+							out = out.substring(0, idx) + repl + out.substring(j + 1);
+						};
+					};
+					out != code ? makeASTWithMeta(ERaw(out), x.metadata, x.pos) : x;				
+				default:
+					x;				
+			};
+		})];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var app2 = name != null && name.indexOf("Web") > 0 ? name.substring(0, name.indexOf("Web")) : reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		var newDo = ElixirASTTransformer.transformNode(doBlock, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case ERaw(code):
+					var out = code;
+					var pattern = "Ecto.Queryable.to_query(:";
+					var idx = out.indexOf(pattern);
+					if (idx != -1 && app2 != null) {
+						var start = idx + pattern.length;
+						var j = start;
+						var nameBuf = new StringBuf();
+						while (j < out.length) {
+							var ch = out.charAt(j);
+							if (!~/^[A-Za-z0-9_]$/.match(ch)) break;
+							nameBuf.add(ch);
+							j++;
+						};
+						if (j < out.length && out.charAt(j) == ")") {
+							var atom = nameBuf.toString();
+							var repl = "Ecto.Queryable.to_query(" + app2 + "." + camelize(atom) + ")";
+							out = out.substring(0, idx) + repl + out.substring(j + 1);
+						};
+					};
+					out != code ? makeASTWithMeta(ERaw(out), x.metadata, x.pos) : x;				
+				default:
+					x;				
+			};
+		});
+		makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var app = if (name != null && name.indexOf("Web", null) > 0) {
+									name.substring(0, name.indexOf("Web", null));
+								} else {
+									reflaxe.elixir.PhoenixMapper.getAppModuleName();
+								};
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.ElixirASTTransformer.transformNode(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+												return @:ast(switch (x.def) {
+	case ERaw(code):
+		var out = code;
+		var pattern = "Ecto.Queryable.to_query(:";
+		var idx = out.indexOf(pattern);
+		if (idx != -1 && app != null) {
+			var start = idx + pattern.length;
+			var j = start;
+			var nameBuf = new StringBuf();
+			while (j < out.length) {
+				var ch = out.charAt(j);
+				if (!~/^[A-Za-z0-9_]$/.match(ch)) break;
+				nameBuf.add(ch);
+				j++;
+			};
+			if (j < out.length && out.charAt(j) == ")") {
+				var atom = nameBuf.toString();
+				var repl = "Ecto.Queryable.to_query(" + app + "." + camelize(atom) + ")";
+				out = out.substring(0, idx) + repl + out.substring(j + 1);
+			};
+		};
+		out != code ? makeASTWithMeta(ERaw(out), x.metadata, x.pos) : x;	
+	default:
+		x;	
+}) {
+													var ` = x.def;
+													if (enumIndex ` == 62) {
+														var ` = `[0];
+														{
+															var code = `;
+															{
+																var out = code;
+																var pattern = "Ecto.Queryable.to_query(:";
+																var idx = out.indexOf(pattern, null);
+																if (idx != -1 && app != null) {
+																	var start = idx + pattern.length;
+																	var j = start;
+																	var nameBuf = new StringBuf();
+																	while (j < out.length) {
+																		var ch = out.charAt(j);
+																		if (! new EReg("^[A-Za-z0-9_]$", "").match(ch)) {
+																			break;
+																		};
+																		nameBuf.add(ch);
+																		j ++;
+																	};
+																	if (j < out.length && out.charAt(j) == ")") {
+																		var atom = nameBuf.toString();
+																		var repl = "Ecto.Queryable.to_query(" + app + "." + {
+																			var parts = atom.split("_");
+																			var out = [];
+																			{
+																				var ` = 0;
+																				while (` < parts.length) {
+																					var p = parts[`];
+																					++ `;
+																					if (p.length > 0) {
+																						out.push(p.charAt(0).toUpperCase() + p.substr(1, null));
+																					};
+																				};
+																			};
+																			out.join("");
+																		} + ")";
+																		out = out.substring(0, idx) + repl + out.substring(j + 1, null);
+																	};
+																};
+																if (out != code) {
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(out), metadata : x.metadata, pos : x.pos};
+																} else {
+																	x;
+																};
+															};
+														};
+													} else {
+														x;
+													};
+												};
+											}));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var app2 = if (name != null && name.indexOf("Web", null) > 0) {
+									name.substring(0, name.indexOf("Web", null));
+								} else {
+									reflaxe.elixir.PhoenixMapper.getAppModuleName();
+								};
+								var newDo = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(doBlock, function(x:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (x.def) {
+	case ERaw(code):
+		var out = code;
+		var pattern = "Ecto.Queryable.to_query(:";
+		var idx = out.indexOf(pattern);
+		if (idx != -1 && app2 != null) {
+			var start = idx + pattern.length;
+			var j = start;
+			var nameBuf = new StringBuf();
+			while (j < out.length) {
+				var ch = out.charAt(j);
+				if (!~/^[A-Za-z0-9_]$/.match(ch)) break;
+				nameBuf.add(ch);
+				j++;
+			};
+			if (j < out.length && out.charAt(j) == ")") {
+				var atom = nameBuf.toString();
+				var repl = "Ecto.Queryable.to_query(" + app2 + "." + camelize(atom) + ")";
+				out = out.substring(0, idx) + repl + out.substring(j + 1);
+			};
+		};
+		out != code ? makeASTWithMeta(ERaw(out), x.metadata, x.pos) : x;	
+	default:
+		x;	
+}) {
+										var ` = x.def;
+										if (enumIndex ` == 62) {
+											var ` = `[0];
+											{
+												var code = `;
+												{
+													var out = code;
+													var pattern = "Ecto.Queryable.to_query(:";
+													var idx = out.indexOf(pattern, null);
+													if (idx != -1 && app2 != null) {
+														var start = idx + pattern.length;
+														var j = start;
+														var nameBuf = new StringBuf();
+														while (j < out.length) {
+															var ch = out.charAt(j);
+															if (! new EReg("^[A-Za-z0-9_]$", "").match(ch)) {
+																break;
+															};
+															nameBuf.add(ch);
+															j ++;
+														};
+														if (j < out.length && out.charAt(j) == ")") {
+															var atom = nameBuf.toString();
+															var repl = "Ecto.Queryable.to_query(" + app2 + "." + {
+																var parts = atom.split("_");
+																var out = [];
+																{
+																	var ` = 0;
+																	while (` < parts.length) {
+																		var p = parts[`];
+																		++ `;
+																		if (p.length > 0) {
+																			out.push(p.charAt(0).toUpperCase() + p.substr(1, null));
+																		};
+																	};
+																};
+																out.join("");
+															} + ")";
+															out = out.substring(0, idx) + repl + out.substring(j + 1, null);
+														};
+													};
+													if (out != code) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(out), metadata : x.metadata, pos : x.pos};
+													} else {
+														x;
+													};
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								});
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	public static function fromInAtomQualificationPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		var app = (function() {
+			try {
+				var d = haxe.macro.Compiler.getDefine("app_name");
+				if (d != null && d.length > 0) {
+					return d;
+				};
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		})();
+		if (app == null || app.length == 0) {
+			return ast;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, fn, args) if (fn == "from" && args != null && args.length >= 1):
+		var modStr = switch (mod.def) {
+			case EVar(rn):
+				rn;			
+			default:
+				reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);			
+		};
+		if (modStr != "Ecto.Query") return n;
+		var a0 = args[0];
+		switch (a0.def) {
+			case EBinary(In, left, right):
+				switch (right.def) {
+					case EAtom(atomVal):
+						var raw = Std.string(atomVal);
+						if (raw.indexOf(".") == -1) {
+							var qual = app + "." + camelize(raw);
+							var newRight = makeAST(EVar(qual));
+							var newA0 = makeAST(EBinary(In, left, newRight));
+							var newArgs = args.copy();
+							newArgs[0] = newA0;
+							makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);
+						} else n;					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var fn = `;
+						var args = `;
+						if (fn == "from" && args != null && args.length >= 1) {
+							var modStr = @:ast(switch (mod.def) {
+	case EVar(rn):
+		rn;	
+	default:
+		reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var rn = `;
+										{
+											rn;
+										};
+									};
+								} else {
+									reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod, null);
+								};
+							};
+							if (modStr != "Ecto.Query") {
+								return n;
+							};
+							var a0 = args[0];
+							@:ast(switch (a0.def) {
+	case EBinary(In, left, right):
+		switch (right.def) {
+			case EAtom(atomVal):
+				var raw = Std.string(atomVal);
+				if (raw.indexOf(".") == -1) {
+					var qual = app + "." + camelize(raw);
+					var newRight = makeAST(EVar(qual));
+					var newA0 = makeAST(EBinary(In, left, newRight));
+					var newArgs = args.copy();
+					newArgs[0] = newA0;
+					makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);
+				} else n;			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+								var ` = a0.def;
+								if (enumIndex ` == 26) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (enumIndex ` == 26) {
+										{
+											var left = `;
+											var right = `;
+											{
+												@:ast(switch (right.def) {
+	case EAtom(atomVal):
+		var raw = Std.string(atomVal);
+		if (raw.indexOf(".") == -1) {
+			var qual = app + "." + camelize(raw);
+			var newRight = makeAST(EVar(qual));
+			var newA0 = makeAST(EBinary(In, left, newRight));
+			var newArgs = args.copy();
+			newArgs[0] = newA0;
+			makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+													var ` = right.def;
+													if (enumIndex ` == 31) {
+														var ` = `[0];
+														{
+															var atomVal = `;
+															{
+																var raw = Std.string(atomVal);
+																if (raw.indexOf(".", null) == -1) {
+																	var qual = app + "." + {
+																		var parts = raw.split("_");
+																		var out = [];
+																		{
+																			var ` = 0;
+																			while (` < parts.length) {
+																				var p = parts[`];
+																				++ `;
+																				if (p.length > 0) {
+																					out.push(p.charAt(0).toUpperCase() + p.substr(1, null));
+																				};
+																			};
+																		};
+																		out.join("");
+																	};
+																	var newRight = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar(qual), metadata : {}, pos : pos};
+																	};
+																	var newA0 = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.In, left, newRight), metadata : {}, pos : pos};
+																	};
+																	var newArgs = args.copy();
+																	newArgs[0] = newA0;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fn, newArgs), metadata : n.metadata, pos : n.pos};
+																} else {
+																	n;
+																};
+															};
+														};
+													} else {
+														n;
+													};
+												};
+											};
+										};
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	public static function fromInModuleQualificationPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		{};
+		var app = (function() {
+			try {
+				var d = haxe.macro.Compiler.getDefine("app_name");
+				if (d != null && d.length > 0) {
+					return d;
+				};
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			return reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		})();
+		if (app == null || app.length == 0) {
+			return ast;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, fn, args) if (fn == "from" && args != null && args.length >= 1):
+		var modStr = switch (mod.def) {
+			case EVar(rn):
+				rn;			
+			default:
+				reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);			
+		};
+		if (modStr != "Ecto.Query") return n;
+		var a0 = args[0];
+		switch (a0.def) {
+			case EBinary(In, left, right):
+				switch (right.def) {
+					case EVar(name) if (isSingleSegmentModule(name) && isUpperCamel(name)):
+						var newRight = makeAST(EVar(app + "." + name));
+						var newA0 = makeAST(EBinary(In, left, newRight));
+						var newArgs = args.copy();
+						newArgs[0] = newA0;
+						makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var fn = `;
+						var args = `;
+						if (fn == "from" && args != null && args.length >= 1) {
+							var modStr = @:ast(switch (mod.def) {
+	case EVar(rn):
+		rn;	
+	default:
+		reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var rn = `;
+										{
+											rn;
+										};
+									};
+								} else {
+									reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod, null);
+								};
+							};
+							if (modStr != "Ecto.Query") {
+								return n;
+							};
+							var a0 = args[0];
+							@:ast(switch (a0.def) {
+	case EBinary(In, left, right):
+		switch (right.def) {
+			case EVar(name) if (isSingleSegmentModule(name) && isUpperCamel(name)):
+				var newRight = makeAST(EVar(app + "." + name));
+				var newA0 = makeAST(EBinary(In, left, newRight));
+				var newArgs = args.copy();
+				newArgs[0] = newA0;
+				makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+								var ` = a0.def;
+								if (enumIndex ` == 26) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (enumIndex ` == 26) {
+										{
+											var left = `;
+											var right = `;
+											{
+												@:ast(switch (right.def) {
+	case EVar(name) if (isSingleSegmentModule(name) && isUpperCamel(name)):
+		var newRight = makeAST(EVar(app + "." + name));
+		var newA0 = makeAST(EBinary(In, left, newRight));
+		var newArgs = args.copy();
+		newArgs[0] = newA0;
+		makeASTWithMeta(ERemoteCall(mod, fn, newArgs), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+													var ` = right.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var name = `;
+															if (name != null && name.indexOf(".", null) == -1 && name.length > 0 && if (name == null || name.length == 0) {
+																false;
+															} else {
+																var c = name.charAt(0);
+																c.toUpperCase() == c && c.toLowerCase() != c;
+															}) {
+																var newRight = {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar(app + "." + name), metadata : {}, pos : pos};
+																};
+																var newA0 = {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.In, left, newRight), metadata : {}, pos : pos};
+																};
+																var newArgs = args.copy();
+																newArgs[0] = newA0;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fn, newArgs), metadata : n.metadata, pos : n.pos};
+															} else {
+																n;
+															};
+														};
+													} else {
+														n;
+													};
+												};
+											};
+										};
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

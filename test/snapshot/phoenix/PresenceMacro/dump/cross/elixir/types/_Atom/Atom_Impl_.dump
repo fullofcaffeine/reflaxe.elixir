@@ -1,0 +1,83 @@
+@:used
+private class elixir.types._Atom.Atom_Impl_ {
+
+	@:noCompletion
+	public static inline function _new(s:String) {
+		var this1;
+		this1 = s;
+		return cast this1;
+	}
+
+	public static inline function toString(this1:String) {
+		return this1;
+	}
+
+	@:op(A == B)
+	public static inline function equals(this1:String, other:elixir.types.Atom) {
+		return this1 == cast other;
+	}
+
+	@:op(A != B)
+	public static inline function notEquals(this1:String, other:elixir.types.Atom) {
+		return this1 != cast other;
+	}
+
+	public static inline function fromString(s:String) {
+		return {
+			var this1;
+			this1 = s;
+			cast this1;
+		};
+	}
+
+	@:value("ok")
+	public static inline var OK:elixir.types.Atom = cast "ok";
+
+	@:value("error")
+	public static inline var ERROR:elixir.types.Atom = cast "error";
+
+	@:value("true")
+	public static inline var TRUE:elixir.types.Atom = cast "true";
+
+	@:value("false")
+	public static inline var FALSE:elixir.types.Atom = cast "false";
+
+	@:value("nil")
+	public static inline var NIL:elixir.types.Atom = cast "nil";
+
+	@:value("undefined")
+	public static inline var UNDEFINED:elixir.types.Atom = cast "undefined";
+
+	@:value("infinity")
+	public static inline var INFINITY:elixir.types.Atom = cast "infinity";
+
+	@:value("timeout")
+	public static inline var TIMEOUT:elixir.types.Atom = cast "timeout";
+
+	@:value("normal")
+	public static inline var NORMAL:elixir.types.Atom = cast "normal";
+
+	@:value("shutdown")
+	public static inline var SHUTDOWN:elixir.types.Atom = cast "shutdown";
+
+	@:value("lt")
+	public static inline var LT:elixir.types.Atom = cast "lt";
+
+	@:value("eq")
+	public static inline var EQ:elixir.types.Atom = cast "eq";
+
+	@:value("gt")
+	public static inline var GT:elixir.types.Atom = cast "gt";
+
+	@:value("second")
+	public static inline var SECOND:elixir.types.Atom = cast "second";
+
+	@:value("millisecond")
+	public static inline var MILLISECOND:elixir.types.Atom = cast "millisecond";
+
+	@:value("microsecond")
+	public static inline var MICROSECOND:elixir.types.Atom = cast "microsecond";
+
+	@:value("nanosecond")
+	public static inline var NANOSECOND:elixir.types.Atom = cast "nanosecond";
+}

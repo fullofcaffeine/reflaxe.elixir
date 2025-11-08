@@ -1,0 +1,275 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.ASTUtils {
+
+	public static function walk(ast:reflaxe.elixir.ast.ElixirAST, visitor:reflaxe.elixir.ast.ElixirAST -> Void) {
+		if (ast == null || ast.def == null) {
+			return;
+		};
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			visitor(n);
+			return n;
+		});
+	}
+
+	public static function flattenBlocks(ast:reflaxe.elixir.ast.ElixirAST) {
+		if (ast == null || ast.def == null) {
+			return [];
+		};
+		return @:ast(switch (ast.def) {
+	case EBlock(exprs):
+		var flattened = [];
+		for (expr  in  exprs) {
+			flattened = flattened.concat(flattenBlocks(expr));
+		};
+		flattened;	
+	default:
+		[ast];	
+}) {
+			var ` = ast.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						var flattened = [];
+						{
+							var ` = 0;
+							while (` < exprs.length) {
+								var expr = exprs[`];
+								++ `;
+								flattened = flattened.concat(reflaxe.elixir.ast.ASTUtils.flattenBlocks(expr));
+							};
+						};
+						flattened;
+					};
+				};
+			} else {
+				[ast];
+			};
+		};
+	}
+
+	public static function extractBlockExprs(ast:reflaxe.elixir.ast.ElixirAST) {
+		if (ast == null || ast.def == null) {
+			return [];
+		};
+		return @:ast(switch (ast.def) {
+	case EBlock(exprs):
+		if (exprs.length == 1) {
+			switch (exprs[0].def) {
+				case EBlock(nested):
+					nested;				
+				default:
+					exprs;				
+			};
+		} else {
+			exprs;
+		};	
+	default:
+		[ast];	
+}) {
+			var ` = ast.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						if (exprs.length == 1) {
+							@:ast(switch (exprs[0].def) {
+	case EBlock(nested):
+		nested;	
+	default:
+		exprs;	
+}) {
+								var ` = exprs[0].def;
+								if (enumIndex ` == 53) {
+									var ` = `[0];
+									{
+										var nested = `;
+										{
+											nested;
+										};
+									};
+								} else {
+									exprs;
+								};
+							};
+						} else {
+							exprs;
+						};
+					};
+				};
+			} else {
+				[ast];
+			};
+		};
+	}
+
+	public static function containsIteratorPattern(ast:reflaxe.elixir.ast.ElixirAST) {
+		if (ast == null || ast.def == null) {
+			return false;
+		};
+		var hasPattern = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case EField(_, field):
+		if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
+			hasPattern = true;
+		};	
+	case ECall(func, _, _):
+		switch (func.def) {
+			case EField(_, field):
+				if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+					hasPattern = true;
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var func = `;
+							{
+								@:ast(switch (func.def) {
+	case EField(_, field):
+		if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+			hasPattern = true;
+		};	
+	default:
+}) {
+									var ` = func.def;
+									if (enumIndex ` == 28) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var field = `;
+											{
+												if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+													hasPattern[0] = true;
+												};
+											};
+										};
+									} else {};
+								};
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var field = `;
+							{
+								if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
+									hasPattern[0] = true;
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return n;
+		});
+		return hasPattern[0];
+	}
+
+	public static function filterIteratorAssignments(exprs:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (exprs == null) {
+			return [];
+		};
+		var filtered = [];
+		{
+			var ` = 0;
+			while (` < exprs.length) {
+				var expr = exprs[`];
+				++ `;
+				var skip = false;
+				@:ast(switch (expr.def) {
+	case EMatch(PVar(_), rhs):
+		if (containsIteratorPattern(rhs)) {
+			skip = true;
+		};	
+	default:
+}) {
+					var ` = expr.def;
+					if (enumIndex ` == 8) {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var rhs = `;
+								{
+									if (reflaxe.elixir.ast.ASTUtils.containsIteratorPattern(rhs)) {
+										skip = true;
+									};
+								};
+							};
+						} else {};
+					} else {};
+				};
+				if (! skip) {
+					filtered.push(expr);
+				};
+			};
+		};
+		return filtered;
+	}
+
+	public static function extractFieldChain(ast:reflaxe.elixir.ast.ElixirAST) {
+		var fieldChain = [];
+		var current = ast;
+		while (current != null) {
+			@:ast(switch (current.def) {
+	case EField(obj, field):
+		fieldChain.push(field);
+		current = obj;	
+	case ECall(func, _, _):
+		current = func;	
+	default:
+		current = null;	
+}) {
+				var ` = current.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var func = `;
+							{
+								current = func;
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj = `;
+							var field = `;
+							{
+								fieldChain.push(field);
+								current = obj;
+							};
+						};
+					};
+					default: {
+						current = null;
+					}
+				};
+			};
+		};
+		return fieldChain;
+	}
+
+	public static inline function makeAST(def:reflaxe.elixir.ast.ElixirASTDef, pos:Null<haxe.macro.Position> = null) {
+		return {def : def, pos : pos, metadata : {}};
+	}
+}

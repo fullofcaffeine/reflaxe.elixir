@@ -1,0 +1,91 @@
+@:realPath("TestPresence") @:directlyUsed @:used @:keep @:build(phoenix.macros.PresenceMacro.build()) @:autoBuild(phoenix.macros.PresenceMacro.build()) @:native("TestApp.Presence") @:presence
+class TestApp.Presence implements phoenix.PresenceBehavior {
+
+	@:keep @:value("presence:test")
+	static inline var TOPIC:String = "presence:test";
+
+	@:keep
+	public static function trackTestUser(socket:Socket, userId:String, name:String) {
+		var meta = {onlineAt : _Date.Date_Impl_.getTime(cast DateTime.utc_now()), userName : name, status : "active"};
+		__elixir__("{0}.track({1}, {2}, {3}, {4})", __elixir__("__MODULE__"), __elixir__("self()"), "presence:test", userId, meta);
+		return socket;
+	}
+
+	@:keep
+	public static function updateStatus(socket:Socket, userId:String, newStatus:String) {
+		var presences = cast __elixir__("{0}.list({1})", __elixir__("MyAppWeb.Presence"), "presence:test");
+		if ((Reflect.hasField(presences, userId))) {
+			var entry = Reflect.field(presences, userId);
+			if ((entry.metas.length > 0)) {
+				var currentMeta = entry.metas[0];
+				var updatedMeta = {onlineAt : currentMeta.onlineAt, userName : currentMeta.userName, status : newStatus};
+				__elixir__("{0}.update({1}, {2}, {3}, {4})", __elixir__("__MODULE__"), __elixir__("self()"), "presence:test", userId, updatedMeta);
+			};
+		};
+		return socket;
+	}
+
+	@:keep
+	public static function removeUser(socket:Socket, userId:String) {
+		__elixir__("{0}.untrack({1}, {2}, {3})", __elixir__("__MODULE__"), __elixir__("self()"), "presence:test", userId);
+		return socket;
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function trackInternal<M>(topic:String, key:String, meta:trackInternal.M) {
+		__elixir__("{0}.track({1}, {2}, {3}, {4})", __elixir__("__MODULE__"), __elixir__("self()"), topic, key, meta);
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function updateInternal<M>(topic:String, key:String, meta:updateInternal.M) {
+		__elixir__("{0}.update({1}, {2}, {3}, {4})", __elixir__("__MODULE__"), __elixir__("self()"), topic, key, meta);
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function untrackInternal(topic:String, key:String) {
+		__elixir__("{0}.untrack({1}, {2}, {3})", __elixir__("__MODULE__"), __elixir__("self()"), topic, key);
+	}
+
+	@:keep @:doc
+	public static inline function trackWithSocket<T, M>(socket:trackWithSocket.T, topic:String, key:String, meta:trackWithSocket.M) {
+		__elixir__("{0}.track({1}, {2}, {3}, {4})", __elixir__("__MODULE__"), __elixir__("self()"), topic, key, meta);
+		return socket;
+	}
+
+	@:keep @:doc
+	public static inline function updateWithSocket<T, M>(socket:updateWithSocket.T, topic:String, key:String, meta:updateWithSocket.M) {
+		__elixir__("{0}.update({1}, {2}, {3}, {4})", __elixir__("__MODULE__"), __elixir__("self()"), topic, key, meta);
+		return socket;
+	}
+
+	@:keep @:doc
+	public static inline function untrackWithSocket<T>(socket:untrackWithSocket.T, topic:String, key:String) {
+		__elixir__("{0}.untrack({1}, {2}, {3})", __elixir__("__MODULE__"), __elixir__("self()"), topic, key);
+		return socket;
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function list(topic:String) {
+		return __elixir__("{0}.list({1})", __elixir__("MyAppWeb.Presence"), topic);
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function getByKey(topic:String, key:String) {
+		return __elixir__("Phoenix.Presence.get_by_key({0}, {1})", topic, key);
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function track<M>(topic:String, key:String, meta:track.M) {
+		__elixir__("Phoenix.Presence.track({0}, {1}, {2})", topic, key, meta);
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function update<M>(topic:String, key:String, meta:update.M) {
+		__elixir__("Phoenix.Presence.update({0}, {1}, {2})", topic, key, meta);
+	}
+
+	@:keep @:has_untyped @:doc
+	public static inline function untrack(topic:String, key:String) {
+		__elixir__("Phoenix.Presence.untrack({0}, {1})", topic, key);
+	}
+}

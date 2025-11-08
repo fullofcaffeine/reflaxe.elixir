@@ -1,0 +1,4126 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.ComprehensionBuilder {
+
+	public static function tryBuildArrayComprehensionFromBlock(statements:Array<haxe.macro.TypedExpr>, context:reflaxe.elixir.ast.context.BuildContext) {
+		if (statements.length < 2) {
+			return null;
+		};
+		if (reflaxe.elixir.ast.builders.ComprehensionBuilder.isComprehensionPattern(statements)) {
+			var data = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractComprehensionData(statements);
+			if (data != null) {
+				var buildPossiblyNested = function(value:haxe.macro.TypedExpr) {
+					@:ast(switch (value.expr) {
+	case TBlock(stmts):
+		if (looksLikeListBuildingBlock(stmts)) {
+			var nested = tryBuildArrayComprehensionFromBlock(stmts, context);
+			if (nested != null) return nested;
+		} else {
+			var attempt = tryBuildArrayComprehensionFromBlock(stmts, context);
+			if (attempt != null) return attempt;
+			var loose = extractListElementsLoose(stmts, context);
+			if (loose != null && loose.length > 0) return makeAST(EList(loose));
+		};
+		return context.getExpressionBuilder()(value);	
+	case TCall(f, args) if (args.length == 0):
+		var iifeStmts = extractListBlockFromIIFE(value);
+		if (iifeStmts != null) {
+			if (looksLikeListBuildingBlock(iifeStmts)) {
+				var nestedIIFE = tryBuildArrayComprehensionFromBlock(iifeStmts, context);
+				if (nestedIIFE != null) return nestedIIFE;
+				var looseIIFE = extractListElementsLoose(iifeStmts, context);
+				if (looseIIFE != null && looseIIFE.length > 0) return makeAST(EList(looseIIFE));
+			} else {
+				var attemptIIFE = tryBuildArrayComprehensionFromBlock(iifeStmts, context);
+				if (attemptIIFE != null) return attemptIIFE;
+			};
+		};
+		return context.getExpressionBuilder()(value);	
+	case TArrayDecl([inner]) if (switch (inner.expr) {
+	case TBlock(_):
+		true;	
+	default:
+		false;	
+}):
+		var innerStmts = switch (inner.expr) {
+			case TBlock(s):
+				s;			
+			default:
+				[];			
+		};
+		var innerBuilt = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+		if (innerBuilt != null) {
+			return makeAST(EList([innerBuilt]));
+		};
+		return context.getExpressionBuilder()(value);	
+	case TArrayDecl([inner2]) if (switch (inner2.expr) {
+	case TCall(_, _):
+		true;	
+	default:
+		false;	
+}):
+		var iifeStmts2 = extractListBlockFromIIFE(inner2);
+		if (iifeStmts2 != null) {
+			var nested2 = tryBuildArrayComprehensionFromBlock(iifeStmts2, context);
+			if (nested2 != null) return makeAST(EList([nested2]));
+			var loose2 = extractListElementsLoose(iifeStmts2, context);
+			if (loose2 != null && loose2.length > 0) return makeAST(EList([makeAST(EList(loose2))]));
+		};
+		return context.getExpressionBuilder()(value);	
+	default:
+		return context.getExpressionBuilder()(value);	
+}) {
+						var ` = value.expr;
+						switch (enumIndex `) {
+							case 8: {
+								var ` = `[0];
+								if (`.length == 1) {
+									var ` = `[0];
+									{
+										var inner = `;
+										if (@:ast(switch (inner.expr) {
+	case TBlock(_):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = inner.expr;
+											if (enumIndex ` == 14) {
+												var ` = `[0];
+												{
+													true;
+												};
+											} else {
+												false;
+											};
+										}) {
+											var innerStmts = @:ast(switch (inner.expr) {
+	case TBlock(s):
+		s;	
+	default:
+		[];	
+}) {
+												var ` = inner.expr;
+												if (enumIndex ` == 14) {
+													var ` = `[0];
+													{
+														var s = `;
+														{
+															s;
+														};
+													};
+												} else {
+													[];
+												};
+											};
+											var innerBuilt = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(innerStmts, context);
+											if (innerBuilt != null) {
+												return {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EList([innerBuilt]), metadata : {}, pos : pos};
+												};
+											};
+											return context.getExpressionBuilder()(value);
+										} else {
+											var inner2 = `;
+											if (@:ast(switch (inner2.expr) {
+	case TCall(_, _):
+		true;	
+	default:
+		false;	
+}) {
+												var ` = inner2.expr;
+												if (enumIndex ` == 9) {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														true;
+													};
+												} else {
+													false;
+												};
+											}) {
+												var iifeStmts2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListBlockFromIIFE(inner2);
+												if (iifeStmts2 != null) {
+													var nested2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(iifeStmts2, context);
+													if (nested2 != null) {
+														return {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EList([nested2]), metadata : {}, pos : pos};
+														};
+													};
+													var loose2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(iifeStmts2, context);
+													if (loose2 != null && loose2.length > 0) {
+														return {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EList([{
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EList(loose2), metadata : {}, pos : pos};
+															}]), metadata : {}, pos : pos};
+														};
+													};
+												};
+												return context.getExpressionBuilder()(value);
+											} else {
+												return context.getExpressionBuilder()(value);
+											};
+										};
+									};
+								} else {
+									return context.getExpressionBuilder()(value);
+								};
+							};
+							case 9: {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var f = `;
+									var args = `;
+									if (args.length == 0) {
+										var iifeStmts = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListBlockFromIIFE(value);
+										if (iifeStmts != null) {
+											if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(iifeStmts)) {
+												var nestedIIFE = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(iifeStmts, context);
+												if (nestedIIFE != null) {
+													return nestedIIFE;
+												};
+												var looseIIFE = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(iifeStmts, context);
+												if (looseIIFE != null && looseIIFE.length > 0) {
+													return {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseIIFE), metadata : {}, pos : pos};
+													};
+												};
+											} else {
+												var attemptIIFE = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(iifeStmts, context);
+												if (attemptIIFE != null) {
+													return attemptIIFE;
+												};
+											};
+										};
+										return context.getExpressionBuilder()(value);
+									} else {
+										return context.getExpressionBuilder()(value);
+									};
+								};
+							};
+							case 14: {
+								var ` = `[0];
+								{
+									var stmts = `;
+									{
+										if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(stmts)) {
+											var nested = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, context);
+											if (nested != null) {
+												return nested;
+											};
+										} else {
+											var attempt = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, context);
+											if (attempt != null) {
+												return attempt;
+											};
+											var loose = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(stmts, context);
+											if (loose != null && loose.length > 0) {
+												return {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EList(loose), metadata : {}, pos : pos};
+												};
+											};
+										};
+										return context.getExpressionBuilder()(value);
+									};
+								};
+							};
+							default: {
+								return context.getExpressionBuilder()(value);
+							}
+						};
+					};
+				};
+				var body = if (data.condition != null) {
+					buildPossiblyNested(data.body);
+				} else {
+					buildPossiblyNested(data.body);
+				};
+				var filters = if (data.condition != null) {
+					[context.getExpressionBuilder()(data.condition)];
+				} else {
+					[];
+				};
+				return {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : reflaxe.elixir.ast.EPattern.PVar(data.loopVar), expr : context.getExpressionBuilder()(data.iterator)}], filters, body, null, false);
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				};
+			};
+		};
+		if (reflaxe.elixir.ast.builders.ComprehensionBuilder.isUnrolledComprehension(statements)) {
+			var elements = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractUnrolledElements(statements, context);
+			if (elements != null && elements.length > 0) {
+				return {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EList(elements), metadata : {}, pos : pos};
+				};
+			};
+		};
+		if (statements.length >= 3) {
+			var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[0]);
+			var lastStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[statements.length - 1]);
+			@:ast(switch (firstStmt.expr) {
+	case TVar(v, { expr : TArrayDecl([]) }):
+		switch (lastStmt.expr) {
+			case TLocal(returnVar) if (returnVar.name == v.name):
+				var middleStmts = statements.slice(1, statements.length - 1);
+				var result = tryReconstructConditionalComprehension(middleStmts, v.name, context);
+				if (result != null) {
+					return result;
+				};
+				for (mid  in  middleStmts) {
+					switch (unwrapMetaParens(mid).expr) {
+						case TBlock(inner):
+							for (s  in  inner) switch (unwrapMetaParens(s).expr) {
+								case TFor(loopVar, iterator, body):
+									var push = extractPushFromBody(body, v.name);
+									if (push != null) {
+										var filters = push.condition != null ? [context.getExpressionBuilder()(push.condition)] : [];
+										var valueAst = (function() {
+											switch (push.value.expr) {
+												case TBlock(nested) if (looksLikeListBuildingBlock(nested)):
+													var nestedComp = tryBuildArrayComprehensionFromBlock(nested, context);
+													if (nestedComp != null) return nestedComp;
+													var loose = extractListElementsLoose(nested, context);
+													return (loose != null && loose.length > 0) ? makeAST(EList(loose)) : context.getExpressionBuilder()(push.value);												
+												default:
+													return context.getExpressionBuilder()(push.value);												
+											};
+										})();
+										return makeAST(EFor([{ pattern : PVar(loopVar.name), expr : context.getExpressionBuilder()(iterator) }], filters, valueAst, null, false));
+									};								
+								default:
+							};						
+						default:
+					};
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = firstStmt.expr;
+				if (enumIndex ` == 13) {
+					var ` = `[0];
+					var ` = `[1];
+					if (` == null) {} else {
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 8) {
+							var ` = `[0];
+							if (`.length == 0) {
+								{
+									var v = `;
+									{
+										@:ast(switch (lastStmt.expr) {
+	case TLocal(returnVar) if (returnVar.name == v.name):
+		var middleStmts = statements.slice(1, statements.length - 1);
+		var result = tryReconstructConditionalComprehension(middleStmts, v.name, context);
+		if (result != null) {
+			return result;
+		};
+		for (mid  in  middleStmts) {
+			switch (unwrapMetaParens(mid).expr) {
+				case TBlock(inner):
+					for (s  in  inner) switch (unwrapMetaParens(s).expr) {
+						case TFor(loopVar, iterator, body):
+							var push = extractPushFromBody(body, v.name);
+							if (push != null) {
+								var filters = push.condition != null ? [context.getExpressionBuilder()(push.condition)] : [];
+								var valueAst = (function() {
+									switch (push.value.expr) {
+										case TBlock(nested) if (looksLikeListBuildingBlock(nested)):
+											var nestedComp = tryBuildArrayComprehensionFromBlock(nested, context);
+											if (nestedComp != null) return nestedComp;
+											var loose = extractListElementsLoose(nested, context);
+											return (loose != null && loose.length > 0) ? makeAST(EList(loose)) : context.getExpressionBuilder()(push.value);										
+										default:
+											return context.getExpressionBuilder()(push.value);										
+									};
+								})();
+								return makeAST(EFor([{ pattern : PVar(loopVar.name), expr : context.getExpressionBuilder()(iterator) }], filters, valueAst, null, false));
+							};						
+						default:
+					};				
+				default:
+			};
+		};	
+	default:
+}) {
+											var ` = lastStmt.expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var returnVar = `;
+													if (returnVar.name == v.name) {
+														var middleStmts = statements.slice(1, statements.length - 1);
+														var result = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryReconstructConditionalComprehension(middleStmts, v.name, context);
+														if (result != null) {
+															return result;
+														};
+														{
+															var ` = 0;
+															while (` < middleStmts.length) {
+																var mid = middleStmts[`];
+																++ `;
+																@:ast(switch (unwrapMetaParens(mid).expr) {
+	case TBlock(inner):
+		for (s  in  inner) switch (unwrapMetaParens(s).expr) {
+			case TFor(loopVar, iterator, body):
+				var push = extractPushFromBody(body, v.name);
+				if (push != null) {
+					var filters = push.condition != null ? [context.getExpressionBuilder()(push.condition)] : [];
+					var valueAst = (function() {
+						switch (push.value.expr) {
+							case TBlock(nested) if (looksLikeListBuildingBlock(nested)):
+								var nestedComp = tryBuildArrayComprehensionFromBlock(nested, context);
+								if (nestedComp != null) return nestedComp;
+								var loose = extractListElementsLoose(nested, context);
+								return (loose != null && loose.length > 0) ? makeAST(EList(loose)) : context.getExpressionBuilder()(push.value);							
+							default:
+								return context.getExpressionBuilder()(push.value);							
+						};
+					})();
+					return makeAST(EFor([{ pattern : PVar(loopVar.name), expr : context.getExpressionBuilder()(iterator) }], filters, valueAst, null, false));
+				};			
+			default:
+		};	
+	default:
+}) {
+																	var ` = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(mid).expr;
+																	if (enumIndex ` == 14) {
+																		var ` = `[0];
+																		{
+																			var inner = `;
+																			{
+																				{
+																					var ` = 0;
+																					while (` < inner.length) {
+																						var s = inner[`];
+																						++ `;
+																						@:ast(switch (unwrapMetaParens(s).expr) {
+	case TFor(loopVar, iterator, body):
+		var push = extractPushFromBody(body, v.name);
+		if (push != null) {
+			var filters = push.condition != null ? [context.getExpressionBuilder()(push.condition)] : [];
+			var valueAst = (function() {
+				switch (push.value.expr) {
+					case TBlock(nested) if (looksLikeListBuildingBlock(nested)):
+						var nestedComp = tryBuildArrayComprehensionFromBlock(nested, context);
+						if (nestedComp != null) return nestedComp;
+						var loose = extractListElementsLoose(nested, context);
+						return (loose != null && loose.length > 0) ? makeAST(EList(loose)) : context.getExpressionBuilder()(push.value);					
+					default:
+						return context.getExpressionBuilder()(push.value);					
+				};
+			})();
+			return makeAST(EFor([{ pattern : PVar(loopVar.name), expr : context.getExpressionBuilder()(iterator) }], filters, valueAst, null, false));
+		};	
+	default:
+}) {
+																							var ` = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(s).expr;
+																							if (enumIndex ` == 15) {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var loopVar = `;
+																									var iterator = `;
+																									var body = `;
+																									{
+																										var push = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractPushFromBody(body, v.name);
+																										if (push != null) {
+																											var filters = if (push.condition != null) {
+																												[context.getExpressionBuilder()(push.condition)];
+																											} else {
+																												[];
+																											};
+																											var valueAst = (function() {
+																												@:ast(switch (push.value.expr) {
+	case TBlock(nested) if (looksLikeListBuildingBlock(nested)):
+		var nestedComp = tryBuildArrayComprehensionFromBlock(nested, context);
+		if (nestedComp != null) return nestedComp;
+		var loose = extractListElementsLoose(nested, context);
+		return (loose != null && loose.length > 0) ? makeAST(EList(loose)) : context.getExpressionBuilder()(push.value);	
+	default:
+		return context.getExpressionBuilder()(push.value);	
+}) {
+																													var ` = push.value.expr;
+																													if (enumIndex ` == 14) {
+																														var ` = `[0];
+																														{
+																															var nested = `;
+																															if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(nested)) {
+																																var nestedComp = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(nested, context);
+																																if (nestedComp != null) {
+																																	return nestedComp;
+																																};
+																																var loose = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(nested, context);
+																																return if ((loose != null && loose.length > 0)) {
+																																	{
+																																		var pos = null;
+																																		{def : reflaxe.elixir.ast.ElixirASTDef.EList(loose), metadata : {}, pos : pos};
+																																	};
+																																} else {
+																																	context.getExpressionBuilder()(push.value);
+																																};
+																															} else {
+																																return context.getExpressionBuilder()(push.value);
+																															};
+																														};
+																													} else {
+																														return context.getExpressionBuilder()(push.value);
+																													};
+																												};
+																											})();
+																											return {
+																												var def = reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : reflaxe.elixir.ast.EPattern.PVar(loopVar.name), expr : context.getExpressionBuilder()(iterator)}], filters, valueAst, null, false);
+																												var pos = null;
+																												{def : def, metadata : {}, pos : pos};
+																											};
+																										};
+																									};
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return null;
+	}
+
+	static function isComprehensionPattern(statements:Array<haxe.macro.TypedExpr>) {
+		if (statements.length < 3) {
+			return false;
+		};
+		var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[0]);
+		var lastStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[statements.length - 1]);
+		var tempVarName = null;
+		@:ast(switch (firstStmt.expr) {
+	case TVar(v, { expr : TArrayDecl([]) }):
+		tempVarName = v.name;	
+	default:
+		return false;	
+}) {
+			var ` = firstStmt.expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				if (` == null) {
+					return false;
+				} else {
+					var ` = `.expr;
+					var ` = `.pos;
+					var ` = `.t;
+					if (enumIndex ` == 8) {
+						var ` = `[0];
+						if (`.length == 0) {
+							{
+								var v = `;
+								{
+									tempVarName = v.name;
+								};
+							};
+						} else {
+							return false;
+						};
+					} else {
+						return false;
+					};
+				};
+			} else {
+				return false;
+			};
+		};
+		@:ast(switch (lastStmt.expr) {
+	case TLocal(v) if (v.name == tempVarName):
+	default:
+		return false;	
+}) {
+			var ` = lastStmt.expr;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var v = `;
+					if (v.name == tempVarName) {} else {
+						return false;
+					};
+				};
+			} else {
+				return false;
+			};
+		};
+		{
+			var ` = 1;
+			var ` = statements.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[i]);
+				@:ast(switch (stmt.expr) {
+	case TFor(_, _, _) | TWhile(_, _, _):
+		return true;	
+	default:
+}) {
+					var ` = stmt.expr;
+					switch (enumIndex `) {
+						case 15: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								return true;
+							};
+						};
+						case 17: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								return true;
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return false;
+	}
+
+	static function isUnrolledComprehension(statements:Array<haxe.macro.TypedExpr>) {
+		if (statements.length < 3) {
+			return false;
+		};
+		if (reflaxe.elixir.ast.builders.ComprehensionBuilder.isLegacyUnrolledComprehension(statements)) {
+			return true;
+		};
+		if (reflaxe.elixir.ast.builders.ComprehensionBuilder.isChainedAssignmentComprehension(statements)) {
+			return true;
+		};
+		return false;
+	}
+
+	static function isLegacyUnrolledComprehension(statements:Array<haxe.macro.TypedExpr>) {
+		var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[0]);
+		var lastStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[statements.length - 1]);
+		var tempVarName = null;
+		@:ast(switch (firstStmt.expr) {
+	case TVar(v, { expr : TArrayDecl([]) }):
+		tempVarName = v.name;	
+	default:
+		return false;	
+}) {
+			var ` = firstStmt.expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				if (` == null) {
+					return false;
+				} else {
+					var ` = `.expr;
+					var ` = `.pos;
+					var ` = `.t;
+					if (enumIndex ` == 8) {
+						var ` = `[0];
+						if (`.length == 0) {
+							{
+								var v = `;
+								{
+									tempVarName = v.name;
+								};
+							};
+						} else {
+							return false;
+						};
+					} else {
+						return false;
+					};
+				};
+			} else {
+				return false;
+			};
+		};
+		@:ast(switch (lastStmt.expr) {
+	case TLocal(v) if (v.name == tempVarName):
+	default:
+		return false;	
+}) {
+			var ` = lastStmt.expr;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var v = `;
+					if (v.name == tempVarName) {} else {
+						return false;
+					};
+				};
+			} else {
+				return false;
+			};
+		};
+		var hasConcatenation = false;
+		{
+			var ` = 1;
+			var ` = statements.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[i]);
+				@:ast(switch (stmt.expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == tempVarName):
+		hasConcatenation = true;	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, _) }) if (v.name == tempVarName):
+		hasConcatenation = true;	
+	case TIf(_, _, _):
+		hasConcatenation = true;	
+	default:
+}) {
+					var ` = stmt.expr;
+					switch (enumIndex `) {
+						case 3: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							switch (enumIndex `) {
+								case 4: {
+									{
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										if (enumIndex ` == 1) {
+											var ` = `[0];
+											{
+												var ` = `.expr;
+												var ` = `.pos;
+												var ` = `.t;
+												if (enumIndex ` == 3) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 0) {
+														{
+															var v = `;
+															if (v.name == tempVarName) {
+																hasConcatenation = true;
+															} else {};
+														};
+													} else {};
+												} else {};
+											};
+										} else {};
+									};
+								};
+								case 20: {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var v = `;
+													if (v.name == tempVarName) {
+														hasConcatenation = true;
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+								default: {}
+							};
+						};
+						case 16: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								hasConcatenation = true;
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return hasConcatenation;
+	}
+
+	static function isChainedAssignmentComprehension(statements:Array<haxe.macro.TypedExpr>) {
+		if (statements.length < 3) {
+			return false;
+		};
+		var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[0]);
+		var lastStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[statements.length - 1]);
+		var hasChainedAssignment = @:ast(switch (firstStmt.expr) {
+	case TBinop(OpAssign, { expr : TLocal(_) }, { expr : TBinop(OpAssign, { expr : TLocal(_) }, _) }):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = firstStmt.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 4) {
+					{
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 3) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (enumIndex ` == 4) {
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													true;
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+		if (! hasChainedAssignment) {
+			return false;
+		};
+		var endsWithEmptyArray = @:ast(switch (lastStmt.expr) {
+	case TArrayDecl([]):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = lastStmt.expr;
+			if (enumIndex ` == 8) {
+				var ` = `[0];
+				if (`.length == 0) {
+					{
+						true;
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+		if (! endsWithEmptyArray) {
+			return false;
+		};
+		var hasBareConcat = false;
+		{
+			var ` = 1;
+			var ` = statements.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[i]);
+				@:ast(switch (stmt.expr) {
+	case TBinop(OpAdd, { expr : TArrayDecl([]) }, { expr : TArrayDecl(_) }):
+		hasBareConcat = true;	
+	case TBinop(OpAssign, { expr : TLocal(_) }, _):
+	default:
+}) {
+					var ` = stmt.expr;
+					if (enumIndex ` == 3) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						switch (enumIndex `) {
+							case 0: {
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 8) {
+										var ` = `[0];
+										if (`.length == 0) {
+											{
+												var ` = `.expr;
+												var ` = `.pos;
+												var ` = `.t;
+												if (enumIndex ` == 8) {
+													var ` = `[0];
+													{
+														hasBareConcat = true;
+													};
+												} else {};
+											};
+										} else {};
+									} else {};
+								};
+							};
+							case 4: {
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{};
+									} else {};
+								};
+							};
+							default: {}
+						};
+					} else {};
+				};
+			};
+		};
+		return hasBareConcat;
+	}
+
+	public static function looksLikeListBuildingBlock(stmts:Array<haxe.macro.TypedExpr>) {
+		if (stmts.length < 3) {
+			return false;
+		};
+		var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(stmts[0]);
+		var lastStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(stmts[stmts.length - 1]);
+		var tempVar = null;
+		@:ast(switch (firstStmt.expr) {
+	case TVar(v, { expr : TArrayDecl([]) }):
+		tempVar = v.name;	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TArrayDecl([]) }):
+		tempVar = v.name;	
+	default:
+		return false;	
+}) {
+			var ` = firstStmt.expr;
+			switch (enumIndex `) {
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 4) {
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 8) {
+										var ` = `[0];
+										if (`.length == 0) {
+											{
+												var v = `;
+												{
+													tempVar = v.name;
+												};
+											};
+										} else {
+											return false;
+										};
+									} else {
+										return false;
+									};
+								};
+							} else {
+								return false;
+							};
+						};
+					} else {
+						return false;
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					if (` == null) {
+						return false;
+					} else {
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 8) {
+							var ` = `[0];
+							if (`.length == 0) {
+								{
+									var v = `;
+									{
+										tempVar = v.name;
+									};
+								};
+							} else {
+								return false;
+							};
+						} else {
+							return false;
+						};
+					};
+				};
+				default: {
+					return false;
+				}
+			};
+		};
+		@:ast(switch (lastStmt.expr) {
+	case TLocal(v) if (v.name == tempVar):
+		for (i  in  1 ... stmts.length - 1) {
+			var stmt = unwrapMetaParens(stmts[i]);
+			switch (stmt.expr) {
+				case TBinop(OpAdd, { expr : TLocal(v) }, _) if (v.name == tempVar):
+					return true;				
+				case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == tempVar):
+					return true;				
+				default:
+			};
+		};	
+	default:
+}) {
+			var ` = lastStmt.expr;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var v = `;
+					if (v.name == tempVar) {
+						{
+							var ` = 1;
+							var ` = stmts.length - 1;
+							while (` < `) {
+								var i = ` ++;
+								var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(stmts[i]);
+								@:ast(switch (stmt.expr) {
+	case TBinop(OpAdd, { expr : TLocal(v) }, _) if (v.name == tempVar):
+		return true;	
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == tempVar):
+		return true;	
+	default:
+}) {
+									var ` = stmt.expr;
+									if (enumIndex ` == 3) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										switch (enumIndex `) {
+											case 0: {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var v = `;
+															if (v.name == tempVar) {
+																return true;
+															} else {};
+														};
+													} else {};
+												};
+											};
+											case 20: {
+												var ` = `[0];
+												if (enumIndex ` == 0) {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var v = `;
+																if (v.name == tempVar) {
+																	return true;
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									} else {};
+								};
+							};
+						};
+					} else {};
+				};
+			} else {};
+		};
+		return false;
+	}
+
+	static function extractComprehensionData(statements:Array<haxe.macro.TypedExpr>) {
+		if (statements.length < 3) {
+			return null;
+		};
+		var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[0]);
+		var tempVarName = null;
+		@:ast(switch (firstStmt.expr) {
+	case TVar(v, _):
+		tempVarName = v.name;	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TArrayDecl([]) }):
+		tempVarName = v.name;	
+	default:
+		return null;	
+}) {
+			var ` = firstStmt.expr;
+			switch (enumIndex `) {
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 4) {
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 8) {
+										var ` = `[0];
+										if (`.length == 0) {
+											{
+												var v = `;
+												{
+													tempVarName = v.name;
+												};
+											};
+										} else {
+											return null;
+										};
+									} else {
+										return null;
+									};
+								};
+							} else {
+								return null;
+							};
+						};
+					} else {
+						return null;
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						{
+							tempVarName = v.name;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+		{
+			var ` = 1;
+			var ` = statements.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[i]);
+				@:ast(switch (stmt.expr) {
+	case TFor(_, iterator, body):
+		var pushData = extractPushFromBody(body, tempVarName);
+		if (pushData != null) {
+			var loopVar = switch (stmt.expr) {
+				case TFor(v, _, _):
+					v.name;				
+				default:
+					"";				
+			};
+			return { tempVar : tempVarName, loopVar : loopVar, iterator : iterator, body : pushData.value, condition : pushData.condition };
+		};	
+	case TWhile(_, body, _):
+		continue;	
+	default:
+}) {
+					var ` = stmt.expr;
+					switch (enumIndex `) {
+						case 15: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var iterator = `;
+								var body = `;
+								{
+									var pushData = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractPushFromBody(body, tempVarName);
+									if (pushData != null) {
+										var loopVar = @:ast(switch (stmt.expr) {
+	case TFor(v, _, _):
+		v.name;	
+	default:
+		"";	
+}) {
+											var ` = stmt.expr;
+											if (enumIndex ` == 15) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var v = `;
+													{
+														v.name;
+													};
+												};
+											} else {
+												"";
+											};
+										};
+										return {tempVar : tempVarName, loopVar : loopVar, iterator : iterator, body : pushData.value, condition : pushData.condition};
+									};
+								};
+							};
+						};
+						case 17: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var body = `;
+								{
+									continue;
+								};
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return null;
+	}
+
+	public static function extractPushFromBody(body:haxe.macro.TypedExpr, tempVar:String) {
+		@:ast(switch (body.expr) {
+	case TCall({ expr : TField({ expr : TLocal(v) }, FInstance(_, _, field)) }, [value]) if (v.name == tempVar && field.get().name == "push"):
+		return { value : value, condition : null };	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, { expr : TArrayDecl([value]) }) }) if (v.name == tempVar && v2.name == tempVar):
+		return { value : value, condition : null };	
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVar):
+		return { value : value, condition : null };	
+	case TIf(condition, thenExpr, null):
+		var pushData = extractPushFromBody(thenExpr, tempVar);
+		if (pushData != null) {
+			return { value : pushData.value, condition : condition };
+		};	
+	case TBlock(stmts):
+		for (stmt  in  stmts) {
+			var pushData = extractPushFromBody(stmt, tempVar);
+			if (pushData != null) {
+				return pushData;
+			};
+		};	
+	default:
+}) {
+			var ` = body.expr;
+			switch (enumIndex `) {
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					switch (enumIndex `) {
+						case 4: {
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										if (enumIndex ` == 3) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 0) {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 8) {
+																var ` = `[0];
+																if (`.length == 1) {
+																	var ` = `[0];
+																	{
+																		var value = `;
+																		var v2 = `;
+																		var v = `;
+																		if (v.name == tempVar && v2.name == tempVar) {
+																			return {value : value, condition : null};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										} else {};
+									};
+								} else {};
+							};
+						};
+						case 20: {
+							var ` = `[0];
+							if (enumIndex ` == 0) {
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											if (enumIndex ` == 8) {
+												var ` = `[0];
+												if (`.length == 1) {
+													var ` = `[0];
+													{
+														var value = `;
+														var v = `;
+														if (v.name == tempVar) {
+															return {value : value, condition : null};
+														} else {};
+													};
+												} else {};
+											} else {};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 4) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (`.length == 1) {
+											var ` = `[0];
+											{
+												var value = `;
+												var v = `;
+												var field = `;
+												if (v.name == tempVar && field.get().name == "push") {
+													return {value : value, condition : null};
+												} else {};
+											};
+										} else {};
+									} else {};
+								} else {};
+							};
+						} else {};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var ` = 0;
+								while (` < stmts.length) {
+									var stmt = stmts[`];
+									++ `;
+									var pushData = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractPushFromBody(stmt, tempVar);
+									if (pushData != null) {
+										return pushData;
+									};
+								};
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == null) {
+						var thenExpr = `;
+						var condition = `;
+						{
+							var pushData = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractPushFromBody(thenExpr, tempVar);
+							if (pushData != null) {
+								return {value : pushData.value, condition : condition};
+							};
+						};
+					} else {};
+				};
+				default: {}
+			};
+		};
+		return null;
+	}
+
+	static function extractUnrolledElements(statements:Array<haxe.macro.TypedExpr>, context:reflaxe.elixir.ast.context.BuildContext) {
+		if (statements.length < 3) {
+			return null;
+		};
+		var tempVarName = null;
+		var firstStmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[0]);
+		@:ast(switch (firstStmt.expr) {
+	case TVar(v, _):
+		tempVarName = v.name;	
+	default:
+		return null;	
+}) {
+			var ` = firstStmt.expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var v = `;
+					{
+						tempVarName = v.name;
+					};
+				};
+			} else {
+				return null;
+			};
+		};
+		var elements = [];
+		{};
+		{
+			var ` = 1;
+			var ` = statements.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(statements[i]);
+				@:ast(switch (stmt.expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+		var built = switch (value.expr) {
+			case TBinop(OpAdd, l, r):
+				context.getExpressionBuilder()(value);			
+			case TBlock(innerStmts):
+				var nested = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+				if (nested != null) nested else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));			
+			default:
+				context.getExpressionBuilder()(value);			
+		};
+		elements.push(built);	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName && v2.name == tempVarName):
+		var built2 = switch (value.expr) {
+			case TBlock(innerStmts):
+				var nested2 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+				if (nested2 != null) nested2 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));			
+			default:
+				context.getExpressionBuilder()(value);			
+		};
+		elements.push(built2);	
+	case TIf(condition, thenExpr, elseExpr):
+		switch (thenExpr.expr) {
+			case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+				var built3 = switch (value.expr) {
+					case TBlock(innerStmts):
+						var nested3 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+						if (nested3 != null) nested3 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));					
+					default:
+						context.getExpressionBuilder()(value);					
+				};
+				elements.push(built3);			
+			case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName):
+				var built4 = switch (value.expr) {
+					case TBlock(innerStmts):
+						var nested4 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+						if (nested4 != null) nested4 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));					
+					default:
+						context.getExpressionBuilder()(value);					
+				};
+				elements.push(built4);			
+			default:
+		};	
+	default:
+}) {
+					var ` = stmt.expr;
+					switch (enumIndex `) {
+						case 3: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							switch (enumIndex `) {
+								case 4: {
+									{
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										if (enumIndex ` == 1) {
+											var ` = `[0];
+											{
+												var ` = `.expr;
+												var ` = `.pos;
+												var ` = `.t;
+												if (enumIndex ` == 3) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 0) {
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																{
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if (enumIndex ` == 8) {
+																		var ` = `[0];
+																		if (`.length == 1) {
+																			var ` = `[0];
+																			{
+																				var value = `;
+																				var v2 = `;
+																				var v = `;
+																				if (v.name == tempVarName && v2.name == tempVarName) {
+																					var built2 = @:ast(switch (value.expr) {
+	case TBlock(innerStmts):
+		var nested2 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+		if (nested2 != null) nested2 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));	
+	default:
+		context.getExpressionBuilder()(value);	
+}) {
+																						var ` = value.expr;
+																						if (enumIndex ` == 14) {
+																							var ` = `[0];
+																							{
+																								var innerStmts = `;
+																								{
+																									var nested2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(innerStmts, context);
+																									if (nested2 != null) {
+																										nested2;
+																									} else {
+																										(if ({
+																											var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																											if (strictVals != null && strictVals.length > 0) {
+																												var builtStrict = {
+																													var ` = [];
+																													{
+																														var ` = 0;
+																														var ` = strictVals;
+																														while (` < `.length) {
+																															var v = `[`];
+																															++ `;
+																															`.push(function(v:haxe.macro.TypedExpr) {
+																																return context.getExpressionBuilder()(v);
+																															}(v));
+																														};
+																													};
+																													`;
+																												};
+																												{
+																													var pos = null;
+																													{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																												};
+																											} else {
+																												var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																												if (looseVals != null && looseVals.length > 0) {
+																													{
+																														var pos = null;
+																														{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																													};
+																												} else {
+																													null;
+																												};
+																											};
+																										} != null) {
+																											{
+																												var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																												if (strictVals != null && strictVals.length > 0) {
+																													var builtStrict = {
+																														var ` = [];
+																														{
+																															var ` = 0;
+																															var ` = strictVals;
+																															while (` < `.length) {
+																																var v = `[`];
+																																++ `;
+																																`.push(function(v:haxe.macro.TypedExpr) {
+																																	return context.getExpressionBuilder()(v);
+																																}(v));
+																															};
+																														};
+																														`;
+																													};
+																													{
+																														var pos = null;
+																														{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																													};
+																												} else {
+																													var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																													if (looseVals != null && looseVals.length > 0) {
+																														{
+																															var pos = null;
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																														};
+																													} else {
+																														null;
+																													};
+																												};
+																											};
+																										} else {
+																											context.getExpressionBuilder()(value);
+																										});
+																									};
+																								};
+																							};
+																						} else {
+																							context.getExpressionBuilder()(value);
+																						};
+																					};
+																					elements.push(built2);
+																				} else {};
+																			};
+																		} else {};
+																	} else {};
+																};
+															} else {};
+														};
+													} else {};
+												} else {};
+											};
+										} else {};
+									};
+								};
+								case 20: {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 8) {
+														var ` = `[0];
+														if (`.length == 1) {
+															var ` = `[0];
+															{
+																var value = `;
+																var v = `;
+																if (v.name == tempVarName) {
+																	var built = @:ast(switch (value.expr) {
+	case TBinop(OpAdd, l, r):
+		context.getExpressionBuilder()(value);	
+	case TBlock(innerStmts):
+		var nested = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+		if (nested != null) nested else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));	
+	default:
+		context.getExpressionBuilder()(value);	
+}) {
+																		var ` = value.expr;
+																		switch (enumIndex `) {
+																			case 3: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				if (enumIndex ` == 0) {
+																					{
+																						var l = `;
+																						var r = `;
+																						{
+																							context.getExpressionBuilder()(value);
+																						};
+																					};
+																				} else {
+																					context.getExpressionBuilder()(value);
+																				};
+																			};
+																			case 14: {
+																				var ` = `[0];
+																				{
+																					var innerStmts = `;
+																					{
+																						var nested = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(innerStmts, context);
+																						if (nested != null) {
+																							nested;
+																						} else {
+																							(if ({
+																								var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																								if (strictVals != null && strictVals.length > 0) {
+																									var builtStrict = {
+																										var ` = [];
+																										{
+																											var ` = 0;
+																											var ` = strictVals;
+																											while (` < `.length) {
+																												var v = `[`];
+																												++ `;
+																												`.push(function(v:haxe.macro.TypedExpr) {
+																													return context.getExpressionBuilder()(v);
+																												}(v));
+																											};
+																										};
+																										`;
+																									};
+																									{
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																									};
+																								} else {
+																									var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																									if (looseVals != null && looseVals.length > 0) {
+																										{
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																										};
+																									} else {
+																										null;
+																									};
+																								};
+																							} != null) {
+																								{
+																									var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																									if (strictVals != null && strictVals.length > 0) {
+																										var builtStrict = {
+																											var ` = [];
+																											{
+																												var ` = 0;
+																												var ` = strictVals;
+																												while (` < `.length) {
+																													var v = `[`];
+																													++ `;
+																													`.push(function(v:haxe.macro.TypedExpr) {
+																														return context.getExpressionBuilder()(v);
+																													}(v));
+																												};
+																											};
+																											`;
+																										};
+																										{
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																										};
+																									} else {
+																										var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																										if (looseVals != null && looseVals.length > 0) {
+																											{
+																												var pos = null;
+																												{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																											};
+																										} else {
+																											null;
+																										};
+																									};
+																								};
+																							} else {
+																								context.getExpressionBuilder()(value);
+																							});
+																						};
+																					};
+																				};
+																			};
+																			default: {
+																				context.getExpressionBuilder()(value);
+																			}
+																		};
+																	};
+																	elements.push(built);
+																} else {};
+															};
+														} else {};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+								default: {}
+							};
+						};
+						case 16: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var condition = `;
+								var thenExpr = `;
+								var elseExpr = `;
+								{
+									@:ast(switch (thenExpr.expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+		var built3 = switch (value.expr) {
+			case TBlock(innerStmts):
+				var nested3 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+				if (nested3 != null) nested3 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));			
+			default:
+				context.getExpressionBuilder()(value);			
+		};
+		elements.push(built3);	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName):
+		var built4 = switch (value.expr) {
+			case TBlock(innerStmts):
+				var nested4 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+				if (nested4 != null) nested4 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));			
+			default:
+				context.getExpressionBuilder()(value);			
+		};
+		elements.push(built4);	
+	default:
+}) {
+										var ` = thenExpr.expr;
+										if (enumIndex ` == 3) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											switch (enumIndex `) {
+												case 4: {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var ` = `.expr;
+																var ` = `.pos;
+																var ` = `.t;
+																if (enumIndex ` == 3) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 0) {
+																		{
+																			var ` = `.expr;
+																			var ` = `.pos;
+																			var ` = `.t;
+																			if (enumIndex ` == 8) {
+																				var ` = `[0];
+																				if (`.length == 1) {
+																					var ` = `[0];
+																					{
+																						var value = `;
+																						var v = `;
+																						if (v.name == tempVarName) {
+																							var built4 = @:ast(switch (value.expr) {
+	case TBlock(innerStmts):
+		var nested4 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+		if (nested4 != null) nested4 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));	
+	default:
+		context.getExpressionBuilder()(value);	
+}) {
+																								var ` = value.expr;
+																								if (enumIndex ` == 14) {
+																									var ` = `[0];
+																									{
+																										var innerStmts = `;
+																										{
+																											var nested4 = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(innerStmts, context);
+																											if (nested4 != null) {
+																												nested4;
+																											} else {
+																												(if ({
+																													var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																													if (strictVals != null && strictVals.length > 0) {
+																														var builtStrict = {
+																															var ` = [];
+																															{
+																																var ` = 0;
+																																var ` = strictVals;
+																																while (` < `.length) {
+																																	var v = `[`];
+																																	++ `;
+																																	`.push(function(v:haxe.macro.TypedExpr) {
+																																		return context.getExpressionBuilder()(v);
+																																	}(v));
+																																};
+																															};
+																															`;
+																														};
+																														{
+																															var pos = null;
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																														};
+																													} else {
+																														var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																														if (looseVals != null && looseVals.length > 0) {
+																															{
+																																var pos = null;
+																																{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																															};
+																														} else {
+																															null;
+																														};
+																													};
+																												} != null) {
+																													{
+																														var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																														if (strictVals != null && strictVals.length > 0) {
+																															var builtStrict = {
+																																var ` = [];
+																																{
+																																	var ` = 0;
+																																	var ` = strictVals;
+																																	while (` < `.length) {
+																																		var v = `[`];
+																																		++ `;
+																																		`.push(function(v:haxe.macro.TypedExpr) {
+																																			return context.getExpressionBuilder()(v);
+																																		}(v));
+																																	};
+																																};
+																																`;
+																															};
+																															{
+																																var pos = null;
+																																{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																															};
+																														} else {
+																															var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																															if (looseVals != null && looseVals.length > 0) {
+																																{
+																																	var pos = null;
+																																	{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																																};
+																															} else {
+																																null;
+																															};
+																														};
+																													};
+																												} else {
+																													context.getExpressionBuilder()(value);
+																												});
+																											};
+																										};
+																									};
+																								} else {
+																									context.getExpressionBuilder()(value);
+																								};
+																							};
+																							elements.push(built4);
+																						} else {};
+																					};
+																				} else {};
+																			} else {};
+																		};
+																	} else {};
+																} else {};
+															};
+														} else {};
+													};
+												};
+												case 20: {
+													var ` = `[0];
+													if (enumIndex ` == 0) {
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																{
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if (enumIndex ` == 8) {
+																		var ` = `[0];
+																		if (`.length == 1) {
+																			var ` = `[0];
+																			{
+																				var value = `;
+																				var v = `;
+																				if (v.name == tempVarName) {
+																					var built3 = @:ast(switch (value.expr) {
+	case TBlock(innerStmts):
+		var nested3 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
+		if (nested3 != null) nested3 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));	
+	default:
+		context.getExpressionBuilder()(value);	
+}) {
+																						var ` = value.expr;
+																						if (enumIndex ` == 14) {
+																							var ` = `[0];
+																							{
+																								var innerStmts = `;
+																								{
+																									var nested3 = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(innerStmts, context);
+																									if (nested3 != null) {
+																										nested3;
+																									} else {
+																										(if ({
+																											var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																											if (strictVals != null && strictVals.length > 0) {
+																												var builtStrict = {
+																													var ` = [];
+																													{
+																														var ` = 0;
+																														var ` = strictVals;
+																														while (` < `.length) {
+																															var v = `[`];
+																															++ `;
+																															`.push(function(v:haxe.macro.TypedExpr) {
+																																return context.getExpressionBuilder()(v);
+																															}(v));
+																														};
+																													};
+																													`;
+																												};
+																												{
+																													var pos = null;
+																													{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																												};
+																											} else {
+																												var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																												if (looseVals != null && looseVals.length > 0) {
+																													{
+																														var pos = null;
+																														{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																													};
+																												} else {
+																													null;
+																												};
+																											};
+																										} != null) {
+																											{
+																												var strictVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																												if (strictVals != null && strictVals.length > 0) {
+																													var builtStrict = {
+																														var ` = [];
+																														{
+																															var ` = 0;
+																															var ` = strictVals;
+																															while (` < `.length) {
+																																var v = `[`];
+																																++ `;
+																																`.push(function(v:haxe.macro.TypedExpr) {
+																																	return context.getExpressionBuilder()(v);
+																																}(v));
+																															};
+																														};
+																														`;
+																													};
+																													{
+																														var pos = null;
+																														{def : reflaxe.elixir.ast.ElixirASTDef.EList(builtStrict), metadata : {}, pos : pos};
+																													};
+																												} else {
+																													var looseVals = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(innerStmts, context);
+																													if (looseVals != null && looseVals.length > 0) {
+																														{
+																															var pos = null;
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EList(looseVals), metadata : {}, pos : pos};
+																														};
+																													} else {
+																														null;
+																													};
+																												};
+																											};
+																										} else {
+																											context.getExpressionBuilder()(value);
+																										});
+																									};
+																								};
+																							};
+																						} else {
+																							context.getExpressionBuilder()(value);
+																						};
+																					};
+																					elements.push(built3);
+																				} else {};
+																			};
+																		} else {};
+																	} else {};
+																};
+															} else {};
+														};
+													} else {};
+												};
+												default: {}
+											};
+										} else {};
+									};
+								};
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return if (elements.length > 0) {
+			elements;
+		} else {
+			null;
+		};
+	}
+
+	public static function tryReconstructConditionalComprehension(statements:Array<haxe.macro.TypedExpr>, tempVarName:String, context:reflaxe.elixir.ast.context.BuildContext) {
+		if (statements.length == 0) {
+			return null;
+		};
+		if (statements.length == 1) {
+			@:ast(switch (statements[0].expr) {
+	case TBlock(innerStmts):
+		return tryReconstructConditionalComprehension(innerStmts, tempVarName, context);	
+	default:
+}) {
+				var ` = statements[0].expr;
+				if (enumIndex ` == 14) {
+					var ` = `[0];
+					{
+						var innerStmts = `;
+						{
+							return reflaxe.elixir.ast.builders.ComprehensionBuilder.tryReconstructConditionalComprehension(innerStmts, tempVarName, context);
+						};
+					};
+				} else {};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < statements.length) {
+				var stmt = statements[`];
+				++ `;
+				@:ast(switch (stmt.expr) {
+	case TFor(_, iterator, body):
+		var filterAndValue = extractConditionalConcatenation(body, tempVarName);
+		if (filterAndValue != null) {
+			var loopVarName = switch (stmt.expr) {
+				case TFor(v, _, _):
+					v.name;				
+				default:
+					"";				
+			};
+			return makeAST(EFor([{ pattern : PVar(loopVarName), expr : context.getExpressionBuilder()(iterator) }], [context.getExpressionBuilder()(filterAndValue.condition)], context.getExpressionBuilder()(filterAndValue.value), null, false));
+		};	
+	case TWhile({ expr : TBinop(OpLt, { expr : TLocal(indexVar) }, limit) }, body, _):
+		continue;	
+	default:
+}) {
+					var ` = stmt.expr;
+					switch (enumIndex `) {
+						case 15: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var iterator = `;
+								var body = `;
+								{
+									var filterAndValue = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractConditionalConcatenation(body, tempVarName);
+									if (filterAndValue != null) {
+										var loopVarName = @:ast(switch (stmt.expr) {
+	case TFor(v, _, _):
+		v.name;	
+	default:
+		"";	
+}) {
+											var ` = stmt.expr;
+											if (enumIndex ` == 15) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var v = `;
+													{
+														v.name;
+													};
+												};
+											} else {
+												"";
+											};
+										};
+										return {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : reflaxe.elixir.ast.EPattern.PVar(loopVarName), expr : context.getExpressionBuilder()(iterator)}], [context.getExpressionBuilder()(filterAndValue.condition)], context.getExpressionBuilder()(filterAndValue.value), null, false);
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										};
+									};
+								};
+							};
+						};
+						case 17: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 3) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (enumIndex ` == 9) {
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var indexVar = `;
+													var limit = `;
+													var body = `;
+													{
+														continue;
+													};
+												};
+											} else {};
+										};
+									} else {};
+								} else {};
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		var elements = [];
+		var hasConditions = false;
+		{
+			var ` = 0;
+			while (` < statements.length) {
+				var stmt = statements[`];
+				++ `;
+				@:ast(switch (stmt.expr) {
+	case TIf(condition, thenExpr, _):
+		hasConditions = true;
+		switch (thenExpr.expr) {
+			case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+				elements.push(context.getExpressionBuilder()(value));			
+			case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName):
+				elements.push(context.getExpressionBuilder()(value));			
+			default:
+		};	
+	default:
+}) {
+					var ` = stmt.expr;
+					if (enumIndex ` == 16) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var condition = `;
+							var thenExpr = `;
+							{
+								hasConditions = true;
+								@:ast(switch (thenExpr.expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+		elements.push(context.getExpressionBuilder()(value));	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName):
+		elements.push(context.getExpressionBuilder()(value));	
+	default:
+}) {
+									var ` = thenExpr.expr;
+									if (enumIndex ` == 3) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										switch (enumIndex `) {
+											case 4: {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 3) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 0) {
+																	{
+																		var ` = `.expr;
+																		var ` = `.pos;
+																		var ` = `.t;
+																		if (enumIndex ` == 8) {
+																			var ` = `[0];
+																			if (`.length == 1) {
+																				var ` = `[0];
+																				{
+																					var value = `;
+																					var v = `;
+																					if (v.name == tempVarName) {
+																						elements.push(context.getExpressionBuilder()(value));
+																					} else {};
+																				};
+																			} else {};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											};
+											case 20: {
+												var ` = `[0];
+												if (enumIndex ` == 0) {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var ` = `.expr;
+																var ` = `.pos;
+																var ` = `.t;
+																if (enumIndex ` == 8) {
+																	var ` = `[0];
+																	if (`.length == 1) {
+																		var ` = `[0];
+																		{
+																			var value = `;
+																			var v = `;
+																			if (v.name == tempVarName) {
+																				elements.push(context.getExpressionBuilder()(value));
+																			} else {};
+																		};
+																	} else {};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									} else {};
+								};
+							};
+						};
+					} else {};
+				};
+			};
+		};
+		if (elements.length > 0) {
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EList(elements), metadata : {}, pos : pos};
+			};
+		};
+		return null;
+	}
+
+	static function extractConditionalConcatenation(stmt:haxe.macro.TypedExpr, tempVarName:String) {
+		@:ast(switch (stmt.expr) {
+	case TIf(condition, thenExpr, _):
+		switch (thenExpr.expr) {
+			case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+				return { condition : condition, value : value };			
+			case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName):
+				return { condition : condition, value : value };			
+			case TBlock(stmts):
+				for (s  in  stmts) {
+					var result = extractConditionalConcatenation(s, tempVarName);
+					if (result != null) return result;
+				};			
+			default:
+		};	
+	case TBlock(stmts):
+		for (s  in  stmts) {
+			var result = extractConditionalConcatenation(s, tempVarName);
+			if (result != null) return result;
+		};	
+	default:
+}) {
+			var ` = stmt.expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var ` = 0;
+								while (` < stmts.length) {
+									var s = stmts[`];
+									++ `;
+									var result = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractConditionalConcatenation(s, tempVarName);
+									if (result != null) {
+										return result;
+									};
+								};
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var condition = `;
+						var thenExpr = `;
+						{
+							@:ast(switch (thenExpr.expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, { expr : TArrayDecl([value]) }) if (v.name == tempVarName):
+		return { condition : condition, value : value };	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }) if (v.name == tempVarName):
+		return { condition : condition, value : value };	
+	case TBlock(stmts):
+		for (s  in  stmts) {
+			var result = extractConditionalConcatenation(s, tempVarName);
+			if (result != null) return result;
+		};	
+	default:
+}) {
+								var ` = thenExpr.expr;
+								switch (enumIndex `) {
+									case 3: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										switch (enumIndex `) {
+											case 4: {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 3) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 0) {
+																	{
+																		var ` = `.expr;
+																		var ` = `.pos;
+																		var ` = `.t;
+																		if (enumIndex ` == 8) {
+																			var ` = `[0];
+																			if (`.length == 1) {
+																				var ` = `[0];
+																				{
+																					var value = `;
+																					var v = `;
+																					if (v.name == tempVarName) {
+																						return {condition : condition, value : value};
+																					} else {};
+																				};
+																			} else {};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											};
+											case 20: {
+												var ` = `[0];
+												if (enumIndex ` == 0) {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var ` = `.expr;
+																var ` = `.pos;
+																var ` = `.t;
+																if (enumIndex ` == 8) {
+																	var ` = `[0];
+																	if (`.length == 1) {
+																		var ` = `[0];
+																		{
+																			var value = `;
+																			var v = `;
+																			if (v.name == tempVarName) {
+																				return {condition : condition, value : value};
+																			} else {};
+																		};
+																	} else {};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+									case 14: {
+										var ` = `[0];
+										{
+											var stmts = `;
+											{
+												{
+													var ` = 0;
+													while (` < stmts.length) {
+														var s = stmts[`];
+														++ `;
+														var result = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractConditionalConcatenation(s, tempVarName);
+														if (result != null) {
+															return result;
+														};
+													};
+												};
+											};
+										};
+									};
+									default: {}
+								};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		return null;
+	}
+
+	public static function extractListElements(stmts:Array<haxe.macro.TypedExpr>) {
+		if (! reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(stmts)) {
+			return null;
+		};
+		var elements = [];
+		var encounteredUnsafe = false;
+		{};
+		{
+			var ` = 1;
+			var ` = stmts.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(stmts[i]);
+				@:ast(switch (stmt.expr) {
+	case TBinop(OpAdd, { expr : TLocal(v) }, { expr : TArrayDecl([value]) }):
+		switch (value.expr) {
+			case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+				var nestedElements = extractListElements(innerStmts);
+				if (nestedElements != null && nestedElements.length > 0) {
+					var listExpr = { expr : TArrayDecl(nestedElements), pos : value.pos, t : value.t };
+					elements.push(listExpr);
+				} else {
+					elements.push(value);
+				};			
+			default:
+				var iifeInner = extractListBlockFromIIFE(value);
+				if (iifeInner != null && looksLikeListBuildingBlock(iifeInner)) {
+					var nestedIIFE = extractListElements(iifeInner);
+					if (nestedIIFE != null && nestedIIFE.length > 0) {
+						var listExprIIFE = { expr : TArrayDecl(nestedIIFE), pos : value.pos, t : value.t };
+						elements.push(listExprIIFE);
+					} else {
+						elements.push(value);
+					};
+				} else {
+					if (hasAnyLocal(value)) {
+						encounteredUnsafe = true;
+					} else elements.push(value);
+				};			
+		};	
+	case TBinop(OpAdd, _, { expr : TBlock(blockStmts) }):
+		if (looksLikeListBuildingBlock(blockStmts)) {
+			var nestedElements = extractListElements(blockStmts);
+			if (nestedElements != null && nestedElements.length > 0) {
+				var listExpr = { expr : TArrayDecl(nestedElements), pos : stmt.pos, t : stmt.t };
+				elements.push(listExpr);
+			} else {
+				elements.push({ expr : TBlock(blockStmts), pos : stmt.pos, t : stmt.t });
+			};
+		} else {
+			elements.push({ expr : TBlock(blockStmts), pos : stmt.pos, t : stmt.t });
+		};	
+	case TBinop(OpAssign, _, rhs):
+		switch (rhs.expr) {
+			case TBinop(OpAdd, _, { expr : TArrayDecl([value]) }):
+				switch (value.expr) {
+					case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+						var nestedElements = extractListElements(innerStmts);
+						if (nestedElements != null && nestedElements.length > 0) {
+							var listExpr = { expr : TArrayDecl(nestedElements), pos : value.pos, t : value.t };
+							elements.push(listExpr);
+						} else {
+							elements.push(value);
+						};					
+					default:
+						if (hasAnyLocal(value)) {
+							encounteredUnsafe = true;
+						} else elements.push(value);					
+				};			
+			case TBinop(OpAdd, _, { expr : TBlock(blockStmts) }):
+				if (looksLikeListBuildingBlock(blockStmts)) {
+					var nestedElements = extractListElements(blockStmts);
+					if (nestedElements != null && nestedElements.length > 0) {
+						var listExpr = { expr : TArrayDecl(nestedElements), pos : rhs.pos, t : rhs.t };
+						elements.push(listExpr);
+					} else {
+						elements.push({ expr : TBlock(blockStmts), pos : rhs.pos, t : rhs.t });
+					};
+				} else {
+					elements.push({ expr : TBlock(blockStmts), pos : rhs.pos, t : rhs.t });
+				};			
+			default:
+		};	
+	default:
+}) {
+					var ` = stmt.expr;
+					if (enumIndex ` == 3) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						switch (enumIndex `) {
+							case 0: {
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													if (`.length == 1) {
+														var ` = `[0];
+														{
+															var value = `;
+															var v = `;
+															{
+																@:ast(switch (value.expr) {
+	case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+		var nestedElements = extractListElements(innerStmts);
+		if (nestedElements != null && nestedElements.length > 0) {
+			var listExpr = { expr : TArrayDecl(nestedElements), pos : value.pos, t : value.t };
+			elements.push(listExpr);
+		} else {
+			elements.push(value);
+		};	
+	default:
+		var iifeInner = extractListBlockFromIIFE(value);
+		if (iifeInner != null && looksLikeListBuildingBlock(iifeInner)) {
+			var nestedIIFE = extractListElements(iifeInner);
+			if (nestedIIFE != null && nestedIIFE.length > 0) {
+				var listExprIIFE = { expr : TArrayDecl(nestedIIFE), pos : value.pos, t : value.t };
+				elements.push(listExprIIFE);
+			} else {
+				elements.push(value);
+			};
+		} else {
+			if (hasAnyLocal(value)) {
+				encounteredUnsafe = true;
+			} else elements.push(value);
+		};	
+}) {
+																	var ` = value.expr;
+																	if (enumIndex ` == 14) {
+																		var ` = `[0];
+																		{
+																			var innerStmts = `;
+																			if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(innerStmts)) {
+																				var nestedElements = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																				if (nestedElements != null && nestedElements.length > 0) {
+																					var listExpr = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedElements), pos : value.pos, t : value.t};
+																					elements.push(listExpr);
+																				} else {
+																					elements.push(value);
+																				};
+																			} else {
+																				var iifeInner = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListBlockFromIIFE(value);
+																				if (iifeInner != null && reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(iifeInner)) {
+																					var nestedIIFE = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(iifeInner);
+																					if (nestedIIFE != null && nestedIIFE.length > 0) {
+																						var listExprIIFE = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedIIFE), pos : value.pos, t : value.t};
+																						elements.push(listExprIIFE);
+																					} else {
+																						elements.push(value);
+																					};
+																				} else {
+																					if ({
+																						var found = [false];
+																						var walk = [null];
+																						walk[0] = function(te:haxe.macro.TypedExpr) {
+																							if (found[0] || te == null) {
+																								return;
+																							};
+																							@:ast(switch (te.expr) {
+	case TLocal(_):
+		found = true;	
+	case TArrayDecl(arr):
+		for (a  in  arr) walk(a);	
+	case TBlock(bs):
+		for (b  in  bs) walk(b);	
+	case TBinop(_, l, r):
+		walk(l);
+		walk(r);	
+	case TCall(t, args):
+		walk(t);
+		for (a  in  args) walk(a);	
+	case TField(t, _):
+		walk(t);	
+	case TParenthesis(inner):
+		walk(inner);	
+	case TIf(c, t, eo):
+		walk(c);
+		walk(t);
+		if (eo != null) walk(eo);	
+	case TWhile(c, b, _):
+		walk(c);
+		walk(b);	
+	case TFor(v, it, b):
+		walk(it);
+		walk(b);	
+	case TMeta(_, inner):
+		walk(inner);	
+	default:
+}) {
+																								var ` = te.expr;
+																								switch (enumIndex `) {
+																									case 1: {
+																										var ` = `[0];
+																										{
+																											found[0] = true;
+																										};
+																									};
+																									case 3: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var l = `;
+																											var r = `;
+																											{
+																												walk[0](l);
+																												walk[0](r);
+																											};
+																										};
+																									};
+																									case 4: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var t = `;
+																											{
+																												walk[0](t);
+																											};
+																										};
+																									};
+																									case 6: {
+																										var ` = `[0];
+																										{
+																											var inner = `;
+																											{
+																												walk[0](inner);
+																											};
+																										};
+																									};
+																									case 8: {
+																										var ` = `[0];
+																										{
+																											var arr = `;
+																											{
+																												{
+																													var ` = 0;
+																													while (` < arr.length) {
+																														var a = arr[`];
+																														++ `;
+																														walk[0](a);
+																													};
+																												};
+																											};
+																										};
+																									};
+																									case 9: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var t = `;
+																											var args = `;
+																											{
+																												walk[0](t);
+																												{
+																													var ` = 0;
+																													while (` < args.length) {
+																														var a = args[`];
+																														++ `;
+																														walk[0](a);
+																													};
+																												};
+																											};
+																										};
+																									};
+																									case 14: {
+																										var ` = `[0];
+																										{
+																											var bs = `;
+																											{
+																												{
+																													var ` = 0;
+																													while (` < bs.length) {
+																														var b = bs[`];
+																														++ `;
+																														walk[0](b);
+																													};
+																												};
+																											};
+																										};
+																									};
+																									case 15: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var v = `;
+																											var it = `;
+																											var b = `;
+																											{
+																												walk[0](it);
+																												walk[0](b);
+																											};
+																										};
+																									};
+																									case 16: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var c = `;
+																											var t = `;
+																											var eo = `;
+																											{
+																												walk[0](c);
+																												walk[0](t);
+																												if (eo != null) {
+																													walk[0](eo);
+																												};
+																											};
+																										};
+																									};
+																									case 17: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var c = `;
+																											var b = `;
+																											{
+																												walk[0](c);
+																												walk[0](b);
+																											};
+																										};
+																									};
+																									case 25: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var inner = `;
+																											{
+																												walk[0](inner);
+																											};
+																										};
+																									};
+																									default: {}
+																								};
+																							};
+																						};
+																						walk[0](value);
+																						found[0];
+																					}) {
+																						encounteredUnsafe = true;
+																					} else {
+																						elements.push(value);
+																					};
+																				};
+																			};
+																		};
+																	} else {
+																		var iifeInner = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListBlockFromIIFE(value);
+																		if (iifeInner != null && reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(iifeInner)) {
+																			var nestedIIFE = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(iifeInner);
+																			if (nestedIIFE != null && nestedIIFE.length > 0) {
+																				var listExprIIFE = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedIIFE), pos : value.pos, t : value.t};
+																				elements.push(listExprIIFE);
+																			} else {
+																				elements.push(value);
+																			};
+																		} else {
+																			if ({
+																				var found = [false];
+																				var walk = [null];
+																				walk[0] = function(te:haxe.macro.TypedExpr) {
+																					if (found[0] || te == null) {
+																						return;
+																					};
+																					@:ast(switch (te.expr) {
+	case TLocal(_):
+		found = true;	
+	case TArrayDecl(arr):
+		for (a  in  arr) walk(a);	
+	case TBlock(bs):
+		for (b  in  bs) walk(b);	
+	case TBinop(_, l, r):
+		walk(l);
+		walk(r);	
+	case TCall(t, args):
+		walk(t);
+		for (a  in  args) walk(a);	
+	case TField(t, _):
+		walk(t);	
+	case TParenthesis(inner):
+		walk(inner);	
+	case TIf(c, t, eo):
+		walk(c);
+		walk(t);
+		if (eo != null) walk(eo);	
+	case TWhile(c, b, _):
+		walk(c);
+		walk(b);	
+	case TFor(v, it, b):
+		walk(it);
+		walk(b);	
+	case TMeta(_, inner):
+		walk(inner);	
+	default:
+}) {
+																						var ` = te.expr;
+																						switch (enumIndex `) {
+																							case 1: {
+																								var ` = `[0];
+																								{
+																									found[0] = true;
+																								};
+																							};
+																							case 3: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var l = `;
+																									var r = `;
+																									{
+																										walk[0](l);
+																										walk[0](r);
+																									};
+																								};
+																							};
+																							case 4: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								{
+																									var t = `;
+																									{
+																										walk[0](t);
+																									};
+																								};
+																							};
+																							case 6: {
+																								var ` = `[0];
+																								{
+																									var inner = `;
+																									{
+																										walk[0](inner);
+																									};
+																								};
+																							};
+																							case 8: {
+																								var ` = `[0];
+																								{
+																									var arr = `;
+																									{
+																										{
+																											var ` = 0;
+																											while (` < arr.length) {
+																												var a = arr[`];
+																												++ `;
+																												walk[0](a);
+																											};
+																										};
+																									};
+																								};
+																							};
+																							case 9: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								{
+																									var t = `;
+																									var args = `;
+																									{
+																										walk[0](t);
+																										{
+																											var ` = 0;
+																											while (` < args.length) {
+																												var a = args[`];
+																												++ `;
+																												walk[0](a);
+																											};
+																										};
+																									};
+																								};
+																							};
+																							case 14: {
+																								var ` = `[0];
+																								{
+																									var bs = `;
+																									{
+																										{
+																											var ` = 0;
+																											while (` < bs.length) {
+																												var b = bs[`];
+																												++ `;
+																												walk[0](b);
+																											};
+																										};
+																									};
+																								};
+																							};
+																							case 15: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var v = `;
+																									var it = `;
+																									var b = `;
+																									{
+																										walk[0](it);
+																										walk[0](b);
+																									};
+																								};
+																							};
+																							case 16: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var c = `;
+																									var t = `;
+																									var eo = `;
+																									{
+																										walk[0](c);
+																										walk[0](t);
+																										if (eo != null) {
+																											walk[0](eo);
+																										};
+																									};
+																								};
+																							};
+																							case 17: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var c = `;
+																									var b = `;
+																									{
+																										walk[0](c);
+																										walk[0](b);
+																									};
+																								};
+																							};
+																							case 25: {
+																								var ` = `[0];
+																								var ` = `[1];
+																								{
+																									var inner = `;
+																									{
+																										walk[0](inner);
+																									};
+																								};
+																							};
+																							default: {}
+																						};
+																					};
+																				};
+																				walk[0](value);
+																				found[0];
+																			}) {
+																				encounteredUnsafe = true;
+																			} else {
+																				elements.push(value);
+																			};
+																		};
+																	};
+																};
+															};
+														};
+													} else {};
+												};
+												case 14: {
+													var ` = `[0];
+													{
+														var blockStmts = `;
+														{
+															if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(blockStmts)) {
+																var nestedElements = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(blockStmts);
+																if (nestedElements != null && nestedElements.length > 0) {
+																	var listExpr = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedElements), pos : stmt.pos, t : stmt.t};
+																	elements.push(listExpr);
+																} else {
+																	elements.push({expr : haxe.macro.TypedExprDef.TBlock(blockStmts), pos : stmt.pos, t : stmt.t});
+																};
+															} else {
+																elements.push({expr : haxe.macro.TypedExprDef.TBlock(blockStmts), pos : stmt.pos, t : stmt.t});
+															};
+														};
+													};
+												};
+												default: {}
+											};
+										};
+									} else {
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										if (enumIndex ` == 14) {
+											var ` = `[0];
+											{
+												var blockStmts = `;
+												{
+													if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(blockStmts)) {
+														var nestedElements = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(blockStmts);
+														if (nestedElements != null && nestedElements.length > 0) {
+															var listExpr = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedElements), pos : stmt.pos, t : stmt.t};
+															elements.push(listExpr);
+														} else {
+															elements.push({expr : haxe.macro.TypedExprDef.TBlock(blockStmts), pos : stmt.pos, t : stmt.t});
+														};
+													} else {
+														elements.push({expr : haxe.macro.TypedExprDef.TBlock(blockStmts), pos : stmt.pos, t : stmt.t});
+													};
+												};
+											};
+										} else {};
+									};
+								};
+							};
+							case 4: {
+								{
+									var rhs = `;
+									{
+										@:ast(switch (rhs.expr) {
+	case TBinop(OpAdd, _, { expr : TArrayDecl([value]) }):
+		switch (value.expr) {
+			case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+				var nestedElements = extractListElements(innerStmts);
+				if (nestedElements != null && nestedElements.length > 0) {
+					var listExpr = { expr : TArrayDecl(nestedElements), pos : value.pos, t : value.t };
+					elements.push(listExpr);
+				} else {
+					elements.push(value);
+				};			
+			default:
+				if (hasAnyLocal(value)) {
+					encounteredUnsafe = true;
+				} else elements.push(value);			
+		};	
+	case TBinop(OpAdd, _, { expr : TBlock(blockStmts) }):
+		if (looksLikeListBuildingBlock(blockStmts)) {
+			var nestedElements = extractListElements(blockStmts);
+			if (nestedElements != null && nestedElements.length > 0) {
+				var listExpr = { expr : TArrayDecl(nestedElements), pos : rhs.pos, t : rhs.t };
+				elements.push(listExpr);
+			} else {
+				elements.push({ expr : TBlock(blockStmts), pos : rhs.pos, t : rhs.t });
+			};
+		} else {
+			elements.push({ expr : TBlock(blockStmts), pos : rhs.pos, t : rhs.t });
+		};	
+	default:
+}) {
+											var ` = rhs.expr;
+											if (enumIndex ` == 3) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 0) {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																if (`.length == 1) {
+																	var ` = `[0];
+																	{
+																		var value = `;
+																		{
+																			@:ast(switch (value.expr) {
+	case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+		var nestedElements = extractListElements(innerStmts);
+		if (nestedElements != null && nestedElements.length > 0) {
+			var listExpr = { expr : TArrayDecl(nestedElements), pos : value.pos, t : value.t };
+			elements.push(listExpr);
+		} else {
+			elements.push(value);
+		};	
+	default:
+		if (hasAnyLocal(value)) {
+			encounteredUnsafe = true;
+		} else elements.push(value);	
+}) {
+																				var ` = value.expr;
+																				if (enumIndex ` == 14) {
+																					var ` = `[0];
+																					{
+																						var innerStmts = `;
+																						if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(innerStmts)) {
+																							var nestedElements = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(innerStmts);
+																							if (nestedElements != null && nestedElements.length > 0) {
+																								var listExpr = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedElements), pos : value.pos, t : value.t};
+																								elements.push(listExpr);
+																							} else {
+																								elements.push(value);
+																							};
+																						} else {
+																							if ({
+																								var found = [false];
+																								var walk = [null];
+																								walk[0] = function(te:haxe.macro.TypedExpr) {
+																									if (found[0] || te == null) {
+																										return;
+																									};
+																									@:ast(switch (te.expr) {
+	case TLocal(_):
+		found = true;	
+	case TArrayDecl(arr):
+		for (a  in  arr) walk(a);	
+	case TBlock(bs):
+		for (b  in  bs) walk(b);	
+	case TBinop(_, l, r):
+		walk(l);
+		walk(r);	
+	case TCall(t, args):
+		walk(t);
+		for (a  in  args) walk(a);	
+	case TField(t, _):
+		walk(t);	
+	case TParenthesis(inner):
+		walk(inner);	
+	case TIf(c, t, eo):
+		walk(c);
+		walk(t);
+		if (eo != null) walk(eo);	
+	case TWhile(c, b, _):
+		walk(c);
+		walk(b);	
+	case TFor(v, it, b):
+		walk(it);
+		walk(b);	
+	case TMeta(_, inner):
+		walk(inner);	
+	default:
+}) {
+																										var ` = te.expr;
+																										switch (enumIndex `) {
+																											case 1: {
+																												var ` = `[0];
+																												{
+																													found[0] = true;
+																												};
+																											};
+																											case 3: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												{
+																													var l = `;
+																													var r = `;
+																													{
+																														walk[0](l);
+																														walk[0](r);
+																													};
+																												};
+																											};
+																											case 4: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												{
+																													var t = `;
+																													{
+																														walk[0](t);
+																													};
+																												};
+																											};
+																											case 6: {
+																												var ` = `[0];
+																												{
+																													var inner = `;
+																													{
+																														walk[0](inner);
+																													};
+																												};
+																											};
+																											case 8: {
+																												var ` = `[0];
+																												{
+																													var arr = `;
+																													{
+																														{
+																															var ` = 0;
+																															while (` < arr.length) {
+																																var a = arr[`];
+																																++ `;
+																																walk[0](a);
+																															};
+																														};
+																													};
+																												};
+																											};
+																											case 9: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												{
+																													var t = `;
+																													var args = `;
+																													{
+																														walk[0](t);
+																														{
+																															var ` = 0;
+																															while (` < args.length) {
+																																var a = args[`];
+																																++ `;
+																																walk[0](a);
+																															};
+																														};
+																													};
+																												};
+																											};
+																											case 14: {
+																												var ` = `[0];
+																												{
+																													var bs = `;
+																													{
+																														{
+																															var ` = 0;
+																															while (` < bs.length) {
+																																var b = bs[`];
+																																++ `;
+																																walk[0](b);
+																															};
+																														};
+																													};
+																												};
+																											};
+																											case 15: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												{
+																													var v = `;
+																													var it = `;
+																													var b = `;
+																													{
+																														walk[0](it);
+																														walk[0](b);
+																													};
+																												};
+																											};
+																											case 16: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												{
+																													var c = `;
+																													var t = `;
+																													var eo = `;
+																													{
+																														walk[0](c);
+																														walk[0](t);
+																														if (eo != null) {
+																															walk[0](eo);
+																														};
+																													};
+																												};
+																											};
+																											case 17: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												{
+																													var c = `;
+																													var b = `;
+																													{
+																														walk[0](c);
+																														walk[0](b);
+																													};
+																												};
+																											};
+																											case 25: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												{
+																													var inner = `;
+																													{
+																														walk[0](inner);
+																													};
+																												};
+																											};
+																											default: {}
+																										};
+																									};
+																								};
+																								walk[0](value);
+																								found[0];
+																							}) {
+																								encounteredUnsafe = true;
+																							} else {
+																								elements.push(value);
+																							};
+																						};
+																					};
+																				} else {
+																					if ({
+																						var found = [false];
+																						var walk = [null];
+																						walk[0] = function(te:haxe.macro.TypedExpr) {
+																							if (found[0] || te == null) {
+																								return;
+																							};
+																							@:ast(switch (te.expr) {
+	case TLocal(_):
+		found = true;	
+	case TArrayDecl(arr):
+		for (a  in  arr) walk(a);	
+	case TBlock(bs):
+		for (b  in  bs) walk(b);	
+	case TBinop(_, l, r):
+		walk(l);
+		walk(r);	
+	case TCall(t, args):
+		walk(t);
+		for (a  in  args) walk(a);	
+	case TField(t, _):
+		walk(t);	
+	case TParenthesis(inner):
+		walk(inner);	
+	case TIf(c, t, eo):
+		walk(c);
+		walk(t);
+		if (eo != null) walk(eo);	
+	case TWhile(c, b, _):
+		walk(c);
+		walk(b);	
+	case TFor(v, it, b):
+		walk(it);
+		walk(b);	
+	case TMeta(_, inner):
+		walk(inner);	
+	default:
+}) {
+																								var ` = te.expr;
+																								switch (enumIndex `) {
+																									case 1: {
+																										var ` = `[0];
+																										{
+																											found[0] = true;
+																										};
+																									};
+																									case 3: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var l = `;
+																											var r = `;
+																											{
+																												walk[0](l);
+																												walk[0](r);
+																											};
+																										};
+																									};
+																									case 4: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var t = `;
+																											{
+																												walk[0](t);
+																											};
+																										};
+																									};
+																									case 6: {
+																										var ` = `[0];
+																										{
+																											var inner = `;
+																											{
+																												walk[0](inner);
+																											};
+																										};
+																									};
+																									case 8: {
+																										var ` = `[0];
+																										{
+																											var arr = `;
+																											{
+																												{
+																													var ` = 0;
+																													while (` < arr.length) {
+																														var a = arr[`];
+																														++ `;
+																														walk[0](a);
+																													};
+																												};
+																											};
+																										};
+																									};
+																									case 9: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var t = `;
+																											var args = `;
+																											{
+																												walk[0](t);
+																												{
+																													var ` = 0;
+																													while (` < args.length) {
+																														var a = args[`];
+																														++ `;
+																														walk[0](a);
+																													};
+																												};
+																											};
+																										};
+																									};
+																									case 14: {
+																										var ` = `[0];
+																										{
+																											var bs = `;
+																											{
+																												{
+																													var ` = 0;
+																													while (` < bs.length) {
+																														var b = bs[`];
+																														++ `;
+																														walk[0](b);
+																													};
+																												};
+																											};
+																										};
+																									};
+																									case 15: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var v = `;
+																											var it = `;
+																											var b = `;
+																											{
+																												walk[0](it);
+																												walk[0](b);
+																											};
+																										};
+																									};
+																									case 16: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var c = `;
+																											var t = `;
+																											var eo = `;
+																											{
+																												walk[0](c);
+																												walk[0](t);
+																												if (eo != null) {
+																													walk[0](eo);
+																												};
+																											};
+																										};
+																									};
+																									case 17: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var c = `;
+																											var b = `;
+																											{
+																												walk[0](c);
+																												walk[0](b);
+																											};
+																										};
+																									};
+																									case 25: {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var inner = `;
+																											{
+																												walk[0](inner);
+																											};
+																										};
+																									};
+																									default: {}
+																								};
+																							};
+																						};
+																						walk[0](value);
+																						found[0];
+																					}) {
+																						encounteredUnsafe = true;
+																					} else {
+																						elements.push(value);
+																					};
+																				};
+																			};
+																		};
+																	};
+																} else {};
+															};
+															case 14: {
+																var ` = `[0];
+																{
+																	var blockStmts = `;
+																	{
+																		if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(blockStmts)) {
+																			var nestedElements = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(blockStmts);
+																			if (nestedElements != null && nestedElements.length > 0) {
+																				var listExpr = {expr : haxe.macro.TypedExprDef.TArrayDecl(nestedElements), pos : rhs.pos, t : rhs.t};
+																				elements.push(listExpr);
+																			} else {
+																				elements.push({expr : haxe.macro.TypedExprDef.TBlock(blockStmts), pos : rhs.pos, t : rhs.t});
+																			};
+																		} else {
+																			elements.push({expr : haxe.macro.TypedExprDef.TBlock(blockStmts), pos : rhs.pos, t : rhs.t});
+																		};
+																	};
+																};
+															};
+															default: {}
+														};
+													};
+												} else {};
+											} else {};
+										};
+									};
+								};
+							};
+							default: {}
+						};
+					} else {};
+				};
+			};
+		};
+		if (encounteredUnsafe) {
+			return null;
+		};
+		return elements;
+	}
+
+	public static function extractListElementsLoose(stmts:Array<haxe.macro.TypedExpr>, context:reflaxe.elixir.ast.context.BuildContext) {
+		var build = context.getExpressionBuilder();
+		var out = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var stmt = stmts[`];
+				++ `;
+				var s = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(stmt);
+				@:ast(switch (s.expr) {
+	case TBinop(OpAdd, _, { expr : TArrayDecl([value]) }):
+		out.push(build(value));	
+	case TBinop(OpAdd, _, { expr : TCall(_, _) }):
+		var iifeSt = extractListBlockFromIIFE(s);
+		if (iifeSt != null) {
+			var nestedI = extractListElementsLoose(iifeSt, context);
+			if (nestedI != null && nestedI.length > 0) out.push(makeAST(EList(nestedI)));
+		};	
+	case TBinop(OpAssign, _, { expr : TBinop(OpAdd, _, { expr : TArrayDecl([value]) }) }):
+		out.push(build(value));	
+	case TBinop(OpAssign, _, { expr : TBinop(OpAdd, _, { expr : TCall(_, _) }) }):
+		var iifeSt2 = extractListBlockFromIIFE(s);
+		if (iifeSt2 != null) {
+			var nestedI2 = extractListElementsLoose(iifeSt2, context);
+			if (nestedI2 != null && nestedI2.length > 0) out.push(makeAST(EList(nestedI2)));
+		};	
+	case TBinop(OpAdd, _, { expr : TBlock(blockStmts) }):
+		var nested:Null<Array<ElixirAST>> = null;
+		if (looksLikeListBuildingBlock(blockStmts)) {
+			var nestedValues = extractListElements(blockStmts);
+			if (nestedValues != null) {
+				var built = nestedValues.map(function(v) ->  @:implicitReturn return build(v));
+				nested = built;
+			};
+		};
+		if (nested == null) {
+			nested = extractListElementsLoose(blockStmts, context);
+		};
+		if (nested != null && nested.length > 0) {
+			out.push(makeAST(EList(nested)));
+		} else {
+			out.push(makeAST(EBlock(blockStmts.map(function(e) ->  @:implicitReturn return build(e)))));
+		};	
+	case TBinop(OpAssign, _, { expr : TBinop(OpAdd, _, { expr : TBlock(blockStmts) }) }):
+		var nested2:Null<Array<ElixirAST>> = null;
+		if (looksLikeListBuildingBlock(blockStmts)) {
+			var nestedValues2 = extractListElements(blockStmts);
+			if (nestedValues2 != null) {
+				var built2 = nestedValues2.map(function(v) ->  @:implicitReturn return build(v));
+				nested2 = built2;
+			};
+		};
+		if (nested2 == null) {
+			nested2 = extractListElementsLoose(blockStmts, context);
+		};
+		if (nested2 != null && nested2.length > 0) {
+			out.push(makeAST(EList(nested2)));
+		} else {
+			out.push(makeAST(EBlock(blockStmts.map(function(e) ->  @:implicitReturn return build(e)))));
+		};	
+	case TBlock(blockStmts):
+		var nested3 = extractListElementsLoose(blockStmts, context);
+		if (nested3 != null && nested3.length > 0) {
+			out.push(makeAST(EList(nested3)));
+		};	
+	default:
+}) {
+					var ` = s.expr;
+					switch (enumIndex `) {
+						case 3: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							switch (enumIndex `) {
+								case 0: {
+									{
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												if (`.length == 1) {
+													var ` = `[0];
+													{
+														var value = `;
+														{
+															out.push(build(value));
+														};
+													};
+												} else {};
+											};
+											case 9: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var iifeSt = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListBlockFromIIFE(s);
+													if (iifeSt != null) {
+														var nestedI = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(iifeSt, context);
+														if (nestedI != null && nestedI.length > 0) {
+															out.push({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EList(nestedI), metadata : {}, pos : pos};
+															});
+														};
+													};
+												};
+											};
+											case 14: {
+												var ` = `[0];
+												{
+													var blockStmts = `;
+													{
+														var nested = null;
+														if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(blockStmts)) {
+															var nestedValues = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(blockStmts);
+															if (nestedValues != null) {
+																var built = {
+																	var ` = [];
+																	{
+																		var ` = 0;
+																		var ` = nestedValues;
+																		while (` < `.length) {
+																			var v = `[`];
+																			++ `;
+																			`.push(function(v:haxe.macro.TypedExpr) {
+																				return build(v);
+																			}(v));
+																		};
+																	};
+																	`;
+																};
+																nested = built;
+															};
+														};
+														if (nested == null) {
+															nested = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(blockStmts, context);
+														};
+														if (nested != null && nested.length > 0) {
+															out.push({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EList(nested), metadata : {}, pos : pos};
+															});
+														} else {
+															out.push({
+																var def = reflaxe.elixir.ast.ElixirASTDef.EBlock({
+																	var ` = [];
+																	{
+																		var ` = 0;
+																		var ` = blockStmts;
+																		while ((` < `.length)) {
+																			var v = `[`];
+																			++ `;
+																			`.push(build(v));
+																		};
+																	};
+																	`;
+																});
+																var pos = null;
+																{def : def, metadata : {}, pos : pos};
+															});
+														};
+													};
+												};
+											};
+											default: {}
+										};
+									};
+								};
+								case 4: {
+									{
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										if (enumIndex ` == 3) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 0) {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													switch (enumIndex `) {
+														case 8: {
+															var ` = `[0];
+															if (`.length == 1) {
+																var ` = `[0];
+																{
+																	var value = `;
+																	{
+																		out.push(build(value));
+																	};
+																};
+															} else {};
+														};
+														case 9: {
+															var ` = `[0];
+															var ` = `[1];
+															{
+																var iifeSt2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListBlockFromIIFE(s);
+																if (iifeSt2 != null) {
+																	var nestedI2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(iifeSt2, context);
+																	if (nestedI2 != null && nestedI2.length > 0) {
+																		out.push({
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EList(nestedI2), metadata : {}, pos : pos};
+																		});
+																	};
+																};
+															};
+														};
+														case 14: {
+															var ` = `[0];
+															{
+																var blockStmts = `;
+																{
+																	var nested2 = null;
+																	if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(blockStmts)) {
+																		var nestedValues2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElements(blockStmts);
+																		if (nestedValues2 != null) {
+																			var built2 = {
+																				var ` = [];
+																				{
+																					var ` = 0;
+																					var ` = nestedValues2;
+																					while (` < `.length) {
+																						var v = `[`];
+																						++ `;
+																						`.push(function(v:haxe.macro.TypedExpr) {
+																							return build(v);
+																						}(v));
+																					};
+																				};
+																				`;
+																			};
+																			nested2 = built2;
+																		};
+																	};
+																	if (nested2 == null) {
+																		nested2 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(blockStmts, context);
+																	};
+																	if (nested2 != null && nested2.length > 0) {
+																		out.push({
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EList(nested2), metadata : {}, pos : pos};
+																		});
+																	} else {
+																		out.push({
+																			var def = reflaxe.elixir.ast.ElixirASTDef.EBlock({
+																				var ` = [];
+																				{
+																					var ` = 0;
+																					var ` = blockStmts;
+																					while ((` < `.length)) {
+																						var v = `[`];
+																						++ `;
+																						`.push(build(v));
+																					};
+																				};
+																				`;
+																			});
+																			var pos = null;
+																			{def : def, metadata : {}, pos : pos};
+																		});
+																	};
+																};
+															};
+														};
+														default: {}
+													};
+												};
+											} else {};
+										} else {};
+									};
+								};
+								default: {}
+							};
+						};
+						case 14: {
+							var ` = `[0];
+							{
+								var blockStmts = `;
+								{
+									var nested3 = reflaxe.elixir.ast.builders.ComprehensionBuilder.extractListElementsLoose(blockStmts, context);
+									if (nested3 != null && nested3.length > 0) {
+										out.push({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EList(nested3), metadata : {}, pos : pos};
+										});
+									};
+								};
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return if (out.length > 0) {
+			out;
+		} else {
+			null;
+		};
+	}
+
+	static function unwrapMetaParens(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TMeta({ name : ":mergeBlock" | ":implicitReturn" }, e) | TParenthesis(e):
+		unwrapMetaParens(e);	
+	default:
+		expr;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(e);
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.name;
+						var ` = `.params;
+						var ` = `.pos;
+						switch (`) {
+							case ":implicitReturn", ":mergeBlock": {
+								{
+									var e = `;
+									{
+										reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(e);
+									};
+								};
+							};
+							default: {
+								expr;
+							}
+						};
+					};
+				};
+				default: {
+					expr;
+				}
+			};
+		};
+	}
+
+	static function extractListBlockFromIIFE(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TCall(f, args) if (args.length == 0):
+		switch (unwrapMetaParens(f).expr) {
+			case TFunction(tf):
+				switch (tf.expr.expr) {
+					case TBlock(stmts):
+						stmts;					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var f = `;
+					var args = `;
+					if (args.length == 0) {
+						@:ast(switch (unwrapMetaParens(f).expr) {
+	case TFunction(tf):
+		switch (tf.expr.expr) {
+			case TBlock(stmts):
+				stmts;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+							var ` = reflaxe.elixir.ast.builders.ComprehensionBuilder.unwrapMetaParens(f).expr;
+							if (enumIndex ` == 12) {
+								var ` = `[0];
+								{
+									var tf = `;
+									{
+										@:ast(switch (tf.expr.expr) {
+	case TBlock(stmts):
+		stmts;	
+	default:
+		null;	
+}) {
+											var ` = tf.expr.expr;
+											if (enumIndex ` == 14) {
+												var ` = `[0];
+												{
+													var stmts = `;
+													{
+														stmts;
+													};
+												};
+											} else {
+												null;
+											};
+										};
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+}

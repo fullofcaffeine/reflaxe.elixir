@@ -1,0 +1,158 @@
+class reflaxe.elixir.ast.transformers.WebAliasAssignUnderscoreTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (isWeb(name)):
+		var out = [for (b  in  body) rewrite(b)];
+		makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock) if (isWeb(name2)):
+		makeASTWithMeta(EDefmodule(name2, rewrite(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name != null && name.indexOf("Web.", null) > 0) {
+								var out = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.WebAliasAssignUnderscoreTransforms.rewrite(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, out), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							if (name2 != null && name2.indexOf("Web.", null) > 0) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, reflaxe.elixir.ast.transformers.WebAliasAssignUnderscoreTransforms.rewrite(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isWeb(name:String) {
+		return name != null && name.indexOf("Web.", null) > 0;
+	}
+
+	static function rewrite(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v) if (isAlias(v)):
+				var newLeft = makeASTWithMeta(EVar("_" + v), left.metadata, left.pos);
+				makeASTWithMeta(EBinary(Match, newLeft, rhs), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case EMatch(PVar(v2), rhs2) if (isAlias(v2)):
+		makeASTWithMeta(EMatch(PVar("_" + v2), rhs2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var v2 = `;
+								var rhs2 = `;
+								if (v2 == "json" || v2 == "data" || v2 == "conn") {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("_" + v2), rhs2), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								{
+									@:ast(switch (left.def) {
+	case EVar(v) if (isAlias(v)):
+		var newLeft = makeASTWithMeta(EVar("_" + v), left.metadata, left.pos);
+		makeASTWithMeta(EBinary(Match, newLeft, rhs), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == "json" || v == "data" || v == "conn") {
+													var newLeft = {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_" + v), metadata : left.metadata, pos : left.pos};
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, newLeft, rhs), metadata : n.metadata, pos : n.pos};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isAlias(n:String) {
+		return n == "json" || n == "data" || n == "conn";
+	}
+}

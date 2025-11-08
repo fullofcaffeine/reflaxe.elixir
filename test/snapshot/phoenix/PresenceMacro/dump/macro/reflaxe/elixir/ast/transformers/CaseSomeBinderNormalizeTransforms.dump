@@ -1,0 +1,856 @@
+class reflaxe.elixir.ast.transformers.CaseSomeBinderNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		var currentFunc = [null];
+		var socketArgName = [null];
+		var transformBody = function(body:reflaxe.elixir.ast.ElixirAST) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (n.def) {
+	case ECase(expr, clauses):
+		var out:Array<ECaseClause> = [];
+		for (cl  in  clauses) {
+			var newCl = cl;
+			switch (cl.pattern) {
+				case PTuple(parts) if (parts.length == 2):
+					var isSome = false;
+					switch (parts[0]) {
+						case PLiteral(l):
+							isSome = switch (l.def) {
+								case EAtom(a) if (a == ":some" || a == "some"):
+									true;								
+								default:
+									false;								
+							};						
+						default:
+					};
+					if (isSome) switch (parts[1]) {
+						case PVar(nm) if (nm != null):
+							var candidate = (nm.length > 1 && nm.charAt(0) == "_") ? nm.substr(1) : nm;
+							if (candidate == null || candidate == "" || candidate == "socket") candidate = "payload";
+							var body2 = cl.body;
+							inline function dropAlias(b:ElixirAST):ElixirAST {
+								return switch (b.def) {
+									case EBlock(stmts) if (stmts.length > 0):
+										var rest = stmts.copy();
+										while (rest.length > 0) {
+											var s0 = rest[0];
+											var removed = false;
+											switch (s0.def) {
+												case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+													rest.shift();
+													removed = true;												
+												case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+													rest.shift();
+													removed = true;												
+												default:
+											};
+											if (!removed) break;
+										};
+										makeASTWithMeta(EBlock(rest), b.metadata, b.pos);									
+									case EDo(stmts2) if (stmts2.length > 0):
+										var r2 = stmts2.copy();
+										while (r2.length > 0) {
+											var s00 = r2[0];
+											var removed2 = false;
+											switch (s00.def) {
+												case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+													r2.shift();
+													removed2 = true;												
+												case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+													r2.shift();
+													removed2 = true;												
+												default:
+											};
+											if (!removed2) break;
+										};
+										makeASTWithMeta(EDo(r2), b.metadata, b.pos);									
+									default:
+										b;									
+								};
+							};
+							body2 = dropAlias(body2);
+							body2 = ElixirASTTransformer.transformNode(body2, function(x:ElixirAST):ElixirAST {
+								return switch (x.def) {
+									case EVar(v) if (v == nm):
+										makeASTWithMeta(EVar(candidate), x.metadata, x.pos);									
+									case ECase(tgt, cls2):
+										switch (tgt.def) {
+											case EVar(v2) if (v2 == nm):
+												makeASTWithMeta(ECase(makeAST(EVar(candidate)), cls2), x.metadata, x.pos);											
+											default:
+												x;											
+										};									
+									case ETuple(elems):
+										if ((currentFunc == "handleInfo" || currentFunc == "handle_info") && elems.length == 2) {
+											switch (elems[0].def) {
+												case EAtom(a) if (a == ":noreply" || a == "noreply"):
+													switch (elems[1].def) {
+														case EVar(v3) if (v3 == nm || v3 == candidate):
+															var sockName = socketArgName != null ? socketArgName : "socket";
+															makeASTWithMeta(ETuple([elems[0], makeAST(EVar(sockName))]), x.metadata, x.pos);														
+														default:
+															x;														
+													};												
+												default:
+													x;												
+											};
+										} else x;									
+									default:
+										x;									
+								};
+							});
+							var pattern2 = PTuple([parts[0], PVar(candidate)]);
+							newCl = { pattern : pattern2, guard : cl.guard, body : body2 };						
+						default:
+					};				
+				default:
+			};
+			out.push(newCl);
+		};
+		makeASTWithMeta(ECase(expr, out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+					var ` = n.def;
+					if (enumIndex ` == 6) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var newCl = cl;
+										@:ast(switch (cl.pattern) {
+	case PTuple(parts) if (parts.length == 2):
+		var isSome = false;
+		switch (parts[0]) {
+			case PLiteral(l):
+				isSome = switch (l.def) {
+					case EAtom(a) if (a == ":some" || a == "some"):
+						true;					
+					default:
+						false;					
+				};			
+			default:
+		};
+		if (isSome) switch (parts[1]) {
+			case PVar(nm) if (nm != null):
+				var candidate = (nm.length > 1 && nm.charAt(0) == "_") ? nm.substr(1) : nm;
+				if (candidate == null || candidate == "" || candidate == "socket") candidate = "payload";
+				var body2 = cl.body;
+				inline function dropAlias(b:ElixirAST):ElixirAST {
+					return switch (b.def) {
+						case EBlock(stmts) if (stmts.length > 0):
+							var rest = stmts.copy();
+							while (rest.length > 0) {
+								var s0 = rest[0];
+								var removed = false;
+								switch (s0.def) {
+									case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+										rest.shift();
+										removed = true;									
+									case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+										rest.shift();
+										removed = true;									
+									default:
+								};
+								if (!removed) break;
+							};
+							makeASTWithMeta(EBlock(rest), b.metadata, b.pos);						
+						case EDo(stmts2) if (stmts2.length > 0):
+							var r2 = stmts2.copy();
+							while (r2.length > 0) {
+								var s00 = r2[0];
+								var removed2 = false;
+								switch (s00.def) {
+									case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+										r2.shift();
+										removed2 = true;									
+									case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+										r2.shift();
+										removed2 = true;									
+									default:
+								};
+								if (!removed2) break;
+							};
+							makeASTWithMeta(EDo(r2), b.metadata, b.pos);						
+						default:
+							b;						
+					};
+				};
+				body2 = dropAlias(body2);
+				body2 = ElixirASTTransformer.transformNode(body2, function(x:ElixirAST):ElixirAST {
+					return switch (x.def) {
+						case EVar(v) if (v == nm):
+							makeASTWithMeta(EVar(candidate), x.metadata, x.pos);						
+						case ECase(tgt, cls2):
+							switch (tgt.def) {
+								case EVar(v2) if (v2 == nm):
+									makeASTWithMeta(ECase(makeAST(EVar(candidate)), cls2), x.metadata, x.pos);								
+								default:
+									x;								
+							};						
+						case ETuple(elems):
+							if ((currentFunc == "handleInfo" || currentFunc == "handle_info") && elems.length == 2) {
+								switch (elems[0].def) {
+									case EAtom(a) if (a == ":noreply" || a == "noreply"):
+										switch (elems[1].def) {
+											case EVar(v3) if (v3 == nm || v3 == candidate):
+												var sockName = socketArgName != null ? socketArgName : "socket";
+												makeASTWithMeta(ETuple([elems[0], makeAST(EVar(sockName))]), x.metadata, x.pos);											
+											default:
+												x;											
+										};									
+									default:
+										x;									
+								};
+							} else x;						
+						default:
+							x;						
+					};
+				});
+				var pattern2 = PTuple([parts[0], PVar(candidate)]);
+				newCl = { pattern : pattern2, guard : cl.guard, body : body2 };			
+			default:
+		};	
+	default:
+}) {
+											var ` = cl.pattern;
+											if (enumIndex ` == 2) {
+												var ` = `[0];
+												{
+													var parts = `;
+													if (parts.length == 2) {
+														var isSome = false;
+														@:ast(switch (parts[0]) {
+	case PLiteral(l):
+		isSome = switch (l.def) {
+			case EAtom(a) if (a == ":some" || a == "some"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+}) {
+															var ` = parts[0];
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																{
+																	var l = `;
+																	{
+																		isSome = @:ast(switch (l.def) {
+	case EAtom(a) if (a == ":some" || a == "some"):
+		true;	
+	default:
+		false;	
+}) {
+																			var ` = l.def;
+																			if (enumIndex ` == 31) {
+																				var ` = `[0];
+																				{
+																					var a = `;
+																					if (a == ":some" || a == "some") {
+																						true;
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																	};
+																};
+															} else {};
+														};
+														if (isSome) {
+															@:ast(switch (parts[1]) {
+	case PVar(nm) if (nm != null):
+		var candidate = (nm.length > 1 && nm.charAt(0) == "_") ? nm.substr(1) : nm;
+		if (candidate == null || candidate == "" || candidate == "socket") candidate = "payload";
+		var body2 = cl.body;
+		inline function dropAlias(b:ElixirAST):ElixirAST {
+			return switch (b.def) {
+				case EBlock(stmts) if (stmts.length > 0):
+					var rest = stmts.copy();
+					while (rest.length > 0) {
+						var s0 = rest[0];
+						var removed = false;
+						switch (s0.def) {
+							case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+								rest.shift();
+								removed = true;							
+							case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+								rest.shift();
+								removed = true;							
+							default:
+						};
+						if (!removed) break;
+					};
+					makeASTWithMeta(EBlock(rest), b.metadata, b.pos);				
+				case EDo(stmts2) if (stmts2.length > 0):
+					var r2 = stmts2.copy();
+					while (r2.length > 0) {
+						var s00 = r2[0];
+						var removed2 = false;
+						switch (s00.def) {
+							case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+								r2.shift();
+								removed2 = true;							
+							case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+								r2.shift();
+								removed2 = true;							
+							default:
+						};
+						if (!removed2) break;
+					};
+					makeASTWithMeta(EDo(r2), b.metadata, b.pos);				
+				default:
+					b;				
+			};
+		};
+		body2 = dropAlias(body2);
+		body2 = ElixirASTTransformer.transformNode(body2, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (v == nm):
+					makeASTWithMeta(EVar(candidate), x.metadata, x.pos);				
+				case ECase(tgt, cls2):
+					switch (tgt.def) {
+						case EVar(v2) if (v2 == nm):
+							makeASTWithMeta(ECase(makeAST(EVar(candidate)), cls2), x.metadata, x.pos);						
+						default:
+							x;						
+					};				
+				case ETuple(elems):
+					if ((currentFunc == "handleInfo" || currentFunc == "handle_info") && elems.length == 2) {
+						switch (elems[0].def) {
+							case EAtom(a) if (a == ":noreply" || a == "noreply"):
+								switch (elems[1].def) {
+									case EVar(v3) if (v3 == nm || v3 == candidate):
+										var sockName = socketArgName != null ? socketArgName : "socket";
+										makeASTWithMeta(ETuple([elems[0], makeAST(EVar(sockName))]), x.metadata, x.pos);									
+									default:
+										x;									
+								};							
+							default:
+								x;							
+						};
+					} else x;				
+				default:
+					x;				
+			};
+		});
+		var pattern2 = PTuple([parts[0], PVar(candidate)]);
+		newCl = { pattern : pattern2, guard : cl.guard, body : body2 };	
+	default:
+}) {
+																var ` = parts[1];
+																if (enumIndex ` == 0) {
+																	var ` = `[0];
+																	{
+																		var nm = `;
+																		if (nm != null) {
+																			var candidate = [if ((nm.length > 1 && nm.charAt(0) == "_")) {
+																				nm.substr(1, null);
+																			} else {
+																				nm;
+																			}];
+																			if (candidate[0] == null || candidate[0] == "" || candidate[0] == "socket") {
+																				candidate[0] = "payload";
+																			};
+																			var body2 = cl.body;
+																			{};
+																			body2 = @:ast(switch (b.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		var rest = stmts.copy();
+		while (rest.length > 0) {
+			var s0 = rest[0];
+			var removed = false;
+			switch (s0.def) {
+				case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+					rest.shift();
+					removed = true;				
+				case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+					rest.shift();
+					removed = true;				
+				default:
+			};
+			if (!removed) break;
+		};
+		makeASTWithMeta(EBlock(rest), b.metadata, b.pos);	
+	case EDo(stmts2) if (stmts2.length > 0):
+		var r2 = stmts2.copy();
+		while (r2.length > 0) {
+			var s00 = r2[0];
+			var removed2 = false;
+			switch (s00.def) {
+				case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+					r2.shift();
+					removed2 = true;				
+				case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+					r2.shift();
+					removed2 = true;				
+				default:
+			};
+			if (!removed2) break;
+		};
+		makeASTWithMeta(EDo(r2), b.metadata, b.pos);	
+	default:
+		b;	
+}) {
+																				var ` = body2.def;
+																				switch (enumIndex `) {
+																					case 53: {
+																						var ` = `[0];
+																						{
+																							var stmts = `;
+																							if (stmts.length > 0) {
+																								var rest = stmts.copy();
+																								while (rest.length > 0) {
+																									var s0 = rest[0];
+																									var removed = false;
+																									@:ast(switch (s0.def) {
+	case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+		rest.shift();
+		removed = true;	
+	case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+		rest.shift();
+		removed = true;	
+	default:
+}) {
+																										var ` = s0.def;
+																										switch (enumIndex `) {
+																											case 8: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												if (enumIndex ` == 0) {
+																													var ` = `[0];
+																													{
+																														var ` = `.def;
+																														var ` = `.metadata;
+																														var ` = `.pos;
+																														if (enumIndex ` == 38) {
+																															var ` = `[0];
+																															{
+																																var bv2 = `;
+																																var a2 = `;
+																																if (bv2 == nm) {
+																																	rest.shift();
+																																	removed = true;
+																																} else {};
+																															};
+																														} else {};
+																													};
+																												} else {};
+																											};
+																											case 26: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												if (enumIndex ` == 27) {
+																													{
+																														var ` = `.def;
+																														var ` = `.metadata;
+																														var ` = `.pos;
+																														if (enumIndex ` == 38) {
+																															var ` = `[0];
+																															{
+																																var ` = `.def;
+																																var ` = `.metadata;
+																																var ` = `.pos;
+																																if (enumIndex ` == 38) {
+																																	var ` = `[0];
+																																	{
+																																		var bv = `;
+																																		var a = `;
+																																		if (bv == nm) {
+																																			rest.shift();
+																																			removed = true;
+																																		} else {};
+																																	};
+																																} else {};
+																															};
+																														} else {};
+																													};
+																												} else {};
+																											};
+																											default: {}
+																										};
+																									};
+																									if (! removed) {
+																										break;
+																									};
+																								};
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(rest), metadata : body2.metadata, pos : body2.pos};
+																							} else {
+																								body2;
+																							};
+																						};
+																					};
+																					case 55: {
+																						var ` = `[0];
+																						{
+																							var stmts2 = `;
+																							if (stmts2.length > 0) {
+																								var r2 = stmts2.copy();
+																								while (r2.length > 0) {
+																									var s00 = r2[0];
+																									var removed2 = false;
+																									@:ast(switch (s00.def) {
+	case EBinary(Match, { def : EVar(a) }, { def : EVar(bv) }) if (bv == nm):
+		r2.shift();
+		removed2 = true;	
+	case EMatch(PVar(a2), { def : EVar(bv2) }) if (bv2 == nm):
+		r2.shift();
+		removed2 = true;	
+	default:
+}) {
+																										var ` = s00.def;
+																										switch (enumIndex `) {
+																											case 8: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												if (enumIndex ` == 0) {
+																													var ` = `[0];
+																													{
+																														var ` = `.def;
+																														var ` = `.metadata;
+																														var ` = `.pos;
+																														if (enumIndex ` == 38) {
+																															var ` = `[0];
+																															{
+																																var bv2 = `;
+																																var a2 = `;
+																																if (bv2 == nm) {
+																																	r2.shift();
+																																	removed2 = true;
+																																} else {};
+																															};
+																														} else {};
+																													};
+																												} else {};
+																											};
+																											case 26: {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												if (enumIndex ` == 27) {
+																													{
+																														var ` = `.def;
+																														var ` = `.metadata;
+																														var ` = `.pos;
+																														if (enumIndex ` == 38) {
+																															var ` = `[0];
+																															{
+																																var ` = `.def;
+																																var ` = `.metadata;
+																																var ` = `.pos;
+																																if (enumIndex ` == 38) {
+																																	var ` = `[0];
+																																	{
+																																		var bv = `;
+																																		var a = `;
+																																		if (bv == nm) {
+																																			r2.shift();
+																																			removed2 = true;
+																																		} else {};
+																																	};
+																																} else {};
+																															};
+																														} else {};
+																													};
+																												} else {};
+																											};
+																											default: {}
+																										};
+																									};
+																									if (! removed2) {
+																										break;
+																									};
+																								};
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(r2), metadata : body2.metadata, pos : body2.pos};
+																							} else {
+																								body2;
+																							};
+																						};
+																					};
+																					default: {
+																						body2;
+																					}
+																				};
+																			};
+																			body2 = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body2, function(x:reflaxe.elixir.ast.ElixirAST) {
+																				return @:ast(switch (x.def) {
+	case EVar(v) if (v == nm):
+		makeASTWithMeta(EVar(candidate), x.metadata, x.pos);	
+	case ECase(tgt, cls2):
+		switch (tgt.def) {
+			case EVar(v2) if (v2 == nm):
+				makeASTWithMeta(ECase(makeAST(EVar(candidate)), cls2), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	case ETuple(elems):
+		if ((currentFunc == "handleInfo" || currentFunc == "handle_info") && elems.length == 2) {
+			switch (elems[0].def) {
+				case EAtom(a) if (a == ":noreply" || a == "noreply"):
+					switch (elems[1].def) {
+						case EVar(v3) if (v3 == nm || v3 == candidate):
+							var sockName = socketArgName != null ? socketArgName : "socket";
+							makeASTWithMeta(ETuple([elems[0], makeAST(EVar(sockName))]), x.metadata, x.pos);						
+						default:
+							x;						
+					};				
+				default:
+					x;				
+			};
+		} else x;	
+	default:
+		x;	
+}) {
+																					var ` = x.def;
+																					switch (enumIndex `) {
+																						case 6: {
+																							var ` = `[0];
+																							var ` = `[1];
+																							{
+																								var tgt = `;
+																								var cls2 = `;
+																								{
+																									@:ast(switch (tgt.def) {
+	case EVar(v2) if (v2 == nm):
+		makeASTWithMeta(ECase(makeAST(EVar(candidate)), cls2), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																										var ` = tgt.def;
+																										if (enumIndex ` == 38) {
+																											var ` = `[0];
+																											{
+																												var v2 = `;
+																												if (v2 == nm) {
+																													{def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																														var pos = null;
+																														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(candidate[0]), metadata : {}, pos : pos};
+																													}, cls2), metadata : x.metadata, pos : x.pos};
+																												} else {
+																													x;
+																												};
+																											};
+																										} else {
+																											x;
+																										};
+																									};
+																								};
+																							};
+																						};
+																						case 16: {
+																							var ` = `[0];
+																							{
+																								var elems = `;
+																								{
+																									if ((currentFunc[0] == "handleInfo" || currentFunc[0] == "handle_info") && elems.length == 2) {
+																										@:ast(switch (elems[0].def) {
+	case EAtom(a) if (a == ":noreply" || a == "noreply"):
+		switch (elems[1].def) {
+			case EVar(v3) if (v3 == nm || v3 == candidate):
+				var sockName = socketArgName != null ? socketArgName : "socket";
+				makeASTWithMeta(ETuple([elems[0], makeAST(EVar(sockName))]), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+																											var ` = elems[0].def;
+																											if (enumIndex ` == 31) {
+																												var ` = `[0];
+																												{
+																													var a = `;
+																													if (a == ":noreply" || a == "noreply") {
+																														@:ast(switch (elems[1].def) {
+	case EVar(v3) if (v3 == nm || v3 == candidate):
+		var sockName = socketArgName != null ? socketArgName : "socket";
+		makeASTWithMeta(ETuple([elems[0], makeAST(EVar(sockName))]), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																															var ` = elems[1].def;
+																															if (enumIndex ` == 38) {
+																																var ` = `[0];
+																																{
+																																	var v3 = `;
+																																	if (v3 == nm || v3 == candidate[0]) {
+																																		var sockName = if (socketArgName[0] != null) {
+																																			socketArgName[0];
+																																		} else {
+																																			"socket";
+																																		};
+																																		{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([elems[0], {
+																																			var pos = null;
+																																			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(sockName), metadata : {}, pos : pos};
+																																		}]), metadata : x.metadata, pos : x.pos};
+																																	} else {
+																																		x;
+																																	};
+																																};
+																															} else {
+																																x;
+																															};
+																														};
+																													} else {
+																														x;
+																													};
+																												};
+																											} else {
+																												x;
+																											};
+																										};
+																									} else {
+																										x;
+																									};
+																								};
+																							};
+																						};
+																						case 38: {
+																							var ` = `[0];
+																							{
+																								var v = `;
+																								if (v == nm) {
+																									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(candidate[0]), metadata : x.metadata, pos : x.pos};
+																								} else {
+																									x;
+																								};
+																							};
+																						};
+																						default: {
+																							x;
+																						}
+																					};
+																				};
+																			});
+																			var pattern2 = reflaxe.elixir.ast.EPattern.PTuple([parts[0], reflaxe.elixir.ast.EPattern.PVar(candidate[0])]);
+																			newCl = {pattern : pattern2, guard : cl.guard, body : body2};
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													} else {};
+												};
+											} else {};
+										};
+										out.push(newCl);
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					} else {
+						n;
+					};
+				};
+			});
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		currentFunc = name;
+		socketArgName = extractSecondArgName(args);
+		makeASTWithMeta(EDef(name, args, guards, transformBody(body)), n.metadata, n.pos);	
+	case EDefp(name, args, guards, body):
+		currentFunc = name;
+		socketArgName = extractSecondArgName(args);
+		makeASTWithMeta(EDefp(name, args, guards, transformBody(body)), n.metadata, n.pos);	
+	default:
+		currentFunc = null;
+		socketArgName = null;
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								currentFunc[0] = name;
+								socketArgName[0] = reflaxe.elixir.ast.transformers.CaseSomeBinderNormalizeTransforms.extractSecondArgName(args);
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, transformBody(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								currentFunc[0] = name;
+								socketArgName[0] = reflaxe.elixir.ast.transformers.CaseSomeBinderNormalizeTransforms.extractSecondArgName(args);
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, transformBody(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						currentFunc[0] = null;
+						socketArgName[0] = null;
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function extractSecondArgName(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null || args.length < 2) {
+			return null;
+		};
+		return @:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+			var ` = args[1];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var nm = `;
+					{
+						nm;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+}

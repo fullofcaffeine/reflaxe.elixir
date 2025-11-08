@@ -1,0 +1,440 @@
+class reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
+		var payloadVar = extractPayloadVar(args);
+		var nb = rewrite(body, payloadVar);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
+		var payloadVar2 = extractPayloadVar(args2);
+		var nb2 = rewrite(body2, payloadVar2);
+		makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (name == "handle_event" && args != null && args.length == 3) {
+								var payloadVar = if (args == null || args.length < 2) {
+									"params";
+								} else {
+									@:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"params";	
+}) {
+										var ` = args[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var nm = `;
+												{
+													nm;
+												};
+											};
+										} else {
+											"params";
+										};
+									};
+								};
+								var nb = reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms.rewrite(body, payloadVar);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (name2 == "handle_event" && args2 != null && args2.length == 3) {
+								var payloadVar2 = if (args2 == null || args2.length < 2) {
+									"params";
+								} else {
+									@:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"params";	
+}) {
+										var ` = args2[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var nm = `;
+												{
+													nm;
+												};
+											};
+										} else {
+											"params";
+										};
+									};
+								};
+								var nb2 = reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms.rewrite(body2, payloadVar2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isHandleEvent3(name:String, args:Array<reflaxe.elixir.ast.EPattern>) {
+		return name == "handle_event" && args != null && args.length == 3;
+	}
+
+	static inline function extractPayloadVar(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null || args.length < 2) {
+			return "params";
+		};
+		return @:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"params";	
+}) {
+			var ` = args[1];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var nm = `;
+					{
+						nm;
+					};
+				};
+			} else {
+				"params";
+			};
+		};
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST, payloadVar:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ERemoteCall({ def : EVar("Map") }, "get", a) if (a != null && a.length == 2):
+		var isPayload = switch (a[0].def) {
+			case EVar(v) if (v == payloadVar):
+				true;			
+			default:
+				false;			
+		};
+		var isValueKey = switch (a[1].def) {
+			case EString(s):
+				s == "value";			
+			default:
+				false;			
+		};
+		if (isPayload && isValueKey) {
+			var idRaw = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [a[0], makeAST(EString("id")), makeAST(EVar(payloadVar))]));
+			var isBin = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [idRaw]));
+			var idToInt = makeAST(ERemoteCall(makeAST(EVar("String")), "to_integer", [idRaw]));
+			var idCoerced = makeAST(EIf(isBin, idToInt, idRaw));
+			var newArgs = [a[0], a[1], idCoerced];
+			makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
+		} else x;	
+	case ECall(target, funcName, a2) if (funcName == "get" && a2 != null && a2.length == 2):
+		var isMap = switch (target.def) {
+			case EVar(m):
+				m == "Map";			
+			default:
+				false;			
+		};
+		var isPayload2 = isMap && switch (a2[0].def) {
+			case EVar(v2) if (v2 == payloadVar):
+				true;			
+			default:
+				false;			
+		};
+		var isValueKey2 = isMap && switch (a2[1].def) {
+			case EString(s2):
+				s2 == "value";			
+			default:
+				false;			
+		};
+		if (isPayload2 && isValueKey2) {
+			var idRaw2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [a2[0], makeAST(EString("id")), makeAST(EVar(payloadVar))]));
+			var isBin2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [idRaw2]));
+			var idToInt2 = makeAST(ERemoteCall(makeAST(EVar("String")), "to_integer", [idRaw2]));
+			var idCoerced2 = makeAST(EIf(isBin2, idToInt2, idRaw2));
+			var newArgs2 = [a2[0], a2[1], idCoerced2];
+			makeASTWithMeta(ECall(target, funcName, newArgs2), x.metadata, x.pos);
+		} else x;	
+	case ERaw(code) if (code != null && code.indexOf("Map.get(" + payloadVar + ", \"value\")") != -1):
+		var replaced = StringTools.replace(code, "Map.get(" + payloadVar + ", \"value\")", "Map.get(" + payloadVar + ", \"value\", (if Kernel.is_binary(Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")), do: String.to_integer(Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")), else: Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")) )");
+		if (replaced != code) makeASTWithMeta(ERaw(replaced), x.metadata, x.pos) else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var funcName = `;
+							var a2 = `;
+							if (funcName == "get" && a2 != null && a2.length == 2) {
+								var isMap = @:ast(switch (target.def) {
+	case EVar(m):
+		m == "Map";	
+	default:
+		false;	
+}) {
+									var ` = target.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											{
+												m == "Map";
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var isPayload2 = isMap && @:ast(switch (a2[0].def) {
+	case EVar(v2) if (v2 == payloadVar):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = a2[0].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v2 = `;
+											if (v2 == payloadVar) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var isValueKey2 = isMap && @:ast(switch (a2[1].def) {
+	case EString(s2):
+		s2 == "value";	
+	default:
+		false;	
+}) {
+									var ` = a2[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var s2 = `;
+											{
+												s2 == "value";
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (isPayload2 && isValueKey2) {
+									var idRaw2 = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+										}, "get", [a2[0], {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EString("id"), metadata : {}, pos : pos};
+										}, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(payloadVar), metadata : {}, pos : pos};
+										}]), metadata : {}, pos : pos};
+									};
+									var isBin2 = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+										}, "is_binary", [idRaw2]), metadata : {}, pos : pos};
+									};
+									var idToInt2 = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+										}, "to_integer", [idRaw2]), metadata : {}, pos : pos};
+									};
+									var idCoerced2 = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EIf(isBin2, idToInt2, idRaw2), metadata : {}, pos : pos};
+									};
+									var newArgs2 = [a2[0], a2[1], idCoerced2];
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, funcName, newArgs2), metadata : x.metadata, pos : x.pos};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								if (` == "Map") {
+									if (` == "get") {
+										{
+											var a = `;
+											if (a != null && a.length == 2) {
+												var isPayload = @:ast(switch (a[0].def) {
+	case EVar(v) if (v == payloadVar):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = a[0].def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var v = `;
+															if (v == payloadVar) {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												var isValueKey = @:ast(switch (a[1].def) {
+	case EString(s):
+		s == "value";	
+	default:
+		false;	
+}) {
+													var ` = a[1].def;
+													if (enumIndex ` == 32) {
+														var ` = `[0];
+														{
+															var s = `;
+															{
+																s == "value";
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												if (isPayload && isValueKey) {
+													var idRaw = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+														}, "get", [a[0], {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EString("id"), metadata : {}, pos : pos};
+														}, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(payloadVar), metadata : {}, pos : pos};
+														}]), metadata : {}, pos : pos};
+													};
+													var isBin = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+														}, "is_binary", [idRaw]), metadata : {}, pos : pos};
+													};
+													var idToInt = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+														}, "to_integer", [idRaw]), metadata : {}, pos : pos};
+													};
+													var idCoerced = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EIf(isBin, idToInt, idRaw), metadata : {}, pos : pos};
+													};
+													var newArgs = [a[0], a[1], idCoerced];
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+													}, "get", newArgs), metadata : x.metadata, pos : x.pos};
+												} else {
+													x;
+												};
+											} else {
+												x;
+											};
+										};
+									} else {
+										x;
+									};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							if (code != null && code.indexOf("Map.get(" + payloadVar + ", \"value\")", null) != -1) {
+								var replaced = StringTools.replace(code, "Map.get(" + payloadVar + ", \"value\")", "Map.get(" + payloadVar + ", \"value\", (if Kernel.is_binary(Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")), do: String.to_integer(Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")), else: Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")) )");
+								if (replaced != code) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(replaced), metadata : x.metadata, pos : x.pos};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+}

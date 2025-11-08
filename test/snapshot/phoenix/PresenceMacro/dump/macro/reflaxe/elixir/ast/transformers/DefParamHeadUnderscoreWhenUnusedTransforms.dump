@@ -1,0 +1,459 @@
+class reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (args != null && args.length == 3):
+		if (name == "handle_event") {
+			switch (args[1]) {
+				case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body, "params") && !containsVar(body, "_params")):
+					var na = args.copy();
+					na[1] = PVar("_params");
+					makeASTWithMeta(EDef(name, na, guards, body), n.metadata, n.pos);				
+				default:
+					n;				
+			};
+		} else if (name == "mount") {
+			switch (args[0]) {
+				case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body, "params") && !containsVar(body, "_params")):
+					var na2 = args.copy();
+					na2[0] = PVar("_params");
+					makeASTWithMeta(EDef(name, na2, guards, body), n.metadata, n.pos);				
+				default:
+					n;				
+			};
+		} else n;	
+	case EDefp(name2, args2, guards2, body2) if (args2 != null && args2.length == 3):
+		if (name2 == "handle_event") {
+			switch (args2[1]) {
+				case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body2, "params") && !containsVar(body2, "_params")):
+					var nb = args2.copy();
+					nb[1] = PVar("_params");
+					makeASTWithMeta(EDefp(name2, nb, guards2, body2), n.metadata, n.pos);				
+				default:
+					n;				
+			};
+		} else if (name2 == "mount") {
+			switch (args2[0]) {
+				case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body2, "params") && !containsVar(body2, "_params")):
+					var nb2 = args2.copy();
+					nb2[0] = PVar("_params");
+					makeASTWithMeta(EDefp(name2, nb2, guards2, body2), n.metadata, n.pos);				
+				default:
+					n;				
+			};
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (args != null && args.length == 3) {
+								if (name == "handle_event") {
+									@:ast(switch (args[1]) {
+	case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body, "params") && !containsVar(body, "_params")):
+		var na = args.copy();
+		na[1] = PVar("_params");
+		makeASTWithMeta(EDef(name, na, guards, body), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+										var ` = args[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											if (` == "params") {
+												if (! reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body, "params") && ! reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.containsVar(body, "_params")) {
+													var na = args.copy();
+													na[1] = reflaxe.elixir.ast.EPattern.PVar("_params");
+													{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, na, guards, body), metadata : n.metadata, pos : n.pos};
+												} else {
+													n;
+												};
+											} else {
+												n;
+											};
+										} else {
+											n;
+										};
+									};
+								} else {
+									if (name == "mount") {
+										@:ast(switch (args[0]) {
+	case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body, "params") && !containsVar(body, "_params")):
+		var na2 = args.copy();
+		na2[0] = PVar("_params");
+		makeASTWithMeta(EDef(name, na2, guards, body), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+											var ` = args[0];
+											if (enumIndex ` == 0) {
+												var ` = `[0];
+												if (` == "params") {
+													if (! reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body, "params") && ! reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.containsVar(body, "_params")) {
+														var na2 = args.copy();
+														na2[0] = reflaxe.elixir.ast.EPattern.PVar("_params");
+														{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, na2, guards, body), metadata : n.metadata, pos : n.pos};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (args2 != null && args2.length == 3) {
+								if (name2 == "handle_event") {
+									@:ast(switch (args2[1]) {
+	case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body2, "params") && !containsVar(body2, "_params")):
+		var nb = args2.copy();
+		nb[1] = PVar("_params");
+		makeASTWithMeta(EDefp(name2, nb, guards2, body2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+										var ` = args2[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											if (` == "params") {
+												if (! reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body2, "params") && ! reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.containsVar(body2, "_params")) {
+													var nb = args2.copy();
+													nb[1] = reflaxe.elixir.ast.EPattern.PVar("_params");
+													{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, nb, guards2, body2), metadata : n.metadata, pos : n.pos};
+												} else {
+													n;
+												};
+											} else {
+												n;
+											};
+										} else {
+											n;
+										};
+									};
+								} else {
+									if (name2 == "mount") {
+										@:ast(switch (args2[0]) {
+	case PVar("params") if (!VariableUsageCollector.usedInFunctionScope(body2, "params") && !containsVar(body2, "_params")):
+		var nb2 = args2.copy();
+		nb2[0] = PVar("_params");
+		makeASTWithMeta(EDefp(name2, nb2, guards2, body2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+											var ` = args2[0];
+											if (enumIndex ` == 0) {
+												var ` = `[0];
+												if (` == "params") {
+													if (! reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body2, "params") && ! reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.containsVar(body2, "_params")) {
+														var nb2 = args2.copy();
+														nb2[0] = reflaxe.elixir.ast.EPattern.PVar("_params");
+														{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, nb2, guards2, body2), metadata : n.metadata, pos : n.pos};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function containsVar(body:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var found = [false];
+		var walk = [null];
+		walk[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	case EBinary(_, l, r):
+		walk(l);
+		walk(r);	
+	case EMatch(_, rhs):
+		walk(rhs);	
+	case EBlock(ss):
+		for (s  in  ss) walk(s);	
+	case EDo(ss2):
+		for (s  in  ss2) walk(s);	
+	case EIf(c, t, e):
+		walk(c);
+		walk(t);
+		if (e != null) walk(e);	
+	case ECase(e2, cs):
+		walk(e2);
+		for (c  in  cs) {
+			if (c.guard != null) walk(c.guard);
+			walk(c.body);
+		};	
+	case EWith(cls, doBlock, elseBlock):
+		for (wc  in  cls) walk(wc.expr);
+		walk(doBlock);
+		if (elseBlock != null) walk(elseBlock);	
+	case ECall(tg, _, as):
+		if (tg != null) walk(tg);
+		if (as != null) for (a  in  as) walk(a);	
+	case ERemoteCall(tg2, _, as2):
+		walk(tg2);
+		if (as2 != null) for (a2  in  as2) walk(a2);	
+	case EField(obj, _):
+		walk(obj);	
+	case EAccess(obj2, key):
+		walk(obj2);
+		walk(key);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e2 = `;
+							var cs = `;
+							{
+								walk[0](e2);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											walk[0](c.guard);
+										};
+										walk[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var rhs = `;
+							{
+								walk[0](rhs);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cls = `;
+							var doBlock = `;
+							var elseBlock = `;
+							{
+								{
+									var ` = 0;
+									while (` < cls.length) {
+										var wc = cls[`];
+										++ `;
+										walk[0](wc.expr);
+									};
+								};
+								walk[0](doBlock);
+								if (elseBlock != null) {
+									walk[0](elseBlock);
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								walk[0](c);
+								walk[0](t);
+								if (e != null) {
+									walk[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tg = `;
+							var as = `;
+							{
+								if (tg != null) {
+									walk[0](tg);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											walk[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tg2 = `;
+							var as2 = `;
+							{
+								walk[0](tg2);
+								if (as2 != null) {
+									{
+										var ` = 0;
+										while (` < as2.length) {
+											var a2 = as2[`];
+											++ `;
+											walk[0](a2);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								walk[0](l);
+								walk[0](r);
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj = `;
+							{
+								walk[0](obj);
+							};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj2 = `;
+							var key = `;
+							{
+								walk[0](obj2);
+								walk[0](key);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == name) {
+								found[0] = true;
+							} else {};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										walk[0](s);
+									};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var ss2 = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss2.length) {
+										var s = ss2[`];
+										++ `;
+										walk[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](body);
+		return found[0];
+	}
+}

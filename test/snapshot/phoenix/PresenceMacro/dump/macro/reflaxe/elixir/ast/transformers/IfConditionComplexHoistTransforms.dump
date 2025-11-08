@@ -1,0 +1,268 @@
+class reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EIf(cond, thenB, elseB):
+		var rewritten = tryHoist(cond, function(newCond) return makeASTWithMeta(EIf(newCond, thenB, elseB), n.metadata, n.pos));
+		rewritten != null ? rewritten : n;	
+	case EUnless(cond2, body, elseB2):
+		var rewritten2 = tryHoist(cond2, function(newCond2) return makeASTWithMeta(EUnless(newCond2, body, elseB2), n.metadata, n.pos));
+		rewritten2 != null ? rewritten2 : n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond = `;
+							var thenB = `;
+							var elseB = `;
+							{
+								var rewritten = reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.tryHoist(cond, function(newCond:reflaxe.elixir.ast.ElixirAST) return {def : reflaxe.elixir.ast.ElixirASTDef.EIf(newCond, thenB, elseB), metadata : n.metadata, pos : n.pos});
+								if (rewritten != null) {
+									rewritten;
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond2 = `;
+							var body = `;
+							var elseB2 = `;
+							{
+								var rewritten2 = reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.tryHoist(cond2, function(newCond2:reflaxe.elixir.ast.ElixirAST) return {def : reflaxe.elixir.ast.ElixirASTDef.EUnless(newCond2, body, elseB2), metadata : n.metadata, pos : n.pos});
+								if (rewritten2 != null) {
+									rewritten2;
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function containsComplex(e:reflaxe.elixir.ast.ElixirAST) {
+		var found = [false];
+		var walk = [null];
+		walk[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || x == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _):
+		found = true;	
+	case EBinary(_, l, r):
+		walk(l);
+		if (r != null) walk(r);	
+	case EUnary(_, ex):
+		walk(ex);	
+	case EParen(inner):
+		walk(inner);	
+	case ECall(t, _, as):
+		if (t != null) walk(t);
+		for (a  in  as) walk(a);	
+	case ERemoteCall(m, _, as):
+		walk(m);
+		for (a  in  as) walk(a);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							found[0] = true;
+						};
+					};
+					case 7: {
+						var ` = `[0];
+						{
+							found[0] = true;
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							found[0] = true;
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							found[0] = true;
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									walk[0](t);
+								};
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var m = `;
+							var as = `;
+							{
+								walk[0](m);
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								walk[0](l);
+								if (r != null) {
+									walk[0](r);
+								};
+							};
+						};
+					};
+					case 27: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ex = `;
+							{
+								walk[0](ex);
+							};
+						};
+					};
+					case 54: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								walk[0](inner);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](e);
+		return found[0];
+	}
+
+	static function tryHoist(cond:reflaxe.elixir.ast.ElixirAST, rebuild:reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (cond.def) {
+	case EBinary(op, left, right) if (containsComplex(left) || containsComplex(right)):
+		var hoisted = containsComplex(left) ? left : right;
+		var tmpName = "cond_value";
+		var assign = makeAST(EMatch(PVar(tmpName), hoisted));
+		var newLeft = containsComplex(left) ? makeAST(EVar(tmpName)) : left;
+		var newRight = containsComplex(right) ? makeAST(EVar(tmpName)) : right;
+		var newCond = makeAST(EBinary(op, newLeft, newRight));
+		makeAST(EBlock([assign, rebuild(newCond)]));	
+	default:
+		null;	
+}) {
+			var ` = cond.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var op = `;
+					var left = `;
+					var right = `;
+					if (reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.containsComplex(left) || reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.containsComplex(right)) {
+						var hoisted = if (reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.containsComplex(left)) {
+							left;
+						} else {
+							right;
+						};
+						var tmpName = "cond_value";
+						var assign = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(tmpName), hoisted), metadata : {}, pos : pos};
+						};
+						var newLeft = if (reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.containsComplex(left)) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tmpName), metadata : {}, pos : pos};
+							};
+						} else {
+							left;
+						};
+						var newRight = if (reflaxe.elixir.ast.transformers.IfConditionComplexHoistTransforms.containsComplex(right)) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tmpName), metadata : {}, pos : pos};
+							};
+						} else {
+							right;
+						};
+						var newCond = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, newLeft, newRight), metadata : {}, pos : pos};
+						};
+						{
+							var def = reflaxe.elixir.ast.ElixirASTDef.EBlock([assign, rebuild(newCond)]);
+							var pos = null;
+							{def : def, metadata : {}, pos : pos};
+						};
+					} else {
+						null;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+}

@@ -1,0 +1,142 @@
+class reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(Match, left, right):
+		var flatRight = stripUnderscoreAssign(right);
+		if (flatRight != right) makeASTWithMeta(EBinary(Match, left, flatRight), n.metadata, n.pos) else n;	
+	case EMatch(pat, rhs):
+		var flatRhs = stripUnderscoreAssign(rhs);
+		if (flatRhs != rhs) makeASTWithMeta(EMatch(pat, flatRhs), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs = `;
+							{
+								var flatRhs = reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.stripUnderscoreAssign(rhs);
+								if (flatRhs != rhs) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, flatRhs), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var right = `;
+								{
+									var flatRight = reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.stripUnderscoreAssign(right);
+									if (flatRight != right) {
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, flatRight), metadata : n.metadata, pos : n.pos};
+									} else {
+										n;
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function stripUnderscoreAssign(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EBinary(Match, { def : EVar(name) }, rhs) if (name == "_"):
+		stripUnderscoreAssign(rhs);	
+	case EMatch(PVar(name), rhs) if (name == "_"):
+		stripUnderscoreAssign(rhs);	
+	case EParen(inner):
+		var inner2 = stripUnderscoreAssign(inner);
+		if (inner2 != inner) makeASTWithMeta(EParen(inner2), e.metadata, e.pos) else e;	
+	default:
+		e;	
+}) {
+			var ` = e.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var name = `;
+							var rhs = `;
+							if (name == "_") {
+								reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.stripUnderscoreAssign(rhs);
+							} else {
+								e;
+							};
+						};
+					} else {
+						e;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var name = `;
+									var rhs = `;
+									if (name == "_") {
+										reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.stripUnderscoreAssign(rhs);
+									} else {
+										e;
+									};
+								};
+							} else {
+								e;
+							};
+						};
+					} else {
+						e;
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							var inner2 = reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.stripUnderscoreAssign(inner);
+							if (inner2 != inner) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EParen(inner2), metadata : e.metadata, pos : e.pos};
+							} else {
+								e;
+							};
+						};
+					};
+				};
+				default: {
+					e;
+				}
+			};
+		};
+	}
+}

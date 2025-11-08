@@ -1,0 +1,307 @@
+class reflaxe.elixir.ast.transformers.PresenceQualifiedModuleRewriteTransforms {
+
+	static inline function toWebPresence(modName:String) {
+		if (modName == null) {
+			return null;
+		};
+		if (StringTools.endsWith(modName, ".Presence") && modName.indexOf("Web.Presence", null) == -1) {
+			var appPrefix = null;
+			try {
+				appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			if (appPrefix == null || appPrefix.length == 0) {
+				return null;
+			};
+			return appPrefix + "Web.Presence";
+		};
+		return null;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(module, fn, args):
+		var ms = switch (module.def) {
+			case EVar(m):
+				m;			
+			default:
+				null;			
+		};
+		var repl = ms != null ? toWebPresence(ms) : null;
+		if (repl != null) makeASTWithMeta(ERemoteCall(makeAST(EVar(repl)), fn, args), n.metadata, n.pos) else n;	
+	case ECall(target, fn2, args2) if (target != null):
+		var ms2 = switch (target.def) {
+			case EVar(m2):
+				m2;			
+			default:
+				null;			
+		};
+		var repl2 = ms2 != null ? toWebPresence(ms2) : null;
+		if (repl2 != null) makeASTWithMeta(ERemoteCall(makeAST(EVar(repl2)), fn2, args2), n.metadata, n.pos) else n;	
+	case ECapture(expr, arity):
+		switch (expr.def) {
+			case ERemoteCall(module2, fn3, args3):
+				var ms3 = switch (module2.def) {
+					case EVar(m3):
+						m3;					
+					default:
+						null;					
+				};
+				var repl3 = ms3 != null ? toWebPresence(ms3) : null;
+				if (repl3 != null) makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(repl3)), fn3, args3)), arity), n.metadata, n.pos) else n;			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var fn2 = `;
+							var args2 = `;
+							if (target != null) {
+								var ms2 = @:ast(switch (target.def) {
+	case EVar(m2):
+		m2;	
+	default:
+		null;	
+}) {
+									var ` = target.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m2 = `;
+											{
+												m2;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								var repl2 = if (ms2 != null) {
+									if (ms2 == null) {
+										null;
+									} else {
+										if (StringTools.endsWith(ms2, ".Presence") && ms2.indexOf("Web.Presence", null) == -1) {
+											var appPrefix = null;
+											try {
+												appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+											} catch (`:Dynamic) {
+												{};
+												{};
+												if (true) {
+													{};
+													{};
+												} else throw `;
+											};
+											if (appPrefix == null || appPrefix.length == 0) {
+												null;
+											} else {
+												appPrefix + "Web.Presence";
+											};
+										} else {
+											null;
+										};
+									};
+								} else {
+									null;
+								};
+								if (repl2 != null) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(repl2), metadata : {}, pos : pos};
+									}, fn2, args2), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var module = `;
+							var fn = `;
+							var args = `;
+							{
+								var ms = @:ast(switch (module.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+									var ` = module.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											{
+												m;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								var repl = if (ms != null) {
+									if (ms == null) {
+										null;
+									} else {
+										if (StringTools.endsWith(ms, ".Presence") && ms.indexOf("Web.Presence", null) == -1) {
+											var appPrefix = null;
+											try {
+												appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+											} catch (`:Dynamic) {
+												{};
+												{};
+												if (true) {
+													{};
+													{};
+												} else throw `;
+											};
+											if (appPrefix == null || appPrefix.length == 0) {
+												null;
+											} else {
+												appPrefix + "Web.Presence";
+											};
+										} else {
+											null;
+										};
+									};
+								} else {
+									null;
+								};
+								if (repl != null) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(repl), metadata : {}, pos : pos};
+									}, fn, args), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 43: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var arity = `;
+							{
+								@:ast(switch (expr.def) {
+	case ERemoteCall(module2, fn3, args3):
+		var ms3 = switch (module2.def) {
+			case EVar(m3):
+				m3;			
+			default:
+				null;			
+		};
+		var repl3 = ms3 != null ? toWebPresence(ms3) : null;
+		if (repl3 != null) makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(repl3)), fn3, args3)), arity), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+									var ` = expr.def;
+									if (enumIndex ` == 24) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var module2 = `;
+											var fn3 = `;
+											var args3 = `;
+											{
+												var ms3 = @:ast(switch (module2.def) {
+	case EVar(m3):
+		m3;	
+	default:
+		null;	
+}) {
+													var ` = module2.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var m3 = `;
+															{
+																m3;
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												var repl3 = if (ms3 != null) {
+													if (ms3 == null) {
+														null;
+													} else {
+														if (StringTools.endsWith(ms3, ".Presence") && ms3.indexOf("Web.Presence", null) == -1) {
+															var appPrefix = null;
+															try {
+																appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+															} catch (`:Dynamic) {
+																{};
+																{};
+																if (true) {
+																	{};
+																	{};
+																} else throw `;
+															};
+															if (appPrefix == null || appPrefix.length == 0) {
+																null;
+															} else {
+																appPrefix + "Web.Presence";
+															};
+														} else {
+															null;
+														};
+													};
+												} else {
+													null;
+												};
+												if (repl3 != null) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(repl3), metadata : {}, pos : pos};
+														}, fn3, args3), metadata : {}, pos : pos};
+													}, arity), metadata : n.metadata, pos : n.pos};
+												} else {
+													n;
+												};
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

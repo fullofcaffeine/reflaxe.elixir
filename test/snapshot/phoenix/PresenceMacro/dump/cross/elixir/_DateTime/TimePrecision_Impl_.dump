@@ -1,0 +1,12 @@
+@:used @:enum
+private extern class elixir._DateTime.TimePrecision_Impl_ {
+
+	@:value(cast "second") @:impl @:enum
+	static inline var Second:elixir.TimePrecision = cast "second";
+
+	@:value(cast "millisecond") @:impl @:enum
+	static inline var Millisecond:elixir.TimePrecision = cast "millisecond";
+
+	@:value(cast "microsecond") @:impl @:enum
+	static inline var Microsecond:elixir.TimePrecision = cast "microsecond";
+}

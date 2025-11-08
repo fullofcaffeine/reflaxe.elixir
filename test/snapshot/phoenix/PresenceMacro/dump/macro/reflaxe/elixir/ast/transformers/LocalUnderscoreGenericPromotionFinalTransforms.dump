@@ -1,0 +1,6 @@
+class reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionTransforms.pass(ast);
+	}
+}

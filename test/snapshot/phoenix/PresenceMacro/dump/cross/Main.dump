@@ -1,0 +1,13 @@
+@:used
+class Main {
+
+	@:has_untyped
+	static function main() {
+		var socket = {};
+		TestApp.Presence.trackTestUser(socket, "user_1", "Alice");
+		TestApp.Presence.updateStatus(socket, "user_1", "busy");
+		TestApp.Presence.removeUser(socket, "user_1");
+		ExternalCaller.callFromOutside(socket);
+		null;
+	}
+}

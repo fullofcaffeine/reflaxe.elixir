@@ -1,0 +1,264 @@
+class reflaxe.elixir.ast.transformers.HandleInfoAliasCleanupTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "handle_info" || name == "handleInfo"):
+		var nb = cleanup(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "handle_info" || name == "handleInfo") {
+							var nb = reflaxe.elixir.ast.transformers.HandleInfoAliasCleanupTransforms.cleanup(body);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function cleanup(body:reflaxe.elixir.ast.ElixirAST) {
+		var aliasName = [null];
+		var scanForAlias = function(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+			var out = [];
+			{
+				var ` = 0;
+				var ` = stmts.length;
+				while (` < `) {
+					var i = ` ++;
+					var s = stmts[i];
+					var removed = false;
+					@:ast(switch (s.def) {
+	case EBinary(Match, left, right):
+		switch (left.def) {
+			case EVar(nm):
+				switch (right.def) {
+					case EVar(rv) if (rv == "_socket" || rv == "socket"):
+						aliasName = nm;
+						removed = true;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+						var ` = s.def;
+						if (enumIndex ` == 26) {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									var right = `;
+									{
+										@:ast(switch (left.def) {
+	case EVar(nm):
+		switch (right.def) {
+			case EVar(rv) if (rv == "_socket" || rv == "socket"):
+				aliasName = nm;
+				removed = true;			
+			default:
+		};	
+	default:
+}) {
+											var ` = left.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var nm = `;
+													{
+														@:ast(switch (right.def) {
+	case EVar(rv) if (rv == "_socket" || rv == "socket"):
+		aliasName = nm;
+		removed = true;	
+	default:
+}) {
+															var ` = right.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var rv = `;
+																	if (rv == "_socket" || rv == "socket") {
+																		aliasName[0] = nm;
+																		removed = true;
+																	} else {};
+																};
+															} else {};
+														};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						} else {};
+					};
+					if (! removed) {
+						out.push(s);
+					};
+				};
+			};
+			return out;
+		};
+		var replaceAlias = function(e:reflaxe.elixir.ast.ElixirAST) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(e, function(x:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (x.def) {
+	case EVar(v) if (v == aliasName || v == "_socket"):
+		makeASTWithMeta(EVar("socket"), x.metadata, x.pos);	
+	case ETuple(elems) if (elems.length == 2):
+		switch (elems[0].def) {
+			case EAtom(a) if (a == ":noreply" || a == "noreply"):
+				switch (elems[1].def) {
+					case EVar(v2) if (v2 == "_socket" || (aliasName != null && v2 == aliasName) || v2 == "socket"):
+						var newElems = [elems[0], makeASTWithMeta(EVar("socket"), x.metadata, x.pos)];
+						makeASTWithMeta(ETuple(newElems), x.metadata, x.pos);					
+					default:
+						x;					
+				};			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+					var ` = x.def;
+					switch (enumIndex `) {
+						case 16: {
+							var ` = `[0];
+							{
+								var elems = `;
+								if (elems.length == 2) {
+									@:ast(switch (elems[0].def) {
+	case EAtom(a) if (a == ":noreply" || a == "noreply"):
+		switch (elems[1].def) {
+			case EVar(v2) if (v2 == "_socket" || (aliasName != null && v2 == aliasName) || v2 == "socket"):
+				var newElems = [elems[0], makeASTWithMeta(EVar("socket"), x.metadata, x.pos)];
+				makeASTWithMeta(ETuple(newElems), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+										var ` = elems[0].def;
+										if (enumIndex ` == 31) {
+											var ` = `[0];
+											{
+												var a = `;
+												if (a == ":noreply" || a == "noreply") {
+													@:ast(switch (elems[1].def) {
+	case EVar(v2) if (v2 == "_socket" || (aliasName != null && v2 == aliasName) || v2 == "socket"):
+		var newElems = [elems[0], makeASTWithMeta(EVar("socket"), x.metadata, x.pos)];
+		makeASTWithMeta(ETuple(newElems), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+														var ` = elems[1].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var v2 = `;
+																if (v2 == "_socket" || (aliasName[0] != null && v2 == aliasName[0]) || v2 == "socket") {
+																	var newElems = [elems[0], {def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : x.metadata, pos : x.pos}];
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ETuple(newElems), metadata : x.metadata, pos : x.pos};
+																} else {
+																	x;
+																};
+															};
+														} else {
+															x;
+														};
+													};
+												} else {
+													x;
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								} else {
+									x;
+								};
+							};
+						};
+						case 38: {
+							var ` = `[0];
+							{
+								var v = `;
+								if (v == aliasName[0] || v == "_socket") {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : x.metadata, pos : x.pos};
+								} else {
+									x;
+								};
+							};
+						};
+						default: {
+							x;
+						}
+					};
+				};
+			});
+		};
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		var kept = scanForAlias(stmts);
+		var b2 = makeASTWithMeta(EBlock(kept), body.metadata, body.pos);
+		replaceAlias(b2);	
+	case EDo(stmts2):
+		var kept2 = scanForAlias(stmts2);
+		var d2 = makeASTWithMeta(EDo(kept2), body.metadata, body.pos);
+		replaceAlias(d2);	
+	default:
+		replaceAlias(body);	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var kept = scanForAlias(stmts);
+							var b2 = {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(kept), metadata : body.metadata, pos : body.pos};
+							replaceAlias(b2);
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts2 = `;
+						{
+							var kept2 = scanForAlias(stmts2);
+							var d2 = {def : reflaxe.elixir.ast.ElixirASTDef.EDo(kept2), metadata : body.metadata, pos : body.pos};
+							replaceAlias(d2);
+						};
+					};
+				};
+				default: {
+					replaceAlias(body);
+				}
+			};
+		};
+	}
+}

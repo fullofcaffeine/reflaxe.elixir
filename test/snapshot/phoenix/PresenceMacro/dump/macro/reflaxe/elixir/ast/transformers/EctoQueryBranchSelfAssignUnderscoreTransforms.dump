@@ -1,0 +1,250 @@
+class reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		var last = stmts[stmts.length - 1];
+		var rewritten = rewriteIfSelfAssign(last);
+		if (rewritten != null) {
+			var prefix = stmts.copy();
+			prefix.pop();
+			makeASTWithMeta(EBlock(prefix.concat([rewritten])), n.metadata, n.pos);
+		} else n;	
+	case EDo(stmts2) if (stmts2.length > 0):
+		var last2 = stmts2[stmts2.length - 1];
+		var rewritten2 = rewriteIfSelfAssign(last2);
+		if (rewritten2 != null) {
+			var prefix2 = stmts2.copy();
+			prefix2.pop();
+			makeASTWithMeta(EDo(prefix2.concat([rewritten2])), n.metadata, n.pos);
+		} else n;	
+	case EIf(cond, thenExpr, elseExpr):
+		var newThen = rewriteIfSelfAssign(thenExpr);
+		var newElse = (elseExpr != null) ? rewriteIfSelfAssign(elseExpr) : null;
+		makeASTWithMeta(EIf(cond, newThen != null ? newThen : thenExpr, newElse != null ? newElse : elseExpr), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond = `;
+							var thenExpr = `;
+							var elseExpr = `;
+							{
+								var newThen = reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.rewriteIfSelfAssign(thenExpr);
+								var newElse = if ((elseExpr != null)) {
+									reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.rewriteIfSelfAssign(elseExpr);
+								} else {
+									null;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, if ((newThen != null)) newThen else thenExpr, if ((newElse != null)) newElse else elseExpr), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							if (stmts.length > 0) {
+								var last = stmts[stmts.length - 1];
+								var rewritten = reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.rewriteIfSelfAssign(last);
+								if (rewritten != null) {
+									var prefix = stmts.copy();
+									prefix.pop();
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(prefix.concat([rewritten]));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							if (stmts2.length > 0) {
+								var last2 = stmts2[stmts2.length - 1];
+								var rewritten2 = reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.rewriteIfSelfAssign(last2);
+								if (rewritten2 != null) {
+									var prefix2 = stmts2.copy();
+									prefix2.pop();
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDo(prefix2.concat([rewritten2]));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteIfSelfAssign(stmt:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (stmt.def) {
+	case EMatch(PVar(name), rhs) if (isWhereOnVar(rhs, name)):
+		makeAST(EBinary(Match, makeAST(EVar("_" + name)), rhs));	
+	case EBinary(Match, { def : EVar(name2) }, rhs2) if (isWhereOnVar(rhs2, name2)):
+		makeAST(EBinary(Match, makeAST(EVar("_" + name2)), rhs2));	
+	default:
+		null;	
+}) {
+			var ` = stmt.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var name = `;
+							var rhs = `;
+							if (reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.isWhereOnVar(rhs, name)) {
+								{
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("_" + name), metadata : {}, pos : pos};
+									}, rhs), metadata : {}, pos : pos};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var name2 = `;
+									var rhs2 = `;
+									if (reflaxe.elixir.ast.transformers.EctoQueryBranchSelfAssignUnderscoreTransforms.isWhereOnVar(rhs2, name2)) {
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("_" + name2), metadata : {}, pos : pos};
+											}, rhs2), metadata : {}, pos : pos};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function isWhereOnVar(expr:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return @:ast(switch (expr.def) {
+	case ERemoteCall({ def : EVar("Ecto.Query") }, "where", args) if (args != null && args.length >= 1):
+		switch (args[0].def) {
+			case EVar(v) if (v == name):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "Ecto.Query") {
+							if (` == "where") {
+								{
+									var args = `;
+									if (args != null && args.length >= 1) {
+										@:ast(switch (args[0].def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = args[0].def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var v = `;
+													if (v == name) {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

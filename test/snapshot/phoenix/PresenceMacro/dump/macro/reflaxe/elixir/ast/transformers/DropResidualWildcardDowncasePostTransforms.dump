@@ -1,0 +1,309 @@
+class reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		makeASTWithMeta(EBlock(clean(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2) if (stmts2.length > 0):
+		makeASTWithMeta(EDo(clean(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							if (stmts.length > 0) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.clean(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							if (stmts2.length > 0) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.clean(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function isQueryBinder(s:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		var isQ = switch (left.def) {
+			case EVar(nm) if (nm == "query"):
+				true;			
+			default:
+				false;			
+		};
+		if (!isQ) false else isDowncase(rhs);	
+	case EMatch(pat, rhs2):
+		var isQ2 = switch (pat) {
+			case PVar(nm2) if (nm2 == "query"):
+				true;			
+			default:
+				false;			
+		};
+		if (!isQ2) false else isDowncase(rhs2);	
+	default:
+		false;	
+}) {
+			var ` = s.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var pat = `;
+						var rhs2 = `;
+						{
+							var isQ2 = @:ast(switch (pat) {
+	case PVar(nm2) if (nm2 == "query"):
+		true;	
+	default:
+		false;	
+}) if (enumIndex pat == 0) {
+								var ` = pat[0];
+								{
+									var nm2 = `;
+									if (nm2 == "query") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+							if (! isQ2) {
+								false;
+							} else {
+								reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.isDowncase(rhs2);
+							};
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var left = `;
+							var rhs = `;
+							{
+								var isQ = @:ast(switch (left.def) {
+	case EVar(nm) if (nm == "query"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == "query") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (! isQ) {
+									false;
+								} else {
+									reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.isDowncase(rhs);
+								};
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function isDowncase(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall({ def : EVar(m) }, "downcase", args) if (m == "String" && args != null && args.length == 1):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "downcase") {
+							{
+								var m = `;
+								var args = `;
+								if (m == "String" && args != null && args.length == 1) {
+									true;
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function isWildcardDowncase(s:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		var isWild = switch (left.def) {
+			case EVar(nm) if (nm == "_"):
+				true;			
+			case EUnderscore:
+				true;			
+			default:
+				false;			
+		};
+		isWild && isDowncase(rhs);	
+	case EMatch(PWildcard, rhs2):
+		isDowncase(rhs2);	
+	default:
+		false;	
+}) {
+			var ` = s.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 8) {
+						{
+							var rhs2 = `;
+							{
+								reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.isDowncase(rhs2);
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var left = `;
+							var rhs = `;
+							{
+								var isWild = @:ast(switch (left.def) {
+	case EVar(nm) if (nm == "_"):
+		true;	
+	case EUnderscore:
+		true;	
+	default:
+		false;	
+}) {
+									var ` = left.def;
+									switch (enumIndex `) {
+										case 38: {
+											var ` = `[0];
+											{
+												var nm = `;
+												if (nm == "_") {
+													true;
+												} else {
+													false;
+												};
+											};
+										};
+										case 40: {
+											{
+												true;
+											};
+										};
+										default: {
+											false;
+										}
+									};
+								};
+								isWild && reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.isDowncase(rhs);
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function clean(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var out = [];
+		var seenQueryBinder = false;
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var s = stmts[i];
+				if (reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.isQueryBinder(s)) {
+					seenQueryBinder = true;
+					out.push(s);
+					continue;
+				};
+				if (seenQueryBinder && reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.isWildcardDowncase(s)) {
+					continue;
+				};
+				out.push(s);
+			};
+		};
+		return out;
+	}
+}

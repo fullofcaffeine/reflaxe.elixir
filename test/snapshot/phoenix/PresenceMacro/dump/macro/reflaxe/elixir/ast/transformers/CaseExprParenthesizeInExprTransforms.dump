@@ -1,0 +1,91 @@
+class reflaxe.elixir.ast.transformers.CaseExprParenthesizeInExprTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EMatch(pat, rhs):
+		switch (rhs.def) {
+			case ECase(_, _):
+				makeASTWithMeta(EMatch(pat, makeASTWithMeta(EParen(rhs), rhs.metadata, rhs.pos)), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case EBinary(Match, left, rhs2):
+		switch (rhs2.def) {
+			case ECase(_, _):
+				makeASTWithMeta(EBinary(Match, left, makeASTWithMeta(EParen(rhs2), rhs2.metadata, rhs2.pos)), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs = `;
+							{
+								@:ast(switch (rhs.def) {
+	case ECase(_, _):
+		makeASTWithMeta(EMatch(pat, makeASTWithMeta(EParen(rhs), rhs.metadata, rhs.pos)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = rhs.def;
+									if (enumIndex ` == 6) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, {def : reflaxe.elixir.ast.ElixirASTDef.EParen(rhs), metadata : rhs.metadata, pos : rhs.pos}), metadata : n.metadata, pos : n.pos};
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs2 = `;
+								{
+									@:ast(switch (rhs2.def) {
+	case ECase(_, _):
+		makeASTWithMeta(EBinary(Match, left, makeASTWithMeta(EParen(rhs2), rhs2.metadata, rhs2.pos)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+										var ` = rhs2.def;
+										if (enumIndex ` == 6) {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, {def : reflaxe.elixir.ast.ElixirASTDef.EParen(rhs2), metadata : rhs2.metadata, pos : rhs2.pos}), metadata : n.metadata, pos : n.pos};
+											};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,582 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.EnumHandler {
+
+	public static function isEnumConstructor(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return false;
+		};
+		@:ast(switch (expr.expr) {
+	case TField(e, FEnum(_, ef)):
+		return true;	
+	case TCall(e, _):
+		return isEnumConstructor(e);	
+	case _:
+		return false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 5) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ef = `;
+							var e = `;
+							{
+								return true;
+							};
+						};
+					} else {
+						return false;
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.builders.EnumHandler.isEnumConstructor(e);
+						};
+					};
+				};
+				default: {
+					return false;
+				}
+			};
+		};
+	}
+
+	public static function extractEnumTag(expr:haxe.macro.TypedExpr) {
+		@:ast(switch (expr.expr) {
+	case TField(_, FEnum(_, ef)):
+		return ef.name;	
+	case TCall(e, _):
+		return extractEnumTag(e);	
+	case _:
+		return "";	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 5) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ef = `;
+							{
+								return ef.name;
+							};
+						};
+					} else {
+						return "";
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.builders.EnumHandler.extractEnumTag(e);
+						};
+					};
+				};
+				default: {
+					return "";
+				}
+			};
+		};
+	}
+
+	public static function getEnumTypeName(expr:haxe.macro.TypedExpr) {
+		@:ast(switch (expr.expr) {
+	case TField(_, FEnum(enumRef, _)):
+		return enumRef.get().name;	
+	case TCall(e, _):
+		return getEnumTypeName(e);	
+	case _:
+		return "";	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 5) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var enumRef = `;
+							{
+								return enumRef.get().name;
+							};
+						};
+					} else {
+						return "";
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.builders.EnumHandler.getEnumTypeName(e);
+						};
+					};
+				};
+				default: {
+					return "";
+				}
+			};
+		};
+	}
+
+	public static function generateEnumMap(arrayExpr:reflaxe.elixir.ast.ElixirAST, itemVar:String, transformation:reflaxe.elixir.ast.ElixirAST, context:reflaxe.elixir.ast.context.BuildContext) {
+		var lambda = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(itemVar)], guard : null, body : transformation}]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "Enum.map", [arrayExpr, lambda]), metadata : {}, pos : pos};
+		};
+	}
+
+	public static function generateEnumFilter(arrayExpr:reflaxe.elixir.ast.ElixirAST, itemVar:String, condition:reflaxe.elixir.ast.ElixirAST, context:reflaxe.elixir.ast.context.BuildContext) {
+		var lambda = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(itemVar)], guard : null, body : condition}]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "Enum.filter", [arrayExpr, lambda]), metadata : {}, pos : pos};
+		};
+	}
+
+	public static function generateEnumReduce(arrayExpr:reflaxe.elixir.ast.ElixirAST, itemVar:String, accVar:String, initialValue:reflaxe.elixir.ast.ElixirAST, body:reflaxe.elixir.ast.ElixirAST, context:reflaxe.elixir.ast.context.BuildContext) {
+		var lambda = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(itemVar), reflaxe.elixir.ast.EPattern.PVar(accVar)], guard : null, body : body}]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "Enum.reduce", [arrayExpr, initialValue, lambda]), metadata : {}, pos : pos};
+		};
+	}
+
+	@:value({ caseValues : null })
+	public static function analyzeEnumParameterExtraction(caseExpr:haxe.macro.TypedExpr, caseValues:Null<Array<haxe.macro.TypedExpr>> = null) {
+		var extractedParams = [];
+		var seenVars = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var analyze = [null];
+		analyze[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TVar(v, init):
+		if (init != null) {
+			switch (init.expr) {
+				case TEnumParameter(_, _, _):
+					var varName = v.name;
+					if (!seenVars.exists(varName)) {
+						extractedParams.push(varName);
+						seenVars.set(varName, true);
+					};				
+				case _:
+					analyze(init);				
+			};
+		};	
+	case TEnumParameter(_, _, _):
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			analyze(e);
+		};	
+	default:
+		TypedExprTools.iter(expr, analyze);	
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var v = `;
+							var init = `;
+							{
+								if (init != null) {
+									@:ast(switch (init.expr) {
+	case TEnumParameter(_, _, _):
+		var varName = v.name;
+		if (!seenVars.exists(varName)) {
+			extractedParams.push(varName);
+			seenVars.set(varName, true);
+		};	
+	case _:
+		analyze(init);	
+}) {
+										var ` = init.expr;
+										if (enumIndex ` == 26) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var varName = v.name;
+												if (! seenVars.exists(varName)) {
+													extractedParams.push(varName);
+													{
+														seenVars.set(varName, true);
+													};
+												};
+											};
+										} else {
+											analyze[0](init);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var e = exprs[`];
+										++ `;
+										analyze[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{};
+					};
+					default: {
+						haxe.macro.TypedExprTools.iter(expr, analyze[0]);
+					}
+				};
+			};
+		};
+		analyze[0](caseExpr);
+		return extractedParams;
+	}
+
+	public static function createEnumBindingPlan(caseExpr:haxe.macro.TypedExpr, extractedParams:Array<String>, enumType:Null<haxe.macro.EnumType>, context:reflaxe.elixir.ast.context.BuildContext) {
+		var plan = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		var paramIndexToVarId = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		{
+			var ` = 0;
+			var ` = extractedParams.length;
+			while (` < `) {
+				var i = ` ++;
+				{
+					plan.set(i, {finalName : extractedParams[i], isUsed : true});
+				};
+			};
+		};
+		return {plan : plan, paramIndexToVarId : paramIndexToVarId};
+	}
+
+	public static function convertIdiomaticEnumPattern(value:haxe.macro.TypedExpr, enumType:haxe.macro.EnumType, extractedParams:Array<String>, context:reflaxe.elixir.ast.context.BuildContext) {
+		var tag = reflaxe.elixir.ast.builders.EnumHandler.extractEnumTag(value);
+		if (tag == "") {
+			return reflaxe.elixir.ast.EPattern.PWildcard;
+		};
+		var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
+		var params = [];
+		@:ast(switch (value.expr) {
+	case TCall(_, el):
+		for (i  in  0 ... el.length) {
+			if (i < extractedParams.length) {
+				params.push(PVar(extractedParams[i]));
+			} else {
+				params.push(PWildcard);
+			};
+		};	
+	case _:
+}) {
+			var ` = value.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var el = `;
+					{
+						{
+							var ` = 0;
+							var ` = el.length;
+							while (` < `) {
+								var i = ` ++;
+								if (i < extractedParams.length) {
+									params.push(reflaxe.elixir.ast.EPattern.PVar(extractedParams[i]));
+								} else {
+									params.push(reflaxe.elixir.ast.EPattern.PWildcard);
+								};
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		if (params.length > 0) {
+			var tupleElements = [reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			})].concat(params);
+			return reflaxe.elixir.ast.EPattern.PTuple(tupleElements);
+		} else {
+			return reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			});
+		};
+	}
+
+	public static function convertRegularEnumPattern(value:haxe.macro.TypedExpr, enumType:haxe.macro.EnumType, extractedParams:Array<String>, context:reflaxe.elixir.ast.context.BuildContext) {
+		var tag = reflaxe.elixir.ast.builders.EnumHandler.extractEnumTag(value);
+		if (tag == "") {
+			return reflaxe.elixir.ast.EPattern.PWildcard;
+		};
+		var typeName = enumType.name;
+		var params = [];
+		@:ast(switch (value.expr) {
+	case TCall(_, el):
+		for (i  in  0 ... el.length) {
+			if (i < extractedParams.length) {
+				params.push(PVar(extractedParams[i]));
+			} else {
+				params.push(PWildcard);
+			};
+		};	
+	case _:
+}) {
+			var ` = value.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var el = `;
+					{
+						{
+							var ` = 0;
+							var ` = el.length;
+							while (` < `) {
+								var i = ` ++;
+								if (i < extractedParams.length) {
+									params.push(reflaxe.elixir.ast.EPattern.PVar(extractedParams[i]));
+								} else {
+									params.push(reflaxe.elixir.ast.EPattern.PWildcard);
+								};
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		var atomPattern = reflaxe.elixir.ast.EPattern.PLiteral({
+			var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var s = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
+				{
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(s);
+					cast this;
+				};
+			});
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		});
+		if (params.length > 0) {
+			return reflaxe.elixir.ast.EPattern.PTuple([atomPattern].concat(params));
+		} else {
+			return atomPattern;
+		};
+	}
+
+	public static function isEnumParameterUsedAtIndex(index:Int, caseBody:haxe.macro.TypedExpr) {
+		var isUsed = [false];
+		var checkUsage = [null];
+		checkUsage[0] = function(expr:haxe.macro.TypedExpr) {
+			if (isUsed[0]) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
+		isUsed = true;	
+	case TVar(v, init) if (init != null):
+		switch (init.expr) {
+			case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
+				var varName = v.name;
+				isUsed = isVariableUsedInExpression(varName, caseBody);			
+			case _:
+		};	
+	default:
+		TypedExprTools.iter(expr, checkUsage);	
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var v = `;
+							var init = `;
+							if (init != null) {
+								@:ast(switch (init.expr) {
+	case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
+		var varName = v.name;
+		isUsed = isVariableUsedInExpression(varName, caseBody);	
+	case _:
+}) {
+									var ` = init.expr;
+									if (enumIndex ` == 26) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var paramIndex = `;
+											if (paramIndex == index) {
+												var varName = v.name;
+												isUsed[0] = reflaxe.elixir.ast.builders.EnumHandler.isVariableUsedInExpression(varName, caseBody);
+											} else {};
+										};
+									} else {};
+								};
+							} else {
+								haxe.macro.TypedExprTools.iter(expr, checkUsage[0]);
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var paramIndex = `;
+							if (paramIndex == index) {
+								isUsed[0] = true;
+							} else {
+								haxe.macro.TypedExprTools.iter(expr, checkUsage[0]);
+							};
+						};
+					};
+					default: {
+						haxe.macro.TypedExprTools.iter(expr, checkUsage[0]);
+					}
+				};
+			};
+		};
+		checkUsage[0](caseBody);
+		return isUsed[0];
+	}
+
+	static function isVariableUsedInExpression(varName:String, expr:haxe.macro.TypedExpr) {
+		var used = [false];
+		var check = [null];
+		check[0] = function(e:haxe.macro.TypedExpr) {
+			if (used[0]) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TLocal(v) if (v.name == varName):
+		used = true;	
+	default:
+		TypedExprTools.iter(e, check);	
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v.name == varName) {
+							used[0] = true;
+						} else {
+							haxe.macro.TypedExprTools.iter(e, check[0]);
+						};
+					};
+				} else {
+					haxe.macro.TypedExprTools.iter(e, check[0]);
+				};
+			};
+		};
+		check[0](expr);
+		return used[0];
+	}
+
+	public static function isLocalNameUsed(varName:String, caseBody:haxe.macro.TypedExpr) {
+		if (varName == null || varName.length == 0 || caseBody == null) {
+			return false;
+		};
+		return reflaxe.elixir.ast.builders.EnumHandler.isVariableUsedInExpression(varName, caseBody);
+	}
+
+	public static function processEnumCaseBody(caseExpr:haxe.macro.TypedExpr, builtBody:reflaxe.elixir.ast.ElixirAST) {
+		@:ast(switch (caseExpr.expr) {
+	case TBlock(exprs) if (exprs.length == 1):
+		switch (exprs[0].expr) {
+			case TEnumParameter(_, _, _):
+				return builtBody;			
+			case _:
+		};	
+	case _:
+}) {
+			var ` = caseExpr.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					if (exprs.length == 1) {
+						@:ast(switch (exprs[0].expr) {
+	case TEnumParameter(_, _, _):
+		return builtBody;	
+	case _:
+}) {
+							var ` = exprs[0].expr;
+							if (enumIndex ` == 26) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									return builtBody;
+								};
+							} else {};
+						};
+					} else {};
+				};
+			} else {};
+		};
+		return builtBody;
+	}
+}

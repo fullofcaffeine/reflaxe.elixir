@@ -1,0 +1,126 @@
+class reflaxe.elixir.ast.transformers.HXXRegistryFieldCasePreserveTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (name == "HXXComponentRegistry"):
+		var newBody = [for (b  in  body) transformInRegistry(b)];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if (name == "HXXComponentRegistry"):
+		makeASTWithMeta(EDefmodule(name, transformInRegistry(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "HXXComponentRegistry") {
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.HXXRegistryFieldCasePreserveTransforms.transformInRegistry(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name == "HXXComponentRegistry") {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.HXXRegistryFieldCasePreserveTransforms.transformInRegistry(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function transformInRegistry(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EField(target, fieldName):
+		var mapped = mapField(fieldName);
+		if (mapped != fieldName) makeASTWithMeta(EField(target, mapped), x.metadata, x.pos) else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 28) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var fieldName = `;
+						{
+							var mapped = @:ast(switch (name) {
+	case "allowed_attributes":
+		"allowedAttributes";	
+	default:
+		name;	
+}) if (fieldName == "allowed_attributes") {
+								{
+									"allowedAttributes";
+								};
+							} else {
+								fieldName;
+							};
+							if (mapped != fieldName) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EField(target, mapped), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static inline function mapField(name:String) {
+		return @:ast(switch (name) {
+	case "allowed_attributes":
+		"allowedAttributes";	
+	default:
+		name;	
+}) if (name == "allowed_attributes") {
+			{
+				"allowedAttributes";
+			};
+		} else {
+			name;
+		};
+	}
+}

@@ -1,0 +1,374 @@
+class reflaxe.elixir.ast.transformers.SelfCompareToParamFixTransforms {
+
+	public static function paramSelfCompareFixPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var idName:Null<String> = null;
+		for (a  in  args) switch (a) {
+			case PVar(nm) if (nm == "id" || nm == "_id"):
+				idName = nm;			
+			default:
+		};
+		if (idName == null) n else makeASTWithMeta(EDef(name, args, guards, fixBody(body, idName)), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var idName2:Null<String> = null;
+		for (a2  in  args2) switch (a2) {
+			case PVar(nm2) if (nm2 == "id" || nm2 == "_id"):
+				idName2 = nm2;			
+			default:
+		};
+		if (idName2 == null) n else makeASTWithMeta(EDefp(name2, args2, guards2, fixBody(body2, idName2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var idName = null;
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										@:ast(switch (a) {
+	case PVar(nm) if (nm == "id" || nm == "_id"):
+		idName = nm;	
+	default:
+}) if (enumIndex a == 0) {
+											var ` = a[0];
+											{
+												var nm = `;
+												if (nm == "id" || nm == "_id") {
+													idName = nm;
+												} else {};
+											};
+										} else {};
+									};
+								};
+								if (idName == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.SelfCompareToParamFixTransforms.fixBody(body, idName));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var idName2 = null;
+								{
+									var ` = 0;
+									while (` < args2.length) {
+										var a2 = args2[`];
+										++ `;
+										@:ast(switch (a2) {
+	case PVar(nm2) if (nm2 == "id" || nm2 == "_id"):
+		idName2 = nm2;	
+	default:
+}) if (enumIndex a2 == 0) {
+											var ` = a2[0];
+											{
+												var nm2 = `;
+												if (nm2 == "id" || nm2 == "_id") {
+													idName2 = nm2;
+												} else {};
+											};
+										} else {};
+									};
+								};
+								if (idName2 == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, reflaxe.elixir.ast.transformers.SelfCompareToParamFixTransforms.fixBody(body2, idName2));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function fixBody(body:reflaxe.elixir.ast.ElixirAST, idParam:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EFn(clauses) if (clauses.length == 1):
+		var cl = clauses[0];
+		var binder:Null<String> = switch (cl.args.length == 1 ? cl.args[0] : null) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (binder == null) x else {
+			switch (cl.body.def) {
+				case EBinary(NotEqual | StrictNotEqual, l, r):
+					inline function isBinderVar(e:ElixirAST):Bool return switch (e.def) {
+						case EVar(n) if (n == binder):
+							true;						
+						default:
+							false;						
+					};
+					inline function isBinderIdField(e:ElixirAST):Bool return switch (e.def) {
+						case EField({ def : EVar(n2) }, fld) if (n2 == binder && fld == "id"):
+							true;						
+						default:
+							false;						
+					};
+					if (isBinderIdField(l) && isBinderVar(r)) {
+						var nb = makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam))));
+						makeASTWithMeta(EFn([{ args : cl.args, guard : cl.guard, body : nb }]), x.metadata, x.pos);
+					} else if (isBinderVar(l) && isBinderVar(r)) {
+						var nb2 = makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam))));
+						makeASTWithMeta(EFn([{ args : cl.args, guard : cl.guard, body : nb2 }]), x.metadata, x.pos);
+					} else x;				
+				default:
+					x;				
+			};
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 42) {
+					var ` = `[0];
+					{
+						var clauses = `;
+						if (clauses.length == 1) {
+							var cl = clauses[0];
+							var binder = @:ast(switch (cl.args.length == 1 ? cl.args[0] : null) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+								var ` = if (cl.args.length == 1) {
+									cl.args[0];
+								} else {
+									null;
+								};
+								if (` == null) {
+									null;
+								} else if (enumIndex ` == 0) {
+									var ` = `[0];
+									{
+										var nm = `;
+										{
+											nm;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							if (binder == null) {
+								x;
+							} else {
+								@:ast(switch (cl.body.def) {
+	case EBinary(NotEqual | StrictNotEqual, l, r):
+		inline function isBinderVar(e:ElixirAST):Bool return switch (e.def) {
+			case EVar(n) if (n == binder):
+				true;			
+			default:
+				false;			
+		};
+		inline function isBinderIdField(e:ElixirAST):Bool return switch (e.def) {
+			case EField({ def : EVar(n2) }, fld) if (n2 == binder && fld == "id"):
+				true;			
+			default:
+				false;			
+		};
+		if (isBinderIdField(l) && isBinderVar(r)) {
+			var nb = makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam))));
+			makeASTWithMeta(EFn([{ args : cl.args, guard : cl.guard, body : nb }]), x.metadata, x.pos);
+		} else if (isBinderVar(l) && isBinderVar(r)) {
+			var nb2 = makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam))));
+			makeASTWithMeta(EFn([{ args : cl.args, guard : cl.guard, body : nb2 }]), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+									var ` = cl.body.def;
+									if (enumIndex ` == 26) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										switch (enumIndex `) {
+											case 7, 9: {
+												{
+													var l = `;
+													var r = `;
+													{
+														{};
+														{};
+														if (@:ast(switch (e.def) {
+	case EField({ def : EVar(n2) }, fld) if (n2 == binder && fld == "id"):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = l.def;
+															if (enumIndex ` == 28) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var ` = `.def;
+																	var ` = `.metadata;
+																	var ` = `.pos;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var n2 = `;
+																			var fld = `;
+																			if (n2 == binder && fld == "id") {
+																				true;
+																			} else {
+																				false;
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} && @:ast(switch (e.def) {
+	case EVar(n) if (n == binder):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = r.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var n = `;
+																	if (n == binder) {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														}) {
+															var nb = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, l, {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam), metadata : {}, pos : pos};
+																}), metadata : {}, pos : pos};
+															};
+															{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : nb}]), metadata : x.metadata, pos : x.pos};
+														} else {
+															if (@:ast(switch (e.def) {
+	case EVar(n) if (n == binder):
+		true;	
+	default:
+		false;	
+}) {
+																var ` = l.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var n = `;
+																		if (n == binder) {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															} && @:ast(switch (e.def) {
+	case EVar(n) if (n == binder):
+		true;	
+	default:
+		false;	
+}) {
+																var ` = r.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var n = `;
+																		if (n == binder) {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															}) {
+																var nb2 = {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, l, {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam), metadata : {}, pos : pos};
+																	}), metadata : {}, pos : pos};
+																};
+																{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : nb2}]), metadata : x.metadata, pos : x.pos};
+															} else {
+																x;
+															};
+														};
+													};
+												};
+											};
+											default: {
+												x;
+											}
+										};
+									} else {
+										x;
+									};
+								};
+							};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

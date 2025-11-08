@@ -1,0 +1,332 @@
+class reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms {
+
+	static function rewriteStmt(stmt:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (stmt.def) {
+	case EBinary(op, left, right):
+		switch (op) {
+			case Add | Subtract:
+				switch [left.def, right.def] {
+					case [EVar(v), EInteger(_) | EFloat(_)]:
+						makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));					
+					case [EInteger(_) | EFloat(_), EVar(v)]:
+						makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	case EInteger(v) if (v == 1 || v == 0):
+		makeAST(ENil);	
+	case EFloat(f) if (f == 0.0):
+		makeAST(ENil);	
+	default:
+		null;	
+}) {
+			var ` = stmt.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var left = `;
+						var right = `;
+						{
+							@:ast(switch (op) {
+	case Add | Subtract:
+		switch [left.def, right.def] {
+			case [EVar(v), EInteger(_) | EFloat(_)]:
+				makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));			
+			case [EInteger(_) | EFloat(_), EVar(v)]:
+				makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) switch (enumIndex op) {
+								case 0, 1: {
+									{
+										@:ast(switch [left.def, right.def] {
+	case [EVar(v), EInteger(_) | EFloat(_)]:
+		makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));	
+	case [EInteger(_) | EFloat(_), EVar(v)]:
+		makeAST(EMatch(PVar(v), makeAST(EBinary(op, left, right))));	
+	default:
+		null;	
+}) {
+											var ` = left.def;
+											var ` = right.def;
+											switch (enumIndex `) {
+												case 33: {
+													var ` = `[0];
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var v = `;
+															{
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(v), {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, left, right), metadata : {}, pos : pos};
+																	}), metadata : {}, pos : pos};
+																};
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												case 34: {
+													var ` = `[0];
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var v = `;
+															{
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(v), {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, left, right), metadata : {}, pos : pos};
+																	}), metadata : {}, pos : pos};
+																};
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												case 38: {
+													var ` = `[0];
+													switch (enumIndex `) {
+														case 33: {
+															var ` = `[0];
+															{
+																var v = `;
+																{
+																	{
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(v), {
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, left, right), metadata : {}, pos : pos};
+																		}), metadata : {}, pos : pos};
+																	};
+																};
+															};
+														};
+														case 34: {
+															var ` = `[0];
+															{
+																var v = `;
+																{
+																	{
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(v), {
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, left, right), metadata : {}, pos : pos};
+																		}), metadata : {}, pos : pos};
+																	};
+																};
+															};
+														};
+														default: {
+															null;
+														}
+													};
+												};
+												default: {
+													null;
+												}
+											};
+										};
+									};
+								};
+								default: {
+									null;
+								}
+							};
+						};
+					};
+				};
+				case 33: {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == 1 || v == 0) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+							};
+						} else {
+							null;
+						};
+					};
+				};
+				case 34: {
+					var ` = `[0];
+					{
+						var f = `;
+						if (f == 0.0) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+							};
+						} else {
+							null;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function normalizeBlock(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var out = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				var r = reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.rewriteStmt(s);
+				if (r == null) {
+					out.push(s);
+				} else {
+					if (r.def != reflaxe.elixir.ast.ElixirASTDef.ENil) {
+						out.push(r);
+					} else {};
+				};
+			};
+		};
+		return out;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(normalizeBlock(stmts)), n.metadata, n.pos);	
+	case EDo(stmts):
+		makeASTWithMeta(EDo(normalizeBlock(stmts)), n.metadata, n.pos);	
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var b = cl.body;
+			switch (b.def) {
+				case EBlock(stmts):
+					newClauses.push({ args : cl.args, guard : cl.guard, body : makeASTWithMeta(EBlock(normalizeBlock(stmts)), b.metadata, b.pos) });				
+				case EDo(stmts):
+					newClauses.push({ args : cl.args, guard : cl.guard, body : makeASTWithMeta(EDo(normalizeBlock(stmts)), b.metadata, b.pos) });				
+				default:
+					newClauses.push(cl);				
+			};
+		};
+		makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var b = cl.body;
+										@:ast(switch (b.def) {
+	case EBlock(stmts):
+		newClauses.push({ args : cl.args, guard : cl.guard, body : makeASTWithMeta(EBlock(normalizeBlock(stmts)), b.metadata, b.pos) });	
+	case EDo(stmts):
+		newClauses.push({ args : cl.args, guard : cl.guard, body : makeASTWithMeta(EDo(normalizeBlock(stmts)), b.metadata, b.pos) });	
+	default:
+		newClauses.push(cl);	
+}) {
+											var ` = b.def;
+											switch (enumIndex `) {
+												case 53: {
+													var ` = `[0];
+													{
+														var stmts = `;
+														{
+															newClauses.push({args : cl.args, guard : cl.guard, body : {
+																var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.normalizeBlock(stmts));
+																var meta = b.metadata;
+																var pos = b.pos;
+																{def : def, metadata : meta, pos : pos};
+															}});
+														};
+													};
+												};
+												case 55: {
+													var ` = `[0];
+													{
+														var stmts = `;
+														{
+															newClauses.push({args : cl.args, guard : cl.guard, body : {
+																var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.normalizeBlock(stmts));
+																var meta = b.metadata;
+																var pos = b.pos;
+																{def : def, metadata : meta, pos : pos};
+															}});
+														};
+													};
+												};
+												default: {
+													newClauses.push(cl);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.normalizeBlock(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.normalizeBlock(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

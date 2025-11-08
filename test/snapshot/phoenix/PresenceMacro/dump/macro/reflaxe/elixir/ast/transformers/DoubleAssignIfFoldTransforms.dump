@@ -1,0 +1,374 @@
+class reflaxe.elixir.ast.transformers.DoubleAssignIfFoldTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var i = 0;
+		while (i < stmts.length) {
+			var s = stmts[i];
+			var folded = false;
+			switch (s.def) {
+				case EBinary(Match, { def : EVar(a) }, { def : EBinary(Match, { def : EVar(b) }, rhs) }):
+					if (i + 1 < stmts.length) {
+						switch (stmts[i + 1].def) {
+							case EIf(cond, thenE, elseE):
+								var elseIsB = switch (elseE.def) {
+									case EVar(bb) if (bb == b):
+										true;									
+									default:
+										false;									
+								};
+								if (elseIsB) {
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[i + 1].metadata, stmts[i + 1].pos)), s.metadata, s.pos));
+									i += 2;
+									folded = true;
+								};							
+							default:
+						};
+					};				
+				default:
+			};
+			if (!folded) {
+				out.push(s);
+				i++;
+			};
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts2):
+		var out2:Array<ElixirAST> = [];
+		var j = 0;
+		while (j < stmts2.length) {
+			var s2 = stmts2[j];
+			var folded2 = false;
+			switch (s2.def) {
+				case EBinary(Match, { def : EVar(a2) }, { def : EBinary(Match, { def : EVar(b2) }, rhs2) }):
+					if (j + 1 < stmts2.length) {
+						switch (stmts2[j + 1].def) {
+							case EIf(cond2, then2, else2):
+								var elseIsB2 = switch (else2.def) {
+									case EVar(bb2) if (bb2 == b2):
+										true;									
+									default:
+										false;									
+								};
+								if (elseIsB2) {
+									out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s2.metadata, s2.pos), rhs2), s2.metadata, s2.pos));
+									out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s2.metadata, s2.pos), makeASTWithMeta(EIf(cond2, then2, else2), stmts2[j + 1].metadata, stmts2[j + 1].pos)), s2.metadata, s2.pos));
+									j += 2;
+									folded2 = true;
+								};							
+							default:
+						};
+					};				
+				default:
+			};
+			if (!folded2) {
+				out2.push(s2);
+				j++;
+			};
+		};
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								var i = 0;
+								while (i < stmts.length) {
+									var s = stmts[i];
+									var folded = false;
+									@:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(a) }, { def : EBinary(Match, { def : EVar(b) }, rhs) }):
+		if (i + 1 < stmts.length) {
+			switch (stmts[i + 1].def) {
+				case EIf(cond, thenE, elseE):
+					var elseIsB = switch (elseE.def) {
+						case EVar(bb) if (bb == b):
+							true;						
+						default:
+							false;						
+					};
+					if (elseIsB) {
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[i + 1].metadata, stmts[i + 1].pos)), s.metadata, s.pos));
+						i += 2;
+						folded = true;
+					};				
+				default:
+			};
+		};	
+	default:
+}) {
+										var ` = s.def;
+										if (enumIndex ` == 26) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 26) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var ` = `.def;
+																		var ` = `.metadata;
+																		var ` = `.pos;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			{
+																				var b = `;
+																				var rhs = `;
+																				var a = `;
+																				{
+																					if (i + 1 < stmts.length) {
+																						@:ast(switch (stmts[i + 1].def) {
+	case EIf(cond, thenE, elseE):
+		var elseIsB = switch (elseE.def) {
+			case EVar(bb) if (bb == b):
+				true;			
+			default:
+				false;			
+		};
+		if (elseIsB) {
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[i + 1].metadata, stmts[i + 1].pos)), s.metadata, s.pos));
+			i += 2;
+			folded = true;
+		};	
+	default:
+}) {
+																							var ` = stmts[i + 1].def;
+																							if (enumIndex ` == 10) {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var cond = `;
+																									var thenE = `;
+																									var elseE = `;
+																									{
+																										var elseIsB = @:ast(switch (elseE.def) {
+	case EVar(bb) if (bb == b):
+		true;	
+	default:
+		false;	
+}) {
+																											var ` = elseE.def;
+																											if (enumIndex ` == 38) {
+																												var ` = `[0];
+																												{
+																													var bb = `;
+																													if (bb == b) {
+																														true;
+																													} else {
+																														false;
+																													};
+																												};
+																											} else {
+																												false;
+																											};
+																										};
+																										if (elseIsB) {
+																											out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b), metadata : s.metadata, pos : s.pos}, rhs), metadata : s.metadata, pos : s.pos});
+																											out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, thenE, elseE), metadata : stmts[i + 1].metadata, pos : stmts[i + 1].pos}), metadata : s.metadata, pos : s.pos});
+																											i += 2;
+																											folded = true;
+																										};
+																									};
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										} else {};
+									};
+									if (! folded) {
+										out.push(s);
+										i ++;
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								var out2 = [];
+								var j = 0;
+								while (j < stmts2.length) {
+									var s2 = stmts2[j];
+									var folded2 = false;
+									@:ast(switch (s2.def) {
+	case EBinary(Match, { def : EVar(a2) }, { def : EBinary(Match, { def : EVar(b2) }, rhs2) }):
+		if (j + 1 < stmts2.length) {
+			switch (stmts2[j + 1].def) {
+				case EIf(cond2, then2, else2):
+					var elseIsB2 = switch (else2.def) {
+						case EVar(bb2) if (bb2 == b2):
+							true;						
+						default:
+							false;						
+					};
+					if (elseIsB2) {
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s2.metadata, s2.pos), rhs2), s2.metadata, s2.pos));
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s2.metadata, s2.pos), makeASTWithMeta(EIf(cond2, then2, else2), stmts2[j + 1].metadata, stmts2[j + 1].pos)), s2.metadata, s2.pos));
+						j += 2;
+						folded2 = true;
+					};				
+				default:
+			};
+		};	
+	default:
+}) {
+										var ` = s2.def;
+										if (enumIndex ` == 26) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 26) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var ` = `.def;
+																		var ` = `.metadata;
+																		var ` = `.pos;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			{
+																				var b2 = `;
+																				var rhs2 = `;
+																				var a2 = `;
+																				{
+																					if (j + 1 < stmts2.length) {
+																						@:ast(switch (stmts2[j + 1].def) {
+	case EIf(cond2, then2, else2):
+		var elseIsB2 = switch (else2.def) {
+			case EVar(bb2) if (bb2 == b2):
+				true;			
+			default:
+				false;			
+		};
+		if (elseIsB2) {
+			out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s2.metadata, s2.pos), rhs2), s2.metadata, s2.pos));
+			out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s2.metadata, s2.pos), makeASTWithMeta(EIf(cond2, then2, else2), stmts2[j + 1].metadata, stmts2[j + 1].pos)), s2.metadata, s2.pos));
+			j += 2;
+			folded2 = true;
+		};	
+	default:
+}) {
+																							var ` = stmts2[j + 1].def;
+																							if (enumIndex ` == 10) {
+																								var ` = `[0];
+																								var ` = `[1];
+																								var ` = `[2];
+																								{
+																									var cond2 = `;
+																									var then2 = `;
+																									var else2 = `;
+																									{
+																										var elseIsB2 = @:ast(switch (else2.def) {
+	case EVar(bb2) if (bb2 == b2):
+		true;	
+	default:
+		false;	
+}) {
+																											var ` = else2.def;
+																											if (enumIndex ` == 38) {
+																												var ` = `[0];
+																												{
+																													var bb2 = `;
+																													if (bb2 == b2) {
+																														true;
+																													} else {
+																														false;
+																													};
+																												};
+																											} else {
+																												false;
+																											};
+																										};
+																										if (elseIsB2) {
+																											out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b2), metadata : s2.metadata, pos : s2.pos}, rhs2), metadata : s2.metadata, pos : s2.pos});
+																											out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a2), metadata : s2.metadata, pos : s2.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond2, then2, else2), metadata : stmts2[j + 1].metadata, pos : stmts2[j + 1].pos}), metadata : s2.metadata, pos : s2.pos});
+																											j += 2;
+																											folded2 = true;
+																										};
+																									};
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										} else {};
+									};
+									if (! folded2) {
+										out2.push(s2);
+										j ++;
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

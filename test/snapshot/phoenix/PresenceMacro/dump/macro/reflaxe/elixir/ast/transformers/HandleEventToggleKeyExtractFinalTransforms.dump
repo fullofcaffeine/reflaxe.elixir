@@ -1,0 +1,441 @@
+class reflaxe.elixir.ast.transformers.HandleEventToggleKeyExtractFinalTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (isToggleHandler(name, args)):
+		var paramVar = secondArgVar(args);
+		var key = toggleKey(args);
+		var rewritten = rewriteBody(body, paramVar, key);
+		makeASTWithMeta(EDef(name, args, guards, rewritten), n.metadata, n.pos);	
+	case EDefp(name, args, guards, body) if (isToggleHandler(name, args)):
+		var paramVar2 = secondArgVar(args);
+		var key2 = toggleKey(args);
+		var rewritten2 = rewriteBody(body, paramVar2, key2);
+		makeASTWithMeta(EDefp(name, args, guards, rewritten2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (if (name != "handle_event" || args == null || args.length != 3) {
+								false;
+							} else {
+								@:ast(switch (args[0]) {
+	case PLiteral({ def : EString(ev) }):
+		StringTools.startsWith(ev, "toggle_");	
+	default:
+		false;	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 32) {
+												var ` = `[0];
+												{
+													var ev = `;
+													{
+														StringTools.startsWith(ev, "toggle_");
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							}) {
+								var paramVar = @:ast(switch (args[1]) {
+	case PVar(n):
+		n;	
+	default:
+		"params";	
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var n = `;
+											{
+												n;
+											};
+										};
+									} else {
+										"params";
+									};
+								};
+								var key = @:ast(switch (args[0]) {
+	case PLiteral({ def : EString(ev) }):
+		ev.substr("toggle_".length);	
+	default:
+		"id";	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 32) {
+												var ` = `[0];
+												{
+													var ev = `;
+													{
+														ev.substr("toggle_".length, null);
+													};
+												};
+											} else {
+												"id";
+											};
+										};
+									} else {
+										"id";
+									};
+								};
+								var rewritten = reflaxe.elixir.ast.transformers.HandleEventToggleKeyExtractFinalTransforms.rewriteBody(body, paramVar, key);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, rewritten), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (if (name != "handle_event" || args == null || args.length != 3) {
+								false;
+							} else {
+								@:ast(switch (args[0]) {
+	case PLiteral({ def : EString(ev) }):
+		StringTools.startsWith(ev, "toggle_");	
+	default:
+		false;	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 32) {
+												var ` = `[0];
+												{
+													var ev = `;
+													{
+														StringTools.startsWith(ev, "toggle_");
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							}) {
+								var paramVar2 = @:ast(switch (args[1]) {
+	case PVar(n):
+		n;	
+	default:
+		"params";	
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var n = `;
+											{
+												n;
+											};
+										};
+									} else {
+										"params";
+									};
+								};
+								var key2 = @:ast(switch (args[0]) {
+	case PLiteral({ def : EString(ev) }):
+		ev.substr("toggle_".length);	
+	default:
+		"id";	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 32) {
+												var ` = `[0];
+												{
+													var ev = `;
+													{
+														ev.substr("toggle_".length, null);
+													};
+												};
+											} else {
+												"id";
+											};
+										};
+									} else {
+										"id";
+									};
+								};
+								var rewritten2 = reflaxe.elixir.ast.transformers.HandleEventToggleKeyExtractFinalTransforms.rewriteBody(body, paramVar2, key2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, rewritten2), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isToggleHandler(name:String, args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (name != "handle_event" || args == null || args.length != 3) {
+			return false;
+		};
+		return @:ast(switch (args[0]) {
+	case PLiteral({ def : EString(ev) }):
+		StringTools.startsWith(ev, "toggle_");	
+	default:
+		false;	
+}) {
+			var ` = args[0];
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 32) {
+						var ` = `[0];
+						{
+							var ev = `;
+							{
+								StringTools.startsWith(ev, "toggle_");
+							};
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function secondArgVar(args:Array<reflaxe.elixir.ast.EPattern>) {
+		return @:ast(switch (args[1]) {
+	case PVar(n):
+		n;	
+	default:
+		"params";	
+}) {
+			var ` = args[1];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				"params";
+			};
+		};
+	}
+
+	static inline function toggleKey(args:Array<reflaxe.elixir.ast.EPattern>) {
+		return @:ast(switch (args[0]) {
+	case PLiteral({ def : EString(ev) }):
+		ev.substr("toggle_".length);	
+	default:
+		"id";	
+}) {
+			var ` = args[0];
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 32) {
+						var ` = `[0];
+						{
+							var ev = `;
+							{
+								ev.substr("toggle_".length, null);
+							};
+						};
+					} else {
+						"id";
+					};
+				};
+			} else {
+				"id";
+			};
+		};
+	}
+
+	static function mapGet(paramVar:String, key:String) {
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+			}, "get", [{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(paramVar), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EString(key), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+	}
+
+	static function rewriteBody(body:reflaxe.elixir.ast.ElixirAST, paramVar:String, key:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ECall(target, fname, args) if (args != null && args.length >= 1):
+		switch (args[0].def) {
+			case EVar(v) if (v == paramVar):
+				var newArgs = args.copy();
+				newArgs[0] = mapGet(paramVar, key);
+				makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	case ERemoteCall(mod, fname, args) if (args != null && args.length >= 1):
+		switch (args[0].def) {
+			case EVar(v2) if (v2 == paramVar):
+				var newArgs2 = args.copy();
+				newArgs2[0] = mapGet(paramVar, key);
+				makeASTWithMeta(ERemoteCall(mod, fname, newArgs2), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var fname = `;
+							var args = `;
+							if (args != null && args.length >= 1) {
+								@:ast(switch (args[0].def) {
+	case EVar(v) if (v == paramVar):
+		var newArgs = args.copy();
+		newArgs[0] = mapGet(paramVar, key);
+		makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+									var ` = args[0].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (v == paramVar) {
+												var newArgs = args.copy();
+												newArgs[0] = reflaxe.elixir.ast.transformers.HandleEventToggleKeyExtractFinalTransforms.mapGet(paramVar, key);
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, newArgs), metadata : x.metadata, pos : x.pos};
+											} else {
+												x;
+											};
+										};
+									} else {
+										x;
+									};
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var fname = `;
+							var args = `;
+							if (args != null && args.length >= 1) {
+								@:ast(switch (args[0].def) {
+	case EVar(v2) if (v2 == paramVar):
+		var newArgs2 = args.copy();
+		newArgs2[0] = mapGet(paramVar, key);
+		makeASTWithMeta(ERemoteCall(mod, fname, newArgs2), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+									var ` = args[0].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v2 = `;
+											if (v2 == paramVar) {
+												var newArgs2 = args.copy();
+												newArgs2[0] = reflaxe.elixir.ast.transformers.HandleEventToggleKeyExtractFinalTransforms.mapGet(paramVar, key);
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fname, newArgs2), metadata : x.metadata, pos : x.pos};
+											} else {
+												x;
+											};
+										};
+									} else {
+										x;
+									};
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+}

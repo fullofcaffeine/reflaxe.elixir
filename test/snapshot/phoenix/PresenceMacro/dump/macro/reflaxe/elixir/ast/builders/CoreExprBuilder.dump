@@ -1,0 +1,342 @@
+class reflaxe.elixir.ast.builders.CoreExprBuilder {
+
+	@:value({ metadata : null })
+	public static function buildConst(c:haxe.macro.TConstant, metadata:Null<reflaxe.elixir.ast.ElixirMetadata> = null) {
+		var def = @:ast(switch (c) {
+	case TInt(i):
+		ElixirASTDef.EInteger(i);	
+	case TFloat(f):
+		ElixirASTDef.EFloat(Std.parseFloat(f));	
+	case TString(s):
+		ElixirASTDef.EString(s);	
+	case TBool(b):
+		ElixirASTDef.EBoolean(b);	
+	case TNull:
+		ElixirASTDef.ENil;	
+	case TThis:
+		ElixirASTDef.EVar("self");	
+	case TSuper:
+		ElixirASTDef.EVar("super");	
+}) switch (@:exhaustive enumIndex c) {
+			case 0: {
+				var ` = c[0];
+				{
+					var i = `;
+					{
+						reflaxe.elixir.ast.ElixirASTDef.EInteger(i);
+					};
+				};
+			};
+			case 1: {
+				var ` = c[0];
+				{
+					var f = `;
+					{
+						reflaxe.elixir.ast.ElixirASTDef.EFloat(Std.parseFloat(f));
+					};
+				};
+			};
+			case 2: {
+				var ` = c[0];
+				{
+					var s = `;
+					{
+						reflaxe.elixir.ast.ElixirASTDef.EString(s);
+					};
+				};
+			};
+			case 3: {
+				var ` = c[0];
+				{
+					var b = `;
+					{
+						reflaxe.elixir.ast.ElixirASTDef.EBoolean(b);
+					};
+				};
+			};
+			case 4: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.ENil;
+				};
+			};
+			case 5: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EVar("self");
+				};
+			};
+			case 6: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EVar("super");
+				};
+			};
+		};
+		return if (metadata != null) {
+			{
+				var pos = null;
+				{def : def, metadata : metadata, pos : pos};
+			};
+		} else {
+			{
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+		};
+	}
+
+	@:value({ metadata : null })
+	public static function buildLocal(v:haxe.macro.TVar, metadata:Null<reflaxe.elixir.ast.ElixirMetadata> = null) {
+		if (metadata == null) {
+			metadata = {};
+		};
+		metadata.sourceVarId = v.id;
+		var elixirVarName = reflaxe.elixir.ast.naming.ElixirNaming.toVarName(v.name);
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(elixirVarName), metadata : metadata, pos : pos};
+		};
+	}
+
+	public static function buildBinop(op:haxe.macro.Binop) {
+		return @:ast(switch (op) {
+	case OpAdd:
+		EBinaryOp.Add;	
+	case OpMult:
+		EBinaryOp.Multiply;	
+	case OpDiv:
+		EBinaryOp.Divide;	
+	case OpSub:
+		EBinaryOp.Subtract;	
+	case OpMod:
+		EBinaryOp.Remainder;	
+	case OpAssign:
+		throw "Assignment should be handled as EMatch";	
+	case OpAssignOp(_):
+		throw "Compound assignment needs special handling";	
+	case OpEq:
+		EBinaryOp.Equal;	
+	case OpNotEq:
+		EBinaryOp.NotEqual;	
+	case OpGt:
+		EBinaryOp.Greater;	
+	case OpGte:
+		EBinaryOp.GreaterEqual;	
+	case OpLt:
+		EBinaryOp.Less;	
+	case OpLte:
+		EBinaryOp.LessEqual;	
+	case OpBoolAnd:
+		EBinaryOp.And;	
+	case OpBoolOr:
+		EBinaryOp.Or;	
+	case OpAnd:
+		EBinaryOp.BitwiseAnd;	
+	case OpOr:
+		EBinaryOp.BitwiseOr;	
+	case OpXor:
+		EBinaryOp.BitwiseXor;	
+	case OpShl:
+		EBinaryOp.ShiftLeft;	
+	case OpShr:
+		EBinaryOp.ShiftRight;	
+	case OpUShr:
+		EBinaryOp.ShiftRight;	
+	case OpInterval:
+		throw "Interval operator needs special handling";	
+	case OpArrow:
+		throw "Arrow operator needs special handling";	
+	case OpIn:
+		EBinaryOp.In;	
+	case OpNullCoal:
+		throw "Null coalescing needs special handling";	
+}) switch (@:exhaustive enumIndex op) {
+			case 0: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Add;
+				};
+			};
+			case 1: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Multiply;
+				};
+			};
+			case 2: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Divide;
+				};
+			};
+			case 3: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Subtract;
+				};
+			};
+			case 4: {
+				{
+					throw "Assignment should be handled as EMatch";
+				};
+			};
+			case 5: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Equal;
+				};
+			};
+			case 6: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.NotEqual;
+				};
+			};
+			case 7: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Greater;
+				};
+			};
+			case 8: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.GreaterEqual;
+				};
+			};
+			case 9: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Less;
+				};
+			};
+			case 10: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.LessEqual;
+				};
+			};
+			case 11: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.BitwiseAnd;
+				};
+			};
+			case 12: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.BitwiseOr;
+				};
+			};
+			case 13: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.BitwiseXor;
+				};
+			};
+			case 14: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.And;
+				};
+			};
+			case 15: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Or;
+				};
+			};
+			case 16: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.ShiftLeft;
+				};
+			};
+			case 17: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.ShiftRight;
+				};
+			};
+			case 18: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.ShiftRight;
+				};
+			};
+			case 19: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Remainder;
+				};
+			};
+			case 20: {
+				var ` = op[0];
+				{
+					throw "Compound assignment needs special handling";
+				};
+			};
+			case 21: {
+				{
+					throw "Interval operator needs special handling";
+				};
+			};
+			case 22: {
+				{
+					throw "Arrow operator needs special handling";
+				};
+			};
+			case 23: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.In;
+				};
+			};
+			case 24: {
+				{
+					throw "Null coalescing needs special handling";
+				};
+			};
+		};
+	}
+
+	@:value({ metadata : null })
+	public static function buildUnop(op:haxe.macro.Unop, postfix:Bool, e:reflaxe.elixir.ast.ElixirAST, metadata:Null<reflaxe.elixir.ast.ElixirMetadata> = null) {
+		if (metadata == null) {
+			metadata = {};
+		};
+		var def = @:ast(switch (op) {
+	case OpIncrement:
+		ElixirASTDef.EBinary(EBinaryOp.Add, e, makeAST(ElixirASTDef.EInteger(1)));	
+	case OpDecrement:
+		ElixirASTDef.EBinary(EBinaryOp.Subtract, e, makeAST(ElixirASTDef.EInteger(1)));	
+	case OpNot:
+		ElixirASTDef.EUnary(EUnaryOp.Not, e);	
+	case OpNeg:
+		ElixirASTDef.EUnary(EUnaryOp.Negate, e);	
+	case OpNegBits:
+		EUnary(BitwiseNot, e);	
+	case OpSpread:
+		throw "Spread operator requires context";	
+}) switch (@:exhaustive enumIndex op) {
+			case 0: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, e, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+					});
+				};
+			};
+			case 1: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Subtract, e, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+					});
+				};
+			};
+			case 2: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EUnary(reflaxe.elixir.ast.EUnaryOp.Not, e);
+				};
+			};
+			case 3: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EUnary(reflaxe.elixir.ast.EUnaryOp.Negate, e);
+				};
+			};
+			case 4: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EUnary(reflaxe.elixir.ast.EUnaryOp.BitwiseNot, e);
+				};
+			};
+			case 5: {
+				{
+					throw "Spread operator requires context";
+				};
+			};
+		};
+		return {
+			var pos = null;
+			{def : def, metadata : metadata, pos : pos};
+		};
+	}
+}

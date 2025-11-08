@@ -1,0 +1,188 @@
+class reflaxe.elixir.ast.transformers.StdDsOverrideTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDefmodule(name, _):
+		if (name == "BalancedTree") balancedTreeDef(n) else if (name == "EnumValueMap") enumValueMapDef(n) else if (name == "TreeNode") treeNodeDef(n) else n;	
+	case EModule(name, attrs, _):
+		if (name == "BalancedTree") {
+			var blk = balancedTreeBlock(n.metadata, n.pos);
+			makeASTWithMeta(EModule(name, attrs, [blk]), n.metadata, n.pos);
+		} else if (name == "EnumValueMap") {
+			var blk2 = enumValueMapBlock(n.metadata, n.pos);
+			makeASTWithMeta(EModule(name, attrs, [blk2]), n.metadata, n.pos);
+		} else if (name == "TreeNode") {
+			var blk3 = treeNodeBlock(n.metadata, n.pos);
+			makeASTWithMeta(EModule(name, attrs, [blk3]), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							{
+								if (name == "BalancedTree") {
+									var blk = {
+										var meta = cast n.metadata;
+										var pos = n.pos;
+										var raw = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def set(struct, _key, _value), do: struct\n" + "  def get(_struct, _key), do: nil\n" + "  def remove(_struct, _key), do: false\n" + "  def exists(_struct, _key), do: false\n" + "  def iterator(_struct), do: []\n" + "  def key_value_iterator(_struct), do: []\n" + "  def keys(_struct), do: []\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def clear(_struct), do: nil\n"), metadata : {}, pos : pos};
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, [blk]), metadata : n.metadata, pos : n.pos};
+								} else {
+									if (name == "EnumValueMap") {
+										var blk2 = {
+											var meta = cast n.metadata;
+											var pos = n.pos;
+											var raw = {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def keys(struct), do: Map.keys(struct)\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def iterator(struct), do: Map.keys(struct)\n"), metadata : {}, pos : pos};
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, [blk2]), metadata : n.metadata, pos : n.pos};
+									} else {
+										if (name == "TreeNode") {
+											var blk3 = {
+												var meta = cast n.metadata;
+												var pos = n.pos;
+												var raw = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def get_height(struct), do: Map.get(struct, :_height)\n" + "  def to_string(struct), do: inspect(struct)\n"), metadata : {}, pos : pos};
+												};
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, [blk3]), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							{
+								if (name == "BalancedTree") {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule("BalancedTree", {
+										var meta = cast n.metadata;
+										var pos = n.pos;
+										var raw = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def set(struct, _key, _value), do: struct\n" + "  def get(_struct, _key), do: nil\n" + "  def remove(_struct, _key), do: false\n" + "  def exists(_struct, _key), do: false\n" + "  def iterator(_struct), do: []\n" + "  def key_value_iterator(_struct), do: []\n" + "  def keys(_struct), do: []\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def clear(_struct), do: nil\n"), metadata : {}, pos : pos};
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+									}), metadata : n.metadata, pos : n.pos};
+								} else {
+									if (name == "EnumValueMap") {
+										{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule("EnumValueMap", {
+											var meta = cast n.metadata;
+											var pos = n.pos;
+											var raw = {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def keys(struct), do: Map.keys(struct)\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def iterator(struct), do: Map.keys(struct)\n"), metadata : {}, pos : pos};
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+										}), metadata : n.metadata, pos : n.pos};
+									} else {
+										if (name == "TreeNode") {
+											{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule("TreeNode", {
+												var meta = cast n.metadata;
+												var pos = n.pos;
+												var raw = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def get_height(struct), do: Map.get(struct, :_height)\n" + "  def to_string(struct), do: inspect(struct)\n"), metadata : {}, pos : pos};
+												};
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+											}), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function balancedTreeDef(orig:reflaxe.elixir.ast.ElixirAST) {
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule("BalancedTree", {
+			var meta = cast orig.metadata;
+			var pos = orig.pos;
+			var raw = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def set(struct, _key, _value), do: struct\n" + "  def get(_struct, _key), do: nil\n" + "  def remove(_struct, _key), do: false\n" + "  def exists(_struct, _key), do: false\n" + "  def iterator(_struct), do: []\n" + "  def key_value_iterator(_struct), do: []\n" + "  def keys(_struct), do: []\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def clear(_struct), do: nil\n"), metadata : {}, pos : pos};
+			};
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+		}), metadata : orig.metadata, pos : orig.pos};
+	}
+
+	static inline function balancedTreeBlock(meta:Dynamic, pos:haxe.macro.Position) {
+		var raw = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def set(struct, _key, _value), do: struct\n" + "  def get(_struct, _key), do: nil\n" + "  def remove(_struct, _key), do: false\n" + "  def exists(_struct, _key), do: false\n" + "  def iterator(_struct), do: []\n" + "  def key_value_iterator(_struct), do: []\n" + "  def keys(_struct), do: []\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def clear(_struct), do: nil\n"), metadata : {}, pos : pos};
+		};
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+	}
+
+	static inline function enumValueMapDef(orig:reflaxe.elixir.ast.ElixirAST) {
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule("EnumValueMap", {
+			var meta = cast orig.metadata;
+			var pos = orig.pos;
+			var raw = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def keys(struct), do: Map.keys(struct)\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def iterator(struct), do: Map.keys(struct)\n"), metadata : {}, pos : pos};
+			};
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+		}), metadata : orig.metadata, pos : orig.pos};
+	}
+
+	static inline function enumValueMapBlock(meta:Dynamic, pos:haxe.macro.Position) {
+		var raw = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def keys(struct), do: Map.keys(struct)\n" + "  def copy(struct), do: struct\n" + "  def to_string(struct), do: inspect(struct)\n" + "  def iterator(struct), do: Map.keys(struct)\n"), metadata : {}, pos : pos};
+		};
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+	}
+
+	static inline function treeNodeDef(orig:reflaxe.elixir.ast.ElixirAST) {
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule("TreeNode", {
+			var meta = cast orig.metadata;
+			var pos = orig.pos;
+			var raw = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def get_height(struct), do: Map.get(struct, :_height)\n" + "  def to_string(struct), do: inspect(struct)\n"), metadata : {}, pos : pos};
+			};
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+		}), metadata : orig.metadata, pos : orig.pos};
+	}
+
+	static inline function treeNodeBlock(meta:Dynamic, pos:haxe.macro.Position) {
+		var raw = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERaw("  def get_height(struct), do: Map.get(struct, :_height)\n" + "  def to_string(struct), do: inspect(struct)\n"), metadata : {}, pos : pos};
+		};
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock([raw]), metadata : cast meta, pos : pos};
+	}
+}

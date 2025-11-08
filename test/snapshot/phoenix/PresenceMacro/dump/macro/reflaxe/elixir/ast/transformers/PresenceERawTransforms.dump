@@ -1,0 +1,182 @@
+class reflaxe.elixir.ast.transformers.PresenceERawTransforms {
+
+	static inline function isPresenceModuleName(name:String) {
+		if (name == null) {
+			return false;
+		};
+		if (name.indexOf("Web.Presence", null) >= 0) {
+			return true;
+		};
+		var suffix = ".Presence";
+		var len = name.length;
+		return len >= suffix.length && name.substr(len - suffix.length, null) == suffix;
+	}
+
+	public static function erawPresenceKeysNormalizePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if ((n.metadata?.isPresence == true) || isPresenceModuleName(name)):
+		var newBody = [];
+		for (b  in  body) newBody.push(rewriteERaw(b));
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if ((n.metadata?.isPresence == true) || isPresenceModuleName(name)):
+		makeASTWithMeta(EDefmodule(name, rewriteERaw(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (({
+								var tmp = n.metadata;
+								if (tmp != null) tmp.isPresence else null;
+							} == true) || if (name == null) {
+								false;
+							} else {
+								if (name.indexOf("Web.Presence", null) >= 0) {
+									true;
+								} else {
+									var suffix = ".Presence";
+									var len = name.length;
+									len >= suffix.length && name.substr(len - suffix.length, null) == suffix;
+								};
+							}) {
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.PresenceERawTransforms.rewriteERaw(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (({
+								var tmp = n.metadata;
+								if (tmp != null) tmp.isPresence else null;
+							} == true) || if (name == null) {
+								false;
+							} else {
+								if (name.indexOf("Web.Presence", null) >= 0) {
+									true;
+								} else {
+									var suffix = ".Presence";
+									var len = name.length;
+									len >= suffix.length && name.substr(len - suffix.length, null) == suffix;
+								};
+							}) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.PresenceERawTransforms.rewriteERaw(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteERaw(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ERaw(code):
+		var normalized = collapsePresenceKeysPipeline(code);
+		if (normalized != code) makeASTWithMeta(ERaw(normalized), x.metadata, x.pos) else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 62) {
+					var ` = `[0];
+					{
+						var code = `;
+						{
+							var normalized = reflaxe.elixir.ast.transformers.PresenceERawTransforms.collapsePresenceKeysPipeline(code);
+							if (normalized != code) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(normalized), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function collapsePresenceKeysPipeline(code:String) {
+		var out = new StringBuf();
+		var i = 0;
+		while (i < code.length) {
+			var idx = code.indexOf("Map.keys(", i);
+			if (idx == -1) {
+				out.add(code.substr(i, null));
+				break;
+			};
+			out.add(code.substr(i, idx - i));
+			out.add("Map.keys(");
+			var j = idx + "Map.keys(".length;
+			var depth = 1;
+			var inner = new StringBuf();
+			while (j < code.length && depth > 0) {
+				var ch = code.charAt(j);
+				if (ch == "(") {
+					depth ++;
+				} else {
+					if (ch == ")") {
+						depth --;
+					};
+				};
+				inner.add(ch);
+				j ++;
+			};
+			var innerStr = inner.toString();
+			var k = j;
+			while (k < code.length) {
+				var ws = code.charAt(k);
+				if (ws == " " || ws == "\\n" || ws == "\\t" || ws == "\\r") {
+					k ++;
+				} else {
+					break;
+				};
+			};
+			var suffix = code.substr(k, "|> Enum.map(&Atom.to_string/1)".length);
+			if (suffix == "|> Enum.map(&Atom.to_string/1)") {
+				out.add(innerStr);
+				i = k + "|> Enum.map(&Atom.to_string/1)".length;
+			} else {
+				out.add(innerStr);
+				i = j;
+			};
+		};
+		return out.toString();
+	}
+}

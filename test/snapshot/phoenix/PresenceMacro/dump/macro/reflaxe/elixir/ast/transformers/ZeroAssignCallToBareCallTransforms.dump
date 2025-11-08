@@ -1,0 +1,248 @@
+class reflaxe.elixir.ast.transformers.ZeroAssignCallToBareCallTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(Match, { def : EInteger(0) }, rhs):
+		switch (rhs.def) {
+			case ECall(_, _, _) | ERemoteCall(_, _, _):
+				rhs;			
+			case EParen(inner):
+				switch (inner.def) {
+					case ECall(_, _, _) | ERemoteCall(_, _, _):
+						inner;					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	case EMatch(PLiteral({ def : EInteger(0) }), rhs2):
+		switch (rhs2.def) {
+			case ECall(_, _, _) | ERemoteCall(_, _, _):
+				rhs2;			
+			case EParen(inner2):
+				switch (inner2.def) {
+					case ECall(_, _, _) | ERemoteCall(_, _, _):
+						inner2;					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 33) {
+									var ` = `[0];
+									if (` == 0) {
+										{
+											var rhs2 = `;
+											{
+												@:ast(switch (rhs2.def) {
+	case ECall(_, _, _) | ERemoteCall(_, _, _):
+		rhs2;	
+	case EParen(inner2):
+		switch (inner2.def) {
+			case ECall(_, _, _) | ERemoteCall(_, _, _):
+				inner2;			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+													var ` = rhs2.def;
+													switch (enumIndex `) {
+														case 22: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																rhs2;
+															};
+														};
+														case 24: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																rhs2;
+															};
+														};
+														case 54: {
+															var ` = `[0];
+															{
+																var inner2 = `;
+																{
+																	@:ast(switch (inner2.def) {
+	case ECall(_, _, _) | ERemoteCall(_, _, _):
+		inner2;	
+	default:
+		n;	
+}) {
+																		var ` = inner2.def;
+																		switch (enumIndex `) {
+																			case 22: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					inner2;
+																				};
+																			};
+																			case 24: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					inner2;
+																				};
+																			};
+																			default: {
+																				n;
+																			}
+																		};
+																	};
+																};
+															};
+														};
+														default: {
+															n;
+														}
+													};
+												};
+											};
+										};
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 33) {
+									var ` = `[0];
+									if (` == 0) {
+										{
+											var rhs = `;
+											{
+												@:ast(switch (rhs.def) {
+	case ECall(_, _, _) | ERemoteCall(_, _, _):
+		rhs;	
+	case EParen(inner):
+		switch (inner.def) {
+			case ECall(_, _, _) | ERemoteCall(_, _, _):
+				inner;			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+													var ` = rhs.def;
+													switch (enumIndex `) {
+														case 22: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																rhs;
+															};
+														};
+														case 24: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																rhs;
+															};
+														};
+														case 54: {
+															var ` = `[0];
+															{
+																var inner = `;
+																{
+																	@:ast(switch (inner.def) {
+	case ECall(_, _, _) | ERemoteCall(_, _, _):
+		inner;	
+	default:
+		n;	
+}) {
+																		var ` = inner.def;
+																		switch (enumIndex `) {
+																			case 22: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					inner;
+																				};
+																			};
+																			case 24: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					inner;
+																				};
+																			};
+																			default: {
+																				n;
+																			}
+																		};
+																	};
+																};
+															};
+														};
+														default: {
+															n;
+														}
+													};
+												};
+											};
+										};
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

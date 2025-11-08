@@ -75,14 +75,18 @@ class ConstructorBuilder {
         // WHY: compileExpressionImpl creates a FRESH context, losing our flag
         // WHAT: Call ElixirASTBuilder directly with our context to preserve flags
         // HOW: Use buildFromTypedExpr with current context instead of compiler method
+        #if debug_ast_builder
         trace('[ConstructorBuilder] SETTING FLAG isInConstructorArgContext = true');
+        #end
         context.isInConstructorArgContext = true;
 
         // Compile arguments directly with our context (not through compiler which creates fresh context)
         var args = [for (e in el) reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context)];
 
         context.isInConstructorArgContext = false;
+        #if debug_ast_builder
         trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false');
+        #end
 
         // ====================================================================
         // PATTERN 1: Ecto Schemas

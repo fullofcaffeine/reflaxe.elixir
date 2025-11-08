@@ -1,0 +1,448 @@
+class reflaxe.elixir.ast.transformers.InlinePrevAssignIntoArgTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewriteSeq(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewriteSeq(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.InlinePrevAssignIntoArgTransforms.rewriteSeq(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.InlinePrevAssignIntoArgTransforms.rewriteSeq(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteSeq(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null || stmts.length < 2) {
+			return stmts;
+		};
+		var out = [];
+		var i = 0;
+		while (i < stmts.length) {
+			if (i + 1 < stmts.length) {
+				var lhsVar = null;
+				var rhsExpr = null;
+				@:ast(switch (stmts[i].def) {
+	case EBinary(Match, { def : EVar(v) }, rhs):
+		lhsVar = v;
+		rhsExpr = rhs;	
+	case EMatch(PVar(v2), rhs2):
+		lhsVar = v2;
+		rhsExpr = rhs2;	
+	default:
+}) {
+					var ` = stmts[i].def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var v2 = `;
+									var rhs2 = `;
+									{
+										lhsVar = v2;
+										rhsExpr = rhs2;
+									};
+								};
+							} else {};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											var rhs = `;
+											{
+												lhsVar = v;
+												rhsExpr = rhs;
+											};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				if (lhsVar != null && rhsExpr != null) {
+					var next = stmts[i + 1];
+					var replaced = reflaxe.elixir.ast.transformers.InlinePrevAssignIntoArgTransforms.tryRewriteCallUsingVar(next, lhsVar, rhsExpr);
+					if (replaced != null) {
+						out.push(replaced);
+						i += 2;
+						continue;
+					};
+				};
+			};
+			out.push(stmts[i]);
+			i ++;
+		};
+		return out;
+	}
+
+	static function tryRewriteCallUsingVar(callNode:reflaxe.elixir.ast.ElixirAST, varName:String, rhs:reflaxe.elixir.ast.ElixirAST) {
+		var normalizeArg = function(a:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (a.def) {
+	case EBinary(op, left, right) if ((op == GreaterEqual && isZero(right)) || (op == Greater && isMinusOne(right))):
+		switch (left.def) {
+			case ECase(matchExpr, _):
+				switch (matchExpr.def) {
+					case ERemoteCall({ def : EVar(m) }, fnName, margs) if (m == ":binary" && fnName == "match" && margs != null && margs.length == 2):
+						switch (margs[0].def) {
+							case EVar(v) if (v == varName):
+								var binMod = makeAST(EVar(":binary"));
+								var newCall = makeAST(ERemoteCall(binMod, "match", [rhs, margs[1]]));
+								var nomatch = makeAST(EAtom(":nomatch"));
+								makeAST(EBinary(NotEqual, newCall, nomatch));							
+							default:
+								null;							
+						};					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+				var ` = a.def;
+				if (enumIndex ` == 26) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var left = `;
+						var right = `;
+						if ((op == reflaxe.elixir.ast.EBinaryOp.GreaterEqual && @:ast(switch (e.def) {
+	case EInteger(v) if (v == 0):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = right.def;
+							if (enumIndex ` == 33) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == 0) {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						}) || (op == reflaxe.elixir.ast.EBinaryOp.Greater && @:ast(switch (e.def) {
+	case EInteger(v) if (v == -1):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = right.def;
+							if (enumIndex ` == 33) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == -1) {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						})) {
+							@:ast(switch (left.def) {
+	case ECase(matchExpr, _):
+		switch (matchExpr.def) {
+			case ERemoteCall({ def : EVar(m) }, fnName, margs) if (m == ":binary" && fnName == "match" && margs != null && margs.length == 2):
+				switch (margs[0].def) {
+					case EVar(v) if (v == varName):
+						var binMod = makeAST(EVar(":binary"));
+						var newCall = makeAST(ERemoteCall(binMod, "match", [rhs, margs[1]]));
+						var nomatch = makeAST(EAtom(":nomatch"));
+						makeAST(EBinary(NotEqual, newCall, nomatch));					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+								var ` = left.def;
+								if (enumIndex ` == 6) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var matchExpr = `;
+										{
+											@:ast(switch (matchExpr.def) {
+	case ERemoteCall({ def : EVar(m) }, fnName, margs) if (m == ":binary" && fnName == "match" && margs != null && margs.length == 2):
+		switch (margs[0].def) {
+			case EVar(v) if (v == varName):
+				var binMod = makeAST(EVar(":binary"));
+				var newCall = makeAST(ERemoteCall(binMod, "match", [rhs, margs[1]]));
+				var nomatch = makeAST(EAtom(":nomatch"));
+				makeAST(EBinary(NotEqual, newCall, nomatch));			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+												var ` = matchExpr.def;
+												if (enumIndex ` == 24) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var m = `;
+																var fnName = `;
+																var margs = `;
+																if (m == ":binary" && fnName == "match" && margs != null && margs.length == 2) {
+																	@:ast(switch (margs[0].def) {
+	case EVar(v) if (v == varName):
+		var binMod = makeAST(EVar(":binary"));
+		var newCall = makeAST(ERemoteCall(binMod, "match", [rhs, margs[1]]));
+		var nomatch = makeAST(EAtom(":nomatch"));
+		makeAST(EBinary(NotEqual, newCall, nomatch));	
+	default:
+		null;	
+}) {
+																		var ` = margs[0].def;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			{
+																				var v = `;
+																				if (v == varName) {
+																					var binMod = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EVar(":binary"), metadata : {}, pos : pos};
+																					};
+																					var newCall = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(binMod, "match", [rhs, margs[1]]), metadata : {}, pos : pos};
+																					};
+																					var nomatch = {
+																						var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+																							var this;
+																							this = reflaxe.elixir.ast.NameUtils.toSnakeCase(":nomatch");
+																							cast this;
+																						});
+																						var pos = null;
+																						{def : def, metadata : {}, pos : pos};
+																					};
+																					{
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, newCall, nomatch), metadata : {}, pos : pos};
+																					};
+																				} else {
+																					null;
+																				};
+																			};
+																		} else {
+																			null;
+																		};
+																	};
+																} else {
+																	null;
+																};
+															};
+														} else {
+															null;
+														};
+													};
+												} else {
+													null;
+												};
+											};
+										};
+									};
+								} else {
+									null;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		};
+		return @:ast(switch (callNode.def) {
+	case ECall(t, fnName, args) if (args != null && args.length >= 1):
+		var newFirst = normalizeArg(args[0]);
+		if (newFirst != null) makeASTWithMeta(ECall(t, fnName, [newFirst].concat(args.slice(1))), callNode.metadata, callNode.pos) else null;	
+	case ERemoteCall(m, fnName, args) if (args != null && args.length >= 1):
+		var newFirst2 = normalizeArg(args[0]);
+		if (newFirst2 != null) makeASTWithMeta(ERemoteCall(m, fnName, [newFirst2].concat(args.slice(1))), callNode.metadata, callNode.pos) else null;	
+	default:
+		null;	
+}) {
+			var ` = callNode.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t = `;
+						var fnName = `;
+						var args = `;
+						if (args != null && args.length >= 1) {
+							var newFirst = normalizeArg(args[0]);
+							if (newFirst != null) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.ECall(t, fnName, [newFirst].concat(args.slice(1, null)));
+									var meta = callNode.metadata;
+									var pos = callNode.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								null;
+							};
+						} else {
+							null;
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var m = `;
+						var fnName = `;
+						var args = `;
+						if (args != null && args.length >= 1) {
+							var newFirst2 = normalizeArg(args[0]);
+							if (newFirst2 != null) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(m, fnName, [newFirst2].concat(args.slice(1, null)));
+									var meta = callNode.metadata;
+									var pos = callNode.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								null;
+							};
+						} else {
+							null;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static inline function isZero(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EInteger(v) if (v == 0):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 33) {
+				var ` = `[0];
+				{
+					var v = `;
+					if (v == 0) {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function isMinusOne(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EInteger(v) if (v == -1):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 33) {
+				var ` = `[0];
+				{
+					var v = `;
+					if (v == -1) {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

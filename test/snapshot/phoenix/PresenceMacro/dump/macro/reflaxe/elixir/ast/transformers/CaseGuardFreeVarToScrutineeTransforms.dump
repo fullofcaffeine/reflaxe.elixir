@@ -1,0 +1,283 @@
+class reflaxe.elixir.ast.transformers.CaseGuardFreeVarToScrutineeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(scrutinee, clauses):
+		var scrutVar:Null<String> = switch (scrutinee.def) {
+			case EVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (scrutVar == null) n else {
+			var unionBinders = collectAllBinderNames(clauses);
+			var newClauses:Array<ECaseClause> = [];
+			for (cl  in  clauses) {
+				var bound = collectBinderNames(cl.pattern);
+				var newGuard = cl.guard;
+				if (newGuard != null) {
+					newGuard = ElixirASTTransformer.transformNode(newGuard, function(g:ElixirAST):ElixirAST {
+						return switch (g.def) {
+							case EVar(vname) if (unionBinders.exists(vname) && !bound.exists(vname)):
+								makeAST(EVar(scrutVar));							
+							default:
+								g;							
+						};
+					});
+				};
+				newClauses.push({ pattern : cl.pattern, guard : newGuard, body : cl.body });
+			};
+			makeASTWithMeta(ECase(scrutinee, newClauses), n.metadata, n.pos);
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var scrutinee = `;
+						var clauses = `;
+						{
+							var scrutVar = @:ast(switch (scrutinee.def) {
+	case EVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+								var ` = scrutinee.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var nm = `;
+										{
+											nm;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							if (scrutVar == null) {
+								n;
+							} else {
+								var unionBinders = reflaxe.elixir.ast.transformers.CaseGuardFreeVarToScrutineeTransforms.collectAllBinderNames(clauses);
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var bound = reflaxe.elixir.ast.transformers.CaseGuardFreeVarToScrutineeTransforms.collectBinderNames(cl.pattern);
+										var newGuard = cl.guard;
+										if (newGuard != null) {
+											newGuard = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(newGuard, function(g:reflaxe.elixir.ast.ElixirAST) {
+												return @:ast(switch (g.def) {
+	case EVar(vname) if (unionBinders.exists(vname) && !bound.exists(vname)):
+		makeAST(EVar(scrutVar));	
+	default:
+		g;	
+}) {
+													var ` = g.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var vname = `;
+															if (unionBinders.exists(vname) && ! bound.exists(vname)) {
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar(scrutVar), metadata : {}, pos : pos};
+																};
+															} else {
+																g;
+															};
+														};
+													} else {
+														g;
+													};
+												};
+											});
+										};
+										newClauses.push({pattern : cl.pattern, guard : newGuard, body : cl.body});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(scrutinee, newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function collectAllBinderNames(clauses:Array<reflaxe.elixir.ast.ECaseClause>) {
+		var m = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < clauses.length) {
+				var cl = clauses[`];
+				++ `;
+				var b = reflaxe.elixir.ast.transformers.CaseGuardFreeVarToScrutineeTransforms.collectBinderNames(cl.pattern);
+				for (k in b.keys()) {
+					{
+						m.set(k, true);
+					};
+				};
+			};
+		};
+		return m;
+	}
+
+	static function collectBinderNames(p:reflaxe.elixir.ast.EPattern) {
+		var m = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var walkPat = [null];
+		walkPat[0] = function(pp:reflaxe.elixir.ast.EPattern) {
+			@:ast(switch (pp) {
+	case PVar(n):
+		m.set(n, true);	
+	case PCons(h, t):
+		walkPat(h);
+		walkPat(t);	
+	case PTuple(els):
+		for (e  in  els) walkPat(e);	
+	case PList(els):
+		for (e  in  els) walkPat(e);	
+	case PMap(pairs):
+		for (kv  in  pairs) walkPat(kv.value);	
+	case PStruct(_, fields):
+		for (f  in  fields) walkPat(f.value);	
+	case PPin(inner):
+		walkPat(inner);	
+	case PAlias(nm, inner):
+		m.set(nm, true);
+		walkPat(inner);	
+	default:
+}) switch (enumIndex pp) {
+				case 0: {
+					var ` = pp[0];
+					{
+						var n = `;
+						{
+							{
+								m.set(n, true);
+							};
+						};
+					};
+				};
+				case 2: {
+					var ` = pp[0];
+					{
+						var els = `;
+						{
+							{
+								var ` = 0;
+								while (` < els.length) {
+									var e = els[`];
+									++ `;
+									walkPat[0](e);
+								};
+							};
+						};
+					};
+				};
+				case 3: {
+					var ` = pp[0];
+					{
+						var els = `;
+						{
+							{
+								var ` = 0;
+								while (` < els.length) {
+									var e = els[`];
+									++ `;
+									walkPat[0](e);
+								};
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = pp[0];
+					var ` = pp[1];
+					{
+						var h = `;
+						var t = `;
+						{
+							walkPat[0](h);
+							walkPat[0](t);
+						};
+					};
+				};
+				case 5: {
+					var ` = pp[0];
+					{
+						var pairs = `;
+						{
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var kv = pairs[`];
+									++ `;
+									walkPat[0](kv.value);
+								};
+							};
+						};
+					};
+				};
+				case 6: {
+					var ` = pp[0];
+					var ` = pp[1];
+					{
+						var fields = `;
+						{
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var f = fields[`];
+									++ `;
+									walkPat[0](f.value);
+								};
+							};
+						};
+					};
+				};
+				case 7: {
+					var ` = pp[0];
+					{
+						var inner = `;
+						{
+							walkPat[0](inner);
+						};
+					};
+				};
+				case 9: {
+					var ` = pp[0];
+					var ` = pp[1];
+					{
+						var nm = `;
+						var inner = `;
+						{
+							{
+								m.set(nm, true);
+							};
+							walkPat[0](inner);
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		walkPat[0](p);
+		return m;
+	}
+}

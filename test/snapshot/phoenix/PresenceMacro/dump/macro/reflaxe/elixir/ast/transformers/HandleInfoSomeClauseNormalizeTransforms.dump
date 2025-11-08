@@ -1,0 +1,492 @@
+class reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "handle_info" || name == "handleInfo"):
+		Sys.println("[HandleInfoSomeNormalize] Visiting " + name);
+		var socketArg:Null<String> = extractSocketArg(args);
+		var nb = normalizeHandleInfoBody(body, socketArg);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "handle_info" || name == "handleInfo") {
+							Sys.println("[HandleInfoSomeNormalize] Visiting " + name);
+							var socketArg = reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.extractSocketArg(args);
+							var nb = reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.normalizeHandleInfoBody(body, socketArg);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function extractSocketArg(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null || args.length < 2) {
+			return "socket";
+		};
+		return @:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		"socket";	
+}) {
+			var ` = args[1];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var nm = `;
+					{
+						nm;
+					};
+				};
+			} else {
+				"socket";
+			};
+		};
+	}
+
+	static function normalizeHandleInfoBody(body:reflaxe.elixir.ast.ElixirAST, socketName:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ECase(tgt, clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var c2 = cl;
+			var binder:Null<String> = null;
+			var parts:Array<EPattern> = null;
+			switch (cl.pattern) {
+				case PTuple(ps) if (ps.length == 2):
+					parts = ps;
+					switch (ps[0]) {
+						case PLiteral(l) if (switch (l.def) {
+						case EAtom(a):
+							a == ":some" || a == "some";						
+						default:
+							false;						
+					}):
+							switch (ps[1]) {
+								case PVar(nm):
+									binder = nm;								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+			if (binder != null) {
+				Sys.println("[HandleInfoSomeNormalize] Found {:some, " + binder + "}");
+				var newBody = cl.body;
+				newBody = dropLeadingAlias(newBody, binder);
+				newBody = rewriteNoreplySocket(newBody, binder, socketName);
+				var promoted = binder;
+				if (binder.length > 1 && binder.charAt(0) == "_") promoted = binder.substr(1);
+				var ps2 = parts.copy();
+				ps2[1] = PVar(promoted);
+				var newPat = PTuple(ps2);
+				newBody = ElixirASTTransformer.transformNode(newBody, function(y:ElixirAST):ElixirAST {
+					return switch (y.def) {
+						case EVar(v) if (v == binder):
+							makeASTWithMeta(EVar(promoted), y.metadata, y.pos);						
+						default:
+							y;						
+					};
+				});
+				c2 = { pattern : newPat, guard : cl.guard, body : newBody };
+			};
+			newClauses.push(c2);
+		};
+		makeASTWithMeta(ECase(tgt, newClauses), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var tgt = `;
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var c2 = cl;
+									var binder = [null];
+									var parts = null;
+									@:ast(switch (cl.pattern) {
+	case PTuple(ps) if (ps.length == 2):
+		parts = ps;
+		switch (ps[0]) {
+			case PLiteral(l) if (switch (l.def) {
+			case EAtom(a):
+				a == ":some" || a == "some";			
+			default:
+				false;			
+		}):
+				switch (ps[1]) {
+					case PVar(nm):
+						binder = nm;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = cl.pattern;
+										if (enumIndex ` == 2) {
+											var ` = `[0];
+											{
+												var ps = `;
+												if (ps.length == 2) {
+													parts = ps;
+													@:ast(switch (ps[0]) {
+	case PLiteral(l) if (switch (l.def) {
+	case EAtom(a):
+		a == ":some" || a == "some";	
+	default:
+		false;	
+}):
+		switch (ps[1]) {
+			case PVar(nm):
+				binder = nm;			
+			default:
+		};	
+	default:
+}) {
+														var ` = ps[0];
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var l = `;
+																if (@:ast(switch (l.def) {
+	case EAtom(a):
+		a == ":some" || a == "some";	
+	default:
+		false;	
+}) {
+																	var ` = l.def;
+																	if (enumIndex ` == 31) {
+																		var ` = `[0];
+																		{
+																			var a = `;
+																			{
+																				a == ":some" || a == "some";
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																}) {
+																	@:ast(switch (ps[1]) {
+	case PVar(nm):
+		binder = nm;	
+	default:
+}) {
+																		var ` = ps[1];
+																		if (enumIndex ` == 0) {
+																			var ` = `[0];
+																			{
+																				var nm = `;
+																				{
+																					binder[0] = nm;
+																				};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									};
+									if (binder[0] != null) {
+										Sys.println("[HandleInfoSomeNormalize] Found {:some, " + binder[0] + "}");
+										var newBody = cl.body;
+										newBody = reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.dropLeadingAlias(newBody, binder[0]);
+										newBody = reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.rewriteNoreplySocket(newBody, binder[0], socketName);
+										var promoted = [binder[0]];
+										if (binder[0].length > 1 && binder[0].charAt(0) == "_") {
+											promoted[0] = binder[0].substr(1, null);
+										};
+										var ps2 = parts.copy();
+										ps2[1] = reflaxe.elixir.ast.EPattern.PVar(promoted[0]);
+										var newPat = reflaxe.elixir.ast.EPattern.PTuple(ps2);
+										newBody = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(newBody, function(y:reflaxe.elixir.ast.ElixirAST) {
+											return @:ast(switch (y.def) {
+	case EVar(v) if (v == binder):
+		makeASTWithMeta(EVar(promoted), y.metadata, y.pos);	
+	default:
+		y;	
+}) {
+												var ` = y.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var v = `;
+														if (v == binder[0]) {
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(promoted[0]), metadata : y.metadata, pos : y.pos};
+														} else {
+															y;
+														};
+													};
+												} else {
+													y;
+												};
+											};
+										});
+										c2 = {pattern : newPat, guard : cl.guard, body : newBody};
+									};
+									newClauses.push(c2);
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(tgt, newClauses), metadata : x.metadata, pos : x.pos};
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function dropLeadingAlias(body:reflaxe.elixir.ast.ElixirAST, binder:String) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		var rest = stmts.copy();
+		if (isAliasOf(rest[0], binder)) rest.shift();
+		makeASTWithMeta(EBlock(rest), body.metadata, body.pos);	
+	case EDo(stmts2) if (stmts2.length > 0):
+		var r2 = stmts2.copy();
+		if (isAliasOf(r2[0], binder)) r2.shift();
+		makeASTWithMeta(EDo(r2), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						if (stmts.length > 0) {
+							var rest = stmts.copy();
+							if (reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.isAliasOf(rest[0], binder)) {
+								rest.shift();
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(rest), metadata : body.metadata, pos : body.pos};
+						} else {
+							body;
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts2 = `;
+						if (stmts2.length > 0) {
+							var r2 = stmts2.copy();
+							if (reflaxe.elixir.ast.transformers.HandleInfoSomeClauseNormalizeTransforms.isAliasOf(r2[0], binder)) {
+								r2.shift();
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDo(r2), metadata : body.metadata, pos : body.pos};
+						} else {
+							body;
+						};
+					};
+				};
+				default: {
+					body;
+				}
+			};
+		};
+	}
+
+	static function isAliasOf(stmt:reflaxe.elixir.ast.ElixirAST, binder:String) {
+		return @:ast(switch (stmt.def) {
+	case EBinary(Match, { def : EVar(_) }, { def : EVar(v) }) if (v == binder || v == "_socket" || v == "socket"):
+		true;	
+	case EMatch(PVar(_), { def : EVar(v2) }) if (v2 == binder || v2 == "_socket" || v2 == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = stmt.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v2 = `;
+									if (v2 == binder || v2 == "_socket" || v2 == "socket") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (v == binder || v == "_socket" || v == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function rewriteNoreplySocket(body:reflaxe.elixir.ast.ElixirAST, binder:String, socketName:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(z:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (z.def) {
+	case ETuple(elems) if (elems.length == 2):
+		switch (elems[0].def) {
+			case EAtom(a) if (a == ":noreply" || a == "noreply"):
+				switch (elems[1].def) {
+					case EVar(v) if (v == binder || v == "_socket"):
+						makeASTWithMeta(ETuple([elems[0], makeAST(EVar(socketName))]), z.metadata, z.pos);					
+					default:
+						z;					
+				};			
+			default:
+				z;			
+		};	
+	default:
+		z;	
+}) {
+				var ` = z.def;
+				if (enumIndex ` == 16) {
+					var ` = `[0];
+					{
+						var elems = `;
+						if (elems.length == 2) {
+							@:ast(switch (elems[0].def) {
+	case EAtom(a) if (a == ":noreply" || a == "noreply"):
+		switch (elems[1].def) {
+			case EVar(v) if (v == binder || v == "_socket"):
+				makeASTWithMeta(ETuple([elems[0], makeAST(EVar(socketName))]), z.metadata, z.pos);			
+			default:
+				z;			
+		};	
+	default:
+		z;	
+}) {
+								var ` = elems[0].def;
+								if (enumIndex ` == 31) {
+									var ` = `[0];
+									{
+										var a = `;
+										if (a == ":noreply" || a == "noreply") {
+											@:ast(switch (elems[1].def) {
+	case EVar(v) if (v == binder || v == "_socket"):
+		makeASTWithMeta(ETuple([elems[0], makeAST(EVar(socketName))]), z.metadata, z.pos);	
+	default:
+		z;	
+}) {
+												var ` = elems[1].def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var v = `;
+														if (v == binder || v == "_socket") {
+															{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([elems[0], {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketName), metadata : {}, pos : pos};
+															}]), metadata : z.metadata, pos : z.pos};
+														} else {
+															z;
+														};
+													};
+												} else {
+													z;
+												};
+											};
+										} else {
+											z;
+										};
+									};
+								} else {
+									z;
+								};
+							};
+						} else {
+							z;
+						};
+					};
+				} else {
+					z;
+				};
+			};
+		});
+	}
+}

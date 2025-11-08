@@ -1,0 +1,614 @@
+class reflaxe.elixir.ast.transformers.ReduceAliasConcatToAccTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(modRef, "reduce", args) if (args.length == 3):
+		var listExpr = args[0];
+		var init = args[1];
+		var fnNode = args[2];
+		switch (fnNode.def) {
+			case EFn(clauses) if (clauses.length == 1):
+				var cl = clauses[0];
+				if (cl.args.length < 2) return n;
+				var accName:Null<String> = switch (cl.args[1]) {
+					case PVar(a):
+						a;					
+					default:
+						null;					
+				};
+				if (accName == null) return n;
+				var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
+					case EBlock(ss):
+						ss;					
+					default:
+						[cl.body];					
+				};
+				var newBody:Array<ElixirAST> = [];
+				for (stmt  in  bodyStmts) {
+					var rewritten = switch (stmt.def) {
+						case EBinary(Match, left, rhs):
+							var lhs:Null<String> = switch (left.def) {
+								case EVar(nm):
+									nm;								
+								default:
+									null;								
+							};
+							switch (rhs.def) {
+								case ERemoteCall(_, "concat", cargs) if (lhs != null && cargs.length == 2):
+									var arg0Name:Null<String> = switch (cargs[0].def) {
+										case EVar(nm2):
+											nm2;										
+										default:
+											null;										
+									};
+									var isSelf = (arg0Name != null && arg0Name == lhs);
+									if (isSelf) {
+										Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat lhs=" + lhs + " -> acc=" + accName);
+										var replLeft = makeAST(EVar(accName));
+										var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
+										makeASTWithMeta(EBinary(Match, replLeft, replRight), stmt.metadata, stmt.pos);
+									} else stmt;								
+								case ERemoteCall(_, "concat", cargs) if (lhs != null):
+									var arg0Dbg = switch (cargs[0].def) {
+										case EVar(nm4):
+											nm4;										
+										default:
+											"<non-var>";										
+									};
+									Sys.println("[ReduceAliasConcatToAcc] concat found but not self: lhs=" + lhs + ", arg0=" + arg0Dbg);
+									stmt;								
+								default:
+									stmt;								
+							};						
+						case EMatch(pat, rhs2):
+							var lhs2:Null<String> = switch (pat) {
+								case PVar(nm):
+									nm;								
+								default:
+									null;								
+							};
+							switch (rhs2.def) {
+								case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
+									var isSelf2 = switch (cargs2[0].def) {
+										case EVar(nm3):
+											(nm3 == lhs2);										
+										default:
+											false;										
+									};
+									if (isSelf2) {
+										Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat pat=" + lhs2 + " -> acc=" + accName);
+										var newLeft = makeAST(EVar(accName));
+										var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs2[1]]));
+										makeASTWithMeta(EBinary(Match, newLeft, newRight), stmt.metadata, stmt.pos);
+									} else stmt;								
+								default:
+									stmt;								
+							};						
+						default:
+							stmt;						
+					};
+					newBody.push(rewritten);
+				};
+				var finalBody:ElixirAST = makeAST(EBlock(newBody));
+				var newFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : finalBody }]));
+				makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "reduce", [listExpr, init, newFn]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == "reduce") {
+						{
+							var modRef = `;
+							var args = `;
+							if (args.length == 3) {
+								var listExpr = args[0];
+								var init = args[1];
+								var fnNode = args[2];
+								@:ast(switch (fnNode.def) {
+	case EFn(clauses) if (clauses.length == 1):
+		var cl = clauses[0];
+		if (cl.args.length < 2) return n;
+		var accName:Null<String> = switch (cl.args[1]) {
+			case PVar(a):
+				a;			
+			default:
+				null;			
+		};
+		if (accName == null) return n;
+		var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[cl.body];			
+		};
+		var newBody:Array<ElixirAST> = [];
+		for (stmt  in  bodyStmts) {
+			var rewritten = switch (stmt.def) {
+				case EBinary(Match, left, rhs):
+					var lhs:Null<String> = switch (left.def) {
+						case EVar(nm):
+							nm;						
+						default:
+							null;						
+					};
+					switch (rhs.def) {
+						case ERemoteCall(_, "concat", cargs) if (lhs != null && cargs.length == 2):
+							var arg0Name:Null<String> = switch (cargs[0].def) {
+								case EVar(nm2):
+									nm2;								
+								default:
+									null;								
+							};
+							var isSelf = (arg0Name != null && arg0Name == lhs);
+							if (isSelf) {
+								Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat lhs=" + lhs + " -> acc=" + accName);
+								var replLeft = makeAST(EVar(accName));
+								var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
+								makeASTWithMeta(EBinary(Match, replLeft, replRight), stmt.metadata, stmt.pos);
+							} else stmt;						
+						case ERemoteCall(_, "concat", cargs) if (lhs != null):
+							var arg0Dbg = switch (cargs[0].def) {
+								case EVar(nm4):
+									nm4;								
+								default:
+									"<non-var>";								
+							};
+							Sys.println("[ReduceAliasConcatToAcc] concat found but not self: lhs=" + lhs + ", arg0=" + arg0Dbg);
+							stmt;						
+						default:
+							stmt;						
+					};				
+				case EMatch(pat, rhs2):
+					var lhs2:Null<String> = switch (pat) {
+						case PVar(nm):
+							nm;						
+						default:
+							null;						
+					};
+					switch (rhs2.def) {
+						case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
+							var isSelf2 = switch (cargs2[0].def) {
+								case EVar(nm3):
+									(nm3 == lhs2);								
+								default:
+									false;								
+							};
+							if (isSelf2) {
+								Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat pat=" + lhs2 + " -> acc=" + accName);
+								var newLeft = makeAST(EVar(accName));
+								var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs2[1]]));
+								makeASTWithMeta(EBinary(Match, newLeft, newRight), stmt.metadata, stmt.pos);
+							} else stmt;						
+						default:
+							stmt;						
+					};				
+				default:
+					stmt;				
+			};
+			newBody.push(rewritten);
+		};
+		var finalBody:ElixirAST = makeAST(EBlock(newBody));
+		var newFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : finalBody }]));
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "reduce", [listExpr, init, newFn]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = fnNode.def;
+									if (enumIndex ` == 42) {
+										var ` = `[0];
+										{
+											var clauses = `;
+											if (clauses.length == 1) {
+												var cl = clauses[0];
+												if (cl.args.length < 2) {
+													return n;
+												};
+												var accName = @:ast(switch (cl.args[1]) {
+	case PVar(a):
+		a;	
+	default:
+		null;	
+}) {
+													var ` = cl.args[1];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var a = `;
+															{
+																a;
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												if (accName == null) {
+													return n;
+												};
+												var bodyStmts = @:ast(switch (cl.body.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[cl.body];	
+}) {
+													var ` = cl.body.def;
+													if (enumIndex ` == 53) {
+														var ` = `[0];
+														{
+															var ss = `;
+															{
+																ss;
+															};
+														};
+													} else {
+														[cl.body];
+													};
+												};
+												var newBody = [];
+												{
+													var ` = 0;
+													while (` < bodyStmts.length) {
+														var stmt = bodyStmts[`];
+														++ `;
+														var rewritten = @:ast(switch (stmt.def) {
+	case EBinary(Match, left, rhs):
+		var lhs:Null<String> = switch (left.def) {
+			case EVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		switch (rhs.def) {
+			case ERemoteCall(_, "concat", cargs) if (lhs != null && cargs.length == 2):
+				var arg0Name:Null<String> = switch (cargs[0].def) {
+					case EVar(nm2):
+						nm2;					
+					default:
+						null;					
+				};
+				var isSelf = (arg0Name != null && arg0Name == lhs);
+				if (isSelf) {
+					Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat lhs=" + lhs + " -> acc=" + accName);
+					var replLeft = makeAST(EVar(accName));
+					var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
+					makeASTWithMeta(EBinary(Match, replLeft, replRight), stmt.metadata, stmt.pos);
+				} else stmt;			
+			case ERemoteCall(_, "concat", cargs) if (lhs != null):
+				var arg0Dbg = switch (cargs[0].def) {
+					case EVar(nm4):
+						nm4;					
+					default:
+						"<non-var>";					
+				};
+				Sys.println("[ReduceAliasConcatToAcc] concat found but not self: lhs=" + lhs + ", arg0=" + arg0Dbg);
+				stmt;			
+			default:
+				stmt;			
+		};	
+	case EMatch(pat, rhs2):
+		var lhs2:Null<String> = switch (pat) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		switch (rhs2.def) {
+			case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
+				var isSelf2 = switch (cargs2[0].def) {
+					case EVar(nm3):
+						(nm3 == lhs2);					
+					default:
+						false;					
+				};
+				if (isSelf2) {
+					Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat pat=" + lhs2 + " -> acc=" + accName);
+					var newLeft = makeAST(EVar(accName));
+					var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs2[1]]));
+					makeASTWithMeta(EBinary(Match, newLeft, newRight), stmt.metadata, stmt.pos);
+				} else stmt;			
+			default:
+				stmt;			
+		};	
+	default:
+		stmt;	
+}) {
+															var ` = stmt.def;
+															switch (enumIndex `) {
+																case 8: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var pat = `;
+																		var rhs2 = `;
+																		{
+																			var lhs2 = @:ast(switch (pat) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+																				var ` = pat[0];
+																				{
+																					var nm = `;
+																					{
+																						nm;
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																			@:ast(switch (rhs2.def) {
+	case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
+		var isSelf2 = switch (cargs2[0].def) {
+			case EVar(nm3):
+				(nm3 == lhs2);			
+			default:
+				false;			
+		};
+		if (isSelf2) {
+			Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat pat=" + lhs2 + " -> acc=" + accName);
+			var newLeft = makeAST(EVar(accName));
+			var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs2[1]]));
+			makeASTWithMeta(EBinary(Match, newLeft, newRight), stmt.metadata, stmt.pos);
+		} else stmt;	
+	default:
+		stmt;	
+}) {
+																				var ` = rhs2.def;
+																				if (enumIndex ` == 24) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					var ` = `[2];
+																					if (` == "concat") {
+																						{
+																							var cargs2 = `;
+																							if (lhs2 != null && cargs2.length == 2) {
+																								var isSelf2 = @:ast(switch (cargs2[0].def) {
+	case EVar(nm3):
+		(nm3 == lhs2);	
+	default:
+		false;	
+}) {
+																									var ` = cargs2[0].def;
+																									if (enumIndex ` == 38) {
+																										var ` = `[0];
+																										{
+																											var nm3 = `;
+																											{
+																												(nm3 == lhs2);
+																											};
+																										};
+																									} else {
+																										false;
+																									};
+																								};
+																								if (isSelf2) {
+																									Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat pat=" + lhs2 + " -> acc=" + accName);
+																									var newLeft = {
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																									};
+																									var newRight = {
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+																										}, "concat", [{
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																										}, cargs2[1]]), metadata : {}, pos : pos};
+																									};
+																									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, newLeft, newRight), metadata : stmt.metadata, pos : stmt.pos};
+																								} else {
+																									stmt;
+																								};
+																							} else {
+																								stmt;
+																							};
+																						};
+																					} else {
+																						stmt;
+																					};
+																				} else {
+																					stmt;
+																				};
+																			};
+																		};
+																	};
+																};
+																case 26: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 27) {
+																		{
+																			var left = `;
+																			var rhs = `;
+																			{
+																				var lhs = @:ast(switch (left.def) {
+	case EVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+																					var ` = left.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var nm = `;
+																							{
+																								nm;
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																				@:ast(switch (rhs.def) {
+	case ERemoteCall(_, "concat", cargs) if (lhs != null && cargs.length == 2):
+		var arg0Name:Null<String> = switch (cargs[0].def) {
+			case EVar(nm2):
+				nm2;			
+			default:
+				null;			
+		};
+		var isSelf = (arg0Name != null && arg0Name == lhs);
+		if (isSelf) {
+			Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat lhs=" + lhs + " -> acc=" + accName);
+			var replLeft = makeAST(EVar(accName));
+			var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
+			makeASTWithMeta(EBinary(Match, replLeft, replRight), stmt.metadata, stmt.pos);
+		} else stmt;	
+	case ERemoteCall(_, "concat", cargs) if (lhs != null):
+		var arg0Dbg = switch (cargs[0].def) {
+			case EVar(nm4):
+				nm4;			
+			default:
+				"<non-var>";			
+		};
+		Sys.println("[ReduceAliasConcatToAcc] concat found but not self: lhs=" + lhs + ", arg0=" + arg0Dbg);
+		stmt;	
+	default:
+		stmt;	
+}) {
+																					var ` = rhs.def;
+																					if (enumIndex ` == 24) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						var ` = `[2];
+																						if (` == "concat") {
+																							{
+																								var cargs = `;
+																								if (lhs != null && cargs.length == 2) {
+																									var arg0Name = @:ast(switch (cargs[0].def) {
+	case EVar(nm2):
+		nm2;	
+	default:
+		null;	
+}) {
+																										var ` = cargs[0].def;
+																										if (enumIndex ` == 38) {
+																											var ` = `[0];
+																											{
+																												var nm2 = `;
+																												{
+																													nm2;
+																												};
+																											};
+																										} else {
+																											null;
+																										};
+																									};
+																									var isSelf = (arg0Name != null && arg0Name == lhs);
+																									if (isSelf) {
+																										Sys.println("[ReduceAliasConcatToAcc] Rewriting alias concat lhs=" + lhs + " -> acc=" + accName);
+																										var replLeft = {
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																										};
+																										var replRight = {
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																												var pos = null;
+																												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+																											}, "concat", [{
+																												var pos = null;
+																												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																											}, cargs[1]]), metadata : {}, pos : pos};
+																										};
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, replLeft, replRight), metadata : stmt.metadata, pos : stmt.pos};
+																									} else {
+																										stmt;
+																									};
+																								} else {
+																									var cargs = `;
+																									if (lhs != null) {
+																										var arg0Dbg = @:ast(switch (cargs[0].def) {
+	case EVar(nm4):
+		nm4;	
+	default:
+		"<non-var>";	
+}) {
+																											var ` = cargs[0].def;
+																											if (enumIndex ` == 38) {
+																												var ` = `[0];
+																												{
+																													var nm4 = `;
+																													{
+																														nm4;
+																													};
+																												};
+																											} else {
+																												"<non-var>";
+																											};
+																										};
+																										Sys.println("[ReduceAliasConcatToAcc] concat found but not self: lhs=" + lhs + ", arg0=" + arg0Dbg);
+																										stmt;
+																									} else {
+																										stmt;
+																									};
+																								};
+																							};
+																						} else {
+																							stmt;
+																						};
+																					} else {
+																						stmt;
+																					};
+																				};
+																			};
+																		};
+																	} else {
+																		stmt;
+																	};
+																};
+																default: {
+																	stmt;
+																}
+															};
+														};
+														newBody.push(rewritten);
+													};
+												};
+												var finalBody = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(newBody), metadata : {}, pos : pos};
+												};
+												var newFn = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : finalBody}]), metadata : {}, pos : pos};
+												};
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+												}, "reduce", [listExpr, init, newFn]), metadata : n.metadata, pos : n.pos};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					} else {
+						n;
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

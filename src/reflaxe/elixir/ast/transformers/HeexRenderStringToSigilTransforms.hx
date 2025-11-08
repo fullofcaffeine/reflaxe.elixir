@@ -76,8 +76,11 @@ class HeexRenderStringToSigilTransforms {
                     case EBlock(stmts) if (stmts.length > 0):
                         var last = unwrapParens(stmts[stmts.length - 1]);
                         switch (last.def) {
-                            case EString(s) if (looksLikeHtml(s)):
-                                var conv = convertInterpolations(s);
+                    case EString(s) if (looksLikeHtml(s)):
+                        #if debug_heex_render
+                        #if sys Sys.println('[HeexRenderStringToSigil] Rewriting render/.. in module to ~H'); #else trace('[HeexRenderStringToSigil]'); #end
+                        #end
+                        var conv = convertInterpolations(s);
                                 var newStmts = stmts.copy();
                                 newStmts[newStmts.length - 1] = makeAST(ESigil("H", conv, ""));
                                 makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), n.metadata, n.pos);
@@ -86,14 +89,20 @@ class HeexRenderStringToSigilTransforms {
                     case EDo(stmts) if (stmts.length > 0):
                         var last2 = unwrapParens(stmts[stmts.length - 1]);
                         switch (last2.def) {
-                            case EString(ss) if (looksLikeHtml(ss)):
-                                var conv3 = convertInterpolations(ss);
+                    case EString(ss) if (looksLikeHtml(ss)):
+                        #if debug_heex_render
+                        #if sys Sys.println('[HeexRenderStringToSigil] Rewriting render/.. (do-block) to ~H'); #else trace('[HeexRenderStringToSigil]'); #end
+                        #end
+                        var conv3 = convertInterpolations(ss);
                                 var out = stmts.copy();
                                 out[out.length - 1] = makeAST(ESigil("H", conv3, ""));
                                 makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out))), n.metadata, n.pos);
                             default: n;
                         }
                     case EString(s4) if (looksLikeHtml(s4)):
+                        #if debug_heex_render
+                        #if sys Sys.println('[HeexRenderStringToSigil] Rewriting direct string to ~H'); #else trace('[HeexRenderStringToSigil]'); #end
+                        #end
                         var sig2 = makeAST(ESigil("H", convertInterpolations(s4), ""));
                         makeASTWithMeta(EDef(name, args, guards, sig2), n.metadata, n.pos);
                     default:

@@ -1,0 +1,1035 @@
+class reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms {
+
+	static inline function rhsIsTwoStmtBlock(e:reflaxe.elixir.ast.ElixirAST) {
+		if (e == null || e.def == null) {
+			return null;
+		};
+		return @:ast(switch (e.def) {
+	case EBlock(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EBlock" };	
+	case EDo(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EDo" };	
+	case EParen(inner):
+		rhsIsTwoStmtBlock(inner);	
+	default:
+		null;	
+}) {
+			var ` = e.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						if (stmts.length == 2) {
+							{first : stmts[0], second : stmts[1], ctor : "EBlock"};
+						} else {
+							null;
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.rhsIsTwoStmtBlock(inner);
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						if (stmts.length == 2) {
+							{first : stmts[0], second : stmts[1], ctor : "EDo"};
+						} else {
+							null;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static inline function bindNameAndRhs(s:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(n) }, r):
+		{ name : n, rhs : r };	
+	case EMatch(PVar(n), r):
+		{ name : n, rhs : r };	
+	default:
+		null;	
+}) {
+			var ` = s.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var n = `;
+							var r = `;
+							{
+								{name : n, rhs : r};
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var n = `;
+									var r = `;
+									{
+										{name : n, rhs : r};
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static inline function elseReturnsVar(e:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var v = `;
+					if (v == name) {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var nb = transformPass(cl.body);
+			newClauses.push({ args : cl.args, guard : cl.guard, body : nb });
+		};
+		makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var i = 0;
+		while (i < stmts.length) {
+			var s = stmts[i];
+			var rewritten = false;
+			switch (s.def) {
+				case EBinary(Match, left, rhs):
+					var two = rhsIsTwoStmtBlock(rhs);
+					if (two != null) {
+						var b = bindNameAndRhs(two.first);
+						switch (two.second.def) {
+							case EIf(cond, thenE, elseE) if (b != null && elseReturnsVar(elseE, b.name)):
+								out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b.name), two.first.metadata, two.first.pos), b.rhs), two.first.metadata, two.first.pos));
+								out.push(makeASTWithMeta(EBinary(Match, left, makeASTWithMeta(EIf(cond, thenE, elseE), two.second.metadata, two.second.pos)), s.metadata, s.pos));
+								rewritten = true;							
+							default:
+						};
+					};				
+				case EMatch(pat, rhs2):
+					if (!rewritten) {
+						var two2 = rhsIsTwoStmtBlock(rhs2);
+						if (two2 != null) {
+							var b2 = bindNameAndRhs(two2.first);
+							switch (two2.second.def) {
+								case EIf(cond2, thenE2, elseE2) if (b2 != null && elseReturnsVar(elseE2, b2.name)):
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2.name), two2.first.metadata, two2.first.pos), b2.rhs), two2.first.metadata, two2.first.pos));
+									out.push(makeASTWithMeta(EMatch(pat, makeASTWithMeta(EIf(cond2, thenE2, elseE2), two2.second.metadata, two2.second.pos)), s.metadata, s.pos));
+									rewritten = true;								
+								default:
+							};
+						};
+					};				
+				default:
+			};
+			if (!rewritten) out.push(s);
+			i++;
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts2):
+		var out2:Array<ElixirAST> = [];
+		for (s2  in  stmts2) {
+			var done = false;
+			switch (s2.def) {
+				case EBinary(Match, left2, rhsX):
+					var tw = rhsIsTwoStmtBlock(rhsX);
+					if (tw != null) {
+						var bX = bindNameAndRhs(tw.first);
+						switch (tw.second.def) {
+							case EIf(condX, thenX, elseX) if (bX != null && elseReturnsVar(elseX, bX.name)):
+								out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bX.name), tw.first.metadata, tw.first.pos), bX.rhs), tw.first.metadata, tw.first.pos));
+								out2.push(makeASTWithMeta(EBinary(Match, left2, makeASTWithMeta(EIf(condX, thenX, elseX), tw.second.metadata, tw.second.pos)), s2.metadata, s2.pos));
+								done = true;							
+							default:
+						};
+					};				
+				case EMatch(p2, rhsY):
+					if (!done) {
+						var tw2 = rhsIsTwoStmtBlock(rhsY);
+						if (tw2 != null) {
+							var bY = bindNameAndRhs(tw2.first);
+							switch (tw2.second.def) {
+								case EIf(condY, thenY, elseY) if (bY != null && elseReturnsVar(elseY, bY.name)):
+									out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bY.name), tw2.first.metadata, tw2.first.pos), bY.rhs), tw2.first.metadata, tw2.first.pos));
+									out2.push(makeASTWithMeta(EMatch(p2, makeASTWithMeta(EIf(condY, thenY, elseY), tw2.second.metadata, tw2.second.pos)), s2.metadata, s2.pos));
+									done = true;								
+								default:
+							};
+						};
+					};				
+				default:
+			};
+			if (!done) out2.push(s2);
+		};
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var nb = reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.transformPass(cl.body);
+										newClauses.push({args : cl.args, guard : cl.guard, body : nb});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								var i = 0;
+								while (i < stmts.length) {
+									var s = stmts[i];
+									var rewritten = false;
+									@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		var two = rhsIsTwoStmtBlock(rhs);
+		if (two != null) {
+			var b = bindNameAndRhs(two.first);
+			switch (two.second.def) {
+				case EIf(cond, thenE, elseE) if (b != null && elseReturnsVar(elseE, b.name)):
+					out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b.name), two.first.metadata, two.first.pos), b.rhs), two.first.metadata, two.first.pos));
+					out.push(makeASTWithMeta(EBinary(Match, left, makeASTWithMeta(EIf(cond, thenE, elseE), two.second.metadata, two.second.pos)), s.metadata, s.pos));
+					rewritten = true;				
+				default:
+			};
+		};	
+	case EMatch(pat, rhs2):
+		if (!rewritten) {
+			var two2 = rhsIsTwoStmtBlock(rhs2);
+			if (two2 != null) {
+				var b2 = bindNameAndRhs(two2.first);
+				switch (two2.second.def) {
+					case EIf(cond2, thenE2, elseE2) if (b2 != null && elseReturnsVar(elseE2, b2.name)):
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2.name), two2.first.metadata, two2.first.pos), b2.rhs), two2.first.metadata, two2.first.pos));
+						out.push(makeASTWithMeta(EMatch(pat, makeASTWithMeta(EIf(cond2, thenE2, elseE2), two2.second.metadata, two2.second.pos)), s.metadata, s.pos));
+						rewritten = true;					
+					default:
+				};
+			};
+		};	
+	default:
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													var rhs2 = `;
+													{
+														if (! rewritten) {
+															var two2 = if (rhs2 == null || rhs2.def == null) {
+																null;
+															} else {
+																@:ast(switch (e.def) {
+	case EBlock(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EBlock" };	
+	case EDo(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EDo" };	
+	case EParen(inner):
+		rhsIsTwoStmtBlock(inner);	
+	default:
+		null;	
+}) {
+																	var ` = rhs2.def;
+																	switch (enumIndex `) {
+																		case 53: {
+																			var ` = `[0];
+																			{
+																				var stmts = `;
+																				if (stmts.length == 2) {
+																					{first : stmts[0], second : stmts[1], ctor : "EBlock"};
+																				} else {
+																					null;
+																				};
+																			};
+																		};
+																		case 54: {
+																			var ` = `[0];
+																			{
+																				var inner = `;
+																				{
+																					reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.rhsIsTwoStmtBlock(inner);
+																				};
+																			};
+																		};
+																		case 55: {
+																			var ` = `[0];
+																			{
+																				var stmts = `;
+																				if (stmts.length == 2) {
+																					{first : stmts[0], second : stmts[1], ctor : "EDo"};
+																				} else {
+																					null;
+																				};
+																			};
+																		};
+																		default: {
+																			null;
+																		}
+																	};
+																};
+															};
+															if (two2 != null) {
+																var b2 = @:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(n) }, r):
+		{ name : n, rhs : r };	
+	case EMatch(PVar(n), r):
+		{ name : n, rhs : r };	
+	default:
+		null;	
+}) {
+																	var ` = two2.first.def;
+																	switch (enumIndex `) {
+																		case 8: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			if (enumIndex ` == 0) {
+																				var ` = `[0];
+																				{
+																					var n = `;
+																					var r = `;
+																					{
+																						{name : n, rhs : r};
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																		};
+																		case 26: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			if (enumIndex ` == 27) {
+																				{
+																					var ` = `.def;
+																					var ` = `.metadata;
+																					var ` = `.pos;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var n = `;
+																							var r = `;
+																							{
+																								{name : n, rhs : r};
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																		};
+																		default: {
+																			null;
+																		}
+																	};
+																};
+																@:ast(switch (two2.second.def) {
+	case EIf(cond2, thenE2, elseE2) if (b2 != null && elseReturnsVar(elseE2, b2.name)):
+		out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2.name), two2.first.metadata, two2.first.pos), b2.rhs), two2.first.metadata, two2.first.pos));
+		out.push(makeASTWithMeta(EMatch(pat, makeASTWithMeta(EIf(cond2, thenE2, elseE2), two2.second.metadata, two2.second.pos)), s.metadata, s.pos));
+		rewritten = true;	
+	default:
+}) {
+																	var ` = two2.second.def;
+																	if (enumIndex ` == 10) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		{
+																			var cond2 = `;
+																			var thenE2 = `;
+																			var elseE2 = `;
+																			if (b2 != null && @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+																				var ` = elseE2.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var v = `;
+																						if (v == b2.name) {
+																							true;
+																						} else {
+																							false;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			}) {
+																				out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b2.name), metadata : two2.first.metadata, pos : two2.first.pos}, b2.rhs), metadata : two2.first.metadata, pos : two2.first.pos});
+																				out.push({def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond2, thenE2, elseE2), metadata : two2.second.metadata, pos : two2.second.pos}), metadata : s.metadata, pos : s.pos});
+																				rewritten = true;
+																			} else {};
+																		};
+																	} else {};
+																};
+															};
+														};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var rhs = `;
+														{
+															var two = if (rhs == null || rhs.def == null) {
+																null;
+															} else {
+																@:ast(switch (e.def) {
+	case EBlock(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EBlock" };	
+	case EDo(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EDo" };	
+	case EParen(inner):
+		rhsIsTwoStmtBlock(inner);	
+	default:
+		null;	
+}) {
+																	var ` = rhs.def;
+																	switch (enumIndex `) {
+																		case 53: {
+																			var ` = `[0];
+																			{
+																				var stmts = `;
+																				if (stmts.length == 2) {
+																					{first : stmts[0], second : stmts[1], ctor : "EBlock"};
+																				} else {
+																					null;
+																				};
+																			};
+																		};
+																		case 54: {
+																			var ` = `[0];
+																			{
+																				var inner = `;
+																				{
+																					reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.rhsIsTwoStmtBlock(inner);
+																				};
+																			};
+																		};
+																		case 55: {
+																			var ` = `[0];
+																			{
+																				var stmts = `;
+																				if (stmts.length == 2) {
+																					{first : stmts[0], second : stmts[1], ctor : "EDo"};
+																				} else {
+																					null;
+																				};
+																			};
+																		};
+																		default: {
+																			null;
+																		}
+																	};
+																};
+															};
+															if (two != null) {
+																var b = @:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(n) }, r):
+		{ name : n, rhs : r };	
+	case EMatch(PVar(n), r):
+		{ name : n, rhs : r };	
+	default:
+		null;	
+}) {
+																	var ` = two.first.def;
+																	switch (enumIndex `) {
+																		case 8: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			if (enumIndex ` == 0) {
+																				var ` = `[0];
+																				{
+																					var n = `;
+																					var r = `;
+																					{
+																						{name : n, rhs : r};
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																		};
+																		case 26: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			if (enumIndex ` == 27) {
+																				{
+																					var ` = `.def;
+																					var ` = `.metadata;
+																					var ` = `.pos;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var n = `;
+																							var r = `;
+																							{
+																								{name : n, rhs : r};
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																		};
+																		default: {
+																			null;
+																		}
+																	};
+																};
+																@:ast(switch (two.second.def) {
+	case EIf(cond, thenE, elseE) if (b != null && elseReturnsVar(elseE, b.name)):
+		out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b.name), two.first.metadata, two.first.pos), b.rhs), two.first.metadata, two.first.pos));
+		out.push(makeASTWithMeta(EBinary(Match, left, makeASTWithMeta(EIf(cond, thenE, elseE), two.second.metadata, two.second.pos)), s.metadata, s.pos));
+		rewritten = true;	
+	default:
+}) {
+																	var ` = two.second.def;
+																	if (enumIndex ` == 10) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		{
+																			var cond = `;
+																			var thenE = `;
+																			var elseE = `;
+																			if (b != null && @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+																				var ` = elseE.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var v = `;
+																						if (v == b.name) {
+																							true;
+																						} else {
+																							false;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			}) {
+																				out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b.name), metadata : two.first.metadata, pos : two.first.pos}, b.rhs), metadata : two.first.metadata, pos : two.first.pos});
+																				out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, thenE, elseE), metadata : two.second.metadata, pos : two.second.pos}), metadata : s.metadata, pos : s.pos});
+																				rewritten = true;
+																			} else {};
+																		};
+																	} else {};
+																};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+									if (! rewritten) {
+										out.push(s);
+									};
+									i ++;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								var out2 = [];
+								{
+									var ` = 0;
+									while (` < stmts2.length) {
+										var s2 = stmts2[`];
+										++ `;
+										var done = false;
+										@:ast(switch (s2.def) {
+	case EBinary(Match, left2, rhsX):
+		var tw = rhsIsTwoStmtBlock(rhsX);
+		if (tw != null) {
+			var bX = bindNameAndRhs(tw.first);
+			switch (tw.second.def) {
+				case EIf(condX, thenX, elseX) if (bX != null && elseReturnsVar(elseX, bX.name)):
+					out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bX.name), tw.first.metadata, tw.first.pos), bX.rhs), tw.first.metadata, tw.first.pos));
+					out2.push(makeASTWithMeta(EBinary(Match, left2, makeASTWithMeta(EIf(condX, thenX, elseX), tw.second.metadata, tw.second.pos)), s2.metadata, s2.pos));
+					done = true;				
+				default:
+			};
+		};	
+	case EMatch(p2, rhsY):
+		if (!done) {
+			var tw2 = rhsIsTwoStmtBlock(rhsY);
+			if (tw2 != null) {
+				var bY = bindNameAndRhs(tw2.first);
+				switch (tw2.second.def) {
+					case EIf(condY, thenY, elseY) if (bY != null && elseReturnsVar(elseY, bY.name)):
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bY.name), tw2.first.metadata, tw2.first.pos), bY.rhs), tw2.first.metadata, tw2.first.pos));
+						out2.push(makeASTWithMeta(EMatch(p2, makeASTWithMeta(EIf(condY, thenY, elseY), tw2.second.metadata, tw2.second.pos)), s2.metadata, s2.pos));
+						done = true;					
+					default:
+				};
+			};
+		};	
+	default:
+}) {
+											var ` = s2.def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var p2 = `;
+														var rhsY = `;
+														{
+															if (! done) {
+																var tw2 = if (rhsY == null || rhsY.def == null) {
+																	null;
+																} else {
+																	@:ast(switch (e.def) {
+	case EBlock(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EBlock" };	
+	case EDo(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EDo" };	
+	case EParen(inner):
+		rhsIsTwoStmtBlock(inner);	
+	default:
+		null;	
+}) {
+																		var ` = rhsY.def;
+																		switch (enumIndex `) {
+																			case 53: {
+																				var ` = `[0];
+																				{
+																					var stmts = `;
+																					if (stmts.length == 2) {
+																						{first : stmts[0], second : stmts[1], ctor : "EBlock"};
+																					} else {
+																						null;
+																					};
+																				};
+																			};
+																			case 54: {
+																				var ` = `[0];
+																				{
+																					var inner = `;
+																					{
+																						reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.rhsIsTwoStmtBlock(inner);
+																					};
+																				};
+																			};
+																			case 55: {
+																				var ` = `[0];
+																				{
+																					var stmts = `;
+																					if (stmts.length == 2) {
+																						{first : stmts[0], second : stmts[1], ctor : "EDo"};
+																					} else {
+																						null;
+																					};
+																				};
+																			};
+																			default: {
+																				null;
+																			}
+																		};
+																	};
+																};
+																if (tw2 != null) {
+																	var bY = @:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(n) }, r):
+		{ name : n, rhs : r };	
+	case EMatch(PVar(n), r):
+		{ name : n, rhs : r };	
+	default:
+		null;	
+}) {
+																		var ` = tw2.first.def;
+																		switch (enumIndex `) {
+																			case 8: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				if (enumIndex ` == 0) {
+																					var ` = `[0];
+																					{
+																						var n = `;
+																						var r = `;
+																						{
+																							{name : n, rhs : r};
+																						};
+																					};
+																				} else {
+																					null;
+																				};
+																			};
+																			case 26: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				if (enumIndex ` == 27) {
+																					{
+																						var ` = `.def;
+																						var ` = `.metadata;
+																						var ` = `.pos;
+																						if (enumIndex ` == 38) {
+																							var ` = `[0];
+																							{
+																								var n = `;
+																								var r = `;
+																								{
+																									{name : n, rhs : r};
+																								};
+																							};
+																						} else {
+																							null;
+																						};
+																					};
+																				} else {
+																					null;
+																				};
+																			};
+																			default: {
+																				null;
+																			}
+																		};
+																	};
+																	@:ast(switch (tw2.second.def) {
+	case EIf(condY, thenY, elseY) if (bY != null && elseReturnsVar(elseY, bY.name)):
+		out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bY.name), tw2.first.metadata, tw2.first.pos), bY.rhs), tw2.first.metadata, tw2.first.pos));
+		out2.push(makeASTWithMeta(EMatch(p2, makeASTWithMeta(EIf(condY, thenY, elseY), tw2.second.metadata, tw2.second.pos)), s2.metadata, s2.pos));
+		done = true;	
+	default:
+}) {
+																		var ` = tw2.second.def;
+																		if (enumIndex ` == 10) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			{
+																				var condY = `;
+																				var thenY = `;
+																				var elseY = `;
+																				if (bY != null && @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = elseY.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var v = `;
+																							if (v == bY.name) {
+																								true;
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				}) {
+																					out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(bY.name), metadata : tw2.first.metadata, pos : tw2.first.pos}, bY.rhs), metadata : tw2.first.metadata, pos : tw2.first.pos});
+																					out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EMatch(p2, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(condY, thenY, elseY), metadata : tw2.second.metadata, pos : tw2.second.pos}), metadata : s2.metadata, pos : s2.pos});
+																					done = true;
+																				} else {};
+																			};
+																		} else {};
+																	};
+																};
+															};
+														};
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var left2 = `;
+															var rhsX = `;
+															{
+																var tw = if (rhsX == null || rhsX.def == null) {
+																	null;
+																} else {
+																	@:ast(switch (e.def) {
+	case EBlock(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EBlock" };	
+	case EDo(stmts) if (stmts.length == 2):
+		{ first : stmts[0], second : stmts[1], ctor : "EDo" };	
+	case EParen(inner):
+		rhsIsTwoStmtBlock(inner);	
+	default:
+		null;	
+}) {
+																		var ` = rhsX.def;
+																		switch (enumIndex `) {
+																			case 53: {
+																				var ` = `[0];
+																				{
+																					var stmts = `;
+																					if (stmts.length == 2) {
+																						{first : stmts[0], second : stmts[1], ctor : "EBlock"};
+																					} else {
+																						null;
+																					};
+																				};
+																			};
+																			case 54: {
+																				var ` = `[0];
+																				{
+																					var inner = `;
+																					{
+																						reflaxe.elixir.ast.transformers.AssignIfFoldInRhsTransforms.rhsIsTwoStmtBlock(inner);
+																					};
+																				};
+																			};
+																			case 55: {
+																				var ` = `[0];
+																				{
+																					var stmts = `;
+																					if (stmts.length == 2) {
+																						{first : stmts[0], second : stmts[1], ctor : "EDo"};
+																					} else {
+																						null;
+																					};
+																				};
+																			};
+																			default: {
+																				null;
+																			}
+																		};
+																	};
+																};
+																if (tw != null) {
+																	var bX = @:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(n) }, r):
+		{ name : n, rhs : r };	
+	case EMatch(PVar(n), r):
+		{ name : n, rhs : r };	
+	default:
+		null;	
+}) {
+																		var ` = tw.first.def;
+																		switch (enumIndex `) {
+																			case 8: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				if (enumIndex ` == 0) {
+																					var ` = `[0];
+																					{
+																						var n = `;
+																						var r = `;
+																						{
+																							{name : n, rhs : r};
+																						};
+																					};
+																				} else {
+																					null;
+																				};
+																			};
+																			case 26: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				if (enumIndex ` == 27) {
+																					{
+																						var ` = `.def;
+																						var ` = `.metadata;
+																						var ` = `.pos;
+																						if (enumIndex ` == 38) {
+																							var ` = `[0];
+																							{
+																								var n = `;
+																								var r = `;
+																								{
+																									{name : n, rhs : r};
+																								};
+																							};
+																						} else {
+																							null;
+																						};
+																					};
+																				} else {
+																					null;
+																				};
+																			};
+																			default: {
+																				null;
+																			}
+																		};
+																	};
+																	@:ast(switch (tw.second.def) {
+	case EIf(condX, thenX, elseX) if (bX != null && elseReturnsVar(elseX, bX.name)):
+		out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bX.name), tw.first.metadata, tw.first.pos), bX.rhs), tw.first.metadata, tw.first.pos));
+		out2.push(makeASTWithMeta(EBinary(Match, left2, makeASTWithMeta(EIf(condX, thenX, elseX), tw.second.metadata, tw.second.pos)), s2.metadata, s2.pos));
+		done = true;	
+	default:
+}) {
+																		var ` = tw.second.def;
+																		if (enumIndex ` == 10) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			{
+																				var condX = `;
+																				var thenX = `;
+																				var elseX = `;
+																				if (bX != null && @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = elseX.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var v = `;
+																							if (v == bX.name) {
+																								true;
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				}) {
+																					out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(bX.name), metadata : tw.first.metadata, pos : tw.first.pos}, bX.rhs), metadata : tw.first.metadata, pos : tw.first.pos});
+																					out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left2, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(condX, thenX, elseX), metadata : tw.second.metadata, pos : tw.second.pos}), metadata : s2.metadata, pos : s2.pos});
+																					done = true;
+																				} else {};
+																			};
+																		} else {};
+																	};
+																};
+															};
+														};
+													} else {};
+												};
+												default: {}
+											};
+										};
+										if (! done) {
+											out2.push(s2);
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

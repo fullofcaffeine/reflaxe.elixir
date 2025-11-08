@@ -1,0 +1,6 @@
+enum reflaxe.elixir.ast.loop_ir.EarlyExitKind {
+	Break;
+	Return(value:reflaxe.elixir.ast.ElixirAST);
+	Continue;
+	ConditionalBreak(cond:reflaxe.elixir.ast.ElixirAST);
+}

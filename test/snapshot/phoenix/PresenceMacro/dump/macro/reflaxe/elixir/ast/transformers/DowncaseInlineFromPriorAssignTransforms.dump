@@ -1,0 +1,241 @@
+class reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.rewrite(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.rewrite(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		var assigns = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var s = stmts[i];
+				var replaced = null;
+				@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v):
+				assigns.set(v, { idx : out.length, rhs : rhs });			
+			default:
+		};	
+	case ERemoteCall({ def : EVar("String") }, "downcase", args) if (args != null && args.length == 1):
+		switch (args[0].def) {
+			case EVar(vname) if (assigns.exists(vname) && !usedBetween(out, stmts, assigns.get(vname).idx + 1, i, vname) && !usedLater(stmts, i + 1, vname)):
+				var rec = assigns.get(vname);
+				out = out.slice(0, rec.idx).concat(out.slice(rec.idx + 1));
+				replaced = makeASTWithMeta(ERemoteCall(makeASTWithMeta(EVar("String"), s.metadata, s.pos), "downcase", [rec.rhs]), s.metadata, s.pos);			
+			default:
+		};	
+	default:
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 24: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									if (` == "String") {
+										if (` == "downcase") {
+											{
+												var args = `;
+												if (args != null && args.length == 1) {
+													@:ast(switch (args[0].def) {
+	case EVar(vname) if (assigns.exists(vname) && !usedBetween(out, stmts, assigns.get(vname).idx + 1, i, vname) && !usedLater(stmts, i + 1, vname)):
+		var rec = assigns.get(vname);
+		out = out.slice(0, rec.idx).concat(out.slice(rec.idx + 1));
+		replaced = makeASTWithMeta(ERemoteCall(makeASTWithMeta(EVar("String"), s.metadata, s.pos), "downcase", [rec.rhs]), s.metadata, s.pos);	
+	default:
+}) {
+														var ` = args[0].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var vname = `;
+																if (assigns.exists(vname) && ! reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.usedBetween(out, stmts, cast assigns.get(vname).idx + 1, i, vname) && ! reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.usedLater(stmts, i + 1, vname)) {
+																	var rec = cast assigns.get(vname);
+																	out = out.slice(0, rec.idx).concat(out.slice(rec.idx + 1, null));
+																	replaced = {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : s.metadata, pos : s.pos}, "downcase", [rec.rhs]), metadata : s.metadata, pos : s.pos};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									} else {};
+								} else {};
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									var rhs = `;
+									{
+										@:ast(switch (left.def) {
+	case EVar(v):
+		assigns.set(v, { idx : out.length, rhs : rhs });	
+	default:
+}) {
+											var ` = left.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var v = `;
+													{
+														{
+															var value = {idx : out.length, rhs : rhs};
+															assigns.set(v, value);
+														};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				out.push(if (replaced != null) {
+					replaced;
+				} else {
+					s;
+				});
+			};
+		};
+		return out;
+	}
+
+	static function usedBetween(out:Array<reflaxe.elixir.ast.ElixirAST>, stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, endIdx:Int, name:String) {
+		var found = [false];
+		{
+			var ` = start;
+			var ` = endIdx;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					var node = if (j < out.length) {
+						out[j];
+					} else {
+						stmts[j];
+					};
+					reflaxe.elixir.ast.ASTUtils.walk(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+						@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == name) {
+										found[0] = true;
+									} else {};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		var found = [false];
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:reflaxe.elixir.ast.ElixirAST) {
+						@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == name) {
+										found[0] = true;
+									} else {};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+}

@@ -1,0 +1,203 @@
+class reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms {
+
+	@:value(["fn", "do", "end", "case", "cond", "try", "rescue", "catch", "after", "receive", "quote", "unquote", "when", "and", "or", "not"])
+	static var reserved(default,never):Array<String> = ["fn", "do", "end", "case", "cond", "try", "rescue", "catch", "after", "receive", "quote", "unquote", "when", "and", "or", "not"];
+
+	static inline function safe(name:String) {
+		return if (reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.reserved.indexOf(name, null) >= 0) {
+			(name + "_");
+		} else {
+			name;
+		};
+	}
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EVar(v):
+		makeAST(EVar(safe(v)));	
+	case EMatch(pattern, expr):
+		var newPat = sanitizePattern(pattern);
+		if (newPat != pattern) makeAST(EMatch(newPat, expr)) else n;	
+	case EBinary(EBinaryOp.Match, left, right):
+		var newLeft = switch (left.def) {
+			case EVar(v):
+				makeAST(EVar(safe(v)));			
+			default:
+				left;			
+		};
+		if (newLeft != left) makeAST(EBinary(EBinaryOp.Match, newLeft, right)) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pattern = `;
+							var expr = `;
+							{
+								var newPat = reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.sanitizePattern(pattern);
+								if (newPat != pattern) {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(newPat, expr), metadata : {}, pos : pos};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var right = `;
+								{
+									var newLeft = @:ast(switch (left.def) {
+	case EVar(v):
+		makeAST(EVar(safe(v)));	
+	default:
+		left;	
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EVar(if ((reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.reserved.indexOf(v, null) >= 0)) v + "_" else v);
+														var pos = null;
+														{def : def, metadata : {}, pos : pos};
+													};
+												};
+											};
+										} else {
+											left;
+										};
+									};
+									if (newLeft != left) {
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, newLeft, right), metadata : {}, pos : pos};
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EVar(if ((reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.reserved.indexOf(v, null) >= 0)) v + "_" else v);
+									var pos = null;
+									{def : def, metadata : {}, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function sanitizePattern(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PVar(n):
+		PVar(safe(n));	
+	case PCons(h, t):
+		PCons(sanitizePattern(h), sanitizePattern(t));	
+	case PTuple(elems):
+		PTuple([for (e  in  elems) sanitizePattern(e)]);	
+	case PList(elems):
+		PList([for (e  in  elems) sanitizePattern(e)]);	
+	default:
+		p;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						reflaxe.elixir.ast.EPattern.PVar(if (reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.reserved.indexOf(n, null) >= 0) {
+							(n + "_");
+						} else {
+							n;
+						});
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var elems = `;
+					{
+						reflaxe.elixir.ast.EPattern.PTuple({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < elems.length) {
+									var e = elems[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.sanitizePattern(e));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var elems = `;
+					{
+						reflaxe.elixir.ast.EPattern.PList({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < elems.length) {
+									var e = elems[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.sanitizePattern(e));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.EPattern.PCons(reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.sanitizePattern(h), reflaxe.elixir.ast.transformers.ReservedWordVarSanitizeTransforms.sanitizePattern(t));
+					};
+				};
+			};
+			default: {
+				p;
+			}
+		};
+	}
+}

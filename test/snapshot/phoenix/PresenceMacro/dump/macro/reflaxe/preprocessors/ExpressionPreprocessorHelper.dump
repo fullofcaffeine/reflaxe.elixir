@@ -1,0 +1,218 @@
+class reflaxe.preprocessors.ExpressionPreprocessorHelper {
+
+	public static function process(self:reflaxe.preprocessors.ExpressionPreprocessor, data:reflaxe.data.ClassFuncData, compiler:reflaxe.BaseCompiler) {
+		if (data.expr == null) {
+			return;
+		};
+		@:ast(switch (self) {
+	case SanitizeEverythingIsExpression(options):
+		{
+			var eiec = new EverythingIsExprSanitizer(data.expr, options);
+			data.setExpr(eiec.convertedExpr());
+			if (eiec.variableUsageCount != null) {
+				data.setVariableUsageCount(eiec.variableUsageCount);
+			};
+		};	
+	case RemoveTemporaryVariables(mode):
+		{
+			var tvr = new RemoveTemporaryVariablesImpl(mode, data.expr, data.getOrFindVariableUsageCount());
+			data.setExpr(tvr.fixTemporaries());
+		};	
+	case PreventRepeatVariables({ preventRepeatArguments : preventRepeatArguments, extraReservedNames : extraReservedNames }):
+		{
+			var reservedNames = data.getAllVariableNames(compiler).concatIfNotNull(extraReservedNames);
+			var rvf = new PreventRepeatVariablesImpl(data.expr, null, data.args.map(function(a) ->  @:implicitReturn return a.originalName).concat(reservedNames));
+			if (preventRepeatArguments) {
+				for (arg  in  data.args) {
+					if (arg.ensureNameDoesntMatch(reservedNames) && arg.tvar != null) {
+						rvf.registerVarReplacement(arg.getName(), arg.tvar);
+					};
+				};
+			};
+			data.setExpr(rvf.fixRepeatVariables());
+		};	
+	case WrapLambdaCaptureVariablesInArray(options):
+		{
+			var cfv = new WrapLambdaCaptureVariablesInArrayImpl(data.expr, options.wrapMetadata);
+			data.setExpr(cfv.fixCaptures());
+		};	
+	case RemoveSingleExpressionBlocks:
+		{
+			data.setExpr(RemoveSingleExpressionBlocksImpl.process(data.expr));
+		};	
+	case RemoveConstantBoolIfs:
+		{
+			data.setExprList(RemoveConstantBoolIfsImpl.process(data.expr.unwrapBlock()));
+		};	
+	case RemoveUnnecessaryBlocks:
+		{
+			data.setExprList(RemoveUnnecessaryBlocksImpl.process(data.expr.unwrapBlock()));
+		};	
+	case RemoveReassignedVariableDeclarations:
+		{
+			data.setExprList(RemoveReassignedVariableDeclarationsImpl.process(data.expr.unwrapBlock()));
+		};	
+	case RemoveLocalVariableAliases:
+		{
+			data.setExprList(RemoveLocalVariableAliasesImpl.process(data.expr.unwrapBlock()));
+		};	
+	case MarkUnusedVariables:
+		{
+			data.setExprList(MarkUnusedVariablesImpl.mark(data.expr.unwrapBlock()));
+		};	
+	case Custom(preprocessor):
+		{
+			preprocessor.process(data, compiler);
+		};	
+}) switch (@:exhaustive enumIndex self) {
+			case 0: {
+				var ` = self[0];
+				{
+					var options = `;
+					{
+						{
+							var eiec = new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer(data.expr, options, null, null, null);
+							data.setExpr(eiec.convertedExpr());
+							if (eiec.variableUsageCount != null) {
+								data.setVariableUsageCount(eiec.variableUsageCount);
+							};
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = self[0];
+				{
+					var mode = `;
+					{
+						{
+							var tvr = new reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl(mode, data.expr, data.getOrFindVariableUsageCount());
+							data.setExpr(tvr.fixTemporaries());
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = self[0];
+				{
+					var ` = `.preventRepeatArguments;
+					var ` = `.extraReservedNames;
+					{
+						var preventRepeatArguments = `;
+						var extraReservedNames = `;
+						{
+							{
+								var reservedNames = reflaxe.helpers.ArrayHelper.concatIfNotNull(reflaxe.helpers.ClassFieldHelper.getAllVariableNames(data, compiler), extraReservedNames);
+								var rvf = new reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl(data.expr, null, {
+									var _this = data.args;
+									{
+										var ` = [];
+										{
+											var ` = 0;
+											var ` = _this;
+											while (` < `.length) {
+												var v = `[`];
+												++ `;
+												`.push(function(a:reflaxe.data.ClassFuncArg) {
+													return a.originalName;
+												}(v));
+											};
+										};
+										`;
+									};
+								}.concat(reservedNames));
+								if (preventRepeatArguments) {
+									{
+										var ` = 0;
+										var ` = data.args;
+										while (` < `.length) {
+											var arg = `[`];
+											++ `;
+											if (arg.ensureNameDoesntMatch(reservedNames) && arg.tvar != null) {
+												rvf.registerVarReplacement(arg.getName(), arg.tvar);
+											};
+										};
+									};
+								};
+								data.setExpr(rvf.fixRepeatVariables());
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = self[0];
+				{
+					var options = `;
+					{
+						{
+							var cfv = new reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl(data.expr, options.wrapMetadata);
+							data.setExpr(cfv.fixCaptures());
+						};
+					};
+				};
+			};
+			case 4: {
+				{
+					{
+						data.setExpr(reflaxe.preprocessors.implementations.RemoveSingleExpressionBlocksImpl.process(data.expr));
+					};
+				};
+			};
+			case 5: {
+				{
+					{
+						data.setExprList(reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
+					};
+				};
+			};
+			case 6: {
+				{
+					{
+						data.setExprList(reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
+					};
+				};
+			};
+			case 7: {
+				{
+					{
+						data.setExprList(reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
+					};
+				};
+			};
+			case 8: {
+				{
+					{
+						data.setExprList(reflaxe.preprocessors.implementations.RemoveLocalVariableAliasesImpl.process(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
+					};
+				};
+			};
+			case 9: {
+				{
+					{
+						data.setExprList(reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl.mark(reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr)));
+					};
+				};
+			};
+			case 10: {
+				var ` = self[0];
+				{
+					var preprocessor = `;
+					{
+						{
+							preprocessor.process(data, compiler);
+						};
+					};
+				};
+			};
+		};
+	}
+
+	public static function defaults() {
+		return [reflaxe.preprocessors.ExpressionPreprocessor.SanitizeEverythingIsExpression({
+			new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions(null, null, null, null, null);
+		}), reflaxe.preprocessors.ExpressionPreprocessor.PreventRepeatVariables({
+			new reflaxe.preprocessors.PreventRepeatVariablesOptions(null, null);
+		}), reflaxe.preprocessors.ExpressionPreprocessor.RemoveSingleExpressionBlocks, reflaxe.preprocessors.ExpressionPreprocessor.RemoveConstantBoolIfs, reflaxe.preprocessors.ExpressionPreprocessor.RemoveUnnecessaryBlocks, reflaxe.preprocessors.ExpressionPreprocessor.RemoveReassignedVariableDeclarations, reflaxe.preprocessors.ExpressionPreprocessor.RemoveLocalVariableAliases, reflaxe.preprocessors.ExpressionPreprocessor.MarkUnusedVariables];
+	}
+}

@@ -1,0 +1,1 @@
+typedef TestMeta = { userName : String, status : String, onlineAt : Float }

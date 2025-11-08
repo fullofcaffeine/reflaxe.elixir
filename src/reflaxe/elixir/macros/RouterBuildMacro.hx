@@ -53,11 +53,15 @@ class RouterBuildMacro {
         var routeDefinitions = extractRoutesAnnotation(classType);
         if (routeDefinitions == null || routeDefinitions.length == 0) {
             // No @:routes annotation found - return existing fields unchanged
+            #if debug_router_macro
             trace('RouterBuildMacro: No @:routes annotation found in ${classType.name}');
+            #end
             return fields;
         }
         
+        #if debug_router_macro
         trace('RouterBuildMacro: Found ${routeDefinitions.length} route definitions in ${classType.name}');
+        #end
         
         // Validate route definitions
         validateRouteDefinitions(routeDefinitions, classType.pos);
@@ -70,10 +74,14 @@ class RouterBuildMacro {
 
             var generatedFunction = createRouteFunction(routeDef, classType.pos);
             fields.push(generatedFunction);
+            #if debug_router_macro
             trace('RouterBuildMacro: Generated function ${routeDef.name} for route ${routeDef.method} ${routeDef.path}');
+            #end
         }
-        
+
+        #if debug_router_macro
         trace('RouterBuildMacro: Successfully generated ${routeDefinitions.length} route functions');
+        #end
 
         #if debug_compilation_hang
         var elapsed = (haxe.Timer.stamp() * 1000) - routerStartTime;
@@ -357,7 +365,9 @@ class RouterBuildMacro {
         try {
             // Try to resolve the controller as a type
             var controllerType = Context.getType(controllerName);
+            #if debug_router_macro
             trace('RouterBuildMacro: Controller ${controllerName} exists and is valid');
+            #end
         } catch (e: Dynamic) {
             // Controller doesn't exist or can't be resolved
             Context.warning('Controller "${controllerName}" not found in route "${routeName}" (path: "${routePath}"). Ensure the class exists and is in the classpath.', pos);
@@ -396,7 +406,9 @@ class RouterBuildMacro {
                     }
                     
                     if (methodExists) {
+                        #if debug_router_macro
                         trace('RouterBuildMacro: Action ${controllerName}.${actionName} exists and is valid');
+                        #end
                     } else {
                         Context.warning('Action "${actionName}" not found on controller "${controllerName}" in route "${routeName}". Check that the method exists and is public static.', pos);
                     }

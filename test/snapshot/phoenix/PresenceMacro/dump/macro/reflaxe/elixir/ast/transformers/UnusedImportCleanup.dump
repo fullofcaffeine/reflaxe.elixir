@@ -1,0 +1,495 @@
+class reflaxe.elixir.ast.transformers.UnusedImportCleanup {
+
+	public static function cleanupPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var usesChangeset = usesEctoChangesetUnqualified(body);
+		var usesQualifiedChangeset = moduleQualifiedUsed(body, "Ecto.Changeset");
+		var usesRepoAlias = aliasUsed(body, "Repo");
+		var newAttrs = attrs;
+		var newBody:Array<ElixirAST> = [];
+		for (b  in  body) {
+			switch (b.def) {
+				case EImport(module, _, _) if (module == "Ecto.Changeset" && (!usesChangeset || usesQualifiedChangeset)):
+				case EAlias(module, as) if ((as == null || as == "Repo") && !usesRepoAlias):
+				default:
+					newBody.push(b);				
+			};
+		};
+		makeASTWithMeta(EModule(name, newAttrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var stmts:Array<ElixirAST> = switch (doBlock.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[doBlock];			
+		};
+		var usesChangeset2 = usesEctoChangesetUnqualified(stmts);
+		var usesQualifiedChangeset2 = moduleQualifiedUsed(stmts, "Ecto.Changeset");
+		var usesRepoAlias2 = aliasUsed(stmts, "Repo");
+		var filtered:Array<ElixirAST> = [];
+		for (b  in  stmts) {
+			switch (b.def) {
+				case EImport(module, _, _) if (module == "Ecto.Changeset" && (!usesChangeset2 || usesQualifiedChangeset2)):
+				case EAlias(module, as) if ((as == null || as == "Repo") && !usesRepoAlias2):
+				default:
+					filtered.push(b);				
+			};
+		};
+		var newDo = makeAST(EBlock(filtered));
+		makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var usesChangeset = reflaxe.elixir.ast.transformers.UnusedImportCleanup.usesEctoChangesetUnqualified(body);
+								var usesQualifiedChangeset = reflaxe.elixir.ast.transformers.UnusedImportCleanup.moduleQualifiedUsed(body, "Ecto.Changeset");
+								var usesRepoAlias = reflaxe.elixir.ast.transformers.UnusedImportCleanup.aliasUsed(body, "Repo");
+								var newAttrs = attrs;
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										@:ast(switch (b.def) {
+	case EImport(module, _, _) if (module == "Ecto.Changeset" && (!usesChangeset || usesQualifiedChangeset)):
+	case EAlias(module, as) if ((as == null || as == "Repo") && !usesRepoAlias):
+	default:
+		newBody.push(b);	
+}) {
+											var ` = b.def;
+											switch (enumIndex `) {
+												case 44: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var module = `;
+														var as = `;
+														if ((as == null || as == "Repo") && ! usesRepoAlias) {} else {
+															newBody.push(b);
+														};
+													};
+												};
+												case 45: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var module = `;
+														if (module == "Ecto.Changeset" && (! usesChangeset || usesQualifiedChangeset)) {} else {
+															newBody.push(b);
+														};
+													};
+												};
+												default: {
+													newBody.push(b);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, newAttrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									if (enumIndex ` == 53) {
+										var ` = `[0];
+										{
+											var ss = `;
+											{
+												ss;
+											};
+										};
+									} else {
+										[doBlock];
+									};
+								};
+								var usesChangeset2 = reflaxe.elixir.ast.transformers.UnusedImportCleanup.usesEctoChangesetUnqualified(stmts);
+								var usesQualifiedChangeset2 = reflaxe.elixir.ast.transformers.UnusedImportCleanup.moduleQualifiedUsed(stmts, "Ecto.Changeset");
+								var usesRepoAlias2 = reflaxe.elixir.ast.transformers.UnusedImportCleanup.aliasUsed(stmts, "Repo");
+								var filtered = [];
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var b = stmts[`];
+										++ `;
+										@:ast(switch (b.def) {
+	case EImport(module, _, _) if (module == "Ecto.Changeset" && (!usesChangeset2 || usesQualifiedChangeset2)):
+	case EAlias(module, as) if ((as == null || as == "Repo") && !usesRepoAlias2):
+	default:
+		filtered.push(b);	
+}) {
+											var ` = b.def;
+											switch (enumIndex `) {
+												case 44: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var module = `;
+														var as = `;
+														if ((as == null || as == "Repo") && ! usesRepoAlias2) {} else {
+															filtered.push(b);
+														};
+													};
+												};
+												case 45: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var module = `;
+														if (module == "Ecto.Changeset" && (! usesChangeset2 || usesQualifiedChangeset2)) {} else {
+															filtered.push(b);
+														};
+													};
+												};
+												default: {
+													filtered.push(b);
+												}
+											};
+										};
+									};
+								};
+								var newDo = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(filtered), metadata : {}, pos : pos};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function moduleUsed(body:Array<reflaxe.elixir.ast.ElixirAST>, moduleName:String) {
+		var used = [false];
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				if (! used[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+						if (used[0] || x == null || x.def == null) {
+							return;
+						};
+						@:ast(switch (x.def) {
+	case ERemoteCall(mod, _, _):
+		switch (mod.def) {
+			case EVar(n) if (n == moduleName):
+				used = true;			
+			default:
+		};	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 24) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var mod = `;
+									{
+										@:ast(switch (mod.def) {
+	case EVar(n) if (n == moduleName):
+		used = true;	
+	default:
+}) {
+											var ` = mod.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var n = `;
+													if (n == moduleName) {
+														used[0] = true;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return used[0];
+	}
+
+	static function usesEctoChangesetUnqualified(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var used = [false];
+		var fnSet = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			{
+				var name = "change";
+				{
+					fnSet.set(name, true);
+				};
+			};
+			{
+				var name = "cast";
+				{
+					fnSet.set(name, true);
+				};
+			};
+			{
+				var name = "validate_length";
+				{
+					fnSet.set(name, true);
+				};
+			};
+			{
+				var name = "validate_required";
+				{
+					fnSet.set(name, true);
+				};
+			};
+			{
+				var name = "apply_action";
+				{
+					fnSet.set(name, true);
+				};
+			};
+			{
+				var name = "put_change";
+				{
+					fnSet.set(name, true);
+				};
+			};
+			{
+				var name = "put_assoc";
+				{
+					fnSet.set(name, true);
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				if (! used[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+						if (used[0] || x == null || x.def == null) {
+							return;
+						};
+						@:ast(switch (x.def) {
+	case ECall(null, fn, _):
+		if (fnSet.exists(fn)) used = true;	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 22) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (` == null) {
+									var fn = `;
+									{
+										if (fnSet.exists(fn)) {
+											used[0] = true;
+										};
+									};
+								} else {};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return used[0];
+	}
+
+	static function moduleQualifiedUsed(body:Array<reflaxe.elixir.ast.ElixirAST>, moduleName:String) {
+		var used = [false];
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				if (! used[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+						if (used[0] || x == null || x.def == null) {
+							return;
+						};
+						@:ast(switch (x.def) {
+	case ERemoteCall(mod, _, _):
+		switch (mod.def) {
+			case EVar(n) if (n == moduleName):
+				used = true;			
+			default:
+		};	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 24) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var mod = `;
+									{
+										@:ast(switch (mod.def) {
+	case EVar(n) if (n == moduleName):
+		used = true;	
+	default:
+}) {
+											var ` = mod.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var n = `;
+													if (n == moduleName) {
+														used[0] = true;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return used[0];
+	}
+
+	static function aliasUsed(body:Array<reflaxe.elixir.ast.ElixirAST>, aliasName:String) {
+		var used = [false];
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				if (! used[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+						if (used[0] || x == null || x.def == null) {
+							return;
+						};
+						@:ast(switch (x.def) {
+	case ERemoteCall(mod, _, _) | ECall(mod, _, _):
+		if (mod != null) {
+			switch (mod.def) {
+				case EVar(n) if (n == aliasName):
+					used = true;				
+				default:
+			};
+		};	
+	case EVar(v) if (v == aliasName):
+		used = true;	
+	default:
+}) {
+							var ` = x.def;
+							switch (enumIndex `) {
+								case 22: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var mod = `;
+										{
+											if (mod != null) {
+												@:ast(switch (mod.def) {
+	case EVar(n) if (n == aliasName):
+		used = true;	
+	default:
+}) {
+													var ` = mod.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var n = `;
+															if (n == aliasName) {
+																used[0] = true;
+															} else {};
+														};
+													} else {};
+												};
+											};
+										};
+									};
+								};
+								case 24: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var mod = `;
+										{
+											if (mod != null) {
+												@:ast(switch (mod.def) {
+	case EVar(n) if (n == aliasName):
+		used = true;	
+	default:
+}) {
+													var ` = mod.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var n = `;
+															if (n == aliasName) {
+																used[0] = true;
+															} else {};
+														};
+													} else {};
+												};
+											};
+										};
+									};
+								};
+								case 38: {
+									var ` = `[0];
+									{
+										var v = `;
+										if (v == aliasName) {
+											used[0] = true;
+										} else {};
+									};
+								};
+								default: {}
+							};
+						};
+					});
+				};
+			};
+		};
+		return used[0];
+	}
+}

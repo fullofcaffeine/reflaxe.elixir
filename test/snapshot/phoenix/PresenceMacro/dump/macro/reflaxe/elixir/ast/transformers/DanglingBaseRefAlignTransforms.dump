@@ -1,0 +1,172 @@
+class reflaxe.elixir.ast.transformers.DanglingBaseRefAlignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var nb = alignInBody(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var nb2 = alignInBody(body2);
+		makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var nb = reflaxe.elixir.ast.transformers.DanglingBaseRefAlignTransforms.alignInBody(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var nb2 = reflaxe.elixir.ast.transformers.DanglingBaseRefAlignTransforms.alignInBody(body2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function alignInBody(body:reflaxe.elixir.ast.ElixirAST) {
+		var allUnders = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var allDefined = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(n):
+				allDefined.set(n, true);
+				if (n.length > 1 && n.charAt(0) == "_") allUnders.set(n, true);			
+			default:
+		};	
+	case EMatch(PVar(n2), _):
+		allDefined.set(n2, true);
+		if (n2.length > 1 && n2.charAt(0) == "_") allUnders.set(n2, true);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var n2 = `;
+								{
+									{
+										allDefined.set(n2, true);
+									};
+									if (n2.length > 1 && n2.charAt(0) == "_") {
+										{
+											allUnders.set(n2, true);
+										};
+									};
+								};
+							};
+						} else {};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								{
+									@:ast(switch (left.def) {
+	case EVar(n):
+		allDefined.set(n, true);
+		if (n.length > 1 && n.charAt(0) == "_") allUnders.set(n, true);	
+	default:
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var n = `;
+												{
+													{
+														allDefined.set(n, true);
+													};
+													if (n.length > 1 && n.charAt(0) == "_") {
+														{
+															allUnders.set(n, true);
+														};
+													};
+												};
+											};
+										} else {};
+									};
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v):
+		var base = v;
+		var underscoreName = "_" + base;
+		if (!allDefined.exists(base) && allUnders.exists(underscoreName)) makeASTWithMeta(EVar(underscoreName), x.metadata, x.pos) else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							var base = v;
+							var underscoreName = "_" + base;
+							if (! allDefined.exists(base) && allUnders.exists(underscoreName)) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(underscoreName), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

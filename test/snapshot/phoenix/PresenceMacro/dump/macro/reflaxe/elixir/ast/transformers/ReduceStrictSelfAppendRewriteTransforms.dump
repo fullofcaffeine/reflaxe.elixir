@@ -1,0 +1,1017 @@
+class reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms {
+
+	static function selfAppendListArg(rhs:reflaxe.elixir.ast.ElixirAST, lhs:String) {
+		return @:ast(switch (rhs.def) {
+	case ERemoteCall(_, "concat", args) if (args.length == 2):
+		switch (args[0].def) {
+			case EVar(nm) if (nm == lhs):
+				args[1];			
+			default:
+				null;			
+		};	
+	case ECall(_, "concat", argsC) if (argsC.length == 2):
+		switch (argsC[0].def) {
+			case EVar(nm2) if (nm2 == lhs):
+				argsC[1];			
+			default:
+				null;			
+		};	
+	case EBinary(Concat, l, r):
+		switch (l.def) {
+			case EVar(nm3) if (nm3 == lhs):
+				r;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = rhs.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == "concat") {
+						{
+							var argsC = `;
+							if (argsC.length == 2) {
+								@:ast(switch (argsC[0].def) {
+	case EVar(nm2) if (nm2 == lhs):
+		argsC[1];	
+	default:
+		null;	
+}) {
+									var ` = argsC[0].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm2 = `;
+											if (nm2 == lhs) {
+												argsC[1];
+											} else {
+												null;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == "concat") {
+						{
+							var args = `;
+							if (args.length == 2) {
+								@:ast(switch (args[0].def) {
+	case EVar(nm) if (nm == lhs):
+		args[1];	
+	default:
+		null;	
+}) {
+									var ` = args[0].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == lhs) {
+												args[1];
+											} else {
+												null;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 23) {
+						{
+							var l = `;
+							var r = `;
+							{
+								@:ast(switch (l.def) {
+	case EVar(nm3) if (nm3 == lhs):
+		r;	
+	default:
+		null;	
+}) {
+									var ` = l.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm3 = `;
+											if (nm3 == lhs) {
+												r;
+											} else {
+												null;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function findAnyConcatListArg(rhs:reflaxe.elixir.ast.ElixirAST) {
+		var found = [null];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(rhs, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] != null) {
+				return n;
+			};
+			@:ast(switch (n.def) {
+	case ERemoteCall(_, "concat", args) if (args.length == 2):
+		found = args[1];	
+	case ECall(_, "concat", argsC) if (argsC.length == 2):
+		found = argsC[1];	
+	case EBinary(Concat, _, r):
+		found = r;	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var argsC = `;
+								if (argsC.length == 2) {
+									found[0] = argsC[1];
+								} else {};
+							};
+						} else {};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var args = `;
+								if (args.length == 2) {
+									found[0] = args[1];
+								} else {};
+							};
+						} else {};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 23) {
+							{
+								var r = `;
+								{
+									found[0] = r;
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+			return n;
+		});
+		return found[0];
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(modRef, "reduce", args) if (args.length == 3):
+		var fnNode = args[2];
+		switch (fnNode.def) {
+			case EFn(clauses) if (clauses.length == 1):
+				var cl = clauses[0];
+				if (cl.args.length < 2) return n;
+				var binderName:Null<String> = switch (cl.args[0]) {
+					case PVar(b):
+						b;					
+					default:
+						null;					
+				};
+				var accName:Null<String> = switch (cl.args[1]) {
+					case PVar(a):
+						a;					
+					default:
+						null;					
+				};
+				if (accName == null) return n;
+				var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
+					case EBlock(ss):
+						ss;					
+					default:
+						[cl.body];					
+				};
+				var listArg:Null<ElixirAST> = null;
+				for (stmt  in  bodyStmts) switch (stmt.def) {
+					case EBinary(Match, left, rhs):
+						var lhs:Null<String> = switch (left.def) {
+							case EVar(nm):
+								nm;							
+							default:
+								null;							
+						};
+						if (lhs != null) {
+							var la = selfAppendListArg(rhs, lhs);
+							if (la != null) {
+								listArg = la;
+							};
+						};					
+					case EMatch(pat, rhs2):
+						var lhs2:Null<String> = switch (pat) {
+							case PVar(nm2):
+								nm2;							
+							default:
+								null;							
+						};
+						if (lhs2 != null) {
+							var la2 = selfAppendListArg(rhs2, lhs2);
+							if (la2 != null) {
+								listArg = la2;
+							};
+						};					
+					default:
+				};
+				if (listArg == null) {
+					for (stmt  in  bodyStmts) switch (stmt.def) {
+						case EBinary(Match, _, rhsX):
+							if (listArg == null) listArg = findAnyConcatListArg(rhsX);						
+						case EMatch(_, rhsY):
+							if (listArg == null) listArg = findAnyConcatListArg(rhsY);						
+						default:
+					};
+				};
+				if (listArg == null) {
+					for (stmt  in  bodyStmts) switch (stmt.def) {
+						case EBinary(Match, leftE, rhsE):
+							var lhsName:Null<String> = switch (leftE.def) {
+								case EVar(n):
+									n;								
+								default:
+									null;								
+							};
+							switch (rhsE.def) {
+								case ERaw(code) if (lhsName != null && code != null && code.indexOf("Enum.concat(") != -1):
+									var needle = "Enum.concat(" + lhsName + ", ";
+									var idx = code.indexOf(needle);
+									if (idx != -1) {
+										var rest = code.substr(idx + needle.length);
+										var rtrim = rest;
+										while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+											rtrim = rtrim.substr(0, rtrim.length - 1);
+										};
+										if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+											rtrim = rtrim.substr(0, rtrim.length - 1);
+										};
+										var newRhsCode = "Enum.concat(" + accName + ", " + rtrim + ")";
+										var newBody2 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode)))), makeAST(EVar(accName))]));
+										var newFn2 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody2 }]));
+										return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn2]), n.metadata, n.pos);
+									};								
+								default:
+							};
+							if (lhsName != null) {
+								var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.print(rhsE, 0);
+								var needle = "Enum.concat(" + lhsName + ", ";
+								var idx = rhsStr.indexOf(needle);
+								if (idx != -1) {
+									var rest = rhsStr.substr(idx + needle.length);
+									var rtrim = rest;
+									while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+										rtrim = rtrim.substr(0, rtrim.length - 1);
+									};
+									if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+										rtrim = rtrim.substr(0, rtrim.length - 1);
+									};
+									var newRhsCode2 = "Enum.concat(" + accName + ", " + rtrim + ")";
+									var newBody3 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode2)))), makeAST(EVar(accName))]));
+									var newFn3 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody3 }]));
+									return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn3]), n.metadata, n.pos);
+								};
+							};						
+						default:
+					};
+				};
+				if (listArg == null) {
+					for (stmt  in  bodyStmts) {
+						var sstr = reflaxe.elixir.ast.ElixirASTPrinter.print(stmt, 0);
+						var idxEq = sstr.indexOf("= Enum.concat(");
+						if (idxEq != -1) {
+							var idxComma = sstr.indexOf(", ", idxEq + 14);
+							var idxClose = sstr.lastIndexOf(")");
+							if (idxComma != -1 && idxClose != -1 && idxComma < idxClose) {
+								var listText = sstr.substr(idxComma + 2, idxClose - (idxComma + 2));
+								var newRhsCode4 = "Enum.concat(" + accName + ", " + listText + ")";
+								var newBody4 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode4)))), makeAST(EVar(accName))]));
+								var newFn4 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody4 }]));
+								return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn4]), n.metadata, n.pos);
+							};
+						};
+					};
+					return n;
+				};
+				var newBody = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), listArg])))), makeAST(EVar(accName))]));
+				var newFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody }]));
+				makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == "reduce") {
+						{
+							var modRef = `;
+							var args = `;
+							if (args.length == 3) {
+								var fnNode = args[2];
+								@:ast(switch (fnNode.def) {
+	case EFn(clauses) if (clauses.length == 1):
+		var cl = clauses[0];
+		if (cl.args.length < 2) return n;
+		var binderName:Null<String> = switch (cl.args[0]) {
+			case PVar(b):
+				b;			
+			default:
+				null;			
+		};
+		var accName:Null<String> = switch (cl.args[1]) {
+			case PVar(a):
+				a;			
+			default:
+				null;			
+		};
+		if (accName == null) return n;
+		var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[cl.body];			
+		};
+		var listArg:Null<ElixirAST> = null;
+		for (stmt  in  bodyStmts) switch (stmt.def) {
+			case EBinary(Match, left, rhs):
+				var lhs:Null<String> = switch (left.def) {
+					case EVar(nm):
+						nm;					
+					default:
+						null;					
+				};
+				if (lhs != null) {
+					var la = selfAppendListArg(rhs, lhs);
+					if (la != null) {
+						listArg = la;
+					};
+				};			
+			case EMatch(pat, rhs2):
+				var lhs2:Null<String> = switch (pat) {
+					case PVar(nm2):
+						nm2;					
+					default:
+						null;					
+				};
+				if (lhs2 != null) {
+					var la2 = selfAppendListArg(rhs2, lhs2);
+					if (la2 != null) {
+						listArg = la2;
+					};
+				};			
+			default:
+		};
+		if (listArg == null) {
+			for (stmt  in  bodyStmts) switch (stmt.def) {
+				case EBinary(Match, _, rhsX):
+					if (listArg == null) listArg = findAnyConcatListArg(rhsX);				
+				case EMatch(_, rhsY):
+					if (listArg == null) listArg = findAnyConcatListArg(rhsY);				
+				default:
+			};
+		};
+		if (listArg == null) {
+			for (stmt  in  bodyStmts) switch (stmt.def) {
+				case EBinary(Match, leftE, rhsE):
+					var lhsName:Null<String> = switch (leftE.def) {
+						case EVar(n):
+							n;						
+						default:
+							null;						
+					};
+					switch (rhsE.def) {
+						case ERaw(code) if (lhsName != null && code != null && code.indexOf("Enum.concat(") != -1):
+							var needle = "Enum.concat(" + lhsName + ", ";
+							var idx = code.indexOf(needle);
+							if (idx != -1) {
+								var rest = code.substr(idx + needle.length);
+								var rtrim = rest;
+								while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+									rtrim = rtrim.substr(0, rtrim.length - 1);
+								};
+								if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+									rtrim = rtrim.substr(0, rtrim.length - 1);
+								};
+								var newRhsCode = "Enum.concat(" + accName + ", " + rtrim + ")";
+								var newBody2 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode)))), makeAST(EVar(accName))]));
+								var newFn2 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody2 }]));
+								return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn2]), n.metadata, n.pos);
+							};						
+						default:
+					};
+					if (lhsName != null) {
+						var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.print(rhsE, 0);
+						var needle = "Enum.concat(" + lhsName + ", ";
+						var idx = rhsStr.indexOf(needle);
+						if (idx != -1) {
+							var rest = rhsStr.substr(idx + needle.length);
+							var rtrim = rest;
+							while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+								rtrim = rtrim.substr(0, rtrim.length - 1);
+							};
+							if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+								rtrim = rtrim.substr(0, rtrim.length - 1);
+							};
+							var newRhsCode2 = "Enum.concat(" + accName + ", " + rtrim + ")";
+							var newBody3 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode2)))), makeAST(EVar(accName))]));
+							var newFn3 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody3 }]));
+							return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn3]), n.metadata, n.pos);
+						};
+					};				
+				default:
+			};
+		};
+		if (listArg == null) {
+			for (stmt  in  bodyStmts) {
+				var sstr = reflaxe.elixir.ast.ElixirASTPrinter.print(stmt, 0);
+				var idxEq = sstr.indexOf("= Enum.concat(");
+				if (idxEq != -1) {
+					var idxComma = sstr.indexOf(", ", idxEq + 14);
+					var idxClose = sstr.lastIndexOf(")");
+					if (idxComma != -1 && idxClose != -1 && idxComma < idxClose) {
+						var listText = sstr.substr(idxComma + 2, idxClose - (idxComma + 2));
+						var newRhsCode4 = "Enum.concat(" + accName + ", " + listText + ")";
+						var newBody4 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode4)))), makeAST(EVar(accName))]));
+						var newFn4 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody4 }]));
+						return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn4]), n.metadata, n.pos);
+					};
+				};
+			};
+			return n;
+		};
+		var newBody = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), listArg])))), makeAST(EVar(accName))]));
+		var newFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody }]));
+		makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = fnNode.def;
+									if (enumIndex ` == 42) {
+										var ` = `[0];
+										{
+											var clauses = `;
+											if (clauses.length == 1) {
+												var cl = clauses[0];
+												if (cl.args.length < 2) {
+													return n;
+												};
+												var binderName = @:ast(switch (cl.args[0]) {
+	case PVar(b):
+		b;	
+	default:
+		null;	
+}) {
+													var ` = cl.args[0];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var b = `;
+															{
+																b;
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												var accName = @:ast(switch (cl.args[1]) {
+	case PVar(a):
+		a;	
+	default:
+		null;	
+}) {
+													var ` = cl.args[1];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var a = `;
+															{
+																a;
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												if (accName == null) {
+													return n;
+												};
+												var bodyStmts = @:ast(switch (cl.body.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[cl.body];	
+}) {
+													var ` = cl.body.def;
+													if (enumIndex ` == 53) {
+														var ` = `[0];
+														{
+															var ss = `;
+															{
+																ss;
+															};
+														};
+													} else {
+														[cl.body];
+													};
+												};
+												var listArg = null;
+												{
+													var ` = 0;
+													while (` < bodyStmts.length) {
+														var stmt = bodyStmts[`];
+														++ `;
+														@:ast(switch (stmt.def) {
+	case EBinary(Match, left, rhs):
+		var lhs:Null<String> = switch (left.def) {
+			case EVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (lhs != null) {
+			var la = selfAppendListArg(rhs, lhs);
+			if (la != null) {
+				listArg = la;
+			};
+		};	
+	case EMatch(pat, rhs2):
+		var lhs2:Null<String> = switch (pat) {
+			case PVar(nm2):
+				nm2;			
+			default:
+				null;			
+		};
+		if (lhs2 != null) {
+			var la2 = selfAppendListArg(rhs2, lhs2);
+			if (la2 != null) {
+				listArg = la2;
+			};
+		};	
+	default:
+}) {
+															var ` = stmt.def;
+															switch (enumIndex `) {
+																case 8: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var pat = `;
+																		var rhs2 = `;
+																		{
+																			var lhs2 = @:ast(switch (pat) {
+	case PVar(nm2):
+		nm2;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+																				var ` = pat[0];
+																				{
+																					var nm2 = `;
+																					{
+																						nm2;
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																			if (lhs2 != null) {
+																				var la2 = reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms.selfAppendListArg(rhs2, lhs2);
+																				if (la2 != null) {
+																					listArg = la2;
+																				};
+																			};
+																		};
+																	};
+																};
+																case 26: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 27) {
+																		{
+																			var left = `;
+																			var rhs = `;
+																			{
+																				var lhs = @:ast(switch (left.def) {
+	case EVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+																					var ` = left.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var nm = `;
+																							{
+																								nm;
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																				if (lhs != null) {
+																					var la = reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms.selfAppendListArg(rhs, lhs);
+																					if (la != null) {
+																						listArg = la;
+																					};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+																default: {}
+															};
+														};
+													};
+												};
+												if (listArg == null) {
+													{
+														var ` = 0;
+														while (` < bodyStmts.length) {
+															var stmt = bodyStmts[`];
+															++ `;
+															@:ast(switch (stmt.def) {
+	case EBinary(Match, _, rhsX):
+		if (listArg == null) listArg = findAnyConcatListArg(rhsX);	
+	case EMatch(_, rhsY):
+		if (listArg == null) listArg = findAnyConcatListArg(rhsY);	
+	default:
+}) {
+																var ` = stmt.def;
+																switch (enumIndex `) {
+																	case 8: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var rhsY = `;
+																			{
+																				if (listArg == null) {
+																					listArg = reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms.findAnyConcatListArg(rhsY);
+																				};
+																			};
+																		};
+																	};
+																	case 26: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		if (enumIndex ` == 27) {
+																			{
+																				var rhsX = `;
+																				{
+																					if (listArg == null) {
+																						listArg = reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms.findAnyConcatListArg(rhsX);
+																					};
+																				};
+																			};
+																		} else {};
+																	};
+																	default: {}
+																};
+															};
+														};
+													};
+												};
+												if (listArg == null) {
+													{
+														var ` = 0;
+														while (` < bodyStmts.length) {
+															var stmt = bodyStmts[`];
+															++ `;
+															@:ast(switch (stmt.def) {
+	case EBinary(Match, leftE, rhsE):
+		var lhsName:Null<String> = switch (leftE.def) {
+			case EVar(n):
+				n;			
+			default:
+				null;			
+		};
+		switch (rhsE.def) {
+			case ERaw(code) if (lhsName != null && code != null && code.indexOf("Enum.concat(") != -1):
+				var needle = "Enum.concat(" + lhsName + ", ";
+				var idx = code.indexOf(needle);
+				if (idx != -1) {
+					var rest = code.substr(idx + needle.length);
+					var rtrim = rest;
+					while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+						rtrim = rtrim.substr(0, rtrim.length - 1);
+					};
+					if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+						rtrim = rtrim.substr(0, rtrim.length - 1);
+					};
+					var newRhsCode = "Enum.concat(" + accName + ", " + rtrim + ")";
+					var newBody2 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode)))), makeAST(EVar(accName))]));
+					var newFn2 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody2 }]));
+					return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn2]), n.metadata, n.pos);
+				};			
+			default:
+		};
+		if (lhsName != null) {
+			var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.print(rhsE, 0);
+			var needle = "Enum.concat(" + lhsName + ", ";
+			var idx = rhsStr.indexOf(needle);
+			if (idx != -1) {
+				var rest = rhsStr.substr(idx + needle.length);
+				var rtrim = rest;
+				while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+					rtrim = rtrim.substr(0, rtrim.length - 1);
+				};
+				if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+					rtrim = rtrim.substr(0, rtrim.length - 1);
+				};
+				var newRhsCode2 = "Enum.concat(" + accName + ", " + rtrim + ")";
+				var newBody3 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode2)))), makeAST(EVar(accName))]));
+				var newFn3 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody3 }]));
+				return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn3]), n.metadata, n.pos);
+			};
+		};	
+	default:
+}) {
+																var ` = stmt.def;
+																if (enumIndex ` == 26) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 27) {
+																		{
+																			var leftE = `;
+																			var rhsE = `;
+																			{
+																				var lhsName = @:ast(switch (leftE.def) {
+	case EVar(n):
+		n;	
+	default:
+		null;	
+}) {
+																					var ` = leftE.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var n = `;
+																							{
+																								n;
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																				@:ast(switch (rhsE.def) {
+	case ERaw(code) if (lhsName != null && code != null && code.indexOf("Enum.concat(") != -1):
+		var needle = "Enum.concat(" + lhsName + ", ";
+		var idx = code.indexOf(needle);
+		if (idx != -1) {
+			var rest = code.substr(idx + needle.length);
+			var rtrim = rest;
+			while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+				rtrim = rtrim.substr(0, rtrim.length - 1);
+			};
+			if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+				rtrim = rtrim.substr(0, rtrim.length - 1);
+			};
+			var newRhsCode = "Enum.concat(" + accName + ", " + rtrim + ")";
+			var newBody2 = makeAST(EBlock([makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERaw(newRhsCode)))), makeAST(EVar(accName))]));
+			var newFn2 = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody2 }]));
+			return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn2]), n.metadata, n.pos);
+		};	
+	default:
+}) {
+																					var ` = rhsE.def;
+																					if (enumIndex ` == 62) {
+																						var ` = `[0];
+																						{
+																							var code = `;
+																							if (lhsName != null && code != null && code.indexOf("Enum.concat(", null) != -1) {
+																								var needle = "Enum.concat(" + lhsName + ", ";
+																								var idx = code.indexOf(needle, null);
+																								if (idx != -1) {
+																									var rest = code.substr(idx + needle.length, null);
+																									var rtrim = rest;
+																									while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+																										rtrim = rtrim.substr(0, rtrim.length - 1);
+																									};
+																									if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+																										rtrim = rtrim.substr(0, rtrim.length - 1);
+																									};
+																									var newRhsCode = "Enum.concat(" + accName + ", " + rtrim + ")";
+																									var newBody2 = {
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																												var pos = null;
+																												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																											}, {
+																												var pos = null;
+																												{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(newRhsCode), metadata : {}, pos : pos};
+																											}), metadata : {}, pos : pos};
+																										}, {
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																										}]), metadata : {}, pos : pos};
+																									};
+																									var newFn2 = {
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : newBody2}]), metadata : {}, pos : pos};
+																									};
+																									return {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(modRef, "reduce", [args[0], args[1], newFn2]), metadata : n.metadata, pos : n.pos};
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																				if (lhsName != null) {
+																					var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.print(rhsE, 0);
+																					var needle = "Enum.concat(" + lhsName + ", ";
+																					var idx = rhsStr.indexOf(needle, null);
+																					if (idx != -1) {
+																						var rest = rhsStr.substr(idx + needle.length, null);
+																						var rtrim = rest;
+																						while (rtrim.length > 0 && (rtrim.charCodeAt(rtrim.length - 1) == 32 || rtrim.charCodeAt(rtrim.length - 1) == 10 || rtrim.charCodeAt(rtrim.length - 1) == 13)) {
+																							rtrim = rtrim.substr(0, rtrim.length - 1);
+																						};
+																						if (rtrim.length > 0 && rtrim.charAt(rtrim.length - 1) == ")") {
+																							rtrim = rtrim.substr(0, rtrim.length - 1);
+																						};
+																						var newRhsCode2 = "Enum.concat(" + accName + ", " + rtrim + ")";
+																						var newBody3 = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																								}, {
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(newRhsCode2), metadata : {}, pos : pos};
+																								}), metadata : {}, pos : pos};
+																							}, {
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																							}]), metadata : {}, pos : pos};
+																						};
+																						var newFn3 = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : newBody3}]), metadata : {}, pos : pos};
+																						};
+																						return {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(modRef, "reduce", [args[0], args[1], newFn3]), metadata : n.metadata, pos : n.pos};
+																					};
+																				};
+																			};
+																		};
+																	} else {};
+																} else {};
+															};
+														};
+													};
+												};
+												if (listArg == null) {
+													{
+														var ` = 0;
+														while (` < bodyStmts.length) {
+															var stmt = bodyStmts[`];
+															++ `;
+															var sstr = reflaxe.elixir.ast.ElixirASTPrinter.print(stmt, 0);
+															var idxEq = sstr.indexOf("= Enum.concat(", null);
+															if (idxEq != -1) {
+																var idxComma = sstr.indexOf(", ", idxEq + 14);
+																var idxClose = sstr.lastIndexOf(")", null);
+																if (idxComma != -1 && idxClose != -1 && idxComma < idxClose) {
+																	var listText = sstr.substr(idxComma + 2, idxClose - (idxComma + 2));
+																	var newRhsCode4 = "Enum.concat(" + accName + ", " + listText + ")";
+																	var newBody4 = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																			}, {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(newRhsCode4), metadata : {}, pos : pos};
+																			}), metadata : {}, pos : pos};
+																		}, {
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																		}]), metadata : {}, pos : pos};
+																	};
+																	var newFn4 = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : newBody4}]), metadata : {}, pos : pos};
+																	};
+																	return {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(modRef, "reduce", [args[0], args[1], newFn4]), metadata : n.metadata, pos : n.pos};
+																};
+															};
+														};
+													};
+													return n;
+												};
+												var newBody = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+														}, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+															}, "concat", [{
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+															}, listArg]), metadata : {}, pos : pos};
+														}), metadata : {}, pos : pos};
+													}, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+													}]), metadata : {}, pos : pos};
+												};
+												var newFn = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : newBody}]), metadata : {}, pos : pos};
+												};
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(modRef, "reduce", [args[0], args[1], newFn]), metadata : n.metadata, pos : n.pos};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					} else {
+						n;
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,10 @@
+class reflaxe.elixir.ast.builders.HeexFragmentBuilder {
+
+	public static function build(content:String) {
+		if (content == null || content.length == 0) {
+			return [];
+		};
+		var p = new reflaxe.elixir.ast.builders._HeexFragmentBuilder.Parser(content);
+		return p.parseNodes();
+	}
+}

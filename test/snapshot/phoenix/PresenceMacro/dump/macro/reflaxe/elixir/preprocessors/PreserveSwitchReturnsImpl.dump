@@ -1,0 +1,357 @@
+class reflaxe.elixir.preprocessors.PreserveSwitchReturnsImpl extends reflaxe.preprocessors.BasePreprocessor {
+
+	public function new() {}
+
+	public function process(data:reflaxe.data.ClassFuncData, compiler:reflaxe.BaseCompiler) {
+		if (data.expr != null) {
+			var transformed = this.transformExpression(data.expr);
+			if (transformed != data.expr) {
+				data.setExpr(transformed);
+			};
+		};
+	}
+
+	function transformExpression(expr:haxe.macro.TypedExpr) {
+		var `this = this;
+		if (expr == null) {
+			return null;
+		};
+		return @:ast(switch (expr.expr) {
+	case TReturn(e) if (e != null):
+		var innerExpr = e;
+		switch (e.expr) {
+			case TMeta(_, actualExpr):
+				innerExpr = actualExpr;			
+			case _:
+		};
+		switch (innerExpr.expr) {
+			case TSwitch(scrutinee, cases, defaultCase):
+				var varName = "switch_result_" + (++preservationCounter);
+				var tvar:TVar = { id : -preservationCounter, name : varName, t : innerExpr.t, capture : false, isStatic : false, extra : null, meta : null };
+				var varDecl:TypedExpr = { expr : TVar(tvar, innerExpr), pos : innerExpr.pos, t : innerExpr.t };
+				var varRef:TypedExpr = { expr : TLocal(tvar), pos : expr.pos, t : innerExpr.t };
+				var returnVar:TypedExpr = { expr : TReturn(varRef), pos : expr.pos, t : expr.t };
+				var block:TypedExpr = { expr : TBlock([varDecl, returnVar]), pos : expr.pos, t : expr.t };
+				return block;			
+			case _:
+				var transformedReturn = transformExpression(e);
+				if (transformedReturn != e) {
+					return { expr : TReturn(transformedReturn), pos : expr.pos, t : expr.t };
+				};
+				return expr;			
+		};	
+	case TBlock(exprs):
+		var transformed = exprs.map(transformExpression);
+		var changed = false;
+		for (i  in  0 ... exprs.length) {
+			if (transformed[i] != exprs[i]) {
+				changed = true;
+				break;
+			};
+		};
+		if (changed) {
+			return { expr : TBlock(transformed), pos : expr.pos, t : expr.t };
+		};
+		return expr;	
+	case TIf(cond, then, els):
+		var transformedCond = transformExpression(cond);
+		var transformedThen = transformExpression(then);
+		var transformedEls = els != null ? transformExpression(els) : null;
+		if (transformedCond != cond || transformedThen != then || transformedEls != els) {
+			return { expr : TIf(transformedCond, transformedThen, transformedEls), pos : expr.pos, t : expr.t };
+		};
+		return expr;	
+	case TWhile(cond, body, normalWhile):
+		var transformedCond = transformExpression(cond);
+		var transformedBody = transformExpression(body);
+		if (transformedCond != cond || transformedBody != body) {
+			return { expr : TWhile(transformedCond, transformedBody, normalWhile), pos : expr.pos, t : expr.t };
+		};
+		return expr;	
+	case TFor(v, iter, body):
+		var transformedIter = transformExpression(iter);
+		var transformedBody = transformExpression(body);
+		if (transformedIter != iter || transformedBody != body) {
+			return { expr : TFor(v, transformedIter, transformedBody), pos : expr.pos, t : expr.t };
+		};
+		return expr;	
+	case TTry(e, catches):
+		var transformedTry = transformExpression(e);
+		var transformedCatches = catches.map(function(c) ->  @:implicitReturn return {
+			var transformedExpr = transformExpression(c.expr);
+			if (transformedExpr != c.expr) {
+				{ v : c.v, expr : transformedExpr };
+			} else {
+				c;
+			};
+		});
+		var changed = transformedTry != e;
+		if (!changed) {
+			for (i  in  0 ... catches.length) {
+				if (transformedCatches[i] != catches[i]) {
+					changed = true;
+					break;
+				};
+			};
+		};
+		if (changed) {
+			return { expr : TTry(transformedTry, transformedCatches), pos : expr.pos, t : expr.t };
+		};
+		return expr;	
+	case TFunction(tf):
+		if (tf.expr != null) {
+			var transformedBody = transformExpression(tf.expr);
+			if (transformedBody != tf.expr) {
+				var newTf:TFunc = { args : tf.args, expr : transformedBody, t : tf.t };
+				return { expr : TFunction(newTf), pos : expr.pos, t : expr.t };
+			};
+		};
+		return expr;	
+	case _:
+		return expr;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 12: {
+					var ` = `[0];
+					{
+						var tf = `;
+						{
+							if (tf.expr != null) {
+								var transformedBody = this.transformExpression(tf.expr);
+								if (transformedBody != tf.expr) {
+									var newTf = {args : tf.args, expr : transformedBody, t : tf.t};
+									return {expr : haxe.macro.TypedExprDef.TFunction(newTf), pos : expr.pos, t : expr.t};
+								};
+							};
+							return expr;
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							var transformed = {
+								var f = this.transformExpression;
+								{
+									var ` = [];
+									{
+										var ` = 0;
+										var ` = exprs;
+										while (` < `.length) {
+											var v = `[`];
+											++ `;
+											`.push(f(v));
+										};
+									};
+									`;
+								};
+							};
+							var changed = false;
+							{
+								var ` = 0;
+								var ` = exprs.length;
+								while (` < `) {
+									var i = ` ++;
+									if (transformed[i] != exprs[i]) {
+										changed = true;
+										break;
+									};
+								};
+							};
+							if (changed) {
+								return {expr : haxe.macro.TypedExprDef.TBlock(transformed), pos : expr.pos, t : expr.t};
+							};
+							return expr;
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var iter = `;
+						var body = `;
+						{
+							var transformedIter = this.transformExpression(iter);
+							var transformedBody = this.transformExpression(body);
+							if (transformedIter != iter || transformedBody != body) {
+								return {expr : haxe.macro.TypedExprDef.TFor(v, transformedIter, transformedBody), pos : expr.pos, t : expr.t};
+							};
+							return expr;
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var then = `;
+						var els = `;
+						{
+							var transformedCond = this.transformExpression(cond);
+							var transformedThen = this.transformExpression(then);
+							var transformedEls = if (els != null) {
+								this.transformExpression(els);
+							} else {
+								null;
+							};
+							if (transformedCond != cond || transformedThen != then || transformedEls != els) {
+								return {expr : haxe.macro.TypedExprDef.TIf(transformedCond, transformedThen, transformedEls), pos : expr.pos, t : expr.t};
+							};
+							return expr;
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var body = `;
+						var normalWhile = `;
+						{
+							var transformedCond = this.transformExpression(cond);
+							var transformedBody = this.transformExpression(body);
+							if (transformedCond != cond || transformedBody != body) {
+								return {expr : haxe.macro.TypedExprDef.TWhile(transformedCond, transformedBody, normalWhile), pos : expr.pos, t : expr.t};
+							};
+							return expr;
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							var transformedTry = this.transformExpression(e);
+							var transformedCatches = {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = catches;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(c:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }) {
+											return {
+												var transformedExpr = `this.transformExpression(c.expr);
+												if ((transformedExpr != c.expr)) {v : c.v, expr : transformedExpr} else c;
+											};
+										}(v));
+									};
+								};
+								`;
+							};
+							var changed = transformedTry != e;
+							if (! changed) {
+								{
+									var ` = 0;
+									var ` = catches.length;
+									while (` < `) {
+										var i = ` ++;
+										if (transformedCatches[i] != catches[i]) {
+											changed = true;
+											break;
+										};
+									};
+								};
+							};
+							if (changed) {
+								return {expr : haxe.macro.TypedExprDef.TTry(transformedTry, transformedCatches), pos : expr.pos, t : expr.t};
+							};
+							return expr;
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e = `;
+						if (e != null) {
+							var innerExpr = e;
+							@:ast(switch (e.expr) {
+	case TMeta(_, actualExpr):
+		innerExpr = actualExpr;	
+	case _:
+}) {
+								var ` = e.expr;
+								if (enumIndex ` == 25) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var actualExpr = `;
+										{
+											innerExpr = actualExpr;
+										};
+									};
+								} else {};
+							};
+							@:ast(switch (innerExpr.expr) {
+	case TSwitch(scrutinee, cases, defaultCase):
+		var varName = "switch_result_" + (++preservationCounter);
+		var tvar:TVar = { id : -preservationCounter, name : varName, t : innerExpr.t, capture : false, isStatic : false, extra : null, meta : null };
+		var varDecl:TypedExpr = { expr : TVar(tvar, innerExpr), pos : innerExpr.pos, t : innerExpr.t };
+		var varRef:TypedExpr = { expr : TLocal(tvar), pos : expr.pos, t : innerExpr.t };
+		var returnVar:TypedExpr = { expr : TReturn(varRef), pos : expr.pos, t : expr.t };
+		var block:TypedExpr = { expr : TBlock([varDecl, returnVar]), pos : expr.pos, t : expr.t };
+		return block;	
+	case _:
+		var transformedReturn = transformExpression(e);
+		if (transformedReturn != e) {
+			return { expr : TReturn(transformedReturn), pos : expr.pos, t : expr.t };
+		};
+		return expr;	
+}) {
+								var ` = innerExpr.expr;
+								if (enumIndex ` == 18) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var scrutinee = `;
+										var cases = `;
+										var defaultCase = `;
+										{
+											var varName = "switch_result_" + (++ reflaxe.elixir.preprocessors.PreserveSwitchReturnsImpl.preservationCounter);
+											var tvar = {id : - reflaxe.elixir.preprocessors.PreserveSwitchReturnsImpl.preservationCounter, name : varName, t : innerExpr.t, capture : false, isStatic : false, extra : null, meta : null};
+											var varDecl = {expr : haxe.macro.TypedExprDef.TVar(tvar, innerExpr), pos : innerExpr.pos, t : innerExpr.t};
+											var varRef = {expr : haxe.macro.TypedExprDef.TLocal(tvar), pos : expr.pos, t : innerExpr.t};
+											var returnVar = {expr : haxe.macro.TypedExprDef.TReturn(varRef), pos : expr.pos, t : expr.t};
+											var block = {expr : haxe.macro.TypedExprDef.TBlock([varDecl, returnVar]), pos : expr.pos, t : expr.t};
+											return block;
+										};
+									};
+								} else {
+									var transformedReturn = this.transformExpression(e);
+									if (transformedReturn != e) {
+										return {expr : haxe.macro.TypedExprDef.TReturn(transformedReturn), pos : expr.pos, t : expr.t};
+									};
+									return expr;
+								};
+							};
+						} else {
+							return expr;
+						};
+					};
+				};
+				default: {
+					return expr;
+				}
+			};
+		};
+	}
+
+	@:value(0)
+	static var preservationCounter:Int = 0;
+}

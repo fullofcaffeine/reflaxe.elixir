@@ -1,0 +1,206 @@
+class reflaxe.elixir.ast.transformers.IfConditionComplexToParenTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EIf(cond, thenB, elseB):
+		var newCond = containsComplex(cond) ? makeAST(EParen(cond)) : cond;
+		makeASTWithMeta(EIf(newCond, thenB, elseB), n.metadata, n.pos);	
+	case EUnless(cond2, body, elseB2):
+		var newCond2 = containsComplex(cond2) ? makeAST(EParen(cond2)) : cond2;
+		makeASTWithMeta(EUnless(newCond2, body, elseB2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond = `;
+							var thenB = `;
+							var elseB = `;
+							{
+								var newCond = if (reflaxe.elixir.ast.transformers.IfConditionComplexToParenTransforms.containsComplex(cond)) {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EParen(cond), metadata : {}, pos : pos};
+									};
+								} else {
+									cond;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(newCond, thenB, elseB), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond2 = `;
+							var body = `;
+							var elseB2 = `;
+							{
+								var newCond2 = if (reflaxe.elixir.ast.transformers.IfConditionComplexToParenTransforms.containsComplex(cond2)) {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EParen(cond2), metadata : {}, pos : pos};
+									};
+								} else {
+									cond2;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EUnless(newCond2, body, elseB2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function containsComplex(e:reflaxe.elixir.ast.ElixirAST) {
+		var found = [false];
+		var walk = [null];
+		walk[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || x == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _):
+		found = true;	
+	case EBinary(_, l, r):
+		walk(l);
+		if (r != null) walk(r);	
+	case EUnary(_, ex):
+		walk(ex);	
+	case EParen(inner):
+		walk(inner);	
+	case ECall(t, _, as):
+		if (t != null) walk(t);
+		for (a  in  as) walk(a);	
+	case ERemoteCall(m, _, as):
+		walk(m);
+		for (a  in  as) walk(a);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							found[0] = true;
+						};
+					};
+					case 7: {
+						var ` = `[0];
+						{
+							found[0] = true;
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							found[0] = true;
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							found[0] = true;
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									walk[0](t);
+								};
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var m = `;
+							var as = `;
+							{
+								walk[0](m);
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								walk[0](l);
+								if (r != null) {
+									walk[0](r);
+								};
+							};
+						};
+					};
+					case 27: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ex = `;
+							{
+								walk[0](ex);
+							};
+						};
+					};
+					case 54: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								walk[0](inner);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](e);
+		return found[0];
+	}
+}

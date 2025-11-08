@@ -1,0 +1,613 @@
+class reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		fixBlock(stmts, n);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.fixBlock(stmts, n);
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function fixBlock(stmts:Array<reflaxe.elixir.ast.ElixirAST>, original:reflaxe.elixir.ast.ElixirAST) {
+		var updated = [];
+		var i = [0];
+		while (i[0] < stmts.length) {
+			var current = stmts[i[0]];
+			var handled = false;
+			var matchedWindow = [null];
+			var sepArg = [null];
+			var repairedCurrent = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(current, function(m:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (m.def) {
+	case ERemoteCall({ def : EVar("Enum") }, "join", joinArgs) if (joinArgs != null && joinArgs.length == 2 && matchedWindow == null):
+		var accVarName = extractVarName(joinArgs[0]);
+		var win = (accVarName != null) ? findBuilderWindow(stmts, i, accVarName) : null;
+		if (win == null) win = findBuilderWindow(stmts, i, null);
+		if (win != null) {
+			matchedWindow = win;
+			sepArg = joinArgs[1];
+			var mapExpr = buildEnumMap(win.listExpr, win.binderName, win.valueExpr);
+			makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [mapExpr, joinArgs[1]]));
+		} else m;	
+	default:
+		m;	
+}) {
+					var ` = m.def;
+					if (enumIndex ` == 24) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								if (` == "Enum") {
+									if (` == "join") {
+										{
+											var joinArgs = `;
+											if (joinArgs != null && joinArgs.length == 2 && matchedWindow[0] == null) {
+												var accVarName = reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.extractVarName(joinArgs[0]);
+												var win = if ((accVarName != null)) {
+													reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.findBuilderWindow(stmts, i[0], accVarName);
+												} else {
+													null;
+												};
+												if (win == null) {
+													win = reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.findBuilderWindow(stmts, i[0], null);
+												};
+												if (win != null) {
+													matchedWindow[0] = win;
+													sepArg[0] = joinArgs[1];
+													var mapExpr = reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.buildEnumMap(win.listExpr, win.binderName, win.valueExpr);
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+														}, "join", [mapExpr, joinArgs[1]]), metadata : {}, pos : pos};
+													};
+												} else {
+													m;
+												};
+											} else {
+												m;
+											};
+										};
+									} else {
+										m;
+									};
+								} else {
+									m;
+								};
+							} else {
+								m;
+							};
+						};
+					} else {
+						m;
+					};
+				};
+			});
+			if (matchedWindow[0] != null) {
+				var didRemove = false;
+				if (matchedWindow[0].isContiguous) {
+					{
+						var ` = 0;
+						var ` = matchedWindow[0].startIndex;
+						while (` < `) {
+							var k = ` ++;
+							updated.push(stmts[k]);
+						};
+					};
+					updated.push(repairedCurrent);
+					i[0] = matchedWindow[0].endIndex + 1;
+					handled = true;
+					didRemove = true;
+				};
+				if (! didRemove) {
+					updated.push(repairedCurrent);
+					i[0] ++;
+					handled = true;
+				};
+			};
+			if (! handled) {
+				updated.push(current);
+				i[0] ++;
+			};
+		};
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(updated), metadata : original.metadata, pos : original.pos};
+	}
+
+	static function extractVarName(ast:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (ast.def) {
+	case EVar(n):
+		n;	
+	case EParen(inner):
+		extractVarName(inner);	
+	default:
+		null;	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 38: {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							n;
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.JoinArgBlockScopedFixTransforms.extractVarName(inner);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function buildEnumMap(listExpr:reflaxe.elixir.ast.ElixirAST, binderName:String, valueExpr:reflaxe.elixir.ast.ElixirAST) {
+		var fnNode = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(binderName)], guard : null, body : valueExpr}]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+			}, "map", [listExpr, fnNode]), metadata : {}, pos : pos};
+		};
+	}
+
+	static function findBuilderWindow(stmts:Array<reflaxe.elixir.ast.ElixirAST>, joinIndex:Int, accName:Null<String>) {
+		var initIndex = -1;
+		var eachIndex = -1;
+		var returnIndex = -1;
+		var listExpr = null;
+		var binderName = "item";
+		var valueExpr = null;
+		var accDetected = accName;
+		var startScan = Std.int(Math.max(0, joinIndex - 3));
+		{
+			var ` = startScan;
+			var ` = joinIndex;
+			while (` < `) {
+				var idx = ` ++;
+				@:ast(switch (stmts[idx].def) {
+	case EBinary(Match, { def : EVar(v) }, { def : EList([]) }):
+		if (accDetected == null || v == accDetected) {
+			initIndex = idx;
+			if (accDetected == null) accDetected = v;
+		};	
+	case EMatch(PVar(v2), { def : EList([]) }):
+		if (accDetected == null || v2 == accDetected) {
+			initIndex = idx;
+			if (accDetected == null) accDetected = v2;
+		};	
+	case ERemoteCall({ def : EVar("Enum") }, "each", eargs) if (eargs != null && eargs.length == 2):
+		var maybeList = eargs[0];
+		switch (eargs[1].def) {
+			case EFn(clauses) if (clauses.length == 1):
+				var clause = clauses[0];
+				switch (clause.args.length > 0 ? clause.args[0] : null) {
+					case PVar(n):
+						binderName = n;					
+					default:
+				};
+				var bodyStmts:Array<ElixirAST> = switch (clause.body.def) {
+					case EBlock(ss):
+						ss;					
+					default:
+						[clause.body];					
+				};
+				for (bs  in  bodyStmts) switch (bs.def) {
+					case EBinary(Match, { def : EVar(lhs) }, rhs) if (accDetected != null && lhs == accDetected):
+						switch (rhs.def) {
+							case ERemoteCall({ def : EVar("Enum") }, "concat", cargs) if (cargs.length == 2):
+								switch (cargs[1].def) {
+									case EList(items) if (items.length == 1):
+										valueExpr = items[0];									
+									default:
+								};							
+							case EBinary(Concat, { def : EVar(base) }, rhsAppend) if (accDetected != null && base == accDetected):
+								switch (rhsAppend.def) {
+									case EList(items2) if (items2.length == 1):
+										valueExpr = items2[0];									
+									default:
+								};							
+							default:
+						};					
+					default:
+				};
+				if (valueExpr != null) {
+					eachIndex = idx;
+					listExpr = maybeList;
+				};			
+			default:
+		};	
+	case EVar(vret) if (accDetected != null && vret == accDetected):
+		returnIndex = idx;	
+	default:
+}) {
+					var ` = stmts[idx].def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 15) {
+										var ` = `[0];
+										if (`.length == 0) {
+											{
+												var v2 = `;
+												{
+													if (accDetected == null || v2 == accDetected) {
+														initIndex = idx;
+														if (accDetected == null) {
+															accDetected = v2;
+														};
+													};
+												};
+											};
+										} else {};
+									} else {};
+								};
+							} else {};
+						};
+						case 24: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									if (` == "Enum") {
+										if (` == "each") {
+											{
+												var eargs = `;
+												if (eargs != null && eargs.length == 2) {
+													var maybeList = eargs[0];
+													@:ast(switch (eargs[1].def) {
+	case EFn(clauses) if (clauses.length == 1):
+		var clause = clauses[0];
+		switch (clause.args.length > 0 ? clause.args[0] : null) {
+			case PVar(n):
+				binderName = n;			
+			default:
+		};
+		var bodyStmts:Array<ElixirAST> = switch (clause.body.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[clause.body];			
+		};
+		for (bs  in  bodyStmts) switch (bs.def) {
+			case EBinary(Match, { def : EVar(lhs) }, rhs) if (accDetected != null && lhs == accDetected):
+				switch (rhs.def) {
+					case ERemoteCall({ def : EVar("Enum") }, "concat", cargs) if (cargs.length == 2):
+						switch (cargs[1].def) {
+							case EList(items) if (items.length == 1):
+								valueExpr = items[0];							
+							default:
+						};					
+					case EBinary(Concat, { def : EVar(base) }, rhsAppend) if (accDetected != null && base == accDetected):
+						switch (rhsAppend.def) {
+							case EList(items2) if (items2.length == 1):
+								valueExpr = items2[0];							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};
+		if (valueExpr != null) {
+			eachIndex = idx;
+			listExpr = maybeList;
+		};	
+	default:
+}) {
+														var ` = eargs[1].def;
+														if (enumIndex ` == 42) {
+															var ` = `[0];
+															{
+																var clauses = `;
+																if (clauses.length == 1) {
+																	var clause = clauses[0];
+																	@:ast(switch (clause.args.length > 0 ? clause.args[0] : null) {
+	case PVar(n):
+		binderName = n;	
+	default:
+}) {
+																		var ` = if (clause.args.length > 0) {
+																			clause.args[0];
+																		} else {
+																			null;
+																		};
+																		if (` == null) {} else if (enumIndex ` == 0) {
+																			var ` = `[0];
+																			{
+																				var n = `;
+																				{
+																					binderName = n;
+																				};
+																			};
+																		} else {};
+																	};
+																	var bodyStmts = @:ast(switch (clause.body.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[clause.body];	
+}) {
+																		var ` = clause.body.def;
+																		if (enumIndex ` == 53) {
+																			var ` = `[0];
+																			{
+																				var ss = `;
+																				{
+																					ss;
+																				};
+																			};
+																		} else {
+																			[clause.body];
+																		};
+																	};
+																	{
+																		var ` = 0;
+																		while (` < bodyStmts.length) {
+																			var bs = bodyStmts[`];
+																			++ `;
+																			@:ast(switch (bs.def) {
+	case EBinary(Match, { def : EVar(lhs) }, rhs) if (accDetected != null && lhs == accDetected):
+		switch (rhs.def) {
+			case ERemoteCall({ def : EVar("Enum") }, "concat", cargs) if (cargs.length == 2):
+				switch (cargs[1].def) {
+					case EList(items) if (items.length == 1):
+						valueExpr = items[0];					
+					default:
+				};			
+			case EBinary(Concat, { def : EVar(base) }, rhsAppend) if (accDetected != null && base == accDetected):
+				switch (rhsAppend.def) {
+					case EList(items2) if (items2.length == 1):
+						valueExpr = items2[0];					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+																				var ` = bs.def;
+																				if (enumIndex ` == 26) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					var ` = `[2];
+																					if (enumIndex ` == 27) {
+																						{
+																							var ` = `.def;
+																							var ` = `.metadata;
+																							var ` = `.pos;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var lhs = `;
+																									var rhs = `;
+																									if (accDetected != null && lhs == accDetected) {
+																										@:ast(switch (rhs.def) {
+	case ERemoteCall({ def : EVar("Enum") }, "concat", cargs) if (cargs.length == 2):
+		switch (cargs[1].def) {
+			case EList(items) if (items.length == 1):
+				valueExpr = items[0];			
+			default:
+		};	
+	case EBinary(Concat, { def : EVar(base) }, rhsAppend) if (accDetected != null && base == accDetected):
+		switch (rhsAppend.def) {
+			case EList(items2) if (items2.length == 1):
+				valueExpr = items2[0];			
+			default:
+		};	
+	default:
+}) {
+																											var ` = rhs.def;
+																											switch (enumIndex `) {
+																												case 24: {
+																													var ` = `[0];
+																													var ` = `[1];
+																													var ` = `[2];
+																													{
+																														var ` = `.def;
+																														var ` = `.metadata;
+																														var ` = `.pos;
+																														if (enumIndex ` == 38) {
+																															var ` = `[0];
+																															if (` == "Enum") {
+																																if (` == "concat") {
+																																	{
+																																		var cargs = `;
+																																		if (cargs.length == 2) {
+																																			@:ast(switch (cargs[1].def) {
+	case EList(items) if (items.length == 1):
+		valueExpr = items[0];	
+	default:
+}) {
+																																				var ` = cargs[1].def;
+																																				if (enumIndex ` == 15) {
+																																					var ` = `[0];
+																																					{
+																																						var items = `;
+																																						if (items.length == 1) {
+																																							valueExpr = items[0];
+																																						} else {};
+																																					};
+																																				} else {};
+																																			};
+																																		} else {};
+																																	};
+																																} else {};
+																															} else {};
+																														} else {};
+																													};
+																												};
+																												case 26: {
+																													var ` = `[0];
+																													var ` = `[1];
+																													var ` = `[2];
+																													if (enumIndex ` == 23) {
+																														{
+																															var ` = `.def;
+																															var ` = `.metadata;
+																															var ` = `.pos;
+																															if (enumIndex ` == 38) {
+																																var ` = `[0];
+																																{
+																																	var base = `;
+																																	var rhsAppend = `;
+																																	if (accDetected != null && base == accDetected) {
+																																		@:ast(switch (rhsAppend.def) {
+	case EList(items2) if (items2.length == 1):
+		valueExpr = items2[0];	
+	default:
+}) {
+																																			var ` = rhsAppend.def;
+																																			if (enumIndex ` == 15) {
+																																				var ` = `[0];
+																																				{
+																																					var items2 = `;
+																																					if (items2.length == 1) {
+																																						valueExpr = items2[0];
+																																					} else {};
+																																				};
+																																			} else {};
+																																		};
+																																	} else {};
+																																};
+																															} else {};
+																														};
+																													} else {};
+																												};
+																												default: {}
+																											};
+																										};
+																									} else {};
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				} else {};
+																			};
+																		};
+																	};
+																	if (valueExpr != null) {
+																		eachIndex = idx;
+																		listExpr = maybeList;
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									} else {};
+								} else {};
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 15) {
+												var ` = `[0];
+												if (`.length == 0) {
+													{
+														var v = `;
+														{
+															if (accDetected == null || v == accDetected) {
+																initIndex = idx;
+																if (accDetected == null) {
+																	accDetected = v;
+																};
+															};
+														};
+													};
+												} else {};
+											} else {};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						case 38: {
+							var ` = `[0];
+							{
+								var vret = `;
+								if (accDetected != null && vret == accDetected) {
+									returnIndex = idx;
+								} else {};
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		if (initIndex == -1 || eachIndex == -1) {
+			return null;
+		};
+		if (listExpr == null || valueExpr == null) {
+			return null;
+		};
+		var startIndex = initIndex;
+		var endIndex = if (returnIndex != -1) {
+			returnIndex;
+		} else {
+			eachIndex;
+		};
+		var isContiguous = (startIndex + 1 == eachIndex) && (returnIndex == -1 || eachIndex + 1 == returnIndex) && (endIndex < joinIndex);
+		return {startIndex : startIndex, endIndex : endIndex, listExpr : listExpr, binderName : binderName, valueExpr : valueExpr, isContiguous : isContiguous};
+	}
+}

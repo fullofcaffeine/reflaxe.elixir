@@ -1,0 +1,2 @@
+@:enum
+abstract reflaxe.MetaArgumentType to String {}

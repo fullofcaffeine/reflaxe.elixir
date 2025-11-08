@@ -742,6 +742,7 @@ typedef ElixirMetadata = {
     ?isApplication: Bool,         // @:application OTP Application
     ?isGenServer: Bool,           // @:genserver GenServer behavior
     ?isRouter: Bool,              // @:router Phoenix.Router
+    ?routerRefs: Array<String>,   // Referenced modules captured from @:router DSL
     ?isController: Bool,          // @:controller Phoenix.Controller
     ?isPresence: Bool,            // @:presence Phoenix.Presence
     ?isPhoenixWeb: Bool,          // @:phoenixWeb AppNameWeb module with macros

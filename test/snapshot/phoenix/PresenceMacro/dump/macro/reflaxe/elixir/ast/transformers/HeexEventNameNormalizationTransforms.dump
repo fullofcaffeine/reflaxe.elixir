@@ -1,0 +1,322 @@
+class reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.normalize(ast, null);
+	}
+
+	public static function contextualPass(ast:reflaxe.elixir.ast.ElixirAST, context:reflaxe.elixir.CompilationContext) {
+		return reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.normalize(ast, context);
+	}
+
+	@:value(["phx-click", "phx-change", "phx-submit", "phx-focus", "phx-blur", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup", "phx-click-away"])
+	static var EVENT_ATTRS:Array<String> = ["phx-click", "phx-change", "phx-submit", "phx-focus", "phx-blur", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup", "phx-click-away"];
+
+	@:value(["phx-value-", "phx-update", "phx-hook", "phx-target", "phx-debounce", "phx-throttle", "phx-page-loading", "phx-viewport", "phx-track-static"])
+	static var NON_EVENT_PREFIXES:Array<String> = ["phx-value-", "phx-update", "phx-hook", "phx-target", "phx-debounce", "phx-throttle", "phx-page-loading", "phx-viewport", "phx-track-static"];
+
+	static function isEventAttr(name:String) {
+		if (! StringTools.startsWith(name, "phx-")) {
+			return false;
+		};
+		{
+			var ` = 0;
+			var ` = reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.NON_EVENT_PREFIXES;
+			while (` < `.length) {
+				var pfx = `[`];
+				++ `;
+				if (StringTools.startsWith(name, pfx)) {
+					return false;
+				};
+			};
+		};
+		{
+			var ` = 0;
+			var ` = reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.EVENT_ATTRS;
+			while (` < `.length) {
+				var ev = `[`];
+				++ `;
+				if (name == ev) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	static function toEventSnakeCase(s:String) {
+		if (s == null) {
+			return s;
+		};
+		var normalized = StringTools.trim(s);
+		normalized = normalized.split("-").join("_");
+		normalized = new EReg("\\s+", "g").replace(normalized, "_");
+		normalized = reflaxe.elixir.ast.NameUtils.toSnakeCase(normalized);
+		normalized = new EReg("__+", "g").replace(normalized, "_");
+		normalized = normalized.toLowerCase();
+		return normalized;
+	}
+
+	static function isValidEventName(s:String) {
+		return new EReg("^[a-z0-9_]+$", "").match(s);
+	}
+
+	static function warn(ctx:Null<reflaxe.elixir.CompilationContext>, msg:String, pos:haxe.macro.Position) {
+		if (ctx != null) {
+			ctx.warning(msg, pos);
+		};
+	}
+
+	static function error(ctx:Null<reflaxe.elixir.CompilationContext>, msg:String, pos:haxe.macro.Position) {
+		if (ctx != null) {
+			ctx.error(msg, pos);
+		} else {
+			throw msg;
+		};
+	}
+
+	static function normalize(ast:reflaxe.elixir.ast.ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EFragment(tag, attributes, children):
+		var changed = false;
+		var newAttrs:Array<EAttribute> = [];
+		for (attr  in  attributes) {
+			if (isEventAttr(attr.name)) {
+				switch (attr.value.def) {
+					case EString(v):
+						var snake = toEventSnakeCase(v);
+						if (snake != v) changed = true;
+						if (!isValidEventName(snake)) {
+							warn(ctx, "Invalid LiveView event name \"${v}\" → \"${snake}\"; expected lowercase snake_case", n.pos);
+						};
+						newAttrs.push({ name : attr.name, value : makeAST(EString(snake)) });					
+					case EAtom(a):
+						var raw:String = ((cast a : String));
+						var snake2 = toEventSnakeCase(raw);
+						changed = true;
+						if (!isValidEventName(snake2)) {
+							warn(ctx, "Invalid LiveView event atom :${raw} → \"${snake2}\"; expected lowercase snake_case string", n.pos);
+						};
+						newAttrs.push({ name : attr.name, value : makeAST(EString(snake2)) });					
+					default:
+						newAttrs.push(attr);					
+				};
+			} else {
+				newAttrs.push(attr);
+			};
+		};
+		if (changed) makeASTWithMeta(EFragment(tag, newAttrs, children), n.metadata, n.pos) else n;	
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var updated = rewriteHeexString(content, ctx, n.pos);
+		if (updated != content) makeASTWithMeta(ESigil(type, updated, modifiers), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							var content = `;
+							var modifiers = `;
+							if (type == "H") {
+								var updated = reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.rewriteHeexString(content, ctx, n.pos);
+								if (updated != content) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, updated, modifiers), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 64: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tag = `;
+							var attributes = `;
+							var children = `;
+							{
+								var changed = false;
+								var newAttrs = [];
+								{
+									var ` = 0;
+									while (` < attributes.length) {
+										var attr = attributes[`];
+										++ `;
+										if (reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.isEventAttr(attr.name)) {
+											@:ast(switch (attr.value.def) {
+	case EString(v):
+		var snake = toEventSnakeCase(v);
+		if (snake != v) changed = true;
+		if (!isValidEventName(snake)) {
+			warn(ctx, "Invalid LiveView event name \"${v}\" → \"${snake}\"; expected lowercase snake_case", n.pos);
+		};
+		newAttrs.push({ name : attr.name, value : makeAST(EString(snake)) });	
+	case EAtom(a):
+		var raw:String = ((cast a : String));
+		var snake2 = toEventSnakeCase(raw);
+		changed = true;
+		if (!isValidEventName(snake2)) {
+			warn(ctx, "Invalid LiveView event atom :${raw} → \"${snake2}\"; expected lowercase snake_case string", n.pos);
+		};
+		newAttrs.push({ name : attr.name, value : makeAST(EString(snake2)) });	
+	default:
+		newAttrs.push(attr);	
+}) {
+												var ` = attr.value.def;
+												switch (enumIndex `) {
+													case 31: {
+														var ` = `[0];
+														{
+															var a = `;
+															{
+																var raw = (cast cast a);
+																var snake2 = reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.toEventSnakeCase(raw);
+																changed = true;
+																if (! reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.isValidEventName(snake2)) {
+																	reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.warn(ctx, "Invalid LiveView event atom :" + raw + " → \"" + snake2 + "\"; expected lowercase snake_case string", n.pos);
+																};
+																newAttrs.push({name : attr.name, value : {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EString(snake2), metadata : {}, pos : pos};
+																}});
+															};
+														};
+													};
+													case 32: {
+														var ` = `[0];
+														{
+															var v = `;
+															{
+																var snake = reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.toEventSnakeCase(v);
+																if (snake != v) {
+																	changed = true;
+																};
+																if (! reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.isValidEventName(snake)) {
+																	reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.warn(ctx, "Invalid LiveView event name \"" + v + "\" → \"" + snake + "\"; expected lowercase snake_case", n.pos);
+																};
+																newAttrs.push({name : attr.name, value : {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EString(snake), metadata : {}, pos : pos};
+																}});
+															};
+														};
+													};
+													default: {
+														newAttrs.push(attr);
+													}
+												};
+											};
+										} else {
+											newAttrs.push(attr);
+										};
+									};
+								};
+								if (changed) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EFragment(tag, newAttrs, children), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteHeexString(s:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position) {
+		var out = new StringBuf();
+		var i = 0;
+		while (i < s.length) {
+			var idx = s.indexOf("phx-", i);
+			if (idx == -1) {
+				out.add(s.substr(i, null));
+				break;
+			};
+			out.add(s.substr(i, idx - i));
+			var j = idx;
+			while (j < s.length) {
+				var ch = s.charAt(j);
+				var isNameChar = new EReg("^[A-Za-z0-9_-]$", "").match(ch);
+				if (! isNameChar) {
+					break;
+				};
+				j ++;
+			};
+			var attrName = s.substr(idx, j - idx);
+			if (! reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.isEventAttr(attrName)) {
+				out.add(attrName);
+				i = j;
+				continue;
+			};
+			out.add(attrName);
+			while (j < s.length && new EReg("^\\s$", "").match(s.charAt(j))) {
+				j ++;
+			};
+			if (j >= s.length || s.charAt(j) != "=") {
+				i = j;
+				continue;
+			};
+			out.add("=");
+			j ++;
+			while (j < s.length && new EReg("^\\s$", "").match(s.charAt(j))) {
+				j ++;
+			};
+			if (j >= s.length || s.charAt(j) != "\"") {
+				i = j;
+				continue;
+			};
+			out.add("\"");
+			j ++;
+			var valStart = j;
+			var valBuf = new StringBuf();
+			var closed = false;
+			while (j < s.length) {
+				var ch2 = s.charAt(j);
+				if (ch2 == "\"") {
+					closed = true;
+					break;
+				};
+				if (ch2 == "{" || (ch2 == "<" && j + 2 < s.length && s.substr(j, 3) == "<%=")) {
+					valBuf = new StringBuf();
+					valBuf.add(s.substr(valStart, j - valStart));
+					var k = j;
+					while (k < s.length && s.charAt(k) != "\"") {
+						k ++;
+					};
+					valBuf.add(s.substr(j, k - j));
+					j = k;
+					break;
+				};
+				valBuf.add(ch2);
+				j ++;
+			};
+			var rawVal = valBuf.toString();
+			if (closed) {
+				var snake = reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.toEventSnakeCase(rawVal);
+				if (! reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.isValidEventName(snake)) {
+					reflaxe.elixir.ast.transformers.HeexEventNameNormalizationTransforms.warn(ctx, "Invalid LiveView event name \"" + rawVal + "\" in " + attrName + "; normalized to \"" + snake + "\"", pos);
+				};
+				out.add(snake);
+				out.add("\"");
+				j ++;
+				i = j;
+			} else {
+				out.add(rawVal);
+				i = j;
+			};
+		};
+		return out.toString();
+	}
+}

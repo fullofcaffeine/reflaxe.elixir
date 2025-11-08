@@ -1,0 +1,1031 @@
+class reflaxe.elixir.ast.transformers.LiveMountReturnFinalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "mount"):
+		var socketParam:Null<String> = null;
+		if (args != null && args.length > 0) {
+			var last = args[args.length - 1];
+			switch (last) {
+				case PVar(nm):
+					socketParam = nm;				
+				default:
+			};
+		};
+		if (socketParam == null) return n;
+		switch (body.def) {
+			case EBlock(stmts):
+				var alreadyTuple = false;
+				if (stmts.length > 0) switch (stmts[stmts.length - 1].def) {
+					case ETuple(elems) if (elems.length == 2):
+						alreadyTuple = (switch (elems[0].def) {
+							case EAtom(_):
+								true;							
+							default:
+								false;							
+						});					
+					default:
+				};
+				if (alreadyTuple) return n;
+				if (stmts.length > 0) switch (stmts[stmts.length - 1].def) {
+					case EBinary(Match, leftAny, rhs):
+						switch (rhs.def) {
+							case EMap(_):
+								var okAtom0 = makeAST(EAtom(ElixirAtom.raw("ok")));
+								var tupleVal0 = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs]));
+								var finalTuple0 = makeAST(ETuple([okAtom0, tupleVal0]));
+								var replaced:Array<ElixirAST> = stmts.copy();
+								replaced[replaced.length - 1] = finalTuple0;
+								return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replaced))), n.metadata, n.pos);							
+							default:
+						};					
+					case EMatch(patAny, rhsM):
+						switch (rhsM.def) {
+							case EMap(_):
+								var okAtomM = makeAST(EAtom(ElixirAtom.raw("ok")));
+								var tupleValM = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM]));
+								var finalTupleM = makeAST(ETuple([okAtomM, tupleValM]));
+								var replacedM:Array<ElixirAST> = stmts.copy();
+								replacedM[replacedM.length - 1] = finalTupleM;
+								return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replacedM))), n.metadata, n.pos);							
+							default:
+						};					
+					default:
+				};
+				var assignsVar:Null<String> = null;
+				for (s  in  stmts) switch (s.def) {
+					case EBinary(Match, left, rhs):
+						switch (left.def) {
+							case EVar(v):
+								switch (rhs.def) {
+									case EMap(_):
+										assignsVar = v;									
+									default:
+								};							
+							default:
+						};					
+					case EMatch(pat, rhs2):
+						switch (pat) {
+							case PVar(v2):
+								switch (rhs2.def) {
+									case EMap(_):
+										assignsVar = v2;									
+									default:
+								};							
+							default:
+						};					
+					default:
+				};
+				var okAtom = makeAST(EAtom(ElixirAtom.raw("ok")));
+				var tupleVal:ElixirAST = (assignsVar != null) ? makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), makeAST(EVar(assignsVar))])) : makeAST(EVar(socketParam));
+				var finalTuple = makeAST(ETuple([okAtom, tupleVal]));
+				var out:Array<ElixirAST> = stmts.copy();
+				out.push(finalTuple);
+				makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(out))), n.metadata, n.pos);			
+			case EDo(stmts2):
+				var alreadyTuple2 = false;
+				if (stmts2.length > 0) switch (stmts2[stmts2.length - 1].def) {
+					case ETuple(elems) if (elems.length == 2):
+						alreadyTuple2 = (switch (elems[0].def) {
+							case EAtom(_):
+								true;							
+							default:
+								false;							
+						});					
+					default:
+				};
+				if (alreadyTuple2) return n;
+				if (stmts2.length > 0) switch (stmts2[stmts2.length - 1].def) {
+					case EBinary(Match, leftAny2, rhs2):
+						switch (rhs2.def) {
+							case EMap(_):
+								var okAtomX = makeAST(EAtom(ElixirAtom.raw("ok")));
+								var tupleValX = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs2]));
+								var finalTupleX = makeAST(ETuple([okAtomX, tupleValX]));
+								var replaced2:Array<ElixirAST> = stmts2.copy();
+								replaced2[replaced2.length - 1] = finalTupleX;
+								return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replaced2))), n.metadata, n.pos);							
+							default:
+						};					
+					case EMatch(patAny2, rhsM2):
+						switch (rhsM2.def) {
+							case EMap(_):
+								var okAtomY = makeAST(EAtom(ElixirAtom.raw("ok")));
+								var tupleValY = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM2]));
+								var finalTupleY = makeAST(ETuple([okAtomY, tupleValY]));
+								var replacedY:Array<ElixirAST> = stmts2.copy();
+								replacedY[replacedY.length - 1] = finalTupleY;
+								return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replacedY))), n.metadata, n.pos);							
+							default:
+						};					
+					default:
+				};
+				var assignsVar2:Null<String> = null;
+				for (s  in  stmts2) switch (s.def) {
+					case EBinary(Match, left, rhs):
+						switch (left.def) {
+							case EVar(v):
+								switch (rhs.def) {
+									case EMap(_):
+										assignsVar2 = v;									
+									default:
+								};							
+							default:
+						};					
+					case EMatch(pat, rhs2):
+						switch (pat) {
+							case PVar(v2):
+								switch (rhs2.def) {
+									case EMap(_):
+										assignsVar2 = v2;									
+									default:
+								};							
+							default:
+						};					
+					default:
+				};
+				var okAtom2 = makeAST(EAtom(ElixirAtom.raw("ok")));
+				var tupleVal2:ElixirAST = (assignsVar2 != null) ? makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), makeAST(EVar(assignsVar2))])) : makeAST(EVar(socketParam));
+				var finalTuple2 = makeAST(ETuple([okAtom2, tupleVal2]));
+				var out2:Array<ElixirAST> = stmts2.copy();
+				out2.push(finalTuple2);
+				makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out2))), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "mount") {
+							var socketParam = null;
+							if (args != null && args.length > 0) {
+								var last = args[args.length - 1];
+								@:ast(switch (last) {
+	case PVar(nm):
+		socketParam = nm;	
+	default:
+}) if (enumIndex last == 0) {
+									var ` = last[0];
+									{
+										var nm = `;
+										{
+											socketParam = nm;
+										};
+									};
+								} else {};
+							};
+							if (socketParam == null) {
+								return n;
+							};
+							@:ast(switch (body.def) {
+	case EBlock(stmts):
+		var alreadyTuple = false;
+		if (stmts.length > 0) switch (stmts[stmts.length - 1].def) {
+			case ETuple(elems) if (elems.length == 2):
+				alreadyTuple = (switch (elems[0].def) {
+					case EAtom(_):
+						true;					
+					default:
+						false;					
+				});			
+			default:
+		};
+		if (alreadyTuple) return n;
+		if (stmts.length > 0) switch (stmts[stmts.length - 1].def) {
+			case EBinary(Match, leftAny, rhs):
+				switch (rhs.def) {
+					case EMap(_):
+						var okAtom0 = makeAST(EAtom(ElixirAtom.raw("ok")));
+						var tupleVal0 = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs]));
+						var finalTuple0 = makeAST(ETuple([okAtom0, tupleVal0]));
+						var replaced:Array<ElixirAST> = stmts.copy();
+						replaced[replaced.length - 1] = finalTuple0;
+						return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replaced))), n.metadata, n.pos);					
+					default:
+				};			
+			case EMatch(patAny, rhsM):
+				switch (rhsM.def) {
+					case EMap(_):
+						var okAtomM = makeAST(EAtom(ElixirAtom.raw("ok")));
+						var tupleValM = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM]));
+						var finalTupleM = makeAST(ETuple([okAtomM, tupleValM]));
+						var replacedM:Array<ElixirAST> = stmts.copy();
+						replacedM[replacedM.length - 1] = finalTupleM;
+						return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replacedM))), n.metadata, n.pos);					
+					default:
+				};			
+			default:
+		};
+		var assignsVar:Null<String> = null;
+		for (s  in  stmts) switch (s.def) {
+			case EBinary(Match, left, rhs):
+				switch (left.def) {
+					case EVar(v):
+						switch (rhs.def) {
+							case EMap(_):
+								assignsVar = v;							
+							default:
+						};					
+					default:
+				};			
+			case EMatch(pat, rhs2):
+				switch (pat) {
+					case PVar(v2):
+						switch (rhs2.def) {
+							case EMap(_):
+								assignsVar = v2;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};
+		var okAtom = makeAST(EAtom(ElixirAtom.raw("ok")));
+		var tupleVal:ElixirAST = (assignsVar != null) ? makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), makeAST(EVar(assignsVar))])) : makeAST(EVar(socketParam));
+		var finalTuple = makeAST(ETuple([okAtom, tupleVal]));
+		var out:Array<ElixirAST> = stmts.copy();
+		out.push(finalTuple);
+		makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(out))), n.metadata, n.pos);	
+	case EDo(stmts2):
+		var alreadyTuple2 = false;
+		if (stmts2.length > 0) switch (stmts2[stmts2.length - 1].def) {
+			case ETuple(elems) if (elems.length == 2):
+				alreadyTuple2 = (switch (elems[0].def) {
+					case EAtom(_):
+						true;					
+					default:
+						false;					
+				});			
+			default:
+		};
+		if (alreadyTuple2) return n;
+		if (stmts2.length > 0) switch (stmts2[stmts2.length - 1].def) {
+			case EBinary(Match, leftAny2, rhs2):
+				switch (rhs2.def) {
+					case EMap(_):
+						var okAtomX = makeAST(EAtom(ElixirAtom.raw("ok")));
+						var tupleValX = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs2]));
+						var finalTupleX = makeAST(ETuple([okAtomX, tupleValX]));
+						var replaced2:Array<ElixirAST> = stmts2.copy();
+						replaced2[replaced2.length - 1] = finalTupleX;
+						return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replaced2))), n.metadata, n.pos);					
+					default:
+				};			
+			case EMatch(patAny2, rhsM2):
+				switch (rhsM2.def) {
+					case EMap(_):
+						var okAtomY = makeAST(EAtom(ElixirAtom.raw("ok")));
+						var tupleValY = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM2]));
+						var finalTupleY = makeAST(ETuple([okAtomY, tupleValY]));
+						var replacedY:Array<ElixirAST> = stmts2.copy();
+						replacedY[replacedY.length - 1] = finalTupleY;
+						return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replacedY))), n.metadata, n.pos);					
+					default:
+				};			
+			default:
+		};
+		var assignsVar2:Null<String> = null;
+		for (s  in  stmts2) switch (s.def) {
+			case EBinary(Match, left, rhs):
+				switch (left.def) {
+					case EVar(v):
+						switch (rhs.def) {
+							case EMap(_):
+								assignsVar2 = v;							
+							default:
+						};					
+					default:
+				};			
+			case EMatch(pat, rhs2):
+				switch (pat) {
+					case PVar(v2):
+						switch (rhs2.def) {
+							case EMap(_):
+								assignsVar2 = v2;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};
+		var okAtom2 = makeAST(EAtom(ElixirAtom.raw("ok")));
+		var tupleVal2:ElixirAST = (assignsVar2 != null) ? makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), makeAST(EVar(assignsVar2))])) : makeAST(EVar(socketParam));
+		var finalTuple2 = makeAST(ETuple([okAtom2, tupleVal2]));
+		var out2:Array<ElixirAST> = stmts2.copy();
+		out2.push(finalTuple2);
+		makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out2))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = body.def;
+								switch (enumIndex `) {
+									case 53: {
+										var ` = `[0];
+										{
+											var stmts = `;
+											{
+												var alreadyTuple = false;
+												if (stmts.length > 0) {
+													@:ast(switch (stmts[stmts.length - 1].def) {
+	case ETuple(elems) if (elems.length == 2):
+		alreadyTuple = (switch (elems[0].def) {
+			case EAtom(_):
+				true;			
+			default:
+				false;			
+		});	
+	default:
+}) {
+														var ` = stmts[stmts.length - 1].def;
+														if (enumIndex ` == 16) {
+															var ` = `[0];
+															{
+																var elems = `;
+																if (elems.length == 2) {
+																	alreadyTuple = (@:ast(switch (elems[0].def) {
+	case EAtom(_):
+		true;	
+	default:
+		false;	
+}) {
+																		var ` = elems[0].def;
+																		if (enumIndex ` == 31) {
+																			var ` = `[0];
+																			{
+																				true;
+																			};
+																		} else {
+																			false;
+																		};
+																	});
+																} else {};
+															};
+														} else {};
+													};
+												};
+												if (alreadyTuple) {
+													return n;
+												};
+												if (stmts.length > 0) {
+													@:ast(switch (stmts[stmts.length - 1].def) {
+	case EBinary(Match, leftAny, rhs):
+		switch (rhs.def) {
+			case EMap(_):
+				var okAtom0 = makeAST(EAtom(ElixirAtom.raw("ok")));
+				var tupleVal0 = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs]));
+				var finalTuple0 = makeAST(ETuple([okAtom0, tupleVal0]));
+				var replaced:Array<ElixirAST> = stmts.copy();
+				replaced[replaced.length - 1] = finalTuple0;
+				return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replaced))), n.metadata, n.pos);			
+			default:
+		};	
+	case EMatch(patAny, rhsM):
+		switch (rhsM.def) {
+			case EMap(_):
+				var okAtomM = makeAST(EAtom(ElixirAtom.raw("ok")));
+				var tupleValM = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM]));
+				var finalTupleM = makeAST(ETuple([okAtomM, tupleValM]));
+				var replacedM:Array<ElixirAST> = stmts.copy();
+				replacedM[replacedM.length - 1] = finalTupleM;
+				return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replacedM))), n.metadata, n.pos);			
+			default:
+		};	
+	default:
+}) {
+														var ` = stmts[stmts.length - 1].def;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var patAny = `;
+																	var rhsM = `;
+																	{
+																		@:ast(switch (rhsM.def) {
+	case EMap(_):
+		var okAtomM = makeAST(EAtom(ElixirAtom.raw("ok")));
+		var tupleValM = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM]));
+		var finalTupleM = makeAST(ETuple([okAtomM, tupleValM]));
+		var replacedM:Array<ElixirAST> = stmts.copy();
+		replacedM[replacedM.length - 1] = finalTupleM;
+		return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replacedM))), n.metadata, n.pos);	
+	default:
+}) {
+																			var ` = rhsM.def;
+																			if (enumIndex ` == 17) {
+																				var ` = `[0];
+																				{
+																					var okAtomM = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+																					};
+																					var tupleValM = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.Component"), metadata : {}, pos : pos};
+																						}, "assign", [{
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+																						}, rhsM]), metadata : {}, pos : pos};
+																					};
+																					var finalTupleM = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([okAtomM, tupleValM]), metadata : {}, pos : pos};
+																					};
+																					var replacedM = stmts.copy();
+																					replacedM[replacedM.length - 1] = finalTupleM;
+																					return {def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(replacedM), metadata : {}, pos : pos};
+																					}), metadata : n.metadata, pos : n.pos};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															};
+															case 26: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var leftAny = `;
+																		var rhs = `;
+																		{
+																			@:ast(switch (rhs.def) {
+	case EMap(_):
+		var okAtom0 = makeAST(EAtom(ElixirAtom.raw("ok")));
+		var tupleVal0 = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs]));
+		var finalTuple0 = makeAST(ETuple([okAtom0, tupleVal0]));
+		var replaced:Array<ElixirAST> = stmts.copy();
+		replaced[replaced.length - 1] = finalTuple0;
+		return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replaced))), n.metadata, n.pos);	
+	default:
+}) {
+																				var ` = rhs.def;
+																				if (enumIndex ` == 17) {
+																					var ` = `[0];
+																					{
+																						var okAtom0 = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+																						};
+																						var tupleVal0 = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.Component"), metadata : {}, pos : pos};
+																							}, "assign", [{
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+																							}, rhs]), metadata : {}, pos : pos};
+																						};
+																						var finalTuple0 = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([okAtom0, tupleVal0]), metadata : {}, pos : pos};
+																						};
+																						var replaced = stmts.copy();
+																						replaced[replaced.length - 1] = finalTuple0;
+																						return {def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(replaced), metadata : {}, pos : pos};
+																						}), metadata : n.metadata, pos : n.pos};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+															default: {}
+														};
+													};
+												};
+												var assignsVar = null;
+												{
+													var ` = 0;
+													while (` < stmts.length) {
+														var s = stmts[`];
+														++ `;
+														@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v):
+				switch (rhs.def) {
+					case EMap(_):
+						assignsVar = v;					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(v2):
+				switch (rhs2.def) {
+					case EMap(_):
+						assignsVar = v2;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+															var ` = s.def;
+															switch (enumIndex `) {
+																case 8: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var pat = `;
+																		var rhs2 = `;
+																		{
+																			@:ast(switch (pat) {
+	case PVar(v2):
+		switch (rhs2.def) {
+			case EMap(_):
+				assignsVar = v2;			
+			default:
+		};	
+	default:
+}) if (enumIndex pat == 0) {
+																				var ` = pat[0];
+																				{
+																					var v2 = `;
+																					{
+																						@:ast(switch (rhs2.def) {
+	case EMap(_):
+		assignsVar = v2;	
+	default:
+}) {
+																							var ` = rhs2.def;
+																							if (enumIndex ` == 17) {
+																								var ` = `[0];
+																								{
+																									assignsVar = v2;
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+																case 26: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 27) {
+																		{
+																			var left = `;
+																			var rhs = `;
+																			{
+																				@:ast(switch (left.def) {
+	case EVar(v):
+		switch (rhs.def) {
+			case EMap(_):
+				assignsVar = v;			
+			default:
+		};	
+	default:
+}) {
+																					var ` = left.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var v = `;
+																							{
+																								@:ast(switch (rhs.def) {
+	case EMap(_):
+		assignsVar = v;	
+	default:
+}) {
+																									var ` = rhs.def;
+																									if (enumIndex ` == 17) {
+																										var ` = `[0];
+																										{
+																											assignsVar = v;
+																										};
+																									} else {};
+																								};
+																							};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+																default: {}
+															};
+														};
+													};
+												};
+												var okAtom = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+												};
+												var tupleVal = if ((assignsVar != null)) {
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.Component"), metadata : {}, pos : pos};
+														}, "assign", [{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+														}, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(assignsVar), metadata : {}, pos : pos};
+														}]), metadata : {}, pos : pos};
+													};
+												} else {
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+													};
+												};
+												var finalTuple = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([okAtom, tupleVal]), metadata : {}, pos : pos};
+												};
+												var out = stmts.copy();
+												out.push(finalTuple);
+												{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : {}, pos : pos};
+												}), metadata : n.metadata, pos : n.pos};
+											};
+										};
+									};
+									case 55: {
+										var ` = `[0];
+										{
+											var stmts2 = `;
+											{
+												var alreadyTuple2 = false;
+												if (stmts2.length > 0) {
+													@:ast(switch (stmts2[stmts2.length - 1].def) {
+	case ETuple(elems) if (elems.length == 2):
+		alreadyTuple2 = (switch (elems[0].def) {
+			case EAtom(_):
+				true;			
+			default:
+				false;			
+		});	
+	default:
+}) {
+														var ` = stmts2[stmts2.length - 1].def;
+														if (enumIndex ` == 16) {
+															var ` = `[0];
+															{
+																var elems = `;
+																if (elems.length == 2) {
+																	alreadyTuple2 = (@:ast(switch (elems[0].def) {
+	case EAtom(_):
+		true;	
+	default:
+		false;	
+}) {
+																		var ` = elems[0].def;
+																		if (enumIndex ` == 31) {
+																			var ` = `[0];
+																			{
+																				true;
+																			};
+																		} else {
+																			false;
+																		};
+																	});
+																} else {};
+															};
+														} else {};
+													};
+												};
+												if (alreadyTuple2) {
+													return n;
+												};
+												if (stmts2.length > 0) {
+													@:ast(switch (stmts2[stmts2.length - 1].def) {
+	case EBinary(Match, leftAny2, rhs2):
+		switch (rhs2.def) {
+			case EMap(_):
+				var okAtomX = makeAST(EAtom(ElixirAtom.raw("ok")));
+				var tupleValX = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs2]));
+				var finalTupleX = makeAST(ETuple([okAtomX, tupleValX]));
+				var replaced2:Array<ElixirAST> = stmts2.copy();
+				replaced2[replaced2.length - 1] = finalTupleX;
+				return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replaced2))), n.metadata, n.pos);			
+			default:
+		};	
+	case EMatch(patAny2, rhsM2):
+		switch (rhsM2.def) {
+			case EMap(_):
+				var okAtomY = makeAST(EAtom(ElixirAtom.raw("ok")));
+				var tupleValY = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM2]));
+				var finalTupleY = makeAST(ETuple([okAtomY, tupleValY]));
+				var replacedY:Array<ElixirAST> = stmts2.copy();
+				replacedY[replacedY.length - 1] = finalTupleY;
+				return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replacedY))), n.metadata, n.pos);			
+			default:
+		};	
+	default:
+}) {
+														var ` = stmts2[stmts2.length - 1].def;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var patAny2 = `;
+																	var rhsM2 = `;
+																	{
+																		@:ast(switch (rhsM2.def) {
+	case EMap(_):
+		var okAtomY = makeAST(EAtom(ElixirAtom.raw("ok")));
+		var tupleValY = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhsM2]));
+		var finalTupleY = makeAST(ETuple([okAtomY, tupleValY]));
+		var replacedY:Array<ElixirAST> = stmts2.copy();
+		replacedY[replacedY.length - 1] = finalTupleY;
+		return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replacedY))), n.metadata, n.pos);	
+	default:
+}) {
+																			var ` = rhsM2.def;
+																			if (enumIndex ` == 17) {
+																				var ` = `[0];
+																				{
+																					var okAtomY = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+																					};
+																					var tupleValY = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.Component"), metadata : {}, pos : pos};
+																						}, "assign", [{
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+																						}, rhsM2]), metadata : {}, pos : pos};
+																					};
+																					var finalTupleY = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([okAtomY, tupleValY]), metadata : {}, pos : pos};
+																					};
+																					var replacedY = stmts2.copy();
+																					replacedY[replacedY.length - 1] = finalTupleY;
+																					return {def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EDo(replacedY), metadata : {}, pos : pos};
+																					}), metadata : n.metadata, pos : n.pos};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															};
+															case 26: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var leftAny2 = `;
+																		var rhs2 = `;
+																		{
+																			@:ast(switch (rhs2.def) {
+	case EMap(_):
+		var okAtomX = makeAST(EAtom(ElixirAtom.raw("ok")));
+		var tupleValX = makeAST(ERemoteCall(makeAST(EVar("Phoenix.Component")), "assign", [makeAST(EVar(socketParam)), rhs2]));
+		var finalTupleX = makeAST(ETuple([okAtomX, tupleValX]));
+		var replaced2:Array<ElixirAST> = stmts2.copy();
+		replaced2[replaced2.length - 1] = finalTupleX;
+		return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replaced2))), n.metadata, n.pos);	
+	default:
+}) {
+																				var ` = rhs2.def;
+																				if (enumIndex ` == 17) {
+																					var ` = `[0];
+																					{
+																						var okAtomX = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+																						};
+																						var tupleValX = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.Component"), metadata : {}, pos : pos};
+																							}, "assign", [{
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+																							}, rhs2]), metadata : {}, pos : pos};
+																						};
+																						var finalTupleX = {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([okAtomX, tupleValX]), metadata : {}, pos : pos};
+																						};
+																						var replaced2 = stmts2.copy();
+																						replaced2[replaced2.length - 1] = finalTupleX;
+																						return {def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EDo(replaced2), metadata : {}, pos : pos};
+																						}), metadata : n.metadata, pos : n.pos};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+															default: {}
+														};
+													};
+												};
+												var assignsVar2 = null;
+												{
+													var ` = 0;
+													while (` < stmts2.length) {
+														var s = stmts2[`];
+														++ `;
+														@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v):
+				switch (rhs.def) {
+					case EMap(_):
+						assignsVar2 = v;					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(v2):
+				switch (rhs2.def) {
+					case EMap(_):
+						assignsVar2 = v2;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+															var ` = s.def;
+															switch (enumIndex `) {
+																case 8: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var pat = `;
+																		var rhs2 = `;
+																		{
+																			@:ast(switch (pat) {
+	case PVar(v2):
+		switch (rhs2.def) {
+			case EMap(_):
+				assignsVar2 = v2;			
+			default:
+		};	
+	default:
+}) if (enumIndex pat == 0) {
+																				var ` = pat[0];
+																				{
+																					var v2 = `;
+																					{
+																						@:ast(switch (rhs2.def) {
+	case EMap(_):
+		assignsVar2 = v2;	
+	default:
+}) {
+																							var ` = rhs2.def;
+																							if (enumIndex ` == 17) {
+																								var ` = `[0];
+																								{
+																									assignsVar2 = v2;
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+																case 26: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 27) {
+																		{
+																			var left = `;
+																			var rhs = `;
+																			{
+																				@:ast(switch (left.def) {
+	case EVar(v):
+		switch (rhs.def) {
+			case EMap(_):
+				assignsVar2 = v;			
+			default:
+		};	
+	default:
+}) {
+																					var ` = left.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var v = `;
+																							{
+																								@:ast(switch (rhs.def) {
+	case EMap(_):
+		assignsVar2 = v;	
+	default:
+}) {
+																									var ` = rhs.def;
+																									if (enumIndex ` == 17) {
+																										var ` = `[0];
+																										{
+																											assignsVar2 = v;
+																										};
+																									} else {};
+																								};
+																							};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+																default: {}
+															};
+														};
+													};
+												};
+												var okAtom2 = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+												};
+												var tupleVal2 = if ((assignsVar2 != null)) {
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.Component"), metadata : {}, pos : pos};
+														}, "assign", [{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+														}, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(assignsVar2), metadata : {}, pos : pos};
+														}]), metadata : {}, pos : pos};
+													};
+												} else {
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(socketParam), metadata : {}, pos : pos};
+													};
+												};
+												var finalTuple2 = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([okAtom2, tupleVal2]), metadata : {}, pos : pos};
+												};
+												var out2 = stmts2.copy();
+												out2.push(finalTuple2);
+												{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : {}, pos : pos};
+												}), metadata : n.metadata, pos : n.pos};
+											};
+										};
+									};
+									default: {
+										n;
+									}
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,970 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.analyzers.VariableAnalyzer {
+
+	public static function usesVariable(nodes:Array<reflaxe.elixir.ast.ElixirAST>, varName:String) {
+		{
+			var ` = 0;
+			while (` < nodes.length) {
+				var node = nodes[`];
+				++ `;
+				if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(node, varName)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	public static function usesVariableInNode(node:reflaxe.elixir.ast.ElixirAST, varName:String) {
+		if (node == null) {
+			return false;
+		};
+		return @:ast(switch (node.def) {
+	case EVar(name):
+		name == varName;	
+	case ERemoteCall(target, _, args):
+		(target != null && usesVariableInNode(target, varName)) || usesVariable(args, varName);	
+	case EMatch(_, expr):
+		usesVariableInNode(expr, varName);	
+	case EBinary(_, left, right):
+		usesVariableInNode(left, varName) || usesVariableInNode(right, varName);	
+	case EBlock(exprs):
+		usesVariable(exprs, varName);	
+	case EList(items):
+		usesVariable(items, varName);	
+	case ETuple(items):
+		usesVariable(items, varName);	
+	case EMap(fields):
+		var used = false;
+		for (field  in  fields) {
+			if (usesVariableInNode(field.key, varName) || usesVariableInNode(field.value, varName)) {
+				used = true;
+				break;
+			};
+		};
+		used;	
+	case EIf(cond, thenBranch, elseBranch):
+		usesVariableInNode(cond, varName) || usesVariableInNode(thenBranch, varName) || (elseBranch != null && usesVariableInNode(elseBranch, varName));	
+	case ECase(expr, clauses):
+		var used = usesVariableInNode(expr, varName);
+		if (!used) {
+			for (clause  in  clauses) {
+				if ((clause.guard != null && usesVariableInNode(clause.guard, varName)) || usesVariableInNode(clause.body, varName)) {
+					used = true;
+					break;
+				};
+			};
+		};
+		used;	
+	case EFor(generators, filters, body, into, uniq):
+		var used = false;
+		for (gen  in  generators) {
+			if (usesVariableInNode(gen.expr, varName)) {
+				used = true;
+				break;
+			};
+		};
+		if (!used) {
+			for (filter  in  filters) {
+				if (usesVariableInNode(filter, varName)) {
+					used = true;
+					break;
+				};
+			};
+		};
+		if (!used && body != null) {
+			used = usesVariableInNode(body, varName);
+		};
+		if (!used && into != null) {
+			used = usesVariableInNode(into, varName);
+		};
+		used;	
+	case EField(target, _):
+		usesVariableInNode(target, varName);	
+	case EParen(expr):
+		usesVariableInNode(expr, varName);	
+	case ECall(_, _, args):
+		usesVariable(args, varName);	
+	case EUnary(_, expr):
+		usesVariableInNode(expr, varName);	
+	case EDo(body):
+		usesVariable(body, varName);	
+	case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+		var used = usesVariableInNode(body, varName);
+		if (!used && rescueClauses != null) {
+			for (clause  in  rescueClauses) {
+				if (usesVariableInNode(clause.body, varName)) {
+					used = true;
+					break;
+				};
+			};
+		};
+		if (!used && catchClauses != null) {
+			for (clause  in  catchClauses) {
+				if (usesVariableInNode(clause.body, varName)) {
+					used = true;
+					break;
+				};
+			};
+		};
+		if (!used && afterBlock != null) {
+			used = usesVariableInNode(afterBlock, varName);
+		};
+		if (!used && elseBlock != null) {
+			used = usesVariableInNode(elseBlock, varName);
+		};
+		used;	
+	case EFn(clauses):
+		var used = false;
+		for (clause  in  clauses) {
+			if (usesVariableInNode(clause.body, varName)) {
+				used = true;
+				break;
+			};
+		};
+		used;	
+	case EPipe(left, right):
+		usesVariableInNode(left, varName) || usesVariableInNode(right, varName);	
+	case EStructUpdate(structExpr, fields):
+		var used = usesVariableInNode(structExpr, varName);
+		if (!used) {
+			for (field  in  fields) {
+				if (usesVariableInNode(field.value, varName)) {
+					used = true;
+					break;
+				};
+			};
+		};
+		used;	
+	case ECond(clauses):
+		var used = false;
+		for (clause  in  clauses) {
+			if (usesVariableInNode(clause.condition, varName) || usesVariableInNode(clause.body, varName)) {
+				used = true;
+				break;
+			};
+		};
+		used;	
+	case EWith(clauses, doBlock, elseBlock):
+		var used = false;
+		for (clause  in  clauses) {
+			if (usesVariableInNode(clause.expr, varName)) {
+				used = true;
+				break;
+			};
+		};
+		if (!used) {
+			used = usesVariableInNode(doBlock, varName);
+		};
+		if (!used && elseBlock != null) {
+			used = usesVariableInNode(elseBlock, varName);
+		};
+		used;	
+	default:
+		false;	
+}) {
+			var ` = node.def;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						var clauses = `;
+						{
+							var used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(expr, varName);
+							if (! used) {
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var clause = clauses[`];
+										++ `;
+										if ((clause.guard != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.guard, varName)) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.body, varName)) {
+											used = true;
+											break;
+										};
+									};
+								};
+							};
+							used;
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var clauses = `;
+						{
+							var used = false;
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var clause = clauses[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.condition, varName) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.body, varName)) {
+										used = true;
+										break;
+									};
+								};
+							};
+							used;
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(expr, varName);
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var clauses = `;
+						var doBlock = `;
+						var elseBlock = `;
+						{
+							var used = false;
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var clause = clauses[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.expr, varName)) {
+										used = true;
+										break;
+									};
+								};
+							};
+							if (! used) {
+								used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(doBlock, varName);
+							};
+							if (! used && elseBlock != null) {
+								used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(elseBlock, varName);
+							};
+							used;
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenBranch = `;
+						var elseBranch = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(cond, varName) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(thenBranch, varName) || (elseBranch != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(elseBranch, varName));
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					var ` = `[4];
+					{
+						var body = `;
+						var rescueClauses = `;
+						var catchClauses = `;
+						var afterBlock = `;
+						var elseBlock = `;
+						{
+							var used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(body, varName);
+							if (! used && rescueClauses != null) {
+								{
+									var ` = 0;
+									while (` < rescueClauses.length) {
+										var clause = rescueClauses[`];
+										++ `;
+										if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.body, varName)) {
+											used = true;
+											break;
+										};
+									};
+								};
+							};
+							if (! used && catchClauses != null) {
+								{
+									var ` = 0;
+									while (` < catchClauses.length) {
+										var clause = catchClauses[`];
+										++ `;
+										if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.body, varName)) {
+											used = true;
+											break;
+										};
+									};
+								};
+							};
+							if (! used && afterBlock != null) {
+								used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(afterBlock, varName);
+							};
+							if (! used && elseBlock != null) {
+								used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(elseBlock, varName);
+							};
+							used;
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					{
+						var items = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariable(items, varName);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					{
+						var items = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariable(items, varName);
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					{
+						var fields = `;
+						{
+							var used = false;
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var field = fields[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(field.key, varName) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(field.value, varName)) {
+										used = true;
+										break;
+									};
+								};
+							};
+							used;
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var structExpr = `;
+						var fields = `;
+						{
+							var used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(structExpr, varName);
+							if (! used) {
+								{
+									var ` = 0;
+									while (` < fields.length) {
+										var field = fields[`];
+										++ `;
+										if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(field.value, varName)) {
+											used = true;
+											break;
+										};
+									};
+								};
+							};
+							used;
+						};
+					};
+				};
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var args = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariable(args, varName);
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var args = `;
+						{
+							(target != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(target, varName)) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariable(args, varName);
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var left = `;
+						var right = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(left, varName) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(right, varName);
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var left = `;
+						var right = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(left, varName) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(right, varName);
+						};
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(expr, varName);
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(target, varName);
+						};
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var name = `;
+						{
+							name == varName;
+						};
+					};
+				};
+				case 41: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					var ` = `[4];
+					{
+						var generators = `;
+						var filters = `;
+						var body = `;
+						var into = `;
+						var uniq = `;
+						{
+							var used = false;
+							{
+								var ` = 0;
+								while (` < generators.length) {
+									var gen = generators[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(gen.expr, varName)) {
+										used = true;
+										break;
+									};
+								};
+							};
+							if (! used) {
+								{
+									var ` = 0;
+									while (` < filters.length) {
+										var filter = filters[`];
+										++ `;
+										if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(filter, varName)) {
+											used = true;
+											break;
+										};
+									};
+								};
+							};
+							if (! used && body != null) {
+								used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(body, varName);
+							};
+							if (! used && into != null) {
+								used = reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(into, varName);
+							};
+							used;
+						};
+					};
+				};
+				case 42: {
+					var ` = `[0];
+					{
+						var clauses = `;
+						{
+							var used = false;
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var clause = clauses[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(clause.body, varName)) {
+										used = true;
+										break;
+									};
+								};
+							};
+							used;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariable(exprs, varName);
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var expr = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariableInNode(expr, varName);
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var body = `;
+						{
+							reflaxe.elixir.ast.analyzers.VariableAnalyzer.usesVariable(body, varName);
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	@:value({ preserveUnderscore : true })
+	public static function toElixirVarName(name:String, preserveUnderscore:Bool = true) {
+		if (preserveUnderscore && name.charAt(0) == "_") {
+			var baseName = name.substr(1, null);
+			if (baseName.length > 0) {
+				return "_" + reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(baseName);
+			};
+			return "_";
+		};
+		return reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(name);
+	}
+
+	public static function isForbiddenInElixir(name:String) {
+		var forbidden = ["and", "or", "not", "when", "in", "fn", "do", "end", "catch", "rescue", "after", "else", "true", "false", "nil"];
+		return forbidden.indexOf(name, null) != -1;
+	}
+
+	public static function generateTempVar(prefix:String, context:reflaxe.elixir.ast.context.BuildContext) {
+		var counter = 0;
+		if (context != null) {
+			counter = Std.int(Date.now().getTime()) % 10000;
+		};
+		return prefix + "_" + counter;
+	}
+
+	public static function registerVariableMapping(context:reflaxe.elixir.ast.context.BuildContext, originalId:String, mappedName:String) {
+		if (context == null) {
+			return;
+		};
+	}
+
+	public static function getMappedVariableName(context:reflaxe.elixir.ast.context.BuildContext, originalId:String) {
+		if (context == null) {
+			return null;
+		};
+		return null;
+	}
+
+	public static function isPatternVariableUsedById(body:haxe.macro.TypedExpr, varId:Int) {
+		if (body == null) {
+			return false;
+		};
+		@:ast(switch (body.expr) {
+	case TLocal(v):
+		return v.id == varId;	
+	case TBlock(exprs):
+		for (expr  in  exprs) {
+			if (isPatternVariableUsedById(expr, varId)) return true;
+		};
+		return false;	
+	case TBinop(_, e1, e2):
+		return isPatternVariableUsedById(e1, varId) || isPatternVariableUsedById(e2, varId);	
+	case TCall(e, el):
+		if (isPatternVariableUsedById(e, varId)) return true;
+		for (arg  in  el) {
+			if (isPatternVariableUsedById(arg, varId)) return true;
+		};
+		return false;	
+	case TField(e, _):
+		return isPatternVariableUsedById(e, varId);	
+	case TIf(cond, thenExpr, elseExpr):
+		return isPatternVariableUsedById(cond, varId) || isPatternVariableUsedById(thenExpr, varId) || (elseExpr != null && isPatternVariableUsedById(elseExpr, varId));	
+	case TSwitch(e, cases, edef):
+		if (isPatternVariableUsedById(e, varId)) return true;
+		for (c  in  cases) {
+			if (isPatternVariableUsedById(c.expr, varId)) return true;
+		};
+		return edef != null && isPatternVariableUsedById(edef, varId);	
+	case TReturn(e):
+		return e != null && isPatternVariableUsedById(e, varId);	
+	case TParenthesis(e):
+		return isPatternVariableUsedById(e, varId);	
+	case TObjectDecl(fields):
+		for (field  in  fields) {
+			if (isPatternVariableUsedById(field.expr, varId)) return true;
+		};
+		return false;	
+	case TArrayDecl(values):
+		for (value  in  values) {
+			if (isPatternVariableUsedById(value, varId)) return true;
+		};
+		return false;	
+	case TVar(_, expr):
+		return expr != null && isPatternVariableUsedById(expr, varId);	
+	case TFunction(func):
+		return isPatternVariableUsedById(func.expr, varId);	
+	case TFor(v, e1, e2):
+		return isPatternVariableUsedById(e1, varId) || isPatternVariableUsedById(e2, varId);	
+	case TWhile(e1, e2, _):
+		return isPatternVariableUsedById(e1, varId) || isPatternVariableUsedById(e2, varId);	
+	case TUnop(_, _, e):
+		return isPatternVariableUsedById(e, varId);	
+	case TTry(e, catches):
+		if (isPatternVariableUsedById(e, varId)) return true;
+		for (c  in  catches) {
+			if (isPatternVariableUsedById(c.expr, varId)) return true;
+		};
+		return false;	
+	case TThrow(e):
+		return isPatternVariableUsedById(e, varId);	
+	case TCast(e, _):
+		return isPatternVariableUsedById(e, varId);	
+	case TMeta(_, e):
+		return isPatternVariableUsedById(e, varId);	
+	default:
+		return false;	
+}) {
+			var ` = body.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							return v.id == varId;
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e1, varId) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e2, varId);
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var fields = `;
+						{
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var field = fields[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(field.expr, varId)) {
+										return true;
+									};
+								};
+							};
+							return false;
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						var values = `;
+						{
+							{
+								var ` = 0;
+								while (` < values.length) {
+									var value = values[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(value, varId)) {
+										return true;
+									};
+								};
+							};
+							return false;
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var el = `;
+						{
+							if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId)) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var arg = el[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(arg, varId)) {
+										return true;
+									};
+								};
+							};
+							return false;
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						var func = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(func.expr, varId);
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						{
+							return expr != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(expr, varId);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(expr, varId)) {
+										return true;
+									};
+								};
+							};
+							return false;
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e1, varId) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e2, varId);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenExpr = `;
+						var elseExpr = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(cond, varId) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(thenExpr, varId) || (elseExpr != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(elseExpr, varId));
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e1, varId) || reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e2, varId);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						var cases = `;
+						var edef = `;
+						{
+							if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId)) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < cases.length) {
+									var c = cases[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(c.expr, varId)) {
+										return true;
+									};
+								};
+							};
+							return edef != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(edef, varId);
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId)) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < catches.length) {
+									var c = catches[`];
+									++ `;
+									if (reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(c.expr, varId)) {
+										return true;
+									};
+								};
+							};
+							return false;
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							return e != null && reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				case 23: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							return reflaxe.elixir.ast.analyzers.VariableAnalyzer.isPatternVariableUsedById(e, varId);
+						};
+					};
+				};
+				default: {
+					return false;
+				}
+			};
+		};
+	}
+
+	public static inline function isUnusedVariable(name:String) {
+		return name != null && name.charAt(0) == "_";
+	}
+
+	public static inline function stripUnderscorePrefix(name:String) {
+		if (name != null && name.charAt(0) == "_") {
+			return name.substr(1, null);
+		};
+		return name;
+	}
+
+	public static inline function addUnderscorePrefix(name:String) {
+		if (name != null && name.charAt(0) != "_") {
+			return "_" + name;
+		};
+		return name;
+	}
+}

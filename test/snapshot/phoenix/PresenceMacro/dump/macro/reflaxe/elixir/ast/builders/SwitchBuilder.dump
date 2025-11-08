@@ -1,0 +1,4988 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.SwitchBuilder {
+
+	static function cleanupTempBinderAliases(body:reflaxe.elixir.ast.ElixirAST) {
+		var isInfraTemp = function(name:String) {
+			if (name == null || name.length == 0) {
+				return false;
+			};
+			if (name.charAt(0) == "_") {
+				name = name.substr(1, null);
+			};
+			if (name == "g") {
+				return true;
+			};
+			if (name.charAt(0) == "g") {
+				{
+					var ` = 1;
+					var ` = name.length;
+					while (` < `) {
+						var i = ` ++;
+						var c = name.charCodeAt(i);
+						if (c < 48 || c > 57) {
+							return false;
+						};
+					};
+				};
+				return true;
+			};
+			return false;
+		};
+		@:ast(switch (body.def) {
+	case EBlock(stmts):
+		var filtered:Array<ElixirAST> = [];
+		for (s  in  stmts) {
+			var drop = false;
+			switch (s.def) {
+				case EBinary(Match, left, right):
+					switch (right.def) {
+						case EVar(rn) if (isInfraTemp(rn)):
+							drop = true;						
+						default:
+					};				
+				case EMatch(pat, rhs):
+					switch (rhs.def) {
+						case EVar(rn) if (isInfraTemp(rn)):
+							drop = true;						
+						default:
+					};				
+				default:
+			};
+			if (!drop) filtered.push(s);
+		};
+		return { def : EBlock(filtered), metadata : body.metadata, pos : body.pos };	
+	default:
+		return body;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					{
+						var filtered = [];
+						{
+							var ` = 0;
+							while (` < stmts.length) {
+								var s = stmts[`];
+								++ `;
+								var drop = false;
+								@:ast(switch (s.def) {
+	case EBinary(Match, left, right):
+		switch (right.def) {
+			case EVar(rn) if (isInfraTemp(rn)):
+				drop = true;			
+			default:
+		};	
+	case EMatch(pat, rhs):
+		switch (rhs.def) {
+			case EVar(rn) if (isInfraTemp(rn)):
+				drop = true;			
+			default:
+		};	
+	default:
+}) {
+									var ` = s.def;
+									switch (enumIndex `) {
+										case 8: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var pat = `;
+												var rhs = `;
+												{
+													@:ast(switch (rhs.def) {
+	case EVar(rn) if (isInfraTemp(rn)):
+		drop = true;	
+	default:
+}) {
+														var ` = rhs.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var rn = `;
+																if (isInfraTemp(rn)) {
+																	drop = true;
+																} else {};
+															};
+														} else {};
+													};
+												};
+											};
+										};
+										case 26: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var left = `;
+													var right = `;
+													{
+														@:ast(switch (right.def) {
+	case EVar(rn) if (isInfraTemp(rn)):
+		drop = true;	
+	default:
+}) {
+															var ` = right.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var rn = `;
+																	if (isInfraTemp(rn)) {
+																		drop = true;
+																	} else {};
+																};
+															} else {};
+														};
+													};
+												};
+											} else {};
+										};
+										default: {}
+									};
+								};
+								if (! drop) {
+									filtered.push(s);
+								};
+							};
+						};
+						return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(filtered), metadata : body.metadata, pos : body.pos};
+					};
+				};
+			} else {
+				return body;
+			};
+		};
+	}
+
+	@:has_untyped
+	public static function build(e:haxe.macro.TypedExpr, cases:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>, edef:Null<haxe.macro.TypedExpr>, context:reflaxe.elixir.CompilationContext) {
+		var enumType = null;
+		var isEnumIndexSwitch = false;
+		var actualSwitchExpr = e;
+		var innerExpr = e;
+		@:ast(switch (e.expr) {
+	case TParenthesis(innerE):
+		innerExpr = innerE;
+		switch (innerExpr.expr) {
+			case TMeta(_, metaE):
+				innerExpr = metaE;			
+			default:
+		};	
+	default:
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 6) {
+				var ` = `[0];
+				{
+					var innerE = `;
+					{
+						innerExpr = innerE;
+						@:ast(switch (innerExpr.expr) {
+	case TMeta(_, metaE):
+		innerExpr = metaE;	
+	default:
+}) {
+							var ` = innerExpr.expr;
+							if (enumIndex ` == 25) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var metaE = `;
+									{
+										innerExpr = metaE;
+									};
+								};
+							} else {};
+						};
+					};
+				};
+			} else {};
+		};
+		@:ast(switch (innerExpr.expr) {
+	case TEnumIndex(enumExpr):
+		isEnumIndexSwitch = true;
+		actualSwitchExpr = enumExpr;
+		enumType = getEnumTypeFromExpression(enumExpr);
+		if (enumType != null) { } else { };	
+	default:
+		enumType = getEnumTypeFromExpression(innerExpr);
+		if (enumType != null) {
+			isEnumIndexSwitch = true;
+			actualSwitchExpr = innerExpr;
+		};	
+}) {
+			var ` = innerExpr.expr;
+			if (enumIndex ` == 27) {
+				var ` = `[0];
+				{
+					var enumExpr = `;
+					{
+						isEnumIndexSwitch = true;
+						actualSwitchExpr = enumExpr;
+						enumType = reflaxe.elixir.ast.builders.SwitchBuilder.getEnumTypeFromExpression(enumExpr);
+						if (enumType != null) {} else {};
+					};
+				};
+			} else {
+				enumType = reflaxe.elixir.ast.builders.SwitchBuilder.getEnumTypeFromExpression(innerExpr);
+				if (enumType != null) {
+					isEnumIndexSwitch = true;
+					actualSwitchExpr = innerExpr;
+				};
+			};
+		};
+		var targetVarName = reflaxe.elixir.ast.builders.SwitchBuilder.extractTargetVarName(actualSwitchExpr);
+		var targetAST = if (context.compiler != null) {
+			var substitutedTarget = context.substituteIfNeeded(actualSwitchExpr);
+			var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedTarget, context);
+			result;
+		} else {
+			return null;
+		};
+		if (targetAST == null) {
+			haxe.Log.trace("[SwitchBuilder ERROR] Target AST compilation returned null!", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 197, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "build"});
+			return null;
+		};
+		var oldClauseContext = context.currentClauseContext;
+		var caseClauses = [];
+		{
+			var ` = 0;
+			var ` = cases.length;
+			while (` < `) {
+				var i = ` ++;
+				var switchCase = cases[i];
+				var clausesFromCase = reflaxe.elixir.ast.builders.SwitchBuilder.buildCaseClause(switchCase, targetVarName, context, i, enumType);
+				if (clausesFromCase.length > 0) {
+					{
+						var ` = 0;
+						while (` < clausesFromCase.length) {
+							var clause = clausesFromCase[`];
+							++ `;
+							caseClauses.push(clause);
+						};
+					};
+				} else {};
+			};
+		};
+		if (edef != null) {
+			var defaultBody = if (context.compiler != null) {
+				reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(edef, context);
+			} else {
+				null;
+			};
+			if (defaultBody != null) {
+				caseClauses.push({pattern : reflaxe.elixir.ast.EPattern.PWildcard, guard : null, body : defaultBody});
+			};
+		};
+		context.currentClauseContext = oldClauseContext;
+		if (caseClauses.length > 0) {
+			var repaired = [];
+			{
+				var ` = 0;
+				while (` < caseClauses.length) {
+					var cl = caseClauses[`];
+					++ `;
+					var binder = null;
+					if (cl.body != null && cl.body.metadata != null) {
+						binder = try {
+							cl.body.metadata.primaryCaseBinder;
+						} catch (`:Dynamic) {
+							{};
+							{};
+							if (true) {
+								{};
+								{
+									null;
+								};
+							} else throw `;
+						};
+					};
+					if (binder == null) {
+						binder = reflaxe.elixir.ast.builders.SwitchBuilder.selectPrimaryBinder(cl.pattern);
+					};
+					var newBody = cl.body;
+					if (targetVarName != null && binder != null && binder != targetVarName) {
+						newBody = reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(newBody, targetVarName, binder);
+					};
+					if (binder != null) {
+						newBody = reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(newBody, binder);
+					};
+					repaired.push({pattern : cl.pattern, guard : cl.guard, body : newBody});
+				};
+			};
+			caseClauses = repaired;
+		};
+		if (caseClauses.length == 0) {
+			return null;
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.ECase(targetAST, caseClauses);
+	}
+
+	@:has_untyped
+	static function buildCaseClause(switchCase:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }, targetVarName:String, context:reflaxe.elixir.CompilationContext, caseIndex:Int, enumTypeForSwitch:Null<haxe.macro.EnumType>) {
+		var parentCtx = context.getCurrentClauseContext();
+		var clauseCtx = new reflaxe.elixir.ast.context.ClauseContext(parentCtx, null, null);
+		if (enumTypeForSwitch != null) {
+			clauseCtx.enumType = enumTypeForSwitch;
+		};
+		context.pushClauseContext(clauseCtx);
+		if (switchCase.values.length == 0) {
+			context.popClauseContext();
+			return [];
+		};
+		var value = switchCase.values[0];
+		var isOptionSomeCall = function(v:haxe.macro.TypedExpr) {
+			return @:ast(switch (v.expr) {
+	case TCall(ctorExpr, args) if (args != null && args.length == 1):
+		switch (ctorExpr.expr) {
+			case TField(_, FEnum(_, ef)):
+				ef != null && ef.name == "Some" ? { isSome : true, param : args[0] } : { isSome : false, param : null };			
+			default:
+				{ isSome : false, param : null };			
+		};	
+	default:
+		{ isSome : false, param : null };	
+}) {
+				var ` = v.expr;
+				if (enumIndex ` == 9) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ctorExpr = `;
+						var args = `;
+						if (args != null && args.length == 1) {
+							@:ast(switch (ctorExpr.expr) {
+	case TField(_, FEnum(_, ef)):
+		ef != null && ef.name == "Some" ? { isSome : true, param : args[0] } : { isSome : false, param : null };	
+	default:
+		{ isSome : false, param : null };	
+}) {
+								var ` = ctorExpr.expr;
+								if (enumIndex ` == 4) {
+									var ` = `[0];
+									var ` = `[1];
+									if (enumIndex ` == 5) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var ef = `;
+											{
+												if (ef != null && ef.name == "Some") {
+													{isSome : true, param : args[0]};
+												} else {
+													{isSome : false, param : null};
+												};
+											};
+										};
+									} else {
+										{isSome : false, param : null};
+									};
+								} else {
+									{isSome : false, param : null};
+								};
+							};
+						} else {
+							{isSome : false, param : null};
+						};
+					};
+				} else {
+					{isSome : false, param : null};
+				};
+			};
+		};
+		var findNestedSwitchOnVar = [null];
+		findNestedSwitchOnVar[0] = function(e:haxe.macro.TypedExpr, varName:String) {
+			if (e == null) {
+				return null;
+			};
+			return @:ast(switch (e.expr) {
+	case TSwitch(scrutinee, innerCases, innerDefault):
+		switch (scrutinee.expr) {
+			case TLocal(v) if (v.name == varName):
+				{ cases : innerCases, edef : innerDefault };			
+			default:
+				null;			
+		};	
+	case TBlock(exprs):
+		var hit:Null<{ var cases : Array<{ var values : Array<TypedExpr>; var expr : TypedExpr}>; var edef : Null<TypedExpr>}> = null;
+		for (ex  in  exprs) {
+			hit = findNestedSwitchOnVar(ex, varName);
+			if (hit != null) return hit;
+		};
+		null;	
+	case TMeta(_, inner):
+		findNestedSwitchOnVar(inner, varName);	
+	case TParenthesis(inner):
+		findNestedSwitchOnVar(inner, varName);	
+	default:
+		null;	
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								findNestedSwitchOnVar[0](inner, varName);
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								var hit = null;
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var ex = exprs[`];
+										++ `;
+										hit = findNestedSwitchOnVar[0](ex, varName);
+										if (hit != null) {
+											return hit;
+										};
+									};
+								};
+								null;
+							};
+						};
+					};
+					case 18: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var scrutinee = `;
+							var innerCases = `;
+							var innerDefault = `;
+							{
+								@:ast(switch (scrutinee.expr) {
+	case TLocal(v) if (v.name == varName):
+		{ cases : innerCases, edef : innerDefault };	
+	default:
+		null;	
+}) {
+									var ` = scrutinee.expr;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (v.name == varName) {
+												{cases : innerCases, edef : innerDefault};
+											} else {
+												null;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							};
+						};
+					};
+					case 25: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var inner = `;
+							{
+								findNestedSwitchOnVar[0](inner, varName);
+							};
+						};
+					};
+					default: {
+						null;
+					}
+				};
+			};
+		};
+		haxe.Log.trace("[SwitchBuilder] ====== PATTERN ANALYSIS ======", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 414, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildCaseClause"});
+		haxe.Log.trace("[SwitchBuilder] Pattern expr type: " + Type.enumConstructor(value.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 415, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildCaseClause"});
+		var patternVars = reflaxe.elixir.ast.builders.SwitchBuilder.extractUsedVariablesFromCaseBody(switchCase.expr);
+		var tvarMapping = reflaxe.elixir.ast.builders.SwitchBuilder.extractTLocalIDsFromGuard(switchCase.expr, patternVars);
+		if (context.currentClauseContext != null) {
+			for (tvarId in tvarMapping.keys()) {
+				var name = cast tvarMapping.get(tvarId);
+				{
+					var this = context.currentClauseContext.localToName;
+					cast this.set(tvarId, name);
+				};
+			};
+		};
+		var pattern = reflaxe.elixir.ast.builders.SwitchBuilder.buildPattern(value, targetVarName, patternVars, switchCase.expr, context);
+		if (pattern == null) {
+			context.popClauseContext();
+			return [];
+		};
+		clauseCtx.primaryCaseBinder = reflaxe.elixir.ast.builders.SwitchBuilder.selectPrimaryBinder(pattern);
+		var clauses = [];
+		if (switchCase.expr != null) {
+			var exprToCheck = switchCase.expr;
+			@:ast(switch (switchCase.expr.expr) {
+	case TBlock(exprs):
+		for (expr  in  exprs) {
+			if (Type.enumConstructor(expr.expr) == "TIf") {
+				exprToCheck = expr;
+				break;
+			};
+		};	
+	default:
+}) {
+				var ` = switchCase.expr.expr;
+				if (enumIndex ` == 14) {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									if (Type.enumConstructor(expr.expr) == "TIf") {
+										exprToCheck = expr;
+										break;
+									};
+								};
+							};
+						};
+					};
+				} else {};
+			};
+			clauses = reflaxe.elixir.ast.builders.SwitchBuilder.extractGuardChain(exprToCheck, pattern, context, clauseCtx.primaryCaseBinder, switchCase.expr);
+		};
+		if (clauses.length == 0) {
+			var body = if (switchCase.expr != null && context.compiler != null) {
+				var substitutedBody = context.substituteIfNeeded(switchCase.expr);
+				reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+			} else {
+				null;
+			};
+			if (body != null) {
+				var usedTyped = reflaxe.elixir.ast.builders.SwitchBuilder.collectUsedLowerLocalsTyped(switchCase.expr);
+				var annotated = body;
+				try {
+					var meta = annotated.metadata;
+					if (meta == null) {
+						meta = {};
+					};
+					if (clauseCtx != null && clauseCtx.primaryCaseBinder != null) {
+						meta.primaryCaseBinder = clauseCtx.primaryCaseBinder;
+					};
+					meta.usedLocalsFromTyped = usedTyped;
+					annotated = {def : annotated.def, metadata : cast meta, pos : annotated.pos};
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+				var cleanedBody = reflaxe.elixir.ast.builders.SwitchBuilder.cleanupTempBinderAliases(annotated);
+				clauses.push({pattern : pattern, guard : null, body : cleanedBody});
+			};
+		};
+		return clauses;
+	}
+
+	static function collectUsedLowerLocalsTyped(caseBodyExpr:haxe.macro.TypedExpr) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var walk = [null];
+		walk[0] = function(e:haxe.macro.TypedExpr) {
+			if (e == null) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TLocal(v):
+		var n = v.name;
+		if (n != null && n.length > 0) {
+			var c = n.charAt(0);
+			if (c.toLowerCase() == c && n != "socket" && n != "live_socket" && n != "liveSocket") names.set(n, true);
+		};	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							var n = v.name;
+							if (n != null && n.length > 0) {
+								var c = n.charAt(0);
+								if (c.toLowerCase() == c && n != "socket" && n != "live_socket" && n != "liveSocket") {
+									{
+										names.set(n, true);
+									};
+								};
+							};
+						};
+					};
+				} else {};
+			};
+			haxe.macro.TypedExprTools.iter(e, walk[0]);
+		};
+		walk[0](caseBodyExpr);
+		return {
+			var ` = [];
+			for (k in names.keys()) {
+				`.push(k);
+			};
+			`;
+		};
+	}
+
+	@:has_untyped
+	static function extractGuardChain(expr:haxe.macro.TypedExpr, pattern:reflaxe.elixir.ast.EPattern, context:reflaxe.elixir.CompilationContext, primaryBinder:Null<String>, originalCaseBody:haxe.macro.TypedExpr) {
+		var clauses = [];
+		var current = expr;
+		haxe.Log.trace("[GuardChain] Starting extraction, expr type: " + Type.enumConstructor(current.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 558, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+		while (true) {
+			@:ast(switch (current.expr) {
+	case TIf(econd, eif, eelse):
+		trace("[GuardChain] Found TIf - extracting guard");
+		var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
+		var substitutedBody = context.substituteIfNeeded(eif);
+		var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+		var metaBody = (function(b:ElixirAST) {
+			try {
+				var meta:Dynamic = b.metadata;
+				if (meta == null) meta = { };
+				if (primaryBinder != null) untyped meta.primaryCaseBinder = primaryBinder;
+				untyped meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+				return makeASTWithMeta(b.def, meta, b.pos);
+			} catch(e:Dynamic) {
+				return b;
+			};
+		})(rawBody);
+		var body = cleanupTempBinderAliases(metaBody);
+		clauses.push({ pattern : pattern, guard : guard, body : body });
+		trace("[GuardChain]   Created clause with guard");
+		if (eelse != null) {
+			trace("[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}");
+			var nextExpr = eelse;
+			switch (eelse.expr) {
+				case TBlock(exprs):
+					trace("[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions");
+					for (expr  in  exprs) {
+						if (Type.enumConstructor(expr.expr) == "TIf") {
+							trace("[GuardChain]   Found TIf inside TBlock");
+							nextExpr = expr;
+							break;
+						};
+					};				
+				default:
+			};
+			current = nextExpr;
+		} else {
+			trace("[GuardChain]   No else-branch, stopping");
+			break;
+		};	
+	default:
+		trace("[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause");
+		var substitutedBody = context.substituteIfNeeded(current);
+		var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+		var metaBody2 = (function(b:ElixirAST) {
+			try {
+				var meta:Dynamic = b.metadata;
+				if (meta == null) meta = { };
+				if (primaryBinder != null) untyped meta.primaryCaseBinder = primaryBinder;
+				untyped meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+				return makeASTWithMeta(b.def, meta, b.pos);
+			} catch(e:Dynamic) {
+				return b;
+			};
+		})(rawBody);
+		var body = cleanupTempBinderAliases(metaBody2);
+		clauses.push({ pattern : pattern, guard : null, body : body });
+		break;	
+}) {
+				var ` = current.expr;
+				if (enumIndex ` == 16) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var econd = `;
+						var eif = `;
+						var eelse = `;
+						{
+							haxe.Log.trace("[GuardChain] Found TIf - extracting guard", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 564, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+							var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
+							var substitutedBody = context.substituteIfNeeded(eif);
+							var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+							var metaBody = (function(b:reflaxe.elixir.ast.ElixirAST) {
+								try {
+									var meta = b.metadata;
+									if (meta == null) {
+										meta = {};
+									};
+									if (primaryBinder != null) {
+										meta.primaryCaseBinder = primaryBinder;
+									};
+									meta.usedLocalsFromTyped = reflaxe.elixir.ast.builders.SwitchBuilder.collectUsedLowerLocalsTyped(originalCaseBody);
+									return {def : b.def, metadata : cast meta, pos : b.pos};
+								} catch (`:Dynamic) {
+									{};
+									{};
+									if (true) {
+										{};
+										{
+											return b;
+										};
+									} else throw `;
+								};
+							})(rawBody);
+							var body = reflaxe.elixir.ast.builders.SwitchBuilder.cleanupTempBinderAliases(metaBody);
+							clauses.push({pattern : pattern, guard : guard, body : body});
+							haxe.Log.trace("[GuardChain]   Created clause with guard", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 589, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+							if (eelse != null) {
+								haxe.Log.trace("[GuardChain]   Else-branch type: " + Type.enumConstructor(eelse.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 593, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+								var nextExpr = eelse;
+								@:ast(switch (eelse.expr) {
+	case TBlock(exprs):
+		trace("[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions");
+		for (expr  in  exprs) {
+			if (Type.enumConstructor(expr.expr) == "TIf") {
+				trace("[GuardChain]   Found TIf inside TBlock");
+				nextExpr = expr;
+				break;
+			};
+		};	
+	default:
+}) {
+									var ` = eelse.expr;
+									if (enumIndex ` == 14) {
+										var ` = `[0];
+										{
+											var exprs = `;
+											{
+												haxe.Log.trace("[GuardChain]   Unwrapping TBlock with " + exprs.length + " expressions", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 599, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+												{
+													var ` = 0;
+													while (` < exprs.length) {
+														var expr = exprs[`];
+														++ `;
+														if (Type.enumConstructor(expr.expr) == "TIf") {
+															haxe.Log.trace("[GuardChain]   Found TIf inside TBlock", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 603, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+															nextExpr = expr;
+															break;
+														};
+													};
+												};
+											};
+										};
+									} else {};
+								};
+								current = nextExpr;
+							} else {
+								haxe.Log.trace("[GuardChain]   No else-branch, stopping", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 614, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+								break;
+							};
+						};
+					};
+				} else {
+					haxe.Log.trace("[GuardChain] Not a TIf (type: " + Type.enumConstructor(current.expr) + "), creating final clause", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 619, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+					var substitutedBody = context.substituteIfNeeded(current);
+					var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+					var metaBody2 = (function(b:reflaxe.elixir.ast.ElixirAST) {
+						try {
+							var meta = b.metadata;
+							if (meta == null) {
+								meta = {};
+							};
+							if (primaryBinder != null) {
+								meta.primaryCaseBinder = primaryBinder;
+							};
+							meta.usedLocalsFromTyped = reflaxe.elixir.ast.builders.SwitchBuilder.collectUsedLowerLocalsTyped(originalCaseBody);
+							return {def : b.def, metadata : cast meta, pos : b.pos};
+						} catch (`:Dynamic) {
+							{};
+							{};
+							if (true) {
+								{};
+								{
+									return b;
+								};
+							} else throw `;
+						};
+					})(rawBody);
+					var body = reflaxe.elixir.ast.builders.SwitchBuilder.cleanupTempBinderAliases(metaBody2);
+					clauses.push({pattern : pattern, guard : null, body : body});
+					break;
+				};
+			};
+		};
+		var _cctx = context.getCurrentClauseContext();
+		if (_cctx != null && _cctx.primaryCaseBinder != null) {
+			var annotated = [];
+			{
+				var ` = 0;
+				while (` < clauses.length) {
+					var cl = clauses[`];
+					++ `;
+					var harmonized = cl;
+					@:ast(switch (cl.pattern) {
+	case PTuple(es) if (es.length == 2):
+		switch (es[0]) {
+			case PLiteral(_):
+				switch (es[1]) {
+					case PVar(bn):
+						var declared = new Map<String,Bool>();
+						function patDecl(p:EPattern):Void {
+							switch (p) {
+								case PVar(n):
+									declared.set(n, true);								
+								case PTuple(ps) | PList(ps):
+									for (pp  in  ps) patDecl(pp);								
+								case PCons(h, t):
+									patDecl(h);
+									patDecl(t);								
+								case PMap(kvs):
+									for (kv  in  kvs) patDecl(kv.value);								
+								case PStruct(_, fs):
+									for (f  in  fs) patDecl(f.value);								
+								case PPin(inner):
+									patDecl(inner);								
+								default:
+							};
+						};
+						patDecl(cl.pattern);
+						reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+							switch (n.def) {
+								case EMatch(p, _):
+									patDecl(p);								
+								case EBinary(Match, { def : EVar(lhs) }, _):
+									declared.set(lhs, true);								
+								default:
+							};
+							return n;
+						});
+						var used = new Map<String,Bool>();
+						reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+							switch (n.def) {
+								case EVar(v):
+									if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) used.set(v, true);								
+								default:
+							};
+							return n;
+						});
+						var undef:Array<String> = [];
+						for (k  in  used.keys()) if (!declared.exists(k) && k != bn) undef.push(k);
+						if (undef.length == 1) {
+							var newName = undef[0];
+							harmonized = { pattern : PTuple([es[0], PVar(newName)]), guard : cl.guard, body : reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
+								return switch (x.def) {
+									case EVar(v) if (v == bn):
+										makeASTWithMeta(EVar(newName), x.metadata, x.pos);									
+									default:
+										x;									
+								};
+							}) };
+						};					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+						var ` = cl.pattern;
+						if (enumIndex ` == 2) {
+							var ` = `[0];
+							{
+								var es = `;
+								if (es.length == 2) {
+									@:ast(switch (es[0]) {
+	case PLiteral(_):
+		switch (es[1]) {
+			case PVar(bn):
+				var declared = new Map<String,Bool>();
+				function patDecl(p:EPattern):Void {
+					switch (p) {
+						case PVar(n):
+							declared.set(n, true);						
+						case PTuple(ps) | PList(ps):
+							for (pp  in  ps) patDecl(pp);						
+						case PCons(h, t):
+							patDecl(h);
+							patDecl(t);						
+						case PMap(kvs):
+							for (kv  in  kvs) patDecl(kv.value);						
+						case PStruct(_, fs):
+							for (f  in  fs) patDecl(f.value);						
+						case PPin(inner):
+							patDecl(inner);						
+						default:
+					};
+				};
+				patDecl(cl.pattern);
+				reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+					switch (n.def) {
+						case EMatch(p, _):
+							patDecl(p);						
+						case EBinary(Match, { def : EVar(lhs) }, _):
+							declared.set(lhs, true);						
+						default:
+					};
+					return n;
+				});
+				var used = new Map<String,Bool>();
+				reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+					switch (n.def) {
+						case EVar(v):
+							if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) used.set(v, true);						
+						default:
+					};
+					return n;
+				});
+				var undef:Array<String> = [];
+				for (k  in  used.keys()) if (!declared.exists(k) && k != bn) undef.push(k);
+				if (undef.length == 1) {
+					var newName = undef[0];
+					harmonized = { pattern : PTuple([es[0], PVar(newName)]), guard : cl.guard, body : reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
+						return switch (x.def) {
+							case EVar(v) if (v == bn):
+								makeASTWithMeta(EVar(newName), x.metadata, x.pos);							
+							default:
+								x;							
+						};
+					}) };
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = es[0];
+										if (enumIndex ` == 1) {
+											var ` = `[0];
+											{
+												@:ast(switch (es[1]) {
+	case PVar(bn):
+		var declared = new Map<String,Bool>();
+		function patDecl(p:EPattern):Void {
+			switch (p) {
+				case PVar(n):
+					declared.set(n, true);				
+				case PTuple(ps) | PList(ps):
+					for (pp  in  ps) patDecl(pp);				
+				case PCons(h, t):
+					patDecl(h);
+					patDecl(t);				
+				case PMap(kvs):
+					for (kv  in  kvs) patDecl(kv.value);				
+				case PStruct(_, fs):
+					for (f  in  fs) patDecl(f.value);				
+				case PPin(inner):
+					patDecl(inner);				
+				default:
+			};
+		};
+		patDecl(cl.pattern);
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+			switch (n.def) {
+				case EMatch(p, _):
+					patDecl(p);				
+				case EBinary(Match, { def : EVar(lhs) }, _):
+					declared.set(lhs, true);				
+				default:
+			};
+			return n;
+		});
+		var used = new Map<String,Bool>();
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+			switch (n.def) {
+				case EVar(v):
+					if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) used.set(v, true);				
+				default:
+			};
+			return n;
+		});
+		var undef:Array<String> = [];
+		for (k  in  used.keys()) if (!declared.exists(k) && k != bn) undef.push(k);
+		if (undef.length == 1) {
+			var newName = undef[0];
+			harmonized = { pattern : PTuple([es[0], PVar(newName)]), guard : cl.guard, body : reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
+				return switch (x.def) {
+					case EVar(v) if (v == bn):
+						makeASTWithMeta(EVar(newName), x.metadata, x.pos);					
+					default:
+						x;					
+				};
+			}) };
+		};	
+	default:
+}) {
+													var ` = es[1];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var bn = `;
+															{
+																var declared = {
+																	{};
+																	new haxe.ds.StringMap();
+																};
+																var patDecl = [null];
+																patDecl[0] = function(p:reflaxe.elixir.ast.EPattern) {
+																	@:ast(switch (p) {
+	case PVar(n):
+		declared.set(n, true);	
+	case PTuple(ps) | PList(ps):
+		for (pp  in  ps) patDecl(pp);	
+	case PCons(h, t):
+		patDecl(h);
+		patDecl(t);	
+	case PMap(kvs):
+		for (kv  in  kvs) patDecl(kv.value);	
+	case PStruct(_, fs):
+		for (f  in  fs) patDecl(f.value);	
+	case PPin(inner):
+		patDecl(inner);	
+	default:
+}) switch (enumIndex p) {
+																		case 0: {
+																			var ` = p[0];
+																			{
+																				var n = `;
+																				{
+																					{
+																						declared.set(n, true);
+																					};
+																				};
+																			};
+																		};
+																		case 2: {
+																			var ` = p[0];
+																			{
+																				var ps = `;
+																				{
+																					{
+																						var ` = 0;
+																						while (` < ps.length) {
+																							var pp = ps[`];
+																							++ `;
+																							patDecl[0](pp);
+																						};
+																					};
+																				};
+																			};
+																		};
+																		case 3: {
+																			var ` = p[0];
+																			{
+																				var ps = `;
+																				{
+																					{
+																						var ` = 0;
+																						while (` < ps.length) {
+																							var pp = ps[`];
+																							++ `;
+																							patDecl[0](pp);
+																						};
+																					};
+																				};
+																			};
+																		};
+																		case 4: {
+																			var ` = p[0];
+																			var ` = p[1];
+																			{
+																				var h = `;
+																				var t = `;
+																				{
+																					patDecl[0](h);
+																					patDecl[0](t);
+																				};
+																			};
+																		};
+																		case 5: {
+																			var ` = p[0];
+																			{
+																				var kvs = `;
+																				{
+																					{
+																						var ` = 0;
+																						while (` < kvs.length) {
+																							var kv = kvs[`];
+																							++ `;
+																							patDecl[0](kv.value);
+																						};
+																					};
+																				};
+																			};
+																		};
+																		case 6: {
+																			var ` = p[0];
+																			var ` = p[1];
+																			{
+																				var fs = `;
+																				{
+																					{
+																						var ` = 0;
+																						while (` < fs.length) {
+																							var f = fs[`];
+																							++ `;
+																							patDecl[0](f.value);
+																						};
+																					};
+																				};
+																			};
+																		};
+																		case 7: {
+																			var ` = p[0];
+																			{
+																				var inner = `;
+																				{
+																					patDecl[0](inner);
+																				};
+																			};
+																		};
+																		default: {}
+																	};
+																};
+																patDecl[0](cl.pattern);
+																reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:reflaxe.elixir.ast.ElixirAST) {
+																	@:ast(switch (n.def) {
+	case EMatch(p, _):
+		patDecl(p);	
+	case EBinary(Match, { def : EVar(lhs) }, _):
+		declared.set(lhs, true);	
+	default:
+}) {
+																		var ` = n.def;
+																		switch (enumIndex `) {
+																			case 8: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				{
+																					var p = `;
+																					{
+																						patDecl[0](p);
+																					};
+																				};
+																			};
+																			case 26: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				if (enumIndex ` == 27) {
+																					{
+																						var ` = `.def;
+																						var ` = `.metadata;
+																						var ` = `.pos;
+																						if (enumIndex ` == 38) {
+																							var ` = `[0];
+																							{
+																								var lhs = `;
+																								{
+																									{
+																										declared.set(lhs, true);
+																									};
+																								};
+																							};
+																						} else {};
+																					};
+																				} else {};
+																			};
+																			default: {}
+																		};
+																	};
+																	return n;
+																});
+																var used = {
+																	{};
+																	new haxe.ds.StringMap();
+																};
+																reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:reflaxe.elixir.ast.ElixirAST) {
+																	@:ast(switch (n.def) {
+	case EVar(v):
+		if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) used.set(v, true);	
+	default:
+}) {
+																		var ` = n.def;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			{
+																				var v = `;
+																				{
+																					if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) {
+																						{
+																							used.set(v, true);
+																						};
+																					};
+																				};
+																			};
+																		} else {};
+																	};
+																	return n;
+																});
+																var undef = [];
+																for (k in used.keys()) {
+																	if (! declared.exists(k) && k != bn) {
+																		undef.push(k);
+																	};
+																};
+																if (undef.length == 1) {
+																	var newName = undef[0];
+																	harmonized = {pattern : reflaxe.elixir.ast.EPattern.PTuple([es[0], reflaxe.elixir.ast.EPattern.PVar(newName)]), guard : cl.guard, body : reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:reflaxe.elixir.ast.ElixirAST) {
+																		return @:ast(switch (x.def) {
+	case EVar(v) if (v == bn):
+		makeASTWithMeta(EVar(newName), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																			var ` = x.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var v = `;
+																					if (v == bn) {
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EVar(newName), metadata : x.metadata, pos : x.pos};
+																					} else {
+																						x;
+																					};
+																				};
+																			} else {
+																				x;
+																			};
+																		};
+																	})};
+																};
+															};
+														};
+													} else {};
+												};
+											};
+										} else {};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					var b = harmonized.body;
+					if (b != null) {
+						if (b.metadata == null) {
+							b.metadata = {};
+						};
+						b.metadata.primaryCaseBinder = _cctx.primaryCaseBinder;
+					};
+					annotated.push(harmonized);
+				};
+			};
+			clauses = annotated;
+		};
+		haxe.Log.trace("[GuardChain] Extracted " + clauses.length + " total clauses", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 696, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractGuardChain"});
+		context.popClauseContext();
+		return clauses;
+	}
+
+	static function selectPrimaryBinder(p:reflaxe.elixir.ast.EPattern) {
+		var firstVar = [null];
+		firstVar[0] = function(pt:reflaxe.elixir.ast.EPattern) {
+			return @:ast(switch (pt) {
+	case PAlias(nm, _):
+		nm;	
+	case PVar(nm):
+		nm;	
+	case PPin(inner):
+		firstVar(inner);	
+	case PTuple(es):
+		for (e  in  es) {
+			var v = firstVar(e);
+			if (v != null) return v;
+		};
+		null;	
+	case PList(es):
+		for (e  in  es) {
+			var v = firstVar(e);
+			if (v != null) return v;
+		};
+		null;	
+	case PCons(h, t):
+		var v1 = firstVar(h);
+		if (v1 != null) v1 else firstVar(t);	
+	case PMap(kvs):
+		for (kv  in  kvs) {
+			var v = firstVar(kv.value);
+			if (v != null) return v;
+		};
+		null;	
+	case PStruct(_, fs):
+		for (f  in  fs) {
+			var v = firstVar(f.value);
+			if (v != null) return v;
+		};
+		null;	
+	default:
+		null;	
+}) switch (enumIndex pt) {
+				case 0: {
+					var ` = pt[0];
+					{
+						var nm = `;
+						{
+							nm;
+						};
+					};
+				};
+				case 2: {
+					var ` = pt[0];
+					{
+						var es = `;
+						{
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									var v = firstVar[0](e);
+									if (v != null) {
+										return v;
+									};
+								};
+							};
+							null;
+						};
+					};
+				};
+				case 3: {
+					var ` = pt[0];
+					{
+						var es = `;
+						{
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									var v = firstVar[0](e);
+									if (v != null) {
+										return v;
+									};
+								};
+							};
+							null;
+						};
+					};
+				};
+				case 4: {
+					var ` = pt[0];
+					var ` = pt[1];
+					{
+						var h = `;
+						var t = `;
+						{
+							var v1 = firstVar[0](h);
+							if (v1 != null) {
+								v1;
+							} else {
+								firstVar[0](t);
+							};
+						};
+					};
+				};
+				case 5: {
+					var ` = pt[0];
+					{
+						var kvs = `;
+						{
+							{
+								var ` = 0;
+								while (` < kvs.length) {
+									var kv = kvs[`];
+									++ `;
+									var v = firstVar[0](kv.value);
+									if (v != null) {
+										return v;
+									};
+								};
+							};
+							null;
+						};
+					};
+				};
+				case 6: {
+					var ` = pt[0];
+					var ` = pt[1];
+					{
+						var fs = `;
+						{
+							{
+								var ` = 0;
+								while (` < fs.length) {
+									var f = fs[`];
+									++ `;
+									var v = firstVar[0](f.value);
+									if (v != null) {
+										return v;
+									};
+								};
+							};
+							null;
+						};
+					};
+				};
+				case 7: {
+					var ` = pt[0];
+					{
+						var inner = `;
+						{
+							firstVar[0](inner);
+						};
+					};
+				};
+				case 9: {
+					var ` = pt[0];
+					var ` = pt[1];
+					{
+						var nm = `;
+						{
+							nm;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+		@:ast(switch (p) {
+	case PTuple(es) if (es.length >= 2):
+		switch (es[0]) {
+			case PLiteral(ast):
+				switch (ast.def) {
+					case EAtom(_):
+						var pv = firstVar(es[1]);
+						if (pv != null) return pv;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var es = `;
+				if (es.length >= 2) {
+					@:ast(switch (es[0]) {
+	case PLiteral(ast):
+		switch (ast.def) {
+			case EAtom(_):
+				var pv = firstVar(es[1]);
+				if (pv != null) return pv;			
+			default:
+		};	
+	default:
+}) {
+						var ` = es[0];
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var ast = `;
+								{
+									@:ast(switch (ast.def) {
+	case EAtom(_):
+		var pv = firstVar(es[1]);
+		if (pv != null) return pv;	
+	default:
+}) {
+										var ` = ast.def;
+										if (enumIndex ` == 31) {
+											var ` = `[0];
+											{
+												var pv = firstVar[0](es[1]);
+												if (pv != null) {
+													return pv;
+												};
+											};
+										} else {};
+									};
+								};
+							};
+						} else {};
+					};
+				} else {};
+			};
+		} else {};
+		return firstVar[0](p);
+	}
+
+	static function rewriteInnerCaseScrutinee(body:reflaxe.elixir.ast.ElixirAST, oldName:String, newName:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return n;
+			};
+			return @:ast(switch (n.def) {
+	case ECase(scrut, cls):
+		var nscrut = switch (scrut.def) {
+			case EVar(v) if (v == oldName):
+				{ def : EVar(newName), metadata : scrut.metadata, pos : scrut.pos };			
+			default:
+				scrut;			
+		};
+		var ncls = [];
+		for (c  in  cls) ncls.push({ pattern : c.pattern, guard : c.guard == null ? null : rewriteInnerCaseScrutinee(c.guard, oldName, newName), body : rewriteInnerCaseScrutinee(c.body, oldName, newName) });
+		{ def : ECase(nscrut, ncls), metadata : n.metadata, pos : n.pos };	
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (s  in  stmts) out.push(rewriteInnerCaseScrutinee(s, oldName, newName));
+		{ def : EBlock(out), metadata : n.metadata, pos : n.pos };	
+	case EDo(statements):
+		var outDo:Array<ElixirAST> = [];
+		for (s  in  statements) outDo.push(rewriteInnerCaseScrutinee(s, oldName, newName));
+		{ def : EDo(outDo), metadata : n.metadata, pos : n.pos };	
+	case EIf(c, t, e):
+		{ def : EIf(rewriteInnerCaseScrutinee(c, oldName, newName), rewriteInnerCaseScrutinee(t, oldName, newName), e == null ? null : rewriteInnerCaseScrutinee(e, oldName, newName)), metadata : n.metadata, pos : n.pos };	
+	case EBinary(op, l, r):
+		{ def : EBinary(op, rewriteInnerCaseScrutinee(l, oldName, newName), rewriteInnerCaseScrutinee(r, oldName, newName)), metadata : n.metadata, pos : n.pos };	
+	case EMatch(pat, rhs):
+		{ def : EMatch(pat, rewriteInnerCaseScrutinee(rhs, oldName, newName)), metadata : n.metadata, pos : n.pos };	
+	case ECall(tgt, fnm, args):
+		var nt = tgt == null ? null : rewriteInnerCaseScrutinee(tgt, oldName, newName);
+		var nargs = [for (a  in  args) rewriteInnerCaseScrutinee(a, oldName, newName)];
+		{ def : ECall(nt, fnm, nargs), metadata : n.metadata, pos : n.pos };	
+	case ERemoteCall(moduleExpr, functionName, remoteArgs):
+		var nmod = rewriteInnerCaseScrutinee(moduleExpr, oldName, newName);
+		var nargs = [for (a  in  remoteArgs) rewriteInnerCaseScrutinee(a, oldName, newName)];
+		{ def : ERemoteCall(nmod, functionName, nargs), metadata : n.metadata, pos : n.pos };	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var scrut = `;
+							var cls = `;
+							{
+								var nscrut = @:ast(switch (scrut.def) {
+	case EVar(v) if (v == oldName):
+		{ def : EVar(newName), metadata : scrut.metadata, pos : scrut.pos };	
+	default:
+		scrut;	
+}) {
+									var ` = scrut.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (v == oldName) {
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(newName), metadata : scrut.metadata, pos : scrut.pos};
+											} else {
+												scrut;
+											};
+										};
+									} else {
+										scrut;
+									};
+								};
+								var ncls = [];
+								{
+									var ` = 0;
+									while (` < cls.length) {
+										var c = cls[`];
+										++ `;
+										ncls.push({pattern : c.pattern, guard : if (c.guard == null) {
+											null;
+										} else {
+											reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(c.guard, oldName, newName);
+										}, body : reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(c.body, oldName, newName)});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(nscrut, ncls), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs = `;
+							{
+								{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(rhs, oldName, newName)), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(c, oldName, newName), reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(t, oldName, newName), if (e == null) {
+									null;
+								} else {
+									reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(e, oldName, newName);
+								}), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var fnm = `;
+							var args = `;
+							{
+								var nt = if (tgt == null) {
+									null;
+								} else {
+									reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(tgt, oldName, newName);
+								};
+								var nargs = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < args.length) {
+											var a = args[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(a, oldName, newName));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECall(nt, fnm, nargs), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var moduleExpr = `;
+							var functionName = `;
+							var remoteArgs = `;
+							{
+								var nmod = reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(moduleExpr, oldName, newName);
+								var nargs = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < remoteArgs.length) {
+											var a = remoteArgs[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(a, oldName, newName));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(nmod, functionName, nargs), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var op = `;
+							var l = `;
+							var r = `;
+							{
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(l, oldName, newName), reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(r, oldName, newName)), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										out.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(s, oldName, newName));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var statements = `;
+							{
+								var outDo = [];
+								{
+									var ` = 0;
+									while (` < statements.length) {
+										var s = statements[`];
+										++ `;
+										outDo.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutinee(s, oldName, newName));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(outDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteInnerCaseScrutineeInfra(body:reflaxe.elixir.ast.ElixirAST, newName:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return n;
+			};
+			return @:ast(switch (n.def) {
+	case ECase(scrut, cls):
+		var nscrut = switch (scrut.def) {
+			case EVar(v) if (isInfrastructureVar(v)):
+				{ def : EVar(newName), metadata : scrut.metadata, pos : scrut.pos };			
+			default:
+				scrut;			
+		};
+		var ncls = [];
+		for (c  in  cls) ncls.push({ pattern : c.pattern, guard : c.guard == null ? null : rewriteInnerCaseScrutineeInfra(c.guard, newName), body : rewriteInnerCaseScrutineeInfra(c.body, newName) });
+		{ def : ECase(nscrut, ncls), metadata : n.metadata, pos : n.pos };	
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (s  in  stmts) out.push(rewriteInnerCaseScrutineeInfra(s, newName));
+		{ def : EBlock(out), metadata : n.metadata, pos : n.pos };	
+	case EDo(statements):
+		var outDo:Array<ElixirAST> = [];
+		for (s  in  statements) outDo.push(rewriteInnerCaseScrutineeInfra(s, newName));
+		{ def : EDo(outDo), metadata : n.metadata, pos : n.pos };	
+	case EIf(c, t, e):
+		{ def : EIf(rewriteInnerCaseScrutineeInfra(c, newName), rewriteInnerCaseScrutineeInfra(t, newName), e == null ? null : rewriteInnerCaseScrutineeInfra(e, newName)), metadata : n.metadata, pos : n.pos };	
+	case EBinary(op, l, r):
+		{ def : EBinary(op, rewriteInnerCaseScrutineeInfra(l, newName), rewriteInnerCaseScrutineeInfra(r, newName)), metadata : n.metadata, pos : n.pos };	
+	case EMatch(pat, rhs):
+		{ def : EMatch(pat, rewriteInnerCaseScrutineeInfra(rhs, newName)), metadata : n.metadata, pos : n.pos };	
+	case ECall(tgt, fnm, args):
+		var nt = tgt == null ? null : rewriteInnerCaseScrutineeInfra(tgt, newName);
+		var nargs = [for (a  in  args) rewriteInnerCaseScrutineeInfra(a, newName)];
+		{ def : ECall(nt, fnm, nargs), metadata : n.metadata, pos : n.pos };	
+	case ERemoteCall(moduleExpr, functionName, remoteArgs):
+		var nmod = rewriteInnerCaseScrutineeInfra(moduleExpr, newName);
+		var nargs = [for (a  in  remoteArgs) rewriteInnerCaseScrutineeInfra(a, newName)];
+		{ def : ERemoteCall(nmod, functionName, nargs), metadata : n.metadata, pos : n.pos };	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var scrut = `;
+							var cls = `;
+							{
+								var nscrut = @:ast(switch (scrut.def) {
+	case EVar(v) if (isInfrastructureVar(v)):
+		{ def : EVar(newName), metadata : scrut.metadata, pos : scrut.pos };	
+	default:
+		scrut;	
+}) {
+									var ` = scrut.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (reflaxe.elixir.ast.builders.SwitchBuilder.isInfrastructureVar(v)) {
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(newName), metadata : scrut.metadata, pos : scrut.pos};
+											} else {
+												scrut;
+											};
+										};
+									} else {
+										scrut;
+									};
+								};
+								var ncls = [];
+								{
+									var ` = 0;
+									while (` < cls.length) {
+										var c = cls[`];
+										++ `;
+										ncls.push({pattern : c.pattern, guard : if (c.guard == null) {
+											null;
+										} else {
+											reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(c.guard, newName);
+										}, body : reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(c.body, newName)});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(nscrut, ncls), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs = `;
+							{
+								{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(rhs, newName)), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(c, newName), reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(t, newName), if (e == null) {
+									null;
+								} else {
+									reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(e, newName);
+								}), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var fnm = `;
+							var args = `;
+							{
+								var nt = if (tgt == null) {
+									null;
+								} else {
+									reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(tgt, newName);
+								};
+								var nargs = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < args.length) {
+											var a = args[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(a, newName));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECall(nt, fnm, nargs), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var moduleExpr = `;
+							var functionName = `;
+							var remoteArgs = `;
+							{
+								var nmod = reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(moduleExpr, newName);
+								var nargs = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < remoteArgs.length) {
+											var a = remoteArgs[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(a, newName));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(nmod, functionName, nargs), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var op = `;
+							var l = `;
+							var r = `;
+							{
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(l, newName), reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(r, newName)), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										out.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(s, newName));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var statements = `;
+							{
+								var outDo = [];
+								{
+									var ` = 0;
+									while (` < statements.length) {
+										var s = statements[`];
+										++ `;
+										outDo.push(reflaxe.elixir.ast.builders.SwitchBuilder.rewriteInnerCaseScrutineeInfra(s, newName));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(outDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function buildPattern(value:haxe.macro.TypedExpr, targetVarName:String, guardVars:Array<String>, caseBody:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		@:ast(switch (value.expr) {
+	case TConst(c):
+		switch (c) {
+			case TInt(i):
+				if (context.currentClauseContext != null && context.currentClauseContext.enumType != null) {
+					var enumType = context.currentClauseContext.enumType;
+					var constructor = getEnumConstructorByIndex(enumType, i);
+					if (constructor != null) {
+						trace("[SwitchBuilder]     *** Found constructor: ${constructor.name} ***");
+						return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
+					} else {
+						trace("[SwitchBuilder]     WARNING: No constructor found for index $i");
+					};
+				};
+				return PLiteral(makeAST(EInteger(i)));			
+			case TFloat(f):
+				return PLiteral(makeAST(EFloat(Std.parseFloat(Std.string(f)))));			
+			case TString(s):
+				return PLiteral(makeAST(EString(s)));			
+			case TBool(true):
+				return PLiteral(makeAST(EAtom("true")));			
+			case TBool(false):
+				return PLiteral(makeAST(EAtom("false")));			
+			case TNull:
+				return PLiteral(makeAST(ENil));			
+			default:
+				return null;			
+		};	
+	case TCall(e, args):
+		trace("[SwitchBuilder]   Found TCall, checking if enum constructor");
+		if (isEnumConstructor(e)) {
+			trace("[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)");
+			var ef:EnumField = null;
+			switch (e.expr) {
+				case TField(_, FEnum(_, enumField)):
+					ef = enumField;				
+				default:
+			};
+			if (ef != null) {
+				return generateIdiomaticEnumPatternWithBodyArgs(ef, args, guardVars, caseBody, context);
+			} else {
+				return buildEnumPattern(e, args, guardVars, context);
+			};
+		};
+		trace("[SwitchBuilder]     Not an enum constructor");
+		return null;	
+	case TField(e2, FEnum(_, enumField2)):
+		trace("[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)");
+		return generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context);	
+	case TLocal(v):
+		var varName = VariableAnalyzer.toElixirVarName(v.name);
+		return PVar(varName);	
+	default:
+		return null;	
+}) {
+			var ` = value.expr;
+			switch (enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						var c = `;
+						{
+							@:ast(switch (c) {
+	case TInt(i):
+		if (context.currentClauseContext != null && context.currentClauseContext.enumType != null) {
+			var enumType = context.currentClauseContext.enumType;
+			var constructor = getEnumConstructorByIndex(enumType, i);
+			if (constructor != null) {
+				trace("[SwitchBuilder]     *** Found constructor: ${constructor.name} ***");
+				return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
+			} else {
+				trace("[SwitchBuilder]     WARNING: No constructor found for index $i");
+			};
+		};
+		return PLiteral(makeAST(EInteger(i)));	
+	case TFloat(f):
+		return PLiteral(makeAST(EFloat(Std.parseFloat(Std.string(f)))));	
+	case TString(s):
+		return PLiteral(makeAST(EString(s)));	
+	case TBool(true):
+		return PLiteral(makeAST(EAtom("true")));	
+	case TBool(false):
+		return PLiteral(makeAST(EAtom("false")));	
+	case TNull:
+		return PLiteral(makeAST(ENil));	
+	default:
+		return null;	
+}) switch (enumIndex c) {
+								case 0: {
+									var ` = c[0];
+									{
+										var i = `;
+										{
+											if (context.currentClauseContext != null && context.currentClauseContext.enumType != null) {
+												var enumType = context.currentClauseContext.enumType;
+												var constructor = reflaxe.elixir.ast.builders.SwitchBuilder.getEnumConstructorByIndex(enumType, i);
+												if (constructor != null) {
+													haxe.Log.trace("[SwitchBuilder]     *** Found constructor: " + constructor.name + " ***", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 874, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildPattern"});
+													return reflaxe.elixir.ast.builders.SwitchBuilder.generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
+												} else {
+													haxe.Log.trace("[SwitchBuilder]     WARNING: No constructor found for index " + i, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 882, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildPattern"});
+												};
+											};
+											return reflaxe.elixir.ast.EPattern.PLiteral({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(i), metadata : {}, pos : pos};
+											});
+										};
+									};
+								};
+								case 1: {
+									var ` = c[0];
+									{
+										var f = `;
+										{
+											return reflaxe.elixir.ast.EPattern.PLiteral({
+												var def = reflaxe.elixir.ast.ElixirASTDef.EFloat(Std.parseFloat(Std.string(f)));
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											});
+										};
+									};
+								};
+								case 2: {
+									var ` = c[0];
+									{
+										var s = `;
+										{
+											return reflaxe.elixir.ast.EPattern.PLiteral({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EString(s), metadata : {}, pos : pos};
+											});
+										};
+									};
+								};
+								case 3: {
+									var ` = c[0];
+									if (`) {
+										{
+											return reflaxe.elixir.ast.EPattern.PLiteral({
+												var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+													var this;
+													this = reflaxe.elixir.ast.NameUtils.toSnakeCase("true");
+													cast this;
+												});
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											});
+										};
+									} else {
+										{
+											return reflaxe.elixir.ast.EPattern.PLiteral({
+												var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+													var this;
+													this = reflaxe.elixir.ast.NameUtils.toSnakeCase("false");
+													cast this;
+												});
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											});
+										};
+									};
+								};
+								case 4: {
+									{
+										return reflaxe.elixir.ast.EPattern.PLiteral({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+										});
+									};
+								};
+								default: {
+									return null;
+								}
+							};
+						};
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							var varName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(v.name, null);
+							return reflaxe.elixir.ast.EPattern.PVar(varName);
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 5) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var enumField2 = `;
+							var e2 = `;
+							{
+								haxe.Log.trace("[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 921, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildPattern"});
+								return reflaxe.elixir.ast.builders.SwitchBuilder.generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context);
+							};
+						};
+					} else {
+						return null;
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var args = `;
+						{
+							haxe.Log.trace("[SwitchBuilder]   Found TCall, checking if enum constructor", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 898, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildPattern"});
+							if (reflaxe.elixir.ast.builders.SwitchBuilder.isEnumConstructor(e)) {
+								haxe.Log.trace("[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 900, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildPattern"});
+								var ef = null;
+								@:ast(switch (e.expr) {
+	case TField(_, FEnum(_, enumField)):
+		ef = enumField;	
+	default:
+}) {
+									var ` = e.expr;
+									if (enumIndex ` == 4) {
+										var ` = `[0];
+										var ` = `[1];
+										if (enumIndex ` == 5) {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var enumField = `;
+												{
+													ef = enumField;
+												};
+											};
+										} else {};
+									} else {};
+								};
+								if (ef != null) {
+									return reflaxe.elixir.ast.builders.SwitchBuilder.generateIdiomaticEnumPatternWithBodyArgs(ef, args, guardVars, caseBody, context);
+								} else {
+									return reflaxe.elixir.ast.builders.SwitchBuilder.buildEnumPattern(e, args, guardVars, context);
+								};
+							};
+							haxe.Log.trace("[SwitchBuilder]     Not an enum constructor", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 915, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildPattern"});
+							return null;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+	}
+
+	static function generateIdiomaticEnumPatternWithBody(ef:haxe.macro.EnumField, guardVars:Array<String>, caseBody:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+		var parameterNames = [];
+		@:ast(switch (ef.type) {
+	case TFun(args, _):
+		for (arg  in  args) {
+			parameterNames.push(arg.name);
+		};	
+	default:
+}) {
+			var ` = ef.type;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var args = `;
+					{
+						{
+							var ` = 0;
+							while (` < args.length) {
+								var arg = args[`];
+								++ `;
+								parameterNames.push(arg.name);
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		if (parameterNames.length == 0) {
+			return reflaxe.elixir.ast.EPattern.PTuple([reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			})]);
+		} else {
+			var patterns = [reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			})];
+			var isEnvLikeName = function(n:String) {
+				if (n == null) {
+					return false;
+				};
+				if (n == "socket" || n == "live_socket" || n == "liveSocket" || n == "conn" || n == "params") {
+					return true;
+				};
+				if (StringTools.startsWith(n, "this")) {
+					var rest = n.substr(4, null);
+					var ok = true;
+					{
+						var ` = 0;
+						var ` = rest.length;
+						while (` < `) {
+							var i = ` ++;
+							var ch = rest.charAt(i);
+							if (ch < "0" || ch > "9") {
+								ok = false;
+								break;
+							};
+						};
+					};
+					if (rest.length == 0 || ok) {
+						return true;
+					};
+				};
+				if (n == "json" || n == "data") {
+					return true;
+				};
+				return false;
+			};
+			var collectUsedLowerLocals = function(body:haxe.macro.TypedExpr) {
+				var names = {
+					{};
+					new haxe.ds.StringMap();
+				};
+				var walk = [null];
+				walk[0] = function(e:haxe.macro.TypedExpr) {
+					if (e == null) {
+						return;
+					};
+					@:ast(switch (e.expr) {
+	case TLocal(v):
+		var n = v.name;
+		if (n != null && n.length > 0) {
+			var c = n.charAt(0);
+			if (c.toLowerCase() == c && !isEnvLikeName(n)) names.set(n, true);
+		};	
+	default:
+}) {
+						var ` = e.expr;
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var v = `;
+								{
+									var n = v.name;
+									if (n != null && n.length > 0) {
+										var c = n.charAt(0);
+										if (c.toLowerCase() == c && ! isEnvLikeName(n)) {
+											{
+												names.set(n, true);
+											};
+										};
+									};
+								};
+							};
+						} else {};
+					};
+					haxe.macro.TypedExprTools.iter(e, walk[0]);
+				};
+				walk[0](body);
+				return {
+					var ` = [];
+					for (k in names.keys()) {
+						`.push(k);
+					};
+					`;
+				};
+			};
+			var usedLower = collectUsedLowerLocals(caseBody);
+			var isFunctionParamByName = function(n:String) {
+				if (n == null || n.length == 0) {
+					return false;
+				};
+				var foundId = [null];
+				var findId = [null];
+				findId[0] = function(e:haxe.macro.TypedExpr) {
+					if (e == null || foundId[0] != null) {
+						return;
+					};
+					@:ast(switch (e.expr) {
+	case TLocal(v) if (v.name == n):
+		foundId = v.id;	
+	default:
+}) {
+						var ` = e.expr;
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var v = `;
+								if (v.name == n) {
+									foundId[0] = v.id;
+								} else {};
+							};
+						} else {};
+					};
+					if (foundId[0] == null) {
+						haxe.macro.TypedExprTools.iter(e, findId[0]);
+					};
+				};
+				findId[0](caseBody);
+				return foundId[0] != null && {
+					var this = context.functionParameterIds;
+					var key = Std.string(foundId[0]);
+					cast this.exists(key);
+				};
+			};
+			var bestUsedLowerName = function() {
+				if (parameterNames.length != 1 || usedLower.length == 0) {
+					return null;
+				};
+				var filtered = [];
+				{
+					var ` = 0;
+					while (` < usedLower.length) {
+						var n = usedLower[`];
+						++ `;
+						var alt = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(n, null);
+						if (! isEnvLikeName(alt) && ! isFunctionParamByName(alt)) {
+							filtered.push(alt);
+						};
+					};
+				};
+				if (filtered.length == 1) {
+					return filtered[0];
+				};
+				return null;
+			};
+			var preferredLower = bestUsedLowerName();
+			var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
+			{
+				var ` = 0;
+				var ` = parameterNames.length;
+				while (` < `) {
+					var i = ` ++;
+					var candidate = null;
+					if (guardVars != null && i < guardVars.length) {
+						candidate = guardVars[i];
+					};
+					if (candidate == null || isEnvLikeName(candidate) || isFunctionParamByName(candidate)) {
+						candidate = parameterNames[i];
+					};
+					var baseParamName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(candidate, null);
+					if (isResultCtor && i == 0) {
+						baseParamName = if ((ef.name == "Ok")) {
+							"value";
+						} else {
+							"reason";
+						};
+					};
+					if (preferredLower != null) {
+						baseParamName = preferredLower;
+					};
+					var isUsed = reflaxe.elixir.ast.builders.EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
+					if (! isUsed) {
+						var rawParamName = candidate;
+						if (rawParamName != null) {
+							isUsed = reflaxe.elixir.ast.builders.EnumHandler.isLocalNameUsed(rawParamName, caseBody);
+						};
+					};
+					if (! isUsed && preferredLower != null) {
+						isUsed = true;
+					};
+					if (! isUsed && isResultCtor) {
+						isUsed = true;
+					};
+					var paramName = if (isUsed) {
+						baseParamName;
+					} else {
+						"_" + baseParamName;
+					};
+					haxe.Log.trace("[SwitchBuilder]     Parameter " + i + ": EnumParam=" + parameterNames[i] + ", Usage=" + if (isUsed) {
+						"USED";
+					} else {
+						"UNUSED";
+					} + ", FinalName=" + paramName, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1072, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "generateIdiomaticEnumPatternWithBody"});
+					patterns.push(reflaxe.elixir.ast.EPattern.PVar(paramName));
+					if (context.currentClauseContext != null) {
+						{
+							var this = context.currentClauseContext.enumBindingPlan;
+							cast this.set(i, {finalName : paramName, isUsed : isUsed});
+						};
+					};
+				};
+			};
+			var finalNames = {
+				var ` = [];
+				{
+					var ` = 0;
+					var ` = parameterNames.length;
+					while (` < `) {
+						var i = ` ++;
+						var base = if ((guardVars != null && i < guardVars.length)) {
+							guardVars[i];
+						} else {
+							parameterNames[i];
+						};
+						var effectiveBase = if ((preferredLower != null)) {
+							preferredLower;
+						} else {
+							base;
+						};
+						var isUsed = reflaxe.elixir.ast.builders.EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || (effectiveBase != null && reflaxe.elixir.ast.builders.EnumHandler.isLocalNameUsed(effectiveBase, caseBody));
+						`.push(if (isUsed) {
+							base;
+						} else {
+							"_" + base;
+						});
+					};
+				};
+				`;
+			};
+			haxe.Log.trace("[SwitchBuilder]     Generated pattern: {:" + atomName + ", " + finalNames.join(", ") + "}", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1092, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "generateIdiomaticEnumPatternWithBody"});
+			if (context.currentClauseContext != null) {
+				context.currentClauseContext.patternExtractedParams.push(ef.name);
+				var debugFile = sys.io.File.append("/tmp/enum_debug.log", null);
+				debugFile.writeString("[SwitchBuilder.generateIdiomaticEnumPatternWithBody] ✅ STORED \"" + ef.name + "\" in patternExtractedParams\n");
+				debugFile.close();
+			};
+			return reflaxe.elixir.ast.EPattern.PTuple(patterns);
+		};
+	}
+
+	static function generateIdiomaticEnumPatternWithBodyArgs(ef:haxe.macro.EnumField, callArgs:Array<haxe.macro.TypedExpr>, guardVars:Array<String>, caseBody:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+		var paramCount = 0;
+		@:ast(switch (ef.type) {
+	case TFun(args, _):
+		paramCount = args.length;	
+	default:
+}) {
+			var ` = ef.type;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var args = `;
+					{
+						paramCount = args.length;
+					};
+				};
+			} else {};
+		};
+		if (paramCount == 0) {
+			return reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			});
+		};
+		var patterns = [reflaxe.elixir.ast.EPattern.PLiteral({
+			var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var this;
+				this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+				cast this;
+			});
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		})];
+		var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
+		{
+			var ` = 0;
+			var ` = paramCount;
+			while (` < `) {
+				var i = ` ++;
+				var guardName = if ((guardVars != null && i < guardVars.length)) {
+					guardVars[i];
+				} else {
+					null;
+				};
+				var argLocal = null;
+				if (i < callArgs.length) {
+					@:ast(switch (callArgs[i].expr) {
+	case TLocal(v):
+		argLocal = v.name;	
+	case TParenthesis(inner):
+		switch (inner.expr) {
+			case TLocal(v2):
+				argLocal = v2.name;			
+			default:
+		};	
+	default:
+}) {
+						var ` = callArgs[i].expr;
+						switch (enumIndex `) {
+							case 1: {
+								var ` = `[0];
+								{
+									var v = `;
+									{
+										argLocal = v.name;
+									};
+								};
+							};
+							case 6: {
+								var ` = `[0];
+								{
+									var inner = `;
+									{
+										@:ast(switch (inner.expr) {
+	case TLocal(v2):
+		argLocal = v2.name;	
+	default:
+}) {
+											var ` = inner.expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var v2 = `;
+													{
+														argLocal = v2.name;
+													};
+												};
+											} else {};
+										};
+									};
+								};
+							};
+							default: {}
+						};
+					};
+				};
+				var enumParamName = null;
+				@:ast(switch (ef.type) {
+	case TFun(args, _):
+		if (i < args.length) enumParamName = args[i].name;	
+	default:
+}) {
+					var ` = ef.type;
+					if (enumIndex ` == 4) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var args = `;
+							{
+								if (i < args.length) {
+									enumParamName = args[i].name;
+								};
+							};
+						};
+					} else {};
+				};
+				var chosen = if (guardName != null) {
+					guardName;
+				} else {
+					(if (argLocal != null) {
+						argLocal;
+					} else {
+						enumParamName;
+					});
+				};
+				var baseParamName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(chosen, null);
+				if (isResultCtor && i == 0) {
+					baseParamName = if ((ef.name == "Ok")) {
+						"value";
+					} else {
+						"reason";
+					};
+				};
+				var isUsed = reflaxe.elixir.ast.builders.EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || (chosen != null && reflaxe.elixir.ast.builders.EnumHandler.isLocalNameUsed(chosen, caseBody));
+				if (! isUsed && isResultCtor) {
+					isUsed = true;
+				};
+				var finalName = if (isUsed) {
+					baseParamName;
+				} else {
+					"_" + baseParamName;
+				};
+				patterns.push(reflaxe.elixir.ast.EPattern.PVar(finalName));
+				if (context.currentClauseContext != null) {
+					{
+						var this = context.currentClauseContext.enumBindingPlan;
+						cast this.set(i, {finalName : finalName, isUsed : isUsed});
+					};
+				};
+			};
+		};
+		return reflaxe.elixir.ast.EPattern.PTuple(patterns);
+	}
+
+	static function generateIdiomaticEnumPattern(ef:haxe.macro.EnumField, guardVars:Array<String>, context:reflaxe.elixir.CompilationContext) {
+		var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+		var parameterNames = [];
+		@:ast(switch (ef.type) {
+	case TFun(args, _):
+		for (arg  in  args) {
+			parameterNames.push(arg.name);
+		};	
+	default:
+}) {
+			var ` = ef.type;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var args = `;
+					{
+						{
+							var ` = 0;
+							while (` < args.length) {
+								var arg = args[`];
+								++ `;
+								parameterNames.push(arg.name);
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		if (parameterNames.length == 0) {
+			haxe.Log.trace("[SwitchBuilder]     Generated pattern: {:" + atomName + "}", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1180, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "generateIdiomaticEnumPattern"});
+			return reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			});
+		} else {
+			var patterns = [reflaxe.elixir.ast.EPattern.PLiteral({
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			})];
+			{
+				var ` = 0;
+				var ` = parameterNames.length;
+				while (` < `) {
+					var i = ` ++;
+					var sourceName = if ((guardVars != null && i < guardVars.length)) {
+						guardVars[i];
+					} else {
+						parameterNames[i];
+					};
+					var paramName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(sourceName, null);
+					haxe.Log.trace("[SwitchBuilder]     Parameter " + i + ": GuardVar=" + if (guardVars != null && i < guardVars.length) {
+						guardVars[i];
+					} else {
+						"none";
+					} + ", EnumParam=" + parameterNames[i] + ", Using=" + paramName, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1190, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "generateIdiomaticEnumPattern"});
+					if (context.currentClauseContext != null) {
+						{
+							var this = context.currentClauseContext.enumBindingPlan;
+							cast this.set(i, {finalName : paramName, isUsed : false});
+						};
+					};
+					patterns.push(reflaxe.elixir.ast.EPattern.PVar(paramName));
+				};
+			};
+			var finalNames = {
+				var ` = [];
+				{
+					var ` = 0;
+					var ` = parameterNames.length;
+					while (` < `) {
+						var i = ` ++;
+						`.push(if ((guardVars != null && i < guardVars.length)) {
+							guardVars[i];
+						} else {
+							parameterNames[i];
+						});
+					};
+				};
+				`;
+			};
+			haxe.Log.trace("[SwitchBuilder]     Generated pattern: {:" + atomName + ", " + finalNames.join(", ") + "}", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1208, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "generateIdiomaticEnumPattern"});
+			return reflaxe.elixir.ast.EPattern.PTuple(patterns);
+		};
+	}
+
+	static function extractGuardVariables(caseExpr:haxe.macro.TypedExpr) {
+		var vars = [];
+		var traverse = [null];
+		traverse[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TLocal(v):
+		if (!vars.contains(v.name)) {
+			vars.push(v.name);
+		};	
+	case TBinop(_, e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TIf(econd, eif, eelse):
+		traverse(econd);
+		traverse(eif);
+		if (eelse != null) traverse(eelse);	
+	case TBlock(exprs):
+		for (e  in  exprs) traverse(e);	
+	case TUnop(_, _, e1):
+		traverse(e1);	
+	case TField(e, _):
+		traverse(e);	
+	case TCall(e, el):
+		traverse(e);
+		for (arg  in  el) traverse(arg);	
+	case TParenthesis(e):
+		traverse(e);	
+	default:
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								if (! vars.contains(v.name)) {
+									vars.push(v.name);
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var el = `;
+							{
+								traverse[0](e);
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var arg = el[`];
+										++ `;
+										traverse[0](arg);
+									};
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							{
+								traverse[0](e1);
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var e = exprs[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var eif = `;
+							var eelse = `;
+							{
+								traverse[0](econd);
+								traverse[0](eif);
+								if (eelse != null) {
+									traverse[0](eelse);
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		traverse[0](caseExpr);
+		return vars;
+	}
+
+	static function extractFirstTLocalName(expr:Null<haxe.macro.TypedExpr>) {
+		if (expr == null) {
+			return null;
+		};
+		return @:ast(switch (expr.expr) {
+	case TLocal(v):
+		v.name;	
+	case TBinop(_, e1, e2):
+		var result = extractFirstTLocalName(e1);
+		result != null ? result : extractFirstTLocalName(e2);	
+	case TUnop(_, _, e):
+		extractFirstTLocalName(e);	
+	case TParenthesis(e):
+		extractFirstTLocalName(e);	
+	case TCall(e, el):
+		var result = extractFirstTLocalName(e);
+		if (result != null) return result;
+		for (arg  in  el) {
+			result = extractFirstTLocalName(arg);
+			if (result != null) return result;
+		};
+		null;	
+	default:
+		null;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							v.name;
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							var result = reflaxe.elixir.ast.builders.SwitchBuilder.extractFirstTLocalName(e1);
+							if (result != null) {
+								result;
+							} else {
+								reflaxe.elixir.ast.builders.SwitchBuilder.extractFirstTLocalName(e2);
+							};
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.ast.builders.SwitchBuilder.extractFirstTLocalName(e);
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var el = `;
+						{
+							var result = reflaxe.elixir.ast.builders.SwitchBuilder.extractFirstTLocalName(e);
+							if (result != null) {
+								return result;
+							};
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var arg = el[`];
+									++ `;
+									result = reflaxe.elixir.ast.builders.SwitchBuilder.extractFirstTLocalName(arg);
+									if (result != null) {
+										return result;
+									};
+								};
+							};
+							null;
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.ast.builders.SwitchBuilder.extractFirstTLocalName(e);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function extractVarsFromGuardExpr(guardExpr:Null<haxe.macro.TypedExpr>) {
+		if (guardExpr == null) {
+			haxe.Log.trace("[extractVarsFromGuardExpr] guardExpr is null", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1304, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromGuardExpr"});
+			return [];
+		};
+		haxe.Log.trace("[extractVarsFromGuardExpr] Starting extraction from: " + Type.enumConstructor(guardExpr.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1308, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromGuardExpr"});
+		var vars = [];
+		var traverse = [null];
+		traverse[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			haxe.Log.trace("[extractVarsFromGuardExpr]   Traversing: " + Type.enumConstructor(expr.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1314, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromGuardExpr"});
+			@:ast(switch (expr.expr) {
+	case TLocal(v):
+		trace("[extractVarsFromGuardExpr]     FOUND TLocal: ${v.name} (id=${v.id})");
+		if (!vars.contains(v.name)) {
+			vars.push(v.name);
+		};	
+	case TIf(econd, eif, eelse):
+		traverse(econd);	
+	case TBinop(_, e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TUnop(_, _, e):
+		traverse(e);	
+	case TParenthesis(e):
+		traverse(e);	
+	case TCall(e, el):
+		traverse(e);
+		for (arg  in  el) traverse(arg);	
+	default:
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								haxe.Log.trace("[extractVarsFromGuardExpr]     FOUND TLocal: " + v.name + " (id=" + v.id + ")", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1317, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromGuardExpr"});
+								if (! vars.contains(v.name)) {
+									vars.push(v.name);
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var el = `;
+							{
+								traverse[0](e);
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var arg = el[`];
+										++ `;
+										traverse[0](arg);
+									};
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var eif = `;
+							var eelse = `;
+							{
+								traverse[0](econd);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		traverse[0](guardExpr);
+		return vars;
+	}
+
+	static function stripNumericSuffix(name:String) {
+		var pattern = new EReg("^(.+?)(\\d+)$", "");
+		if (pattern.match(name)) {
+			return pattern.matched(1);
+		};
+		return name;
+	}
+
+	static function extractUsedVariablesFromCaseBody(caseBodyExpr:haxe.macro.TypedExpr) {
+		var vars = [];
+		var seenIds = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		@:ast(switch (caseBodyExpr.expr) {
+	case TSwitch(e, _, _):
+		switch (e.expr) {
+			case TLocal(v):
+				return [v.name];			
+			default:
+		};	
+	case TBlock(exprs):
+		function findSwitchTarget(expr:TypedExpr, depth:Int = 0):Null<String> {
+			switch (expr.expr) {
+				case TSwitch(e, _, _):
+					var unwrappedTarget = e;
+					while (true) {
+						switch (unwrappedTarget.expr) {
+							case TParenthesis(inner):
+								unwrappedTarget = inner;							
+							case TMeta(_, inner):
+								unwrappedTarget = inner;							
+							default:
+								break;							
+						};
+					};
+					switch (unwrappedTarget.expr) {
+						case TLocal(v):
+							return v.name;						
+						case TEnumIndex(e):
+							switch (e.expr) {
+								case TLocal(v):
+									return v.name;								
+								default:
+									return null;								
+							};						
+						default:
+							return null;						
+					};				
+				case TMeta(_, innerExpr):
+					return findSwitchTarget(innerExpr, depth + 1);				
+				case TParenthesis(innerExpr):
+					return findSwitchTarget(innerExpr, depth + 1);				
+				case TBlock(innerExprs):
+					for (i  in  0 ... innerExprs.length) {
+						var result = findSwitchTarget(innerExprs[i], depth + 1);
+						if (result != null) {
+							return result;
+						};
+					};
+					return null;				
+				default:
+					return null;				
+			};
+		};
+		for (expr  in  exprs) {
+			var switchTarget = findSwitchTarget(expr);
+			if (switchTarget != null) {
+				return [switchTarget];
+			};
+		};	
+	default:
+}) {
+			var ` = caseBodyExpr.expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							var findSwitchTarget = [null];
+							findSwitchTarget[0] = function(expr:haxe.macro.TypedExpr, depth:Int = 0) {
+								@:ast(switch (expr.expr) {
+	case TSwitch(e, _, _):
+		var unwrappedTarget = e;
+		while (true) {
+			switch (unwrappedTarget.expr) {
+				case TParenthesis(inner):
+					unwrappedTarget = inner;				
+				case TMeta(_, inner):
+					unwrappedTarget = inner;				
+				default:
+					break;				
+			};
+		};
+		switch (unwrappedTarget.expr) {
+			case TLocal(v):
+				return v.name;			
+			case TEnumIndex(e):
+				switch (e.expr) {
+					case TLocal(v):
+						return v.name;					
+					default:
+						return null;					
+				};			
+			default:
+				return null;			
+		};	
+	case TMeta(_, innerExpr):
+		return findSwitchTarget(innerExpr, depth + 1);	
+	case TParenthesis(innerExpr):
+		return findSwitchTarget(innerExpr, depth + 1);	
+	case TBlock(innerExprs):
+		for (i  in  0 ... innerExprs.length) {
+			var result = findSwitchTarget(innerExprs[i], depth + 1);
+			if (result != null) {
+				return result;
+			};
+		};
+		return null;	
+	default:
+		return null;	
+}) {
+									var ` = expr.expr;
+									switch (enumIndex `) {
+										case 6: {
+											var ` = `[0];
+											{
+												var innerExpr = `;
+												{
+													return findSwitchTarget[0](innerExpr, depth + 1);
+												};
+											};
+										};
+										case 14: {
+											var ` = `[0];
+											{
+												var innerExprs = `;
+												{
+													{
+														var ` = 0;
+														var ` = innerExprs.length;
+														while (` < `) {
+															var i = ` ++;
+															var result = findSwitchTarget[0](innerExprs[i], depth + 1);
+															if (result != null) {
+																return result;
+															};
+														};
+													};
+													return null;
+												};
+											};
+										};
+										case 18: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var e = `;
+												{
+													var unwrappedTarget = e;
+													while (true) {
+														@:ast(switch (unwrappedTarget.expr) {
+	case TParenthesis(inner):
+		unwrappedTarget = inner;	
+	case TMeta(_, inner):
+		unwrappedTarget = inner;	
+	default:
+		break;	
+}) {
+															var ` = unwrappedTarget.expr;
+															switch (enumIndex `) {
+																case 6: {
+																	var ` = `[0];
+																	{
+																		var inner = `;
+																		{
+																			unwrappedTarget = inner;
+																		};
+																	};
+																};
+																case 25: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var inner = `;
+																		{
+																			unwrappedTarget = inner;
+																		};
+																	};
+																};
+																default: {
+																	break;
+																}
+															};
+														};
+													};
+													@:ast(switch (unwrappedTarget.expr) {
+	case TLocal(v):
+		return v.name;	
+	case TEnumIndex(e):
+		switch (e.expr) {
+			case TLocal(v):
+				return v.name;			
+			default:
+				return null;			
+		};	
+	default:
+		return null;	
+}) {
+														var ` = unwrappedTarget.expr;
+														switch (enumIndex `) {
+															case 1: {
+																var ` = `[0];
+																{
+																	var v = `;
+																	{
+																		return v.name;
+																	};
+																};
+															};
+															case 27: {
+																var ` = `[0];
+																{
+																	var e = `;
+																	{
+																		@:ast(switch (e.expr) {
+	case TLocal(v):
+		return v.name;	
+	default:
+		return null;	
+}) {
+																			var ` = e.expr;
+																			if (enumIndex ` == 1) {
+																				var ` = `[0];
+																				{
+																					var v = `;
+																					{
+																						return v.name;
+																					};
+																				};
+																			} else {
+																				return null;
+																			};
+																		};
+																	};
+																};
+															};
+															default: {
+																return null;
+															}
+														};
+													};
+												};
+											};
+										};
+										case 25: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var innerExpr = `;
+												{
+													return findSwitchTarget[0](innerExpr, depth + 1);
+												};
+											};
+										};
+										default: {
+											return null;
+										}
+									};
+								};
+							};
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									var switchTarget = findSwitchTarget[0](expr, null);
+									if (switchTarget != null) {
+										return [switchTarget];
+									};
+								};
+							};
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						{
+							@:ast(switch (e.expr) {
+	case TLocal(v):
+		return [v.name];	
+	default:
+}) {
+								var ` = e.expr;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var v = `;
+										{
+											return [v.name];
+										};
+									};
+								} else {};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		var traverse = [null];
+		traverse[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TLocal(v):
+		if (!seenIds.exists(v.id)) {
+			vars.push(v.name);
+			seenIds.set(v.id, true);
+		};	
+	case TBlock(exprs):
+		for (e  in  exprs) traverse(e);	
+	case TBinop(_, e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TUnop(_, _, e):
+		traverse(e);	
+	case TCall(e, args):
+		traverse(e);
+		for (arg  in  args) traverse(arg);	
+	case TField(e, _):
+		traverse(e);	
+	case TArray(e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TIf(econd, eif, eelse):
+		traverse(econd);
+		traverse(eif);
+		if (eelse != null) traverse(eelse);	
+	case TSwitch(e, _, _):
+		traverse(e);	
+	case TWhile(econd, e, _):
+		traverse(econd);
+		traverse(e);	
+	case TFor(v, e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TReturn(e):
+		if (e != null) traverse(e);	
+	case TThrow(e):
+		traverse(e);	
+	case TTry(e, catches):
+		traverse(e);
+		for (c  in  catches) traverse(c.expr);	
+	case TParenthesis(e):
+		traverse(e);	
+	case TMeta(_, e):
+		traverse(e);	
+	case TCast(e, _):
+		traverse(e);	
+	case TEnumParameter(e, _, _):
+		traverse(e);	
+	case TObjectDecl(fields):
+		for (f  in  fields) traverse(f.expr);	
+	case TArrayDecl(el):
+		for (e  in  el) traverse(e);	
+	case TNew(_, _, el):
+		for (e  in  el) traverse(e);	
+	default:
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								if (! {
+									var key = v.id;
+									seenIds.exists(key);
+								}) {
+									vars.push(v.name);
+									{
+										var key = v.id;
+										seenIds.set(key, true);
+									};
+								};
+							};
+						};
+					};
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 7: {
+						var ` = `[0];
+						{
+							var fields = `;
+							{
+								{
+									var ` = 0;
+									while (` < fields.length) {
+										var f = fields[`];
+										++ `;
+										traverse[0](f.expr);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var args = `;
+							{
+								traverse[0](e);
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var arg = args[`];
+										++ `;
+										traverse[0](arg);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var e = exprs[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var v = `;
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var eif = `;
+							var eelse = `;
+							{
+								traverse[0](econd);
+								traverse[0](eif);
+								if (eelse != null) {
+									traverse[0](eelse);
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var e = `;
+							{
+								traverse[0](econd);
+								traverse[0](e);
+							};
+						};
+					};
+					case 18: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 19: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var catches = `;
+							{
+								traverse[0](e);
+								{
+									var ` = 0;
+									while (` < catches.length) {
+										var c = catches[`];
+										++ `;
+										traverse[0](c.expr);
+									};
+								};
+							};
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								if (e != null) {
+									traverse[0](e);
+								};
+							};
+						};
+					};
+					case 23: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 25: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		traverse[0](caseBodyExpr);
+		return vars;
+	}
+
+	static function extractVarsFromPatternExpr(patternExpr:haxe.macro.TypedExpr) {
+		var vars = [];
+		haxe.Log.trace("[extractVarsFromPatternExpr] Pattern expr type: " + Type.enumConstructor(patternExpr.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1622, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+		var traverse = [null];
+		traverse[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			haxe.Log.trace("[extractVarsFromPatternExpr]   Traversing: " + Type.enumConstructor(expr.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1627, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+			@:ast(switch (expr.expr) {
+	case TEnumParameter(e, ef, index):
+		trace("[extractVarsFromPatternExpr]     Found TEnumParameter, ef.name=${ef.name}, index=$index");
+		trace("[extractVarsFromPatternExpr]     Inner expr (e) type: ${Type.enumConstructor(e.expr)}");
+		traverse(e);	
+	case TLocal(v):
+		trace("[extractVarsFromPatternExpr]     Found TLocal: ${v.name} (id=${v.id})");
+		if (!vars.contains(v.name)) {
+			vars.push(v.name);
+		};	
+	case TCall(_, args):
+		trace("[extractVarsFromPatternExpr]     Found TCall with ${args.length} args");
+		for (arg  in  args) traverse(arg);	
+	case TField(e, _):
+		trace("[extractVarsFromPatternExpr]     Found TField");
+		traverse(e);	
+	default:
+		trace("[extractVarsFromPatternExpr]     Unhandled type");	
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								haxe.Log.trace("[extractVarsFromPatternExpr]     Found TLocal: " + v.name + " (id=" + v.id + ")", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1641, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+								if (! vars.contains(v.name)) {
+									vars.push(v.name);
+								};
+							};
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								haxe.Log.trace("[extractVarsFromPatternExpr]     Found TField", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1650, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+								traverse[0](e);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var args = `;
+							{
+								haxe.Log.trace("[extractVarsFromPatternExpr]     Found TCall with " + args.length + " args", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1647, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var arg = args[`];
+										++ `;
+										traverse[0](arg);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							var ef = `;
+							var index = `;
+							{
+								haxe.Log.trace("[extractVarsFromPatternExpr]     Found TEnumParameter, ef.name=" + ef.name + ", index=" + index, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1633, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+								haxe.Log.trace("[extractVarsFromPatternExpr]     Inner expr (e) type: " + Type.enumConstructor(e.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1634, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+								traverse[0](e);
+							};
+						};
+					};
+					default: {
+						haxe.Log.trace("[extractVarsFromPatternExpr]     Unhandled type", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1654, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+					}
+				};
+			};
+		};
+		traverse[0](patternExpr);
+		haxe.Log.trace("[extractVarsFromPatternExpr] Final vars: [" + vars.join(", ") + "]", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1659, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "extractVarsFromPatternExpr"});
+		return vars;
+	}
+
+	static function extractTLocalIDsFromGuard(expr:haxe.macro.TypedExpr, patternNames:Array<String>) {
+		var mapping = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		var traverse = [null];
+		traverse[0] = function(e:haxe.macro.TypedExpr) {
+			if (e == null) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TLocal(v):
+		var baseName = stripNumericSuffix(v.name);
+		if (patternNames.contains(baseName)) {
+			mapping.set(v.id, baseName);
+		};	
+	case TBinop(_, e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TIf(econd, eif, eelse):
+		traverse(econd);
+		traverse(eif);
+		if (eelse != null) traverse(eelse);	
+	case TUnop(_, _, e1):
+		traverse(e1);	
+	case TParenthesis(e1):
+		traverse(e1);	
+	case TMeta(_, e1):
+		traverse(e1);	
+	case TBlock(el):
+		for (e  in  el) traverse(e);	
+	case TCall(_, el):
+		for (e  in  el) traverse(e);	
+	case TField(e, _):
+		traverse(e);	
+	default:
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								var baseName = reflaxe.elixir.ast.builders.SwitchBuilder.stripNumericSuffix(v.name);
+								if (patternNames.contains(baseName)) {
+									{
+										var key = v.id;
+										mapping.set(key, baseName);
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var e1 = `;
+							{
+								traverse[0](e1);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							{
+								traverse[0](e1);
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var eif = `;
+							var eelse = `;
+							{
+								traverse[0](econd);
+								traverse[0](eif);
+								if (eelse != null) {
+									traverse[0](eelse);
+								};
+							};
+						};
+					};
+					case 25: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e1 = `;
+							{
+								traverse[0](e1);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		traverse[0](expr);
+		return mapping;
+	}
+
+	static function buildEnumPattern(constructorExpr:haxe.macro.TypedExpr, args:Array<haxe.macro.TypedExpr>, guardVars:Array<String>, context:reflaxe.elixir.CompilationContext) {
+		var ef = null;
+		var constructorName = @:ast(switch (constructorExpr.expr) {
+	case TField(_, FEnum(_, enumField)):
+		ef = enumField;
+		enumField.name;	
+	default:
+		return null;	
+}) {
+			var ` = constructorExpr.expr;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				if (enumIndex ` == 5) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var enumField = `;
+						{
+							ef = enumField;
+							enumField.name;
+						};
+					};
+				} else {
+					return null;
+				};
+			} else {
+				return null;
+			};
+		};
+		var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(constructorName);
+		var parameterNames = [];
+		if (ef != null) {
+			@:ast(switch (ef.type) {
+	case TFun(tfunArgs, _):
+		for (arg  in  tfunArgs) {
+			parameterNames.push(arg.name);
+		};	
+	default:
+}) {
+				var ` = ef.type;
+				if (enumIndex ` == 4) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var tfunArgs = `;
+						{
+							{
+								var ` = 0;
+								while (` < tfunArgs.length) {
+									var arg = tfunArgs[`];
+									++ `;
+									parameterNames.push(arg.name);
+								};
+							};
+						};
+					};
+				} else {};
+			};
+		};
+		var patterns = [reflaxe.elixir.ast.EPattern.PLiteral({
+			var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var this;
+				this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+				cast this;
+			});
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		})];
+		{
+			var ` = 0;
+			var ` = args.length;
+			while (` < `) {
+				var i = ` ++;
+				var arg = args[i];
+				var guardVar = if ((guardVars != null && i < guardVars.length)) {
+					guardVars[i];
+				} else {
+					null;
+				};
+				var enumParam = if (i < parameterNames.length) {
+					parameterNames[i];
+				} else {
+					null;
+				};
+				@:ast(switch (arg.expr) {
+	case TLocal(v):
+		var sourceName = guardVar != null ? guardVar : v.name;
+		trace("[SwitchBuilder] *** PATTERN VAR DEBUG ***");
+		trace("[SwitchBuilder]   Index: $i");
+		trace("[SwitchBuilder]   GuardVar: ${guardVar}");
+		trace("[SwitchBuilder]   TLocal v.name: ${v.name}");
+		trace("[SwitchBuilder]   EnumParam: ${enumParam}");
+		trace("[SwitchBuilder]   Using sourceName: ${sourceName}");
+		var varName = VariableAnalyzer.toElixirVarName(sourceName);
+		trace("[SwitchBuilder]   Final varName: ${varName}");
+		patterns.push(PVar(varName));
+		if (context.currentClauseContext != null) {
+			context.currentClauseContext.enumBindingPlan.set(i, { finalName : varName, isUsed : false });
+		};	
+	case TCall(innerCtor, innerArgs):
+		var nested = buildEnumPattern(innerCtor, innerArgs, guardVars, context);
+		if (nested != null) {
+			patterns.push(nested);
+		} else {
+			patterns.push(PWildcard);
+		};	
+	case TParenthesis(innerP):
+		var nested2 = buildEnumPattern(innerP, [], guardVars, context);
+		if (nested2 != null) {
+			patterns.push(nested2);
+		} else {
+			patterns.push(PWildcard);
+		};	
+	case TMeta(_, innerM):
+		var nested3 = buildEnumPattern(innerM, [], guardVars, context);
+		if (nested3 != null) {
+			patterns.push(nested3);
+		} else {
+			patterns.push(PWildcard);
+		};	
+	default:
+		trace("[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***");
+		trace("[SwitchBuilder]   Index: $i");
+		trace("[SwitchBuilder]   Arg expr type: ${Type.enumConstructor(arg.expr)}");
+		trace("[SwitchBuilder]   EnumParam: ${enumParam}");
+		trace("[SwitchBuilder]   GuardVar: ${guardVar}");
+		patterns.push(PWildcard);	
+}) {
+					var ` = arg.expr;
+					switch (enumIndex `) {
+						case 1: {
+							var ` = `[0];
+							{
+								var v = `;
+								{
+									var sourceName = if (guardVar != null) {
+										guardVar;
+									} else {
+										v.name;
+									};
+									haxe.Log.trace("[SwitchBuilder] *** PATTERN VAR DEBUG ***", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1819, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									haxe.Log.trace("[SwitchBuilder]   Index: " + i, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1820, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									haxe.Log.trace("[SwitchBuilder]   GuardVar: " + guardVar, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1821, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									haxe.Log.trace("[SwitchBuilder]   TLocal v.name: " + v.name, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1822, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									haxe.Log.trace("[SwitchBuilder]   EnumParam: " + enumParam, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1823, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									haxe.Log.trace("[SwitchBuilder]   Using sourceName: " + sourceName, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1824, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									var varName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(sourceName, null);
+									haxe.Log.trace("[SwitchBuilder]   Final varName: " + varName, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1827, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+									patterns.push(reflaxe.elixir.ast.EPattern.PVar(varName));
+									if (context.currentClauseContext != null) {
+										{
+											var this = context.currentClauseContext.enumBindingPlan;
+											cast this.set(i, {finalName : varName, isUsed : false});
+										};
+									};
+								};
+							};
+						};
+						case 6: {
+							var ` = `[0];
+							{
+								var innerP = `;
+								{
+									var nested2 = reflaxe.elixir.ast.builders.SwitchBuilder.buildEnumPattern(innerP, [], guardVars, context);
+									if (nested2 != null) {
+										patterns.push(nested2);
+									} else {
+										patterns.push(reflaxe.elixir.ast.EPattern.PWildcard);
+									};
+								};
+							};
+						};
+						case 9: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var innerCtor = `;
+								var innerArgs = `;
+								{
+									var nested = reflaxe.elixir.ast.builders.SwitchBuilder.buildEnumPattern(innerCtor, innerArgs, guardVars, context);
+									if (nested != null) {
+										patterns.push(nested);
+									} else {
+										patterns.push(reflaxe.elixir.ast.EPattern.PWildcard);
+									};
+								};
+							};
+						};
+						case 25: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var innerM = `;
+								{
+									var nested3 = reflaxe.elixir.ast.builders.SwitchBuilder.buildEnumPattern(innerM, [], guardVars, context);
+									if (nested3 != null) {
+										patterns.push(nested3);
+									} else {
+										patterns.push(reflaxe.elixir.ast.EPattern.PWildcard);
+									};
+								};
+							};
+						};
+						default: {
+							haxe.Log.trace("[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***", {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1867, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+							haxe.Log.trace("[SwitchBuilder]   Index: " + i, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1868, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+							haxe.Log.trace("[SwitchBuilder]   Arg expr type: " + Type.enumConstructor(arg.expr), {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1869, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+							haxe.Log.trace("[SwitchBuilder]   EnumParam: " + enumParam, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1870, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+							haxe.Log.trace("[SwitchBuilder]   GuardVar: " + guardVar, {fileName : "../../../../src/reflaxe/elixir/ast/builders/SwitchBuilder.hx", lineNumber : 1871, className : "reflaxe.elixir.ast.builders.SwitchBuilder", methodName : "buildEnumPattern"});
+							patterns.push(reflaxe.elixir.ast.EPattern.PWildcard);
+						}
+					};
+				};
+			};
+		};
+		var debugFile = sys.io.File.append("/tmp/enum_debug.log", null);
+		debugFile.writeString("[SwitchBuilder.buildEnumPattern] About to store ef.name\n");
+		debugFile.writeString("[SwitchBuilder]   ef: " + Std.string(ef) + "\n");
+		debugFile.writeString("[SwitchBuilder]   ef.name: " + if (ef != null) {
+			ef.name;
+		} else {
+			"NULL";
+		} + "\n");
+		debugFile.writeString("[SwitchBuilder]   currentClauseContext: " + Std.string(context.currentClauseContext != null) + "\n");
+		debugFile.close();
+		if (context.currentClauseContext != null && ef != null) {
+			context.currentClauseContext.patternExtractedParams.push(ef.name);
+			var debugFile2 = sys.io.File.append("/tmp/enum_debug.log", null);
+			debugFile2.writeString("[SwitchBuilder] ✅ STORED enum field \"" + ef.name + "\" in patternExtractedParams\n");
+			debugFile2.writeString("[SwitchBuilder]   patternExtractedParams now: [" + context.currentClauseContext.patternExtractedParams.join(", ") + "]\n");
+			debugFile2.close();
+		};
+		return reflaxe.elixir.ast.EPattern.PTuple(patterns);
+	}
+
+	static function extractTargetVarName(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TLocal(v):
+		v.name;	
+	case TParenthesis({ expr : TLocal(v) }):
+		v.name;	
+	default:
+		null;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							v.name;
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var v = `;
+								{
+									v.name;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function getEnumTypeFromExpression(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.t) {
+	case TEnum(ref, _):
+		ref.get();	
+	case TAbstract(ref, _):
+		var abs = ref.get();
+		switch (abs.type) {
+			case TEnum(enumRef, _):
+				enumRef.get();			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = expr.t;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ref = `;
+						{
+							ref.get();
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ref = `;
+						{
+							var abs = ref.get();
+							@:ast(switch (abs.type) {
+	case TEnum(enumRef, _):
+		enumRef.get();	
+	default:
+		null;	
+}) {
+								var ` = abs.type;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var enumRef = `;
+										{
+											enumRef.get();
+										};
+									};
+								} else {
+									null;
+								};
+							};
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function getEnumConstructorByIndex(enumType:haxe.macro.EnumType, index:Int) {
+		for (name in {
+			var this = enumType.constructs;
+			cast this.keys();
+		}) {
+			var constructor = {
+				var this = enumType.constructs;
+				cast this.get(name);
+			};
+			if (constructor.index == index) {
+				return constructor;
+			};
+		};
+		return null;
+	}
+
+	static function isInfrastructureVar(name:String) {
+		return name == "g" || name == "_g" || new EReg("^g\\d+$", "").match(name) || new EReg("^_g\\d+$", "").match(name);
+	}
+
+	static function isEnumConstructor(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TField(_, FEnum(_, _)):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				if (enumIndex ` == 5) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function extractPatternVariables(pattern:reflaxe.elixir.ast.EPattern) {
+		var vars = [];
+		var traverse = [null];
+		traverse[0] = function(p:reflaxe.elixir.ast.EPattern) {
+			@:ast(switch (p) {
+	case PVar(name):
+		vars.push(name);	
+	case PTuple(elements):
+		for (elem  in  elements) {
+			traverse(elem);
+		};	
+	case PList(elements):
+		for (elem  in  elements) {
+			traverse(elem);
+		};	
+	case PCons(head, tail):
+		traverse(head);
+		traverse(tail);	
+	case PMap(pairs):
+		for (pair  in  pairs) {
+			traverse(pair.value);
+		};	
+	case PStruct(_, fields):
+		for (field  in  fields) {
+			traverse(field.value);
+		};	
+	case PLiteral(_):
+	case PWildcard:
+	case PPin(inner):
+		traverse(inner);	
+	case PAlias(varName, pattern):
+		vars.push(varName);
+		traverse(pattern);	
+	case PBinary(segments):
+		for (segment  in  segments) {
+			traverse(segment.pattern);
+		};	
+}) switch (@:exhaustive enumIndex p) {
+				case 0: {
+					var ` = p[0];
+					{
+						var name = `;
+						{
+							vars.push(name);
+						};
+					};
+				};
+				case 1: {
+					var ` = p[0];
+					{};
+				};
+				case 2: {
+					var ` = p[0];
+					{
+						var elements = `;
+						{
+							{
+								var ` = 0;
+								while (` < elements.length) {
+									var elem = elements[`];
+									++ `;
+									traverse[0](elem);
+								};
+							};
+						};
+					};
+				};
+				case 3: {
+					var ` = p[0];
+					{
+						var elements = `;
+						{
+							{
+								var ` = 0;
+								while (` < elements.length) {
+									var elem = elements[`];
+									++ `;
+									traverse[0](elem);
+								};
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = p[0];
+					var ` = p[1];
+					{
+						var head = `;
+						var tail = `;
+						{
+							traverse[0](head);
+							traverse[0](tail);
+						};
+					};
+				};
+				case 5: {
+					var ` = p[0];
+					{
+						var pairs = `;
+						{
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var pair = pairs[`];
+									++ `;
+									traverse[0](pair.value);
+								};
+							};
+						};
+					};
+				};
+				case 6: {
+					var ` = p[0];
+					var ` = p[1];
+					{
+						var fields = `;
+						{
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var field = fields[`];
+									++ `;
+									traverse[0](field.value);
+								};
+							};
+						};
+					};
+				};
+				case 7: {
+					var ` = p[0];
+					{
+						var inner = `;
+						{
+							traverse[0](inner);
+						};
+					};
+				};
+				case 8: {
+					{};
+				};
+				case 9: {
+					var ` = p[0];
+					var ` = p[1];
+					{
+						var varName = `;
+						var pattern = `;
+						{
+							vars.push(varName);
+							traverse[0](pattern);
+						};
+					};
+				};
+				case 10: {
+					var ` = p[0];
+					{
+						var segments = `;
+						{
+							{
+								var ` = 0;
+								while (` < segments.length) {
+									var segment = segments[`];
+									++ `;
+									traverse[0](segment.pattern);
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+		traverse[0](pattern);
+		return vars;
+	}
+
+	static function extractTVarsFromExpr(expr:haxe.macro.TypedExpr) {
+		var tvars = [];
+		var traverse = [null];
+		traverse[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TVar(tvar, init):
+		tvars.push({ id : tvar.id, name : tvar.name });
+		if (init != null) {
+			traverse(init);
+		};	
+	case TBlock(el):
+		for (expr  in  el) {
+			traverse(expr);
+		};	
+	case TBinop(_, e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TCall(e, el):
+		traverse(e);
+		for (arg  in  el) {
+			traverse(arg);
+		};	
+	case TField(e, _):
+		traverse(e);	
+	case TIf(econd, eif, eelse):
+		traverse(econd);
+		traverse(eif);
+		if (eelse != null) {
+			traverse(eelse);
+		};	
+	case TSwitch(e, cases, edef):
+		traverse(e);
+		for (c  in  cases) {
+			for (v  in  c.values) {
+				traverse(v);
+			};
+			traverse(c.expr);
+		};
+		if (edef != null) {
+			traverse(edef);
+		};	
+	case TWhile(econd, e, _):
+		traverse(econd);
+		traverse(e);	
+	case TFor(v, it, expr):
+		traverse(it);
+		traverse(expr);	
+	case TReturn(e):
+		if (e != null) {
+			traverse(e);
+		};	
+	case TArrayDecl(el):
+		for (e  in  el) {
+			traverse(e);
+		};	
+	case TObjectDecl(fields):
+		for (f  in  fields) {
+			traverse(f.expr);
+		};	
+	case TParenthesis(e) | TMeta(_, e) | TCast(e, _):
+		traverse(e);	
+	case TArray(e1, e2):
+		traverse(e1);
+		traverse(e2);	
+	case TUnop(_, _, e):
+		traverse(e);	
+	case TNew(_, _, el):
+		for (e  in  el) {
+			traverse(e);
+		};	
+	default:
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								traverse[0](e1);
+								traverse[0](e2);
+							};
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 7: {
+						var ` = `[0];
+						{
+							var fields = `;
+							{
+								{
+									var ` = 0;
+									while (` < fields.length) {
+										var f = fields[`];
+										++ `;
+										traverse[0](f.expr);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var el = `;
+							{
+								traverse[0](e);
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var arg = el[`];
+										++ `;
+										traverse[0](arg);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										traverse[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tvar = `;
+							var init = `;
+							{
+								tvars.push({id : tvar.id, name : tvar.name});
+								if (init != null) {
+									traverse[0](init);
+								};
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var expr = el[`];
+										++ `;
+										traverse[0](expr);
+									};
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var v = `;
+							var it = `;
+							var expr = `;
+							{
+								traverse[0](it);
+								traverse[0](expr);
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var eif = `;
+							var eelse = `;
+							{
+								traverse[0](econd);
+								traverse[0](eif);
+								if (eelse != null) {
+									traverse[0](eelse);
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var e = `;
+							{
+								traverse[0](econd);
+								traverse[0](e);
+							};
+						};
+					};
+					case 18: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							var cases = `;
+							var edef = `;
+							{
+								traverse[0](e);
+								{
+									var ` = 0;
+									while (` < cases.length) {
+										var c = cases[`];
+										++ `;
+										{
+											var ` = 0;
+											var ` = c.values;
+											while (` < `.length) {
+												var v = `[`];
+												++ `;
+												traverse[0](v);
+											};
+										};
+										traverse[0](c.expr);
+									};
+								};
+								if (edef != null) {
+									traverse[0](edef);
+								};
+							};
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								if (e != null) {
+									traverse[0](e);
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					case 25: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								traverse[0](e);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		traverse[0](expr);
+		return tvars;
+	}
+}

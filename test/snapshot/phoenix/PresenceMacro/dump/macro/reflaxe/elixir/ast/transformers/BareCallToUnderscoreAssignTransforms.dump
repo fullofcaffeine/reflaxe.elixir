@@ -1,0 +1,160 @@
+class reflaxe.elixir.ast.transformers.BareCallToUnderscoreAssignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (s  in  stmts) out.push(rewriteStmt(s));
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts2):
+		var out2:Array<ElixirAST> = [];
+		for (s2  in  stmts2) out2.push(rewriteStmt(s2));
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										out.push(reflaxe.elixir.ast.transformers.BareCallToUnderscoreAssignTransforms.rewriteStmt(s));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								var out2 = [];
+								{
+									var ` = 0;
+									while (` < stmts2.length) {
+										var s2 = stmts2[`];
+										++ `;
+										out2.push(reflaxe.elixir.ast.transformers.BareCallToUnderscoreAssignTransforms.rewriteStmt(s2));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteStmt(s:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (s.def) {
+	case ECall(target, fname, args):
+		switch (target) {
+			case { def : EVar(mod) } if ((mod == "Log" || StringTools.endsWith(mod, ".Log")) && fname == "trace"):
+				s;			
+			default:
+				makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ECall(target, fname, args), s.metadata, s.pos)), s.metadata, s.pos);			
+		};	
+	case ERemoteCall(mod, fname2, args2):
+		switch (mod.def) {
+			case EVar(m) if ((m == "Log" || StringTools.endsWith(m, ".Log")) && fname2 == "trace"):
+				s;			
+			default:
+				makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ERemoteCall(mod, fname2, args2), s.metadata, s.pos)), s.metadata, s.pos);			
+		};	
+	default:
+		s;	
+}) {
+			var ` = s.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var fname = `;
+						var args = `;
+						{
+							@:ast(switch (target) {
+	case { def : EVar(mod) } if ((mod == "Log" || StringTools.endsWith(mod, ".Log")) && fname == "trace"):
+		s;	
+	default:
+		makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ECall(target, fname, args), s.metadata, s.pos)), s.metadata, s.pos);	
+}) if (target == null) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, args), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos};
+							} else {
+								var ` = target.def;
+								var ` = target.metadata;
+								var ` = target.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var mod = `;
+										if ((mod == "Log" || StringTools.endsWith(mod, ".Log")) && fname == "trace") {
+											s;
+										} else {
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, args), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos};
+										};
+									};
+								} else {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, args), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos};
+								};
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var fname2 = `;
+						var args2 = `;
+						{
+							@:ast(switch (mod.def) {
+	case EVar(m) if ((m == "Log" || StringTools.endsWith(m, ".Log")) && fname2 == "trace"):
+		s;	
+	default:
+		makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ERemoteCall(mod, fname2, args2), s.metadata, s.pos)), s.metadata, s.pos);	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										if ((m == "Log" || StringTools.endsWith(m, ".Log")) && fname2 == "trace") {
+											s;
+										} else {
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fname2, args2), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos};
+										};
+									};
+								} else {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fname2, args2), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos};
+								};
+							};
+						};
+					};
+				};
+				default: {
+					s;
+				}
+			};
+		};
+	}
+}

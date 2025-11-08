@@ -1,0 +1,464 @@
+class reflaxe.elixir.CompilationContext implements reflaxe.elixir.ast.context.BuildContext {
+
+	public function new() {
+		this.parentContext = null;
+		this.tempVarRenameMap = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.underscorePrefixedVars = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		this.variableUsageMap = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		this.functionParameterIds = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.patternVariableRegistry = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		this.clauseContextStack = [];
+		this.currentClauseContext = null;
+		this.isInClassMethodContext = false;
+		this.currentReceiverParamName = null;
+		this.isInExUnitTest = false;
+		this.isInConstructorArgContext = false;
+		this.currentModule = null;
+		this.currentModuleHasPresence = false;
+		this.loopCounter = 0;
+		this.whileLoopCounter = 0;
+		this.infrastructureVarInitValues = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.infraVarSubstitutions = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		this.compiler = null;
+		this.behaviorTransformer = null;
+		this.astContext = new reflaxe.elixir.ast.context.ElixirASTContext();
+		this.builderFacade = null;
+		this.currentPosition = null;
+		this.reentrancyGuard = new reflaxe.elixir.ast.ReentrancyGuard();
+	}
+
+	public var parentContext:Null<reflaxe.elixir.CompilationContext>;
+
+	public var tempVarRenameMap:Map<String, String>;
+
+	public var underscorePrefixedVars:Map<Int, Bool>;
+
+	public var variableUsageMap:Null<Map<Int, Bool>>;
+
+	public var functionParameterIds:Map<String, Bool>;
+
+	public var isInClassMethodContext:Bool;
+
+	public var currentReceiverParamName:Null<String>;
+
+	public var isInExUnitTest:Bool;
+
+	public var isInConstructorArgContext:Bool;
+
+	public var patternVariableRegistry:Map<Int, String>;
+
+	public var currentClauseContext:Null<reflaxe.elixir.ast.context.ClauseContext>;
+
+	var clauseContextStack:Array<reflaxe.elixir.ast.context.ClauseContext>;
+
+	public var loopCounter:Int;
+
+	public var whileLoopCounter:Int;
+
+	public var infrastructureVarInitValues:Map<String, reflaxe.elixir.ast.ElixirAST>;
+
+	public var infraVarSubstitutions:Map<Int, haxe.macro.TypedExpr>;
+
+	public var currentModule:Null<String>;
+
+	public var currentClass:Null<haxe.macro.ClassType>;
+
+	public var currentModuleHasPresence:Bool;
+
+	public var compiler:Null<reflaxe.elixir.ElixirCompiler>;
+
+	public var behaviorTransformer:Null<reflaxe.elixir.behaviors.BehaviorTransformer>;
+
+	public var astContext:reflaxe.elixir.ast.context.ElixirASTContext;
+
+	public var builderFacade:Null<reflaxe.elixir.ast.builders.BuilderFacade>;
+
+	var currentPosition:haxe.macro.Position;
+
+	public var reentrancyGuard:reflaxe.elixir.ast.ReentrancyGuard;
+
+	public function pushClauseContext(ctx:reflaxe.elixir.ast.context.ClauseContext) {
+		this.clauseContextStack.push(ctx);
+		this.currentClauseContext = ctx;
+	}
+
+	public function popClauseContext() {
+		if (this.clauseContextStack.length == 0) {
+			this.currentClauseContext = null;
+			return null;
+		};
+		var popped = this.clauseContextStack.pop();
+		this.currentClauseContext = if (this.clauseContextStack.length > 0) {
+			this.clauseContextStack[this.clauseContextStack.length - 1];
+		} else {
+			null;
+		};
+		return popped;
+	}
+
+	public function getCurrentClauseContext() {
+		return this.currentClauseContext;
+	}
+
+	public function createChild() {
+		var child = new reflaxe.elixir.CompilationContext();
+		child.parentContext = this;
+		child.compiler = this.compiler;
+		child.behaviorTransformer = this.behaviorTransformer;
+		child.currentModule = this.currentModule;
+		child.currentModuleHasPresence = this.currentModuleHasPresence;
+		child.isInClassMethodContext = this.isInClassMethodContext;
+		child.currentReceiverParamName = this.currentReceiverParamName;
+		child.isInExUnitTest = this.isInExUnitTest;
+		child.isInConstructorArgContext = this.isInConstructorArgContext;
+		return child;
+	}
+
+	public function mergeNameMappings(child:reflaxe.elixir.CompilationContext) {
+		if (child == null) {
+			return;
+		};
+		for (key in {
+			var this = child.tempVarRenameMap;
+			cast this.keys();
+		}) {
+			var value = {
+				var this = child.tempVarRenameMap;
+				cast this.get(key);
+			};
+			{
+				var this = this.tempVarRenameMap;
+				cast this.set(key, value);
+			};
+		};
+		for (key in {
+			var this = child.underscorePrefixedVars;
+			cast this.keys();
+		}) {
+			var value = {
+				var this = child.underscorePrefixedVars;
+				cast this.get(key);
+			};
+			if (value) {
+				{
+					var this = this.underscorePrefixedVars;
+					cast this.set(key, value);
+				};
+			};
+		};
+	}
+
+	public function getInheritedVarRename(varName:String) {
+		if ({
+			var this = this.tempVarRenameMap;
+			cast this.exists(varName);
+		}) {
+			return {
+				var this = this.tempVarRenameMap;
+				cast this.get(varName);
+			};
+		};
+		if (this.parentContext != null) {
+			return this.parentContext.getInheritedVarRename(varName);
+		};
+		return null;
+	}
+
+	public function shouldPrefixWithUnderscore(varId:Int) {
+		return {
+			var this = this.underscorePrefixedVars;
+			cast this.exists(varId);
+		} && {
+			var this = this.underscorePrefixedVars;
+			cast this.get(varId);
+		};
+	}
+
+	public function markAsUnderscorePrefixed(varId:Int) {
+		{
+			var this = this.underscorePrefixedVars;
+			cast this.set(varId, true);
+		};
+	}
+
+	public function getTempVarRename(tempName:String) {
+		return {
+			var this = this.tempVarRenameMap;
+			cast this.get(tempName);
+		};
+	}
+
+	public function registerTempVarRename(tempName:String, newName:String) {
+		{
+			var this = this.tempVarRenameMap;
+			cast this.set(tempName, newName);
+		};
+	}
+
+	@:value({ hasPresence : false })
+	public function setCurrentModule(moduleName:String, hasPresence:Bool = false) {
+		this.currentModule = moduleName;
+		this.currentModuleHasPresence = hasPresence;
+	}
+
+	public function clearModuleContext() {
+		this.currentModule = null;
+		this.currentModuleHasPresence = false;
+	}
+
+	public function getASTContext() {
+		return this.astContext;
+	}
+
+	public function resolveVariable(tvarId:Int, defaultName:String) {
+		if ({
+			var this = this.patternVariableRegistry;
+			cast this.exists(tvarId);
+		}) {
+			return {
+				var this = this.patternVariableRegistry;
+				cast this.get(tvarId);
+			};
+		};
+		if (this.currentClauseContext != null && {
+			var this = this.currentClauseContext.localToName;
+			cast this.exists(tvarId);
+		}) {
+			return {
+				var this = this.currentClauseContext.localToName;
+				cast this.get(tvarId);
+			};
+		};
+		if (this.shouldPrefixWithUnderscore(tvarId)) {
+			return "_" + defaultName;
+		};
+		return defaultName;
+	}
+
+	public function registerPatternVariable(tvarId:Int, patternName:String) {
+		{
+			var this = this.patternVariableRegistry;
+			cast this.set(tvarId, patternName);
+		};
+	}
+
+	public function getCurrentPosition() {
+		return this.currentPosition;
+	}
+
+	public function setCurrentPosition(pos:haxe.macro.Position) {
+		this.currentPosition = pos;
+	}
+
+	public function getCurrentModule() {
+		return null;
+	}
+
+	public function getCurrentClass() {
+		return this.currentClass;
+	}
+
+	public function setNodeMetadata(nodeId:String, metadata:Dynamic) {
+		this.astContext.setNodeMetadata(nodeId, metadata);
+	}
+
+	public function generateNodeId() {
+		return this.astContext.generateNodeId();
+	}
+
+	public function isIdiomaticEnum(enumType:haxe.macro.EnumType) {
+		return enumType.meta.has(":elixirIdiomatic");
+	}
+
+	public function getClauseContext(caseIndex:Int) {
+		return new reflaxe.elixir.ast.context.ClauseContext(null, null, null);
+	}
+
+	public function getModuleName(originalName:String) {
+		return reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
+	}
+
+	public function getFunctionName(originalName:String) {
+		return reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
+	}
+
+	public function isInPattern() {
+		return this.astContext.isInPattern;
+	}
+
+	public function setInPattern(inPattern:Bool) {
+		this.astContext.isInPattern = inPattern;
+	}
+
+	public function getCurrentFunction() {
+		return null;
+	}
+
+	public function warning(message:String, pos:Null<haxe.macro.Position> = null) {
+		haxe.macro.Context.warning(message, if (pos != null) {
+			pos;
+		} else {
+			haxe.macro.Context.currentPos();
+		}, null);
+	}
+
+	public function error(message:String, pos:Null<haxe.macro.Position> = null) {
+		haxe.macro.Context.error(message, if (pos != null) {
+			pos;
+		} else {
+			haxe.macro.Context.currentPos();
+		}, null);
+	}
+
+	public function getExpressionBuilder() {
+		var `this = this;
+		return function(expr:haxe.macro.TypedExpr) {
+			return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, `this);
+		};
+	}
+
+	public function getTypeBuilder() {
+		return function(type:haxe.macro.Type) {
+			return {
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase("todo_type");
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+		};
+	}
+
+	public function getPatternBuilder(clauseContext:reflaxe.elixir.ast.context.ClauseContext) {
+		var `this = this;
+		return function(expr:haxe.macro.TypedExpr) {
+			var oldContext = `this.currentClauseContext;
+			`this.currentClauseContext = clauseContext;
+			var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, `this);
+			`this.currentClauseContext = oldContext;
+			return result;
+		};
+	}
+
+	public function registerBuilder(builderType:String, builder:reflaxe.elixir.ast.builders.IBuilder) {
+		this.astContext.registerBuilder(builderType, builder);
+	}
+
+	public function isFeatureEnabled(flag:String) {
+		return this.astContext.isFeatureEnabled(flag);
+	}
+
+	public function setFeatureFlag(flag:String, enabled:Bool) {
+		this.astContext.setFeatureFlag(flag, enabled);
+	}
+
+	public function substituteIfNeeded(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return expr;
+		};
+		if (this.infraVarSubstitutions == null) {
+			return expr;
+		};
+		var unwrapped = expr;
+		var unwrapCount = 0;
+		var maxUnwrap = 100;
+		while (unwrapCount < maxUnwrap) {
+			var unwrappedNext = @:ast(switch (unwrapped.expr) {
+	case TParenthesis(e):
+		e;	
+	case TMeta(_, e):
+		e;	
+	default:
+		null;	
+}) {
+				var ` = unwrapped.expr;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								e;
+							};
+						};
+					};
+					case 25: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								e;
+							};
+						};
+					};
+					default: {
+						null;
+					}
+				};
+			};
+			if (unwrappedNext == null) {
+				break;
+			};
+			unwrapped = unwrappedNext;
+			unwrapCount ++;
+		};
+		if (unwrapCount >= maxUnwrap) {};
+		return @:ast(switch (unwrapped.expr) {
+	case TLocal(tvar):
+		var substituted = infraVarSubstitutions.get(tvar.id);
+		if (substituted != null) {
+			substituted;
+		} else {
+			expr;
+		};	
+	default:
+		expr;	
+}) {
+			var ` = unwrapped.expr;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var tvar = `;
+					{
+						var substituted = {
+							var this = this.infraVarSubstitutions;
+							var key = tvar.id;
+							cast this.get(key);
+						};
+						if (substituted != null) {
+							substituted;
+						} else {
+							expr;
+						};
+					};
+				};
+			} else {
+				expr;
+			};
+		};
+	}
+}

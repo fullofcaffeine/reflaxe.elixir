@@ -1,0 +1,150 @@
+class reflaxe.elixir.ast.transformers.MountBodyAlignToHeadTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "mount" && args != null && args.length == 3):
+		var binder = switch (args[0]) {
+			case PVar(p):
+				p;			
+			default:
+				null;			
+		};
+		if (binder == null) n else makeASTWithMeta(EDef(name, args, guards, align(body, binder)), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2) if (name2 == "mount" && args2 != null && args2.length == 3):
+		var binder2 = switch (args2[0]) {
+			case PVar(p2):
+				p2;			
+			default:
+				null;			
+		};
+		if (binder2 == null) n else makeASTWithMeta(EDefp(name2, args2, guards2, align(body2, binder2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (name == "mount" && args != null && args.length == 3) {
+								var binder = @:ast(switch (args[0]) {
+	case PVar(p):
+		p;	
+	default:
+		null;	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var p = `;
+											{
+												p;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								if (binder == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.MountBodyAlignToHeadTransforms.align(body, binder));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (name2 == "mount" && args2 != null && args2.length == 3) {
+								var binder2 = @:ast(switch (args2[0]) {
+	case PVar(p2):
+		p2;	
+	default:
+		null;	
+}) {
+									var ` = args2[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var p2 = `;
+											{
+												p2;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								if (binder2 == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, reflaxe.elixir.ast.transformers.MountBodyAlignToHeadTransforms.align(body2, binder2));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function align(body:reflaxe.elixir.ast.ElixirAST, binder:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == "params" || v == "_params"):
+		makeASTWithMeta(EVar(binder), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == "params" || v == "_params") {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

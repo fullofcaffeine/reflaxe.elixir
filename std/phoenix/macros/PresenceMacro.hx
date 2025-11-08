@@ -217,6 +217,7 @@ using haxe.macro.Tools;
  */
 #if !macro @:build(stdgo.StdGo.buildModule()) #end
 @:nullSafety(Off)
+
 class PresenceMacro {
 	#if macro
 	
@@ -229,6 +230,7 @@ class PresenceMacro {
 	public static function build(): Array<Field> {
 		var fields = Context.getBuildFields();
 		var newFields: Array<Field> = [];
+
 		
 		// Extract topic from @:presenceTopic metadata if present
 		var localClass = Context.getLocalClass();

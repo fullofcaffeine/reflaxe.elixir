@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.transformers.ComprehensionInfo = { values : Array<reflaxe.elixir.ast.ElixirAST>, resultVar : String, loopVar : String, ?filterCondition : Null<reflaxe.elixir.ast.ElixirAST>, bodyExpr : reflaxe.elixir.ast.ElixirAST }

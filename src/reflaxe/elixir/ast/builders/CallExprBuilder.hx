@@ -73,6 +73,8 @@ class CallExprBuilder {
             }
         }
 
+        // (neutral trace emit disabled in this pass) – rely on TracePreserve build macro
+
         // CRITICAL: Check for __elixir__() injection FIRST, before any other processing
         // This ensures code injection works regardless of other transformations
         if (context.compiler.options.targetCodeInjectionName != null && e != null && args.length > 0) {
@@ -413,6 +415,17 @@ class CallExprBuilder {
                         var className = classRef.get().name;
                         var methodName = cf.get().name;
 
+                        // Preserve Haxe's fully-qualified haxe.Log.trace even under -D no_traces
+                        // by mapping it to our runtime Log.trace/2 function at build time.
+                        // We only trigger this mapping when the package is exactly `haxe` to
+                        // avoid coupling to user-defined modules named `Log`.
+                        var classPackArr = classRef.get().pack;
+                        var classPack = classPackArr != null ? classPackArr.join(".") : "";
+                        if (classPack == "haxe" && className == "Log" && methodName == "trace") {
+                            try { if (context != null && context.compiler != null) context.compiler.usedLogTrace = true; } catch (e:Dynamic) {}
+                            return ERemoteCall(makeAST(EVar("Log")), "trace", argASTs);
+                        }
+
                         // Check for special Haxe standard library calls
                         var specialCall = handleSpecialCall(className, methodName, args, context);
                         if (specialCall != null) {
@@ -475,6 +488,12 @@ class CallExprBuilder {
                 // This ensures lambda function parameters use their snake_case names
                 // (e.g., topicConverter -> topic_converter)
                 var resolvedName = VariableBuilder.resolveVariableName(v, context);
+                // Preserve Haxe trace under -D no_traces by mapping plain `trace(...)`
+                // to our runtime Log.trace(...) (shape-only, not app-coupled)
+                if (resolvedName == "trace") {
+                    try { if (context != null && context.compiler != null) context.compiler.usedLogTrace = true; } catch (e:Dynamic) {}
+                    return ERemoteCall(makeAST(EVar("Log")), "trace", argASTs);
+                }
                 return ECall(makeAST(EVar(resolvedName)), "", argASTs);
                 
             default:
@@ -818,6 +837,7 @@ class CallExprBuilder {
     static inline function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
         return {def: def, metadata: {}, pos: pos};
     }
+
 }
 
 #end

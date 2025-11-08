@@ -1,0 +1,292 @@
+class reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(scrut, clauses):
+		var cls = [];
+		for (c  in  clauses) cls.push(rewriteClause(c));
+		makeASTWithMeta(ECase(scrut, cls), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var scrut = `;
+						var clauses = `;
+						{
+							var cls = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var c = clauses[`];
+									++ `;
+									cls.push(reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.rewriteClause(c));
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(scrut, cls), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewriteClause(c:reflaxe.elixir.ast.ECaseClause) {
+		var used = reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.collectUsed(c.body);
+		var newPat = reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(c.pattern, used);
+		return {pattern : newPat, guard : c.guard, body : c.body};
+	}
+
+	static function underscoreUnusedInPattern(p:reflaxe.elixir.ast.EPattern, used:Map<String, Bool>) {
+		return @:ast(switch (p) {
+	case PVar(n):
+		(used.exists(n) ? p : PVar("_" + n));	
+	case PTuple(es):
+		PTuple([for (e  in  es) underscoreUnusedInPattern(e, used)]);	
+	case PList(es):
+		PList([for (e  in  es) underscoreUnusedInPattern(e, used)]);	
+	case PCons(h, t):
+		PCons(underscoreUnusedInPattern(h, used), underscoreUnusedInPattern(t, used));	
+	case PMap(kvs):
+		PMap([for (kv  in  kvs) { key : kv.key, value : underscoreUnusedInPattern(kv.value, used) }]);	
+	case PStruct(nm, fs):
+		PStruct(nm, [for (f  in  fs) { key : f.key, value : underscoreUnusedInPattern(f.value, used) }]);	
+	case PPin(inner):
+		PPin(underscoreUnusedInPattern(inner, used));	
+	default:
+		p;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						(if (used.exists(n)) {
+							p;
+						} else {
+							reflaxe.elixir.ast.EPattern.PVar("_" + n);
+						});
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						reflaxe.elixir.ast.EPattern.PTuple({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(e, used));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						reflaxe.elixir.ast.EPattern.PList({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(e, used));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.EPattern.PCons(reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(h, used), reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(t, used));
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PMap({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < kvs.length) {
+									var kv = kvs[`];
+									++ `;
+									`.push({key : kv.key, value : reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(kv.value, used)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var nm = `;
+					var fs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PStruct(nm, {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fs.length) {
+									var f = fs[`];
+									++ `;
+									`.push({key : f.key, value : reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(f.value, used)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.EPattern.PPin(reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.underscoreUnusedInPattern(inner, used));
+					};
+				};
+			};
+			default: {
+				p;
+			}
+		};
+	}
+
+	static function collectUsed(ast:reflaxe.elixir.ast.ElixirAST) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{};
+		reflaxe.elixir.ast.ASTUtils.walk(ast, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(v):
+		names.set(v, true);	
+	case EString(s):
+		markInterpolations(s);	
+	case ERaw(code):
+		markInterpolations(code);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 32: {
+						var ` = `[0];
+						{
+							var s = `;
+							{
+								{
+									if (s == null) {
+										null;
+									} else {
+										var reBlock = new EReg("\\#\\{([^}]*)\\}", "g");
+										var pos = 0;
+										while (reBlock.matchSub(s, pos, null)) {
+											var inner = reBlock.matched(1);
+											var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+											var tpos = 0;
+											while (tok.matchSub(inner, tpos, null)) {
+												var id = tok.matched(0);
+												if (id != null && id.length > 0) {
+													var c = id.charAt(0);
+													if (c == c.toLowerCase()) {
+														{
+															names.set(id, true);
+														};
+													};
+												};
+												tpos = tok.matchedPos().pos + tok.matchedPos().len;
+											};
+											pos = reBlock.matchedPos().pos + reBlock.matchedPos().len;
+										};
+									};
+								};
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								{
+									names.set(v, true);
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								{
+									if (code == null) {
+										null;
+									} else {
+										var reBlock = new EReg("\\#\\{([^}]*)\\}", "g");
+										var pos = 0;
+										while (reBlock.matchSub(code, pos, null)) {
+											var inner = reBlock.matched(1);
+											var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+											var tpos = 0;
+											while (tok.matchSub(inner, tpos, null)) {
+												var id = tok.matched(0);
+												if (id != null && id.length > 0) {
+													var c = id.charAt(0);
+													if (c == c.toLowerCase()) {
+														{
+															names.set(id, true);
+														};
+													};
+												};
+												tpos = tok.matchedPos().pos + tok.matchedPos().len;
+											};
+											pos = reBlock.matchedPos().pos + reBlock.matchedPos().len;
+										};
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		});
+		return names;
+	}
+}

@@ -1,0 +1,166 @@
+class reflaxe.elixir.ast.transformers.AssertArgIIFETransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, fnName, args) if (isAssert(mod) && (fnName == "is_true" || fnName == "is_false") && args != null && args.length >= 1):
+		var first = args[0];
+		var wrapped = if (needsIIFE(first)) iife(first) else first;
+		makeASTWithMeta(ERemoteCall(mod, fnName, [wrapped].concat(args.slice(1))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var fnName = `;
+						var args = `;
+						if (@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Assert"):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = mod.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m == "Assert") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						} && (fnName == "is_true" || fnName == "is_false") && args != null && args.length >= 1) {
+							var first = args[0];
+							var wrapped = if (reflaxe.elixir.ast.transformers.AssertArgIIFETransforms.needsIIFE(first)) {
+								{
+									var fn = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : first}]), metadata : {}, pos : pos};
+									};
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ECall(fn, "", []), metadata : {}, pos : pos};
+									};
+								};
+							} else {
+								first;
+							};
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fnName, [wrapped].concat(args.slice(1, null)));
+								var meta = n.metadata;
+								var pos = n.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function isAssert(mod:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (mod.def) {
+	case EVar(m) if (m == "Assert"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = mod.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var m = `;
+					if (m == "Assert") {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function needsIIFE(arg:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (arg.def) {
+	case EVar(_) | EInteger(_) | EBoolean(_) | EAtom(_) | EString(_):
+		false;	
+	case EParen(inner):
+		needsIIFE(inner);	
+	default:
+		true;	
+}) {
+			var ` = arg.def;
+			switch (enumIndex `) {
+				case 31: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				case 32: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				case 33: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				case 35: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.AssertArgIIFETransforms.needsIIFE(inner);
+						};
+					};
+				};
+				default: {
+					true;
+				}
+			};
+		};
+	}
+
+	static inline function iife(body:reflaxe.elixir.ast.ElixirAST) {
+		var fn = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : body}]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ECall(fn, "", []), metadata : {}, pos : pos};
+		};
+	}
+}

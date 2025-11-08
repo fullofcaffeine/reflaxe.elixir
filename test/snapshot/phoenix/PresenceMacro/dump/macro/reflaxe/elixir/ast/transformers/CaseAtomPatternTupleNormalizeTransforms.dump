@@ -1,0 +1,134 @@
+class reflaxe.elixir.ast.transformers.CaseAtomPatternTupleNormalizeTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(expr, clauses):
+		var hasTaggedTuple = false;
+		for (cl  in  clauses) switch (cl.pattern) {
+			case PTuple(es) if (es.length >= 1):
+				switch (es[0]) {
+					case PLiteral({ def : EAtom(_) }):
+						hasTaggedTuple = true;					
+					default:
+				};			
+			default:
+		};
+		if (!hasTaggedTuple) return n;
+		var out = [];
+		for (cl  in  clauses) {
+			var pat = cl.pattern;
+			switch (pat) {
+				case PLiteral({ def : EAtom(a) }):
+					pat = PTuple([PLiteral(makeAST(ElixirASTDef.EAtom(a)))]);				
+				default:
+			};
+			out.push({ pattern : pat, guard : cl.guard, body : cl.body });
+		};
+		makeASTWithMeta(ECase(expr, out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						var clauses = `;
+						{
+							var hasTaggedTuple = false;
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									@:ast(switch (cl.pattern) {
+	case PTuple(es) if (es.length >= 1):
+		switch (es[0]) {
+			case PLiteral({ def : EAtom(_) }):
+				hasTaggedTuple = true;			
+			default:
+		};	
+	default:
+}) {
+										var ` = cl.pattern;
+										if (enumIndex ` == 2) {
+											var ` = `[0];
+											{
+												var es = `;
+												if (es.length >= 1) {
+													@:ast(switch (es[0]) {
+	case PLiteral({ def : EAtom(_) }):
+		hasTaggedTuple = true;	
+	default:
+}) {
+														var ` = es[0];
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 31) {
+																	var ` = `[0];
+																	{
+																		hasTaggedTuple = true;
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+							if (! hasTaggedTuple) {
+								return n;
+							};
+							var out = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var pat = cl.pattern;
+									@:ast(switch (pat) {
+	case PLiteral({ def : EAtom(a) }):
+		pat = PTuple([PLiteral(makeAST(ElixirASTDef.EAtom(a)))]);	
+	default:
+}) if (enumIndex pat == 1) {
+										var ` = pat[0];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 31) {
+												var ` = `[0];
+												{
+													var a = `;
+													{
+														pat = reflaxe.elixir.ast.EPattern.PTuple([reflaxe.elixir.ast.EPattern.PLiteral({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(a), metadata : {}, pos : pos};
+														})]);
+													};
+												};
+											} else {};
+										};
+									} else {};
+									out.push({pattern : pat, guard : cl.guard, body : cl.body});
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

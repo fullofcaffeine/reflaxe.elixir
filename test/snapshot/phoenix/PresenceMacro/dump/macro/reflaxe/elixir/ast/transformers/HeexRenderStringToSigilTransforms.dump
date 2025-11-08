@@ -1,0 +1,380 @@
+class reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms {
+
+	static inline function unwrapParens(n:reflaxe.elixir.ast.ElixirAST) {
+		var cur = n;
+		while (Type.enumConstructor(cur.def) == "EParen") {
+			@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;	
+	default:
+}) {
+				var ` = cur.def;
+				if (enumIndex ` == 54) {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							cur = inner;
+						};
+					};
+				} else {};
+			};
+		};
+		return cur;
+	}
+
+	static inline function looksLikeHtml(s:String) {
+		if (s == null) {
+			return false;
+		};
+		var t = StringTools.trim(s);
+		return t.indexOf("<", null) != -1 && t.indexOf(">", null) != -1;
+	}
+
+	static function convertInterpolations(s:String) {
+		if (s == null) {
+			return s;
+		};
+		var res = reflaxe.elixir.ast.TemplateHelpers.rewriteInterpolations(s);
+		res = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(res);
+		return res;
+	}
+
+	static function rewriteRenderDef(n:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "render"):
+		var b0 = unwrapParens(body);
+		switch (b0.def) {
+			case EBlock(stmts) if (stmts.length > 0):
+				var last = unwrapParens(stmts[stmts.length - 1]);
+				switch (last.def) {
+					case EString(s) if (looksLikeHtml(s)):
+						var conv = convertInterpolations(s);
+						var newStmts = stmts.copy();
+						newStmts[newStmts.length - 1] = makeAST(ESigil("H", conv, ""));
+						makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), n.metadata, n.pos);					
+					default:
+						n;					
+				};			
+			case EDo(stmts) if (stmts.length > 0):
+				var last2 = unwrapParens(stmts[stmts.length - 1]);
+				switch (last2.def) {
+					case EString(ss) if (looksLikeHtml(ss)):
+						var conv3 = convertInterpolations(ss);
+						var out = stmts.copy();
+						out[out.length - 1] = makeAST(ESigil("H", conv3, ""));
+						makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out))), n.metadata, n.pos);					
+					default:
+						n;					
+				};			
+			case EString(s4) if (looksLikeHtml(s4)):
+				var sig2 = makeAST(ESigil("H", convertInterpolations(s4), ""));
+				makeASTWithMeta(EDef(name, args, guards, sig2), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 2) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				var ` = `[3];
+				{
+					var name = `;
+					var args = `;
+					var guards = `;
+					var body = `;
+					if (name == "render") {
+						var b0 = {
+							var cur = body;
+							while (Type.enumConstructor(cur.def) == "EParen") {
+								@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;	
+	default:
+}) {
+									var ` = cur.def;
+									if (enumIndex ` == 54) {
+										var ` = `[0];
+										{
+											var inner = `;
+											{
+												cur = inner;
+											};
+										};
+									} else {};
+								};
+							};
+							cur;
+						};
+						@:ast(switch (b0.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		var last = unwrapParens(stmts[stmts.length - 1]);
+		switch (last.def) {
+			case EString(s) if (looksLikeHtml(s)):
+				var conv = convertInterpolations(s);
+				var newStmts = stmts.copy();
+				newStmts[newStmts.length - 1] = makeAST(ESigil("H", conv, ""));
+				makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case EDo(stmts) if (stmts.length > 0):
+		var last2 = unwrapParens(stmts[stmts.length - 1]);
+		switch (last2.def) {
+			case EString(ss) if (looksLikeHtml(ss)):
+				var conv3 = convertInterpolations(ss);
+				var out = stmts.copy();
+				out[out.length - 1] = makeAST(ESigil("H", conv3, ""));
+				makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out))), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case EString(s4) if (looksLikeHtml(s4)):
+		var sig2 = makeAST(ESigil("H", convertInterpolations(s4), ""));
+		makeASTWithMeta(EDef(name, args, guards, sig2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+							var ` = b0.def;
+							switch (enumIndex `) {
+								case 32: {
+									var ` = `[0];
+									{
+										var s4 = `;
+										if (if (s4 == null) {
+											false;
+										} else {
+											var t = StringTools.trim(s4);
+											t.indexOf("<", null) != -1 && t.indexOf(">", null) != -1;
+										}) {
+											var sig2 = {
+												var def = reflaxe.elixir.ast.ElixirASTDef.ESigil("H", reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.convertInterpolations(s4), "");
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, sig2), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								};
+								case 53: {
+									var ` = `[0];
+									{
+										var stmts = `;
+										if (stmts.length > 0) {
+											var last = {
+												var n = stmts[stmts.length - 1];
+												var cur = n;
+												while (Type.enumConstructor(cur.def) == "EParen") {
+													@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;	
+	default:
+}) {
+														var ` = cur.def;
+														if (enumIndex ` == 54) {
+															var ` = `[0];
+															{
+																var inner = `;
+																{
+																	cur = inner;
+																};
+															};
+														} else {};
+													};
+												};
+												cur;
+											};
+											@:ast(switch (last.def) {
+	case EString(s) if (looksLikeHtml(s)):
+		var conv = convertInterpolations(s);
+		var newStmts = stmts.copy();
+		newStmts[newStmts.length - 1] = makeAST(ESigil("H", conv, ""));
+		makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+												var ` = last.def;
+												if (enumIndex ` == 32) {
+													var ` = `[0];
+													{
+														var s = `;
+														if (if (s == null) {
+															false;
+														} else {
+															var t = StringTools.trim(s);
+															t.indexOf("<", null) != -1 && t.indexOf(">", null) != -1;
+														}) {
+															var conv = reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.convertInterpolations(s);
+															var newStmts = stmts.copy();
+															newStmts[newStmts.length - 1] = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ESigil("H", conv, ""), metadata : {}, pos : pos};
+															};
+															{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(newStmts), metadata : {}, pos : pos};
+															}), metadata : n.metadata, pos : n.pos};
+														} else {
+															n;
+														};
+													};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								};
+								case 55: {
+									var ` = `[0];
+									{
+										var stmts = `;
+										if (stmts.length > 0) {
+											var last2 = {
+												var n = stmts[stmts.length - 1];
+												var cur = n;
+												while (Type.enumConstructor(cur.def) == "EParen") {
+													@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;	
+	default:
+}) {
+														var ` = cur.def;
+														if (enumIndex ` == 54) {
+															var ` = `[0];
+															{
+																var inner = `;
+																{
+																	cur = inner;
+																};
+															};
+														} else {};
+													};
+												};
+												cur;
+											};
+											@:ast(switch (last2.def) {
+	case EString(ss) if (looksLikeHtml(ss)):
+		var conv3 = convertInterpolations(ss);
+		var out = stmts.copy();
+		out[out.length - 1] = makeAST(ESigil("H", conv3, ""));
+		makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+												var ` = last2.def;
+												if (enumIndex ` == 32) {
+													var ` = `[0];
+													{
+														var ss = `;
+														if (if (ss == null) {
+															false;
+														} else {
+															var t = StringTools.trim(ss);
+															t.indexOf("<", null) != -1 && t.indexOf(">", null) != -1;
+														}) {
+															var conv3 = reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.convertInterpolations(ss);
+															var out = stmts.copy();
+															out[out.length - 1] = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ESigil("H", conv3, ""), metadata : {}, pos : pos};
+															};
+															{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out), metadata : {}, pos : pos};
+															}), metadata : n.metadata, pos : n.pos};
+														} else {
+															n;
+														};
+													};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								};
+								default: {
+									n;
+								}
+							};
+						};
+					} else {
+						n;
+					};
+				};
+			} else {
+				n;
+			};
+		};
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var newBody = [for (b  in  body) rewriteRenderDef(b)];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var newDo = rewriteRenderDef(doBlock);
+		makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.rewriteRenderDef(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var newDo = reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.rewriteRenderDef(doBlock);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,405 @@
+class reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var nb = inject(body, n);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var nb2 = inject(body2, n);
+		makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);	
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewrite(stmts, n)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewrite(stmts2, n)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var nb = reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.inject(body, n);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var nb2 = reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.inject(body2, n);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.rewrite(stmts, n));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.rewrite(stmts2, n));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function inject(body:reflaxe.elixir.ast.ElixirAST, ctx:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(ss):
+		makeASTWithMeta(EBlock(rewrite(ss, ctx)), x.metadata, x.pos);	
+	case EDo(ss2):
+		makeASTWithMeta(EDo(rewrite(ss2, ctx)), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.rewrite(ss, ctx));
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var ss2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.rewrite(ss2, ctx));
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(stmts:Array<reflaxe.elixir.ast.ElixirAST>, ctx:reflaxe.elixir.ast.ElixirAST) {
+		if (stmts == null || stmts.length == 0) {
+			return stmts;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var s = stmts[i];
+				out.push(s);
+				@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs) if (isSocketVar(left) && isPutFlashOnSocket(rhs)):
+		var nextIsSocketUse = false;
+		if (i + 1 < stmts.length) switch (stmts[i + 1].def) {
+			case EVar(v) if (v == "socket"):
+				nextIsSocketUse = true;			
+			default:
+		};
+		if (!nextIsSocketUse) out.push(makeASTWithMeta(EVar("socket"), s.metadata, s.pos));	
+	default:
+}) {
+					var ` = s.def;
+					if (enumIndex ` == 26) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								if (@:ast(switch (e.def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} && @:ast(switch (e.def) {
+	case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2):
+		var isMod = switch (target.def) {
+			case EVar(m) if (m == "Phoenix.LiveView"):
+				true;			
+			default:
+				false;			
+		};
+		var firstIsSocket = switch (args[0].def) {
+			case EVar(n) if (n == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		isMod && firstIsSocket;	
+	default:
+		false;	
+}) {
+									var ` = rhs.def;
+									if (enumIndex ` == 24) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var target = `;
+											var fnName = `;
+											var args = `;
+											if (fnName == "put_flash" && args != null && args.length >= 2) {
+												var isMod = @:ast(switch (target.def) {
+	case EVar(m) if (m == "Phoenix.LiveView"):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = target.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var m = `;
+															if (m == "Phoenix.LiveView") {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												var firstIsSocket = @:ast(switch (args[0].def) {
+	case EVar(n) if (n == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = args[0].def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var n = `;
+															if (n == "socket") {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												isMod && firstIsSocket;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								}) {
+									var nextIsSocketUse = false;
+									if (i + 1 < stmts.length) {
+										@:ast(switch (stmts[i + 1].def) {
+	case EVar(v) if (v == "socket"):
+		nextIsSocketUse = true;	
+	default:
+}) {
+											var ` = stmts[i + 1].def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var v = `;
+													if (v == "socket") {
+														nextIsSocketUse = true;
+													} else {};
+												};
+											} else {};
+										};
+									};
+									if (! nextIsSocketUse) {
+										out.push({def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : s.metadata, pos : s.pos});
+									};
+								} else {};
+							};
+						} else {};
+					} else {};
+				};
+			};
+		};
+		return out;
+	}
+
+	static inline function isSocketVar(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var nm = `;
+					if (nm == "socket") {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function isPutFlashOnSocket(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2):
+		var isMod = switch (target.def) {
+			case EVar(m) if (m == "Phoenix.LiveView"):
+				true;			
+			default:
+				false;			
+		};
+		var firstIsSocket = switch (args[0].def) {
+			case EVar(n) if (n == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		isMod && firstIsSocket;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var target = `;
+					var fnName = `;
+					var args = `;
+					if (fnName == "put_flash" && args != null && args.length >= 2) {
+						var isMod = @:ast(switch (target.def) {
+	case EVar(m) if (m == "Phoenix.LiveView"):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = target.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m == "Phoenix.LiveView") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						var firstIsSocket = @:ast(switch (args[0].def) {
+	case EVar(n) if (n == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = args[0].def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var n = `;
+									if (n == "socket") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						isMod && firstIsSocket;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

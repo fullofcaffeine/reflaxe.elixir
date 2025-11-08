@@ -1,0 +1,291 @@
+class reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms {
+
+	static inline function isWhereCall(module:reflaxe.elixir.ast.ElixirAST, func:String) {
+		return func == "where";
+	}
+
+	static function unwrapParen(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EParen(inner):
+		unwrapParen(inner);	
+	default:
+		e;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 54) {
+				var ` = `[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.unwrapParen(inner);
+					};
+				};
+			} else {
+				e;
+			};
+		};
+	}
+
+	static function extractPinnedVar(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case EPin(inner):
+		var u = unwrapParen(inner);
+		switch (u.def) {
+			case EVar(_):
+				u;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 39) {
+				var ` = `[0];
+				{
+					var inner = `;
+					{
+						var u = reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.unwrapParen(inner);
+						@:ast(switch (u.def) {
+	case EVar(_):
+		u;	
+	default:
+		null;	
+}) {
+							var ` = u.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									u;
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	static function isFieldExpr(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EField(_, _):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 28) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					true;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function makeIsNil(e:reflaxe.elixir.ast.ElixirAST) {
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+			}, "is_nil", [e]), metadata : {}, pos : pos};
+		};
+	}
+
+	static function guardCompare(op:reflaxe.elixir.ast.EBinaryOp, left:reflaxe.elixir.ast.ElixirAST, right:reflaxe.elixir.ast.ElixirAST) {
+		var pinned = reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.extractPinnedVar(left);
+		var field = if (reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.isFieldExpr(right)) {
+			right;
+		} else {
+			null;
+		};
+		if (pinned == null || field == null) {
+			pinned = reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.extractPinnedVar(right);
+			field = if (reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.isFieldExpr(left)) {
+				left;
+			} else {
+				null;
+			};
+		};
+		if (pinned == null || field == null) {
+			return null;
+		};
+		var isNilPinned = reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.makeIsNil(pinned);
+		isNilPinned = {def : isNilPinned.def, metadata : {ectoPinnedNilGuard : cast true}, pos : isNilPinned.pos};
+		var isNilField = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "is_nil", [field]), metadata : {}, pos : pos};
+		};
+		var thenBody = @:ast(switch (op) {
+	case Equal:
+		isNilField;	
+	case NotEqual:
+		makeAST(EUnary(Not, isNilField));	
+	default:
+		return null;	
+}) switch (enumIndex op) {
+			case 6: {
+				{
+					isNilField;
+				};
+			};
+			case 7: {
+				{
+					{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EUnary(reflaxe.elixir.ast.EUnaryOp.Not, isNilField), metadata : {}, pos : pos};
+					};
+				};
+			};
+			default: {
+				return null;
+			}
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(isNilPinned, thenBody, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, left, right), metadata : {}, pos : pos};
+			}), metadata : {}, pos : pos};
+		};
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(module, func, args) if (isWhereCall(module, func) && args != null && args.length >= 2):
+		var idx = args.length - 1;
+		var cond = args[idx];
+		switch (cond.def) {
+			case EBinary(op, l, r):
+				var branchExpr = guardCompare(op, l, r);
+				if (branchExpr == null) return n;
+				switch (branchExpr.def) {
+					case EIf(isNilPinned, thenCond, elseCond):
+						var thenArgs = args.copy();
+						thenArgs[idx] = thenCond;
+						var elseArgs = args.copy();
+						elseArgs[idx] = elseCond;
+						var thenWhere = makeAST(ERemoteCall(module, func, thenArgs));
+						var elseWhere = makeAST(ERemoteCall(module, func, elseArgs));
+						makeASTWithMeta(EIf(isNilPinned, thenWhere, elseWhere), n.metadata, n.pos);					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var module = `;
+						var func = `;
+						var args = `;
+						if (func == "where" && args != null && args.length >= 2) {
+							var idx = args.length - 1;
+							var cond = args[idx];
+							@:ast(switch (cond.def) {
+	case EBinary(op, l, r):
+		var branchExpr = guardCompare(op, l, r);
+		if (branchExpr == null) return n;
+		switch (branchExpr.def) {
+			case EIf(isNilPinned, thenCond, elseCond):
+				var thenArgs = args.copy();
+				thenArgs[idx] = thenCond;
+				var elseArgs = args.copy();
+				elseArgs[idx] = elseCond;
+				var thenWhere = makeAST(ERemoteCall(module, func, thenArgs));
+				var elseWhere = makeAST(ERemoteCall(module, func, elseArgs));
+				makeASTWithMeta(EIf(isNilPinned, thenWhere, elseWhere), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+								var ` = cond.def;
+								if (enumIndex ` == 26) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var op = `;
+										var l = `;
+										var r = `;
+										{
+											var branchExpr = reflaxe.elixir.ast.transformers.EctoEqPinnedNilGuardTransforms.guardCompare(op, l, r);
+											if (branchExpr == null) {
+												return n;
+											};
+											@:ast(switch (branchExpr.def) {
+	case EIf(isNilPinned, thenCond, elseCond):
+		var thenArgs = args.copy();
+		thenArgs[idx] = thenCond;
+		var elseArgs = args.copy();
+		elseArgs[idx] = elseCond;
+		var thenWhere = makeAST(ERemoteCall(module, func, thenArgs));
+		var elseWhere = makeAST(ERemoteCall(module, func, elseArgs));
+		makeASTWithMeta(EIf(isNilPinned, thenWhere, elseWhere), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+												var ` = branchExpr.def;
+												if (enumIndex ` == 10) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var isNilPinned = `;
+														var thenCond = `;
+														var elseCond = `;
+														{
+															var thenArgs = args.copy();
+															thenArgs[idx] = thenCond;
+															var elseArgs = args.copy();
+															elseArgs[idx] = elseCond;
+															var thenWhere = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(module, func, thenArgs), metadata : {}, pos : pos};
+															};
+															var elseWhere = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(module, func, elseArgs), metadata : {}, pos : pos};
+															};
+															{def : reflaxe.elixir.ast.ElixirASTDef.EIf(isNilPinned, thenWhere, elseWhere), metadata : n.metadata, pos : n.pos};
+														};
+													};
+												} else {
+													n;
+												};
+											};
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,136 @@
+class reflaxe.elixir.ast.transformers.FunctionArgMultiStmtIIFETransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECall(target, fnName, args):
+		makeASTWithMeta(ECall(target, fnName, wrapArgs(args)), n.metadata, n.pos);	
+	case ERemoteCall(mod, fnName, args):
+		makeASTWithMeta(ERemoteCall(mod, fnName, wrapArgs(args)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var fnName = `;
+							var args = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.ECall(target, fnName, reflaxe.elixir.ast.transformers.FunctionArgMultiStmtIIFETransforms.wrapArgs(args));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var fnName = `;
+							var args = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fnName, reflaxe.elixir.ast.transformers.FunctionArgMultiStmtIIFETransforms.wrapArgs(args));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function wrapArgs(args:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (args == null) {
+			return args;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				out.push(reflaxe.elixir.ast.transformers.FunctionArgMultiStmtIIFETransforms.wrapIfBlock(a));
+			};
+		};
+		return out;
+	}
+
+	static function wrapIfBlock(arg:reflaxe.elixir.ast.ElixirAST) {
+		if (arg == null) {
+			return arg;
+		};
+		var isMultiBlock = [null];
+		isMultiBlock[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(stmts) | EDo(stmts):
+		stmts != null && stmts.length > 1;	
+	case EParen(inner):
+		isMultiBlock(inner);	
+	default:
+		false;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								stmts != null && stmts.length > 1;
+							};
+						};
+					};
+					case 54: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								isMultiBlock[0](inner);
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								stmts != null && stmts.length > 1;
+							};
+						};
+					};
+					default: {
+						false;
+					}
+				};
+			};
+		};
+		if (isMultiBlock[0](arg)) {
+			var fn = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : arg}]), metadata : {}, pos : pos};
+			};
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ECall(fn, "", []), metadata : {}, pos : pos};
+			};
+		};
+		return arg;
+	}
+}

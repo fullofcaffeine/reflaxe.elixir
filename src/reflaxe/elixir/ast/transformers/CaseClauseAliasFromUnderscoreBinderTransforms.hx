@@ -73,7 +73,7 @@ class CaseClauseAliasFromUnderscoreBinderTransforms {
     var declArr = [for (k in declared.keys()) k].join(',');
     var usedArr = [for (k in used.keys()) k].join(',');
     var patArr = [for (k in patHasUnderscored.keys()) k].join(',');
-    #if !no_traces Sys.println('[CaseAliasUnderscore] decl={' + declArr + '} used={' + usedArr + '} patU={' + patArr + '}'); #end
+    #if (debug_case_alias && !no_traces) Sys.println('[CaseAliasUnderscore] decl={' + declArr + '} used={' + usedArr + '} patU={' + patArr + '}'); #end
     #end
 
     // Compute alias candidates: primary path uses explicit `used` set.
@@ -126,7 +126,7 @@ class CaseClauseAliasFromUnderscoreBinderTransforms {
     if (prefix.length == 0) return cl;
 
     #if (sys && !no_traces)
-    #if !no_traces for (a in aliases) Sys.println('[CaseAliasUnderscore] prefix ' + a.u + ' = ' + a.from); #end
+    #if (debug_case_alias && !no_traces) for (a in aliases) Sys.println('[CaseAliasUnderscore] prefix ' + a.u + ' = ' + a.from); #end
     #end
     var newBody = switch (cl.body.def) {
       case EBlock(sts):

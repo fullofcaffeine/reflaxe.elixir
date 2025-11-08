@@ -1,0 +1,898 @@
+class reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var repoMod = detectRepoMod(body);
+		if (repoMod == null) {
+			var derived = deriveRepoVarFromModuleName(name);
+			if (derived != null) repoMod = makeAST(EVar(derived));
+		};
+		if (repoMod == null) return n;
+		var newBody = [for (b  in  body) rewriteDefs(b, repoMod)];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var stmts = switch (doBlock.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[doBlock];			
+		};
+		var repoMod2 = detectRepoMod(stmts);
+		if (repoMod2 == null) {
+			var derived2 = deriveRepoVarFromModuleName(name);
+			if (derived2 != null) repoMod2 = makeAST(EVar(derived2));
+		};
+		if (repoMod2 == null) return n;
+		var rewritten = rewriteDefs(doBlock, repoMod2);
+		makeASTWithMeta(EDefmodule(name, rewritten), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var repoMod = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.detectRepoMod(body);
+								if (repoMod == null) {
+									var derived = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.deriveRepoVarFromModuleName(name);
+									if (derived != null) {
+										repoMod = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(derived), metadata : {}, pos : pos};
+										};
+									};
+								};
+								if (repoMod == null) {
+									return n;
+								};
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.rewriteDefs(b, repoMod));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									if (enumIndex ` == 53) {
+										var ` = `[0];
+										{
+											var ss = `;
+											{
+												ss;
+											};
+										};
+									} else {
+										[doBlock];
+									};
+								};
+								var repoMod2 = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.detectRepoMod(stmts);
+								if (repoMod2 == null) {
+									var derived2 = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.deriveRepoVarFromModuleName(name);
+									if (derived2 != null) {
+										repoMod2 = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(derived2), metadata : {}, pos : pos};
+										};
+									};
+								};
+								if (repoMod2 == null) {
+									return n;
+								};
+								var rewritten = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.rewriteDefs(doBlock, repoMod2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, rewritten), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function deriveRepoVarFromModuleName(moduleName:String) {
+		if (moduleName == null) {
+			return null;
+		};
+		var dot = moduleName.indexOf(".", null);
+		var app = if (dot > 0) {
+			moduleName.substr(0, dot);
+		} else {
+			null;
+		};
+		if (app == null || app.length == 0) {
+			return null;
+		};
+		return app + ".Repo";
+	}
+
+	static function detectRepoMod(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var found = [null];
+		var scan = [null];
+		scan[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] != null || x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case ERemoteCall(mod, _, args):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				found = mod;
+				Sys.println("[BareGetterRepoGetRepair] Detected repo module: " + m);			
+			default:
+		};
+		if (found == null && args != null) for (a  in  args) scan(a);	
+	case EBlock(ss):
+		for (s  in  ss) scan(s);	
+	case EIf(c, t, e):
+		scan(c);
+		scan(t);
+		if (e != null) scan(e);	
+	case ECase(expr, cs):
+		scan(expr);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	case EBinary(_, l, r):
+		scan(l);
+		scan(r);	
+	case EMatch(_, rhs):
+		scan(rhs);	
+	case ECall(t, _, as):
+		if (t != null) scan(t);
+		if (as != null) for (a  in  as) scan(a);	
+	case ERemoteCall(t2, _, as2):
+		scan(t2);
+		if (as2 != null) for (a  in  as2) scan(a);	
+	case EFn(clauses):
+		for (cl  in  clauses) scan(cl.body);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								scan[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var rhs = `;
+							{
+								scan[0](rhs);
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (e != null) {
+									scan[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									scan[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var args = `;
+							{
+								@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		found = mod;
+		Sys.println("[BareGetterRepoGetRepair] Detected repo module: " + m);	
+	default:
+}) {
+									var ` = mod.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+												found[0] = mod;
+												Sys.println("[BareGetterRepoGetRepair] Detected repo module: " + m);
+											} else {};
+										};
+									} else {};
+								};
+								if (found[0] == null && args != null) {
+									{
+										var ` = 0;
+										while (` < args.length) {
+											var a = args[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								scan[0](l);
+								scan[0](r);
+							};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										scan[0](cl.body);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										scan[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				scan[0](s);
+			};
+		};
+		return found[0];
+	}
+
+	static function rewriteDefs(node:reflaxe.elixir.ast.ElixirAST, repoMod:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, params, guards, body):
+		if (name == "changeset") return n;
+		var newBody = rewriteBody(body, params, repoMod);
+		if (newBody != body) Sys.println("[BareGetterRepoGetRepair] Rewrote def " + name);
+		makeASTWithMeta(EDef(name, params, guards, newBody), n.metadata, n.pos);	
+	case EDefp(name, params, guards, body):
+		if (name == "changeset") return n;
+		var newBodyp = rewriteBody(body, params, repoMod);
+		if (newBodyp != body) Sys.println("[BareGetterRepoGetRepair] Rewrote defp " + name);
+		makeASTWithMeta(EDefp(name, params, guards, newBodyp), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var params = `;
+							var guards = `;
+							var body = `;
+							{
+								if (name == "changeset") {
+									return n;
+								};
+								var newBody = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.rewriteBody(body, params, repoMod);
+								if (newBody != body) {
+									Sys.println("[BareGetterRepoGetRepair] Rewrote def " + name);
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, params, guards, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var params = `;
+							var guards = `;
+							var body = `;
+							{
+								if (name == "changeset") {
+									return n;
+								};
+								var newBodyp = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.rewriteBody(body, params, repoMod);
+								if (newBodyp != body) {
+									Sys.println("[BareGetterRepoGetRepair] Rewrote defp " + name);
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, params, guards, newBodyp), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteBody(body:reflaxe.elixir.ast.ElixirAST, params:Array<reflaxe.elixir.ast.EPattern>, repoMod:reflaxe.elixir.ast.ElixirAST) {
+		var bareVar = null;
+		@:ast(switch (body.def) {
+	case EVar(v):
+		bareVar = v;	
+	case EBlock(ss) if (ss.length == 1):
+		switch (ss[0].def) {
+			case EVar(v2):
+				bareVar = v2;			
+			default:
+		};	
+	default:
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 38: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							bareVar = v;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var ss = `;
+						if (ss.length == 1) {
+							@:ast(switch (ss[0].def) {
+	case EVar(v2):
+		bareVar = v2;	
+	default:
+}) {
+								var ` = ss[0].def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v2 = `;
+										{
+											bareVar = v2;
+										};
+									};
+								} else {};
+							};
+						} else {};
+					};
+				};
+				default: {}
+			};
+		};
+		if (bareVar == null) {
+			return body;
+		};
+		if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.isParamName(params, bareVar)) {
+			return body;
+		};
+		if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.declaresVar(body, bareVar)) {
+			return body;
+		};
+		var firstParamName = reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.deriveFirstParamName(params);
+		if (firstParamName == null) {
+			firstParamName = "id";
+		};
+		var call = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(repoMod, "get", [{
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var s = bareVar.toLowerCase();
+					{
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase(s);
+						cast this;
+					};
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(firstParamName), metadata : {}, pos : pos};
+			}]);
+			var meta = body.metadata;
+			var pos = body.pos;
+			{def : def, metadata : meta, pos : pos};
+		};
+		Sys.println("[BareGetterRepoGetRepair] Rewriting bare var " + bareVar + " -> " + firstParamName);
+		return call;
+	}
+
+	static function isParamName(params:Array<reflaxe.elixir.ast.EPattern>, name:String) {
+		if (params == null) {
+			return false;
+		};
+		{
+			var ` = 0;
+			while (` < params.length) {
+				var p = params[`];
+				++ `;
+				if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(p, name)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	static function declaresVar(b:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var found = [false];
+		var walk = [null];
+		walk[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EMatch(p, _):
+		if (patternDeclares(p, name)) {
+			found = true;
+			return;
+		};	
+	case EBinary(Match, lhs, _):
+		if (lhsDeclares(lhs, name)) {
+			found = true;
+			return;
+		};	
+	case EBlock(ss):
+		for (s  in  ss) walk(s);	
+	case EIf(c, t, e):
+		walk(c);
+		walk(t);
+		if (e != null) walk(e);	
+	case ECase(expr, cs):
+		walk(expr);
+		for (c  in  cs) walk(c.body);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								walk[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										walk[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var p = `;
+							{
+								if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(p, name)) {
+									found[0] = true;
+									return;
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								walk[0](c);
+								walk[0](t);
+								if (e != null) {
+									walk[0](e);
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var lhs = `;
+								{
+									if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.lhsDeclares(lhs, name)) {
+										found[0] = true;
+										return;
+									};
+								};
+							};
+						} else {};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										walk[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](b);
+		return found[0];
+	}
+
+	static function patternDeclares(p:reflaxe.elixir.ast.EPattern, name:String) {
+		return @:ast(switch (p) {
+	case PVar(n) if (n == name):
+		true;	
+	case PTuple(es):
+		for (e  in  es) if (patternDeclares(e, name)) return true;
+		false;	
+	case PList(es):
+		for (e  in  es) if (patternDeclares(e, name)) return true;
+		false;	
+	case PCons(h, t):
+		patternDeclares(h, name) || patternDeclares(t, name);	
+	case PMap(kvs):
+		for (kv  in  kvs) if (patternDeclares(kv.value, name)) return true;
+		false;	
+	case PStruct(_, fs):
+		for (f  in  fs) if (patternDeclares(f.value, name)) return true;
+		false;	
+	case PPin(inner):
+		patternDeclares(inner, name);	
+	default:
+		false;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					if (n == name) {
+						true;
+					} else {
+						false;
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(e, name)) {
+									return true;
+								};
+							};
+						};
+						false;
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(e, name)) {
+									return true;
+								};
+							};
+						};
+						false;
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(h, name) || reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(t, name);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(kv.value, name)) {
+									return true;
+								};
+							};
+						};
+						false;
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								if (reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(f.value, name)) {
+									return true;
+								};
+							};
+						};
+						false;
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.patternDeclares(inner, name);
+					};
+				};
+			};
+			default: {
+				false;
+			}
+		};
+	}
+
+	static function lhsDeclares(lhs:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return @:ast(switch (lhs.def) {
+	case EVar(v) if (v == name):
+		true;	
+	case EBinary(Match, l2, r2):
+		lhsDeclares(l2, name) || lhsDeclares(r2, name);	
+	default:
+		false;	
+}) {
+			var ` = lhs.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var l2 = `;
+							var r2 = `;
+							{
+								reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.lhsDeclares(l2, name) || reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.lhsDeclares(r2, name);
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == name) {
+							true;
+						} else {
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function deriveFirstParamName(params:Array<reflaxe.elixir.ast.EPattern>) {
+		if (params == null || params.length == 0) {
+			return null;
+		};
+		return @:ast(switch (params[0]) {
+	case PVar(n):
+		n;	
+	case PTuple(es) if (es.length > 0):
+		switch (es[0]) {
+			case PVar(n2):
+				n2;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = params[0];
+			switch (enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							n;
+						};
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					{
+						var es = `;
+						if (es.length > 0) {
+							@:ast(switch (es[0]) {
+	case PVar(n2):
+		n2;	
+	default:
+		null;	
+}) {
+								var ` = es[0];
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									{
+										var n2 = `;
+										{
+											n2;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

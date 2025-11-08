@@ -1,0 +1,264 @@
+class reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "handle_event" && args != null && args.length == 3):
+		var nb = rewrite(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "handle_event" && args != null && args.length == 3) {
+							var nb = reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.rewrite(body);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(dropIn(stmts)), x.metadata, x.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(dropIn(stmts2)), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.dropIn(stmts));
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.dropIn(stmts2));
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static function dropIn(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var s = stmts[i];
+				var dropped = false;
+				@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v) if (isParamsGet(rhs) && !usedLater(stmts, i + 1, v)):
+				dropped = true;			
+			default:
+		};	
+	case EMatch(PVar(pn), rhs2) if (isParamsGet(rhs2) && !usedLater(stmts, i + 1, pn)):
+		dropped = true;	
+	default:
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var pn = `;
+									var rhs2 = `;
+									if (reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.isParamsGet(rhs2) && ! reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.usedLater(stmts, i + 1, pn)) {
+										dropped = true;
+									} else {};
+								};
+							} else {};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									var rhs = `;
+									{
+										@:ast(switch (left.def) {
+	case EVar(v) if (isParamsGet(rhs) && !usedLater(stmts, i + 1, v)):
+		dropped = true;	
+	default:
+}) {
+											var ` = left.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var v = `;
+													if (reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.isParamsGet(rhs) && ! reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.usedLater(stmts, i + 1, v)) {
+														dropped = true;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				if (! dropped) {
+					out.push(s);
+				};
+			};
+		};
+		return out;
+	}
+
+	static function isParamsGet(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall({ def : EVar("Map") }, "get", args) if (args != null && args.length == 2):
+		switch (args[0].def) {
+			case EVar(p) if (p == "params"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "Map") {
+							if (` == "get") {
+								{
+									var args = `;
+									if (args != null && args.length == 2) {
+										@:ast(switch (args[0].def) {
+	case EVar(p) if (p == "params"):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = args[0].def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var p = `;
+													if (p == "params") {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		var found = [false];
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:reflaxe.elixir.ast.ElixirAST) {
+						@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == name) {
+										found[0] = true;
+									} else {};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+}

@@ -1,0 +1,112 @@
+class reflaxe.elixir.ast.transformers.InterpolationInspectMapGetSimplifyTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECall(null, "inspect", [inner]):
+		switch (inner.def) {
+			case ERemoteCall({ def : EVar("Map") }, "get", args) if (args != null && args.length == 2):
+				switch (args[1].def) {
+					case EAtom(field):
+						makeASTWithMeta(EField(args[0], field), n.metadata, n.pos);					
+					default:
+						n;					
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 22) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == null) if (` == "inspect") {
+						if (`.length == 1) {
+							var ` = `[0];
+							{
+								var inner = `;
+								{
+									@:ast(switch (inner.def) {
+	case ERemoteCall({ def : EVar("Map") }, "get", args) if (args != null && args.length == 2):
+		switch (args[1].def) {
+			case EAtom(field):
+				makeASTWithMeta(EField(args[0], field), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+										var ` = inner.def;
+										if (enumIndex ` == 24) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var ` = `.def;
+												var ` = `.metadata;
+												var ` = `.pos;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													if (` == "Map") {
+														if (` == "get") {
+															{
+																var args = `;
+																if (args != null && args.length == 2) {
+																	@:ast(switch (args[1].def) {
+	case EAtom(field):
+		makeASTWithMeta(EField(args[0], field), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+																		var ` = args[1].def;
+																		if (enumIndex ` == 31) {
+																			var ` = `[0];
+																			{
+																				var field = `;
+																				{
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EField(args[0], field), metadata : n.metadata, pos : n.pos};
+																				};
+																			};
+																		} else {
+																			n;
+																		};
+																	};
+																} else {
+																	n;
+																};
+															};
+														} else {
+															n;
+														};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					} else {
+						n;
+					} else {
+						n;
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

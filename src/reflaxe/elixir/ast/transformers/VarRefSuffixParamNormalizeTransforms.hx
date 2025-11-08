@@ -26,7 +26,9 @@ class VarRefSuffixParamNormalizeTransforms {
           var suffixMap = collectUniqueSuffixParams(parameters);
           #if (sys && !no_traces) {
             var keys = [for (k in suffixMap.keys()) k].join(",");
+            #if debug_varref_suffix
             if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] def ' + functionName + ' suffixes={' + keys + '}');
+            #end
           } #end
           var newBody = rewriteRefsScoped(body, suffixMap);
           makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
@@ -34,7 +36,9 @@ class VarRefSuffixParamNormalizeTransforms {
           var suffixMap = collectUniqueSuffixParams(parameters);
           #if (sys && !no_traces) {
             var keys = [for (k in suffixMap.keys()) k].join(",");
+            #if debug_varref_suffix
             if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] defp ' + functionName + ' suffixes={' + keys + '}');
+            #end
           } #end
           var newBody = rewriteRefsScoped(body, suffixMap);
           makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
@@ -92,7 +96,7 @@ class VarRefSuffixParamNormalizeTransforms {
                 return switch (y.def) {
                   case EVar(v) if (suff.exists(v) && !declared.exists(v)):
                     var full = suff.get(v);
-                    #if (sys && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
+                    #if (sys && debug_varref_suffix && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
                     #end
                     makeASTWithMeta(EVar(full), y.metadata, y.pos);
                   default: y;
@@ -106,7 +110,7 @@ class VarRefSuffixParamNormalizeTransforms {
             var topDeclared = collectDeclared(body);
             if (suff.exists(nm) && !topDeclared.exists(nm)) {
               var fullTop = suff.get(nm);
-              #if (sys && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
+              #if (sys && debug_varref_suffix && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
               #end
               makeASTWithMeta(EVar(fullTop), x.metadata, x.pos);
             } else x;

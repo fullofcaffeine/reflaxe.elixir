@@ -1,0 +1,394 @@
+class reflaxe.elixir.ast.transformers.SocketPutFlashAssignDropTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var nb = rewrite(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var nb2 = rewrite(body2);
+		makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);	
+	default:
+		rewrite(n);	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var nb = reflaxe.elixir.ast.transformers.SocketPutFlashAssignDropTransforms.rewrite(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var nb2 = reflaxe.elixir.ast.transformers.SocketPutFlashAssignDropTransforms.rewrite(body2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						reflaxe.elixir.ast.transformers.SocketPutFlashAssignDropTransforms.rewrite(n);
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(Match, left, rhs) if (isSocketVar(left) && isPutFlashOnSocket(rhs)):
+		rhs;	
+	case EMatch(PVar(name), rhs2) if (name == "socket" && isPutFlashOnSocket(rhs2)):
+		rhs2;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var name = `;
+								var rhs2 = `;
+								if (name == "socket" && @:ast(switch (e.def) {
+	case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2):
+		var isMod = switch (target.def) {
+			case EVar(m) if (m == "Phoenix.LiveView"):
+				true;			
+			default:
+				false;			
+		};
+		var firstIsSocket = switch (args[0].def) {
+			case EVar(n) if (n == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		isMod && firstIsSocket;	
+	default:
+		false;	
+}) {
+									var ` = rhs2.def;
+									if (enumIndex ` == 24) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var target = `;
+											var fnName = `;
+											var args = `;
+											if (fnName == "put_flash" && args != null && args.length >= 2) {
+												var isMod = @:ast(switch (target.def) {
+	case EVar(m) if (m == "Phoenix.LiveView"):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = target.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var m = `;
+															if (m == "Phoenix.LiveView") {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												var firstIsSocket = @:ast(switch (args[0].def) {
+	case EVar(n) if (n == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = args[0].def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var n = `;
+															if (n == "socket") {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												isMod && firstIsSocket;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								}) {
+									rhs2;
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								if (@:ast(switch (e.def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} && @:ast(switch (e.def) {
+	case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2):
+		var isMod = switch (target.def) {
+			case EVar(m) if (m == "Phoenix.LiveView"):
+				true;			
+			default:
+				false;			
+		};
+		var firstIsSocket = switch (args[0].def) {
+			case EVar(n) if (n == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		isMod && firstIsSocket;	
+	default:
+		false;	
+}) {
+									var ` = rhs.def;
+									if (enumIndex ` == 24) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var target = `;
+											var fnName = `;
+											var args = `;
+											if (fnName == "put_flash" && args != null && args.length >= 2) {
+												var isMod = @:ast(switch (target.def) {
+	case EVar(m) if (m == "Phoenix.LiveView"):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = target.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var m = `;
+															if (m == "Phoenix.LiveView") {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												var firstIsSocket = @:ast(switch (args[0].def) {
+	case EVar(n) if (n == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+													var ` = args[0].def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var n = `;
+															if (n == "socket") {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												isMod && firstIsSocket;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								}) {
+									rhs;
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isSocketVar(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var nm = `;
+					if (nm == "socket") {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function isPutFlashOnSocket(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2):
+		var isMod = switch (target.def) {
+			case EVar(m) if (m == "Phoenix.LiveView"):
+				true;			
+			default:
+				false;			
+		};
+		var firstIsSocket = switch (args[0].def) {
+			case EVar(n) if (n == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		isMod && firstIsSocket;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var target = `;
+					var fnName = `;
+					var args = `;
+					if (fnName == "put_flash" && args != null && args.length >= 2) {
+						var isMod = @:ast(switch (target.def) {
+	case EVar(m) if (m == "Phoenix.LiveView"):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = target.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m == "Phoenix.LiveView") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						var firstIsSocket = @:ast(switch (args[0].def) {
+	case EVar(n) if (n == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = args[0].def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var n = `;
+									if (n == "socket") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						isMod && firstIsSocket;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

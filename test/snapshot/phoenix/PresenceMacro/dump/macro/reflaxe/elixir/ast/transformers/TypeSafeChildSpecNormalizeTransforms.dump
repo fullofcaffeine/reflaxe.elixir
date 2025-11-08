@@ -1,0 +1,135 @@
+class reflaxe.elixir.ast.transformers.TypeSafeChildSpecNormalizeTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (name == "TypeSafeChildSpec"):
+		var newBody:Array<ElixirAST> = [];
+		for (b  in  body) newBody.push(normalizeDef(b));
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if (name == "TypeSafeChildSpec"):
+		var nb = normalizeBlock(doBlock);
+		makeASTWithMeta(EDefmodule(name, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "TypeSafeChildSpec") {
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.TypeSafeChildSpecNormalizeTransforms.normalizeDef(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name == "TypeSafeChildSpec") {
+								var nb = reflaxe.elixir.ast.transformers.TypeSafeChildSpecNormalizeTransforms.normalizeBlock(doBlock);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function normalizeBlock(doBlock:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(doBlock, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock([for (s  in  stmts) normalizeDef(s)]), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock({
+									var ` = [];
+									{
+										var ` = 0;
+										while ((` < stmts.length)) {
+											var s = stmts[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.TypeSafeChildSpecNormalizeTransforms.normalizeDef(s));
+										};
+									};
+									`;
+								});
+								var meta = x.metadata;
+								var pos = x.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function normalizeDef(defAst:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (defAst.def) {
+	case EDef(fname, args, guards, body) if (fname == "supervisor" && args.length == 3):
+		var raw = ("def supervisor(module, args, opts) do\n" + "  cond do\n" + "    opts != nil ->\n" + "      spec = opts\n" + "      spec = if Keyword.get(spec, :type) == nil, do: Keyword.put(spec, :type, :supervisor), else: spec\n" + "      {:full_spec, spec}\n" + "    args != nil and length(args) > 0 -> {:module_with_args, module, args}\n" + "    true -> {:module_ref, module}\n" + "  end\n" + "end\n");
+		makeASTWithMeta(ERaw(raw), defAst.metadata, defAst.pos);	
+	default:
+		defAst;	
+}) {
+			var ` = defAst.def;
+			if (enumIndex ` == 2) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				var ` = `[3];
+				{
+					var fname = `;
+					var args = `;
+					var guards = `;
+					var body = `;
+					if (fname == "supervisor" && args.length == 3) {
+						var raw = ("def supervisor(module, args, opts) do\n" + "  cond do\n" + "    opts != nil ->\n" + "      spec = opts\n" + "      spec = if Keyword.get(spec, :type) == nil, do: Keyword.put(spec, :type, :supervisor), else: spec\n" + "      {:full_spec, spec}\n" + "    args != nil and length(args) > 0 -> {:module_with_args, module, args}\n" + "    true -> {:module_ref, module}\n" + "  end\n" + "end\n");
+						{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(raw), metadata : defAst.metadata, pos : defAst.pos};
+					} else {
+						defAst;
+					};
+				};
+			} else {
+				defAst;
+			};
+		};
+	}
+}

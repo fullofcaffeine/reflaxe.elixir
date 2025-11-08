@@ -1,0 +1,669 @@
+class reflaxe.elixir.ast.transformers.ReduceWhileIfAssignmentNormalizeTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(module, "reduce_while", args) if (args != null && args.length >= 3):
+		var collection = args[0];
+		var init = args[1];
+		var fnArg = args[2];
+		switch (fnArg.def) {
+			case EFn(clauses):
+				var outClauses = [];
+				for (cl  in  clauses) {
+					var nb = normalizeBlock(cl.body);
+					outClauses.push({ args : cl.args, guard : cl.guard, body : nb });
+				};
+				makeASTWithMeta(ERemoteCall(module, "reduce_while", [collection, init, makeAST(EFn(outClauses))]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case EFn(clauses):
+		var outClauses = [];
+		for (cl  in  clauses) {
+			var normalizedBody = normalizeBlock(cl.body);
+			outClauses.push({ args : cl.args, guard : cl.guard, body : normalizedBody });
+		};
+		makeASTWithMeta(EFn(outClauses), n.metadata, n.pos);	
+	default:
+		switch (n.def) {
+			case EBlock(_):
+				normalizeBlock(n);			
+			default:
+				n;			
+		};	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "reduce_while") {
+							{
+								var module = `;
+								var args = `;
+								if (args != null && args.length >= 3) {
+									var collection = args[0];
+									var init = args[1];
+									var fnArg = args[2];
+									@:ast(switch (fnArg.def) {
+	case EFn(clauses):
+		var outClauses = [];
+		for (cl  in  clauses) {
+			var nb = normalizeBlock(cl.body);
+			outClauses.push({ args : cl.args, guard : cl.guard, body : nb });
+		};
+		makeASTWithMeta(ERemoteCall(module, "reduce_while", [collection, init, makeAST(EFn(outClauses))]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+										var ` = fnArg.def;
+										if (enumIndex ` == 42) {
+											var ` = `[0];
+											{
+												var clauses = `;
+												{
+													var outClauses = [];
+													{
+														var ` = 0;
+														while (` < clauses.length) {
+															var cl = clauses[`];
+															++ `;
+															var nb = reflaxe.elixir.ast.transformers.ReduceWhileIfAssignmentNormalizeTransforms.normalizeBlock(cl.body);
+															outClauses.push({args : cl.args, guard : cl.guard, body : nb});
+														};
+													};
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(module, "reduce_while", [collection, init, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EFn(outClauses), metadata : {}, pos : pos};
+													}]), metadata : n.metadata, pos : n.pos};
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								} else {
+									@:ast(switch (n.def) {
+	case EBlock(_):
+		normalizeBlock(n);	
+	default:
+		n;	
+}) {
+										var ` = n.def;
+										if (enumIndex ` == 53) {
+											var ` = `[0];
+											{
+												reflaxe.elixir.ast.transformers.ReduceWhileIfAssignmentNormalizeTransforms.normalizeBlock(n);
+											};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						} else {
+							@:ast(switch (n.def) {
+	case EBlock(_):
+		normalizeBlock(n);	
+	default:
+		n;	
+}) {
+								var ` = n.def;
+								if (enumIndex ` == 53) {
+									var ` = `[0];
+									{
+										reflaxe.elixir.ast.transformers.ReduceWhileIfAssignmentNormalizeTransforms.normalizeBlock(n);
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								var outClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var normalizedBody = reflaxe.elixir.ast.transformers.ReduceWhileIfAssignmentNormalizeTransforms.normalizeBlock(cl.body);
+										outClauses.push({args : cl.args, guard : cl.guard, body : normalizedBody});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn(outClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						@:ast(switch (n.def) {
+	case EBlock(_):
+		normalizeBlock(n);	
+	default:
+		n;	
+}) {
+							var ` = n.def;
+							if (enumIndex ` == 53) {
+								var ` = `[0];
+								{
+									reflaxe.elixir.ast.transformers.ReduceWhileIfAssignmentNormalizeTransforms.normalizeBlock(n);
+								};
+							} else {
+								n;
+							};
+						};
+					}
+				};
+			};
+		});
+	}
+
+	static function normalizeBlock(body:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var i = 0;
+		while (i < stmts.length) {
+			var s = stmts[i];
+			var rewritten = false;
+			switch (s.def) {
+				case EBinary(Match, { def : EVar(a) }, { def : EBinary(Match, { def : EVar(b) }, rhs) }):
+					var j = i + 1;
+					while (j < stmts.length && j <= i + 3) {
+						switch (stmts[j].def) {
+							case EIf(cond, thenE, elseE) if (elseE != null):
+								var elseIsB = switch (elseE.def) {
+									case EVar(bb) if (bb == b):
+										true;									
+									default:
+										false;									
+								};
+								if (elseIsB) {
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[j].metadata, stmts[j].pos)), s.metadata, s.pos));
+									for (k  in  i + 1 ... j) out.push(stmts[k]);
+									i = j + 1;
+									rewritten = true;
+								};							
+							default:
+						};
+						if (rewritten) break;
+						j++;
+					};				
+				case EMatch(PVar(aM), { def : EBinary(Match, { def : EVar(bM) }, rhsM) }):
+					var scanIndexSecondary = i + 1;
+					while (scanIndexSecondary < stmts.length && scanIndexSecondary <= i + 3) {
+						switch (stmts[scanIndexSecondary].def) {
+							case EIf(condM, thenM, elseM) if (elseM != null):
+								var elseIsBM = switch (elseM.def) {
+									case EVar(bbM) if (bbM == bM):
+										true;									
+									default:
+										false;									
+								};
+								if (elseIsBM) {
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM), s.metadata, s.pos), rhsM), s.metadata, s.pos));
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), s.metadata, s.pos), makeASTWithMeta(EIf(condM, thenM, elseM), stmts[scanIndexSecondary].metadata, stmts[scanIndexSecondary].pos)), s.metadata, s.pos));
+									for (k2  in  i + 1 ... scanIndexSecondary) out.push(stmts[k2]);
+									i = scanIndexSecondary + 1;
+									rewritten = true;
+								};							
+							default:
+						};
+						if (rewritten) break;
+						scanIndexSecondary++;
+					};				
+				case EMatch(PVar(lhsName), { def : EMatch(PVar(rhsBinder), rhsValue) }):
+					var scanIndexTertiary = i + 1;
+					while (scanIndexTertiary < stmts.length && scanIndexTertiary <= i + 3) {
+						switch (stmts[scanIndexTertiary].def) {
+							case EIf(nestedCond, nestedThen, nestedElse) if (nestedElse != null):
+								var elseReturnsBinder = switch (nestedElse.def) {
+									case EVar(binderName) if (binderName == rhsBinder):
+										true;									
+									default:
+										false;									
+								};
+								if (elseReturnsBinder) {
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(rhsBinder), s.metadata, s.pos), rhsValue), s.metadata, s.pos));
+									out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(lhsName), s.metadata, s.pos), makeASTWithMeta(EIf(nestedCond, nestedThen, nestedElse), stmts[scanIndexTertiary].metadata, stmts[scanIndexTertiary].pos)), s.metadata, s.pos));
+									for (k3  in  i + 1 ... scanIndexTertiary) out.push(stmts[k3]);
+									i = scanIndexTertiary + 1;
+									rewritten = true;
+								};							
+							default:
+						};
+						if (rewritten) break;
+						scanIndexTertiary++;
+					};				
+				default:
+			};
+			if (!rewritten) {
+				out.push(s);
+				i++;
+			};
+		};
+		makeASTWithMeta(EBlock(out), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					{
+						var out = [];
+						var i = 0;
+						while (i < stmts.length) {
+							var s = stmts[i];
+							var rewritten = false;
+							@:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(a) }, { def : EBinary(Match, { def : EVar(b) }, rhs) }):
+		var j = i + 1;
+		while (j < stmts.length && j <= i + 3) {
+			switch (stmts[j].def) {
+				case EIf(cond, thenE, elseE) if (elseE != null):
+					var elseIsB = switch (elseE.def) {
+						case EVar(bb) if (bb == b):
+							true;						
+						default:
+							false;						
+					};
+					if (elseIsB) {
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[j].metadata, stmts[j].pos)), s.metadata, s.pos));
+						for (k  in  i + 1 ... j) out.push(stmts[k]);
+						i = j + 1;
+						rewritten = true;
+					};				
+				default:
+			};
+			if (rewritten) break;
+			j++;
+		};	
+	case EMatch(PVar(aM), { def : EBinary(Match, { def : EVar(bM) }, rhsM) }):
+		var scanIndexSecondary = i + 1;
+		while (scanIndexSecondary < stmts.length && scanIndexSecondary <= i + 3) {
+			switch (stmts[scanIndexSecondary].def) {
+				case EIf(condM, thenM, elseM) if (elseM != null):
+					var elseIsBM = switch (elseM.def) {
+						case EVar(bbM) if (bbM == bM):
+							true;						
+						default:
+							false;						
+					};
+					if (elseIsBM) {
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM), s.metadata, s.pos), rhsM), s.metadata, s.pos));
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), s.metadata, s.pos), makeASTWithMeta(EIf(condM, thenM, elseM), stmts[scanIndexSecondary].metadata, stmts[scanIndexSecondary].pos)), s.metadata, s.pos));
+						for (k2  in  i + 1 ... scanIndexSecondary) out.push(stmts[k2]);
+						i = scanIndexSecondary + 1;
+						rewritten = true;
+					};				
+				default:
+			};
+			if (rewritten) break;
+			scanIndexSecondary++;
+		};	
+	case EMatch(PVar(lhsName), { def : EMatch(PVar(rhsBinder), rhsValue) }):
+		var scanIndexTertiary = i + 1;
+		while (scanIndexTertiary < stmts.length && scanIndexTertiary <= i + 3) {
+			switch (stmts[scanIndexTertiary].def) {
+				case EIf(nestedCond, nestedThen, nestedElse) if (nestedElse != null):
+					var elseReturnsBinder = switch (nestedElse.def) {
+						case EVar(binderName) if (binderName == rhsBinder):
+							true;						
+						default:
+							false;						
+					};
+					if (elseReturnsBinder) {
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(rhsBinder), s.metadata, s.pos), rhsValue), s.metadata, s.pos));
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(lhsName), s.metadata, s.pos), makeASTWithMeta(EIf(nestedCond, nestedThen, nestedElse), stmts[scanIndexTertiary].metadata, stmts[scanIndexTertiary].pos)), s.metadata, s.pos));
+						for (k3  in  i + 1 ... scanIndexTertiary) out.push(stmts[k3]);
+						i = scanIndexTertiary + 1;
+						rewritten = true;
+					};				
+				default:
+			};
+			if (rewritten) break;
+			scanIndexTertiary++;
+		};	
+	default:
+}) {
+								var ` = s.def;
+								switch (enumIndex `) {
+									case 8: {
+										var ` = `[0];
+										var ` = `[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var ` = `.def;
+												var ` = `.metadata;
+												var ` = `.pos;
+												switch (enumIndex `) {
+													case 8: {
+														var ` = `[0];
+														var ` = `[1];
+														if (enumIndex ` == 0) {
+															var ` = `[0];
+															{
+																var rhsBinder = `;
+																var rhsValue = `;
+																var lhsName = `;
+																{
+																	var scanIndexTertiary = i + 1;
+																	while (scanIndexTertiary < stmts.length && scanIndexTertiary <= i + 3) {
+																		@:ast(switch (stmts[scanIndexTertiary].def) {
+	case EIf(nestedCond, nestedThen, nestedElse) if (nestedElse != null):
+		var elseReturnsBinder = switch (nestedElse.def) {
+			case EVar(binderName) if (binderName == rhsBinder):
+				true;			
+			default:
+				false;			
+		};
+		if (elseReturnsBinder) {
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(rhsBinder), s.metadata, s.pos), rhsValue), s.metadata, s.pos));
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(lhsName), s.metadata, s.pos), makeASTWithMeta(EIf(nestedCond, nestedThen, nestedElse), stmts[scanIndexTertiary].metadata, stmts[scanIndexTertiary].pos)), s.metadata, s.pos));
+			for (k3  in  i + 1 ... scanIndexTertiary) out.push(stmts[k3]);
+			i = scanIndexTertiary + 1;
+			rewritten = true;
+		};	
+	default:
+}) {
+																			var ` = stmts[scanIndexTertiary].def;
+																			if (enumIndex ` == 10) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					var nestedCond = `;
+																					var nestedThen = `;
+																					var nestedElse = `;
+																					if (nestedElse != null) {
+																						var elseReturnsBinder = @:ast(switch (nestedElse.def) {
+	case EVar(binderName) if (binderName == rhsBinder):
+		true;	
+	default:
+		false;	
+}) {
+																							var ` = nestedElse.def;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var binderName = `;
+																									if (binderName == rhsBinder) {
+																										true;
+																									} else {
+																										false;
+																									};
+																								};
+																							} else {
+																								false;
+																							};
+																						};
+																						if (elseReturnsBinder) {
+																							out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(rhsBinder), metadata : s.metadata, pos : s.pos}, rhsValue), metadata : s.metadata, pos : s.pos});
+																							out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhsName), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(nestedCond, nestedThen, nestedElse), metadata : stmts[scanIndexTertiary].metadata, pos : stmts[scanIndexTertiary].pos}), metadata : s.metadata, pos : s.pos});
+																							{
+																								var ` = i + 1;
+																								var ` = scanIndexTertiary;
+																								while (` < `) {
+																									var k3 = ` ++;
+																									out.push(stmts[k3]);
+																								};
+																							};
+																							i = scanIndexTertiary + 1;
+																							rewritten = true;
+																						};
+																					} else {};
+																				};
+																			} else {};
+																		};
+																		if (rewritten) {
+																			break;
+																		};
+																		scanIndexTertiary ++;
+																	};
+																};
+															};
+														} else {};
+													};
+													case 26: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														if (enumIndex ` == 27) {
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var bM = `;
+																		var rhsM = `;
+																		var aM = `;
+																		{
+																			var scanIndexSecondary = i + 1;
+																			while (scanIndexSecondary < stmts.length && scanIndexSecondary <= i + 3) {
+																				@:ast(switch (stmts[scanIndexSecondary].def) {
+	case EIf(condM, thenM, elseM) if (elseM != null):
+		var elseIsBM = switch (elseM.def) {
+			case EVar(bbM) if (bbM == bM):
+				true;			
+			default:
+				false;			
+		};
+		if (elseIsBM) {
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bM), s.metadata, s.pos), rhsM), s.metadata, s.pos));
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aM), s.metadata, s.pos), makeASTWithMeta(EIf(condM, thenM, elseM), stmts[scanIndexSecondary].metadata, stmts[scanIndexSecondary].pos)), s.metadata, s.pos));
+			for (k2  in  i + 1 ... scanIndexSecondary) out.push(stmts[k2]);
+			i = scanIndexSecondary + 1;
+			rewritten = true;
+		};	
+	default:
+}) {
+																					var ` = stmts[scanIndexSecondary].def;
+																					if (enumIndex ` == 10) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						var ` = `[2];
+																						{
+																							var condM = `;
+																							var thenM = `;
+																							var elseM = `;
+																							if (elseM != null) {
+																								var elseIsBM = @:ast(switch (elseM.def) {
+	case EVar(bbM) if (bbM == bM):
+		true;	
+	default:
+		false;	
+}) {
+																									var ` = elseM.def;
+																									if (enumIndex ` == 38) {
+																										var ` = `[0];
+																										{
+																											var bbM = `;
+																											if (bbM == bM) {
+																												true;
+																											} else {
+																												false;
+																											};
+																										};
+																									} else {
+																										false;
+																									};
+																								};
+																								if (elseIsBM) {
+																									out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(bM), metadata : s.metadata, pos : s.pos}, rhsM), metadata : s.metadata, pos : s.pos});
+																									out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(aM), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(condM, thenM, elseM), metadata : stmts[scanIndexSecondary].metadata, pos : stmts[scanIndexSecondary].pos}), metadata : s.metadata, pos : s.pos});
+																									{
+																										var ` = i + 1;
+																										var ` = scanIndexSecondary;
+																										while (` < `) {
+																											var k2 = ` ++;
+																											out.push(stmts[k2]);
+																										};
+																									};
+																									i = scanIndexSecondary + 1;
+																									rewritten = true;
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																				if (rewritten) {
+																					break;
+																				};
+																				scanIndexSecondary ++;
+																			};
+																		};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+													default: {}
+												};
+											};
+										} else {};
+									};
+									case 26: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (enumIndex ` == 27) {
+											{
+												var ` = `.def;
+												var ` = `.metadata;
+												var ` = `.pos;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 26) {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 27) {
+																{
+																	var ` = `.def;
+																	var ` = `.metadata;
+																	var ` = `.pos;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var b = `;
+																			var rhs = `;
+																			var a = `;
+																			{
+																				var j = i + 1;
+																				while (j < stmts.length && j <= i + 3) {
+																					@:ast(switch (stmts[j].def) {
+	case EIf(cond, thenE, elseE) if (elseE != null):
+		var elseIsB = switch (elseE.def) {
+			case EVar(bb) if (bb == b):
+				true;			
+			default:
+				false;			
+		};
+		if (elseIsB) {
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[j].metadata, stmts[j].pos)), s.metadata, s.pos));
+			for (k  in  i + 1 ... j) out.push(stmts[k]);
+			i = j + 1;
+			rewritten = true;
+		};	
+	default:
+}) {
+																						var ` = stmts[j].def;
+																						if (enumIndex ` == 10) {
+																							var ` = `[0];
+																							var ` = `[1];
+																							var ` = `[2];
+																							{
+																								var cond = `;
+																								var thenE = `;
+																								var elseE = `;
+																								if (elseE != null) {
+																									var elseIsB = @:ast(switch (elseE.def) {
+	case EVar(bb) if (bb == b):
+		true;	
+	default:
+		false;	
+}) {
+																										var ` = elseE.def;
+																										if (enumIndex ` == 38) {
+																											var ` = `[0];
+																											{
+																												var bb = `;
+																												if (bb == b) {
+																													true;
+																												} else {
+																													false;
+																												};
+																											};
+																										} else {
+																											false;
+																										};
+																									};
+																									if (elseIsB) {
+																										out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b), metadata : s.metadata, pos : s.pos}, rhs), metadata : s.metadata, pos : s.pos});
+																										out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, thenE, elseE), metadata : stmts[j].metadata, pos : stmts[j].pos}), metadata : s.metadata, pos : s.pos});
+																										{
+																											var ` = i + 1;
+																											var ` = j;
+																											while (` < `) {
+																												var k = ` ++;
+																												out.push(stmts[k]);
+																											};
+																										};
+																										i = j + 1;
+																										rewritten = true;
+																									};
+																								} else {};
+																							};
+																						} else {};
+																					};
+																					if (rewritten) {
+																						break;
+																					};
+																					j ++;
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															} else {};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									};
+									default: {}
+								};
+							};
+							if (! rewritten) {
+								out.push(s);
+								i ++;
+							};
+						};
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : body.metadata, pos : body.pos};
+					};
+				};
+			} else {
+				body;
+			};
+		};
+	}
+}

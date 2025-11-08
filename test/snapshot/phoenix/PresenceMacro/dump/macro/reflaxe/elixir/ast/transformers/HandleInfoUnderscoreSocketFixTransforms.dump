@@ -1,0 +1,181 @@
+class reflaxe.elixir.ast.transformers.HandleInfoUnderscoreSocketFixTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "handle_info" || name == "handleInfo"):
+		var nb = ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (v == "_socket"):
+					makeASTWithMeta(EVar("socket"), x.metadata, x.pos);				
+				case EBinary(Match, left, right):
+					var normRight = switch (right.def) {
+						case EVar(rv) if (rv == "_socket"):
+							makeASTWithMeta(EVar("socket"), right.metadata, right.pos);						
+						default:
+							right;						
+					};
+					switch (normRight.def) {
+						case EVar(rv2) if (rv2 == "socket"):
+							switch (left.def) {
+								case EVar(_):
+									makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), normRight), x.metadata, x.pos);								
+								default:
+									makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);								
+							};						
+						default:
+							makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);						
+					};				
+				default:
+					x;				
+			};
+		});
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "handle_info" || name == "handleInfo") {
+							var nb = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+								return @:ast(switch (x.def) {
+	case EVar(v) if (v == "_socket"):
+		makeASTWithMeta(EVar("socket"), x.metadata, x.pos);	
+	case EBinary(Match, left, right):
+		var normRight = switch (right.def) {
+			case EVar(rv) if (rv == "_socket"):
+				makeASTWithMeta(EVar("socket"), right.metadata, right.pos);			
+			default:
+				right;			
+		};
+		switch (normRight.def) {
+			case EVar(rv2) if (rv2 == "socket"):
+				switch (left.def) {
+					case EVar(_):
+						makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), normRight), x.metadata, x.pos);					
+					default:
+						makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);					
+				};			
+			default:
+				makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);			
+		};	
+	default:
+		x;	
+}) {
+									var ` = x.def;
+									switch (enumIndex `) {
+										case 26: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var left = `;
+													var right = `;
+													{
+														var normRight = @:ast(switch (right.def) {
+	case EVar(rv) if (rv == "_socket"):
+		makeASTWithMeta(EVar("socket"), right.metadata, right.pos);	
+	default:
+		right;	
+}) {
+															var ` = right.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var rv = `;
+																	if (rv == "_socket") {
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : right.metadata, pos : right.pos};
+																	} else {
+																		right;
+																	};
+																};
+															} else {
+																right;
+															};
+														};
+														@:ast(switch (normRight.def) {
+	case EVar(rv2) if (rv2 == "socket"):
+		switch (left.def) {
+			case EVar(_):
+				makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), normRight), x.metadata, x.pos);			
+			default:
+				makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);			
+		};	
+	default:
+		makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);	
+}) {
+															var ` = normRight.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var rv2 = `;
+																	if (rv2 == "socket") {
+																		@:ast(switch (left.def) {
+	case EVar(_):
+		makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), normRight), x.metadata, x.pos);	
+	default:
+		makeASTWithMeta(EBinary(Match, left, normRight), x.metadata, x.pos);	
+}) {
+																			var ` = left.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : left.metadata, pos : left.pos}, normRight), metadata : x.metadata, pos : x.pos};
+																				};
+																			} else {
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, normRight), metadata : x.metadata, pos : x.pos};
+																			};
+																		};
+																	} else {
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, normRight), metadata : x.metadata, pos : x.pos};
+																	};
+																};
+															} else {
+																{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, normRight), metadata : x.metadata, pos : x.pos};
+															};
+														};
+													};
+												};
+											} else {
+												x;
+											};
+										};
+										case 38: {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == "_socket") {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : x.metadata, pos : x.pos};
+												} else {
+													x;
+												};
+											};
+										};
+										default: {
+											x;
+										}
+									};
+								};
+							});
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

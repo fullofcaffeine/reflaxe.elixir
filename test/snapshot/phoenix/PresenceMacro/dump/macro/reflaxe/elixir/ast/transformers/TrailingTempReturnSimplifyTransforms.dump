@@ -1,0 +1,569 @@
+class reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms {
+
+	static inline function isTemp(name:String) {
+		if (name == null) {
+			return false;
+		};
+		if (name.indexOf("this", null) == 0) {
+			return true;
+		};
+		if (name.indexOf("_this", null) == 0) {
+			return true;
+		};
+		if (name == "g" || name.indexOf("g", null) == 0 && name.length > 1) {
+			return true;
+		};
+		return false;
+	}
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(simplify(stmts, n.metadata, n.pos)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(simplify(stmts2, n.metadata, n.pos)), n.metadata, n.pos);	
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var b = cl.body;
+			var nb = switch (b.def) {
+				case EBlock(ss):
+					makeASTWithMeta(EBlock(simplify(ss, b.metadata, b.pos)), b.metadata, b.pos);				
+				case EDo(ss2):
+					makeASTWithMeta(EDo(simplify(ss2, b.metadata, b.pos)), b.metadata, b.pos);				
+				default:
+					b;				
+			};
+			newClauses.push({ args : cl.args, guard : cl.guard, body : nb });
+		};
+		makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var b = cl.body;
+										var nb = @:ast(switch (b.def) {
+	case EBlock(ss):
+		makeASTWithMeta(EBlock(simplify(ss, b.metadata, b.pos)), b.metadata, b.pos);	
+	case EDo(ss2):
+		makeASTWithMeta(EDo(simplify(ss2, b.metadata, b.pos)), b.metadata, b.pos);	
+	default:
+		b;	
+}) {
+											var ` = b.def;
+											switch (enumIndex `) {
+												case 53: {
+													var ` = `[0];
+													{
+														var ss = `;
+														{
+															{
+																var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.simplify(ss, b.metadata, b.pos));
+																var meta = b.metadata;
+																var pos = b.pos;
+																{def : def, metadata : meta, pos : pos};
+															};
+														};
+													};
+												};
+												case 55: {
+													var ` = `[0];
+													{
+														var ss2 = `;
+														{
+															{
+																var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.simplify(ss2, b.metadata, b.pos));
+																var meta = b.metadata;
+																var pos = b.pos;
+																{def : def, metadata : meta, pos : pos};
+															};
+														};
+													};
+												};
+												default: {
+													b;
+												}
+											};
+										};
+										newClauses.push({args : cl.args, guard : cl.guard, body : nb});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.simplify(stmts, n.metadata, n.pos));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.simplify(stmts2, n.metadata, n.pos));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function simplify(stmts:Array<reflaxe.elixir.ast.ElixirAST>, meta:Dynamic, pos:Dynamic) {
+		if (stmts.length >= 2) {
+			var last = stmts[stmts.length - 1];
+			@:ast(switch (last.def) {
+	case EVar(name):
+		if (!isTemp(name)) return stmts;
+		for (i  in  0 ... stmts.length - 1) {
+			var idx = (stmts.length - 2) - i;
+			switch (stmts[idx].def) {
+				case EBinary(Match, left, rhs):
+					switch (left.def) {
+						case EVar(nm) if (nm == name):
+							if (!usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+								var out:Array<ElixirAST> = [];
+								for (j  in  0 ... idx) out.push(stmts[j]);
+								for (j  in  idx + 1 ... stmts.length - 1) out.push(stmts[j]);
+								out.push(rhs);
+								return out;
+							};						
+						default:
+					};				
+				case EMatch(pat, rhs2):
+					switch (pat) {
+						case PVar(nm2) if (nm2 == name):
+							if (!usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+								var out2:Array<ElixirAST> = [];
+								for (j  in  0 ... idx) out2.push(stmts[j]);
+								for (j  in  idx + 1 ... stmts.length - 1) out2.push(stmts[j]);
+								out2.push(rhs2);
+								return out2;
+							};						
+						default:
+					};				
+				default:
+			};
+		};	
+	default:
+}) {
+				var ` = last.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var name = `;
+						{
+							if (! if (name == null) {
+								false;
+							} else {
+								if (name.indexOf("this", null) == 0) {
+									true;
+								} else {
+									if (name.indexOf("_this", null) == 0) {
+										true;
+									} else {
+										if (name == "g" || name.indexOf("g", null) == 0 && name.length > 1) {
+											true;
+										} else {
+											false;
+										};
+									};
+								};
+							}) {
+								return stmts;
+							};
+							{
+								var ` = 0;
+								var ` = stmts.length - 1;
+								while (` < `) {
+									var i = ` ++;
+									var idx = (stmts.length - 2) - i;
+									@:ast(switch (stmts[idx].def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(nm) if (nm == name):
+				if (!usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+					var out:Array<ElixirAST> = [];
+					for (j  in  0 ... idx) out.push(stmts[j]);
+					for (j  in  idx + 1 ... stmts.length - 1) out.push(stmts[j]);
+					out.push(rhs);
+					return out;
+				};			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(nm2) if (nm2 == name):
+				if (!usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+					var out2:Array<ElixirAST> = [];
+					for (j  in  0 ... idx) out2.push(stmts[j]);
+					for (j  in  idx + 1 ... stmts.length - 1) out2.push(stmts[j]);
+					out2.push(rhs2);
+					return out2;
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = stmts[idx].def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													var rhs2 = `;
+													{
+														@:ast(switch (pat) {
+	case PVar(nm2) if (nm2 == name):
+		if (!usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+			var out2:Array<ElixirAST> = [];
+			for (j  in  0 ... idx) out2.push(stmts[j]);
+			for (j  in  idx + 1 ... stmts.length - 1) out2.push(stmts[j]);
+			out2.push(rhs2);
+			return out2;
+		};	
+	default:
+}) if (enumIndex pat == 0) {
+															var ` = pat[0];
+															{
+																var nm2 = `;
+																if (nm2 == name) {
+																	if (! reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+																		var out2 = [];
+																		{
+																			var ` = 0;
+																			var ` = idx;
+																			while (` < `) {
+																				var j = ` ++;
+																				out2.push(stmts[j]);
+																			};
+																		};
+																		{
+																			var ` = idx + 1;
+																			var ` = stmts.length - 1;
+																			while (` < `) {
+																				var j = ` ++;
+																				out2.push(stmts[j]);
+																			};
+																		};
+																		out2.push(rhs2);
+																		return out2;
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var rhs = `;
+														{
+															@:ast(switch (left.def) {
+	case EVar(nm) if (nm == name):
+		if (!usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+			var out:Array<ElixirAST> = [];
+			for (j  in  0 ... idx) out.push(stmts[j]);
+			for (j  in  idx + 1 ... stmts.length - 1) out.push(stmts[j]);
+			out.push(rhs);
+			return out;
+		};	
+	default:
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var nm = `;
+																		if (nm == name) {
+																			if (! reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.usedBetween(stmts, idx + 1, stmts.length - 1, name)) {
+																				var out = [];
+																				{
+																					var ` = 0;
+																					var ` = idx;
+																					while (` < `) {
+																						var j = ` ++;
+																						out.push(stmts[j]);
+																					};
+																				};
+																				{
+																					var ` = idx + 1;
+																					var ` = stmts.length - 1;
+																					while (` < `) {
+																						var j = ` ++;
+																						out.push(stmts[j]);
+																					};
+																				};
+																				out.push(rhs);
+																				return out;
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+								};
+							};
+						};
+					};
+				} else {};
+			};
+		};
+		return stmts;
+	}
+
+	static function usedBetween(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, endExcl:Int, name:String) {
+		{
+			var ` = start;
+			var ` = endExcl;
+			while (` < `) {
+				var i = ` ++;
+				if (reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.stmtUsesVar(stmts[i], name)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	static function stmtUsesVar(n:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var found = [false];
+		var walk = [null];
+		walk[0] = function(x:reflaxe.elixir.ast.ElixirAST, inPattern:Bool) {
+			if (x == null || found[0]) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(v) if (!inPattern && v == name):
+		found = true;	
+	case EBinary(Match, left, rhs):
+		walk(rhs, false);	
+	case EMatch(pat, rhs2):
+		walk(rhs2, false);	
+	case EBlock(ss):
+		for (s  in  ss) walk(s, false);	
+	case EDo(ss2):
+		for (s  in  ss2) walk(s, false);	
+	case EIf(c, t, e):
+		walk(c, false);
+		walk(t, false);
+		if (e != null) walk(e, false);	
+	case EBinary(_, l, r):
+		walk(l, false);
+		walk(r, false);	
+	case ECall(tgt, _, args):
+		if (tgt != null) walk(tgt, false);
+		for (a  in  args) walk(a, false);	
+	case ERemoteCall(tgt2, _, args2):
+		walk(tgt2, false);
+		for (a2  in  args2) walk(a2, false);	
+	case ECase(expr, cs):
+		walk(expr, false);
+		for (c  in  cs) walk(c.body, false);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								walk[0](expr, false);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										walk[0](c.body, false);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs2 = `;
+							{
+								walk[0](rhs2, false);
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								walk[0](c, false);
+								walk[0](t, false);
+								if (e != null) {
+									walk[0](e, false);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var args = `;
+							{
+								if (tgt != null) {
+									walk[0](tgt, false);
+								};
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										walk[0](a, false);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt2 = `;
+							var args2 = `;
+							{
+								walk[0](tgt2, false);
+								{
+									var ` = 0;
+									while (` < args2.length) {
+										var a2 = args2[`];
+										++ `;
+										walk[0](a2, false);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								{
+									walk[0](rhs, false);
+								};
+							};
+						} else {
+							var l = `;
+							var r = `;
+							{
+								walk[0](l, false);
+								walk[0](r, false);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (! inPattern && v == name) {
+								found[0] = true;
+							} else {};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										walk[0](s, false);
+									};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var ss2 = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss2.length) {
+										var s = ss2[`];
+										++ `;
+										walk[0](s, false);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](n, false);
+		return found[0];
+	}
+}

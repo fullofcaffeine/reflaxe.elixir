@@ -1,0 +1,2276 @@
+class reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EModule(name, attrs, body):
+		var newBody = [for (b  in  body) rewriteDefs(b)];
+		makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);	
+	case EDefmodule(name, doBlock):
+		var rewritten = rewriteDefs(doBlock);
+		makeASTWithMeta(EDefmodule(name, rewritten), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteDefs(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var rewritten = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteDefs(doBlock);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, rewritten), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteDefs(n:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EDef(name, args, guards, body):
+		var idParam = findIdParam(args);
+		if (idParam == null) return node;
+		var binders = collectSuccessBinders(body);
+		var newBody = rewriteCases(body, idParam);
+		if (binders != null && binders.length > 0) {
+			newBody = rewriteCallsByBinders(newBody, binders, idParam);
+		};
+		makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);	
+	case EDefp(name, args, guards, body):
+		var idParamPrivate = findIdParam(args);
+		if (idParamPrivate == null) return node;
+		var successBinders = collectSuccessBinders(body);
+		var rewrittenBody = rewriteCases(body, idParamPrivate);
+		if (successBinders != null && successBinders.length > 0) {
+			rewrittenBody = rewriteCallsByBinders(rewrittenBody, successBinders, idParamPrivate);
+		};
+		makeASTWithMeta(EDefp(name, args, guards, rewrittenBody), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var idParam = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.findIdParam(args);
+								if (idParam == null) {
+									return node;
+								};
+								var binders = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.collectSuccessBinders(body);
+								var newBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCases(body, idParam);
+								if (binders != null && binders.length > 0) {
+									newBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCallsByBinders(newBody, binders, idParam);
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var idParamPrivate = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.findIdParam(args);
+								if (idParamPrivate == null) {
+									return node;
+								};
+								var successBinders = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.collectSuccessBinders(body);
+								var rewrittenBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCases(body, idParamPrivate);
+								if (successBinders != null && successBinders.length > 0) {
+									rewrittenBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCallsByBinders(rewrittenBody, successBinders, idParamPrivate);
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, rewrittenBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static function collectSuccessBinders(body:reflaxe.elixir.ast.ElixirAST) {
+		var binders = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var scanBlock = [null];
+		scanBlock[0] = function(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+			{
+				var ` = 0;
+				var ` = stmts.length;
+				while (` < `) {
+					var i = ` ++;
+					var cur = stmts[i];
+					@:ast(switch (cur.def) {
+	case ECase(expr, clauses):
+		var matchVar:Null<String> = null;
+		switch (expr.def) {
+			case EVar(nm):
+				matchVar = nm;			
+			default:
+		};
+		var isDeleteCase = false;
+		if (!isRepoDelete(expr) && matchVar != null) {
+			var j = i - 1;
+			var scans = 0;
+			while (j >= 0 && scans < 3) {
+				switch (stmts[j].def) {
+					case EBinary(Match, left, rhs):
+						switch (left.def) {
+							case EVar(nm) if (nm == matchVar):
+								if (isRepoDelete(rhs)) isDeleteCase = true;							
+							default:
+						};					
+					case EMatch(pat, rhs2):
+						switch (pat) {
+							case PVar(nm2) if (nm2 == matchVar):
+								if (isRepoDelete(rhs2)) isDeleteCase = true;							
+							default:
+						};					
+					default:
+				};
+				if (isDeleteCase) break;
+				j--;
+				scans++;
+			};
+		} else if (isRepoDelete(expr)) {
+			isDeleteCase = true;
+		};
+		if (isDeleteCase) {
+			for (cl  in  clauses) {
+				var b = isOkBinderPattern(cl.pattern);
+				if (b != null) binders.set(b, true);
+			};
+		};	
+	case EBlock(inner):
+		scanBlock(inner);	
+	default:
+}) {
+						var ` = cur.def;
+						switch (enumIndex `) {
+							case 6: {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var expr = `;
+									var clauses = `;
+									{
+										var matchVar = null;
+										@:ast(switch (expr.def) {
+	case EVar(nm):
+		matchVar = nm;	
+	default:
+}) {
+											var ` = expr.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var nm = `;
+													{
+														matchVar = nm;
+													};
+												};
+											} else {};
+										};
+										var isDeleteCase = false;
+										if (! reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(expr) && matchVar != null) {
+											var j = i - 1;
+											var scans = 0;
+											while (j >= 0 && scans < 3) {
+												@:ast(switch (stmts[j].def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(nm) if (nm == matchVar):
+				if (isRepoDelete(rhs)) isDeleteCase = true;			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(nm2) if (nm2 == matchVar):
+				if (isRepoDelete(rhs2)) isDeleteCase = true;			
+			default:
+		};	
+	default:
+}) {
+													var ` = stmts[j].def;
+													switch (enumIndex `) {
+														case 8: {
+															var ` = `[0];
+															var ` = `[1];
+															{
+																var pat = `;
+																var rhs2 = `;
+																{
+																	@:ast(switch (pat) {
+	case PVar(nm2) if (nm2 == matchVar):
+		if (isRepoDelete(rhs2)) isDeleteCase = true;	
+	default:
+}) if (enumIndex pat == 0) {
+																		var ` = pat[0];
+																		{
+																			var nm2 = `;
+																			if (nm2 == matchVar) {
+																				if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(rhs2)) {
+																					isDeleteCase = true;
+																				};
+																			} else {};
+																		};
+																	} else {};
+																};
+															};
+														};
+														case 26: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 27) {
+																{
+																	var left = `;
+																	var rhs = `;
+																	{
+																		@:ast(switch (left.def) {
+	case EVar(nm) if (nm == matchVar):
+		if (isRepoDelete(rhs)) isDeleteCase = true;	
+	default:
+}) {
+																			var ` = left.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var nm = `;
+																					if (nm == matchVar) {
+																						if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(rhs)) {
+																							isDeleteCase = true;
+																						};
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															} else {};
+														};
+														default: {}
+													};
+												};
+												if (isDeleteCase) {
+													break;
+												};
+												j --;
+												scans ++;
+											};
+										} else {
+											if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(expr)) {
+												isDeleteCase = true;
+											};
+										};
+										if (isDeleteCase) {
+											{
+												var ` = 0;
+												while (` < clauses.length) {
+													var cl = clauses[`];
+													++ `;
+													var b = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isOkBinderPattern(cl.pattern);
+													if (b != null) {
+														{
+															binders.set(b, true);
+														};
+													};
+												};
+											};
+										};
+									};
+								};
+							};
+							case 53: {
+								var ` = `[0];
+								{
+									var inner = `;
+									{
+										scanBlock[0](inner);
+									};
+								};
+							};
+							default: {}
+						};
+					};
+				};
+			};
+		};
+		@:ast(switch (body.def) {
+	case EBlock(stmts):
+		scanBlock(stmts);	
+	default:
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					{
+						scanBlock[0](stmts);
+					};
+				};
+			} else {};
+		};
+		return {
+			var ` = [];
+			for (k in binders.keys()) {
+				`.push(k);
+			};
+			`;
+		};
+	}
+
+	static function rewriteCallsByBinders(body:reflaxe.elixir.ast.ElixirAST, binders:Array<String>, idParam:String) {
+		var successBinderSet = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < binders.length) {
+				var b = binders[`];
+				++ `;
+				{
+					successBinderSet.set(b, true);
+				};
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case ECall(target, funcName, args) if (args != null && args.length == 2):
+		var firstArg = args[0];
+		var secondArg = args[1];
+		var secondArgIsSocket = switch (secondArg.def) {
+			case EVar(varName) if (varName == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		var firstArgIsSuccessBinder = switch (firstArg.def) {
+			case EVar(varName) if (successBinderSet.exists(varName)):
+				true;			
+			default:
+				false;			
+		};
+		var firstArgIsNumericArtifact = switch (firstArg.def) {
+			case EVar(varName2) if (isNumericArtifact(varName2)):
+				true;			
+			default:
+				false;			
+		};
+		if (secondArgIsSocket && (firstArgIsSuccessBinder || firstArgIsNumericArtifact)) {
+			return makeASTWithMeta(ECall(target, funcName, [makeAST(EVar(idParam)), secondArg]), node.metadata, node.pos);
+		} else node;	
+	case ERemoteCall(mod, funcName2, args2) if (args2 != null && args2.length == 2):
+		var remoteFirstArg = args2[0];
+		var remoteSecondArg = args2[1];
+		var remoteSecondIsSocket = switch (remoteSecondArg.def) {
+			case EVar(varName) if (varName == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		var remoteFirstIsSuccessBinder = switch (remoteFirstArg.def) {
+			case EVar(varName) if (successBinderSet.exists(varName)):
+				true;			
+			default:
+				false;			
+		};
+		var remoteFirstIsNumericArtifact = switch (remoteFirstArg.def) {
+			case EVar(varName) if (isNumericArtifact(varName)):
+				true;			
+			default:
+				false;			
+		};
+		if (remoteSecondIsSocket && (remoteFirstIsSuccessBinder || remoteFirstIsNumericArtifact)) {
+			return makeASTWithMeta(ERemoteCall(mod, funcName2, [makeAST(EVar(idParam)), remoteSecondArg]), node.metadata, node.pos);
+		} else node;	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var funcName = `;
+							var args = `;
+							if (args != null && args.length == 2) {
+								var firstArg = args[0];
+								var secondArg = args[1];
+								var secondArgIsSocket = @:ast(switch (secondArg.def) {
+	case EVar(varName) if (varName == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = secondArg.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var varName = `;
+											if (varName == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var firstArgIsSuccessBinder = @:ast(switch (firstArg.def) {
+	case EVar(varName) if (successBinderSet.exists(varName)):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = firstArg.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var varName = `;
+											if (successBinderSet.exists(varName)) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var firstArgIsNumericArtifact = @:ast(switch (firstArg.def) {
+	case EVar(varName2) if (isNumericArtifact(varName2)):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = firstArg.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var varName2 = `;
+											if (if (varName2 == null) {
+												false;
+											} else {
+												var base = if ((varName2.length > 0 && varName2.charAt(0) == "_")) {
+													varName2.substr(1, null);
+												} else {
+													varName2;
+												};
+												new EReg("^[gs]\\d+$", "").match(base);
+											}) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (secondArgIsSocket && (firstArgIsSuccessBinder || firstArgIsNumericArtifact)) {
+									return {def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, funcName, [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam), metadata : {}, pos : pos};
+									}, secondArg]), metadata : node.metadata, pos : node.pos};
+								} else {
+									node;
+								};
+							} else {
+								node;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var funcName2 = `;
+							var args2 = `;
+							if (args2 != null && args2.length == 2) {
+								var remoteFirstArg = args2[0];
+								var remoteSecondArg = args2[1];
+								var remoteSecondIsSocket = @:ast(switch (remoteSecondArg.def) {
+	case EVar(varName) if (varName == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = remoteSecondArg.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var varName = `;
+											if (varName == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var remoteFirstIsSuccessBinder = @:ast(switch (remoteFirstArg.def) {
+	case EVar(varName) if (successBinderSet.exists(varName)):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = remoteFirstArg.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var varName = `;
+											if (successBinderSet.exists(varName)) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var remoteFirstIsNumericArtifact = @:ast(switch (remoteFirstArg.def) {
+	case EVar(varName) if (isNumericArtifact(varName)):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = remoteFirstArg.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var varName = `;
+											if (if (varName == null) {
+												false;
+											} else {
+												var base = if ((varName.length > 0 && varName.charAt(0) == "_")) {
+													varName.substr(1, null);
+												} else {
+													varName;
+												};
+												new EReg("^[gs]\\d+$", "").match(base);
+											}) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (remoteSecondIsSocket && (remoteFirstIsSuccessBinder || remoteFirstIsNumericArtifact)) {
+									return {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, funcName2, [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam), metadata : {}, pos : pos};
+									}, remoteSecondArg]), metadata : node.metadata, pos : node.pos};
+								} else {
+									node;
+								};
+							} else {
+								node;
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isNumericArtifact(name:String) {
+		if (name == null) {
+			return false;
+		};
+		var base = if ((name.length > 0 && name.charAt(0) == "_")) {
+			name.substr(1, null);
+		} else {
+			name;
+		};
+		return new EReg("^[gs]\\d+$", "").match(base);
+	}
+
+	static inline function stripLeadingUnderscores(nm:String) {
+		if (nm == null) {
+			return null;
+		};
+		var i = 0;
+		while (i < nm.length && nm.charAt(i) == "_") {
+			i ++;
+		};
+		return nm.substr(i, null);
+	}
+
+	static function findIdParam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var idName = null;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(nm):
+		var base = stripLeadingUnderscores(nm);
+		if (base == "id" || StringTools.endsWith(base, "_id")) {
+			idName = nm;
+		};	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var nm = `;
+						{
+							var base = if (nm == null) {
+								null;
+							} else {
+								var i = 0;
+								while (i < nm.length && nm.charAt(i) == "_") {
+									i ++;
+								};
+								nm.substr(i, null);
+							};
+							if (base == "id" || StringTools.endsWith(base, "_id")) {
+								idName = nm;
+							};
+						};
+					};
+				} else {};
+			};
+		};
+		return idName;
+	}
+
+	static function isRepoDelete(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var mod = `;
+					var func = `;
+					var _args = `;
+					if (func == "delete") {
+						@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = mod.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function isOkBinderPattern(pat:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (pat) {
+	case PTuple(elements) if (elements.length == 2):
+		var isOk = switch (elements[0]) {
+			case PLiteral({ def : EAtom(v) }):
+				v == "ok";			
+			default:
+				false;			
+		};
+		if (!isOk) return null;
+		switch (elements[1]) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) if (enumIndex pat == 2) {
+			var ` = pat[0];
+			{
+				var elements = `;
+				if (elements.length == 2) {
+					var isOk = @:ast(switch (elements[0]) {
+	case PLiteral({ def : EAtom(v) }):
+		v == "ok";	
+	default:
+		false;	
+}) {
+						var ` = elements[0];
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 31) {
+									var ` = `[0];
+									{
+										var v = `;
+										{
+											v == "ok";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					};
+					if (! isOk) {
+						return null;
+					};
+					@:ast(switch (elements[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+						var ` = elements[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var nm = `;
+								{
+									nm;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+
+	static function binderLooksLikeStruct(body:reflaxe.elixir.ast.ElixirAST, binder:String) {
+		var looks = [false];
+		var walk = [null];
+		walk[0] = function(e:reflaxe.elixir.ast.ElixirAST) {
+			if (looks[0] || e == null || e.def == null) {
+				return;
+			};
+			@:ast(switch (e.def) {
+	case EField({ def : EVar(nm) }, _):
+		if (nm == binder) {
+			looks = true;
+			return;
+		} else walk(e);	
+	case EAccess({ def : EVar(nm2) }, _):
+		if (nm2 == binder) {
+			looks = true;
+			return;
+		} else walk(e);	
+	case EBlock(ss):
+		for (s  in  ss) walk(s);	
+	case EIf(c, t, el):
+		walk(c);
+		walk(t);
+		if (el != null) walk(el);	
+	case ECase(expr, cs):
+		walk(expr);
+		for (c  in  cs) walk(c.body);	
+	case ECall(t, _, as):
+		if (t != null) walk(t);
+		if (as != null) for (a  in  as) walk(a);	
+	case ERemoteCall(t2, _, as2):
+		walk(t2);
+		if (as2 != null) for (a  in  as2) walk(a);	
+	case EList(els):
+		for (el  in  els) walk(el);	
+	case ETuple(els):
+		for (el  in  els) walk(el);	
+	case EMap(pairs):
+		for (p  in  pairs) {
+			walk(p.key);
+			walk(p.value);
+		};	
+	default:
+}) {
+				var ` = e.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								walk[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										walk[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var el = `;
+							{
+								walk[0](c);
+								walk[0](t);
+								if (el != null) {
+									walk[0](el);
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						{
+							var els = `;
+							{
+								{
+									var ` = 0;
+									while (` < els.length) {
+										var el = els[`];
+										++ `;
+										walk[0](el);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var els = `;
+							{
+								{
+									var ` = 0;
+									while (` < els.length) {
+										var el = els[`];
+										++ `;
+										walk[0](el);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										walk[0](p.key);
+										walk[0](p.value);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									walk[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											walk[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t2 = `;
+							var as2 = `;
+							{
+								walk[0](t2);
+								if (as2 != null) {
+									{
+										var ` = 0;
+										while (` < as2.length) {
+											var a = as2[`];
+											++ `;
+											walk[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var nm = `;
+									{
+										if (nm == binder) {
+											looks[0] = true;
+											return;
+										} else {
+											walk[0](e);
+										};
+									};
+								};
+							} else {};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var nm2 = `;
+									{
+										if (nm2 == binder) {
+											looks[0] = true;
+											return;
+										} else {
+											walk[0](e);
+										};
+									};
+								};
+							} else {};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										walk[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](body);
+		return looks[0];
+	}
+
+	static function rewriteCases(body:reflaxe.elixir.ast.ElixirAST, idParam:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var cur = stmts[i];
+			switch (cur.def) {
+				case ECase(expr, clauses):
+					var matchVar:Null<String> = null;
+					switch (expr.def) {
+						case EVar(nm):
+							matchVar = nm;						
+						default:
+					};
+					var isDeleteCase = false;
+					if (!isRepoDelete(expr) && matchVar != null) {
+						var j = i - 1;
+						var scans = 0;
+						while (j >= 0 && scans < 3) {
+							switch (stmts[j].def) {
+								case EBinary(Match, left, rhs):
+									switch (left.def) {
+										case EVar(nm) if (nm == matchVar):
+											if (isRepoDelete(rhs)) isDeleteCase = true;										
+										default:
+									};								
+								case EMatch(pat, rhs2):
+									switch (pat) {
+										case PVar(nm2) if (nm2 == matchVar):
+											if (isRepoDelete(rhs2)) isDeleteCase = true;										
+										default:
+									};								
+								default:
+							};
+							if (isDeleteCase) break;
+							j--;
+							scans++;
+						};
+					} else if (isRepoDelete(expr)) {
+						isDeleteCase = true;
+					};
+					if (isDeleteCase) {
+						var newClauses = [];
+						for (cl  in  clauses) {
+							var binder = isOkBinderPattern(cl.pattern);
+							if (binder != null) {
+								var newBody = rewriteCallsInBody(cl.body, binder, idParam);
+								var assigned = findLastAssignedFromSocketCall(newBody);
+								if (assigned != null) newBody = rewriteNoreplyReturn(newBody, binder, assigned);
+								newClauses.push({ pattern : cl.pattern, guard : cl.guard, body : newBody });
+							} else {
+								newClauses.push(cl);
+							};
+						};
+						out.push(makeASTWithMeta(ECase(expr, newClauses), cur.metadata, cur.pos));
+					} else {
+						out.push(cur);
+					};				
+				default:
+					out.push(cur);				
+			};
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case ECase(expr, clauses) if (isRepoDelete(expr)):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var binder = isOkBinderPattern(cl.pattern);
+			if (binder != null) {
+				var newBody = rewriteCallsInBody(cl.body, binder, idParam);
+				var assigned = findLastAssignedFromSocketCall(newBody);
+				if (assigned != null) newBody = rewriteNoreplyReturn(newBody, binder, assigned);
+				newClauses.push({ pattern : cl.pattern, guard : cl.guard, body : newBody });
+			} else {
+				newClauses.push(cl);
+			};
+		};
+		makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);	
+	case ECase(caseExprFallback, caseClausesFallback):
+		var rewrittenClauses = [];
+		for (clause  in  caseClausesFallback) {
+			var successBinderName = isOkBinderPattern(clause.pattern);
+			if (successBinderName != null) {
+				var rewrittenBody = rewriteCallsInBody(clause.body, successBinderName, idParam);
+				var lastAssignedVar = findLastAssignedFromSocketCall(rewrittenBody);
+				if (lastAssignedVar != null) rewrittenBody = rewriteNoreplyReturn(rewrittenBody, successBinderName, lastAssignedVar);
+				rewrittenClauses.push({ pattern : clause.pattern, guard : clause.guard, body : rewrittenBody });
+			} else {
+				rewrittenClauses.push(clause);
+			};
+		};
+		makeASTWithMeta(ECase(caseExprFallback, rewrittenClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(expr)) {
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var binder = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isOkBinderPattern(cl.pattern);
+										if (binder != null) {
+											var newBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCallsInBody(cl.body, binder, idParam);
+											var assigned = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.findLastAssignedFromSocketCall(newBody);
+											if (assigned != null) {
+												newBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteNoreplyReturn(newBody, binder, assigned);
+											};
+											newClauses.push({pattern : cl.pattern, guard : cl.guard, body : newBody});
+										} else {
+											newClauses.push(cl);
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, newClauses), metadata : n.metadata, pos : n.pos};
+							} else {
+								var caseExprFallback = `;
+								var caseClausesFallback = `;
+								{
+									var rewrittenClauses = [];
+									{
+										var ` = 0;
+										while (` < caseClausesFallback.length) {
+											var clause = caseClausesFallback[`];
+											++ `;
+											var successBinderName = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isOkBinderPattern(clause.pattern);
+											if (successBinderName != null) {
+												var rewrittenBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCallsInBody(clause.body, successBinderName, idParam);
+												var lastAssignedVar = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.findLastAssignedFromSocketCall(rewrittenBody);
+												if (lastAssignedVar != null) {
+													rewrittenBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteNoreplyReturn(rewrittenBody, successBinderName, lastAssignedVar);
+												};
+												rewrittenClauses.push({pattern : clause.pattern, guard : clause.guard, body : rewrittenBody});
+											} else {
+												rewrittenClauses.push(clause);
+											};
+										};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECase(caseExprFallback, rewrittenClauses), metadata : n.metadata, pos : n.pos};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										var cur = stmts[i];
+										@:ast(switch (cur.def) {
+	case ECase(expr, clauses):
+		var matchVar:Null<String> = null;
+		switch (expr.def) {
+			case EVar(nm):
+				matchVar = nm;			
+			default:
+		};
+		var isDeleteCase = false;
+		if (!isRepoDelete(expr) && matchVar != null) {
+			var j = i - 1;
+			var scans = 0;
+			while (j >= 0 && scans < 3) {
+				switch (stmts[j].def) {
+					case EBinary(Match, left, rhs):
+						switch (left.def) {
+							case EVar(nm) if (nm == matchVar):
+								if (isRepoDelete(rhs)) isDeleteCase = true;							
+							default:
+						};					
+					case EMatch(pat, rhs2):
+						switch (pat) {
+							case PVar(nm2) if (nm2 == matchVar):
+								if (isRepoDelete(rhs2)) isDeleteCase = true;							
+							default:
+						};					
+					default:
+				};
+				if (isDeleteCase) break;
+				j--;
+				scans++;
+			};
+		} else if (isRepoDelete(expr)) {
+			isDeleteCase = true;
+		};
+		if (isDeleteCase) {
+			var newClauses = [];
+			for (cl  in  clauses) {
+				var binder = isOkBinderPattern(cl.pattern);
+				if (binder != null) {
+					var newBody = rewriteCallsInBody(cl.body, binder, idParam);
+					var assigned = findLastAssignedFromSocketCall(newBody);
+					if (assigned != null) newBody = rewriteNoreplyReturn(newBody, binder, assigned);
+					newClauses.push({ pattern : cl.pattern, guard : cl.guard, body : newBody });
+				} else {
+					newClauses.push(cl);
+				};
+			};
+			out.push(makeASTWithMeta(ECase(expr, newClauses), cur.metadata, cur.pos));
+		} else {
+			out.push(cur);
+		};	
+	default:
+		out.push(cur);	
+}) {
+											var ` = cur.def;
+											if (enumIndex ` == 6) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var expr = `;
+													var clauses = `;
+													{
+														var matchVar = null;
+														@:ast(switch (expr.def) {
+	case EVar(nm):
+		matchVar = nm;	
+	default:
+}) {
+															var ` = expr.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var nm = `;
+																	{
+																		matchVar = nm;
+																	};
+																};
+															} else {};
+														};
+														var isDeleteCase = false;
+														if (! reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(expr) && matchVar != null) {
+															var j = i - 1;
+															var scans = 0;
+															while (j >= 0 && scans < 3) {
+																@:ast(switch (stmts[j].def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(nm) if (nm == matchVar):
+				if (isRepoDelete(rhs)) isDeleteCase = true;			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(nm2) if (nm2 == matchVar):
+				if (isRepoDelete(rhs2)) isDeleteCase = true;			
+			default:
+		};	
+	default:
+}) {
+																	var ` = stmts[j].def;
+																	switch (enumIndex `) {
+																		case 8: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var pat = `;
+																				var rhs2 = `;
+																				{
+																					@:ast(switch (pat) {
+	case PVar(nm2) if (nm2 == matchVar):
+		if (isRepoDelete(rhs2)) isDeleteCase = true;	
+	default:
+}) if (enumIndex pat == 0) {
+																						var ` = pat[0];
+																						{
+																							var nm2 = `;
+																							if (nm2 == matchVar) {
+																								if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(rhs2)) {
+																									isDeleteCase = true;
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																		case 26: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			if (enumIndex ` == 27) {
+																				{
+																					var left = `;
+																					var rhs = `;
+																					{
+																						@:ast(switch (left.def) {
+	case EVar(nm) if (nm == matchVar):
+		if (isRepoDelete(rhs)) isDeleteCase = true;	
+	default:
+}) {
+																							var ` = left.def;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var nm = `;
+																									if (nm == matchVar) {
+																										if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(rhs)) {
+																											isDeleteCase = true;
+																										};
+																									} else {};
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			} else {};
+																		};
+																		default: {}
+																	};
+																};
+																if (isDeleteCase) {
+																	break;
+																};
+																j --;
+																scans ++;
+															};
+														} else {
+															if (reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isRepoDelete(expr)) {
+																isDeleteCase = true;
+															};
+														};
+														if (isDeleteCase) {
+															var newClauses = [];
+															{
+																var ` = 0;
+																while (` < clauses.length) {
+																	var cl = clauses[`];
+																	++ `;
+																	var binder = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.isOkBinderPattern(cl.pattern);
+																	if (binder != null) {
+																		var newBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteCallsInBody(cl.body, binder, idParam);
+																		var assigned = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.findLastAssignedFromSocketCall(newBody);
+																		if (assigned != null) {
+																			newBody = reflaxe.elixir.ast.transformers.RepoDeleteCaseArgRestoreTransforms.rewriteNoreplyReturn(newBody, binder, assigned);
+																		};
+																		newClauses.push({pattern : cl.pattern, guard : cl.guard, body : newBody});
+																	} else {
+																		newClauses.push(cl);
+																	};
+																};
+															};
+															out.push({def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, newClauses), metadata : cur.metadata, pos : cur.pos});
+														} else {
+															out.push(cur);
+														};
+													};
+												};
+											} else {
+												out.push(cur);
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteCallsInBody(body:reflaxe.elixir.ast.ElixirAST, binder:String, idParam:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ECall(target, name, args) if (args != null && args.length == 2):
+		var a0 = args[0];
+		var a1 = args[1];
+		var isSocket2nd = switch (a1.def) {
+			case EVar(nm) if (nm == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		var isBinder1st = switch (a0.def) {
+			case EVar(nm) if (nm == binder):
+				true;			
+			default:
+				false;			
+		};
+		if (isSocket2nd && isBinder1st) {
+			makeASTWithMeta(ECall(target, name, [makeAST(EVar(idParam)), a1]), x.metadata, x.pos);
+		} else x;	
+	case ERemoteCall(mod, name2, args2) if (args2 != null && args2.length == 2):
+		var b0 = args2[0];
+		var b1 = args2[1];
+		var isSocketSecond = switch (b1.def) {
+			case EVar(nm2) if (nm2 == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		var isBinderFirst = switch (b0.def) {
+			case EVar(nm3) if (nm3 == binder):
+				true;			
+			default:
+				false;			
+		};
+		if (isSocketSecond && isBinderFirst) {
+			makeASTWithMeta(ERemoteCall(mod, name2, [makeAST(EVar(idParam)), b1]), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var name = `;
+							var args = `;
+							if (args != null && args.length == 2) {
+								var a0 = args[0];
+								var a1 = args[1];
+								var isSocket2nd = @:ast(switch (a1.def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = a1.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var isBinder1st = @:ast(switch (a0.def) {
+	case EVar(nm) if (nm == binder):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = a0.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == binder) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (isSocket2nd && isBinder1st) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, name, [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam), metadata : {}, pos : pos};
+									}, a1]), metadata : x.metadata, pos : x.pos};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var name2 = `;
+							var args2 = `;
+							if (args2 != null && args2.length == 2) {
+								var b0 = args2[0];
+								var b1 = args2[1];
+								var isSocketSecond = @:ast(switch (b1.def) {
+	case EVar(nm2) if (nm2 == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = b1.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm2 = `;
+											if (nm2 == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var isBinderFirst = @:ast(switch (b0.def) {
+	case EVar(nm3) if (nm3 == binder):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = b0.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm3 = `;
+											if (nm3 == binder) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (isSocketSecond && isBinderFirst) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, name2, [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam), metadata : {}, pos : pos};
+									}, b1]), metadata : x.metadata, pos : x.pos};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static function findLastAssignedFromSocketCall(body:reflaxe.elixir.ast.ElixirAST) {
+		var found = [null];
+		var scan = [null];
+		scan[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EBinary(Match, left, right):
+		var lhs:Null<String> = switch (left.def) {
+			case EVar(name):
+				name;			
+			default:
+				null;			
+		};
+		var rhsIsCallOnSocket = switch (right.def) {
+			case ECall(_, _, args) if (args != null && args.length == 2):
+				switch (args[1].def) {
+					case EVar(nm) if (nm == "socket"):
+						true;					
+					default:
+						false;					
+				};			
+			case ERemoteCall(_, _, args2) if (args2 != null && args2.length == 2):
+				switch (args2[1].def) {
+					case EVar(nm2) if (nm2 == "socket"):
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};
+		if (lhs != null && rhsIsCallOnSocket) {
+			found = lhs;
+		};
+		scan(right);	
+	case EMatch(pat, rhs2):
+		var lhs2:Null<String> = switch (pat) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		var rhs2IsCallOnSocket = switch (rhs2.def) {
+			case ECall(_, _, args) if (args != null && args.length == 2):
+				switch (args[1].def) {
+					case EVar(nm) if (nm == "socket"):
+						true;					
+					default:
+						false;					
+				};			
+			case ERemoteCall(_, _, args2) if (args2 != null && args2.length == 2):
+				switch (args2[1].def) {
+					case EVar(nm2) if (nm2 == "socket"):
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};
+		if (lhs2 != null && rhs2IsCallOnSocket) {
+			found = lhs2;
+		};
+		scan(rhs2);	
+	case EBlock(stmts):
+		for (s  in  stmts) scan(s);	
+	case EIf(c, t, e):
+		scan(c);
+		scan(t);
+		if (e != null) scan(e);	
+	case ECase(expr, cs):
+		scan(expr);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	case ECall(t, _, as):
+		if (t != null) scan(t);
+		if (as != null) for (a  in  as) scan(a);	
+	case ERemoteCall(t2, _, as2):
+		scan(t2);
+		if (as2 != null) for (a  in  as2) scan(a);	
+	case EList(items):
+		for (i  in  items) scan(i);	
+	case ETuple(items):
+		for (i  in  items) scan(i);	
+	case EMap(pairs):
+		for (p  in  pairs) {
+			scan(p.key);
+			scan(p.value);
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								scan[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs2 = `;
+							{
+								var lhs2 = @:ast(switch (pat) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+									var ` = pat[0];
+									{
+										var nm = `;
+										{
+											nm;
+										};
+									};
+								} else {
+									null;
+								};
+								var rhs2IsCallOnSocket = @:ast(switch (rhs2.def) {
+	case ECall(_, _, args) if (args != null && args.length == 2):
+		switch (args[1].def) {
+			case EVar(nm) if (nm == "socket"):
+				true;			
+			default:
+				false;			
+		};	
+	case ERemoteCall(_, _, args2) if (args2 != null && args2.length == 2):
+		switch (args2[1].def) {
+			case EVar(nm2) if (nm2 == "socket"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+									var ` = rhs2.def;
+									switch (enumIndex `) {
+										case 22: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var args = `;
+												if (args != null && args.length == 2) {
+													@:ast(switch (args[1].def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+														var ` = args[1].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var nm = `;
+																if (nm == "socket") {
+																	true;
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										};
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var args2 = `;
+												if (args2 != null && args2.length == 2) {
+													@:ast(switch (args2[1].def) {
+	case EVar(nm2) if (nm2 == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+														var ` = args2[1].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var nm2 = `;
+																if (nm2 == "socket") {
+																	true;
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										};
+										default: {
+											false;
+										}
+									};
+								};
+								if (lhs2 != null && rhs2IsCallOnSocket) {
+									found[0] = lhs2;
+								};
+								scan[0](rhs2);
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (e != null) {
+									scan[0](e);
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						{
+							var items = `;
+							{
+								{
+									var ` = 0;
+									while (` < items.length) {
+										var i = items[`];
+										++ `;
+										scan[0](i);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var items = `;
+							{
+								{
+									var ` = 0;
+									while (` < items.length) {
+										var i = items[`];
+										++ `;
+										scan[0](i);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										scan[0](p.key);
+										scan[0](p.value);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									scan[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t2 = `;
+							var as2 = `;
+							{
+								scan[0](t2);
+								if (as2 != null) {
+									{
+										var ` = 0;
+										while (` < as2.length) {
+											var a = as2[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var right = `;
+								{
+									var lhs = @:ast(switch (left.def) {
+	case EVar(name):
+		name;	
+	default:
+		null;	
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var name = `;
+												{
+													name;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+									var rhsIsCallOnSocket = @:ast(switch (right.def) {
+	case ECall(_, _, args) if (args != null && args.length == 2):
+		switch (args[1].def) {
+			case EVar(nm) if (nm == "socket"):
+				true;			
+			default:
+				false;			
+		};	
+	case ERemoteCall(_, _, args2) if (args2 != null && args2.length == 2):
+		switch (args2[1].def) {
+			case EVar(nm2) if (nm2 == "socket"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+										var ` = right.def;
+										switch (enumIndex `) {
+											case 22: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var args = `;
+													if (args != null && args.length == 2) {
+														@:ast(switch (args[1].def) {
+	case EVar(nm) if (nm == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = args[1].def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var nm = `;
+																	if (nm == "socket") {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+											};
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var args2 = `;
+													if (args2 != null && args2.length == 2) {
+														@:ast(switch (args2[1].def) {
+	case EVar(nm2) if (nm2 == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = args2[1].def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var nm2 = `;
+																	if (nm2 == "socket") {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+											};
+											default: {
+												false;
+											}
+										};
+									};
+									if (lhs != null && rhsIsCallOnSocket) {
+										found[0] = lhs;
+									};
+									scan[0](right);
+								};
+							};
+						} else {};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										scan[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		scan[0](body);
+		return found[0];
+	}
+
+	static function rewriteNoreplyReturn(body:reflaxe.elixir.ast.ElixirAST, fromBinder:String, toVar:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EMap(pairs):
+		var changed = false;
+		var newPairs:Array<EMapPair> = [];
+		for (p  in  pairs) {
+			var isNoreply = switch (p.key.def) {
+				case EAtom(v) if (v == "noreply"):
+					true;				
+				default:
+					false;				
+			};
+			if (isNoreply) {
+				var valueIsBinder = switch (p.value.def) {
+					case EVar(nm) if (nm == fromBinder):
+						true;					
+					default:
+						false;					
+				};
+				if (valueIsBinder) {
+					newPairs.push({ key : p.key, value : makeAST(EVar(toVar)) });
+					changed = true;
+					continue;
+				};
+			};
+			newPairs.push(p);
+		};
+		if (changed) makeASTWithMeta(EMap(newPairs), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 17) {
+					var ` = `[0];
+					{
+						var pairs = `;
+						{
+							var changed = false;
+							var newPairs = [];
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var p = pairs[`];
+									++ `;
+									var isNoreply = @:ast(switch (p.key.def) {
+	case EAtom(v) if (v == "noreply"):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = p.key.def;
+										if (enumIndex ` == 31) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == "noreply") {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+									if (isNoreply) {
+										var valueIsBinder = @:ast(switch (p.value.def) {
+	case EVar(nm) if (nm == fromBinder):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = p.value.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var nm = `;
+													if (nm == fromBinder) {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+										if (valueIsBinder) {
+											newPairs.push({key : p.key, value : {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(toVar), metadata : {}, pos : pos};
+											}});
+											changed = true;
+											continue;
+										};
+									};
+									newPairs.push(p);
+								};
+							};
+							if (changed) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EMap(newPairs), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

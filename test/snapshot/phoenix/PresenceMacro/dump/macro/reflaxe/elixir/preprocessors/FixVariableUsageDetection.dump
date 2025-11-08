@@ -1,0 +1,180 @@
+@:nullSafety(Off)
+class reflaxe.elixir.preprocessors.FixVariableUsageDetection extends reflaxe.preprocessors.BasePreprocessor {
+
+	public function new() {
+		this.fixedCount = 0;
+		this.usedVars = new haxe.ds.IntMap();
+	}
+
+	@:value(new Map())
+	var usedVars:Map<Int, Bool>;
+
+	@:value(0)
+	var fixedCount:Int;
+
+	public function process(data:reflaxe.data.ClassFuncData, compiler:reflaxe.BaseCompiler) {
+		var list = reflaxe.helpers.TypedExprHelper.unwrapBlock(data.expr);
+		this.usedVars = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		this.fixedCount = 0;
+		{
+			var ` = 0;
+			while (` < list.length) {
+				var e = list[`];
+				++ `;
+				this.scanForUsage(e);
+			};
+		};
+		{
+			var ` = 0;
+			while (` < list.length) {
+				var e = list[`];
+				++ `;
+				this.fixMetadata(e);
+			};
+		};
+	}
+
+	function scanForUsage(te:haxe.macro.TypedExpr) {
+		@:ast(switch (te.expr) {
+	case TLocal(tvar):
+		usedVars.set(tvar.id, true);	
+	case TField(obj, field):
+		switch (obj.expr) {
+			case TLocal(tvar):
+				usedVars.set(tvar.id, true);			
+			case _:
+				scanForUsage(obj);			
+		};	
+	case TCall(e, args):
+		scanForUsage(e);
+		for (arg  in  args) {
+			scanForUsage(arg);
+		};
+		return;	
+	case _:
+}) {
+			var ` = te.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var tvar = `;
+						{
+							{
+								var this = this.usedVars;
+								var key = tvar.id;
+								cast this.set(key, true);
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var obj = `;
+						var field = `;
+						{
+							@:ast(switch (obj.expr) {
+	case TLocal(tvar):
+		usedVars.set(tvar.id, true);	
+	case _:
+		scanForUsage(obj);	
+}) {
+								var ` = obj.expr;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var tvar = `;
+										{
+											{
+												var this = this.usedVars;
+												var key = tvar.id;
+												cast this.set(key, true);
+											};
+										};
+									};
+								} else {
+									this.scanForUsage(obj);
+								};
+							};
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var args = `;
+						{
+							this.scanForUsage(e);
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var arg = args[`];
+									++ `;
+									this.scanForUsage(arg);
+								};
+							};
+							return;
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		haxe.macro.TypedExprTools.iter(te, this.scanForUsage);
+	}
+
+	function fixMetadata(te:haxe.macro.TypedExpr) {
+		@:ast(switch (te.expr) {
+	case TVar(tvar, maybeExpr):
+		if (usedVars.exists(tvar.id) && usedVars.get(tvar.id)) {
+			if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+				tvar.meta.remove("-reflaxe.unused");
+				fixedCount++;
+			};
+		} else { };
+		if (maybeExpr != null) {
+			fixMetadata(maybeExpr);
+		};
+		return;	
+	case _:
+}) {
+			var ` = te.expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var tvar = `;
+					var maybeExpr = `;
+					{
+						if ({
+							var this = this.usedVars;
+							var key = tvar.id;
+							cast this.exists(key);
+						} && {
+							var this = this.usedVars;
+							var key = tvar.id;
+							cast this.get(key);
+						}) {
+							if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+								tvar.meta.remove("-reflaxe.unused");
+								this.fixedCount ++;
+							};
+						} else {};
+						if (maybeExpr != null) {
+							this.fixMetadata(maybeExpr);
+						};
+						return;
+					};
+				};
+			} else {};
+		};
+		haxe.macro.TypedExprTools.iter(te, this.fixMetadata);
+	}
+}

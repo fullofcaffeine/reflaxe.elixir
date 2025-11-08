@@ -1,0 +1,460 @@
+class reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms {
+
+	static function unwrapParen(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EParen(inner):
+		unwrapParen(inner);	
+	default:
+		e;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 54) {
+				var ` = `[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.unwrapParen(inner);
+					};
+				};
+			} else {
+				e;
+			};
+		};
+	}
+
+	static function lastExprOf(body:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (body.def) {
+	case EBlock(exprs) if (exprs.length > 0):
+		exprs[exprs.length - 1];	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					if (exprs.length > 0) {
+						exprs[exprs.length - 1];
+					} else {
+						body;
+					};
+				};
+			} else {
+				body;
+			};
+		};
+	}
+
+	static function findAssignment(name:String, body:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (body.def) {
+	case EBlock(exprs):
+		var i = exprs.length - 1;
+		while (i >= 0) {
+			switch (exprs[i].def) {
+				case EMatch(PVar(v), rhs) if (v == name):
+					return rhs;				
+				default:
+			};
+			i--;
+		};
+		null;	
+	default:
+		null;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						var i = exprs.length - 1;
+						while (i >= 0) {
+							@:ast(switch (exprs[i].def) {
+	case EMatch(PVar(v), rhs) if (v == name):
+		return rhs;	
+	default:
+}) {
+								var ` = exprs[i].def;
+								if (enumIndex ` == 8) {
+									var ` = `[0];
+									var ` = `[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var v = `;
+											var rhs = `;
+											if (v == name) {
+												return rhs;
+											} else {};
+										};
+									} else {};
+								} else {};
+							};
+							i --;
+						};
+						null;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	static function inlineIIFE(iface:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (iface.def) {
+	case ECall(fnTarget, func, args) if (func == "" && (args == null || args.length == 0)):
+		var t = unwrapParen(fnTarget);
+		switch (t.def) {
+			case EFn(clauses) if (clauses.length > 0):
+				var body = clauses[0].body;
+				var last = lastExprOf(body);
+				switch (last.def) {
+					case EVar(retName):
+						var rhs = findAssignment(retName, body);
+						var guard = 0;
+						while (rhs != null && guard++ < 5) {
+							switch (rhs.def) {
+								case ERemoteCall(mod, fn, args) if (fn == "from"):
+									return rhs;								
+								case EVar(nextName):
+									rhs = findAssignment(nextName, body);								
+								default:
+									return null;								
+							};
+						};
+						null;					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = iface.def;
+			if (enumIndex ` == 22) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var fnTarget = `;
+					var func = `;
+					var args = `;
+					if (func == "" && (args == null || args.length == 0)) {
+						var t = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.unwrapParen(fnTarget);
+						@:ast(switch (t.def) {
+	case EFn(clauses) if (clauses.length > 0):
+		var body = clauses[0].body;
+		var last = lastExprOf(body);
+		switch (last.def) {
+			case EVar(retName):
+				var rhs = findAssignment(retName, body);
+				var guard = 0;
+				while (rhs != null && guard++ < 5) {
+					switch (rhs.def) {
+						case ERemoteCall(mod, fn, args) if (fn == "from"):
+							return rhs;						
+						case EVar(nextName):
+							rhs = findAssignment(nextName, body);						
+						default:
+							return null;						
+					};
+				};
+				null;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+							var ` = t.def;
+							if (enumIndex ` == 42) {
+								var ` = `[0];
+								{
+									var clauses = `;
+									if (clauses.length > 0) {
+										var body = clauses[0].body;
+										var last = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.lastExprOf(body);
+										@:ast(switch (last.def) {
+	case EVar(retName):
+		var rhs = findAssignment(retName, body);
+		var guard = 0;
+		while (rhs != null && guard++ < 5) {
+			switch (rhs.def) {
+				case ERemoteCall(mod, fn, args) if (fn == "from"):
+					return rhs;				
+				case EVar(nextName):
+					rhs = findAssignment(nextName, body);				
+				default:
+					return null;				
+			};
+		};
+		null;	
+	default:
+		null;	
+}) {
+											var ` = last.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var retName = `;
+													{
+														var rhs = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.findAssignment(retName, body);
+														var guard = 0;
+														while (rhs != null && guard ++ < 5) {
+															@:ast(switch (rhs.def) {
+	case ERemoteCall(mod, fn, args) if (fn == "from"):
+		return rhs;	
+	case EVar(nextName):
+		rhs = findAssignment(nextName, body);	
+	default:
+		return null;	
+}) {
+																var ` = rhs.def;
+																switch (enumIndex `) {
+																	case 24: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		{
+																			var mod = `;
+																			var fn = `;
+																			var args = `;
+																			if (fn == "from") {
+																				return rhs;
+																			} else {
+																				return null;
+																			};
+																		};
+																	};
+																	case 38: {
+																		var ` = `[0];
+																		{
+																			var nextName = `;
+																			{
+																				rhs = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.findAssignment(nextName, body);
+																			};
+																		};
+																	};
+																	default: {
+																		return null;
+																	}
+																};
+															};
+														};
+														null;
+													};
+												};
+											} else {
+												null;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	static function inlineBlock(qarg:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (qarg.def) {
+	case EBlock(_):
+		var last = lastExprOf(qarg);
+		switch (last.def) {
+			case EVar(retName):
+				var rhs = findAssignment(retName, qarg);
+				var guard = 0;
+				while (rhs != null && guard++ < 5) {
+					switch (rhs.def) {
+						case ERemoteCall(mod, fn, args) if (fn == "from"):
+							return rhs;						
+						case EVar(nextName):
+							rhs = findAssignment(nextName, qarg);						
+						default:
+							return null;						
+					};
+				};
+				null;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+			var ` = qarg.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var last = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.lastExprOf(qarg);
+					@:ast(switch (last.def) {
+	case EVar(retName):
+		var rhs = findAssignment(retName, qarg);
+		var guard = 0;
+		while (rhs != null && guard++ < 5) {
+			switch (rhs.def) {
+				case ERemoteCall(mod, fn, args) if (fn == "from"):
+					return rhs;				
+				case EVar(nextName):
+					rhs = findAssignment(nextName, qarg);				
+				default:
+					return null;				
+			};
+		};
+		null;	
+	default:
+		null;	
+}) {
+						var ` = last.def;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var retName = `;
+								{
+									var rhs = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.findAssignment(retName, qarg);
+									var guard = 0;
+									while (rhs != null && guard ++ < 5) {
+										@:ast(switch (rhs.def) {
+	case ERemoteCall(mod, fn, args) if (fn == "from"):
+		return rhs;	
+	case EVar(nextName):
+		rhs = findAssignment(nextName, qarg);	
+	default:
+		return null;	
+}) {
+											var ` = rhs.def;
+											switch (enumIndex `) {
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var mod = `;
+														var fn = `;
+														var args = `;
+														if (fn == "from") {
+															return rhs;
+														} else {
+															return null;
+														};
+													};
+												};
+												case 38: {
+													var ` = `[0];
+													{
+														var nextName = `;
+														{
+															rhs = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.findAssignment(nextName, qarg);
+														};
+													};
+												};
+												default: {
+													return null;
+												}
+											};
+										};
+									};
+									null;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, func, args) if (func == "where" && args != null && args.length >= 1):
+		var modStr = switch (mod.def) {
+			case EVar(m):
+				m;			
+			default:
+				reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);			
+		};
+		if (modStr != "Ecto.Query") return n;
+		var qArg = args[0];
+		var simplified = inlineIIFE(qArg);
+		if (simplified == null) simplified = inlineBlock(qArg);
+		if (simplified != null) {
+			var newArgs = args.copy();
+			newArgs[0] = simplified;
+			makeASTWithMeta(ERemoteCall(mod, func, newArgs), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var func = `;
+						var args = `;
+						if (func == "where" && args != null && args.length >= 1) {
+							var modStr = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod);	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										{
+											m;
+										};
+									};
+								} else {
+									reflaxe.elixir.ast.ElixirASTPrinter.printAST(mod, null);
+								};
+							};
+							if (modStr != "Ecto.Query") {
+								return n;
+							};
+							var qArg = args[0];
+							var simplified = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.inlineIIFE(qArg);
+							if (simplified == null) {
+								simplified = reflaxe.elixir.ast.transformers.EctoQueryIIFEInlineTransforms.inlineBlock(qArg);
+							};
+							if (simplified != null) {
+								var newArgs = args.copy();
+								newArgs[0] = simplified;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, func, newArgs), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

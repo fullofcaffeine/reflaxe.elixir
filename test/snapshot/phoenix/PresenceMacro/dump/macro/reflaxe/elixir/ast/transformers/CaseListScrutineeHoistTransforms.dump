@@ -1,0 +1,149 @@
+class reflaxe.elixir.ast.transformers.CaseListScrutineeHoistTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(scrutinee, clauses):
+		switch (scrutinee.def) {
+			case EVar(_):
+				n;			
+			case EList(_):
+				var varName = "list_value";
+				var assign = makeASTWithMeta(EBinary(Match, makeAST(EVar(varName)), scrutinee), n.metadata, n.pos);
+				var repairedClauses = rewriteGuardsToListVar(clauses, varName);
+				var caze = makeASTWithMeta(ECase(makeAST(EVar(varName)), repairedClauses), n.metadata, n.pos);
+				makeASTWithMeta(EBlock([assign, caze]), n.metadata, n.pos);			
+			case EBitstring(_):
+				var varName2 = "bin_value";
+				var assign2 = makeASTWithMeta(EBinary(Match, makeAST(EVar(varName2)), scrutinee), n.metadata, n.pos);
+				var repairedClauses2 = rewriteGuardsToListVar(clauses, varName2);
+				var caze2 = makeASTWithMeta(ECase(makeAST(EVar(varName2)), repairedClauses2), n.metadata, n.pos);
+				makeASTWithMeta(EBlock([assign2, caze2]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var scrutinee = `;
+						var clauses = `;
+						{
+							@:ast(switch (scrutinee.def) {
+	case EVar(_):
+		n;	
+	case EList(_):
+		var varName = "list_value";
+		var assign = makeASTWithMeta(EBinary(Match, makeAST(EVar(varName)), scrutinee), n.metadata, n.pos);
+		var repairedClauses = rewriteGuardsToListVar(clauses, varName);
+		var caze = makeASTWithMeta(ECase(makeAST(EVar(varName)), repairedClauses), n.metadata, n.pos);
+		makeASTWithMeta(EBlock([assign, caze]), n.metadata, n.pos);	
+	case EBitstring(_):
+		var varName2 = "bin_value";
+		var assign2 = makeASTWithMeta(EBinary(Match, makeAST(EVar(varName2)), scrutinee), n.metadata, n.pos);
+		var repairedClauses2 = rewriteGuardsToListVar(clauses, varName2);
+		var caze2 = makeASTWithMeta(ECase(makeAST(EVar(varName2)), repairedClauses2), n.metadata, n.pos);
+		makeASTWithMeta(EBlock([assign2, caze2]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = scrutinee.def;
+								switch (enumIndex `) {
+									case 15: {
+										var ` = `[0];
+										{
+											var varName = "list_value";
+											var assign = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+											}, scrutinee), metadata : n.metadata, pos : n.pos};
+											var repairedClauses = reflaxe.elixir.ast.transformers.CaseListScrutineeHoistTransforms.rewriteGuardsToListVar(clauses, varName);
+											var caze = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+											}, repairedClauses), metadata : n.metadata, pos : n.pos};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([assign, caze]), metadata : n.metadata, pos : n.pos};
+										};
+									};
+									case 21: {
+										var ` = `[0];
+										{
+											var varName2 = "bin_value";
+											var assign2 = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName2), metadata : {}, pos : pos};
+											}, scrutinee), metadata : n.metadata, pos : n.pos};
+											var repairedClauses2 = reflaxe.elixir.ast.transformers.CaseListScrutineeHoistTransforms.rewriteGuardsToListVar(clauses, varName2);
+											var caze2 = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName2), metadata : {}, pos : pos};
+											}, repairedClauses2), metadata : n.metadata, pos : n.pos};
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([assign2, caze2]), metadata : n.metadata, pos : n.pos};
+										};
+									};
+									case 38: {
+										var ` = `[0];
+										{
+											n;
+										};
+									};
+									default: {
+										n;
+									}
+								};
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	public static function rewriteGuardsToListVar(clauses:Array<reflaxe.elixir.ast.ECaseClause>, listVar:String) {
+		var out = [];
+		{
+			var ` = 0;
+			while (` < clauses.length) {
+				var cl = clauses[`];
+				++ `;
+				var g = cl.guard;
+				if (g != null) {
+					g = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(g, function(m:reflaxe.elixir.ast.ElixirAST) {
+						return @:ast(switch (m.def) {
+	case EVar(v) if (v == "arr" || v == "data"):
+		makeAST(EVar(listVar));	
+	default:
+		m;	
+}) {
+							var ` = m.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == "arr" || v == "data") {
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(listVar), metadata : {}, pos : pos};
+										};
+									} else {
+										m;
+									};
+								};
+							} else {
+								m;
+							};
+						};
+					});
+				};
+				out.push({pattern : cl.pattern, guard : g, body : cl.body});
+			};
+		};
+		return out;
+	}
+}

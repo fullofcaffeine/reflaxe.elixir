@@ -1,0 +1,280 @@
+class reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms {
+
+	public static function dropPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var s = stmts[i];
+			var isLast = (i == stmts.length - 1);
+			switch (s.def) {
+				case EInteger(v) if ((v == 1 || v == 0) && !isLast):
+				case EFloat(f) if (f == 0.0 && !isLast):
+				case ERaw(code) if ((code.trim() == "1" || code.trim() == "0") && !isLast):
+				default:
+					out.push(s);				
+			};
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts):
+		var out2:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var s = stmts[i];
+			var isLast = (i == stmts.length - 1);
+			switch (s.def) {
+				case EInteger(v) if ((v == 1 || v == 0) && !isLast):
+				case EFloat(f) if (f == 0.0 && !isLast):
+				case ERaw(code) if ((code.trim() == "1" || code.trim() == "0") && !isLast):
+				default:
+					out2.push(s);				
+			};
+		};
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var b = cl.body;
+			switch (b.def) {
+				case EBlock(stmts3):
+					var out3:Array<ElixirAST> = [];
+					for (s  in  stmts3) switch (s.def) {
+						case EInteger(v3) if (v3 == 1 || v3 == 0):
+						case EFloat(f3) if (f3 == 0.0):
+						case ERaw(code3) if (code3.trim() == "1" || code3.trim() == "0"):
+						default:
+							out3.push(s);						
+					};
+					newClauses.push({ args : cl.args, guard : cl.guard, body : makeASTWithMeta(EBlock(out3), b.metadata, b.pos) });				
+				default:
+					newClauses.push(cl);				
+			};
+		};
+		makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var b = cl.body;
+										@:ast(switch (b.def) {
+	case EBlock(stmts3):
+		var out3:Array<ElixirAST> = [];
+		for (s  in  stmts3) switch (s.def) {
+			case EInteger(v3) if (v3 == 1 || v3 == 0):
+			case EFloat(f3) if (f3 == 0.0):
+			case ERaw(code3) if (code3.trim() == "1" || code3.trim() == "0"):
+			default:
+				out3.push(s);			
+		};
+		newClauses.push({ args : cl.args, guard : cl.guard, body : makeASTWithMeta(EBlock(out3), b.metadata, b.pos) });	
+	default:
+		newClauses.push(cl);	
+}) {
+											var ` = b.def;
+											if (enumIndex ` == 53) {
+												var ` = `[0];
+												{
+													var stmts3 = `;
+													{
+														var out3 = [];
+														{
+															var ` = 0;
+															while (` < stmts3.length) {
+																var s = stmts3[`];
+																++ `;
+																@:ast(switch (s.def) {
+	case EInteger(v3) if (v3 == 1 || v3 == 0):
+	case EFloat(f3) if (f3 == 0.0):
+	case ERaw(code3) if (code3.trim() == "1" || code3.trim() == "0"):
+	default:
+		out3.push(s);	
+}) {
+																	var ` = s.def;
+																	switch (enumIndex `) {
+																		case 33: {
+																			var ` = `[0];
+																			{
+																				var v3 = `;
+																				if (v3 == 1 || v3 == 0) {} else {
+																					out3.push(s);
+																				};
+																			};
+																		};
+																		case 34: {
+																			var ` = `[0];
+																			{
+																				var f3 = `;
+																				if (f3 == 0.0) {} else {
+																					out3.push(s);
+																				};
+																			};
+																		};
+																		case 62: {
+																			var ` = `[0];
+																			{
+																				var code3 = `;
+																				if (StringTools.trim(code3) == "1" || StringTools.trim(code3) == "0") {} else {
+																					out3.push(s);
+																				};
+																			};
+																		};
+																		default: {
+																			out3.push(s);
+																		}
+																	};
+																};
+															};
+														};
+														newClauses.push({args : cl.args, guard : cl.guard, body : {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out3), metadata : b.metadata, pos : b.pos}});
+													};
+												};
+											} else {
+												newClauses.push(cl);
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										var s = stmts[i];
+										var isLast = (i == stmts.length - 1);
+										@:ast(switch (s.def) {
+	case EInteger(v) if ((v == 1 || v == 0) && !isLast):
+	case EFloat(f) if (f == 0.0 && !isLast):
+	case ERaw(code) if ((code.trim() == "1" || code.trim() == "0") && !isLast):
+	default:
+		out.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 33: {
+													var ` = `[0];
+													{
+														var v = `;
+														if ((v == 1 || v == 0) && ! isLast) {} else {
+															out.push(s);
+														};
+													};
+												};
+												case 34: {
+													var ` = `[0];
+													{
+														var f = `;
+														if (f == 0.0 && ! isLast) {} else {
+															out.push(s);
+														};
+													};
+												};
+												case 62: {
+													var ` = `[0];
+													{
+														var code = `;
+														if ((StringTools.trim(code) == "1" || StringTools.trim(code) == "0") && ! isLast) {} else {
+															out.push(s);
+														};
+													};
+												};
+												default: {
+													out.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out2 = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										var s = stmts[i];
+										var isLast = (i == stmts.length - 1);
+										@:ast(switch (s.def) {
+	case EInteger(v) if ((v == 1 || v == 0) && !isLast):
+	case EFloat(f) if (f == 0.0 && !isLast):
+	case ERaw(code) if ((code.trim() == "1" || code.trim() == "0") && !isLast):
+	default:
+		out2.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 33: {
+													var ` = `[0];
+													{
+														var v = `;
+														if ((v == 1 || v == 0) && ! isLast) {} else {
+															out2.push(s);
+														};
+													};
+												};
+												case 34: {
+													var ` = `[0];
+													{
+														var f = `;
+														if (f == 0.0 && ! isLast) {} else {
+															out2.push(s);
+														};
+													};
+												};
+												case 62: {
+													var ` = `[0];
+													{
+														var code = `;
+														if ((StringTools.trim(code) == "1" || StringTools.trim(code) == "0") && ! isLast) {} else {
+															out2.push(s);
+														};
+													};
+												};
+												default: {
+													out2.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

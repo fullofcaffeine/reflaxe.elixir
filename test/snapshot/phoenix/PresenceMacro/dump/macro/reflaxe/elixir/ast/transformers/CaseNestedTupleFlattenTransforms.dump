@@ -1,0 +1,280 @@
+class reflaxe.elixir.ast.transformers.CaseNestedTupleFlattenTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(outerExpr, outerClauses):
+		var flattened:Array<ECaseClause> = [];
+		var changed = false;
+		for (cl  in  outerClauses) {
+			var outerTagPat:Null<EPattern> = null;
+			var outerVar:Null<String> = null;
+			switch (cl.pattern) {
+				case PTuple(parts) if (parts.length == 2):
+					outerTagPat = parts[0];
+					switch (parts[1]) {
+						case PVar(v):
+							outerVar = v;						
+						default:
+					};				
+				default:
+			};
+			if (outerTagPat != null && outerVar != null) switch (cl.body.def) {
+				case ECase(innerScrut, innerClauses):
+					switch (innerScrut.def) {
+						case EVar(s) if (s == outerVar):
+							for (ic  in  innerClauses) {
+								var newPat:EPattern = PTuple([outerTagPat, ic.pattern]);
+								var binder = extractSecondBinder(ic.pattern);
+								var newBody = (binder == null) ? ic.body : ElixirASTHelpers.replaceVarInAST(ic.body, outerVar, makeAST(EVar(binder)));
+								flattened.push({ pattern : newPat, guard : ic.guard, body : newBody });
+							};
+							changed = true;						
+						default:
+							flattened.push(cl);						
+					};				
+				default:
+					flattened.push(cl);				
+			} else {
+				flattened.push(cl);
+			};
+		};
+		if (changed) makeASTWithMeta(ECase(outerExpr, flattened), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var outerExpr = `;
+						var outerClauses = `;
+						{
+							var flattened = [];
+							var changed = false;
+							{
+								var ` = 0;
+								while (` < outerClauses.length) {
+									var cl = outerClauses[`];
+									++ `;
+									var outerTagPat = null;
+									var outerVar = null;
+									@:ast(switch (cl.pattern) {
+	case PTuple(parts) if (parts.length == 2):
+		outerTagPat = parts[0];
+		switch (parts[1]) {
+			case PVar(v):
+				outerVar = v;			
+			default:
+		};	
+	default:
+}) {
+										var ` = cl.pattern;
+										if (enumIndex ` == 2) {
+											var ` = `[0];
+											{
+												var parts = `;
+												if (parts.length == 2) {
+													outerTagPat = parts[0];
+													@:ast(switch (parts[1]) {
+	case PVar(v):
+		outerVar = v;	
+	default:
+}) {
+														var ` = parts[1];
+														if (enumIndex ` == 0) {
+															var ` = `[0];
+															{
+																var v = `;
+																{
+																	outerVar = v;
+																};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									};
+									if (outerTagPat != null && outerVar != null) {
+										@:ast(switch (cl.body.def) {
+	case ECase(innerScrut, innerClauses):
+		switch (innerScrut.def) {
+			case EVar(s) if (s == outerVar):
+				for (ic  in  innerClauses) {
+					var newPat:EPattern = PTuple([outerTagPat, ic.pattern]);
+					var binder = extractSecondBinder(ic.pattern);
+					var newBody = (binder == null) ? ic.body : ElixirASTHelpers.replaceVarInAST(ic.body, outerVar, makeAST(EVar(binder)));
+					flattened.push({ pattern : newPat, guard : ic.guard, body : newBody });
+				};
+				changed = true;			
+			default:
+				flattened.push(cl);			
+		};	
+	default:
+		flattened.push(cl);	
+}) {
+											var ` = cl.body.def;
+											if (enumIndex ` == 6) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var innerScrut = `;
+													var innerClauses = `;
+													{
+														@:ast(switch (innerScrut.def) {
+	case EVar(s) if (s == outerVar):
+		for (ic  in  innerClauses) {
+			var newPat:EPattern = PTuple([outerTagPat, ic.pattern]);
+			var binder = extractSecondBinder(ic.pattern);
+			var newBody = (binder == null) ? ic.body : ElixirASTHelpers.replaceVarInAST(ic.body, outerVar, makeAST(EVar(binder)));
+			flattened.push({ pattern : newPat, guard : ic.guard, body : newBody });
+		};
+		changed = true;	
+	default:
+		flattened.push(cl);	
+}) {
+															var ` = innerScrut.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var s = `;
+																	if (s == outerVar) {
+																		{
+																			var ` = 0;
+																			while (` < innerClauses.length) {
+																				var ic = innerClauses[`];
+																				++ `;
+																				var newPat = reflaxe.elixir.ast.EPattern.PTuple([outerTagPat, ic.pattern]);
+																				var binder = reflaxe.elixir.ast.transformers.CaseNestedTupleFlattenTransforms.extractSecondBinder(ic.pattern);
+																				var newBody = if ((binder == null)) {
+																					ic.body;
+																				} else {
+																					reflaxe.elixir.ast.ElixirASTHelpers.replaceVarInAST(ic.body, outerVar, {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : {}, pos : pos};
+																					});
+																				};
+																				flattened.push({pattern : newPat, guard : ic.guard, body : newBody});
+																			};
+																		};
+																		changed = true;
+																	} else {
+																		flattened.push(cl);
+																	};
+																};
+															} else {
+																flattened.push(cl);
+															};
+														};
+													};
+												};
+											} else {
+												flattened.push(cl);
+											};
+										};
+									} else {
+										flattened.push(cl);
+									};
+								};
+							};
+							if (changed) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(outerExpr, flattened), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function extractSecondBinder(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PTuple(items) if (items.length == 2):
+		switch (items[1]) {
+			case PVar(n):
+				n;			
+			case PPin(inner):
+				switch (inner) {
+					case PVar(n2):
+						n2;					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var items = `;
+				if (items.length == 2) {
+					@:ast(switch (items[1]) {
+	case PVar(n):
+		n;	
+	case PPin(inner):
+		switch (inner) {
+			case PVar(n2):
+				n2;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+						var ` = items[1];
+						switch (enumIndex `) {
+							case 0: {
+								var ` = `[0];
+								{
+									var n = `;
+									{
+										n;
+									};
+								};
+							};
+							case 7: {
+								var ` = `[0];
+								{
+									var inner = `;
+									{
+										@:ast(switch (inner) {
+	case PVar(n2):
+		n2;	
+	default:
+		null;	
+}) if (enumIndex inner == 0) {
+											var ` = inner[0];
+											{
+												var n2 = `;
+												{
+													n2;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+								};
+							};
+							default: {
+								null;
+							}
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+}

@@ -207,19 +207,19 @@ class SwitchBuilder {
         for (i in 0...cases.length) {
             var switchCase = cases[i];
             #if debug_switch_builder
-            #if !no_traces trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}'); #end
+            #if debug_switch_builder trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}'); #end
             #end
             var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType);
             if (clausesFromCase.length > 0) {
                 #if debug_switch_builder
-                #if !no_traces trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case'); #end
+                #if debug_switch_builder trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case'); #end
                 #end
                 for (clause in clausesFromCase) {
                     caseClauses.push(clause);
                 }
             } else {
                 #if debug_switch_builder
-                #if !no_traces trace('[SwitchBuilder]   Case clause build returned empty array!'); #end
+                #if debug_switch_builder trace('[SwitchBuilder]   Case clause build returned empty array!'); #end
                 #end
             }
         }
@@ -280,7 +280,7 @@ class SwitchBuilder {
         // Generate case expression
         if (caseClauses.length == 0) {
             #if debug_ast_builder
-            #if !no_traces trace('[SwitchBuilder] No case clauses generated'); #end
+            #if debug_switch_builder trace('[SwitchBuilder] No case clauses generated'); #end
             #end
             return null;
         }
@@ -411,14 +411,14 @@ class SwitchBuilder {
         // After TEnumIndex optimization: pattern=TConst(0), NO variable names!
         // The user's variable "action" is in the case BODY where it's used
         // This is the ONLY way to recover the correct variable name after TEnumIndex
-        #if !no_traces trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======'); #end
-        #if !no_traces trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}'); #end
 
         // NEW FIX: Extract variables from case body (where they're actually used)
         var patternVars = extractUsedVariablesFromCaseBody(switchCase.expr);
 
         #if debug_enum_extraction
-        #if !no_traces trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]'); #end
         #end
 
         // CRITICAL: Extract TLocal IDs from guard and register in ClauseContext.localToName
@@ -429,8 +429,8 @@ class SwitchBuilder {
 
         #if debug_guard_compilation
         var mappingCount = Lambda.count(tvarMapping);
-        #if !no_traces trace('[SwitchBuilder] Current ClauseContext: ${context.currentClauseContext != null ? "EXISTS" : "NULL"}'); #end
-        #if !no_traces trace('[SwitchBuilder] Registering $mappingCount TLocal mapping(s) in ClauseContext.localToName:'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Current ClauseContext: ${context.currentClauseContext != null ? "EXISTS" : "NULL"}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Registering $mappingCount TLocal mapping(s) in ClauseContext.localToName:'); #end
         #end
 
         if (context.currentClauseContext != null) {
@@ -555,13 +555,13 @@ class SwitchBuilder {
         var clauses: Array<ECaseClause> = [];
         var current = expr;
 
-        #if !no_traces trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
+        #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
 
         // Traverse the if-else chain
         while (true) {
             switch(current.expr) {
                 case TIf(econd, eif, eelse):
-                        #if !no_traces trace('[GuardChain] Found TIf - extracting guard'); #end
+                        #if debug_switch_builder trace('[GuardChain] Found TIf - extracting guard'); #end
                     // Extract guard condition
                     var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
 
@@ -586,21 +586,21 @@ class SwitchBuilder {
                         guard: guard,
                         body: body
                     });
-                    #if !no_traces trace('[GuardChain]   Created clause with guard'); #end
+                    #if debug_switch_builder trace('[GuardChain]   Created clause with guard'); #end
 
                     // Continue with else-branch (may be another TIf or final value)
                     if (eelse != null) {
-                        #if !no_traces trace('[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}'); #end
+                        #if debug_switch_builder trace('[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}'); #end
 
                         // Unwrap TBlock to find nested TIf
                         var nextExpr = eelse;
                         switch(eelse.expr) {
                             case TBlock(exprs):
-                                #if !no_traces trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions'); #end
+                                #if debug_switch_builder trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions'); #end
                                 // Search for TIf in the block
                                 for (expr in exprs) {
                                     if (Type.enumConstructor(expr.expr) == "TIf") {
-                                        #if !no_traces trace('[GuardChain]   Found TIf inside TBlock'); #end
+                                        #if debug_switch_builder trace('[GuardChain]   Found TIf inside TBlock'); #end
                                         nextExpr = expr;
                                         break;
                                     }
@@ -611,12 +611,12 @@ class SwitchBuilder {
 
                         current = nextExpr;
                     } else {
-                        #if !no_traces trace('[GuardChain]   No else-branch, stopping'); #end
+                        #if debug_switch_builder trace('[GuardChain]   No else-branch, stopping'); #end
                         break;
                     }
 
                 default:
-                    #if !no_traces trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause'); #end
+                    #if debug_switch_builder trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause'); #end
                     // Reached final else (not a TIf) - create clause without guard
                     var substitutedBody = context.substituteIfNeeded(current);
                     var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
@@ -693,7 +693,7 @@ class SwitchBuilder {
             clauses = annotated;
         }
 
-        #if !no_traces trace('[GuardChain] Extracted ${clauses.length} total clauses'); #end
+        #if debug_switch_builder trace('[GuardChain] Extracted ${clauses.length} total clauses'); #end
         context.popClauseContext();
         return clauses;
     }
@@ -871,7 +871,7 @@ class SwitchBuilder {
 
                             var constructor = getEnumConstructorByIndex(enumType, i);
                             if (constructor != null) {
-                                #if !no_traces trace('[SwitchBuilder]     *** Found constructor: ${constructor.name} ***'); #end
+                                #if debug_switch_builder trace('[SwitchBuilder]     *** Found constructor: ${constructor.name} ***'); #end
 
                                 // Use guard variables passed from buildCaseClause
                                 // When TEnumIndex optimization transforms case Ok(n) to case 0,
@@ -879,7 +879,7 @@ class SwitchBuilder {
                                 // CRITICAL FIX: Use new version that analyzes case body for parameter usage
                                 return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
                             } else {
-                                #if !no_traces trace('[SwitchBuilder]     WARNING: No constructor found for index $i'); #end
+                                #if debug_switch_builder trace('[SwitchBuilder]     WARNING: No constructor found for index $i'); #end
                             }
                         }
 
@@ -895,9 +895,9 @@ class SwitchBuilder {
 
       case TCall(e, args):
         // Enum constructor patterns
-        #if !no_traces trace('[SwitchBuilder]   Found TCall, checking if enum constructor'); #end
+        #if debug_switch_builder trace('[SwitchBuilder]   Found TCall, checking if enum constructor'); #end
         if (isEnumConstructor(e)) {
-                    #if !no_traces trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)'); #end
+                    #if debug_switch_builder trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)'); #end
                     // Prefer body-aware variant so parameter names (todo/id/message) and underscore usage are correct
                     var ef: EnumField = null;
                     switch (e.expr) {
@@ -912,13 +912,13 @@ class SwitchBuilder {
                         return buildEnumPattern(e, args, guardVars, context);
                     }
                 }
-        #if !no_traces trace('[SwitchBuilder]     Not an enum constructor'); #end
+        #if debug_switch_builder trace('[SwitchBuilder]     Not an enum constructor'); #end
         return null;
 
       case TField(e2, FEnum(_, enumField2)):
         // Direct reference to enum constructor (no immediate call in AST)
         // Use body-aware idiomatic generator to pick binder names and usage
-        #if !no_traces trace('[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)'); #end
+        #if debug_switch_builder trace('[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)'); #end
         return generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context);
 
       case TLocal(v):
@@ -928,7 +928,7 @@ class SwitchBuilder {
 
             default:
                 #if debug_ast_builder
-                #if !no_traces trace('[SwitchBuilder] Unhandled pattern type: ${Type.enumConstructor(value.expr)}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Unhandled pattern type: ${Type.enumConstructor(value.expr)}'); #end
                 #end
                 return null;
         }
@@ -1069,7 +1069,7 @@ class SwitchBuilder {
                 // Apply underscore prefix for unused parameters
                 var paramName = isUsed ? baseParamName : "_" + baseParamName;
 
-                trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}');
+                #if debug_switch_builder trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}'); #end
 
                 patterns.push(PVar(paramName));
 
@@ -1089,7 +1089,7 @@ class SwitchBuilder {
                     (effectiveBase != null && EnumHandler.isLocalNameUsed(effectiveBase, caseBody));
                 isUsed ? base : "_" + base;
             }];
-            #if !no_traces trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}'); #end
+            #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}'); #end
 
             // CRITICAL FIX: Store enum field name so TEnumParameter knows this constructor was pattern-matched
             if (context.currentClauseContext != null) {

@@ -1,0 +1,152 @@
+class reflaxe.elixir.ast.transformers.HeexPreferTypedEmissionTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return ast;
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var s = content;
+		if (s.indexOf("<if") != -1 || s.indexOf("</if>") != -1 || s.indexOf("<else") != -1 || s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<% if") != -1 || s.indexOf("<% else") != -1 || s.indexOf("<% end") != -1 || s.indexOf("${") != -1 || s.indexOf("#{") != -1) {
+			return n;
+		};
+		var nodes = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
+		if (nodes == null || nodes.length == 0) return n;
+		var rendered = [for (child  in  nodes) renderHeex(child)].join("");
+		var replacement = makeASTWithMeta(ESigil(type, rendered, modifiers), n.metadata, n.pos);
+		return replacement;	
+	default:
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var modifiers = `;
+						if (type == "H") {
+							var s = content;
+							if (s.indexOf("<if", null) != -1 || s.indexOf("</if>", null) != -1 || s.indexOf("<else", null) != -1 || s.indexOf("<%=", null) != -1 || s.indexOf("<% ", null) != -1 || s.indexOf("<% if", null) != -1 || s.indexOf("<% else", null) != -1 || s.indexOf("<% end", null) != -1 || s.indexOf("${", null) != -1 || s.indexOf("#{", null) != -1) {
+								return n;
+							};
+							var nodes = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
+							if (nodes == null || nodes.length == 0) {
+								return n;
+							};
+							var rendered = {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < nodes.length) {
+										var child = nodes[`];
+										++ `;
+										`.push(reflaxe.elixir.ast.transformers.HeexPreferTypedEmissionTransforms.renderHeex(child));
+									};
+								};
+								`;
+							}.join("");
+							var replacement = {def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, rendered, modifiers), metadata : n.metadata, pos : n.pos};
+							return replacement;
+						} else {};
+					};
+				} else {};
+			};
+			return n;
+		});
+	}
+
+	static function renderHeex(node:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (node.def) {
+	case EFragment(tag, attributes, children):
+		var attrStr = renderAttrs(attributes);
+		var childStr = [for (c  in  children) renderHeex(c)].join("");
+		"<" + tag + attrStr + ">" + childStr + "</" + tag + ">";	
+	case EString(v):
+		v;	
+	default:
+		"<%= " + ElixirASTPrinter.print(node, 0) + " %>";	
+}) {
+			var ` = node.def;
+			switch (enumIndex `) {
+				case 32: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							v;
+						};
+					};
+				};
+				case 64: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var tag = `;
+						var attributes = `;
+						var children = `;
+						{
+							var attrStr = reflaxe.elixir.ast.transformers.HeexPreferTypedEmissionTransforms.renderAttrs(attributes);
+							var childStr = {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < children.length) {
+										var c = children[`];
+										++ `;
+										`.push(reflaxe.elixir.ast.transformers.HeexPreferTypedEmissionTransforms.renderHeex(c));
+									};
+								};
+								`;
+							}.join("");
+							"<" + tag + attrStr + ">" + childStr + "</" + tag + ">";
+						};
+					};
+				};
+				default: {
+					"<%= " + reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0) + " %>";
+				}
+			};
+		};
+	}
+
+	static function renderAttrs(attrs:Array<reflaxe.elixir.ast.EAttribute>) {
+		if (attrs == null || attrs.length == 0) {
+			return "";
+		};
+		var parts = [];
+		{
+			var ` = 0;
+			while (` < attrs.length) {
+				var a = attrs[`];
+				++ `;
+				var val = @:ast(switch (a.value.def) {
+	case EString(s):
+		"\"" + s + "\"";	
+	default:
+		"{" + ElixirASTPrinter.print(a.value, 0) + "}";	
+}) {
+					var ` = a.value.def;
+					if (enumIndex ` == 32) {
+						var ` = `[0];
+						{
+							var s = `;
+							{
+								"\"" + s + "\"";
+							};
+						};
+					} else {
+						"{" + reflaxe.elixir.ast.ElixirASTPrinter.print(a.value, 0) + "}";
+					};
+				};
+				parts.push(a.name + "=" + val);
+			};
+		};
+		return if (parts.length > 0) {
+			(" " + parts.join(" "));
+		} else {
+			"";
+		};
+	}
+}

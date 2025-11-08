@@ -178,6 +178,7 @@ class Std {
         // Runtime type checking for Elixir types
         // Handles basic types, structs, and enums (as tagged tuples)
         return untyped __elixir__('
+(
             # Convert type to string for comparison
             type_str = to_string({1})
             
@@ -199,7 +200,9 @@ class Std {
                         _ -> false
                     end
             end
-        ', value, type);
+        
+)
+', value, type);
     }
     
     /**

@@ -1,0 +1,27 @@
+@:used @:enum
+private extern class elixir._DateTime.TimeUnit_Impl_ {
+
+	@:value(cast "second") @:impl @:enum
+	static inline var Second:elixir.TimeUnit = cast "second";
+
+	@:value(cast "millisecond") @:impl @:enum
+	static inline var Millisecond:elixir.TimeUnit = cast "millisecond";
+
+	@:value(cast "microsecond") @:impl @:enum
+	static inline var Microsecond:elixir.TimeUnit = cast "microsecond";
+
+	@:value(cast "nanosecond") @:impl @:enum
+	static inline var Nanosecond:elixir.TimeUnit = cast "nanosecond";
+
+	@:value(cast "minute") @:impl @:enum
+	static inline var Minute:elixir.TimeUnit = cast "minute";
+
+	@:value(cast "hour") @:impl @:enum
+	static inline var Hour:elixir.TimeUnit = cast "hour";
+
+	@:value(cast "day") @:impl @:enum
+	static inline var Day:elixir.TimeUnit = cast "day";
+
+	@:value(cast "week") @:impl @:enum
+	static inline var Week:elixir.TimeUnit = cast "week";
+}

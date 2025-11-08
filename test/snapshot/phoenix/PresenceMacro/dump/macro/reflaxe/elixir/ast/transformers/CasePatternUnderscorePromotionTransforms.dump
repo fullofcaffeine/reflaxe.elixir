@@ -1,0 +1,592 @@
+class reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(expr, clauses):
+		var outClauses:Array<ECaseClause> = [];
+		for (cl  in  clauses) outClauses.push(promoteClause(cl));
+		makeASTWithMeta(ECase(expr, outClauses), n.metadata, n.pos);	
+	case EWith(clauses2, doBlock, elseBlock):
+		var outWith:Array<EWithClause> = [];
+		for (wc  in  clauses2) outWith.push(promoteWithClause(wc));
+		makeASTWithMeta(EWith(outWith, doBlock, elseBlock), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								var outClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										outClauses.push(reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promoteClause(cl));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, outClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var clauses2 = `;
+							var doBlock = `;
+							var elseBlock = `;
+							{
+								var outWith = [];
+								{
+									var ` = 0;
+									while (` < clauses2.length) {
+										var wc = clauses2[`];
+										++ `;
+										outWith.push(reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promoteWithClause(wc));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EWith(outWith, doBlock, elseBlock), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function promoteClause(cl:reflaxe.elixir.ast.ECaseClause) {
+		var used = reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.collectUsedVars(cl.body, cl.guard);
+		var newPat = reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(cl.pattern, used);
+		return {pattern : newPat, guard : cl.guard, body : cl.body};
+	}
+
+	static function promoteWithClause(wc:reflaxe.elixir.ast.EWithClause) {
+		var used = reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.collectUsedVars(wc.expr, null);
+		var newPat = reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(wc.pattern, used);
+		return {pattern : newPat, expr : wc.expr};
+	}
+
+	static function promotePattern(p:reflaxe.elixir.ast.EPattern, used:Map<String, Bool>) {
+		return @:ast(switch (p) {
+	case PVar(n):
+		if (n != null && n.length > 1 && n.charAt(0) == "_") {
+			var trimmed = n.substr(1);
+			if (used.exists(trimmed)) PVar(trimmed) else p;
+		} else p;	
+	case PTuple(es):
+		PTuple([for (e  in  es) promotePattern(e, used)]);	
+	case PList(es):
+		PList([for (e  in  es) promotePattern(e, used)]);	
+	case PCons(h, t):
+		PCons(promotePattern(h, used), promotePattern(t, used));	
+	case PMap(kvs):
+		PMap([for (kv  in  kvs) { key : kv.key, value : promotePattern(kv.value, used) }]);	
+	case PStruct(m, fs):
+		PStruct(m, [for (f  in  fs) { key : f.key, value : promotePattern(f.value, used) }]);	
+	case PPin(inner):
+		PPin(promotePattern(inner, used));	
+	default:
+		p;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						if (n != null && n.length > 1 && n.charAt(0) == "_") {
+							var trimmed = n.substr(1, null);
+							if (used.exists(trimmed)) {
+								reflaxe.elixir.ast.EPattern.PVar(trimmed);
+							} else {
+								p;
+							};
+						} else {
+							p;
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						reflaxe.elixir.ast.EPattern.PTuple({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(e, used));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						reflaxe.elixir.ast.EPattern.PList({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(e, used));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.EPattern.PCons(reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(h, used), reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(t, used));
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PMap({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < kvs.length) {
+									var kv = kvs[`];
+									++ `;
+									`.push({key : kv.key, value : reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(kv.value, used)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var m = `;
+					var fs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PStruct(m, {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fs.length) {
+									var f = fs[`];
+									++ `;
+									`.push({key : f.key, value : reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(f.value, used)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.EPattern.PPin(reflaxe.elixir.ast.transformers.CasePatternUnderscorePromotionTransforms.promotePattern(inner, used));
+					};
+				};
+			};
+			default: {
+				p;
+			}
+		};
+	}
+
+	@:has_untyped
+	static function collectUsedVars(body:reflaxe.elixir.ast.ElixirAST, guard:Null<reflaxe.elixir.ast.ElixirAST>) {
+		var s = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		try {
+			var meta = if (body != null) {
+				body.metadata;
+			} else {
+				null;
+			};
+			if (meta != null && meta.usedLocalsFromTyped != null) {
+				var arr = meta.usedLocalsFromTyped;
+				{
+					var ` = 0;
+					while (` < arr.length) {
+						var n = arr[`];
+						++ `;
+						if (n != null && n.length > 0) {
+							{
+								s.set(n, true);
+							};
+						};
+					};
+				};
+			};
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{};
+			} else throw `;
+		};
+		var markTextInterps = function(str:String) {
+			if (str == null) {
+				return;
+			};
+			var re = new EReg("\\#\\{([^}]*)\\}", "g");
+			var pos = 0;
+			while (re.matchSub(str, pos, null)) {
+				var inner = re.matched(1);
+				var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+				var tpos = 0;
+				while (tok.matchSub(inner, tpos, null)) {
+					var id = tok.matched(0);
+					if (id != null && id.length > 0 && id.charAt(0) != "_") {
+						{
+							s.set(id, true);
+						};
+					};
+					tpos = tok.matchedPos().pos + tok.matchedPos().len;
+				};
+				pos = re.matchedPos().pos + re.matchedPos().len;
+			};
+		};
+		var collect = [null];
+		collect[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EVar(v):
+		if (v != null && v.length > 0 && v.charAt(0) != "_") s.set(v, true);	
+	case EString(sv):
+		markTextInterps(sv);	
+	case ERaw(code):
+		markTextInterps(code);	
+	case EBinary(_, l, r):
+		collect(l);
+		collect(r);	
+	case EMatch(_, rhs):
+		collect(rhs);	
+	case EBlock(ss):
+		for (x  in  ss) collect(x);	
+	case EDo(ss2):
+		for (x  in  ss2) collect(x);	
+	case EIf(c, t, e):
+		collect(c);
+		collect(t);
+		if (e != null) collect(e);	
+	case ECase(expr, cls):
+		collect(expr);
+		for (c  in  cls) {
+			if (c.guard != null) collect(c.guard);
+			collect(c.body);
+		};	
+	case EWith(wcs, doB, elseB):
+		for (w  in  wcs) {
+			collect(w.expr);
+		};
+		if (doB != null) collect(doB);
+		if (elseB != null) collect(elseB);	
+	case ECall(t, _, as):
+		if (t != null) collect(t);
+		if (as != null) for (a  in  as) collect(a);	
+	case ERemoteCall(t2, _, as2):
+		collect(t2);
+		if (as2 != null) for (a2  in  as2) collect(a2);	
+	case EField(obj, _):
+		collect(obj);	
+	case EAccess(obj2, key):
+		collect(obj2);
+		collect(key);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cls = `;
+							{
+								collect[0](expr);
+								{
+									var ` = 0;
+									while (` < cls.length) {
+										var c = cls[`];
+										++ `;
+										if (c.guard != null) {
+											collect[0](c.guard);
+										};
+										collect[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var rhs = `;
+							{
+								collect[0](rhs);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var wcs = `;
+							var doB = `;
+							var elseB = `;
+							{
+								{
+									var ` = 0;
+									while (` < wcs.length) {
+										var w = wcs[`];
+										++ `;
+										collect[0](w.expr);
+									};
+								};
+								if (doB != null) {
+									collect[0](doB);
+								};
+								if (elseB != null) {
+									collect[0](elseB);
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								collect[0](c);
+								collect[0](t);
+								if (e != null) {
+									collect[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									collect[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											collect[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t2 = `;
+							var as2 = `;
+							{
+								collect[0](t2);
+								if (as2 != null) {
+									{
+										var ` = 0;
+										while (` < as2.length) {
+											var a2 = as2[`];
+											++ `;
+											collect[0](a2);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								collect[0](l);
+								collect[0](r);
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj = `;
+							{
+								collect[0](obj);
+							};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj2 = `;
+							var key = `;
+							{
+								collect[0](obj2);
+								collect[0](key);
+							};
+						};
+					};
+					case 32: {
+						var ` = `[0];
+						{
+							var sv = `;
+							{
+								markTextInterps(sv);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								if (v != null && v.length > 0 && v.charAt(0) != "_") {
+									{
+										s.set(v, true);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var x = ss[`];
+										++ `;
+										collect[0](x);
+									};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var ss2 = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss2.length) {
+										var x = ss2[`];
+										++ `;
+										collect[0](x);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								markTextInterps(code);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		collect[0](body);
+		if (guard != null) {
+			try {
+				var gmeta = guard.metadata;
+				if (gmeta != null && gmeta.usedLocalsFromTyped != null) {
+					var garr = gmeta.usedLocalsFromTyped;
+					{
+						var ` = 0;
+						while (` < garr.length) {
+							var n = garr[`];
+							++ `;
+							if (n != null && n.length > 0) {
+								{
+									s.set(n, true);
+								};
+							};
+						};
+					};
+				};
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+			collect[0](guard);
+		};
+		return s;
+	}
+}

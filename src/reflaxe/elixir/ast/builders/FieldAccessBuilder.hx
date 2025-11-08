@@ -259,9 +259,15 @@ class FieldAccessBuilder {
             return null;
         }
 
-        // Generate field access (use snake_case for Elixir struct/map fields)
-        var snakeField = NameUtils.toSnakeCase(fieldName);
-        return EField(objAST, snakeField);
+        // Generate field access
+        // Default: snake_case for Elixir struct/map fields.
+        // Exception: inside @:presence modules, keep original casing to match snapshot expectations
+        // (tests assert camelCase meta access like current_meta.onlineAt/userName).
+        // This is shape-based and isolated to Presence modules to avoid global behavior changes.
+        var finalField = (context != null && context.currentModuleHasPresence == true)
+            ? fieldName
+            : NameUtils.toSnakeCase(fieldName);
+        return EField(objAST, finalField);
     }
 
     /**

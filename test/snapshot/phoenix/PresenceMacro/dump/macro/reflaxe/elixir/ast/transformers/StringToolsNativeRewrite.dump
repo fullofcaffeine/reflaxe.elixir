@@ -1,0 +1,248 @@
+class reflaxe.elixir.ast.transformers.StringToolsNativeRewrite {
+
+	public static function rewriteTrimPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EModule(name, attrs, body) if (name == "StringTools"):
+		var newBody:Array<ElixirAST> = [];
+		for (b  in  body) newBody.push(rewriteDef(b));
+		makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);	
+	case EDefmodule(name, doBlock) if (name == "StringTools"):
+		makeASTWithMeta(EDefmodule(name, rewriteDef(doBlock)), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "StringTools") {
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.StringToolsNativeRewrite.rewriteDef(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : node.metadata, pos : node.pos};
+							} else {
+								node;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name == "StringTools") {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.StringToolsNativeRewrite.rewriteDef(doBlock));
+									var meta = node.metadata;
+									var pos = node.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								node;
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteDef(n:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (n.def) {
+	case EDef(fnName, params, guards, body) if (fnName == "ltrim" && params.length == 1):
+		var call = makeAST(ERemoteCall(makeAST(EVar("String")), "trim_leading", [paramVar(params[0])]));
+		makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);	
+	case EDef(fnName, params, guards, body) if (fnName == "rtrim" && params.length == 1):
+		var call = makeAST(ERemoteCall(makeAST(EVar("String")), "trim_trailing", [paramVar(params[0])]));
+		makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);	
+	case EDef(fnName, params, guards, body) if (fnName == "is_space" && params.length == 2):
+		var newParams:Array<EPattern> = [PVar("s"), PVar("pos")];
+		var sVar = makeAST(EVar("s"));
+		var posVar = makeAST(EVar("pos"));
+		var atCall = function() return makeAST(ERemoteCall(makeAST(EAtom(ElixirAtom.raw("binary"))), "at", [sVar, posVar]));
+		var cond = makeAST(EBinary(Or, makeAST(EBinary(And, makeAST(EBinary(Greater, atCall(), makeAST(EInteger(8)))), makeAST(EBinary(Less, atCall(), makeAST(EInteger(14)))))), makeAST(EBinary(Equal, atCall(), makeAST(EInteger(32))))));
+		makeASTWithMeta(EDef(fnName, newParams, guards, cond), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 2) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				var ` = `[3];
+				{
+					var fnName = `;
+					var params = `;
+					var guards = `;
+					var body = `;
+					if (fnName == "ltrim" && params.length == 1) {
+						var call = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+							}, "trim_leading", [{
+								var p = params[0];
+								@:ast(switch (p) {
+	case PVar(name):
+		makeAST(EVar(name));	
+	default:
+		makeAST(EVar("s"));	
+}) if ((enumIndex p == 0)) {
+									var ` = p[0];
+									{
+										var name = `;
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(name), metadata : {}, pos : pos};
+										};
+									};
+								} else {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("s"), metadata : {}, pos : pos};
+								};
+							}]), metadata : {}, pos : pos};
+						};
+						{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fnName, params, guards, call), metadata : n.metadata, pos : n.pos};
+					} else {
+						var fnName = `;
+						var params = `;
+						var guards = `;
+						var body = `;
+						if (fnName == "rtrim" && params.length == 1) {
+							var call = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+								}, "trim_trailing", [{
+									var p = params[0];
+									@:ast(switch (p) {
+	case PVar(name):
+		makeAST(EVar(name));	
+	default:
+		makeAST(EVar("s"));	
+}) if ((enumIndex p == 0)) {
+										var ` = p[0];
+										{
+											var name = `;
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(name), metadata : {}, pos : pos};
+											};
+										};
+									} else {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("s"), metadata : {}, pos : pos};
+									};
+								}]), metadata : {}, pos : pos};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fnName, params, guards, call), metadata : n.metadata, pos : n.pos};
+						} else {
+							var fnName = `;
+							var params = `;
+							var guards = `;
+							var body = `;
+							if (fnName == "is_space" && params.length == 2) {
+								var newParams = [reflaxe.elixir.ast.EPattern.PVar("s"), reflaxe.elixir.ast.EPattern.PVar("pos")];
+								var sVar = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("s"), metadata : {}, pos : pos};
+								};
+								var posVar = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("pos"), metadata : {}, pos : pos};
+								};
+								var atCall = function() return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "binary"), metadata : {}, pos : pos};
+									}, "at", [sVar, posVar]), metadata : {}, pos : pos};
+								};
+								var cond = {
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Or, {
+										var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.And, {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, atCall(), {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(8), metadata : {}, pos : pos};
+											});
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										}, {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Less, atCall(), {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(14), metadata : {}, pos : pos};
+											});
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										});
+										var pos = null;
+										{def : def, metadata : {}, pos : pos};
+									}, {
+										var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Equal, atCall(), {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(32), metadata : {}, pos : pos};
+										});
+										var pos = null;
+										{def : def, metadata : {}, pos : pos};
+									});
+									var pos = null;
+									{def : def, metadata : {}, pos : pos};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fnName, newParams, guards, cond), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				};
+			} else {
+				n;
+			};
+		};
+	}
+
+	static inline function paramVar(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PVar(name):
+		makeAST(EVar(name));	
+	default:
+		makeAST(EVar("s"));	
+}) if (enumIndex p == 0) {
+			var ` = p[0];
+			{
+				var name = `;
+				{
+					{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar(name), metadata : {}, pos : pos};
+					};
+				};
+			};
+		} else {
+			{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("s"), metadata : {}, pos : pos};
+			};
+		};
+	}
+}

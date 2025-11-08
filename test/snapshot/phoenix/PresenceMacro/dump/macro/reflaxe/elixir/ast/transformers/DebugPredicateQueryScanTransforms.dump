@@ -1,0 +1,189 @@
+class reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var qp = detectQueryParam(args);
+		if (qp != null) scan(name, qp, body);
+		n;	
+	case EDefp(name2, args2, guards2, body2):
+		var qp2 = detectQueryParam(args2);
+		if (qp2 != null) scan(name2, qp2, body2);
+		n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var qp = reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.detectQueryParam(args);
+								if (qp != null) {
+									reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.scan(name, qp, body);
+								};
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var qp2 = reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.detectQueryParam(args2);
+								if (qp2 != null) {
+									reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.scan(name2, qp2, body2);
+								};
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function detectQueryParam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var found = null;
+		var count = 0;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(n) if (StringTools.endsWith(n, "_query")):
+		found = n;
+		count++;	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var n = `;
+						if (StringTools.endsWith(n, "_query")) {
+							found = n;
+							count ++;
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return if (count == 1) {
+			found;
+		} else {
+			null;
+		};
+	}
+
+	static function scan(fname:String, qparam:String, body:reflaxe.elixir.ast.ElixirAST) {
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+		if (predUsesQuery(args[1])) {
+			Sys.println("[DebugPredicateQueryScan] def " + fname + " qparam=" + qparam + " pred=" + ElixirASTPrinter.print(args[1], 0));
+		};	
+	case ECall(_, "filter", args2) if (args2 != null && args2.length >= 1):
+		var pred = args2[args2.length - 1];
+		if (predUsesQuery(pred)) {
+			Sys.println("[DebugPredicateQueryScan] def " + fname + " qparam=" + qparam + " pred=" + ElixirASTPrinter.print(pred, 0));
+		};	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "filter") {
+							{
+								var args2 = `;
+								if (args2 != null && args2.length >= 1) {
+									var pred = args2[args2.length - 1];
+									if (reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.predUsesQuery(pred)) {
+										Sys.println("[DebugPredicateQueryScan] def " + fname + " qparam=" + qparam + " pred=" + reflaxe.elixir.ast.ElixirASTPrinter.print(pred, 0));
+									};
+								} else {};
+							};
+						} else {};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								if (` == "filter") {
+									{
+										var m = `;
+										var args = `;
+										if (m == "Enum" && args != null && args.length == 2) {
+											if (reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.predUsesQuery(args[1])) {
+												Sys.println("[DebugPredicateQueryScan] def " + fname + " qparam=" + qparam + " pred=" + reflaxe.elixir.ast.ElixirASTPrinter.print(args[1], 0));
+											};
+										} else {};
+									};
+								} else {};
+							} else {};
+						};
+					};
+					default: {}
+				};
+			};
+			return x;
+		});
+	}
+
+	static function predUsesQuery(pred:reflaxe.elixir.ast.ElixirAST) {
+		var used = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(pred, function(y:reflaxe.elixir.ast.ElixirAST) {
+			if (used[0]) {
+				return y;
+			};
+			@:ast(switch (y.def) {
+	case EVar(nm) if (nm == "query"):
+		used = true;	
+	default:
+}) {
+				var ` = y.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == "query") {
+							used[0] = true;
+						} else {};
+					};
+				} else {};
+			};
+			return y;
+		});
+		return used[0];
+	}
+}

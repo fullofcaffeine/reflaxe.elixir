@@ -1,0 +1,982 @@
+class reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var n = stmts.length;
+		for (i  in  0 ... n) {
+			var s = stmts[i];
+			switch (s.def) {
+				case EBinary(Match, leftOuter, rightOuter):
+					var innerAliasName:Null<String> = null;
+					var innerRightExpr:Null<ElixirAST> = null;
+					var innerIsWildcard:Bool = false;
+					switch (rightOuter.def) {
+						case EBinary(Match, leftInner, innerExpr):
+							switch (leftInner.def) {
+								case EVar(varName):
+									innerAliasName = varName;								
+								case EUnderscore:
+									innerIsWildcard = true;								
+								default:
+							};
+							innerRightExpr = innerExpr;						
+						case EMatch(innerPattern, innerPatExpr):
+							switch (innerPattern) {
+								case PVar(variableName):
+									innerAliasName = variableName;								
+								case PWildcard:
+									innerIsWildcard = true;								
+								default:
+							};
+							innerRightExpr = innerPatExpr;						
+						default:
+					};
+					if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i + 1, innerAliasName))) && innerRightExpr != null) {
+						out.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExpr), s.metadata, s.pos));
+					} else {
+						out.push(s);
+					};				
+				case EMatch(patOuter, rhsOuter):
+					var innerAliasName:Null<String> = null;
+					var innerRightExpr:Null<ElixirAST> = null;
+					var innerIsWildcard:Bool = false;
+					switch (rhsOuter.def) {
+						case EBinary(Match, aliasLeft, aliasRightExpr):
+							switch (aliasLeft.def) {
+								case EVar(variableName):
+									innerAliasName = variableName;								
+								case EUnderscore:
+									innerIsWildcard = true;								
+								default:
+							};
+							innerRightExpr = aliasRightExpr;						
+						case EMatch(matchPattern, matchExpr):
+							switch (matchPattern) {
+								case PVar(variableName):
+									innerAliasName = variableName;								
+								case PWildcard:
+									innerIsWildcard = true;								
+								default:
+							};
+							innerRightExpr = matchExpr;						
+						default:
+					};
+					if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i + 1, innerAliasName))) && innerRightExpr != null) {
+						out.push(makeASTWithMeta(EMatch(patOuter, innerRightExpr), s.metadata, s.pos));
+					} else {
+						out.push(s);
+					};				
+				default:
+					out.push(s);				
+			};
+		};
+		makeASTWithMeta(EBlock(out), node.metadata, node.pos);	
+	case EDo(stmts):
+		var doOut:Array<ElixirAST> = [];
+		var doCount = stmts.length;
+		for (i  in  0 ... doCount) {
+			var s = stmts[i];
+			switch (s.def) {
+				case EBinary(Match, leftOuter, rightOuter):
+					var innerAliasNameDo:Null<String> = null;
+					var innerRightExprDo:Null<ElixirAST> = null;
+					switch (rightOuter.def) {
+						case EBinary(Match, leftInner, innerExpr):
+							switch (leftInner.def) {
+								case EVar(variableName):
+									innerAliasNameDo = variableName;								
+								default:
+							};
+							innerRightExprDo = innerExpr;						
+						case EMatch(innerPattern, innerMatchExpr):
+							switch (innerPattern) {
+								case PVar(variableName):
+									innerAliasNameDo = variableName;								
+								default:
+							};
+							innerRightExprDo = innerMatchExpr;						
+						default:
+					};
+					if (innerAliasNameDo != null && innerRightExprDo != null && !nameUsedLater(stmts, i + 1, innerAliasNameDo)) {
+						doOut.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExprDo), s.metadata, s.pos));
+					} else {
+						doOut.push(s);
+					};				
+				case EMatch(patOuter, rhsOuter):
+					var innerAliasNameDoMatch:Null<String> = null;
+					var innerRightExprDoMatch:Null<ElixirAST> = null;
+					switch (rhsOuter.def) {
+						case EBinary(Match, aliasLeft, aliasRightExpr):
+							switch (aliasLeft.def) {
+								case EVar(variableName):
+									innerAliasNameDoMatch = variableName;								
+								default:
+							};
+							innerRightExprDoMatch = aliasRightExpr;						
+						case EMatch(matchPattern, matchExpr):
+							switch (matchPattern) {
+								case PVar(variableName):
+									innerAliasNameDoMatch = variableName;								
+								default:
+							};
+							innerRightExprDoMatch = matchExpr;						
+						default:
+					};
+					if (innerAliasNameDoMatch != null && innerRightExprDoMatch != null && !nameUsedLater(stmts, i + 1, innerAliasNameDoMatch)) {
+						doOut.push(makeASTWithMeta(EMatch(patOuter, innerRightExprDoMatch), s.metadata, s.pos));
+					} else {
+						doOut.push(s);
+					};				
+				default:
+					doOut.push(s);				
+			};
+		};
+		makeASTWithMeta(EDo(doOut), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								var n = stmts.length;
+								{
+									var ` = 0;
+									var ` = n;
+									while (` < `) {
+										var i = ` ++;
+										var s = stmts[i];
+										@:ast(switch (s.def) {
+	case EBinary(Match, leftOuter, rightOuter):
+		var innerAliasName:Null<String> = null;
+		var innerRightExpr:Null<ElixirAST> = null;
+		var innerIsWildcard:Bool = false;
+		switch (rightOuter.def) {
+			case EBinary(Match, leftInner, innerExpr):
+				switch (leftInner.def) {
+					case EVar(varName):
+						innerAliasName = varName;					
+					case EUnderscore:
+						innerIsWildcard = true;					
+					default:
+				};
+				innerRightExpr = innerExpr;			
+			case EMatch(innerPattern, innerPatExpr):
+				switch (innerPattern) {
+					case PVar(variableName):
+						innerAliasName = variableName;					
+					case PWildcard:
+						innerIsWildcard = true;					
+					default:
+				};
+				innerRightExpr = innerPatExpr;			
+			default:
+		};
+		if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i + 1, innerAliasName))) && innerRightExpr != null) {
+			out.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExpr), s.metadata, s.pos));
+		} else {
+			out.push(s);
+		};	
+	case EMatch(patOuter, rhsOuter):
+		var innerAliasName:Null<String> = null;
+		var innerRightExpr:Null<ElixirAST> = null;
+		var innerIsWildcard:Bool = false;
+		switch (rhsOuter.def) {
+			case EBinary(Match, aliasLeft, aliasRightExpr):
+				switch (aliasLeft.def) {
+					case EVar(variableName):
+						innerAliasName = variableName;					
+					case EUnderscore:
+						innerIsWildcard = true;					
+					default:
+				};
+				innerRightExpr = aliasRightExpr;			
+			case EMatch(matchPattern, matchExpr):
+				switch (matchPattern) {
+					case PVar(variableName):
+						innerAliasName = variableName;					
+					case PWildcard:
+						innerIsWildcard = true;					
+					default:
+				};
+				innerRightExpr = matchExpr;			
+			default:
+		};
+		if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i + 1, innerAliasName))) && innerRightExpr != null) {
+			out.push(makeASTWithMeta(EMatch(patOuter, innerRightExpr), s.metadata, s.pos));
+		} else {
+			out.push(s);
+		};	
+	default:
+		out.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var patOuter = `;
+														var rhsOuter = `;
+														{
+															var innerAliasName = null;
+															var innerRightExpr = null;
+															var innerIsWildcard = false;
+															@:ast(switch (rhsOuter.def) {
+	case EBinary(Match, aliasLeft, aliasRightExpr):
+		switch (aliasLeft.def) {
+			case EVar(variableName):
+				innerAliasName = variableName;			
+			case EUnderscore:
+				innerIsWildcard = true;			
+			default:
+		};
+		innerRightExpr = aliasRightExpr;	
+	case EMatch(matchPattern, matchExpr):
+		switch (matchPattern) {
+			case PVar(variableName):
+				innerAliasName = variableName;			
+			case PWildcard:
+				innerIsWildcard = true;			
+			default:
+		};
+		innerRightExpr = matchExpr;	
+	default:
+}) {
+																var ` = rhsOuter.def;
+																switch (enumIndex `) {
+																	case 8: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var matchPattern = `;
+																			var matchExpr = `;
+																			{
+																				@:ast(switch (matchPattern) {
+	case PVar(variableName):
+		innerAliasName = variableName;	
+	case PWildcard:
+		innerIsWildcard = true;	
+	default:
+}) switch (enumIndex matchPattern) {
+																					case 0: {
+																						var ` = matchPattern[0];
+																						{
+																							var variableName = `;
+																							{
+																								innerAliasName = variableName;
+																							};
+																						};
+																					};
+																					case 8: {
+																						{
+																							innerIsWildcard = true;
+																						};
+																					};
+																					default: {}
+																				};
+																				innerRightExpr = matchExpr;
+																			};
+																		};
+																	};
+																	case 26: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		if (enumIndex ` == 27) {
+																			{
+																				var aliasLeft = `;
+																				var aliasRightExpr = `;
+																				{
+																					@:ast(switch (aliasLeft.def) {
+	case EVar(variableName):
+		innerAliasName = variableName;	
+	case EUnderscore:
+		innerIsWildcard = true;	
+	default:
+}) {
+																						var ` = aliasLeft.def;
+																						switch (enumIndex `) {
+																							case 38: {
+																								var ` = `[0];
+																								{
+																									var variableName = `;
+																									{
+																										innerAliasName = variableName;
+																									};
+																								};
+																							};
+																							case 40: {
+																								{
+																									innerIsWildcard = true;
+																								};
+																							};
+																							default: {}
+																						};
+																					};
+																					innerRightExpr = aliasRightExpr;
+																				};
+																			};
+																		} else {};
+																	};
+																	default: {}
+																};
+															};
+															if ((innerIsWildcard || (innerAliasName != null && ! reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.nameUsedLater(stmts, i + 1, innerAliasName))) && innerRightExpr != null) {
+																out.push({def : reflaxe.elixir.ast.ElixirASTDef.EMatch(patOuter, innerRightExpr), metadata : s.metadata, pos : s.pos});
+															} else {
+																out.push(s);
+															};
+														};
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var leftOuter = `;
+															var rightOuter = `;
+															{
+																var innerAliasName = null;
+																var innerRightExpr = null;
+																var innerIsWildcard = false;
+																@:ast(switch (rightOuter.def) {
+	case EBinary(Match, leftInner, innerExpr):
+		switch (leftInner.def) {
+			case EVar(varName):
+				innerAliasName = varName;			
+			case EUnderscore:
+				innerIsWildcard = true;			
+			default:
+		};
+		innerRightExpr = innerExpr;	
+	case EMatch(innerPattern, innerPatExpr):
+		switch (innerPattern) {
+			case PVar(variableName):
+				innerAliasName = variableName;			
+			case PWildcard:
+				innerIsWildcard = true;			
+			default:
+		};
+		innerRightExpr = innerPatExpr;	
+	default:
+}) {
+																	var ` = rightOuter.def;
+																	switch (enumIndex `) {
+																		case 8: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var innerPattern = `;
+																				var innerPatExpr = `;
+																				{
+																					@:ast(switch (innerPattern) {
+	case PVar(variableName):
+		innerAliasName = variableName;	
+	case PWildcard:
+		innerIsWildcard = true;	
+	default:
+}) switch (enumIndex innerPattern) {
+																						case 0: {
+																							var ` = innerPattern[0];
+																							{
+																								var variableName = `;
+																								{
+																									innerAliasName = variableName;
+																								};
+																							};
+																						};
+																						case 8: {
+																							{
+																								innerIsWildcard = true;
+																							};
+																						};
+																						default: {}
+																					};
+																					innerRightExpr = innerPatExpr;
+																				};
+																			};
+																		};
+																		case 26: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			if (enumIndex ` == 27) {
+																				{
+																					var leftInner = `;
+																					var innerExpr = `;
+																					{
+																						@:ast(switch (leftInner.def) {
+	case EVar(varName):
+		innerAliasName = varName;	
+	case EUnderscore:
+		innerIsWildcard = true;	
+	default:
+}) {
+																							var ` = leftInner.def;
+																							switch (enumIndex `) {
+																								case 38: {
+																									var ` = `[0];
+																									{
+																										var varName = `;
+																										{
+																											innerAliasName = varName;
+																										};
+																									};
+																								};
+																								case 40: {
+																									{
+																										innerIsWildcard = true;
+																									};
+																								};
+																								default: {}
+																							};
+																						};
+																						innerRightExpr = innerExpr;
+																					};
+																				};
+																			} else {};
+																		};
+																		default: {}
+																	};
+																};
+																if ((innerIsWildcard || (innerAliasName != null && ! reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.nameUsedLater(stmts, i + 1, innerAliasName))) && innerRightExpr != null) {
+																	out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, leftOuter, innerRightExpr), metadata : s.metadata, pos : s.pos});
+																} else {
+																	out.push(s);
+																};
+															};
+														};
+													} else {
+														out.push(s);
+													};
+												};
+												default: {
+													out.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var doOut = [];
+								var doCount = stmts.length;
+								{
+									var ` = 0;
+									var ` = doCount;
+									while (` < `) {
+										var i = ` ++;
+										var s = stmts[i];
+										@:ast(switch (s.def) {
+	case EBinary(Match, leftOuter, rightOuter):
+		var innerAliasNameDo:Null<String> = null;
+		var innerRightExprDo:Null<ElixirAST> = null;
+		switch (rightOuter.def) {
+			case EBinary(Match, leftInner, innerExpr):
+				switch (leftInner.def) {
+					case EVar(variableName):
+						innerAliasNameDo = variableName;					
+					default:
+				};
+				innerRightExprDo = innerExpr;			
+			case EMatch(innerPattern, innerMatchExpr):
+				switch (innerPattern) {
+					case PVar(variableName):
+						innerAliasNameDo = variableName;					
+					default:
+				};
+				innerRightExprDo = innerMatchExpr;			
+			default:
+		};
+		if (innerAliasNameDo != null && innerRightExprDo != null && !nameUsedLater(stmts, i + 1, innerAliasNameDo)) {
+			doOut.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExprDo), s.metadata, s.pos));
+		} else {
+			doOut.push(s);
+		};	
+	case EMatch(patOuter, rhsOuter):
+		var innerAliasNameDoMatch:Null<String> = null;
+		var innerRightExprDoMatch:Null<ElixirAST> = null;
+		switch (rhsOuter.def) {
+			case EBinary(Match, aliasLeft, aliasRightExpr):
+				switch (aliasLeft.def) {
+					case EVar(variableName):
+						innerAliasNameDoMatch = variableName;					
+					default:
+				};
+				innerRightExprDoMatch = aliasRightExpr;			
+			case EMatch(matchPattern, matchExpr):
+				switch (matchPattern) {
+					case PVar(variableName):
+						innerAliasNameDoMatch = variableName;					
+					default:
+				};
+				innerRightExprDoMatch = matchExpr;			
+			default:
+		};
+		if (innerAliasNameDoMatch != null && innerRightExprDoMatch != null && !nameUsedLater(stmts, i + 1, innerAliasNameDoMatch)) {
+			doOut.push(makeASTWithMeta(EMatch(patOuter, innerRightExprDoMatch), s.metadata, s.pos));
+		} else {
+			doOut.push(s);
+		};	
+	default:
+		doOut.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var patOuter = `;
+														var rhsOuter = `;
+														{
+															var innerAliasNameDoMatch = null;
+															var innerRightExprDoMatch = null;
+															@:ast(switch (rhsOuter.def) {
+	case EBinary(Match, aliasLeft, aliasRightExpr):
+		switch (aliasLeft.def) {
+			case EVar(variableName):
+				innerAliasNameDoMatch = variableName;			
+			default:
+		};
+		innerRightExprDoMatch = aliasRightExpr;	
+	case EMatch(matchPattern, matchExpr):
+		switch (matchPattern) {
+			case PVar(variableName):
+				innerAliasNameDoMatch = variableName;			
+			default:
+		};
+		innerRightExprDoMatch = matchExpr;	
+	default:
+}) {
+																var ` = rhsOuter.def;
+																switch (enumIndex `) {
+																	case 8: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var matchPattern = `;
+																			var matchExpr = `;
+																			{
+																				@:ast(switch (matchPattern) {
+	case PVar(variableName):
+		innerAliasNameDoMatch = variableName;	
+	default:
+}) if (enumIndex matchPattern == 0) {
+																					var ` = matchPattern[0];
+																					{
+																						var variableName = `;
+																						{
+																							innerAliasNameDoMatch = variableName;
+																						};
+																					};
+																				} else {};
+																				innerRightExprDoMatch = matchExpr;
+																			};
+																		};
+																	};
+																	case 26: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		if (enumIndex ` == 27) {
+																			{
+																				var aliasLeft = `;
+																				var aliasRightExpr = `;
+																				{
+																					@:ast(switch (aliasLeft.def) {
+	case EVar(variableName):
+		innerAliasNameDoMatch = variableName;	
+	default:
+}) {
+																						var ` = aliasLeft.def;
+																						if (enumIndex ` == 38) {
+																							var ` = `[0];
+																							{
+																								var variableName = `;
+																								{
+																									innerAliasNameDoMatch = variableName;
+																								};
+																							};
+																						} else {};
+																					};
+																					innerRightExprDoMatch = aliasRightExpr;
+																				};
+																			};
+																		} else {};
+																	};
+																	default: {}
+																};
+															};
+															if (innerAliasNameDoMatch != null && innerRightExprDoMatch != null && ! reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.nameUsedLater(stmts, i + 1, innerAliasNameDoMatch)) {
+																doOut.push({def : reflaxe.elixir.ast.ElixirASTDef.EMatch(patOuter, innerRightExprDoMatch), metadata : s.metadata, pos : s.pos});
+															} else {
+																doOut.push(s);
+															};
+														};
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var leftOuter = `;
+															var rightOuter = `;
+															{
+																var innerAliasNameDo = null;
+																var innerRightExprDo = null;
+																@:ast(switch (rightOuter.def) {
+	case EBinary(Match, leftInner, innerExpr):
+		switch (leftInner.def) {
+			case EVar(variableName):
+				innerAliasNameDo = variableName;			
+			default:
+		};
+		innerRightExprDo = innerExpr;	
+	case EMatch(innerPattern, innerMatchExpr):
+		switch (innerPattern) {
+			case PVar(variableName):
+				innerAliasNameDo = variableName;			
+			default:
+		};
+		innerRightExprDo = innerMatchExpr;	
+	default:
+}) {
+																	var ` = rightOuter.def;
+																	switch (enumIndex `) {
+																		case 8: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var innerPattern = `;
+																				var innerMatchExpr = `;
+																				{
+																					@:ast(switch (innerPattern) {
+	case PVar(variableName):
+		innerAliasNameDo = variableName;	
+	default:
+}) if (enumIndex innerPattern == 0) {
+																						var ` = innerPattern[0];
+																						{
+																							var variableName = `;
+																							{
+																								innerAliasNameDo = variableName;
+																							};
+																						};
+																					} else {};
+																					innerRightExprDo = innerMatchExpr;
+																				};
+																			};
+																		};
+																		case 26: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			if (enumIndex ` == 27) {
+																				{
+																					var leftInner = `;
+																					var innerExpr = `;
+																					{
+																						@:ast(switch (leftInner.def) {
+	case EVar(variableName):
+		innerAliasNameDo = variableName;	
+	default:
+}) {
+																							var ` = leftInner.def;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var variableName = `;
+																									{
+																										innerAliasNameDo = variableName;
+																									};
+																								};
+																							} else {};
+																						};
+																						innerRightExprDo = innerExpr;
+																					};
+																				};
+																			} else {};
+																		};
+																		default: {}
+																	};
+																};
+																if (innerAliasNameDo != null && innerRightExprDo != null && ! reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.nameUsedLater(stmts, i + 1, innerAliasNameDo)) {
+																	doOut.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, leftOuter, innerRightExprDo), metadata : s.metadata, pos : s.pos});
+																} else {
+																	doOut.push(s);
+																};
+															};
+														};
+													} else {
+														doOut.push(s);
+													};
+												};
+												default: {
+													doOut.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(doOut), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static function nameUsedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.statementUsesName(stmts[j], name)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	static function statementUsesName(s:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var used = [false];
+		var visit = [null];
+		visit[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (used[0] || n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EVar(v) if (v == name):
+		used = true;	
+	case EBlock(ss):
+		for (x  in  ss) visit(x);	
+	case EIf(c, t, e):
+		visit(c);
+		visit(t);
+		if (e != null) visit(e);	
+	case ECase(expr, cs):
+		visit(expr);
+		for (c  in  cs) visit(c.body);	
+	case EBinary(_, l, r):
+		visit(l);
+		visit(r);	
+	case EMatch(_, rhs):
+		visit(rhs);	
+	case ECall(t, _, as):
+		if (t != null) visit(t);
+		if (as != null) for (a  in  as) visit(a);	
+	case ERemoteCall(remoteTarget, _, remoteArgs):
+		visit(remoteTarget);
+		if (remoteArgs != null) for (arg  in  remoteArgs) visit(arg);	
+	case EFn(clauses):
+		for (cl  in  clauses) visit(cl.body);	
+	case ERaw(code):
+		if (code != null && code.indexOf("#{" + name) != -1) used = true;	
+	case EString(s):
+		if (s != null && s.indexOf("#{" + name) != -1) used = true;	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								visit[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										visit[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var rhs = `;
+							{
+								visit[0](rhs);
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								visit[0](c);
+								visit[0](t);
+								if (e != null) {
+									visit[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									visit[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											visit[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var remoteTarget = `;
+							var remoteArgs = `;
+							{
+								visit[0](remoteTarget);
+								if (remoteArgs != null) {
+									{
+										var ` = 0;
+										while (` < remoteArgs.length) {
+											var arg = remoteArgs[`];
+											++ `;
+											visit[0](arg);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								visit[0](l);
+								visit[0](r);
+							};
+						};
+					};
+					case 32: {
+						var ` = `[0];
+						{
+							var s = `;
+							{
+								if (s != null && s.indexOf("#{" + name, null) != -1) {
+									used[0] = true;
+								};
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == name) {
+								used[0] = true;
+							} else {};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										visit[0](cl.body);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var x = ss[`];
+										++ `;
+										visit[0](x);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code != null && code.indexOf("#{" + name, null) != -1) {
+									used[0] = true;
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		visit[0](s);
+		return used[0];
+	}
+}

@@ -1,0 +1,368 @@
+class reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms.rewrite(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms.rewrite(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var s = stmts[i];
+				var s2 = s;
+				@:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(lhs) }, rhs) if (isEnumCall(rhs) && !usedLater(stmts, i + 1, lhs)):
+		s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);	
+	case EMatch(PVar(lhs2), rhs2) if (isEnumCall(rhs2) && !usedLater(stmts, i + 1, lhs2)):
+		s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);	
+	default:
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var lhs2 = `;
+									var rhs2 = `;
+									if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, name, _):
+		switch (mod.def) {
+			case EVar(m) if (m == "Enum"):
+				switch (name) {
+					case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+										var ` = rhs2.def;
+										if (enumIndex ` == 24) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var mod = `;
+												var name = `;
+												{
+													@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Enum"):
+		switch (name) {
+			case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+														var ` = mod.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var m = `;
+																if (m == "Enum") {
+																	@:ast(switch (name) {
+	case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+		true;	
+	default:
+		false;	
+}) switch (name) {
+																		case "concat", "each", "filter", "flat_map", "map", "reduce", "reject", "reverse", "sort", "uniq", "with_index": {
+																			{
+																				true;
+																			};
+																		};
+																		default: {
+																			false;
+																		}
+																	};
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+												};
+											};
+										} else {
+											false;
+										};
+									} && ! reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms.usedLater(stmts, i + 1, lhs2)) {
+										s2 = {def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("_"), rhs2), metadata : s.metadata, pos : s.pos};
+									} else {};
+								};
+							} else {};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var lhs = `;
+											var rhs = `;
+											if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, name, _):
+		switch (mod.def) {
+			case EVar(m) if (m == "Enum"):
+				switch (name) {
+					case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+												var ` = rhs.def;
+												if (enumIndex ` == 24) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var mod = `;
+														var name = `;
+														{
+															@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Enum"):
+		switch (name) {
+			case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+																var ` = mod.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var m = `;
+																		if (m == "Enum") {
+																			@:ast(switch (name) {
+	case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+		true;	
+	default:
+		false;	
+}) switch (name) {
+																				case "concat", "each", "filter", "flat_map", "map", "reduce", "reject", "reverse", "sort", "uniq", "with_index": {
+																					{
+																						true;
+																					};
+																				};
+																				default: {
+																					false;
+																				}
+																			};
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															};
+														};
+													};
+												} else {
+													false;
+												};
+											} && ! reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms.usedLater(stmts, i + 1, lhs)) {
+												s2 = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : {}, pos : pos};
+												}, rhs), metadata : s.metadata, pos : s.pos};
+											} else {};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				out.push(s2);
+			};
+		};
+		return out;
+	}
+
+	static inline function isEnumCall(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall(mod, name, _):
+		switch (mod.def) {
+			case EVar(m) if (m == "Enum"):
+				switch (name) {
+					case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var mod = `;
+					var name = `;
+					{
+						@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Enum"):
+		switch (name) {
+			case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+							var ` = mod.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m == "Enum") {
+										@:ast(switch (name) {
+	case "map" | "filter" | "reject" | "each" | "flat_map" | "with_index" | "reduce" | "sort" | "reverse" | "concat" | "uniq":
+		true;	
+	default:
+		false;	
+}) switch (name) {
+											case "concat", "each", "filter", "flat_map", "map", "reduce", "reject", "reverse", "sort", "uniq", "with_index": {
+												{
+													true;
+												};
+											};
+											default: {
+												false;
+											}
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, from:Int, name:String) {
+		if (name == null || name == "_") {
+			return false;
+		};
+		var found = [false];
+		{
+			var ` = from;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(n:reflaxe.elixir.ast.ElixirAST) {
+						@:ast(switch (n.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	default:
+}) {
+							var ` = n.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == name) {
+										found[0] = true;
+									} else {};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+}

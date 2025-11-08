@@ -4,5 +4,9 @@
 -lib reflaxe
 -D reflaxe_runtime
 -D elixir_output=out
+--macro haxe.macro.Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true)
+--macro haxe.macro.Compiler.addGlobalMetadata("", "@:autoBuild(reflaxe.elixir.macros.TracePreserve.build())", true)
+--macro haxe.macro.Compiler.addGlobalMetadata("ExternalCaller", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true)
+--macro haxe.macro.Compiler.addGlobalMetadata("Main", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true)
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

@@ -1,0 +1,46 @@
+class reflaxe.elixir.ast.transformers.DebugControllerJsonArgsPass {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return ast;
+	}
+
+	static inline function isController(name:String) {
+		return name != null && name.indexOf("Web.", null) > 0 && StringTools.endsWith(name, "Controller");
+	}
+
+	static function visit(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(t, fnName, args) if (fnName == "json" && args != null && args.length == 2):
+		var arg2 = args[1];
+		var kind = Std.string(arg2.def);
+		Sys.println("[DebugControllerJson] json arg2 kind: " + kind);
+		n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t = `;
+						var fnName = `;
+						var args = `;
+						if (fnName == "json" && args != null && args.length == 2) {
+							var arg2 = args[1];
+							var kind = Std.string(arg2.def);
+							Sys.println("[DebugControllerJson] json arg2 kind: " + kind);
+							n;
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

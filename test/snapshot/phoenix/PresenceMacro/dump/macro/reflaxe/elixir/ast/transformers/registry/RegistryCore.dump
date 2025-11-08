@@ -1,0 +1,140 @@
+class reflaxe.elixir.ast.transformers.registry.RegistryCore {
+
+	public static function validate(passes:Array<reflaxe.elixir.ast.PassConfig>) {
+		var seen = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var duplicateNames = [];
+		var deduped = [];
+		{
+			var ` = 0;
+			while (` < passes.length) {
+				var p = passes[`];
+				++ `;
+				if (p == null || p.name == null) {
+					continue;
+				};
+				if ({
+					var key = p.name;
+					seen.exists(key);
+				}) {
+					duplicateNames.push(p.name);
+					continue;
+				};
+				{
+					var key = p.name;
+					seen.set(key, true);
+				};
+				deduped.push(p);
+			};
+		};
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < deduped.length) {
+				var p = deduped[`];
+				++ `;
+				if (p != null && p.name != null) {
+					{
+						var key = p.name;
+						names.set(key, true);
+					};
+				};
+			};
+		};
+		var missingDeps = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < deduped.length) {
+				var p = deduped[`];
+				++ `;
+				if (p != null && p.runAfter != null) {
+					{
+						var ` = 0;
+						var ` = p.runAfter;
+						while (` < `.length) {
+							var dep = `[`];
+							++ `;
+							if (! names.exists(dep)) {
+								var users = if (missingDeps.exists(dep)) {
+									cast missingDeps.get(dep);
+								} else {
+									[];
+								};
+								users.push(p.name);
+								{
+									missingDeps.set(dep, users);
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+		var graph = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < deduped.length) {
+				var p = deduped[`];
+				++ `;
+				if (p == null || p.name == null) {
+					continue;
+				};
+				{
+					var key = p.name;
+					var value = if ((p.runAfter == null)) [] else p.runAfter.copy();
+					graph.set(key, value);
+				};
+			};
+		};
+		var visiting = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var visited = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var dfs = [null];
+		dfs[0] = function(n:String, path:Array<String>) {
+			if (visited.exists(n)) {
+				return;
+			};
+			if (visiting.exists(n)) {
+				return;
+			};
+			{
+				visiting.set(n, true);
+			};
+			var deps = cast graph.get(n);
+			if (deps != null) {
+				{
+					var ` = 0;
+					while (` < deps.length) {
+						var d = deps[`];
+						++ `;
+						dfs[0](d, path.concat([n]));
+					};
+				};
+			};
+			visiting.remove(n);
+			{
+				visited.set(n, true);
+			};
+		};
+		for (k in graph.keys()) {
+			dfs[0](k, []);
+		};
+		return deduped;
+	}
+}

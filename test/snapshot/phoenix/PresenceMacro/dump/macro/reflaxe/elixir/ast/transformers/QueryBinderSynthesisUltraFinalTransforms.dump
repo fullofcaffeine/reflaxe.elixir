@@ -1,0 +1,473 @@
+class reflaxe.elixir.ast.transformers.QueryBinderSynthesisUltraFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var qparam = detectQueryParam(args);
+		if (qparam == null) n else makeASTWithMeta(EDef(name, args, guards, rewrite(body, qparam)), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var qparam2 = detectQueryParam(args2);
+		if (qparam2 == null) n else makeASTWithMeta(EDefp(name2, args2, guards2, rewrite(body2, qparam2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var qparam = reflaxe.elixir.ast.transformers.QueryBinderSynthesisUltraFinalTransforms.detectQueryParam(args);
+								if (qparam == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.QueryBinderSynthesisUltraFinalTransforms.rewrite(body, qparam));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var qparam2 = reflaxe.elixir.ast.transformers.QueryBinderSynthesisUltraFinalTransforms.detectQueryParam(args2);
+								if (qparam2 == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, reflaxe.elixir.ast.transformers.QueryBinderSynthesisUltraFinalTransforms.rewrite(body2, qparam2));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function detectQueryParam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var found = null;
+		var count = 0;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(p) if (StringTools.endsWith(p, "_query")):
+		found = p;
+		count++;	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var p = `;
+						if (StringTools.endsWith(p, "_query")) {
+							found = p;
+							count ++;
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return if (count == 1) {
+			found;
+		} else {
+			null;
+		};
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST, qparam:String) {
+		var hasQueryBinder = function(stmts:Array<reflaxe.elixir.ast.ElixirAST>, upto:Int) {
+			{
+				var ` = 0;
+				var ` = upto;
+				while (` < `) {
+					var i = ` ++;
+					@:ast(switch (stmts[i].def) {
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(nm) if (nm == "query"):
+				return true;			
+			default:
+		};	
+	case EMatch(pat, _):
+		switch (pat) {
+			case PVar(nm2) if (nm2 == "query"):
+				return true;			
+			default:
+		};	
+	default:
+}) {
+						var ` = stmts[i].def;
+						switch (enumIndex `) {
+							case 8: {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var pat = `;
+									{
+										@:ast(switch (pat) {
+	case PVar(nm2) if (nm2 == "query"):
+		return true;	
+	default:
+}) if (enumIndex pat == 0) {
+											var ` = pat[0];
+											{
+												var nm2 = `;
+												if (nm2 == "query") {
+													return true;
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+							case 26: {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 27) {
+									{
+										var left = `;
+										{
+											@:ast(switch (left.def) {
+	case EVar(nm) if (nm == "query"):
+		return true;	
+	default:
+}) {
+												var ` = left.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var nm = `;
+														if (nm == "query") {
+															return true;
+														} else {};
+													};
+												} else {};
+											};
+										};
+									};
+								} else {};
+							};
+							default: {}
+						};
+					};
+				};
+			};
+			return false;
+		};
+		var predicateUsesQuery = function(e:reflaxe.elixir.ast.ElixirAST) {
+			var used = [false];
+			reflaxe.elixir.ast.ElixirASTTransformer.transformNode(e, function(x:reflaxe.elixir.ast.ElixirAST) {
+				if (used[0]) {
+					return x;
+				};
+				@:ast(switch (x.def) {
+	case EVar(nm) if (nm == "query"):
+		used = true;	
+	default:
+}) {
+					var ` = x.def;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						{
+							var nm = `;
+							if (nm == "query") {
+								used[0] = true;
+							} else {};
+						};
+					} else {};
+				};
+				return x;
+			});
+			return used[0];
+		};
+		var binder = function() {
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("query"), metadata : {}, pos : pos};
+				}, {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+					}, "downcase", [{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar(qparam), metadata : {}, pos : pos};
+					}]), metadata : {}, pos : pos};
+				}), metadata : {}, pos : pos};
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var s = stmts[i];
+			var inserted = false;
+			switch (s.def) {
+				case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+					if (predicateUsesQuery(args[1]) && !hasQueryBinder(out, out.length)) {
+						Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (block)");
+						out.push(binder());
+						inserted = true;
+					};				
+				case ECall(_, "filter", args2) if (args2 != null && args2.length >= 1):
+					var pred = args2[args2.length - 1];
+					if (predicateUsesQuery(pred) && !hasQueryBinder(out, out.length)) {
+						Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (block)");
+						out.push(binder());
+						inserted = true;
+					};				
+				default:
+			};
+			out.push(s);
+			if (inserted) { };
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts2) if (stmts2.length > 0):
+		var out2:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts2.length) {
+			var s2 = stmts2[i];
+			var ins = false;
+			switch (s2.def) {
+				case ERemoteCall({ def : EVar(m2) }, "filter", a2) if (m2 == "Enum" && a2 != null && a2.length == 2):
+					if (predicateUsesQuery(a2[1]) && !hasQueryBinder(out2, out2.length)) {
+						Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (do)");
+						out2.push(binder());
+						ins = true;
+					};				
+				case ECall(_, "filter", a3) if (a3 != null && a3.length >= 1):
+					var pred2 = a3[a3.length - 1];
+					if (predicateUsesQuery(pred2) && !hasQueryBinder(out2, out2.length)) {
+						Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (do)");
+						out2.push(binder());
+						ins = true;
+					};				
+				default:
+			};
+			out2.push(s2);
+		};
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							if (stmts.length > 0) {
+								var out = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										var s = stmts[i];
+										var inserted = false;
+										@:ast(switch (s.def) {
+	case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+		if (predicateUsesQuery(args[1]) && !hasQueryBinder(out, out.length)) {
+			Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (block)");
+			out.push(binder());
+			inserted = true;
+		};	
+	case ECall(_, "filter", args2) if (args2 != null && args2.length >= 1):
+		var pred = args2[args2.length - 1];
+		if (predicateUsesQuery(pred) && !hasQueryBinder(out, out.length)) {
+			Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (block)");
+			out.push(binder());
+			inserted = true;
+		};	
+	default:
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 22: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (` == "filter") {
+														{
+															var args2 = `;
+															if (args2 != null && args2.length >= 1) {
+																var pred = args2[args2.length - 1];
+																if (predicateUsesQuery(pred) && ! hasQueryBinder(out, out.length)) {
+																	Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (block)");
+																	out.push(binder());
+																	inserted = true;
+																};
+															} else {};
+														};
+													} else {};
+												};
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															if (` == "filter") {
+																{
+																	var m = `;
+																	var args = `;
+																	if (m == "Enum" && args != null && args.length == 2) {
+																		if (predicateUsesQuery(args[1]) && ! hasQueryBinder(out, out.length)) {
+																			Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (block)");
+																			out.push(binder());
+																			inserted = true;
+																		};
+																	} else {};
+																};
+															} else {};
+														} else {};
+													};
+												};
+												default: {}
+											};
+										};
+										out.push(s);
+										if (inserted) {};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							if (stmts2.length > 0) {
+								var out2 = [];
+								{
+									var ` = 0;
+									var ` = stmts2.length;
+									while (` < `) {
+										var i = ` ++;
+										var s2 = stmts2[i];
+										var ins = false;
+										@:ast(switch (s2.def) {
+	case ERemoteCall({ def : EVar(m2) }, "filter", a2) if (m2 == "Enum" && a2 != null && a2.length == 2):
+		if (predicateUsesQuery(a2[1]) && !hasQueryBinder(out2, out2.length)) {
+			Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (do)");
+			out2.push(binder());
+			ins = true;
+		};	
+	case ECall(_, "filter", a3) if (a3 != null && a3.length >= 1):
+		var pred2 = a3[a3.length - 1];
+		if (predicateUsesQuery(pred2) && !hasQueryBinder(out2, out2.length)) {
+			Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (do)");
+			out2.push(binder());
+			ins = true;
+		};	
+	default:
+}) {
+											var ` = s2.def;
+											switch (enumIndex `) {
+												case 22: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (` == "filter") {
+														{
+															var a3 = `;
+															if (a3 != null && a3.length >= 1) {
+																var pred2 = a3[a3.length - 1];
+																if (predicateUsesQuery(pred2) && ! hasQueryBinder(out2, out2.length)) {
+																	Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (do)");
+																	out2.push(binder());
+																	ins = true;
+																};
+															} else {};
+														};
+													} else {};
+												};
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															if (` == "filter") {
+																{
+																	var m2 = `;
+																	var a2 = `;
+																	if (m2 == "Enum" && a2 != null && a2.length == 2) {
+																		if (predicateUsesQuery(a2[1]) && ! hasQueryBinder(out2, out2.length)) {
+																			Sys.println("[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (do)");
+																			out2.push(binder());
+																			ins = true;
+																		};
+																	} else {};
+																};
+															} else {};
+														} else {};
+													};
+												};
+												default: {}
+											};
+										};
+										out2.push(s2);
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

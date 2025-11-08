@@ -1,0 +1,401 @@
+class reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "mount" && args != null && args.length >= 3):
+		switch (args[1]) {
+			case PVar(sess) if (sess == "session"):
+				var arg0Name = switch (args[0]) {
+					case PVar(p0):
+						p0;					
+					default:
+						null;					
+				};
+				var nb = cleanup(body, arg0Name, sess);
+				makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "mount" && args != null && args.length >= 3) {
+							@:ast(switch (args[1]) {
+	case PVar(sess) if (sess == "session"):
+		var arg0Name = switch (args[0]) {
+			case PVar(p0):
+				p0;			
+			default:
+				null;			
+		};
+		var nb = cleanup(body, arg0Name, sess);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = args[1];
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									{
+										var sess = `;
+										if (sess == "session") {
+											var arg0Name = @:ast(switch (args[0]) {
+	case PVar(p0):
+		p0;	
+	default:
+		null;	
+}) {
+												var ` = args[0];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var p0 = `;
+														{
+															p0;
+														};
+													};
+												} else {
+													null;
+												};
+											};
+											var nb = reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.cleanup(body, arg0Name, sess);
+											{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function cleanup(body:reflaxe.elixir.ast.ElixirAST, paramsName:Null<String>, sessionName:String) {
+		if (paramsName == null) {
+			return body;
+		};
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (s  in  stmts) {
+			var drop = false;
+			switch (s.def) {
+				case EMatch(PVar(lhs), rhs) if (lhs == sessionName):
+					drop = isSessionGetFromParams(rhs, paramsName);				
+				case EBinary(Match, left, right):
+					switch (left.def) {
+						case EVar(lhs2) if (lhs2 == sessionName):
+							drop = isSessionGetFromParams(right, paramsName);						
+						default:
+					};				
+				default:
+			};
+			if (!drop) out.push(s);
+		};
+		makeASTWithMeta(EBlock(out), body.metadata, body.pos);	
+	case EDo(stmtsDo):
+		var outDo:Array<ElixirAST> = [];
+		for (s  in  stmtsDo) {
+			var drop = false;
+			switch (s.def) {
+				case EMatch(PVar(lhs), rhs) if (lhs == sessionName):
+					drop = isSessionGetFromParams(rhs, paramsName);				
+				case EBinary(Match, left, right):
+					switch (left.def) {
+						case EVar(lhs2) if (lhs2 == sessionName):
+							drop = isSessionGetFromParams(right, paramsName);						
+						default:
+					};				
+				default:
+			};
+			if (!drop) outDo.push(s);
+		};
+		makeASTWithMeta(EDo(outDo), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < stmts.length) {
+									var s = stmts[`];
+									++ `;
+									var drop = false;
+									@:ast(switch (s.def) {
+	case EMatch(PVar(lhs), rhs) if (lhs == sessionName):
+		drop = isSessionGetFromParams(rhs, paramsName);	
+	case EBinary(Match, left, right):
+		switch (left.def) {
+			case EVar(lhs2) if (lhs2 == sessionName):
+				drop = isSessionGetFromParams(right, paramsName);			
+			default:
+		};	
+	default:
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var lhs = `;
+														var rhs = `;
+														if (lhs == sessionName) {
+															drop = reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.isSessionGetFromParams(rhs, paramsName);
+														} else {};
+													};
+												} else {};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var right = `;
+														{
+															@:ast(switch (left.def) {
+	case EVar(lhs2) if (lhs2 == sessionName):
+		drop = isSessionGetFromParams(right, paramsName);	
+	default:
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var lhs2 = `;
+																		if (lhs2 == sessionName) {
+																			drop = reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.isSessionGetFromParams(right, paramsName);
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+									if (! drop) {
+										out.push(s);
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : body.metadata, pos : body.pos};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmtsDo = `;
+						{
+							var outDo = [];
+							{
+								var ` = 0;
+								while (` < stmtsDo.length) {
+									var s = stmtsDo[`];
+									++ `;
+									var drop = false;
+									@:ast(switch (s.def) {
+	case EMatch(PVar(lhs), rhs) if (lhs == sessionName):
+		drop = isSessionGetFromParams(rhs, paramsName);	
+	case EBinary(Match, left, right):
+		switch (left.def) {
+			case EVar(lhs2) if (lhs2 == sessionName):
+				drop = isSessionGetFromParams(right, paramsName);			
+			default:
+		};	
+	default:
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var lhs = `;
+														var rhs = `;
+														if (lhs == sessionName) {
+															drop = reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.isSessionGetFromParams(rhs, paramsName);
+														} else {};
+													};
+												} else {};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var right = `;
+														{
+															@:ast(switch (left.def) {
+	case EVar(lhs2) if (lhs2 == sessionName):
+		drop = isSessionGetFromParams(right, paramsName);	
+	default:
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var lhs2 = `;
+																		if (lhs2 == sessionName) {
+																			drop = reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.isSessionGetFromParams(right, paramsName);
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+									if (! drop) {
+										outDo.push(s);
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDo(outDo), metadata : body.metadata, pos : body.pos};
+						};
+					};
+				};
+				default: {
+					body;
+				}
+			};
+		};
+	}
+
+	static function sameIgnoringUnderscore(a:String, b:String) {
+		if (a == b) {
+			return true;
+		};
+		if (a != null && b != null) {
+			if (a.length > 1 && a.charAt(0) == "_" && a.substr(1, null) == b) {
+				return true;
+			};
+			if (b.length > 1 && b.charAt(0) == "_" && b.substr(1, null) == a) {
+				return true;
+			};
+		};
+		return false;
+	}
+
+	static function isSessionGetFromParams(expr:reflaxe.elixir.ast.ElixirAST, paramsName:String) {
+		return @:ast(switch (expr.def) {
+	case ERemoteCall({ def : EVar(mod) }, fn, [arg0, { def : EString(key) }]) if (mod == "Map" && fn == "get" && key == "session"):
+		switch (arg0.def) {
+			case EVar(v) if (sameIgnoringUnderscore(v, paramsName)):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (`.length == 2) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 32) {
+									var ` = `[0];
+									{
+										var key = `;
+										var arg0 = `;
+										var fn = `;
+										var mod = `;
+										if (mod == "Map" && fn == "get" && key == "session") {
+											@:ast(switch (arg0.def) {
+	case EVar(v) if (sameIgnoringUnderscore(v, paramsName)):
+		true;	
+	default:
+		false;	
+}) {
+												var ` = arg0.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var v = `;
+														if (reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.sameIgnoringUnderscore(v, paramsName)) {
+															true;
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

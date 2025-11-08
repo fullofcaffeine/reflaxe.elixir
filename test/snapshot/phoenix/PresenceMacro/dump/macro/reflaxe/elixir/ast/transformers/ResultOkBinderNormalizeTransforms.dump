@@ -1,0 +1,197 @@
+class reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(target, clauses):
+		var out = [];
+		for (c  in  clauses) {
+			var newC = c;
+			switch (c.pattern) {
+				case PTuple(els) if (els.length == 2):
+					var isOk = switch (els[0]) {
+						case PLiteral({ def : EAtom(a) }):
+							(a == ":ok" || a == "ok");						
+						default:
+							false;						
+					};
+					if (isOk) {
+						switch (els[1]) {
+							case PVar(pname) if (pname != null):
+								var effective = (pname == "ok_value") ? "value" : pname;
+								var pat = (pname == effective) ? c.pattern : PTuple([els[0], PVar(effective)]);
+								var nb = ElixirASTTransformer.transformNode(c.body, function(x:ElixirAST):ElixirAST {
+									return switch (x.def) {
+										case EVar(v) if (v == "ok_value"):
+											makeASTWithMeta(EVar(effective), x.metadata, x.pos);										
+										default:
+											x;										
+									};
+								});
+								newC = { pattern : pat, guard : c.guard, body : nb };							
+							default:
+						};
+					};				
+				default:
+			};
+			out.push(newC);
+		};
+		makeASTWithMeta(ECase(target, out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var clauses = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var c = clauses[`];
+									++ `;
+									var newC = c;
+									@:ast(switch (c.pattern) {
+	case PTuple(els) if (els.length == 2):
+		var isOk = switch (els[0]) {
+			case PLiteral({ def : EAtom(a) }):
+				(a == ":ok" || a == "ok");			
+			default:
+				false;			
+		};
+		if (isOk) {
+			switch (els[1]) {
+				case PVar(pname) if (pname != null):
+					var effective = (pname == "ok_value") ? "value" : pname;
+					var pat = (pname == effective) ? c.pattern : PTuple([els[0], PVar(effective)]);
+					var nb = ElixirASTTransformer.transformNode(c.body, function(x:ElixirAST):ElixirAST {
+						return switch (x.def) {
+							case EVar(v) if (v == "ok_value"):
+								makeASTWithMeta(EVar(effective), x.metadata, x.pos);							
+							default:
+								x;							
+						};
+					});
+					newC = { pattern : pat, guard : c.guard, body : nb };				
+				default:
+			};
+		};	
+	default:
+}) {
+										var ` = c.pattern;
+										if (enumIndex ` == 2) {
+											var ` = `[0];
+											{
+												var els = `;
+												if (els.length == 2) {
+													var isOk = @:ast(switch (els[0]) {
+	case PLiteral({ def : EAtom(a) }):
+		(a == ":ok" || a == "ok");	
+	default:
+		false;	
+}) {
+														var ` = els[0];
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 31) {
+																	var ` = `[0];
+																	{
+																		var a = `;
+																		{
+																			(a == ":ok" || a == "ok");
+																		};
+																	};
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+													if (isOk) {
+														@:ast(switch (els[1]) {
+	case PVar(pname) if (pname != null):
+		var effective = (pname == "ok_value") ? "value" : pname;
+		var pat = (pname == effective) ? c.pattern : PTuple([els[0], PVar(effective)]);
+		var nb = ElixirASTTransformer.transformNode(c.body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (v == "ok_value"):
+					makeASTWithMeta(EVar(effective), x.metadata, x.pos);				
+				default:
+					x;				
+			};
+		});
+		newC = { pattern : pat, guard : c.guard, body : nb };	
+	default:
+}) {
+															var ` = els[1];
+															if (enumIndex ` == 0) {
+																var ` = `[0];
+																{
+																	var pname = `;
+																	if (pname != null) {
+																		var effective = if ((pname == "ok_value")) {
+																			"value";
+																		} else {
+																			pname;
+																		};
+																		var pat = if ((pname == effective)) {
+																			c.pattern;
+																		} else {
+																			reflaxe.elixir.ast.EPattern.PTuple([els[0], reflaxe.elixir.ast.EPattern.PVar(effective)]);
+																		};
+																		var nb = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(c.body, function(x:reflaxe.elixir.ast.ElixirAST) {
+																			return @:ast(switch (x.def) {
+	case EVar(v) if (v == "ok_value"):
+		makeASTWithMeta(EVar(effective), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																				var ` = x.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var v = `;
+																						if (v == "ok_value") {
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(effective), metadata : x.metadata, pos : x.pos};
+																						} else {
+																							x;
+																						};
+																					};
+																				} else {
+																					x;
+																				};
+																			};
+																		});
+																		newC = {pattern : pat, guard : c.guard, body : nb};
+																	} else {};
+																};
+															} else {};
+														};
+													};
+												} else {};
+											};
+										} else {};
+									};
+									out.push(newC);
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(target, out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

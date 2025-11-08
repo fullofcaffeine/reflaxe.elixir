@@ -1,0 +1,62 @@
+class reflaxe.elixir.ast.transformers.SuppressHXXRuntimeModuleTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (name == "HXX"):
+		var meta:Dynamic = n.metadata == null ? { } : n.metadata;
+		Reflect.setField(meta, "suppressEmission", true);
+		makeASTWithMeta(EModule(name, attrs, body), meta, n.pos);	
+	case EDefmodule(name, doBlock) if (name == "HXX"):
+		var meta2:Dynamic = n.metadata == null ? { } : n.metadata;
+		Reflect.setField(meta2, "suppressEmission", true);
+		makeASTWithMeta(EDefmodule(name, doBlock), meta2, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "HXX") {
+								var meta = if (n.metadata == null) {} else {
+									n.metadata;
+								};
+								Reflect.setField(meta, "suppressEmission", true);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, body), metadata : cast meta, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name == "HXX") {
+								var meta2 = if (n.metadata == null) {} else {
+									n.metadata;
+								};
+								Reflect.setField(meta2, "suppressEmission", true);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, doBlock), metadata : cast meta2, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

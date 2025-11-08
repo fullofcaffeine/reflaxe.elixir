@@ -1,0 +1,365 @@
+class reflaxe.elixir.ast.transformers.ProjectLocalModuleQualificationTransforms {
+
+	static inline function qualifyAppLocalModule(moduleName:String, appPrefix:String) {
+		return if ((moduleName == "Presence")) {
+			(appPrefix + "Web.Presence");
+		} else {
+			(appPrefix + "." + moduleName);
+		};
+	}
+
+	static inline function isSingleSegmentModule(name:String) {
+		return name != null && name.indexOf(".", null) == -1 && name.length > 0;
+	}
+
+	static inline function isUpperCamel(name:String) {
+		var c = name.charAt(0);
+		return c.toUpperCase() == c && c.toLowerCase() != c;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		var defined = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var collect = [null];
+		collect[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EModule(name, _, body):
+		defined.set(name, true);
+		for (b  in  body) collect(b);	
+	case EDefmodule(name, doBlock):
+		defined.set(name, true);
+		collect(doBlock);	
+	default:
+		switch (n.def) {
+			case EBlock(es):
+				for (e  in  es) collect(e);			
+			case ECase(e, cs):
+				collect(e);
+				for (c  in  cs) {
+					if (c.guard != null) collect(c.guard);
+					collect(c.body);
+				};			
+			case EIf(c, t, e):
+				collect(c);
+				collect(t);
+				if (e != null) collect(e);			
+			case EFn(cs):
+				for (cl  in  cs) collect(cl.body);			
+			case ECall(t, _, as):
+				if (t != null) collect(t);
+				if (as != null) for (a  in  as) collect(a);			
+			case ERemoteCall(m, _, as):
+				collect(m);
+				if (as != null) for (a  in  as) collect(a);			
+			default:
+		};	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var body = `;
+							{
+								{
+									defined.set(name, true);
+								};
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										collect[0](b);
+									};
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								{
+									defined.set(name, true);
+								};
+								collect[0](doBlock);
+							};
+						};
+					};
+					default: {
+						@:ast(switch (n.def) {
+	case EBlock(es):
+		for (e  in  es) collect(e);	
+	case ECase(e, cs):
+		collect(e);
+		for (c  in  cs) {
+			if (c.guard != null) collect(c.guard);
+			collect(c.body);
+		};	
+	case EIf(c, t, e):
+		collect(c);
+		collect(t);
+		if (e != null) collect(e);	
+	case EFn(cs):
+		for (cl  in  cs) collect(cl.body);	
+	case ECall(t, _, as):
+		if (t != null) collect(t);
+		if (as != null) for (a  in  as) collect(a);	
+	case ERemoteCall(m, _, as):
+		collect(m);
+		if (as != null) for (a  in  as) collect(a);	
+	default:
+}) {
+							var ` = n.def;
+							switch (enumIndex `) {
+								case 6: {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var e = `;
+										var cs = `;
+										{
+											collect[0](e);
+											{
+												var ` = 0;
+												while (` < cs.length) {
+													var c = cs[`];
+													++ `;
+													if (c.guard != null) {
+														collect[0](c.guard);
+													};
+													collect[0](c.body);
+												};
+											};
+										};
+									};
+								};
+								case 10: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var c = `;
+										var t = `;
+										var e = `;
+										{
+											collect[0](c);
+											collect[0](t);
+											if (e != null) {
+												collect[0](e);
+											};
+										};
+									};
+								};
+								case 22: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var t = `;
+										var as = `;
+										{
+											if (t != null) {
+												collect[0](t);
+											};
+											if (as != null) {
+												{
+													var ` = 0;
+													while (` < as.length) {
+														var a = as[`];
+														++ `;
+														collect[0](a);
+													};
+												};
+											};
+										};
+									};
+								};
+								case 24: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var m = `;
+										var as = `;
+										{
+											collect[0](m);
+											if (as != null) {
+												{
+													var ` = 0;
+													while (` < as.length) {
+														var a = as[`];
+														++ `;
+														collect[0](a);
+													};
+												};
+											};
+										};
+									};
+								};
+								case 42: {
+									var ` = `[0];
+									{
+										var cs = `;
+										{
+											{
+												var ` = 0;
+												while (` < cs.length) {
+													var cl = cs[`];
+													++ `;
+													collect[0](cl.body);
+												};
+											};
+										};
+									};
+								};
+								case 53: {
+									var ` = `[0];
+									{
+										var es = `;
+										{
+											{
+												var ` = 0;
+												while (` < es.length) {
+													var e = es[`];
+													++ `;
+													collect[0](e);
+												};
+											};
+										};
+									};
+								};
+								default: {}
+							};
+						};
+					}
+				};
+			};
+		};
+		collect[0](ast);
+		var app = [null];
+		try {
+			app[0] = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				{};
+				{};
+			} else throw `;
+		};
+		if (app[0] == null) {
+			return ast;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall({ def : EVar(moduleName) }, functionName, argumentList) if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+		var qualifiedModule = qualifyAppLocalModule(moduleName, app);
+		makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);	
+	case ECall({ def : EVar(moduleName) }, functionName, argumentList) if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+		var qualifiedModule = qualifyAppLocalModule(moduleName, app);
+		makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == null) {
+							n;
+						} else {
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var moduleName = `;
+									var functionName = `;
+									var argumentList = `;
+									if (moduleName != null && moduleName.indexOf(".", null) == -1 && moduleName.length > 0 && {
+										var c = moduleName.charAt(0);
+										c.toUpperCase() == c && c.toLowerCase() != c;
+									} && ! moduleName != null && {
+										var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+										cast this.exists(moduleName);
+									}) {
+										var qualifiedModule = if ((moduleName == "Presence")) {
+											(app[0] + "Web.Presence");
+										} else {
+											(app[0] + "." + moduleName);
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(qualifiedModule), metadata : {}, pos : pos};
+										}, functionName, argumentList), metadata : n.metadata, pos : n.pos};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var moduleName = `;
+									var functionName = `;
+									var argumentList = `;
+									if (moduleName != null && moduleName.indexOf(".", null) == -1 && moduleName.length > 0 && {
+										var c = moduleName.charAt(0);
+										c.toUpperCase() == c && c.toLowerCase() != c;
+									} && ! moduleName != null && {
+										var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+										cast this.exists(moduleName);
+									}) {
+										var qualifiedModule = if ((moduleName == "Presence")) {
+											(app[0] + "Web.Presence");
+										} else {
+											(app[0] + "." + moduleName);
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(qualifiedModule), metadata : {}, pos : pos};
+										}, functionName, argumentList), metadata : n.metadata, pos : n.pos};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

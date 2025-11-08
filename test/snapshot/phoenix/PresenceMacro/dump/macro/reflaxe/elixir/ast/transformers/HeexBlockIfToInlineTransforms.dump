@@ -1,0 +1,97 @@
+class reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var updated = rewrite(content);
+		if (updated != content) makeASTWithMeta(ESigil(type, updated, modifiers), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var modifiers = `;
+						if (type == "H") {
+							var updated = reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.rewrite(content);
+							if (updated != content) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, updated, modifiers), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewrite(s:String) {
+		var out = new StringBuf();
+		var i = 0;
+		while (i < s.length) {
+			var open = s.indexOf("<%=", i);
+			if (open == -1) {
+				out.add(s.substr(i, null));
+				break;
+			};
+			out.add(s.substr(i, open - i));
+			var close = s.indexOf("%>", open + 3);
+			if (close == -1) {
+				out.add(s.substr(open, null));
+				break;
+			};
+			var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
+			if (StringTools.startsWith(inner, "if ") && inner.indexOf(" do", null) != -1) {
+				var cond = StringTools.trim(inner.substr(3, inner.indexOf(" do", null) - 3));
+				var thenStart = close + 2;
+				var elseTag = s.indexOf("<% else %>", thenStart);
+				var endTag = s.indexOf("<% end %>", thenStart);
+				if (endTag == -1) {
+					out.add(s.substr(open, (close + 2) - open));
+					i = close + 2;
+					continue;
+				};
+				var thenEnd = if ((elseTag != -1 && elseTag < endTag)) {
+					elseTag;
+				} else {
+					endTag;
+				};
+				var thenHtml = s.substr(thenStart, thenEnd - thenStart);
+				var elseHtml = if ((elseTag != -1 && elseTag < endTag)) {
+					s.substr(elseTag + 10, endTag - (elseTag + 10));
+				} else {
+					"";
+				};
+				var branchesArePlainText = (thenHtml.indexOf("<", null) == -1 && (elseHtml == null || elseHtml.indexOf("<", null) == -1));
+				if (thenHtml.indexOf("<%", null) == -1 && (elseHtml == null || elseHtml.indexOf("<%", null) == -1) && branchesArePlainText) {
+					out.add("<%= if " + cond + ", do: " + reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.toQuoted(thenHtml) + ", else: " + reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.toQuoted(elseHtml) + " %>");
+					i = endTag + 9;
+					continue;
+				};
+			};
+			out.add(s.substr(open, (close + 2) - open));
+			i = close + 2;
+		};
+		return out.toString();
+	}
+
+	static function toQuoted(s:String) {
+		var t = StringTools.trim(s);
+		if ((StringTools.startsWith(t, "\"") && StringTools.endsWith(t, "\"")) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"))) {
+			return t;
+		};
+		t = StringTools.replace(t, "\"", "\\\"");
+		return "\"" + t + "\"";
+	}
+}

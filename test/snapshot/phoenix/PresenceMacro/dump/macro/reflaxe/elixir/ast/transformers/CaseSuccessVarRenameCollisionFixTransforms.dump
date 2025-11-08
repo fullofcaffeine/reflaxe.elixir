@@ -1,0 +1,367 @@
+class reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EDef(name, args, guards, body):
+		var argNames = argNameSet(args);
+		var newBody = fixCollisionsInBody(body, argNames);
+		makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);	
+	case EDefp(name, args, guards, body):
+		var argNames2 = argNameSet(args);
+		var newBody2 = fixCollisionsInBody(body, argNames2);
+		makeASTWithMeta(EDefp(name, args, guards, newBody2), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var argNames = reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.argNameSet(args);
+								var newBody = reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.fixCollisionsInBody(body, argNames);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var argNames2 = reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.argNameSet(args);
+								var newBody2 = reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.fixCollisionsInBody(body, argNames2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, newBody2), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static function argNameSet(args:Array<reflaxe.elixir.ast.EPattern>) {
+		var s = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(a, s);
+			};
+		};
+		return s;
+	}
+
+	static function collectNames(p:reflaxe.elixir.ast.EPattern, acc:Map<String, Bool>) {
+		@:ast(switch (p) {
+	case PVar(n) if (n != null):
+		acc.set(n, true);	
+	case PTuple(es) | PList(es):
+		for (e  in  es) collectNames(e, acc);	
+	case PCons(h, t):
+		collectNames(h, acc);
+		collectNames(t, acc);	
+	case PMap(kvs):
+		for (kv  in  kvs) collectNames(kv.value, acc);	
+	case PStruct(_, fs):
+		for (f  in  fs) collectNames(f.value, acc);	
+	case PPin(inner):
+		collectNames(inner, acc);	
+	default:
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					if (n != null) {
+						{
+							acc.set(n, true);
+						};
+					} else {};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(e, acc);
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(e, acc);
+							};
+						};
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(h, acc);
+						reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(t, acc);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(kv.value, acc);
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(f.value, acc);
+							};
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.collectNames(inner, acc);
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	static function fixCollisionsInBody(body:reflaxe.elixir.ast.ElixirAST, args:Map<String, Bool>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(expr, clauses):
+		var out = [];
+		for (c  in  clauses) {
+			var renamed = c;
+			switch (c.pattern) {
+				case PTuple(els) if (els.length == 2):
+					switch (els[0]) {
+						case PLiteral({ def : EAtom(a) }) if (((a : String)) == ":ok" || ((a : String)) == "ok"):
+							switch (els[1]) {
+								case PVar(vname) if (vname != null && args.exists(vname)):
+									var replacement = safeName(vname);
+									Sys.println("[CaseSuccessVarRenameCollisionFix] Renaming {:ok, " + vname + "} -> {:ok, " + replacement + "} to avoid arg shadow");
+									var newPat = PTuple([els[0], PVar(replacement)]);
+									var newBody = renameVarInBody(c.body, vname, replacement);
+									renamed = { pattern : newPat, guard : c.guard, body : newBody };								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+			out.push(renamed);
+		};
+		makeASTWithMeta(ECase(expr, out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						var clauses = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var c = clauses[`];
+									++ `;
+									var renamed = c;
+									@:ast(switch (c.pattern) {
+	case PTuple(els) if (els.length == 2):
+		switch (els[0]) {
+			case PLiteral({ def : EAtom(a) }) if (((a : String)) == ":ok" || ((a : String)) == "ok"):
+				switch (els[1]) {
+					case PVar(vname) if (vname != null && args.exists(vname)):
+						var replacement = safeName(vname);
+						Sys.println("[CaseSuccessVarRenameCollisionFix] Renaming {:ok, " + vname + "} -> {:ok, " + replacement + "} to avoid arg shadow");
+						var newPat = PTuple([els[0], PVar(replacement)]);
+						var newBody = renameVarInBody(c.body, vname, replacement);
+						renamed = { pattern : newPat, guard : c.guard, body : newBody };					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = c.pattern;
+										if (enumIndex ` == 2) {
+											var ` = `[0];
+											{
+												var els = `;
+												if (els.length == 2) {
+													@:ast(switch (els[0]) {
+	case PLiteral({ def : EAtom(a) }) if (((a : String)) == ":ok" || ((a : String)) == "ok"):
+		switch (els[1]) {
+			case PVar(vname) if (vname != null && args.exists(vname)):
+				var replacement = safeName(vname);
+				Sys.println("[CaseSuccessVarRenameCollisionFix] Renaming {:ok, " + vname + "} -> {:ok, " + replacement + "} to avoid arg shadow");
+				var newPat = PTuple([els[0], PVar(replacement)]);
+				var newBody = renameVarInBody(c.body, vname, replacement);
+				renamed = { pattern : newPat, guard : c.guard, body : newBody };			
+			default:
+		};	
+	default:
+}) {
+														var ` = els[0];
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 31) {
+																	var ` = `[0];
+																	{
+																		var a = `;
+																		if ((cast a) == ":ok" || (cast a) == "ok") {
+																			@:ast(switch (els[1]) {
+	case PVar(vname) if (vname != null && args.exists(vname)):
+		var replacement = safeName(vname);
+		Sys.println("[CaseSuccessVarRenameCollisionFix] Renaming {:ok, " + vname + "} -> {:ok, " + replacement + "} to avoid arg shadow");
+		var newPat = PTuple([els[0], PVar(replacement)]);
+		var newBody = renameVarInBody(c.body, vname, replacement);
+		renamed = { pattern : newPat, guard : c.guard, body : newBody };	
+	default:
+}) {
+																				var ` = els[1];
+																				if (enumIndex ` == 0) {
+																					var ` = `[0];
+																					{
+																						var vname = `;
+																						if (vname != null && args.exists(vname)) {
+																							var replacement = "value";
+																							Sys.println("[CaseSuccessVarRenameCollisionFix] Renaming {:ok, " + vname + "} -> {:ok, " + replacement + "} to avoid arg shadow");
+																							var newPat = reflaxe.elixir.ast.EPattern.PTuple([els[0], reflaxe.elixir.ast.EPattern.PVar(replacement)]);
+																							var newBody = reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.renameVarInBody(c.body, vname, replacement);
+																							renamed = {pattern : newPat, guard : c.guard, body : newBody};
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										} else {};
+									};
+									out.push(renamed);
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function renameVarInBody(body:reflaxe.elixir.ast.ElixirAST, from:String, to:String) {
+		if (from == null || to == null || from == to) {
+			return body;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EVar(v) if (v == from):
+		makeASTWithMeta(EVar(to), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == from) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function safeName(colliding:String) {
+		return "value";
+	}
+}

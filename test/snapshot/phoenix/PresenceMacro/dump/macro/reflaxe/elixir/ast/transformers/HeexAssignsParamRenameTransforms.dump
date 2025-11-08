@@ -1,0 +1,429 @@
+class reflaxe.elixir.ast.transformers.HeexAssignsParamRenameTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) | EDefp(name, args, guards, body):
+		var hasUnderscoreAssigns = false;
+		var hasHSigil = containsHSigilAST(body);
+		if (!hasHSigil) return n;
+		var newArgs = [];
+		for (a  in  args) switch (a) {
+			case PVar(p) if (p == "_assigns"):
+				hasUnderscoreAssigns = true;
+				newArgs.push(PVar("assigns"));			
+			default:
+				newArgs.push(a);			
+		};
+		if (!hasUnderscoreAssigns) return n;
+		var def = Type.enumConstructor(n.def) == "EDef" ? EDef(name, newArgs, guards, body) : EDefp(name, newArgs, guards, body);
+		makeASTWithMeta(def, n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var hasUnderscoreAssigns = false;
+								var hasHSigil = reflaxe.elixir.ast.transformers.HeexAssignsParamRenameTransforms.containsHSigilAST(body);
+								if (! hasHSigil) {
+									return n;
+								};
+								var newArgs = [];
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										@:ast(switch (a) {
+	case PVar(p) if (p == "_assigns"):
+		hasUnderscoreAssigns = true;
+		newArgs.push(PVar("assigns"));	
+	default:
+		newArgs.push(a);	
+}) if (enumIndex a == 0) {
+											var ` = a[0];
+											{
+												var p = `;
+												if (p == "_assigns") {
+													hasUnderscoreAssigns = true;
+													newArgs.push(reflaxe.elixir.ast.EPattern.PVar("assigns"));
+												} else {
+													newArgs.push(a);
+												};
+											};
+										} else {
+											newArgs.push(a);
+										};
+									};
+								};
+								if (! hasUnderscoreAssigns) {
+									return n;
+								};
+								var def = if (Type.enumConstructor(n.def) == "EDef") {
+									reflaxe.elixir.ast.ElixirASTDef.EDef(name, newArgs, guards, body);
+								} else {
+									reflaxe.elixir.ast.ElixirASTDef.EDefp(name, newArgs, guards, body);
+								};
+								{def : def, metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var hasUnderscoreAssigns = false;
+								var hasHSigil = reflaxe.elixir.ast.transformers.HeexAssignsParamRenameTransforms.containsHSigilAST(body);
+								if (! hasHSigil) {
+									return n;
+								};
+								var newArgs = [];
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										@:ast(switch (a) {
+	case PVar(p) if (p == "_assigns"):
+		hasUnderscoreAssigns = true;
+		newArgs.push(PVar("assigns"));	
+	default:
+		newArgs.push(a);	
+}) if (enumIndex a == 0) {
+											var ` = a[0];
+											{
+												var p = `;
+												if (p == "_assigns") {
+													hasUnderscoreAssigns = true;
+													newArgs.push(reflaxe.elixir.ast.EPattern.PVar("assigns"));
+												} else {
+													newArgs.push(a);
+												};
+											};
+										} else {
+											newArgs.push(a);
+										};
+									};
+								};
+								if (! hasUnderscoreAssigns) {
+									return n;
+								};
+								var def = if (Type.enumConstructor(n.def) == "EDef") {
+									reflaxe.elixir.ast.ElixirASTDef.EDef(name, newArgs, guards, body);
+								} else {
+									reflaxe.elixir.ast.ElixirASTDef.EDefp(name, newArgs, guards, body);
+								};
+								{def : def, metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function containsHSigilAST(node:reflaxe.elixir.ast.ElixirAST) {
+		var found = [false];
+		var walk = [null];
+		walk[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case ESigil(type, _, _) if (type == "H"):
+		found = true;
+		return;	
+	case EBlock(es):
+		for (e  in  es) walk(e);	
+	case EIf(c, t, e):
+		walk(c);
+		walk(t);
+		if (e != null) walk(e);	
+	case ECase(e, cs):
+		walk(e);
+		for (cl  in  cs) walk(cl.body);	
+	case EDo(b):
+		for (e  in  b) walk(e);	
+	case EParen(inner):
+		walk(inner);	
+	case ECall(t, _, as):
+		if (t != null) walk(t);
+		for (a  in  as) walk(a);	
+	case ERemoteCall(m, _, as):
+		walk(m);
+		for (a  in  as) walk(a);	
+	case EBinary(_, l, r):
+		walk(l);
+		walk(r);	
+	case EList(el):
+		for (e  in  el) walk(e);	
+	case ETuple(el):
+		for (e  in  el) walk(e);	
+	case EMap(p):
+		for (kv  in  p) {
+			walk(kv.key);
+			walk(kv.value);
+		};	
+	case EStruct(_, fs):
+		for (f  in  fs) walk(f.value);	
+	case EFn(cs):
+		for (cl  in  cs) walk(cl.body);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var cs = `;
+							{
+								walk[0](e);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var cl = cs[`];
+										++ `;
+										walk[0](cl.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								walk[0](c);
+								walk[0](t);
+								if (e != null) {
+									walk[0](e);
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										walk[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var el = `;
+							{
+								{
+									var ` = 0;
+									while (` < el.length) {
+										var e = el[`];
+										++ `;
+										walk[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var p = `;
+							{
+								{
+									var ` = 0;
+									while (` < p.length) {
+										var kv = p[`];
+										++ `;
+										walk[0](kv.key);
+										walk[0](kv.value);
+									};
+								};
+							};
+						};
+					};
+					case 18: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var fs = `;
+							{
+								{
+									var ` = 0;
+									while (` < fs.length) {
+										var f = fs[`];
+										++ `;
+										walk[0](f.value);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									walk[0](t);
+								};
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var m = `;
+							var as = `;
+							{
+								walk[0](m);
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								walk[0](l);
+								walk[0](r);
+							};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var cs = `;
+							{
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var cl = cs[`];
+										++ `;
+										walk[0](cl.body);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var es = `;
+							{
+								{
+									var ` = 0;
+									while (` < es.length) {
+										var e = es[`];
+										++ `;
+										walk[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 54: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								walk[0](inner);
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var b = `;
+							{
+								{
+									var ` = 0;
+									while (` < b.length) {
+										var e = b[`];
+										++ `;
+										walk[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							if (type == "H") {
+								found[0] = true;
+								return;
+							} else {};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](node);
+		return found[0];
+	}
+}

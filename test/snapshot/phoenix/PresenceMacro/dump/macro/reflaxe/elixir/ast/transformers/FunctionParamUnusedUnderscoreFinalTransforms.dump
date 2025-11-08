@@ -1,0 +1,123 @@
+class reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var used = collectUsed(body);
+		var newArgs = underscoreUnused(args, used);
+		makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var used2 = collectUsed(body2);
+		var newArgs2 = underscoreUnused(args2, used2);
+		makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var used = reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.collectUsed(body);
+								var newArgs = reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.underscoreUnused(args, used);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, newArgs, guards, body), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var used2 = reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.collectUsed(body2);
+								var newArgs2 = reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.underscoreUnused(args2, used2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, newArgs2, guards2, body2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function underscoreUnused(args:Array<reflaxe.elixir.ast.EPattern>, used:Map<String, Bool>) {
+		if (args == null) {
+			return args;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(n):
+		if (!used.exists(n) && n.charAt(0) != "_") out.push(PVar("_" + n)) else out.push(a);	
+	default:
+		out.push(a);	
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var n = `;
+						{
+							if (! used.exists(n) && n.charAt(0) != "_") {
+								out.push(reflaxe.elixir.ast.EPattern.PVar("_" + n));
+							} else {
+								out.push(a);
+							};
+						};
+					};
+				} else {
+					out.push(a);
+				};
+			};
+		};
+		return out;
+	}
+
+	static function collectUsed(ast:reflaxe.elixir.ast.ElixirAST) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(ast, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case EVar(v):
+		names.set(v, true);	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							{
+								names.set(v, true);
+							};
+						};
+					};
+				} else {};
+			};
+		});
+		return names;
+	}
+}

@@ -1,0 +1,300 @@
+class reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		if (!hasDefpMainZero(body)) return n;
+		var newAttrs = ensureMainNowarn(attrs);
+		makeASTWithMeta(EModule(name, newAttrs, body), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock):
+		var stmts:Array<ElixirAST> = switch (doBlock.def) {
+			case EBlock(ss):
+				ss;			
+			case EDo(ss2):
+				ss2;			
+			default:
+				[doBlock];			
+		};
+		if (!hasDefpMainZero(stmts)) return n;
+		var attrs2 = ensureMainNowarn([]);
+		makeASTWithMeta(EModule(name2, attrs2, stmts), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								if (! reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms.hasDefpMainZero(body)) {
+									return n;
+								};
+								var newAttrs = reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms.ensureMainNowarn(attrs);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, newAttrs, body), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							{
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	case EDo(ss2):
+		ss2;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													ss;
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var ss2 = `;
+												{
+													ss2;
+												};
+											};
+										};
+										default: {
+											[doBlock];
+										}
+									};
+								};
+								if (! reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms.hasDefpMainZero(stmts)) {
+									return n;
+								};
+								var attrs2 = reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms.ensureMainNowarn([]);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name2, attrs2, stmts), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function hasDefpMainZero(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				@:ast(switch (b.def) {
+	case EDefp(fname, args, _, _):
+		if (fname == "main" && (args == null || args.length == 0)) return true;	
+	default:
+}) {
+					var ` = b.def;
+					if (enumIndex ` == 3) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fname = `;
+							var args = `;
+							{
+								if (fname == "main" && (args == null || args.length == 0)) {
+									return true;
+								};
+							};
+						};
+					} else {};
+				};
+			};
+		};
+		return false;
+	}
+
+	static function ensureMainNowarn(attrs:Array<reflaxe.elixir.ast.EAttribute>) {
+		var idx = -1;
+		{
+			var ` = 0;
+			var ` = attrs.length;
+			while (` < `) {
+				var i = ` ++;
+				var a = attrs[i];
+				if (a != null && a.name == "compile") {
+					@:ast(switch (a.value.def) {
+	case ETuple([kind, kws]):
+		switch (kind.def) {
+			case EAtom(atom) if (atom == "nowarn_unused_function"):
+				idx = i;			
+			default:
+		};	
+	default:
+}) {
+						var ` = a.value.def;
+						if (enumIndex ` == 16) {
+							var ` = `[0];
+							if (`.length == 2) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var kind = `;
+									var kws = `;
+									{
+										@:ast(switch (kind.def) {
+	case EAtom(atom) if (atom == "nowarn_unused_function"):
+		idx = i;	
+	default:
+}) {
+											var ` = kind.def;
+											if (enumIndex ` == 31) {
+												var ` = `[0];
+												{
+													var atom = `;
+													if (atom == "nowarn_unused_function") {
+														idx = i;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						} else {};
+					};
+				};
+			};
+		};
+		if (idx >= 0) {
+			var a = attrs[idx];
+			var newVal = a.value;
+			@:ast(switch (a.value.def) {
+	case ETuple([kind, kws]):
+		switch (kws.def) {
+			case EKeywordList(pairs):
+				var hasMain = false;
+				for (p  in  pairs) if (p.key == "main") {
+					hasMain = true;
+					break;
+				};
+				if (!hasMain) {
+					var newPairs = pairs.copy();
+					newPairs.push({ key : "main", value : makeAST(EInteger(0)) });
+					newVal = makeAST(ETuple([kind, makeAST(EKeywordList(newPairs))]));
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = a.value.def;
+				if (enumIndex ` == 16) {
+					var ` = `[0];
+					if (`.length == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var kind = `;
+							var kws = `;
+							{
+								@:ast(switch (kws.def) {
+	case EKeywordList(pairs):
+		var hasMain = false;
+		for (p  in  pairs) if (p.key == "main") {
+			hasMain = true;
+			break;
+		};
+		if (!hasMain) {
+			var newPairs = pairs.copy();
+			newPairs.push({ key : "main", value : makeAST(EInteger(0)) });
+			newVal = makeAST(ETuple([kind, makeAST(EKeywordList(newPairs))]));
+		};	
+	default:
+}) {
+									var ` = kws.def;
+									if (enumIndex ` == 20) {
+										var ` = `[0];
+										{
+											var pairs = `;
+											{
+												var hasMain = false;
+												{
+													var ` = 0;
+													while (` < pairs.length) {
+														var p = pairs[`];
+														++ `;
+														if (p.key == "main") {
+															hasMain = true;
+															break;
+														};
+													};
+												};
+												if (! hasMain) {
+													var newPairs = pairs.copy();
+													newPairs.push({key : "main", value : {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+													}});
+													newVal = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([kind, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EKeywordList(newPairs), metadata : {}, pos : pos};
+														}]), metadata : {}, pos : pos};
+													};
+												};
+											};
+										};
+									} else {};
+								};
+							};
+						};
+					} else {};
+				} else {};
+			};
+			var newAttrs = attrs.copy();
+			newAttrs[idx] = {name : "compile", value : newVal};
+			return newAttrs;
+		} else {
+			var value = {
+				var def = reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase("nowarn_unused_function");
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}, {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EKeywordList([{key : "main", value : {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+					}}]), metadata : {}, pos : pos};
+				}]);
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+			var compileAttr = {name : "compile", value : value};
+			var out = attrs.copy();
+			out.unshift(compileAttr);
+			return out;
+		};
+	}
+}

@@ -1,0 +1,872 @@
+class reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms {
+
+	public static function alignPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EDef(name, args, guards, body):
+		var fnDeclared = collectFunctionDefinedVars(args, body);
+		var newBody = process(body, fnDeclared);
+		makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);	
+	case EDefp(name, args, guards, body):
+		var fnDeclared2 = collectFunctionDefinedVars(args, body);
+		var newBody2 = process(body, fnDeclared2);
+		makeASTWithMeta(EDefp(name, args, guards, newBody2), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var fnDeclared = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectFunctionDefinedVars(args, body);
+								var newBody = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.process(body, fnDeclared);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var fnDeclared2 = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectFunctionDefinedVars(args, body);
+								var newBody2 = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.process(body, fnDeclared2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, newBody2), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	@:has_untyped
+	static function process(body:reflaxe.elixir.ast.ElixirAST, fnDeclared:Map<String, Bool>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(target, clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var okBinder = extractOkBinder(cl.pattern);
+			if (okBinder != null) {
+				var locked = false;
+				try {
+					locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true));
+				} catch(e:Dynamic) { };
+				if (okBinder == "_value" || locked) {
+					newClauses.push(cl);
+					continue;
+				};
+				var clauseDeclared:Map<String,Bool> = new Map();
+				collectPatternDecls(cl.pattern, clauseDeclared);
+				collectLhsDeclsInBody(cl.body, clauseDeclared);
+				if (fnDeclared != null) for (k  in  fnDeclared.keys()) clauseDeclared.set(k, true);
+				var used = collectUsedNames(cl.body);
+				var undef = [];
+				for (u  in  used.keys()) if (!clauseDeclared.exists(u) && u != okBinder && allowUndefined(u)) undef.push(u);
+				if (undef.length == 1) {
+					var newName = undef[0];
+					if (!allowUndefined(newName)) {
+						newClauses.push(cl);
+						continue;
+					};
+					var newPattern = rewriteOkBinder(cl.pattern, newName);
+					newClauses.push({ pattern : newPattern, guard : cl.guard, body : cl.body });
+					continue;
+				};
+				if (undef.length >= 1) {
+					var freq = new haxe.ds.StringMap<Int>();
+					for (u  in  undef) freq.set(u, 0);
+					ASTUtils.walk(cl.body, function(w:ElixirAST) {
+						switch (w.def) {
+							case EVar(nm) if (freq.exists(nm)):
+								freq.set(nm, freq.get(nm) + 1);							
+							default:
+						};
+					});
+					var best:Null<String> = null;
+					var bestCount = -1;
+					for (u  in  undef) {
+						var c = freq.exists(u) ? freq.get(u) : 0;
+						if (c > bestCount) {
+							bestCount = c;
+							best = u;
+						};
+					};
+					if (best != null && allowUndefined(best)) {
+						var newPat2 = rewriteOkBinder(cl.pattern, best);
+						newClauses.push({ pattern : newPat2, guard : cl.guard, body : cl.body });
+						continue;
+					};
+				};
+			};
+			newClauses.push(cl);
+		};
+		makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var okBinder = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.extractOkBinder(cl.pattern);
+									if (okBinder != null) {
+										var locked = false;
+										try {
+											locked = (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true));
+										} catch (`:Dynamic) {
+											{};
+											{};
+											if (true) {
+												{};
+												{};
+											} else throw `;
+										};
+										if (okBinder == "_value" || locked) {
+											newClauses.push(cl);
+											continue;
+										};
+										var clauseDeclared = {
+											{};
+											new haxe.ds.StringMap();
+										};
+										reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(cl.pattern, clauseDeclared);
+										reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectLhsDeclsInBody(cl.body, clauseDeclared);
+										if (fnDeclared != null) {
+											for (k in fnDeclared.keys()) {
+												{
+													clauseDeclared.set(k, true);
+												};
+											};
+										};
+										var used = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectUsedNames(cl.body);
+										var undef = [];
+										for (u in used.keys()) {
+											if (! clauseDeclared.exists(u) && u != okBinder && if (u == null || u.length == 0) {
+												false;
+											} else {
+												if (u == "socket" || u == "live_socket" || u == "liveSocket") {
+													false;
+												} else {
+													if (u == null || u.length == 0) {
+														false;
+													} else {
+														var c = u.charAt(0);
+														c.toLowerCase() == c;
+													};
+												};
+											}) {
+												undef.push(u);
+											};
+										};
+										if (undef.length == 1) {
+											var newName = undef[0];
+											if (! if (newName == null || newName.length == 0) {
+												false;
+											} else {
+												if (newName == "socket" || newName == "live_socket" || newName == "liveSocket") {
+													false;
+												} else {
+													if (newName == null || newName.length == 0) {
+														false;
+													} else {
+														var c = newName.charAt(0);
+														c.toLowerCase() == c;
+													};
+												};
+											}) {
+												newClauses.push(cl);
+												continue;
+											};
+											var newPattern = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.rewriteOkBinder(cl.pattern, newName);
+											newClauses.push({pattern : newPattern, guard : cl.guard, body : cl.body});
+											continue;
+										};
+										if (undef.length >= 1) {
+											var freq = new haxe.ds.StringMap();
+											{
+												var ` = 0;
+												while (` < undef.length) {
+													var u = undef[`];
+													++ `;
+													freq.set(u, 0);
+												};
+											};
+											reflaxe.elixir.ast.ASTUtils.walk(cl.body, function(w:reflaxe.elixir.ast.ElixirAST) {
+												@:ast(switch (w.def) {
+	case EVar(nm) if (freq.exists(nm)):
+		freq.set(nm, freq.get(nm) + 1);	
+	default:
+}) {
+													var ` = w.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														{
+															var nm = `;
+															if (freq.exists(nm)) {
+																freq.set(nm, freq.get(nm) + 1);
+															} else {};
+														};
+													} else {};
+												};
+											});
+											var best = null;
+											var bestCount = -1;
+											{
+												var ` = 0;
+												while (` < undef.length) {
+													var u = undef[`];
+													++ `;
+													var c = if (freq.exists(u)) {
+														freq.get(u);
+													} else {
+														0;
+													};
+													if (c > bestCount) {
+														bestCount = c;
+														best = u;
+													};
+												};
+											};
+											if (best != null && if (best == null || best.length == 0) {
+												false;
+											} else {
+												if (best == "socket" || best == "live_socket" || best == "liveSocket") {
+													false;
+												} else {
+													if (best == null || best.length == 0) {
+														false;
+													} else {
+														var c = best.charAt(0);
+														c.toLowerCase() == c;
+													};
+												};
+											}) {
+												var newPat2 = reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.rewriteOkBinder(cl.pattern, best);
+												newClauses.push({pattern : newPat2, guard : cl.guard, body : cl.body});
+												continue;
+											};
+										};
+									};
+									newClauses.push(cl);
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(target, newClauses), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function allowUndefined(name:String) {
+		if (name == null || name.length == 0) {
+			return false;
+		};
+		if (name == "socket" || name == "live_socket" || name == "liveSocket") {
+			return false;
+		};
+		return if (name == null || name.length == 0) {
+			false;
+		} else {
+			var c = name.charAt(0);
+			c.toLowerCase() == c;
+		};
+	}
+
+	static function collectFunctionDefinedVars(args:Array<reflaxe.elixir.ast.EPattern>, body:reflaxe.elixir.ast.ElixirAST) {
+		var vars = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(a, vars);
+			};
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EMatch(p, _):
+		collectPatternDecls(p, vars);	
+	case EBinary(Match, l, _):
+		collectLhsDecls(l, vars);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var p = `;
+							{
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(p, vars);
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var l = `;
+								{
+									reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectLhsDecls(l, vars);
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+		return vars;
+	}
+
+	static function collectLhsDeclsInBody(body:reflaxe.elixir.ast.ElixirAST, vars:Map<String, Bool>) {
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EMatch(p, _):
+		collectPatternDecls(p, vars);	
+	case EBinary(Match, l, _):
+		collectLhsDecls(l, vars);	
+	case ECase(_, cs):
+		for (c  in  cs) collectPatternDecls(c.pattern, vars);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var cs = `;
+							{
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(c.pattern, vars);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var p = `;
+							{
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(p, vars);
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var l = `;
+								{
+									reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectLhsDecls(l, vars);
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+	}
+
+	static function collectPatternDecls(p:reflaxe.elixir.ast.EPattern, vars:Map<String, Bool>) {
+		@:ast(switch (p) {
+	case PVar(n):
+		if (n != null && n.length > 0) vars.set(n, true);	
+	case PTuple(es) | PList(es):
+		for (e  in  es) collectPatternDecls(e, vars);	
+	case PCons(h, t):
+		collectPatternDecls(h, vars);
+		collectPatternDecls(t, vars);	
+	case PMap(kvs):
+		for (kv  in  kvs) collectPatternDecls(kv.value, vars);	
+	case PStruct(_, fs):
+		for (f  in  fs) collectPatternDecls(f.value, vars);	
+	case PPin(inner):
+		collectPatternDecls(inner, vars);	
+	default:
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						if (n != null && n.length > 0) {
+							{
+								vars.set(n, true);
+							};
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(e, vars);
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(e, vars);
+							};
+						};
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(h, vars);
+						reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(t, vars);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(kv.value, vars);
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(f.value, vars);
+							};
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectPatternDecls(inner, vars);
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	static function collectLhsDecls(lhs:reflaxe.elixir.ast.ElixirAST, vars:Map<String, Bool>) {
+		@:ast(switch (lhs.def) {
+	case EVar(n):
+		vars.set(n, true);	
+	case EBinary(Match, l2, r2):
+		collectLhsDecls(l2, vars);
+		collectLhsDecls(r2, vars);	
+	default:
+}) {
+			var ` = lhs.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var l2 = `;
+							var r2 = `;
+							{
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectLhsDecls(l2, vars);
+								reflaxe.elixir.ast.transformers.SuccessBinderAlignByBodyUseTransforms.collectLhsDecls(r2, vars);
+							};
+						};
+					} else {};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							{
+								vars.set(n, true);
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+	}
+
+	static function collectUsedNames(ast:reflaxe.elixir.ast.ElixirAST) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(ast, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(v):
+		names.set(v, true);	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							{
+								names.set(v, true);
+							};
+						};
+					};
+				} else {};
+			};
+		});
+		return names;
+	}
+
+	static function extractOkBinder(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PTuple(elements) if (elements.length == 2):
+		switch (elements[0]) {
+			case PLiteral(l) if (isOkAtom(l)):
+				switch (elements[1]) {
+					case PVar(n):
+						n;					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var elements = `;
+				if (elements.length == 2) {
+					@:ast(switch (elements[0]) {
+	case PLiteral(l) if (isOkAtom(l)):
+		switch (elements[1]) {
+			case PVar(n):
+				n;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+						var ` = elements[0];
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var l = `;
+								if (@:ast(switch (ast.def) {
+	case EAtom(v):
+		v == ":ok" || v == "ok";	
+	default:
+		false;	
+}) {
+									var ` = l.def;
+									if (enumIndex ` == 31) {
+										var ` = `[0];
+										{
+											var v = `;
+											{
+												v == ":ok" || v == "ok";
+											};
+										};
+									} else {
+										false;
+									};
+								}) {
+									@:ast(switch (elements[1]) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) {
+										var ` = elements[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var n = `;
+												{
+													n;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+
+	static inline function isOkAtom(ast:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (ast.def) {
+	case EAtom(v):
+		v == ":ok" || v == "ok";	
+	default:
+		false;	
+}) {
+			var ` = ast.def;
+			if (enumIndex ` == 31) {
+				var ` = `[0];
+				{
+					var v = `;
+					{
+						v == ":ok" || v == "ok";
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function rewriteOkBinder(p:reflaxe.elixir.ast.EPattern, newName:String) {
+		return @:ast(switch (p) {
+	case PTuple(es) if (es.length == 2):
+		switch (es[0]) {
+			case PLiteral(l) if (isOkAtom(l)):
+				switch (es[1]) {
+					case PVar(_):
+						PTuple([es[0], PVar(newName)]);					
+					default:
+						p;					
+				};			
+			default:
+				p;			
+		};	
+	default:
+		p;	
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var es = `;
+				if (es.length == 2) {
+					@:ast(switch (es[0]) {
+	case PLiteral(l) if (isOkAtom(l)):
+		switch (es[1]) {
+			case PVar(_):
+				PTuple([es[0], PVar(newName)]);			
+			default:
+				p;			
+		};	
+	default:
+		p;	
+}) {
+						var ` = es[0];
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var l = `;
+								if (@:ast(switch (ast.def) {
+	case EAtom(v):
+		v == ":ok" || v == "ok";	
+	default:
+		false;	
+}) {
+									var ` = l.def;
+									if (enumIndex ` == 31) {
+										var ` = `[0];
+										{
+											var v = `;
+											{
+												v == ":ok" || v == "ok";
+											};
+										};
+									} else {
+										false;
+									};
+								}) {
+									@:ast(switch (es[1]) {
+	case PVar(_):
+		PTuple([es[0], PVar(newName)]);	
+	default:
+		p;	
+}) {
+										var ` = es[1];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												reflaxe.elixir.ast.EPattern.PTuple([es[0], reflaxe.elixir.ast.EPattern.PVar(newName)]);
+											};
+										} else {
+											p;
+										};
+									};
+								} else {
+									p;
+								};
+							};
+						} else {
+							p;
+						};
+					};
+				} else {
+					p;
+				};
+			};
+		} else {
+			p;
+		};
+	}
+
+	static function replaceVar(body:reflaxe.elixir.ast.ElixirAST, from:String, to:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(n) if (n == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var n = `;
+						if (n == from) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static inline function isLower(s:String) {
+		if (s == null || s.length == 0) {
+			return false;
+		};
+		var c = s.charAt(0);
+		return c.toLowerCase() == c;
+	}
+
+	static inline function cloneMap<T>(m:Map<String, cloneMap.T>) {
+		var n = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		if (m == null) {
+			return n;
+		};
+		for (k in m.keys()) {
+			{
+				var value = m.get(k);
+				n.set(k, value);
+			};
+		};
+		return n;
+	}
+}

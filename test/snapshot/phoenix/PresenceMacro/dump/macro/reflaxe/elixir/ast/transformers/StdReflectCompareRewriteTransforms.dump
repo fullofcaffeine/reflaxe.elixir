@@ -1,0 +1,176 @@
+class reflaxe.elixir.ast.transformers.StdReflectCompareRewriteTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (name == "Reflect"):
+		var nb:Array<ElixirAST> = [];
+		for (b  in  body) nb.push(rewriteDef(b));
+		makeASTWithMeta(EModule(name, attrs, nb), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock) if (name2 == "Reflect"):
+		makeASTWithMeta(EDefmodule(name2, rewriteDef(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "Reflect") {
+								var nb = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										nb.push(reflaxe.elixir.ast.transformers.StdReflectCompareRewriteTransforms.rewriteDef(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							if (name2 == "Reflect") {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, reflaxe.elixir.ast.transformers.StdReflectCompareRewriteTransforms.rewriteDef(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteDef(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EDef(fname, args, guards, _body) if (fname == "compare" && args != null && args.length == 2):
+		var aName = argName(args[0]);
+		var bName = argName(args[1]);
+		var cond1 = makeAST(EBinary(Less, makeAST(ECall(null, "inspect", [makeAST(EVar(aName))])), makeAST(ECall(null, "inspect", [makeAST(EVar(bName))]))));
+		var if1 = makeAST(EIf(cond1, makeAST(EInteger(-1)), null));
+		var cond2 = makeAST(EBinary(Greater, makeAST(ECall(null, "inspect", [makeAST(EVar(aName))])), makeAST(ECall(null, "inspect", [makeAST(EVar(bName))]))));
+		var if2 = makeAST(EIf(cond2, makeAST(EInteger(1)), null));
+		makeASTWithMeta(EDef(fname, args, guards, makeAST(EBlock([if1, if2]))), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var fname = `;
+						var args = `;
+						var guards = `;
+						var _body = `;
+						if (fname == "compare" && args != null && args.length == 2) {
+							var aName = reflaxe.elixir.ast.transformers.StdReflectCompareRewriteTransforms.argName(args[0]);
+							var bName = reflaxe.elixir.ast.transformers.StdReflectCompareRewriteTransforms.argName(args[1]);
+							var cond1 = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Less, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "inspect", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(aName), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								}, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "inspect", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(bName), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								}), metadata : {}, pos : pos};
+							};
+							var if1 = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond1, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(-1), metadata : {}, pos : pos};
+								}, null), metadata : {}, pos : pos};
+							};
+							var cond2 = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "inspect", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(aName), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								}, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "inspect", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(bName), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								}), metadata : {}, pos : pos};
+							};
+							var if2 = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond2, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+								}, null), metadata : {}, pos : pos};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname, args, guards, {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([if1, if2]), metadata : {}, pos : pos};
+							}), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function argName(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PVar(n) if (n != null):
+		n;	
+	default:
+		"a";	
+}) if (enumIndex p == 0) {
+			var ` = p[0];
+			{
+				var n = `;
+				if (n != null) {
+					n;
+				} else {
+					"a";
+				};
+			};
+		} else {
+			"a";
+		};
+	}
+}

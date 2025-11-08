@@ -1,0 +1,154 @@
+class reflaxe.helpers.FieldAccessHelper {
+
+	public static function getVarData(fa:haxe.macro.FieldAccess) {
+		return @:ast(switch (fa) {
+	case FInstance(clsRef, params, cfRef):
+		{
+			cfRef.get().findVarData(clsRef.get(), false);
+		};	
+	case FStatic(clsRef, cfRef):
+		{
+			cfRef.get().findVarData(clsRef.get(), false);
+		};	
+	case _:
+		null;	
+}) switch (enumIndex fa) {
+			case 0: {
+				var ` = fa[0];
+				var ` = fa[1];
+				var ` = fa[2];
+				{
+					var clsRef = `;
+					var params = `;
+					var cfRef = `;
+					{
+						{
+							reflaxe.helpers.ClassFieldHelper.findVarData(cfRef.get(), clsRef.get(), false);
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var clsRef = `;
+					var cfRef = `;
+					{
+						{
+							reflaxe.helpers.ClassFieldHelper.findVarData(cfRef.get(), clsRef.get(), false);
+						};
+					};
+				};
+			};
+			default: {
+				null;
+			}
+		};
+	}
+
+	public static function getFuncData(fa:haxe.macro.FieldAccess) {
+		return @:ast(switch (fa) {
+	case FInstance(clsRef, _, cfRef):
+		{
+			cfRef.get().findFuncData(clsRef.get(), false);
+		};	
+	case FStatic(clsRef, cfRef):
+		{
+			cfRef.get().findFuncData(clsRef.get(), false);
+		};	
+	case _:
+		null;	
+}) switch (enumIndex fa) {
+			case 0: {
+				var ` = fa[0];
+				var ` = fa[1];
+				var ` = fa[2];
+				{
+					var clsRef = `;
+					var cfRef = `;
+					{
+						{
+							reflaxe.helpers.ClassFieldHelper.findFuncData(cfRef.get(), clsRef.get(), false);
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var clsRef = `;
+					var cfRef = `;
+					{
+						{
+							reflaxe.helpers.ClassFieldHelper.findFuncData(cfRef.get(), clsRef.get(), false);
+						};
+					};
+				};
+			};
+			default: {
+				null;
+			}
+		};
+	}
+
+	public static function getClassField(fa:haxe.macro.FieldAccess) {
+		return @:ast(switch (fa) {
+	case FInstance(_, _, cfRef):
+		cfRef.get();	
+	case FStatic(_, cfRef):
+		cfRef.get();	
+	case FAnon(cfRef):
+		cfRef.get();	
+	case FClosure(_, cfRef):
+		cfRef.get();	
+	case _:
+		null;	
+}) switch (enumIndex fa) {
+			case 0: {
+				var ` = fa[0];
+				var ` = fa[1];
+				var ` = fa[2];
+				{
+					var cfRef = `;
+					{
+						cfRef.get();
+					};
+				};
+			};
+			case 1: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var cfRef = `;
+					{
+						cfRef.get();
+					};
+				};
+			};
+			case 2: {
+				var ` = fa[0];
+				{
+					var cfRef = `;
+					{
+						cfRef.get();
+					};
+				};
+			};
+			case 4: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var cfRef = `;
+					{
+						cfRef.get();
+					};
+				};
+			};
+			default: {
+				null;
+			}
+		};
+	}
+}

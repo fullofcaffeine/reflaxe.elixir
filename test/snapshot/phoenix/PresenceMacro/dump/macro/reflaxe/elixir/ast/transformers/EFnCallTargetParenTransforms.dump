@@ -1,0 +1,58 @@
+class reflaxe.elixir.ast.transformers.EFnCallTargetParenTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECall(target, funcName, args) if (funcName == "" && target != null):
+		switch (target.def) {
+			case EFn(_):
+				var wrapped = makeAST(EParen(target));
+				makeASTWithMeta(ECall(wrapped, funcName, args), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 22) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var funcName = `;
+						var args = `;
+						if (funcName == "" && target != null) {
+							@:ast(switch (target.def) {
+	case EFn(_):
+		var wrapped = makeAST(EParen(target));
+		makeASTWithMeta(ECall(wrapped, funcName, args), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = target.def;
+								if (enumIndex ` == 42) {
+									var ` = `[0];
+									{
+										var wrapped = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EParen(target), metadata : {}, pos : pos};
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.ECall(wrapped, funcName, args), metadata : n.metadata, pos : n.pos};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

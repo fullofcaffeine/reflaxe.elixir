@@ -1,0 +1,603 @@
+class reflaxe.elixir.ast.transformers.MountDropHeadIdentityReassignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "mount" && args != null && args.length == 3):
+		var p = switch (args[0]) {
+			case PVar(v):
+				v;			
+			default:
+				null;			
+		};
+		var s = switch (args[1]) {
+			case PVar(v2):
+				v2;			
+			default:
+				null;			
+		};
+		var sk = switch (args[2]) {
+			case PVar(v3):
+				v3;			
+			default:
+				null;			
+		};
+		var nb = drop(body, p, s, sk);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "mount" && args != null && args.length == 3) {
+							var p = @:ast(switch (args[0]) {
+	case PVar(v):
+		v;	
+	default:
+		null;	
+}) {
+								var ` = args[0];
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									{
+										var v = `;
+										{
+											v;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							var s = @:ast(switch (args[1]) {
+	case PVar(v2):
+		v2;	
+	default:
+		null;	
+}) {
+								var ` = args[1];
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									{
+										var v2 = `;
+										{
+											v2;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							var sk = @:ast(switch (args[2]) {
+	case PVar(v3):
+		v3;	
+	default:
+		null;	
+}) {
+								var ` = args[2];
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									{
+										var v3 = `;
+										{
+											v3;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							var nb = reflaxe.elixir.ast.transformers.MountDropHeadIdentityReassignTransforms.drop(body, p, s, sk);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function sameOrUnderscore(a:Null<String>, b:Null<String>) {
+		if (a == null || b == null) {
+			return false;
+		};
+		if (a == b) {
+			return true;
+		};
+		if (a.length > 1 && a.charAt(0) == "_" && a.substr(1, null) == b) {
+			return true;
+		};
+		if (b.length > 1 && b.charAt(0) == "_" && b.substr(1, null) == a) {
+			return true;
+		};
+		return false;
+	}
+
+	static function drop(body:reflaxe.elixir.ast.ElixirAST, paramsName:Null<String>, sessionName:Null<String>, socketName:Null<String>) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(filter(stmts, paramsName, sessionName, socketName)), body.metadata, body.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(filter(stmts2, paramsName, sessionName, socketName)), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.MountDropHeadIdentityReassignTransforms.filter(stmts, paramsName, sessionName, socketName));
+								var meta = body.metadata;
+								var pos = body.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts2 = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.MountDropHeadIdentityReassignTransforms.filter(stmts2, paramsName, sessionName, socketName));
+								var meta = body.metadata;
+								var pos = body.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				default: {
+					body;
+				}
+			};
+		};
+	}
+
+	static function filter(stmts:Array<reflaxe.elixir.ast.ElixirAST>, paramsName:Null<String>, sessionName:Null<String>, socketName:Null<String>) {
+		var out = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var st = stmts[`];
+				++ `;
+				var drop = false;
+				@:ast(switch (st.def) {
+	case EMatch(PVar(lhs), rhs):
+		if (lhs == sessionName && isMapGetSession(rhs, paramsName)) drop = true else if ((lhs == socketName || lhs == paramsName || (paramsName != null && lhs == "_" + paramsName)) && isTrivialVar(rhs, [paramsName, "_" + paramsName, socketName, sessionName])) drop = true;	
+	case EBinary(Match, left, right):
+		switch (left.def) {
+			case EVar(lhs2):
+				if (lhs2 == sessionName && isMapGetSession(right, paramsName)) drop = true else if ((lhs2 == socketName || lhs2 == paramsName || (paramsName != null && lhs2 == "_" + paramsName)) && isTrivialVar(right, [paramsName, "_" + paramsName, socketName, sessionName])) drop = true;			
+			default:
+		};	
+	default:
+}) {
+					var ` = st.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var lhs = `;
+									var rhs = `;
+									{
+										if (lhs == sessionName && if (paramsName == null) {
+											false;
+										} else {
+											@:ast(switch (expr.def) {
+	case ERemoteCall({ def : EVar(mod) }, fn, [arg0, { def : EString(key) }]) if (mod == "Map" && fn == "get" && key == "session"):
+		switch (arg0.def) {
+			case EVar(v):
+				sameOrUnderscore(v, paramsName);			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+												var ` = rhs.def;
+												if (enumIndex ` == 24) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															if (`.length == 2) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var ` = `.def;
+																	var ` = `.metadata;
+																	var ` = `.pos;
+																	if (enumIndex ` == 32) {
+																		var ` = `[0];
+																		{
+																			var key = `;
+																			var arg0 = `;
+																			var fn = `;
+																			var mod = `;
+																			if (mod == "Map" && fn == "get" && key == "session") {
+																				@:ast(switch (arg0.def) {
+	case EVar(v):
+		sameOrUnderscore(v, paramsName);	
+	default:
+		false;	
+}) {
+																					var ` = arg0.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var v = `;
+																							{
+																								if (v == null || paramsName == null) {
+																									false;
+																								} else {
+																									if (v == paramsName) {
+																										true;
+																									} else {
+																										if (v.length > 1 && v.charAt(0) == "_" && v.substr(1, null) == paramsName) {
+																											true;
+																										} else {
+																											if (paramsName.length > 1 && paramsName.charAt(0) == "_" && paramsName.substr(1, null) == v) {
+																												true;
+																											} else {
+																												false;
+																											};
+																										};
+																									};
+																								};
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										}) {
+											drop = true;
+										} else {
+											if ((lhs == socketName || lhs == paramsName || (paramsName != null && lhs == "_" + paramsName)) && @:ast(switch (expr.def) {
+	case EVar(v):
+		allowed.indexOf(v) != -1;	
+	default:
+		false;	
+}) {
+												var ` = rhs.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var v = `;
+														{
+															[paramsName, "_" + paramsName, socketName, sessionName].indexOf(v, null) != -1;
+														};
+													};
+												} else {
+													false;
+												};
+											}) {
+												drop = true;
+											};
+										};
+									};
+								};
+							} else {};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									var right = `;
+									{
+										@:ast(switch (left.def) {
+	case EVar(lhs2):
+		if (lhs2 == sessionName && isMapGetSession(right, paramsName)) drop = true else if ((lhs2 == socketName || lhs2 == paramsName || (paramsName != null && lhs2 == "_" + paramsName)) && isTrivialVar(right, [paramsName, "_" + paramsName, socketName, sessionName])) drop = true;	
+	default:
+}) {
+											var ` = left.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var lhs2 = `;
+													{
+														if (lhs2 == sessionName && if (paramsName == null) {
+															false;
+														} else {
+															@:ast(switch (expr.def) {
+	case ERemoteCall({ def : EVar(mod) }, fn, [arg0, { def : EString(key) }]) if (mod == "Map" && fn == "get" && key == "session"):
+		switch (arg0.def) {
+			case EVar(v):
+				sameOrUnderscore(v, paramsName);			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+																var ` = right.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var ` = `.def;
+																		var ` = `.metadata;
+																		var ` = `.pos;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			if (`.length == 2) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				{
+																					var ` = `.def;
+																					var ` = `.metadata;
+																					var ` = `.pos;
+																					if (enumIndex ` == 32) {
+																						var ` = `[0];
+																						{
+																							var key = `;
+																							var arg0 = `;
+																							var fn = `;
+																							var mod = `;
+																							if (mod == "Map" && fn == "get" && key == "session") {
+																								@:ast(switch (arg0.def) {
+	case EVar(v):
+		sameOrUnderscore(v, paramsName);	
+	default:
+		false;	
+}) {
+																									var ` = arg0.def;
+																									if (enumIndex ` == 38) {
+																										var ` = `[0];
+																										{
+																											var v = `;
+																											{
+																												if (v == null || paramsName == null) {
+																													false;
+																												} else {
+																													if (v == paramsName) {
+																														true;
+																													} else {
+																														if (v.length > 1 && v.charAt(0) == "_" && v.substr(1, null) == paramsName) {
+																															true;
+																														} else {
+																															if (paramsName.length > 1 && paramsName.charAt(0) == "_" && paramsName.substr(1, null) == v) {
+																																true;
+																															} else {
+																																false;
+																															};
+																														};
+																													};
+																												};
+																											};
+																										};
+																									} else {
+																										false;
+																									};
+																								};
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															};
+														}) {
+															drop = true;
+														} else {
+															if ((lhs2 == socketName || lhs2 == paramsName || (paramsName != null && lhs2 == "_" + paramsName)) && @:ast(switch (expr.def) {
+	case EVar(v):
+		allowed.indexOf(v) != -1;	
+	default:
+		false;	
+}) {
+																var ` = right.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v = `;
+																		{
+																			[paramsName, "_" + paramsName, socketName, sessionName].indexOf(v, null) != -1;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															}) {
+																drop = true;
+															};
+														};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				if (! drop) {
+					out.push(st);
+				};
+			};
+		};
+		return out;
+	}
+
+	static inline function isTrivialVar(expr:reflaxe.elixir.ast.ElixirAST, allowed:Array<Null<String>>) {
+		return @:ast(switch (expr.def) {
+	case EVar(v):
+		allowed.indexOf(v) != -1;	
+	default:
+		false;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var v = `;
+					{
+						allowed.indexOf(v, null) != -1;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function isMapGetSession(expr:reflaxe.elixir.ast.ElixirAST, paramsName:Null<String>) {
+		if (paramsName == null) {
+			return false;
+		};
+		return @:ast(switch (expr.def) {
+	case ERemoteCall({ def : EVar(mod) }, fn, [arg0, { def : EString(key) }]) if (mod == "Map" && fn == "get" && key == "session"):
+		switch (arg0.def) {
+			case EVar(v):
+				sameOrUnderscore(v, paramsName);			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (`.length == 2) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 32) {
+									var ` = `[0];
+									{
+										var key = `;
+										var arg0 = `;
+										var fn = `;
+										var mod = `;
+										if (mod == "Map" && fn == "get" && key == "session") {
+											@:ast(switch (arg0.def) {
+	case EVar(v):
+		sameOrUnderscore(v, paramsName);	
+	default:
+		false;	
+}) {
+												var ` = arg0.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var v = `;
+														{
+															if (v == null || paramsName == null) {
+																false;
+															} else {
+																if (v == paramsName) {
+																	true;
+																} else {
+																	if (v.length > 1 && v.charAt(0) == "_" && v.substr(1, null) == paramsName) {
+																		true;
+																	} else {
+																		if (paramsName.length > 1 && paramsName.charAt(0) == "_" && paramsName.substr(1, null) == v) {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																};
+															};
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}
