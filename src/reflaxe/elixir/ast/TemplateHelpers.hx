@@ -260,6 +260,10 @@ class TemplateHelpers {
      */
     public static function rewriteInterpolations(s:String):String {
         if (s == null) return s;
+        // Fast-path: if there are no interpolation/control markers, return as-is
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf('<for {') == -1) {
+            return s;
+        }
         #if hxx_instrument_sys
         var __t0 = haxe.Timer.stamp();
         var __bytes = s.length;
