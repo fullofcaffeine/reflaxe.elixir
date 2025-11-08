@@ -1,9 +1,9 @@
 # Haxe→Elixir compilation for Phoenix LiveView server-side code
 # Generates idiomatic Elixir code for the BEAM VM
 
-# Bring in Reflaxe.Elixir via library, avoid repo-level classpaths to prevent
-# shadowing stdlib and slowing compilation. The library hxml wires macros.
+# Use packaged libraries; do not pull repo-level classpaths (keeps compile fast and isolated)
 -lib reflaxe
+-lib reflaxe.elixir
 
 # Ensure a stable entrypoint to satisfy Haxe's main resolution for custom targets.
 # A minimal Main class is provided under src_haxe/Main.hx and is not emitted.
@@ -49,8 +49,9 @@
 # Disabled by default to avoid noisy generation in some modules
 # -D debug_dynamic_assignment
 
-# Exclude client code from server compilation
+# Exclude non-server packs
 --macro exclude('client')
+--macro exclude('test')
 --macro exclude('server.live.UserLive')
 --macro exclude('server.services.UserGenServer')
 --macro exclude('test')
@@ -64,11 +65,10 @@
 --macro keep('phoenix.DateFormat')
 --macro keep('phoenix.Sorting')
 
-# Define library version and initialize compiler
+# Define library version and initialize compiler (via -lib reflaxe.elixir)
 -D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 
-# Debug flags are disabled by default to keep QA builds quiet and fast
+# (Keep debug flags off for app builds)
 # -D debug_success_unifier
 # -D debug_presence
 
