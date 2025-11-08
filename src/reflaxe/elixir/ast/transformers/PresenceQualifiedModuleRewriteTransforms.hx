@@ -28,10 +28,13 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class PresenceQualifiedModuleRewriteTransforms {
     static inline function toWebPresence(modName:String): Null<String> {
         if (modName == null) return null;
+        // Only rewrite modules that look like <Prefix>.Presence and are not already <Prefix>Web.Presence
         if (StringTools.endsWith(modName, ".Presence") && modName.indexOf("Web.Presence") == -1) {
-            var idx = modName.lastIndexOf(".Presence");
-            var prefix = modName.substr(0, idx);
-            return prefix + "Web.Presence";
+            // Use PhoenixMapper to derive the canonical app prefix (shape-based, not name-coupled)
+            var appPrefix: String = null;
+            try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) {}
+            if (appPrefix == null || appPrefix.length == 0) return null;
+            return appPrefix + "Web.Presence";
         }
         return null;
     }
@@ -63,4 +66,3 @@ class PresenceQualifiedModuleRewriteTransforms {
 }
 
 #end
-

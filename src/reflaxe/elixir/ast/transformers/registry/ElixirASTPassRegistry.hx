@@ -1638,18 +1638,15 @@ class ElixirASTPassRegistry {
         });
         #end
         
-        // Prefix unused function parameters with underscore
-        // DISABLED: Now handled during AST building with more accurate TypedExpr-based detection
-        // The transformer approach had issues with mismatched detection logic between TypedExpr and ElixirAST
-        // See ElixirASTBuilder line 2064-2070 for the proper implementation
-        /*
+        // Prefix unused function parameters with underscore (safety net)
+        // Keep this enabled as a late-phase hygiene pass to catch cases where
+        // AST building could not determine usage (e.g., missing function body).
         passes.push({
             name: "PrefixUnusedParameters", 
             description: "Prefix unused function parameters with underscore to follow Elixir conventions",
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_prefixUnusedParametersPass
         });
-        */
         
         // ===== HYGIENE TRANSFORMATION PASSES =====
         // These passes eliminate compilation warnings and ensure idiomatic Elixir
@@ -1872,6 +1869,15 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ZeroAssignCallToBareCallTransforms.pass
         });
+        // Ultra-final safety net: ensure any remaining unused function parameters are underscored
+        // This runs at the very end to catch cases missed earlier due to ordering/analysis gaps.
+        passes.push({
+            name: "UnderscoreParamPromotion_Final",
+            description: "Ultra-final: prefix unused function parameters with underscore",
+            enabled: true,
+            runAfter: ["ZeroAssignCallToBareCall_Final"],
+            pass: reflaxe.elixir.ast.transformers.SimplePrefixUnusedParamsFinalTransforms.pass
+        });
         // Absolute final binder repair for any late-emitted shapes
         passes.push({
             name: "SwitchInnerCaseBinderRepair_Final",
@@ -2000,7 +2006,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceQualifiedModuleRewrite",
             description: "Rewrite <App>.Presence.* calls to <App>Web.Presence.*",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.PresenceQualifiedModuleRewriteTransforms.transformPass
         });
 
