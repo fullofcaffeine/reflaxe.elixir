@@ -181,9 +181,10 @@ defmodule HaxeCompiler do
     # Bound execution time to avoid hangs during mix compile / phx.server
     timeout_ms = haxe_timeout_ms()
 
+    # Build command options (no native timeout here; we enforce via Task/yield)
     cmd_opts = case Path.dirname(hxml_file) do
-      "." -> [stderr_to_stdout: true, env: env, timeout: timeout_ms]
-      dir -> [cd: dir, stderr_to_stdout: true, env: env, timeout: timeout_ms]
+      "." -> [stderr_to_stdout: true, env: env]
+      dir -> [cd: dir, stderr_to_stdout: true, env: env]
     end
     
     # Use just the filename if we're changing directory
@@ -195,15 +196,17 @@ defmodule HaxeCompiler do
     
     args = cmd_args ++ [final_hxml]
     
-    case System.cmd(haxe_cmd, args, cmd_opts) do
-      {output, 0} ->
+    # Run Haxe in a separate task to enforce timeout cleanly
+    task = Task.async(fn -> System.cmd(haxe_cmd, args, cmd_opts) end)
+    case Task.yield(task, timeout_ms) || Task.shutdown(task, :brutal_kill) do
+      {:ok, {output, 0}} ->
         {:ok, output}
-      {output, exit_code} ->
-        # Parse structured error information from Haxe output
+      {:ok, {output, exit_code}} ->
         structured_errors = parse_haxe_errors(output)
         store_compilation_errors(structured_errors)
-
         {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
+      nil ->
+        {:error, "Haxe compilation timed out after #{div(timeout_ms, 1000)}s. Set HAXE_TIMEOUT_MS to adjust."}
     end
   rescue
     error ->
