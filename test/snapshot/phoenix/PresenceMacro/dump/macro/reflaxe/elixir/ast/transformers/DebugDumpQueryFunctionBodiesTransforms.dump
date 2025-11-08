@@ -1,0 +1,95 @@
+class reflaxe.elixir.ast.transformers.DebugDumpQueryFunctionBodiesTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case EDef(name, args, _, body):
+		var q = qparam(args);
+		if (q != null) {
+			Sys.println("[DebugDumpQueryFn] def " + name + "/" + args.length + " qparam=" + q + " body=\n" + reflaxe.elixir.ast.ElixirASTPrinter.print(body, 0));
+		};	
+	case EDefp(name2, args2, _, body2):
+		var q2 = qparam(args2);
+		if (q2 != null) {
+			Sys.println("[DebugDumpQueryFn] defp " + name2 + "/" + args2.length + " qparam=" + q2 + " body=\n" + reflaxe.elixir.ast.ElixirASTPrinter.print(body2, 0));
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var body = `;
+							{
+								var q = reflaxe.elixir.ast.transformers.DebugDumpQueryFunctionBodiesTransforms.qparam(args);
+								if (q != null) {
+									Sys.println("[DebugDumpQueryFn] def " + name + "/" + args.length + " qparam=" + q + " body=\n" + reflaxe.elixir.ast.ElixirASTPrinter.print(body, 0));
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var body2 = `;
+							{
+								var q2 = reflaxe.elixir.ast.transformers.DebugDumpQueryFunctionBodiesTransforms.qparam(args2);
+								if (q2 != null) {
+									Sys.println("[DebugDumpQueryFn] defp " + name2 + "/" + args2.length + " qparam=" + q2 + " body=\n" + reflaxe.elixir.ast.ElixirASTPrinter.print(body2, 0));
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return n;
+		});
+	}
+
+	static function qparam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var found = null;
+		var count = 0;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(n) if (StringTools.endsWith(n, "_query")):
+		found = n;
+		count++;	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var n = `;
+						if (StringTools.endsWith(n, "_query")) {
+							found = n;
+							count ++;
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return if (count == 1) {
+			found;
+		} else {
+			null;
+		};
+	}
+}

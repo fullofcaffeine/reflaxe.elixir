@@ -1,0 +1,70 @@
+class reflaxe.elixir.ast.transformers.HeexSimplifyIIFEInInterpolations {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H" && content != null && content.indexOf("<%=") != -1):
+		var simplified = simplify(content);
+		if (simplified != content) makeASTWithMeta(ESigil(type, simplified, modifiers), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var modifiers = `;
+						if (type == "H" && content != null && content.indexOf("<%=", null) != -1) {
+							var simplified = reflaxe.elixir.ast.transformers.HeexSimplifyIIFEInInterpolations.simplify(content);
+							if (simplified != content) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, simplified, modifiers), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function simplify(s:String) {
+		if (s.indexOf("(fn ->", null) == -1 || s.indexOf("end).()", null) == -1) {
+			return s;
+		};
+		var out = new StringBuf();
+		var i = 0;
+		while (i < s.length) {
+			var start = s.indexOf("<%=", i);
+			if (start == -1) {
+				out.add(s.substr(i, null));
+				break;
+			};
+			out.add(s.substr(i, start - i));
+			var endTag = s.indexOf("%>", start + 3);
+			if (endTag == -1) {
+				out.add(s.substr(start, null));
+				break;
+			};
+			var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
+			if (StringTools.startsWith(inner, "(fn ->") && StringTools.endsWith(inner, " end).()")) {
+				var mid = StringTools.trim(inner.substr(6, inner.length - 6 - " end).()".length));
+				out.add("<%= ");
+				out.add(mid);
+				out.add(" %>");
+			} else {
+				out.add(s.substr(start, (endTag + 2) - start));
+			};
+			i = endTag + 2;
+		};
+		return out.toString();
+	}
+}

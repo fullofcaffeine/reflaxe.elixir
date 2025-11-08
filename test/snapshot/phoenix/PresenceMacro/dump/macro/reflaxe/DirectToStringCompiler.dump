@@ -1,0 +1,280 @@
+class reflaxe.DirectToStringCompiler extends reflaxe.GenericCompiler<String, String, String, String, String> {
+
+	public function new() {
+		this.injectionAllowed = false;
+		this.injectionContent = [];
+		super();
+	}
+
+	@:value({ topLevel : false })
+	public function compileExpression(expr:haxe.macro.TypedExpr, topLevel:Bool = false) {
+		if (this.options.targetCodeInjectionName != null) {
+			var result = reflaxe.compiler.TargetCodeInjection.checkTargetCodeInjection(this.options.targetCodeInjectionName, expr, this);
+			if (result != null) {
+				return result;
+			};
+		};
+		var result = this.compileExpressionImpl(expr, topLevel);
+		return result;
+	}
+
+	public function compileExpressionForCodeInject(expr:haxe.macro.TypedExpr) {
+		return this.compileExpression(expr, null);
+	}
+
+	public function generateOutputIterator() {
+		var all = this.classes.concat(this.enums).concat(this.typedefs).concat(this.abstracts);
+		var index = [0];
+		return {hasNext : function() return index[0] < all.length, next : function() return {
+			var data = all[index[0] ++];
+			return data.withOutput(@:implicitCast reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString(data.data));
+		}};
+	}
+
+	public function compileClassVarExpr(expr:haxe.macro.TypedExpr) {
+		return this.compileExpressionsIntoLines(reflaxe.helpers.TypedExprHelper.unwrapBlock(expr));
+	}
+
+	public function compileClassFuncExpr(expr:haxe.macro.TypedExpr) {
+		return this.compileClassVarExpr(expr);
+	}
+
+	public function compileExpressionsIntoLines(exprList:Array<haxe.macro.TypedExpr>) {
+		var currentType = -1;
+		var lines = [];
+		this.injectionAllowed = true;
+		{
+			var ` = 0;
+			while (` < exprList.length) {
+				var e = exprList[`];
+				++ `;
+				var newType = this.expressionType(e);
+				if (currentType != newType) {
+					if (currentType != -1) {
+						lines.push("");
+					};
+					currentType = newType;
+				};
+				var output = this.compileExpression(e, true);
+				var preExpr = this.prefixExpressionContent(e, output);
+				if (preExpr != null) {
+					{
+						var ` = 0;
+						while (` < preExpr.length) {
+							var e = preExpr[`];
+							++ `;
+							lines.push(this.formatExpressionLine(e));
+						};
+					};
+				};
+				if (output != null) {
+					lines.push(this.formatExpressionLine(output));
+				};
+				if (this.injectionContent.length > 0) {
+					this.injectionContent = [];
+				};
+			};
+		};
+		this.injectionAllowed = false;
+		return lines.join("\n");
+	}
+
+	function prefixExpressionContent(expr:haxe.macro.TypedExpr, output:Null<String>) {
+		return if (this.injectionContent.length > 0) {
+			this.injectionContent;
+		} else {
+			null;
+		};
+	}
+
+	@:value([])
+	var injectionContent:Array<String>;
+
+	@:value(false)
+	var injectionAllowed:Bool;
+
+	public function injectExpressionPrefixContent(content:String) {
+		return if (this.injectionAllowed) {
+			this.injectionContent.push(content);
+			true;
+		} else {
+			false;
+		};
+	}
+
+	function formatExpressionLine(expr:String) {
+		return expr;
+	}
+
+	public function compileNFCThisExpression(expr:haxe.macro.TypedExpr, meta:Null<haxe.macro.MetaAccess>) {
+		return this.compileExpressionOrError(expr);
+	}
+
+	@:value({ custom : null, typeParamsCallback : null })
+	public function compileNativeFunctionCodeMeta(callExpr:haxe.macro.TypedExpr, arguments:Array<haxe.macro.TypedExpr>, typeParamsCallback:Null<Int -> Null<String>> = null, custom:Null<String -> String> = null) {
+		var `this = this;
+		var declaration = reflaxe.helpers.TypedExprHelper.getDeclarationMeta(callExpr, arguments);
+		if (declaration == null) {
+			return null;
+		};
+		var meta = declaration.meta;
+		var data = if (meta != null) {
+			this.extractStringFromMeta(meta, ":nativeFunctionCode");
+		} else {
+			null;
+		};
+		if (data == null) {
+			return null;
+		};
+		var code = data.code;
+		var result = code;
+		if (code.indexOf("{this}", null) != -1) {
+			var thisExpr = if (declaration.thisExpr != null) {
+				this.compileNFCThisExpression(declaration.thisExpr, declaration.meta);
+			} else {
+				null;
+			};
+			if (thisExpr == null) {
+				if (declaration.thisExpr == null) {
+					haxe.macro.Context.error("Cannot use {this} on @:nativeFunctionCode meta for constructors.", data.entry.pos, null);
+				} else {
+					this.onExpressionUnsuccessful(callExpr.pos);
+				};
+			} else {
+				result = StringTools.replace(result, "{this}", thisExpr);
+			};
+		};
+		var argExprs = null;
+		{
+			var ` = 0;
+			var ` = arguments.length;
+			while (` < `) {
+				var i = ` ++;
+				var key = "{arg" + i + "}";
+				if (code.indexOf(key, null) != -1) {
+					if (argExprs == null) {
+						argExprs = {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = arguments;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(function(e:haxe.macro.TypedExpr) {
+										return `this.compileExpressionOrError(e);
+									}(v));
+								};
+							};
+							`;
+						};
+					};
+					if (argExprs[i] == null) {
+						this.onExpressionUnsuccessful(arguments[i].pos);
+					} else {
+						result = StringTools.replace(result, key, argExprs[i]);
+					};
+				};
+			};
+		};
+		if (typeParamsCallback != null) {
+			var typePrefix = "{type";
+			var typeParamsResult = null;
+			var oldIndex = 0;
+			var index = result.indexOf(typePrefix, null);
+			while (index != -1) {
+				var startIndex = index + typePrefix.length;
+				var endIndex = result.indexOf("}", startIndex);
+				var numStr = result.substring(startIndex, endIndex);
+				var typeIndex = Std.parseInt(numStr);
+				if (typeIndex != null && ! Math.isNaN(typeIndex)) {
+					if (typeParamsResult == null) {
+						typeParamsResult = "";
+					};
+					typeParamsResult += result.substring(oldIndex, index);
+					var typeOutput = typeParamsCallback(typeIndex);
+					if (typeOutput != null) {
+						typeParamsResult += typeOutput;
+					};
+				};
+				oldIndex = endIndex + 1;
+				index = result.indexOf(typePrefix, oldIndex);
+			};
+			if (typeParamsResult != null) {
+				typeParamsResult += result.substr(oldIndex, null);
+				result = typeParamsResult;
+			};
+		};
+		if (custom != null) {
+			result = custom(result);
+		};
+		return result;
+	}
+
+	@:value({ varCpp : null })
+	public function compileNativeVariableCodeMeta(fieldExpr:haxe.macro.TypedExpr, varCpp:Null<String> = null) {
+		var declaration = reflaxe.helpers.TypedExprHelper.getDeclarationMeta(fieldExpr, null);
+		if (declaration == null) {
+			return null;
+		};
+		var meta = declaration.meta;
+		var data = if (meta != null) {
+			this.extractStringFromMeta(meta, ":nativeVariableCode");
+		} else {
+			null;
+		};
+		if (data != null) {
+			var code = data.code;
+			var result = code;
+			if (code.indexOf("{this}", null) != -1) {
+				var thisExpr = if (declaration.thisExpr != null) {
+					this.compileNFCThisExpression(declaration.thisExpr, declaration.meta);
+				} else {
+					null;
+				};
+				if (thisExpr == null) {
+					if (declaration.thisExpr == null) {
+						haxe.macro.Context.error("Cannot use {this} on @:nativeVariableCode meta for constructors.", data.entry.pos, null);
+					} else {
+						this.onExpressionUnsuccessful(fieldExpr.pos);
+					};
+				} else {
+					result = StringTools.replace(result, "{this}", thisExpr);
+				};
+			};
+			if (varCpp != null && code.indexOf("{var}", null) != -1) {
+				result = StringTools.replace(result, "{var}", varCpp);
+			};
+			return result;
+		};
+		return null;
+	}
+
+	@:value({ typeParams : null })
+	public function compileNativeTypeCodeMeta(type:haxe.macro.Type, typeParams:Null<Array<() -> String>> = null) {
+		var meta = reflaxe.helpers.TypeHelper.getMeta(type);
+		if (meta == null) {
+			return null;
+		};
+		var data = this.extractStringFromMeta(meta, ":nativeTypeCode");
+		if (data != null) {
+			var code = data.code;
+			var result = code;
+			if (typeParams != null) {
+				{
+					var ` = 0;
+					var ` = typeParams.length;
+					while (` < `) {
+						var i = ` ++;
+						var key = "{type" + i + "}";
+						if (code.indexOf(key, null) != -1) {
+							result = StringTools.replace(result, key, typeParams[i]());
+						};
+					};
+				};
+			};
+			return result;
+		};
+		return null;
+	}
+}

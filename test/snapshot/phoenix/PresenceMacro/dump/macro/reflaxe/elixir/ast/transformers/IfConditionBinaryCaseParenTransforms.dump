@@ -1,0 +1,242 @@
+class reflaxe.elixir.ast.transformers.IfConditionBinaryCaseParenTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EIf(cond, t, e):
+		var newCond = parenCaseSide(cond);
+		(newCond != cond) ? makeASTWithMeta(EIf(newCond, t, e), n.metadata, n.pos) : n;	
+	case EUnless(cond2, b, e2):
+		var newCond2 = parenCaseSide(cond2);
+		(newCond2 != cond2) ? makeASTWithMeta(EUnless(newCond2, b, e2), n.metadata, n.pos) : n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond = `;
+							var t = `;
+							var e = `;
+							{
+								var newCond = reflaxe.elixir.ast.transformers.IfConditionBinaryCaseParenTransforms.parenCaseSide(cond);
+								if ((newCond != cond)) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf(newCond, t, e), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond2 = `;
+							var b = `;
+							var e2 = `;
+							{
+								var newCond2 = reflaxe.elixir.ast.transformers.IfConditionBinaryCaseParenTransforms.parenCaseSide(cond2);
+								if ((newCond2 != cond2)) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EUnless(newCond2, b, e2), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isComplex(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function parenCaseSide(cond:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (cond.def) {
+	case EBinary(op, left, right):
+		var nl = isComplex(left) ? makeAST(EParen(left)) : left;
+		var nr = (right == null) ? right : (isComplex(right) ? makeAST(EParen(right)) : right);
+		(nl != left || nr != right) ? makeAST(EBinary(op, nl, nr)) : cond;	
+	default:
+		cond;	
+}) {
+			var ` = cond.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var op = `;
+					var left = `;
+					var right = `;
+					{
+						var nl = if (@:ast(switch (e.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = left.def;
+							switch (enumIndex `) {
+								case 6: {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										true;
+									};
+								};
+								case 7: {
+									var ` = `[0];
+									{
+										true;
+									};
+								};
+								case 9: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										true;
+									};
+								};
+								case 10: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										true;
+									};
+								};
+								default: {
+									false;
+								}
+							};
+						}) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EParen(left), metadata : {}, pos : pos};
+							};
+						} else {
+							left;
+						};
+						var nr = if ((right == null)) {
+							right;
+						} else {
+							(if (@:ast(switch (e.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _) | EIf(_, _, _):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = right.def;
+								switch (enumIndex `) {
+									case 6: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											true;
+										};
+									};
+									case 7: {
+										var ` = `[0];
+										{
+											true;
+										};
+									};
+									case 9: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											true;
+										};
+									};
+									case 10: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											true;
+										};
+									};
+									default: {
+										false;
+									}
+								};
+							}) {
+								{
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EParen(right), metadata : {}, pos : pos};
+								};
+							} else {
+								right;
+							});
+						};
+						if ((nl != left || nr != right)) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, nl, nr), metadata : {}, pos : pos};
+							};
+						} else {
+							cond;
+						};
+					};
+				};
+			} else {
+				cond;
+			};
+		};
+	}
+}

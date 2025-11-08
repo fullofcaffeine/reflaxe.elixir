@@ -1,0 +1,148 @@
+class reflaxe.elixir.ast.transformers.HandleEventBodyAlignToHeadTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "handle_event" && args != null && args.length == 3):
+		var argName = switch (args[1]) {
+			case PVar(p):
+				p;			
+			default:
+				null;			
+		};
+		if (argName == null) n else {
+			var nb = align(body, argName);
+			makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
+		};	
+	case EDefp(name2, args2, guards2, body2) if (name2 == "handle_event" && args2 != null && args2.length == 3):
+		var argName2 = switch (args2[1]) {
+			case PVar(p2):
+				p2;			
+			default:
+				null;			
+		};
+		if (argName2 == null) n else {
+			var nb2 = align(body2, argName2);
+			makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (name == "handle_event" && args != null && args.length == 3) {
+								var argName = @:ast(switch (args[1]) {
+	case PVar(p):
+		p;	
+	default:
+		null;	
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var p = `;
+											{
+												p;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								if (argName == null) {
+									n;
+								} else {
+									var nb = reflaxe.elixir.ast.transformers.HandleEventBodyAlignToHeadTransforms.align(body, argName);
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (name2 == "handle_event" && args2 != null && args2.length == 3) {
+								var argName2 = @:ast(switch (args2[1]) {
+	case PVar(p2):
+		p2;	
+	default:
+		null;	
+}) {
+									var ` = args2[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var p2 = `;
+											{
+												p2;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								if (argName2 == null) {
+									n;
+								} else {
+									var nb2 = reflaxe.elixir.ast.transformers.HandleEventBodyAlignToHeadTransforms.align(body2, argName2);
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function align(body:reflaxe.elixir.ast.ElixirAST, binder:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == "params" || v == "_params"):
+		makeASTWithMeta(EVar(binder), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == "params" || v == "_params") {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,149 @@
+class reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var target = detectQueryParam(args);
+		if (target != null) Sys.println("[VarRefSuffixParamNormalize_UltraFinal] def " + name + " query->" + target);
+		if (target == null) n else makeASTWithMeta(EDef(name, args, guards, rewrite(body, target)), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var target2 = detectQueryParam(args2);
+		if (target2 != null) Sys.println("[VarRefSuffixParamNormalize_UltraFinal] defp " + name2 + " query->" + target2);
+		if (target2 == null) n else makeASTWithMeta(EDefp(name2, args2, guards2, rewrite(body2, target2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var target = reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms.detectQueryParam(args);
+								if (target != null) {
+									Sys.println("[VarRefSuffixParamNormalize_UltraFinal] def " + name + " query->" + target);
+								};
+								if (target == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms.rewrite(body, target));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var target2 = reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms.detectQueryParam(args2);
+								if (target2 != null) {
+									Sys.println("[VarRefSuffixParamNormalize_UltraFinal] defp " + name2 + " query->" + target2);
+								};
+								if (target2 == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms.rewrite(body2, target2));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function detectQueryParam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var candidate = null;
+		var count = 0;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(p):
+		if (StringTools.endsWith(p, "_query")) {
+			candidate = p;
+			count++;
+		};	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var p = `;
+						{
+							if (StringTools.endsWith(p, "_query")) {
+								candidate = p;
+								count ++;
+							};
+						};
+					};
+				} else {};
+			};
+		};
+		return if (count == 1) {
+			candidate;
+		} else {
+			null;
+		};
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST, paramName:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(nm) if (nm == "query"):
+		Sys.println("[VarRefSuffixParamNormalize_UltraFinal] rewrite query -> " + paramName);
+		makeASTWithMeta(EVar(paramName), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == "query") {
+							Sys.println("[VarRefSuffixParamNormalize_UltraFinal] rewrite query -> " + paramName);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(paramName), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

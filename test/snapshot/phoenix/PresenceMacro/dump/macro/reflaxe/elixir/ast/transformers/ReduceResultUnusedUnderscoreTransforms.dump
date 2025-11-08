@@ -1,0 +1,673 @@
+class reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var s = stmts[i];
+			switch (s.def) {
+				case EMatch(pat, rhs) if (isEnumReduceOrWhile(rhs)):
+					var names = extractNames(pat);
+					if (names.length > 0) {
+						var unused = names.filter(function(nm) ->  @:implicitReturn return !usedLater(stmts, i + 1, nm));
+						if (unused.length > 0) {
+							var newPat = underscoreUnusedInPattern(pat, unused);
+							out.push(makeASTWithMeta(EMatch(newPat, rhs), s.metadata, s.pos));
+						} else out.push(s);
+					} else out.push(s);				
+				default:
+					out.push(s);				
+			};
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									var s = stmts[i];
+									@:ast(switch (s.def) {
+	case EMatch(pat, rhs) if (isEnumReduceOrWhile(rhs)):
+		var names = extractNames(pat);
+		if (names.length > 0) {
+			var unused = names.filter(function(nm) ->  @:implicitReturn return !usedLater(stmts, i + 1, nm));
+			if (unused.length > 0) {
+				var newPat = underscoreUnusedInPattern(pat, unused);
+				out.push(makeASTWithMeta(EMatch(newPat, rhs), s.metadata, s.pos));
+			} else out.push(s);
+		} else out.push(s);	
+	default:
+		out.push(s);	
+}) {
+										var ` = s.def;
+										if (enumIndex ` == 8) {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var pat = `;
+												var rhs = `;
+												if (reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.isEnumReduceOrWhile(rhs)) {
+													var names = reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.extractNames(pat);
+													if (names.length > 0) {
+														var unused = {
+															var ` = [];
+															{
+																var ` = 0;
+																var ` = names;
+																while (` < `.length) {
+																	var v = `[`];
+																	++ `;
+																	if (function(nm:String) {
+																		return ! reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.usedLater(stmts, i + 1, nm);
+																	}(v)) {
+																		`.push(v);
+																	};
+																};
+															};
+															`;
+														};
+														if (unused.length > 0) {
+															var newPat = reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.underscoreUnusedInPattern(pat, unused);
+															out.push({def : reflaxe.elixir.ast.ElixirASTDef.EMatch(newPat, rhs), metadata : s.metadata, pos : s.pos});
+														} else {
+															out.push(s);
+														};
+													} else {
+														out.push(s);
+													};
+												} else {
+													out.push(s);
+												};
+											};
+										} else {
+											out.push(s);
+										};
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function isEnumReduceOrWhile(rhs:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (rhs.def) {
+	case ERemoteCall({ def : EVar("Enum") }, fn, _):
+		(fn == "reduce" || fn == "reduce_while");	
+	default:
+		false;	
+}) {
+			var ` = rhs.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "Enum") {
+							{
+								var fn = `;
+								{
+									(fn == "reduce" || fn == "reduce_while");
+								};
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function extractNames(pat:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (pat) {
+	case PVar(n):
+		[n];	
+	case PTuple(elems):
+		var out:Array<String> = [];
+		for (p  in  elems) switch (p) {
+			case PVar(nm):
+				out.push(nm);			
+			default:
+		};
+		out;	
+	default:
+		[];	
+}) switch (enumIndex pat) {
+			case 0: {
+				var ` = pat[0];
+				{
+					var n = `;
+					{
+						[n];
+					};
+				};
+			};
+			case 2: {
+				var ` = pat[0];
+				{
+					var elems = `;
+					{
+						var out = [];
+						{
+							var ` = 0;
+							while (` < elems.length) {
+								var p = elems[`];
+								++ `;
+								@:ast(switch (p) {
+	case PVar(nm):
+		out.push(nm);	
+	default:
+}) if (enumIndex p == 0) {
+									var ` = p[0];
+									{
+										var nm = `;
+										{
+											out.push(nm);
+										};
+									};
+								} else {};
+							};
+						};
+						out;
+					};
+				};
+			};
+			default: {
+				[];
+			}
+		};
+	}
+
+	static function underscoreUnusedInPattern(pat:reflaxe.elixir.ast.EPattern, unused:Array<String>) {
+		return @:ast(switch (pat) {
+	case PVar(n):
+		if (unused.indexOf(n) >= 0) PVar("_" + n) else pat;	
+	case PTuple(elems):
+		var outElems:Array<EPattern> = [];
+		for (p  in  elems) switch (p) {
+			case PVar(nm):
+				if (unused.indexOf(nm) >= 0) outElems.push(PWildcard) else outElems.push(p);			
+			default:
+				outElems.push(p);			
+		};
+		PTuple(outElems);	
+	default:
+		pat;	
+}) switch (enumIndex pat) {
+			case 0: {
+				var ` = pat[0];
+				{
+					var n = `;
+					{
+						if (unused.indexOf(n, null) >= 0) {
+							reflaxe.elixir.ast.EPattern.PVar("_" + n);
+						} else {
+							pat;
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = pat[0];
+				{
+					var elems = `;
+					{
+						var outElems = [];
+						{
+							var ` = 0;
+							while (` < elems.length) {
+								var p = elems[`];
+								++ `;
+								@:ast(switch (p) {
+	case PVar(nm):
+		if (unused.indexOf(nm) >= 0) outElems.push(PWildcard) else outElems.push(p);	
+	default:
+		outElems.push(p);	
+}) if (enumIndex p == 0) {
+									var ` = p[0];
+									{
+										var nm = `;
+										{
+											if (unused.indexOf(nm, null) >= 0) {
+												outElems.push(reflaxe.elixir.ast.EPattern.PWildcard);
+											} else {
+												outElems.push(p);
+											};
+										};
+									};
+								} else {
+									outElems.push(p);
+								};
+							};
+						};
+						reflaxe.elixir.ast.EPattern.PTuple(outElems);
+					};
+				};
+			};
+			default: {
+				pat;
+			}
+		};
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.stmtUsesVar(stmts[j], name)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	static function stmtUsesVar(n:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var found = [false];
+		{};
+		var walk = [null];
+		walk[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || found[0]) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	case ERaw(code):
+		if (name != null && name.length > 0 && name.charAt(0) != "_" && code != null) {
+			var start = 0;
+			while (!found) {
+				var i = code.indexOf(name, start);
+				if (i == -1) break;
+				var before = i > 0 ? code.substr(i - 1, 1) : null;
+				var afterIdx = i + name.length;
+				var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+				if (!isIdentChar(before) && !isIdentChar(after)) {
+					found = true;
+					break;
+				};
+				start = i + name.length;
+			};
+		};	
+	case EBlock(ss):
+		for (s  in  ss) walk(s);	
+	case EDo(ss2):
+		for (s2  in  ss2) walk(s2);	
+	case EIf(c, t, e):
+		walk(c);
+		walk(t);
+		if (e != null) walk(e);	
+	case EBinary(_, l, r):
+		walk(l);
+		walk(r);	
+	case ECall(tgt, _, args):
+		if (tgt != null) walk(tgt);
+		for (a  in  args) walk(a);	
+	case ERemoteCall(tgt2, _, args2):
+		walk(tgt2);
+		for (a2  in  args2) walk(a2);	
+	case ECase(expr, cs):
+		walk(expr);
+		for (c  in  cs) walk(c.body);	
+	case EKeywordList(pairs):
+		for (p  in  pairs) walk(p.value);	
+	case EMap(pairs):
+		for (p  in  pairs) {
+			walk(p.key);
+			walk(p.value);
+		};	
+	case EStructUpdate(base, fields):
+		walk(base);
+		for (f  in  fields) walk(f.value);	
+	case EField(obj, _):
+		walk(obj);	
+	case EAccess(tgt3, key):
+		walk(tgt3);
+		walk(key);	
+	case EString(str):
+		var i2 = 0;
+		while (!found && str != null && i2 < str.length) {
+			var idx2 = str.indexOf("#{", i2);
+			if (idx2 == -1) break;
+			var j2 = str.indexOf("}", idx2 + 2);
+			if (j2 == -1) break;
+			var inner = str.substr(idx2 + 2, j2 - (idx2 + 2));
+			if (inner.indexOf(name) != -1) {
+				found = true;
+				break;
+			};
+			i2 = j2 + 1;
+		};	
+	case ETuple(elems):
+		for (e  in  elems) walk(e);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								walk[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										walk[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								walk[0](c);
+								walk[0](t);
+								if (e != null) {
+									walk[0](e);
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var elems = `;
+							{
+								{
+									var ` = 0;
+									while (` < elems.length) {
+										var e = elems[`];
+										++ `;
+										walk[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										walk[0](p.key);
+										walk[0](p.value);
+									};
+								};
+							};
+						};
+					};
+					case 19: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var base = `;
+							var fields = `;
+							{
+								walk[0](base);
+								{
+									var ` = 0;
+									while (` < fields.length) {
+										var f = fields[`];
+										++ `;
+										walk[0](f.value);
+									};
+								};
+							};
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										walk[0](p.value);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var args = `;
+							{
+								if (tgt != null) {
+									walk[0](tgt);
+								};
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										walk[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt2 = `;
+							var args2 = `;
+							{
+								walk[0](tgt2);
+								{
+									var ` = 0;
+									while (` < args2.length) {
+										var a2 = args2[`];
+										++ `;
+										walk[0](a2);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								walk[0](l);
+								walk[0](r);
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj = `;
+							{
+								walk[0](obj);
+							};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tgt3 = `;
+							var key = `;
+							{
+								walk[0](tgt3);
+								walk[0](key);
+							};
+						};
+					};
+					case 32: {
+						var ` = `[0];
+						{
+							var str = `;
+							{
+								var i2 = 0;
+								while (! found[0] && str != null && i2 < str.length) {
+									var idx2 = str.indexOf("#{", i2);
+									if (idx2 == -1) {
+										break;
+									};
+									var j2 = str.indexOf("}", idx2 + 2);
+									if (j2 == -1) {
+										break;
+									};
+									var inner = str.substr(idx2 + 2, j2 - (idx2 + 2));
+									if (inner.indexOf(name, null) != -1) {
+										found[0] = true;
+										break;
+									};
+									i2 = j2 + 1;
+								};
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == name) {
+								found[0] = true;
+							} else {};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										walk[0](s);
+									};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var ss2 = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss2.length) {
+										var s2 = ss2[`];
+										++ `;
+										walk[0](s2);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (name != null && name.length > 0 && name.charAt(0) != "_" && code != null) {
+									var start = 0;
+									while (! found[0]) {
+										var i = code.indexOf(name, start);
+										if (i == -1) {
+											break;
+										};
+										var before = if (i > 0) {
+											code.substr(i - 1, 1);
+										} else {
+											null;
+										};
+										var afterIdx = i + name.length;
+										var after = if (afterIdx < code.length) {
+											code.substr(afterIdx, 1);
+										} else {
+											null;
+										};
+										if (! if (before == null || before.length == 0) {
+											false;
+										} else {
+											var ch = before.charCodeAt(0);
+											(ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || before == "_";
+										} && ! if (after == null || after.length == 0) {
+											false;
+										} else {
+											var ch = after.charCodeAt(0);
+											(ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || after == "_";
+										}) {
+											found[0] = true;
+											break;
+										};
+										start = i + name.length;
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](n);
+		return found[0];
+	}
+}

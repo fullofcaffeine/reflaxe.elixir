@@ -1,0 +1,290 @@
+class reflaxe.elixir.ast.transformers.LiveMountArityRepairTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "mount" && args != null && args.length != 3):
+		var newArgs:Array<EPattern> = [];
+		var renameFromTo:Map<String,String> = new Map();
+		var first:EPattern = args[0];
+		var second:EPattern = (args.length >= 2) ? args[1] : PVar("_session");
+		var last:EPattern = args[args.length - 1];
+		switch (first) {
+			case PVar(old):
+				newArgs.push(PVar("params"));
+				renameFromTo.set(old, "params");			
+			default:
+				newArgs.push(first);			
+		};
+		switch (second) {
+			case PVar(old2):
+				newArgs.push(PVar("_session"));
+				renameFromTo.set(old2, "_session");			
+			default:
+				newArgs.push(second);			
+		};
+		switch (last) {
+			case PVar(old3):
+				newArgs.push(PVar("socket"));
+				renameFromTo.set(old3, "socket");			
+			default:
+				newArgs.push(last);			
+		};
+		var newBody = renameVarsInBody(body, renameFromTo);
+		makeASTWithMeta(EDef(name, newArgs, guards, newBody), n.metadata, n.pos);	
+	case EDefp(namep, argsp, guardsp, bodyp) if (namep == "mount" && argsp != null && argsp.length != 3):
+		var newArgsp:Array<EPattern> = [];
+		var rename:Map<String,String> = new Map();
+		var f:EPattern = argsp[0];
+		var s:EPattern = (argsp.length >= 2) ? argsp[1] : PVar("_session");
+		var l:EPattern = argsp[argsp.length - 1];
+		switch (f) {
+			case PVar(o):
+				newArgsp.push(PVar("params"));
+				rename.set(o, "params");			
+			default:
+				newArgsp.push(f);			
+		};
+		switch (s) {
+			case PVar(o2):
+				newArgsp.push(PVar("_session"));
+				rename.set(o2, "_session");			
+			default:
+				newArgsp.push(s);			
+		};
+		switch (l) {
+			case PVar(o3):
+				newArgsp.push(PVar("socket"));
+				rename.set(o3, "socket");			
+			default:
+				newArgsp.push(l);			
+		};
+		var nb = renameVarsInBody(bodyp, rename);
+		makeASTWithMeta(EDefp(namep, newArgsp, guardsp, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (name == "mount" && args != null && args.length != 3) {
+								var newArgs = [];
+								var renameFromTo = {
+									{};
+									new haxe.ds.StringMap();
+								};
+								var first = args[0];
+								var second = if ((args.length >= 2)) {
+									args[1];
+								} else {
+									reflaxe.elixir.ast.EPattern.PVar("_session");
+								};
+								var last = args[args.length - 1];
+								@:ast(switch (first) {
+	case PVar(old):
+		newArgs.push(PVar("params"));
+		renameFromTo.set(old, "params");	
+	default:
+		newArgs.push(first);	
+}) if (enumIndex first == 0) {
+									var ` = first[0];
+									{
+										var old = `;
+										{
+											newArgs.push(reflaxe.elixir.ast.EPattern.PVar("params"));
+											{
+												renameFromTo.set(old, "params");
+											};
+										};
+									};
+								} else {
+									newArgs.push(first);
+								};
+								@:ast(switch (second) {
+	case PVar(old2):
+		newArgs.push(PVar("_session"));
+		renameFromTo.set(old2, "_session");	
+	default:
+		newArgs.push(second);	
+}) if (enumIndex second == 0) {
+									var ` = second[0];
+									{
+										var old2 = `;
+										{
+											newArgs.push(reflaxe.elixir.ast.EPattern.PVar("_session"));
+											{
+												renameFromTo.set(old2, "_session");
+											};
+										};
+									};
+								} else {
+									newArgs.push(second);
+								};
+								@:ast(switch (last) {
+	case PVar(old3):
+		newArgs.push(PVar("socket"));
+		renameFromTo.set(old3, "socket");	
+	default:
+		newArgs.push(last);	
+}) if (enumIndex last == 0) {
+									var ` = last[0];
+									{
+										var old3 = `;
+										{
+											newArgs.push(reflaxe.elixir.ast.EPattern.PVar("socket"));
+											{
+												renameFromTo.set(old3, "socket");
+											};
+										};
+									};
+								} else {
+									newArgs.push(last);
+								};
+								var newBody = reflaxe.elixir.ast.transformers.LiveMountArityRepairTransforms.renameVarsInBody(body, renameFromTo);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, newArgs, guards, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var namep = `;
+							var argsp = `;
+							var guardsp = `;
+							var bodyp = `;
+							if (namep == "mount" && argsp != null && argsp.length != 3) {
+								var newArgsp = [];
+								var rename = {
+									{};
+									new haxe.ds.StringMap();
+								};
+								var f = argsp[0];
+								var s = if ((argsp.length >= 2)) {
+									argsp[1];
+								} else {
+									reflaxe.elixir.ast.EPattern.PVar("_session");
+								};
+								var l = argsp[argsp.length - 1];
+								@:ast(switch (f) {
+	case PVar(o):
+		newArgsp.push(PVar("params"));
+		rename.set(o, "params");	
+	default:
+		newArgsp.push(f);	
+}) if (enumIndex f == 0) {
+									var ` = f[0];
+									{
+										var o = `;
+										{
+											newArgsp.push(reflaxe.elixir.ast.EPattern.PVar("params"));
+											{
+												rename.set(o, "params");
+											};
+										};
+									};
+								} else {
+									newArgsp.push(f);
+								};
+								@:ast(switch (s) {
+	case PVar(o2):
+		newArgsp.push(PVar("_session"));
+		rename.set(o2, "_session");	
+	default:
+		newArgsp.push(s);	
+}) if (enumIndex s == 0) {
+									var ` = s[0];
+									{
+										var o2 = `;
+										{
+											newArgsp.push(reflaxe.elixir.ast.EPattern.PVar("_session"));
+											{
+												rename.set(o2, "_session");
+											};
+										};
+									};
+								} else {
+									newArgsp.push(s);
+								};
+								@:ast(switch (l) {
+	case PVar(o3):
+		newArgsp.push(PVar("socket"));
+		rename.set(o3, "socket");	
+	default:
+		newArgsp.push(l);	
+}) if (enumIndex l == 0) {
+									var ` = l[0];
+									{
+										var o3 = `;
+										{
+											newArgsp.push(reflaxe.elixir.ast.EPattern.PVar("socket"));
+											{
+												rename.set(o3, "socket");
+											};
+										};
+									};
+								} else {
+									newArgsp.push(l);
+								};
+								var nb = reflaxe.elixir.ast.transformers.LiveMountArityRepairTransforms.renameVarsInBody(bodyp, rename);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(namep, newArgsp, guardsp, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function renameVarsInBody(body:reflaxe.elixir.ast.ElixirAST, mapping:Map<String, String>) {
+		if (mapping == null || mapping.keys().hasNext() == false) {
+			return body;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (mapping.exists(v)):
+		makeASTWithMeta(EVar(mapping.get(v)), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (mapping.exists(v)) {
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EVar(mapping.get(v));
+								var meta = x.metadata;
+								var pos = x.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

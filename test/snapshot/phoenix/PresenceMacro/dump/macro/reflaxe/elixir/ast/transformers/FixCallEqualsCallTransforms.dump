@@ -1,0 +1,156 @@
+class reflaxe.elixir.ast.transformers.FixCallEqualsCallTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return n;
+			};
+			return @:ast(switch (n.def) {
+	case EBinary(Match, l, r):
+		var ll = unwrapParens(l);
+		var rr = unwrapParens(r);
+		var leftIsCall = switch (ll.def) {
+			case ECall(_, _, _) | ERemoteCall(_, _, _):
+				true;			
+			default:
+				false;			
+		};
+		var rightIsCall = switch (rr.def) {
+			case ECall(_, _, _) | ERemoteCall(_, _, _):
+				true;			
+			default:
+				false;			
+		};
+		if (leftIsCall && rightIsCall) {
+			makeASTWithMeta(EBlock([makeAST(EBinary(Match, makeAST(EVar("_")), ll)), makeAST(EBinary(Match, makeAST(EVar("_")), rr))]), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 26) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var l = `;
+							var r = `;
+							{
+								var ll = reflaxe.elixir.ast.transformers.FixCallEqualsCallTransforms.unwrapParens(l);
+								var rr = reflaxe.elixir.ast.transformers.FixCallEqualsCallTransforms.unwrapParens(r);
+								var leftIsCall = @:ast(switch (ll.def) {
+	case ECall(_, _, _) | ERemoteCall(_, _, _):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = ll.def;
+									switch (enumIndex `) {
+										case 22: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												true;
+											};
+										};
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												true;
+											};
+										};
+										default: {
+											false;
+										}
+									};
+								};
+								var rightIsCall = @:ast(switch (rr.def) {
+	case ECall(_, _, _) | ERemoteCall(_, _, _):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = rr.def;
+									switch (enumIndex `) {
+										case 22: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												true;
+											};
+										};
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												true;
+											};
+										};
+										default: {
+											false;
+										}
+									};
+								};
+								if (leftIsCall && rightIsCall) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : {}, pos : pos};
+										}, ll), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : {}, pos : pos};
+										}, rr), metadata : {}, pos : pos};
+									}]), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					} else {
+						n;
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function unwrapParens(e:reflaxe.elixir.ast.ElixirAST) {
+		var cur = e;
+		while (cur != null && cur.def != null) {
+			@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;
+		continue;	
+	default:
+		break;	
+}) {
+				var ` = cur.def;
+				if (enumIndex ` == 54) {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							cur = inner;
+							continue;
+						};
+					};
+				} else {
+					break;
+				};
+			};
+		};
+		return cur;
+	}
+}

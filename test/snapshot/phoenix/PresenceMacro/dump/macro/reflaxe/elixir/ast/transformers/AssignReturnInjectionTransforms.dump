@@ -1,0 +1,200 @@
+class reflaxe.elixir.ast.transformers.AssignReturnInjectionTransforms {
+
+	public static function injectPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var newBody = ensureReturn(body);
+		makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);	
+	case EDefp(name, args, guards, body):
+		var newBody2 = ensureReturn(body);
+		makeASTWithMeta(EDefp(name, args, guards, newBody2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var newBody = reflaxe.elixir.ast.transformers.AssignReturnInjectionTransforms.ensureReturn(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var newBody2 = reflaxe.elixir.ast.transformers.AssignReturnInjectionTransforms.ensureReturn(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, newBody2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function ensureReturn(body:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (body.def) {
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(v):
+				makeASTWithMeta(EBlock([body, makeAST(EVar(v))]), body.metadata, body.pos);			
+			default:
+				body;			
+		};	
+	case EBlock(stmts):
+		if (stmts.length > 0) {
+			var last = stmts[stmts.length - 1];
+			switch (last.def) {
+				case EBinary(Match, l2, _):
+					switch (l2.def) {
+						case EVar(v2):
+							var out = stmts.copy();
+							out.push(makeAST(EVar(v2)));
+							makeASTWithMeta(EBlock(out), body.metadata, body.pos);						
+						default:
+							body;						
+					};				
+				default:
+					body;				
+			};
+		} else body;	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var left = `;
+							{
+								@:ast(switch (left.def) {
+	case EVar(v):
+		makeASTWithMeta(EBlock([body, makeAST(EVar(v))]), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											{
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([body, {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(v), metadata : {}, pos : pos};
+												}]), metadata : body.metadata, pos : body.pos};
+											};
+										};
+									} else {
+										body;
+									};
+								};
+							};
+						};
+					} else {
+						body;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							if (stmts.length > 0) {
+								var last = stmts[stmts.length - 1];
+								@:ast(switch (last.def) {
+	case EBinary(Match, l2, _):
+		switch (l2.def) {
+			case EVar(v2):
+				var out = stmts.copy();
+				out.push(makeAST(EVar(v2)));
+				makeASTWithMeta(EBlock(out), body.metadata, body.pos);			
+			default:
+				body;			
+		};	
+	default:
+		body;	
+}) {
+									var ` = last.def;
+									if (enumIndex ` == 26) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (enumIndex ` == 27) {
+											{
+												var l2 = `;
+												{
+													@:ast(switch (l2.def) {
+	case EVar(v2):
+		var out = stmts.copy();
+		out.push(makeAST(EVar(v2)));
+		makeASTWithMeta(EBlock(out), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+														var ` = l2.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var v2 = `;
+																{
+																	var out = stmts.copy();
+																	out.push({
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar(v2), metadata : {}, pos : pos};
+																	});
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : body.metadata, pos : body.pos};
+																};
+															};
+														} else {
+															body;
+														};
+													};
+												};
+											};
+										} else {
+											body;
+										};
+									} else {
+										body;
+									};
+								};
+							} else {
+								body;
+							};
+						};
+					};
+				};
+				default: {
+					body;
+				}
+			};
+		};
+	}
+}

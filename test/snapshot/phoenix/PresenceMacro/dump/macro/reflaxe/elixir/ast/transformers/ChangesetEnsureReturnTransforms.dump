@@ -1,0 +1,349 @@
+class reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var info = analyzeBody(body);
+		if (!info.hasChangeset || info.lastAssigned == null) return n;
+		var newBody = ensureTrailingVar(body, info.lastAssigned);
+		makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						{
+							var info = reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms.analyzeBody(body);
+							if (! info.hasChangeset || info.lastAssigned == null) {
+								return n;
+							};
+							var newBody = reflaxe.elixir.ast.transformers.ChangesetEnsureReturnTransforms.ensureTrailingVar(body, info.lastAssigned);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function analyzeBody(body:reflaxe.elixir.ast.ElixirAST) {
+		var has = [false];
+		var last = [null];
+		var visit = [null];
+		visit[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case ERemoteCall(mod, func, _):
+		switch (mod.def) {
+			case EVar(nm) if (nm == "Ecto.Changeset"):
+				has = true;			
+			default:
+		};	
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(n):
+				last = n;			
+			default:
+		};	
+	case EMatch(pat, _):
+		switch (pat) {
+			case PVar(n2):
+				last = n2;			
+			default:
+		};	
+	case EBlock(ss):
+		for (s  in  ss) visit(s);	
+	case EIf(c, t, e):
+		visit(c);
+		visit(t);
+		if (e != null) visit(e);	
+	case ECase(expr, cs):
+		visit(expr);
+		for (c  in  cs) visit(c.body);	
+	case ECall(tgt, _, args):
+		if (tgt != null) visit(tgt);
+		for (a  in  args) visit(a);	
+	case ERemoteCall(tgt2, _, args2):
+		visit(tgt2);
+		for (a2  in  args2) visit(a2);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								visit[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										visit[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							{
+								@:ast(switch (pat) {
+	case PVar(n2):
+		last = n2;	
+	default:
+}) if (enumIndex pat == 0) {
+									var ` = pat[0];
+									{
+										var n2 = `;
+										{
+											last[0] = n2;
+										};
+									};
+								} else {};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								visit[0](c);
+								visit[0](t);
+								if (e != null) {
+									visit[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var args = `;
+							{
+								if (tgt != null) {
+									visit[0](tgt);
+								};
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										visit[0](a);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var func = `;
+							{
+								@:ast(switch (mod.def) {
+	case EVar(nm) if (nm == "Ecto.Changeset"):
+		has = true;	
+	default:
+}) {
+									var ` = mod.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == "Ecto.Changeset") {
+												has[0] = true;
+											} else {};
+										};
+									} else {};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								{
+									@:ast(switch (left.def) {
+	case EVar(n):
+		last = n;	
+	default:
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var n = `;
+												{
+													last[0] = n;
+												};
+											};
+										} else {};
+									};
+								};
+							};
+						} else {};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										visit[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		visit[0](body);
+		return {hasChangeset : has[0], lastAssigned : last[0]};
+	}
+
+	static function ensureTrailingVar(body:reflaxe.elixir.ast.ElixirAST, varName:String) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		var lastStmt = stmts.length > 0 ? stmts[stmts.length - 1] : null;
+		var alreadyReturns = (lastStmt != null) && switch (lastStmt.def) {
+			case EVar(nm) if (nm == varName):
+				true;			
+			default:
+				false;			
+		};
+		if (alreadyReturns) body else makeASTWithMeta(EBlock(stmts.concat([makeAST(EVar(varName))])), body.metadata, body.pos);	
+	default:
+		var already = switch (body.def) {
+			case EVar(nm) if (nm == varName):
+				true;			
+			default:
+				false;			
+		};
+		already ? body : makeAST(EBlock([body, makeAST(EVar(varName))]));	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					{
+						var lastStmt = if (stmts.length > 0) {
+							stmts[stmts.length - 1];
+						} else {
+							null;
+						};
+						var alreadyReturns = (lastStmt != null) && @:ast(switch (lastStmt.def) {
+	case EVar(nm) if (nm == varName):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = lastStmt.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var nm = `;
+									if (nm == varName) {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						if (alreadyReturns) {
+							body;
+						} else {
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(stmts.concat([{
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+								}]));
+								var meta = body.metadata;
+								var pos = body.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+			} else {
+				var already = @:ast(switch (body.def) {
+	case EVar(nm) if (nm == varName):
+		true;	
+	default:
+		false;	
+}) {
+					var ` = body.def;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						{
+							var nm = `;
+							if (nm == varName) {
+								true;
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				if (already) {
+					body;
+				} else {
+					{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([body, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+						}]), metadata : {}, pos : pos};
+					};
+				};
+			};
+		};
+	}
+}

@@ -1,0 +1,14 @@
+class reflaxe.elixir.ast.transformers.HygieneConsolidatedTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		var r = ast;
+		r = reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass(r);
+		r = reflaxe.elixir.ast.transformers.DefParamUnderscorePromoteTransforms.promotePass(r);
+		r = reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass(r);
+		r = reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass(r);
+		r = reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass(r);
+		r = reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass(r);
+		r = reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass(r);
+		return r;
+	}
+}

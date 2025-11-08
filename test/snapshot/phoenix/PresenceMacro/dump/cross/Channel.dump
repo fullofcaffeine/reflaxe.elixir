@@ -1,0 +1,15 @@
+@:realPath("phoenix.Channel") @:native("Channel")
+extern class Channel {
+
+	function join(timeout:Null<Int>):Push;
+
+	function leave(timeout:Null<Int>):Push;
+
+	function push(event:String, payload:Dynamic, timeout:Null<Int>):Push;
+
+	function on(event:String, callback:Dynamic -> Void):Void;
+
+	function off(event:String, callback:Null<Dynamic -> Void>):Void;
+
+	function state():String;
+}

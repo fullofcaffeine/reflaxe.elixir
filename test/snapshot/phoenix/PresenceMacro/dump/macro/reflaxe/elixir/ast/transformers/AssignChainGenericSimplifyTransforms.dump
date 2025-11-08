@@ -1,0 +1,418 @@
+class reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms {
+
+	static function unwrapRhsAssign(e:reflaxe.elixir.ast.ElixirAST) {
+		if (e == null || e.def == null) {
+			return null;
+		};
+		return @:ast(switch (e.def) {
+	case EBinary(Match, { def : EVar(b) }, rhs):
+		{ a : null, b : b, rhs : rhs };	
+	case EMatch(PVar(bm), rhsM):
+		{ a : null, b : bm, rhs : rhsM };	
+	case EParen(inner):
+		unwrapRhsAssign(inner);	
+	case EBlock(es) if (es.length == 1):
+		unwrapRhsAssign(es[0]);	
+	default:
+		null;	
+}) {
+			var ` = e.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var bm = `;
+							var rhsM = `;
+							{
+								{a : null, b : bm, rhs : rhsM};
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var b = `;
+									var rhs = `;
+									{
+										{a : null, b : b, rhs : rhs};
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var es = `;
+						if (es.length == 1) {
+							reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.unwrapRhsAssign(es[0]);
+						} else {
+							null;
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.unwrapRhsAssign(inner);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	public static function simplifyPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.transformPass(ast);
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var nb = transformPass(cl.body);
+			newClauses.push({ args : cl.args, guard : cl.guard, body : nb });
+		};
+		makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	case EBlock(stmts):
+		var out = [];
+		var i = 0;
+		while (i < stmts.length) {
+			var s = stmts[i];
+			switch (s.def) {
+				case EBinary(Match, { def : EVar(a) }, rhsAny):
+					var un = unwrapRhsAssign(rhsAny);
+					if (un != null && un.b != null && un.rhs != null) {
+						var b = un.b;
+						var rhs = un.rhs;
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EVar(b), s.metadata, s.pos)), s.metadata, s.pos));
+						break;
+					} else {
+						out.push(s);
+					};				
+				case EMatch(PVar(a2), rhsAny2):
+					var un2 = unwrapRhsAssign(rhsAny2);
+					if (un2 != null && un2.b != null && un2.rhs != null) {
+						var b2 = un2.b;
+						var rhs2 = un2.rhs;
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
+						out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+						break;
+					} else {
+						out.push(s);
+					};				
+				default:
+					out.push(s);				
+			};
+			i++;
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts2):
+		var out2 = [];
+		for (s  in  stmts2) {
+			switch (s.def) {
+				case EBinary(Match, { def : EVar(a2) }, rhsAny3):
+					var un3 = unwrapRhsAssign(rhsAny3);
+					if (un3 != null && un3.b != null && un3.rhs != null) {
+						var b2 = un3.b;
+						var rhs2 = un3.rhs;
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+						break;
+					} else {
+						out2.push(s);
+					};				
+				case EMatch(PVar(a3), rhsAny4):
+					var un4 = unwrapRhsAssign(rhsAny4);
+					if (un4 != null && un4.b != null && un4.rhs != null) {
+						var b3 = un4.b;
+						var rhs3 = un4.rhs;
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b3), s.metadata, s.pos), rhs3), s.metadata, s.pos));
+						out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a3), s.metadata, s.pos), makeASTWithMeta(EVar(b3), s.metadata, s.pos)), s.metadata, s.pos));
+						break;
+					} else {
+						out2.push(s);
+					};				
+				default:
+					out2.push(s);				
+			};
+		};
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										var nb = reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.transformPass(cl.body);
+										newClauses.push({args : cl.args, guard : cl.guard, body : nb});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								var i = 0;
+								while (i < stmts.length) {
+									var s = stmts[i];
+									@:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(a) }, rhsAny):
+		var un = unwrapRhsAssign(rhsAny);
+		if (un != null && un.b != null && un.rhs != null) {
+			var b = un.b;
+			var rhs = un.rhs;
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EVar(b), s.metadata, s.pos)), s.metadata, s.pos));
+			break;
+		} else {
+			out.push(s);
+		};	
+	case EMatch(PVar(a2), rhsAny2):
+		var un2 = unwrapRhsAssign(rhsAny2);
+		if (un2 != null && un2.b != null && un2.rhs != null) {
+			var b2 = un2.b;
+			var rhs2 = un2.rhs;
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
+			out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+			break;
+		} else {
+			out.push(s);
+		};	
+	default:
+		out.push(s);	
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var a2 = `;
+														var rhsAny2 = `;
+														{
+															var un2 = reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.unwrapRhsAssign(rhsAny2);
+															if (un2 != null && un2.b != null && un2.rhs != null) {
+																var b2 = un2.b;
+																var rhs2 = un2.rhs;
+																out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b2), metadata : s.metadata, pos : s.pos}, rhs2), metadata : s.metadata, pos : s.pos});
+																out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a2), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b2), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos});
+																break;
+															} else {
+																out.push(s);
+															};
+														};
+													};
+												} else {
+													out.push(s);
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var a = `;
+																var rhsAny = `;
+																{
+																	var un = reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.unwrapRhsAssign(rhsAny);
+																	if (un != null && un.b != null && un.rhs != null) {
+																		var b = un.b;
+																		var rhs = un.rhs;
+																		out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b), metadata : s.metadata, pos : s.pos}, rhs), metadata : s.metadata, pos : s.pos});
+																		out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos});
+																		break;
+																	} else {
+																		out.push(s);
+																	};
+																};
+															};
+														} else {
+															out.push(s);
+														};
+													};
+												} else {
+													out.push(s);
+												};
+											};
+											default: {
+												out.push(s);
+											}
+										};
+									};
+									i ++;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								var out2 = [];
+								{
+									var ` = 0;
+									while (` < stmts2.length) {
+										var s = stmts2[`];
+										++ `;
+										@:ast(switch (s.def) {
+	case EBinary(Match, { def : EVar(a2) }, rhsAny3):
+		var un3 = unwrapRhsAssign(rhsAny3);
+		if (un3 != null && un3.b != null && un3.rhs != null) {
+			var b2 = un3.b;
+			var rhs2 = un3.rhs;
+			out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
+			out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
+			break;
+		} else {
+			out2.push(s);
+		};	
+	case EMatch(PVar(a3), rhsAny4):
+		var un4 = unwrapRhsAssign(rhsAny4);
+		if (un4 != null && un4.b != null && un4.rhs != null) {
+			var b3 = un4.b;
+			var rhs3 = un4.rhs;
+			out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b3), s.metadata, s.pos), rhs3), s.metadata, s.pos));
+			out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a3), s.metadata, s.pos), makeASTWithMeta(EVar(b3), s.metadata, s.pos)), s.metadata, s.pos));
+			break;
+		} else {
+			out2.push(s);
+		};	
+	default:
+		out2.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var a3 = `;
+															var rhsAny4 = `;
+															{
+																var un4 = reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.unwrapRhsAssign(rhsAny4);
+																if (un4 != null && un4.b != null && un4.rhs != null) {
+																	var b3 = un4.b;
+																	var rhs3 = un4.rhs;
+																	out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b3), metadata : s.metadata, pos : s.pos}, rhs3), metadata : s.metadata, pos : s.pos});
+																	out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a3), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b3), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos});
+																	break;
+																} else {
+																	out2.push(s);
+																};
+															};
+														};
+													} else {
+														out2.push(s);
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var a2 = `;
+																	var rhsAny3 = `;
+																	{
+																		var un3 = reflaxe.elixir.ast.transformers.AssignChainGenericSimplifyTransforms.unwrapRhsAssign(rhsAny3);
+																		if (un3 != null && un3.b != null && un3.rhs != null) {
+																			var b2 = un3.b;
+																			var rhs2 = un3.rhs;
+																			out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b2), metadata : s.metadata, pos : s.pos}, rhs2), metadata : s.metadata, pos : s.pos});
+																			out2.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(a2), metadata : s.metadata, pos : s.pos}, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(b2), metadata : s.metadata, pos : s.pos}), metadata : s.metadata, pos : s.pos});
+																			break;
+																		} else {
+																			out2.push(s);
+																		};
+																	};
+																};
+															} else {
+																out2.push(s);
+															};
+														};
+													} else {
+														out2.push(s);
+													};
+												};
+												default: {
+													out2.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

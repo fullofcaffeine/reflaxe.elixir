@@ -1,0 +1,355 @@
+class reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		makeASTWithMeta(EDef(name, args, guards, fixBlock(body)), n.metadata, n.pos);	
+	case EDefp(name, args, guards, body):
+		makeASTWithMeta(EDefp(name, args, guards, fixBlock(body)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.fixBlock(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, reflaxe.elixir.ast.transformers.SwitchResultInlineReturnFixTransforms.fixBlock(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function fixBlock(body:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts) if (stmts != null && stmts.length >= 2):
+		var last = stmts[stmts.length - 1];
+		var trailingName:Null<String> = switch (last.def) {
+			case EVar(v):
+				v;			
+			default:
+				null;			
+		};
+		if (trailingName == null || !StringTools.startsWith(trailingName, "switch_result_")) return body;
+		var assignIndex = -1;
+		var caseExpr:ElixirAST = null;
+		for (i  in  0 ... stmts.length - 1) {
+			switch (stmts[i].def) {
+				case EMatch(pat, rhs):
+					var name:Null<String> = switch (pat) {
+						case PVar(n):
+							n;						
+						default:
+							null;						
+					};
+					if (name != null && name == trailingName) switch (rhs.def) {
+						case ECase(_, _):
+							assignIndex = i;
+							caseExpr = rhs;						
+						default:
+					};				
+				case EBinary(Match, left, rhs2):
+					var name2:Null<String> = switch (left.def) {
+						case EVar(n):
+							n;						
+						default:
+							null;						
+					};
+					if (name2 != null && name2 == trailingName) switch (rhs2.def) {
+						case ECase(_, _):
+							assignIndex = i;
+							caseExpr = rhs2;						
+						default:
+					};				
+				default:
+			};
+		};
+		if (assignIndex == -1 || caseExpr == null) {
+			var lastCaseIndex = -1;
+			for (i  in  0 ... stmts.length - 1) switch (stmts[i].def) {
+				case ECase(_, _):
+					lastCaseIndex = i;				
+				default:
+			};
+			if (lastCaseIndex == -1) return body;
+			var out1 = [];
+			for (i  in  0 ... stmts.length - 1) if (i != lastCaseIndex) out1.push(stmts[i]);
+			out1.push(stmts[lastCaseIndex]);
+			return makeASTWithMeta(EBlock(out1), body.metadata, body.pos);
+		};
+		var out = [];
+		for (i  in  0 ... stmts.length - 1) if (i != assignIndex) out.push(stmts[i]);
+		out.push(caseExpr);
+		makeASTWithMeta(EBlock(out), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					if (stmts != null && stmts.length >= 2) {
+						var last = stmts[stmts.length - 1];
+						var trailingName = @:ast(switch (last.def) {
+	case EVar(v):
+		v;	
+	default:
+		null;	
+}) {
+							var ` = last.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									{
+										v;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+						if (trailingName == null || ! StringTools.startsWith(trailingName, "switch_result_")) {
+							return body;
+						};
+						var assignIndex = -1;
+						var caseExpr = null;
+						{
+							var ` = 0;
+							var ` = stmts.length - 1;
+							while (` < `) {
+								var i = ` ++;
+								@:ast(switch (stmts[i].def) {
+	case EMatch(pat, rhs):
+		var name:Null<String> = switch (pat) {
+			case PVar(n):
+				n;			
+			default:
+				null;			
+		};
+		if (name != null && name == trailingName) switch (rhs.def) {
+			case ECase(_, _):
+				assignIndex = i;
+				caseExpr = rhs;			
+			default:
+		};	
+	case EBinary(Match, left, rhs2):
+		var name2:Null<String> = switch (left.def) {
+			case EVar(n):
+				n;			
+			default:
+				null;			
+		};
+		if (name2 != null && name2 == trailingName) switch (rhs2.def) {
+			case ECase(_, _):
+				assignIndex = i;
+				caseExpr = rhs2;			
+			default:
+		};	
+	default:
+}) {
+									var ` = stmts[i].def;
+									switch (enumIndex `) {
+										case 8: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var pat = `;
+												var rhs = `;
+												{
+													var name = @:ast(switch (pat) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+														var ` = pat[0];
+														{
+															var n = `;
+															{
+																n;
+															};
+														};
+													} else {
+														null;
+													};
+													if (name != null && name == trailingName) {
+														@:ast(switch (rhs.def) {
+	case ECase(_, _):
+		assignIndex = i;
+		caseExpr = rhs;	
+	default:
+}) {
+															var ` = rhs.def;
+															if (enumIndex ` == 6) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	assignIndex = i;
+																	caseExpr = rhs;
+																};
+															} else {};
+														};
+													};
+												};
+											};
+										};
+										case 26: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var left = `;
+													var rhs2 = `;
+													{
+														var name2 = @:ast(switch (left.def) {
+	case EVar(n):
+		n;	
+	default:
+		null;	
+}) {
+															var ` = left.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var n = `;
+																	{
+																		n;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+														if (name2 != null && name2 == trailingName) {
+															@:ast(switch (rhs2.def) {
+	case ECase(_, _):
+		assignIndex = i;
+		caseExpr = rhs2;	
+	default:
+}) {
+																var ` = rhs2.def;
+																if (enumIndex ` == 6) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		assignIndex = i;
+																		caseExpr = rhs2;
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+											} else {};
+										};
+										default: {}
+									};
+								};
+							};
+						};
+						if (assignIndex == -1 || caseExpr == null) {
+							var lastCaseIndex = -1;
+							{
+								var ` = 0;
+								var ` = stmts.length - 1;
+								while (` < `) {
+									var i = ` ++;
+									@:ast(switch (stmts[i].def) {
+	case ECase(_, _):
+		lastCaseIndex = i;	
+	default:
+}) {
+										var ` = stmts[i].def;
+										if (enumIndex ` == 6) {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												lastCaseIndex = i;
+											};
+										} else {};
+									};
+								};
+							};
+							if (lastCaseIndex == -1) {
+								return body;
+							};
+							var out1 = [];
+							{
+								var ` = 0;
+								var ` = stmts.length - 1;
+								while (` < `) {
+									var i = ` ++;
+									if (i != lastCaseIndex) {
+										out1.push(stmts[i]);
+									};
+								};
+							};
+							out1.push(stmts[lastCaseIndex]);
+							return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out1), metadata : body.metadata, pos : body.pos};
+						};
+						var out = [];
+						{
+							var ` = 0;
+							var ` = stmts.length - 1;
+							while (` < `) {
+								var i = ` ++;
+								if (i != assignIndex) {
+									out.push(stmts[i]);
+								};
+							};
+						};
+						out.push(caseExpr);
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : body.metadata, pos : body.pos};
+					} else {
+						body;
+					};
+				};
+			} else {
+				body;
+			};
+		};
+	}
+}

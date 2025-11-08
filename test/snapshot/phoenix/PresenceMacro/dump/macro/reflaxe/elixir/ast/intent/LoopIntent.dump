@@ -1,0 +1,10 @@
+enum reflaxe.elixir.ast.intent.LoopIntent {
+	RangeLoop(varName:String, start:reflaxe.elixir.ast.intent.TypedExpr, end:reflaxe.elixir.ast.intent.TypedExpr, body:reflaxe.elixir.ast.intent.TypedExpr, isInclusive:Bool);
+	CollectionLoop(varName:String, collection:reflaxe.elixir.ast.intent.TypedExpr, body:reflaxe.elixir.ast.intent.TypedExpr);
+	WhileLoop(condition:reflaxe.elixir.ast.intent.TypedExpr, body:reflaxe.elixir.ast.intent.TypedExpr, ?counterVar:Null<String>);
+	DoWhileLoop(body:reflaxe.elixir.ast.intent.TypedExpr, condition:reflaxe.elixir.ast.intent.TypedExpr);
+	ComprehensionLoop(varName:String, collection:reflaxe.elixir.ast.intent.TypedExpr, transform:reflaxe.elixir.ast.intent.TypedExpr, ?filter:Null<reflaxe.elixir.ast.intent.TypedExpr>, ?accumulator:Null<String>);
+	MapLoop(varName:String, collection:reflaxe.elixir.ast.intent.TypedExpr, transform:reflaxe.elixir.ast.intent.TypedExpr);
+	FilterLoop(varName:String, collection:reflaxe.elixir.ast.intent.TypedExpr, predicate:reflaxe.elixir.ast.intent.TypedExpr);
+	ReduceLoop(varName:String, collection:reflaxe.elixir.ast.intent.TypedExpr, accumulator:String, init:reflaxe.elixir.ast.intent.TypedExpr, combine:reflaxe.elixir.ast.intent.TypedExpr);
+}

@@ -1,0 +1,1 @@
+typedef phoenix.SocketOptions = { ?vsn : Null<String>, ?transport : Null<Dynamic>, ?timeout : Null<Int>, ?rejoinAfterMs : Null<Dynamic>, ?reconnectAfterMs : Null<Dynamic>, ?params : Null<Dynamic>, ?longpollerTimeout : Null<Int>, ?logger : Null<Dynamic>, ?heartbeatIntervalMs : Null<Int>, ?binaryType : Null<String> }

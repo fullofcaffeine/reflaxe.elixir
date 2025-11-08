@@ -1,0 +1,55 @@
+class reflaxe.elixir.ast.transformers.HeexStabilizeFinalPass {
+
+	@:value(5)
+	static inline var MAX_ITERS:Int = 5;
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var cur = content;
+		var iter = 0;
+		while (iter++ < MAX_ITERS) {
+			var before = cur;
+			cur = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(cur);
+			if (cur == before) break;
+		};
+		if (cur != content) makeASTWithMeta(ESigil(type, cur, modifiers), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var modifiers = `;
+						if (type == "H") {
+							var cur = content;
+							var iter = 0;
+							while (iter ++ < 5) {
+								var before = cur;
+								cur = reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(cur);
+								if (cur == before) {
+									break;
+								};
+							};
+							if (cur != content) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, cur, modifiers), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

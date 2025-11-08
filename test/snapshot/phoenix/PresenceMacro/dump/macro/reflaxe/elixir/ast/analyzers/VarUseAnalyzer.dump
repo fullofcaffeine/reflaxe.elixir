@@ -1,0 +1,584 @@
+class reflaxe.elixir.ast.analyzers.VarUseAnalyzer {
+
+	public static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, startIdx:Int, name:String) {
+		if (name == null || name.length == 0) {
+			return false;
+		};
+		{
+			var ` = startIdx;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (reflaxe.elixir.ast.analyzers.VarUseAnalyzer.stmtUsesVar(stmts[j], name)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	public static function stmtUsesVar(n:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var found = [false];
+		{};
+		{};
+		{};
+		var candidates = new Array();
+		if (name != null && name.length > 0) {
+			candidates.push(name);
+			var sn = if (name == null || name.length == 0) {
+				name;
+			} else {
+				var out = new StringBuf();
+				{
+					var ` = 0;
+					var ` = name.length;
+					while (` < `) {
+						var i = ` ++;
+						var ch = name.charAt(i);
+						var isUpper = (ch.toUpperCase() == ch && ch.toLowerCase() != ch);
+						if (isUpper && i > 0) {
+							out.add("_");
+						};
+						out.add(ch.toLowerCase());
+					};
+				};
+				out.toString();
+			};
+			if (sn != name) {
+				candidates.push(sn);
+			};
+			var cc = if (name == null || name.length == 0) {
+				name;
+			} else {
+				var parts = name.split("_");
+				if (parts.length == 1) {
+					name;
+				} else {
+					var out = new StringBuf();
+					{
+						var ` = 0;
+						var ` = parts.length;
+						while (` < `) {
+							var i = ` ++;
+							var p = parts[i];
+							if (p.length == 0) {
+								continue;
+							};
+							if (i == 0) {
+								out.add(p);
+							} else {
+								out.add(p.charAt(0).toUpperCase() + p.substr(1, null));
+							};
+						};
+					};
+					out.toString();
+				};
+			};
+			if (cc != name && cc != sn) {
+				candidates.push(cc);
+			};
+		};
+		var scanStringInterpolation = function(str:String) {
+			var i = 0;
+			while (! found[0] && str != null && i < str.length) {
+				var idx = str.indexOf("#{", i);
+				if (idx == -1) {
+					break;
+				};
+				var j = str.indexOf("}", idx + 2);
+				if (j == -1) {
+					break;
+				};
+				var inner = str.substr(idx + 2, j - (idx + 2));
+				if (inner.indexOf(name, null) != -1) {
+					found[0] = true;
+					break;
+				};
+				i = j + 1;
+			};
+		};
+		var walk = [null];
+		walk[0] = function(x:reflaxe.elixir.ast.ElixirAST, inPattern:Bool) {
+			if (x == null || found[0]) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(v) if (!inPattern):
+		for (c  in  candidates) if (v == c) {
+			found = true;
+			break;
+		};	
+	case EPin(inner):
+		walk(inner, false);	
+	case ERaw(code):
+		if (name != null && name.length > 0 && name.charAt(0) != "_" && code != null) {
+			var start = 0;
+			while (!found) {
+				var chosen:String = null;
+				var pos = -1;
+				for (c  in  candidates) {
+					var idx = code.indexOf(c, start);
+					if (idx != -1 && (pos == -1 || idx < pos)) {
+						pos = idx;
+						chosen = c;
+					};
+				};
+				if (pos == -1 || chosen == null) break;
+				var before = pos > 0 ? code.substr(pos - 1, 1) : null;
+				var afterIdx = pos + chosen.length;
+				var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+				if (!isIdentChar(before) && !isIdentChar(after)) {
+					found = true;
+					break;
+				};
+				start = pos + chosen.length;
+			};
+		};	
+	case EString(str):
+		scanStringInterpolation(str);	
+	case EBinary(Match, left, rhs):
+		walk(rhs, false);	
+	case EBinary(_, leftAny, rightAny):
+		walk(leftAny, false);
+		walk(rightAny, false);	
+	case EMatch(pat, rhsExpr):
+		walk(rhsExpr, false);	
+	case EBlock(ss):
+		for (s  in  ss) walk(s, false);	
+	case EDo(statements):
+		for (s  in  statements) walk(s, false);	
+	case EIf(c, t, e):
+		walk(c, false);
+		walk(t, false);
+		if (e != null) walk(e, false);	
+	case ECase(expr, clauses):
+		walk(expr, false);
+		for (c  in  clauses) {
+			if (c.guard != null) walk(c.guard, false);
+			walk(c.body, false);
+		};	
+	case EWith(clauses, doBlock, elseBlock):
+		for (wc  in  clauses) walk(wc.expr, false);
+		walk(doBlock, false);
+		if (elseBlock != null) walk(elseBlock, false);	
+	case ECall(tgt, _, args):
+		if (tgt != null) walk(tgt, false);
+		for (a  in  args) walk(a, false);	
+	case ERemoteCall(targetExpr, _, argsList):
+		walk(targetExpr, false);
+		for (a  in  argsList) walk(a, false);	
+	case EField(obj, _):
+		walk(obj, false);	
+	case EAccess(objectExpr, key):
+		walk(objectExpr, false);
+		walk(key, false);	
+	case EKeywordList(pairs):
+		for (p  in  pairs) walk(p.value, false);	
+	case EMap(pairs):
+		for (p  in  pairs) {
+			walk(p.key, false);
+			walk(p.value, false);
+		};	
+	case EStructUpdate(base, fields):
+		walk(base, false);
+		for (f  in  fields) walk(f.value, false);	
+	case ETuple(elems) | EList(elems):
+		for (e  in  elems) walk(e, false);	
+	case EFn(clauses):
+		for (cl  in  clauses) walk(cl.body, false);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								walk[0](expr, false);
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var c = clauses[`];
+										++ `;
+										if (c.guard != null) {
+											walk[0](c.guard, false);
+										};
+										walk[0](c.body, false);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhsExpr = `;
+							{
+								walk[0](rhsExpr, false);
+							};
+						};
+					};
+					case 9: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var clauses = `;
+							var doBlock = `;
+							var elseBlock = `;
+							{
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var wc = clauses[`];
+										++ `;
+										walk[0](wc.expr, false);
+									};
+								};
+								walk[0](doBlock, false);
+								if (elseBlock != null) {
+									walk[0](elseBlock, false);
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								walk[0](c, false);
+								walk[0](t, false);
+								if (e != null) {
+									walk[0](e, false);
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						{
+							var elems = `;
+							{
+								{
+									var ` = 0;
+									while (` < elems.length) {
+										var e = elems[`];
+										++ `;
+										walk[0](e, false);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var elems = `;
+							{
+								{
+									var ` = 0;
+									while (` < elems.length) {
+										var e = elems[`];
+										++ `;
+										walk[0](e, false);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										walk[0](p.key, false);
+										walk[0](p.value, false);
+									};
+								};
+							};
+						};
+					};
+					case 19: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var base = `;
+							var fields = `;
+							{
+								walk[0](base, false);
+								{
+									var ` = 0;
+									while (` < fields.length) {
+										var f = fields[`];
+										++ `;
+										walk[0](f.value, false);
+									};
+								};
+							};
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										walk[0](p.value, false);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var args = `;
+							{
+								if (tgt != null) {
+									walk[0](tgt, false);
+								};
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										walk[0](a, false);
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var targetExpr = `;
+							var argsList = `;
+							{
+								walk[0](targetExpr, false);
+								{
+									var ` = 0;
+									while (` < argsList.length) {
+										var a = argsList[`];
+										++ `;
+										walk[0](a, false);
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								{
+									walk[0](rhs, false);
+								};
+							};
+						} else {
+							var leftAny = `;
+							var rightAny = `;
+							{
+								walk[0](leftAny, false);
+								walk[0](rightAny, false);
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var obj = `;
+							{
+								walk[0](obj, false);
+							};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var objectExpr = `;
+							var key = `;
+							{
+								walk[0](objectExpr, false);
+								walk[0](key, false);
+							};
+						};
+					};
+					case 32: {
+						var ` = `[0];
+						{
+							var str = `;
+							{
+								scanStringInterpolation(str);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (! inPattern) {
+								{
+									var ` = 0;
+									while (` < candidates.length) {
+										var c = candidates[`];
+										++ `;
+										if (v == c) {
+											found[0] = true;
+											break;
+										};
+									};
+								};
+							} else {};
+						};
+					};
+					case 39: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								walk[0](inner, false);
+							};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										walk[0](cl.body, false);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										walk[0](s, false);
+									};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var statements = `;
+							{
+								{
+									var ` = 0;
+									while (` < statements.length) {
+										var s = statements[`];
+										++ `;
+										walk[0](s, false);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (name != null && name.length > 0 && name.charAt(0) != "_" && code != null) {
+									var start = 0;
+									while (! found[0]) {
+										var chosen = null;
+										var pos = -1;
+										{
+											var ` = 0;
+											while (` < candidates.length) {
+												var c = candidates[`];
+												++ `;
+												var idx = code.indexOf(c, start);
+												if (idx != -1 && (pos == -1 || idx < pos)) {
+													pos = idx;
+													chosen = c;
+												};
+											};
+										};
+										if (pos == -1 || chosen == null) {
+											break;
+										};
+										var before = if (pos > 0) {
+											code.substr(pos - 1, 1);
+										} else {
+											null;
+										};
+										var afterIdx = pos + chosen.length;
+										var after = if (afterIdx < code.length) {
+											code.substr(afterIdx, 1);
+										} else {
+											null;
+										};
+										if (! if (before == null || before.length == 0) {
+											false;
+										} else {
+											var ch = before.charCodeAt(0);
+											(ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || before == "_" || before == ".";
+										} && ! if (after == null || after.length == 0) {
+											false;
+										} else {
+											var ch = after.charCodeAt(0);
+											(ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || after == "_" || after == ".";
+										}) {
+											found[0] = true;
+											break;
+										};
+										start = pos + chosen.length;
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		walk[0](n, false);
+		return found[0];
+	}
+}

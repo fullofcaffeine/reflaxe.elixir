@@ -1,0 +1,283 @@
+class reflaxe.elixir.ast.transformers.CaseFlattenNestedSwitchTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(target, clauses):
+		var out:Array<ElixirAST.ECaseClause> = [];
+		var changed = false;
+		for (cl  in  clauses) {
+			var flattened = false;
+			inline function unwrapToCase(e:ElixirAST):Null<{ var scrut : ElixirAST; var clauses : Array<ElixirAST.ECaseClause>}> {
+				var cur = e;
+				switch (cur.def) {
+					case EParen(inner):
+						cur = inner;					
+					default:
+				};
+				switch (cur.def) {
+					case EBlock(stmts) if (stmts.length == 1):
+						cur = stmts[0];					
+					default:
+				};
+				return switch (cur.def) {
+					case ECase(s, cls):
+						{ scrut : s, clauses : cls };					
+					default:
+						null;					
+				};
+			};
+			switch (cl.pattern) {
+				case PTuple(elems) if (elems.length == 2):
+					var first = elems[0];
+					var second = elems[1];
+					var isSome = switch (first) {
+						case PLiteral({ def : EAtom(a) }):
+							Std.string(a) == "some";						
+						default:
+							false;						
+					};
+					switch (second) {
+						case PVar(varName) if (isSome):
+							var inner = unwrapToCase(cl.body);
+							if (inner != null && (switch (inner.scrut.def) {
+								case EVar(v):
+									v == varName;								
+								default:
+									false;								
+							})) {
+								for (icl  in  inner.clauses) {
+									var combined = PTuple([first, icl.pattern]);
+									out.push({ pattern : combined, guard : icl.guard, body : icl.body });
+								};
+								changed = true;
+								flattened = true;
+							};						
+						default:
+					};				
+				default:
+			};
+			if (!flattened) out.push(cl);
+		};
+		if (changed) makeASTWithMeta(ECase(target, out), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var clauses = `;
+						{
+							var out = [];
+							var changed = false;
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var flattened = false;
+									{};
+									@:ast(switch (cl.pattern) {
+	case PTuple(elems) if (elems.length == 2):
+		var first = elems[0];
+		var second = elems[1];
+		var isSome = switch (first) {
+			case PLiteral({ def : EAtom(a) }):
+				Std.string(a) == "some";			
+			default:
+				false;			
+		};
+		switch (second) {
+			case PVar(varName) if (isSome):
+				var inner = unwrapToCase(cl.body);
+				if (inner != null && (switch (inner.scrut.def) {
+					case EVar(v):
+						v == varName;					
+					default:
+						false;					
+				})) {
+					for (icl  in  inner.clauses) {
+						var combined = PTuple([first, icl.pattern]);
+						out.push({ pattern : combined, guard : icl.guard, body : icl.body });
+					};
+					changed = true;
+					flattened = true;
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = cl.pattern;
+										if (enumIndex ` == 2) {
+											var ` = `[0];
+											{
+												var elems = `;
+												if (elems.length == 2) {
+													var first = elems[0];
+													var second = elems[1];
+													var isSome = @:ast(switch (first) {
+	case PLiteral({ def : EAtom(a) }):
+		Std.string(a) == "some";	
+	default:
+		false;	
+}) if (enumIndex first == 1) {
+														var ` = first[0];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 31) {
+																var ` = `[0];
+																{
+																	var a = `;
+																	{
+																		Std.string(a) == "some";
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+													@:ast(switch (second) {
+	case PVar(varName) if (isSome):
+		var inner = unwrapToCase(cl.body);
+		if (inner != null && (switch (inner.scrut.def) {
+			case EVar(v):
+				v == varName;			
+			default:
+				false;			
+		})) {
+			for (icl  in  inner.clauses) {
+				var combined = PTuple([first, icl.pattern]);
+				out.push({ pattern : combined, guard : icl.guard, body : icl.body });
+			};
+			changed = true;
+			flattened = true;
+		};	
+	default:
+}) if (enumIndex second == 0) {
+														var ` = second[0];
+														{
+															var varName = `;
+															if (isSome) {
+																var inner = {
+																	var e = cl.body;
+																	var cur = e;
+																	@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;	
+	default:
+}) {
+																		var ` = cur.def;
+																		if (enumIndex ` == 54) {
+																			var ` = `[0];
+																			{
+																				var inner = `;
+																				{
+																					cur = inner;
+																				};
+																			};
+																		} else {};
+																	};
+																	@:ast(switch (cur.def) {
+	case EBlock(stmts) if (stmts.length == 1):
+		cur = stmts[0];	
+	default:
+}) {
+																		var ` = cur.def;
+																		if (enumIndex ` == 53) {
+																			var ` = `[0];
+																			{
+																				var stmts = `;
+																				if (stmts.length == 1) {
+																					cur = stmts[0];
+																				} else {};
+																			};
+																		} else {};
+																	};
+																	@:ast(switch (cur.def) {
+	case ECase(s, cls):
+		{ scrut : s, clauses : cls };	
+	default:
+		null;	
+}) {
+																		var ` = cur.def;
+																		if (enumIndex ` == 6) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var s = `;
+																				var cls = `;
+																				{
+																					{scrut : s, clauses : cls};
+																				};
+																			};
+																		} else {
+																			null;
+																		};
+																	};
+																};
+																if (inner != null && (@:ast(switch (inner.scrut.def) {
+	case EVar(v):
+		v == varName;	
+	default:
+		false;	
+}) {
+																	var ` = inner.scrut.def;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var v = `;
+																			{
+																				v == varName;
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																})) {
+																	{
+																		var ` = 0;
+																		var ` = inner.clauses;
+																		while (` < `.length) {
+																			var icl = `[`];
+																			++ `;
+																			var combined = reflaxe.elixir.ast.EPattern.PTuple([first, icl.pattern]);
+																			out.push({pattern : combined, guard : icl.guard, body : icl.body});
+																		};
+																	};
+																	changed = true;
+																	flattened = true;
+																};
+															} else {};
+														};
+													} else {};
+												} else {};
+											};
+										} else {};
+									};
+									if (! flattened) {
+										out.push(cl);
+									};
+								};
+							};
+							if (changed) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(target, out), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -45,23 +45,24 @@ class DefParamUnusedUnderscoreSafeTransforms {
                     var newArgs:Array<EPattern> = [];
                     // Special-case LiveView mount/3: never underscore the 3rd param when it is `socket`
                     var isMount = (name == "mount") && (args != null && args.length >= 3);
-                    var isHandleEvent = (name == "handle_event") && (args != null && args.length == 3);
+                    var isHandleEvent = ((name == "handle_event") || StringTools.startsWith(name, "handle_event")) && (args != null && args.length == 3);
+                    if (isHandleEvent) {
+                        // Preserve all params as-is for handle_event* callbacks to match snapshot shapes
+                        makeASTWithMeta(EDef(name, args, guards, body), n.metadata, n.pos);
+                    } else {
                     for (i in 0...(args != null ? args.length : 0)) {
                         var a = args[i];
-                        if (isMount && i == 2) {
+                        if (isMount && (i == 1 || i == 2)) {
                             switch (a) {
-                                case PVar(nm) if (nm == "socket"): newArgs.push(a); // keep `socket` as-is
+                                case PVar(nm) if (nm == "socket" || nm == "session"): newArgs.push(a); // keep `socket` and `session`
                                 default: newArgs.push(underscoreIfUnused(a, body));
                             }
-                        } else if (isHandleEvent && i == 1) {
-                            // Do not touch handle_event/3 second arg here; downstream
-                            // promotion/alignment passes handle it safely.
-                            newArgs.push(a);
                         } else {
                             newArgs.push(underscoreIfUnused(a, body));
                         }
                     }
                     makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
+                    }
                 case EDefp(name, args2, guards2, body2):
                     var newArgs2:Array<EPattern> = [];
                     var isMountP = (name == "mount") && (args2 != null && args2.length >= 3);

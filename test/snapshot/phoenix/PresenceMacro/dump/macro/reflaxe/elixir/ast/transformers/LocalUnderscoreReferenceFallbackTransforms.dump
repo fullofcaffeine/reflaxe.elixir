@@ -1,0 +1,703 @@
+class reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms {
+
+	public static function fallbackUnderscoreReferenceFixPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EDef(name, args, guards, body):
+		var newBody = normalize(body);
+		makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);	
+	case EDefp(name, args, guards, body):
+		var newBody = normalize(body);
+		makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var newBody = reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.normalize(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, newBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var newBody = reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.normalize(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, newBody), metadata : node.metadata, pos : node.pos};
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+
+	static function normalize(body:reflaxe.elixir.ast.ElixirAST) {
+		var declared = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var referenced = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(body);
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EMatch(p, _):
+		collectPattern(p, declared);	
+	case EBinary(Match, left, _):
+		collectLhsDecls(left, declared);	
+	case EFn(clauses):
+		for (cl  in  clauses) for (a  in  cl.args) collectPattern(a, declared);	
+	case ERaw(code):
+		for (dk  in  declared.keys()) markBaseReferenceInString(referenced, dk, code);	
+	case EString(s):
+		for (dk  in  declared.keys()) markBaseReferenceInString(referenced, dk, s);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var p = `;
+							{
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(p, declared);
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								{
+									reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectLhsDecls(left, declared);
+								};
+							};
+						} else {};
+					};
+					case 32: {
+						var ` = `[0];
+						{
+							var s = `;
+							{
+								for (dk in declared.keys()) {
+									reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.markBaseReferenceInString(referenced, dk, s);
+								};
+							};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							{
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										{
+											var ` = 0;
+											var ` = cl.args;
+											while (` < `.length) {
+												var a = `[`];
+												++ `;
+												reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(a, declared);
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								for (dk in declared.keys()) {
+									reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.markBaseReferenceInString(referenced, dk, code);
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		});
+		var refFallback = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		for (k in declared.keys()) {
+			if (StringTools.startsWith(k, "_") && k.length > 1) {
+				var base = k.substr(1, null);
+				if (! declared.exists(base)) {
+					{
+						refFallback.set(base, k);
+					};
+				};
+			};
+		};
+		var declNormalize = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		for (k in declared.keys()) {
+			if (StringTools.startsWith(k, "_") && k.length > 1) {
+				var base = k.substr(1, null);
+				if (referenced.exists(base) && ! declared.exists(base)) {
+					{
+						declNormalize.set(k, base);
+					};
+				};
+			};
+		};
+		var renamePattern = [null];
+		renamePattern[0] = function(p:reflaxe.elixir.ast.EPattern) {
+			return @:ast(switch (p) {
+	case PVar(n) if (declNormalize.exists(n)):
+		PVar(declNormalize.get(n));	
+	case PTuple(es):
+		PTuple([for (e  in  es) renamePattern(e)]);	
+	case PList(es):
+		PList([for (e  in  es) renamePattern(e)]);	
+	case PCons(h, t):
+		PCons(renamePattern(h), renamePattern(t));	
+	case PMap(kvs):
+		PMap([for (kv  in  kvs) { key : kv.key, value : renamePattern(kv.value) }]);	
+	case PStruct(nm, fs):
+		PStruct(nm, [for (f  in  fs) { key : f.key, value : renamePattern(f.value) }]);	
+	case PPin(inner):
+		PPin(renamePattern(inner));	
+	default:
+		p;	
+}) switch (enumIndex p) {
+				case 0: {
+					var ` = p[0];
+					{
+						var n = `;
+						if (declNormalize.exists(n)) {
+							reflaxe.elixir.ast.EPattern.PVar(cast declNormalize.get(n));
+						} else {
+							p;
+						};
+					};
+				};
+				case 2: {
+					var ` = p[0];
+					{
+						var es = `;
+						{
+							reflaxe.elixir.ast.EPattern.PTuple({
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < es.length) {
+										var e = es[`];
+										++ `;
+										`.push(renamePattern[0](e));
+									};
+								};
+								`;
+							});
+						};
+					};
+				};
+				case 3: {
+					var ` = p[0];
+					{
+						var es = `;
+						{
+							reflaxe.elixir.ast.EPattern.PList({
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < es.length) {
+										var e = es[`];
+										++ `;
+										`.push(renamePattern[0](e));
+									};
+								};
+								`;
+							});
+						};
+					};
+				};
+				case 4: {
+					var ` = p[0];
+					var ` = p[1];
+					{
+						var h = `;
+						var t = `;
+						{
+							reflaxe.elixir.ast.EPattern.PCons(renamePattern[0](h), renamePattern[0](t));
+						};
+					};
+				};
+				case 5: {
+					var ` = p[0];
+					{
+						var kvs = `;
+						{
+							reflaxe.elixir.ast.EPattern.PMap({
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < kvs.length) {
+										var kv = kvs[`];
+										++ `;
+										`.push({key : kv.key, value : renamePattern[0](kv.value)});
+									};
+								};
+								`;
+							});
+						};
+					};
+				};
+				case 6: {
+					var ` = p[0];
+					var ` = p[1];
+					{
+						var nm = `;
+						var fs = `;
+						{
+							reflaxe.elixir.ast.EPattern.PStruct(nm, {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < fs.length) {
+										var f = fs[`];
+										++ `;
+										`.push({key : f.key, value : renamePattern[0](f.value)});
+									};
+								};
+								`;
+							});
+						};
+					};
+				};
+				case 7: {
+					var ` = p[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.EPattern.PPin(renamePattern[0](inner));
+						};
+					};
+				};
+				default: {
+					p;
+				}
+			};
+		};
+		var renameLhs = [null];
+		renameLhs[0] = function(lhs:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (lhs.def) {
+	case EVar(v) if (declNormalize.exists(v)):
+		makeASTWithMeta(EVar(declNormalize.get(v)), lhs.metadata, lhs.pos);	
+	case EBinary(Match, l2, r2):
+		makeASTWithMeta(EBinary(Match, renameLhs(l2), renameLhs(r2)), lhs.metadata, lhs.pos);	
+	default:
+		lhs;	
+}) {
+				var ` = lhs.def;
+				switch (enumIndex `) {
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var l2 = `;
+								var r2 = `;
+								{
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, renameLhs[0](l2), renameLhs[0](r2));
+										var meta = lhs.metadata;
+										var pos = lhs.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						} else {
+							lhs;
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (declNormalize.exists(v)) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EVar(declNormalize.get(v));
+									var meta = lhs.metadata;
+									var pos = lhs.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								lhs;
+							};
+						};
+					};
+					default: {
+						lhs;
+					}
+				};
+			};
+		};
+		var tx = [null];
+		tx[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return n;
+			};
+			return @:ast(switch (n.def) {
+	case EMatch(p, rhs):
+		makeASTWithMeta(EMatch(renamePattern(p), rhs), n.metadata, n.pos);	
+	case EBinary(Match, left, rhs):
+		makeASTWithMeta(EBinary(Match, renameLhs(left), rhs), n.metadata, n.pos);	
+	case ECase(expr, clauses):
+		var cls:Array<ElixirAST.ECaseClause> = [];
+		for (cl  in  clauses) cls.push({ pattern : renamePattern(cl.pattern), guard : cl.guard, body : tx(cl.body) });
+		makeASTWithMeta(ECase(tx(expr), cls), n.metadata, n.pos);	
+	case EVar(v) if (refFallback.exists(v)):
+		makeASTWithMeta(EVar(refFallback.get(v)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								var cls = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										cls.push({pattern : renamePattern[0](cl.pattern), guard : cl.guard, body : tx[0](cl.body)});
+									};
+								};
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.ECase(tx[0](expr), cls);
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var p = `;
+							var rhs = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EMatch(renamePattern[0](p), rhs);
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								{
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, renameLhs[0](left), rhs);
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (refFallback.exists(v)) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EVar(refFallback.get(v));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, tx[0]);
+	}
+
+	static inline function isIdent(ch:String) {
+		if (ch == null || ch.length == 0) {
+			return false;
+		};
+		var c = ch.charCodeAt(0);
+		return (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95;
+	}
+
+	static inline function baseOf(declaredName:String) {
+		return if ((StringTools.startsWith(declaredName, "_") && declaredName.length > 1)) {
+			declaredName.substr(1, null);
+		} else {
+			declaredName;
+		};
+	}
+
+	static function markBaseReferenceInString(referenced:Map<String, Bool>, declaredName:String, code:String) {
+		var base = if ((StringTools.startsWith(declaredName, "_") && declaredName.length > 1)) {
+			declaredName.substr(1, null);
+		} else {
+			declaredName;
+		};
+		if (code == null || base == null || base.length == 0) {
+			return;
+		};
+		if (code.indexOf(base, null) == -1) {
+			return;
+		};
+		var idx = code.indexOf(base, null);
+		var isBoundary = true;
+		if (idx > 0) {
+			var prev = code.charAt(idx - 1);
+			if (if (prev == null || prev.length == 0) {
+				false;
+			} else {
+				var c = prev.charCodeAt(0);
+				(c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95;
+			}) {
+				isBoundary = false;
+			};
+		};
+		var endIdx = idx + base.length;
+		if (endIdx < code.length) {
+			var nxt = code.charAt(endIdx);
+			if (if (nxt == null || nxt.length == 0) {
+				false;
+			} else {
+				var c = nxt.charCodeAt(0);
+				(c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95;
+			}) {
+				isBoundary = false;
+			};
+		};
+		if (isBoundary) {
+			{
+				referenced.set(base, true);
+			};
+		};
+	}
+
+	static function collectPattern(p:reflaxe.elixir.ast.EPattern, declared:Map<String, Bool>) {
+		@:ast(switch (p) {
+	case PVar(n):
+		declared.set(n, true);	
+	case PTuple(es) | PList(es):
+		for (e  in  es) collectPattern(e, declared);	
+	case PCons(h, t):
+		collectPattern(h, declared);
+		collectPattern(t, declared);	
+	case PMap(kvs):
+		for (kv  in  kvs) collectPattern(kv.value, declared);	
+	case PStruct(_, fs):
+		for (f  in  fs) collectPattern(f.value, declared);	
+	case PPin(inner):
+		collectPattern(inner, declared);	
+	default:
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						{
+							declared.set(n, true);
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(e, declared);
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(e, declared);
+							};
+						};
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(h, declared);
+						reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(t, declared);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(kv.value, declared);
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(f.value, declared);
+							};
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectPattern(inner, declared);
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	static function collectLhsDecls(lhs:reflaxe.elixir.ast.ElixirAST, declared:Map<String, Bool>) {
+		@:ast(switch (lhs.def) {
+	case EVar(n):
+		declared.set(n, true);	
+	case EBinary(Match, l2, r2):
+		collectLhsDecls(l2, declared);
+		collectLhsDecls(r2, declared);	
+	default:
+}) {
+			var ` = lhs.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var l2 = `;
+							var r2 = `;
+							{
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectLhsDecls(l2, declared);
+								reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.collectLhsDecls(r2, declared);
+							};
+						};
+					} else {};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							{
+								declared.set(n, true);
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+	}
+}

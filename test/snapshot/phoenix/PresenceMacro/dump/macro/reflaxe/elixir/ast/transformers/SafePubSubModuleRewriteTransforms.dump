@@ -1,0 +1,108 @@
+class reflaxe.elixir.ast.transformers.SafePubSubModuleRewriteTransforms {
+
+	public static function rewritePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, func, args):
+		switch (mod.def) {
+			case EVar(m) if (m == "SafePubSub"):
+				var newMod = makeASTWithMeta(EVar("Phoenix.SafePubSub"), mod.metadata, mod.pos);
+				makeASTWithMeta(ERemoteCall(newMod, func, args), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case ECall(tgt, func2, args2):
+		if (tgt != null) switch (tgt.def) {
+			case EVar(m2) if (m2 == "SafePubSub"):
+				var newTgt = makeASTWithMeta(EVar("Phoenix.SafePubSub"), tgt.metadata, tgt.pos);
+				makeASTWithMeta(ECall(newTgt, func2, args2), n.metadata, n.pos);			
+			default:
+				n;			
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							var func2 = `;
+							var args2 = `;
+							{
+								if (tgt != null) {
+									@:ast(switch (tgt.def) {
+	case EVar(m2) if (m2 == "SafePubSub"):
+		var newTgt = makeASTWithMeta(EVar("Phoenix.SafePubSub"), tgt.metadata, tgt.pos);
+		makeASTWithMeta(ECall(newTgt, func2, args2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+										var ` = tgt.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var m2 = `;
+												if (m2 == "SafePubSub") {
+													var newTgt = {def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.SafePubSub"), metadata : tgt.metadata, pos : tgt.pos};
+													{def : reflaxe.elixir.ast.ElixirASTDef.ECall(newTgt, func2, args2), metadata : n.metadata, pos : n.pos};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var func = `;
+							var args = `;
+							{
+								@:ast(switch (mod.def) {
+	case EVar(m) if (m == "SafePubSub"):
+		var newMod = makeASTWithMeta(EVar("Phoenix.SafePubSub"), mod.metadata, mod.pos);
+		makeASTWithMeta(ERemoteCall(newMod, func, args), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = mod.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											if (m == "SafePubSub") {
+												var newMod = {def : reflaxe.elixir.ast.ElixirASTDef.EVar("Phoenix.SafePubSub"), metadata : mod.metadata, pos : mod.pos};
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(newMod, func, args), metadata : n.metadata, pos : n.pos};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,19 @@
+@:directlyUsed @:used
+class ExternalCaller {
+
+	@:value("presence:test")
+	static inline var TOPIC:String = "presence:test";
+
+	public static function callFromOutside(socket:Socket) {
+		var meta = {onlineAt : _Date.Date_Impl_.getTime(cast DateTime.utc_now()), userName : "External User", status : "online"};
+		__elixir__("Phoenix.Presence.track({0}, {1}, {2})", "presence:test", "external_user", meta);
+		__elixir__("Phoenix.Presence.update({0}, {1}, {2})", "presence:test", "external_user", meta);
+		__elixir__("Phoenix.Presence.untrack({0}, {1})", "presence:test", "external_user");
+		var allPresences = cast __elixir__("{0}.list({1})", __elixir__("MyAppWeb.Presence"), "presence:test");
+		var userPresence = cast __elixir__("Phoenix.Presence.get_by_key({0}, {1})", "presence:test", "external_user");
+		if ((userPresence != null && userPresence.metas.length > 0)) {
+			var typedMeta = userPresence.metas[0];
+			null;
+		};
+	}
+}

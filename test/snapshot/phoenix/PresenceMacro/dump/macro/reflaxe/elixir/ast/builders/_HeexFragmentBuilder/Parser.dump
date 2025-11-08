@@ -1,0 +1,403 @@
+private class reflaxe.elixir.ast.builders._HeexFragmentBuilder.Parser {
+
+	public function new(s:String) {
+		this.i = 0;
+		this.s = s;
+		this.i = 0;
+	}
+
+	var s(default,ctor):String;
+
+	@:value(0)
+	var i:Int;
+
+	public function parseNodes() {
+		var out = [];
+		while (! this.i >= this.s.length) {
+			if (this.i >= this.s.length) {
+				break;
+			};
+			if (if (this.i < this.s.length) {
+				this.s.charAt(this.i);
+			} else {
+				null;
+			} == "<") {
+				var node = this.parseElement();
+				if (node != null) {
+					out.push(node);
+				} else {
+					{
+						this.i += 1;
+					};
+				};
+			} else {
+				var start = this.i;
+				var lt = this.s.indexOf("<", this.i);
+				var end = if (lt == -1) {
+					this.s.length;
+				} else {
+					lt;
+				};
+				var txt = this.s.substr(start, end - start);
+				this.i = end;
+				if (txt.length > 0) {
+					out.push({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EString(txt), metadata : {}, pos : pos};
+					});
+				};
+			};
+		};
+		return out;
+	}
+
+	function parseElement() {
+		var start = this.i;
+		if (! this.consume("<")) {
+			return null;
+		};
+		if (if (this.i < this.s.length) {
+			this.s.charAt(this.i);
+		} else {
+			null;
+		} == "/") {
+			this.i = start;
+			return null;
+		};
+		var tag = this.parseTagName();
+		if (tag == null) {
+			this.i = start;
+			return null;
+		};
+		var attrs = this.parseAttributes();
+		this.skipWs();
+		var selfClosing = false;
+		if (if (this.i < this.s.length) {
+			this.s.charAt(this.i);
+		} else {
+			null;
+		} == "/") {
+			selfClosing = true;
+			{
+				this.i += 1;
+			};
+		};
+		if (! this.consume(">")) {
+			this.i = start;
+			return null;
+		};
+		var children = [];
+		if (! selfClosing) {
+			while (! this.i >= this.s.length) {
+				if (if (this.i < this.s.length) {
+					this.s.charAt(this.i);
+				} else {
+					null;
+				} == "<" && if (this.i + 1 < this.s.length) {
+					this.s.charAt(this.i + 1);
+				} else {
+					null;
+				} == "/") {
+					{
+						this.i += 2;
+					};
+					var close = this.parseTagName();
+					this.skipWs();
+					this.consume(">");
+					break;
+				} else {
+					if (if (this.i < this.s.length) {
+						this.s.charAt(this.i);
+					} else {
+						null;
+					} == "<") {
+						var child = this.parseElement();
+						if (child != null) {
+							children.push(child);
+						} else {
+							{
+								this.i += 1;
+							};
+						};
+					} else {
+						var tstart = this.i;
+						var lt = this.s.indexOf("<", this.i);
+						var end = if (lt == -1) {
+							this.s.length;
+						} else {
+							lt;
+						};
+						var txt = this.s.substr(tstart, end - tstart);
+						this.i = end;
+						if (txt.length > 0) {
+							children.push({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EString(txt), metadata : {}, pos : pos};
+							});
+						};
+					};
+				};
+			};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFragment(tag, attrs, children), metadata : {}, pos : pos};
+		};
+	}
+
+	function parseTagName() {
+		this.skipWs();
+		var start = this.i;
+		while (! this.i >= this.s.length) {
+			var ch = if (this.i < this.s.length) {
+				this.s.charAt(this.i);
+			} else {
+				null;
+			};
+			if (this.isTagChar(ch)) {
+				{
+					this.i += 1;
+				};
+			} else {
+				break;
+			};
+		};
+		return if (this.i > start) {
+			this.s.substr(start, this.i - start);
+		} else {
+			null;
+		};
+	}
+
+	function isTagChar(ch:String) {
+		if (ch == null || ch.length == 0) {
+			return false;
+		};
+		var c = ch.charCodeAt(0);
+		return (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || ch == "_" || ch == "-" || ch == "." || ch == ":";
+	}
+
+	function parseAttributes() {
+		var attrs = [];
+		while (! this.i >= this.s.length) {
+			this.skipWs();
+			var c = if (this.i < this.s.length) {
+				this.s.charAt(this.i);
+			} else {
+				null;
+			};
+			if (c == ">" || c == "/" || c == null) {
+				break;
+			};
+			var name = this.parseAttrName();
+			if (name == null) {
+				break;
+			};
+			this.skipWs();
+			var valueAst = null;
+			if (this.consume("=")) {
+				this.skipWs();
+				var q = if (this.i < this.s.length) {
+					this.s.charAt(this.i);
+				} else {
+					null;
+				};
+				if (q == "\"" || q == "'") {
+					valueAst = {
+						var def = reflaxe.elixir.ast.ElixirASTDef.EString(this.parseQuotedString());
+						var pos = null;
+						{def : def, metadata : {}, pos : pos};
+					};
+				} else {
+					if (q == "{") {
+						{
+							this.i += 1;
+						};
+						var exprStart = this.i;
+						var depth = 1;
+						while (! this.i >= this.s.length && depth > 0) {
+							var ch = if (this.i < this.s.length) {
+								this.s.charAt(this.i);
+							} else {
+								null;
+							};
+							if (ch == "{") {
+								depth ++;
+							} else {
+								if (ch == "}") {
+									depth --;
+								};
+							};
+							{
+								this.i += 1;
+							};
+						};
+						var expr = this.s.substr(exprStart, (this.i - 1) - exprStart);
+						valueAst = this.parseAttrExpr(expr);
+					} else {
+						var vs = this.i;
+						while (! this.i >= this.s.length) {
+							var ch2 = if (this.i < this.s.length) {
+								this.s.charAt(this.i);
+							} else {
+								null;
+							};
+							if (ch2 != null && new EReg("^\\s$", "").match(ch2) || ch2 == ">" || ch2 == "/") {
+								break;
+							};
+							{
+								this.i += 1;
+							};
+						};
+						valueAst = {
+							var def = reflaxe.elixir.ast.ElixirASTDef.EString(this.s.substr(vs, this.i - vs));
+							var pos = null;
+							{def : def, metadata : {}, pos : pos};
+						};
+					};
+				};
+			} else {
+				valueAst = {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBoolean(true), metadata : {}, pos : pos};
+				};
+			};
+			attrs.push({name : name, value : valueAst});
+		};
+		return attrs;
+	}
+
+	function parseAttrName() {
+		this.skipWs();
+		var start = this.i;
+		while (! this.i >= this.s.length) {
+			var ch = if (this.i < this.s.length) {
+				this.s.charAt(this.i);
+			} else {
+				null;
+			};
+			if (if (ch == null || ch.length == 0) {
+				false;
+			} else {
+				var c = ch.charCodeAt(0);
+				if (ch == null || ch.length == 0) {
+					false;
+				} else {
+					var c = ch.charCodeAt(0);
+					(c >= 65 && c <= 90) || (c >= 97 && c <= 122) || ch == "_";
+				} || (c >= 48 && c <= 57);
+			} || ch == ":" || ch == "-") {
+				{
+					this.i += 1;
+				};
+			} else {
+				break;
+			};
+		};
+		return if (this.i > start) {
+			this.s.substr(start, this.i - start);
+		} else {
+			null;
+		};
+	}
+
+	function parseAttrExpr(expr:String) {
+		var ep = new reflaxe.elixir.ast.builders._HeexFragmentBuilder.ExprParser(expr);
+		return ep.parse();
+	}
+
+	inline function eof() return this.i >= this.s.length
+
+	inline function peek() return if (this.i < this.s.length) {
+		this.s.charAt(this.i);
+	} else {
+		null;
+	}
+
+	inline function peek2() return if (this.i + 1 < this.s.length) {
+		this.s.charAt(this.i + 1);
+	} else {
+		null;
+	}
+
+	inline function advance(n:Int) this.i += n
+
+	function consume(ch:String) {
+		if (if (this.i < this.s.length) {
+			this.s.charAt(this.i);
+		} else {
+			null;
+		} == ch) {
+			this.i ++;
+			return true;
+		};
+		return false;
+	}
+
+	function skipWs() {
+		while (! this.i >= this.s.length && {
+			var ch = if ((this.i < this.s.length)) this.s.charAt(this.i) else null;
+			ch != null && new EReg("^\\s$", "").match(ch);
+		}) {
+			this.i ++;
+		};
+	}
+
+	function parseQuotedString() {
+		var q = if (this.i < this.s.length) {
+			this.s.charAt(this.i);
+		} else {
+			null;
+		};
+		if (q != "\"" && q != "'") {
+			return "";
+		};
+		{
+			this.i += 1;
+		};
+		var start = this.i;
+		while (! this.i >= this.s.length && if (this.i < this.s.length) {
+			this.s.charAt(this.i);
+		} else {
+			null;
+		} != q) {
+			{
+				this.i += 1;
+			};
+		};
+		var val = this.s.substr(start, this.i - start);
+		if (if (this.i < this.s.length) {
+			this.s.charAt(this.i);
+		} else {
+			null;
+		} == q) {
+			{
+				this.i += 1;
+			};
+		};
+		return val;
+	}
+
+	static inline function isWs(ch:String) return ch != null && new EReg("^\\s$", "").match(ch)
+
+	static inline function isIdentStart(ch:String) {
+		if (ch == null || ch.length == 0) {
+			return false;
+		};
+		var c = ch.charCodeAt(0);
+		return (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || ch == "_";
+	}
+
+	static inline function isIdentChar(ch:String) {
+		if (ch == null || ch.length == 0) {
+			return false;
+		};
+		var c = ch.charCodeAt(0);
+		return if (ch == null || ch.length == 0) {
+			false;
+		} else {
+			var c = ch.charCodeAt(0);
+			(c >= 65 && c <= 90) || (c >= 97 && c <= 122) || ch == "_";
+		} || (c >= 48 && c <= 57);
+	}
+}

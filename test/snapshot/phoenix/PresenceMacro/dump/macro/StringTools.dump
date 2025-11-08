@@ -1,0 +1,328 @@
+class StringTools {
+
+	public static function urlEncode(s:String) {
+		return null;
+	}
+
+	public static function urlDecode(s:String) {
+		return null;
+	}
+
+	public static function htmlEscape(s:String, quotes:Null<Bool> = null) {
+		var buf = new StringBuf();
+		{
+			var ` = new haxe.iterators.StringIteratorUnicode(s);
+			while (`.offset < `.s.length) {
+				var code = {
+					var c = {
+						var s = `.s;
+						var index = `.offset ++;
+						var c = StringTools.fastCodeAt(s, index);
+						if (c >= 55296 && c <= 56319) {
+							c = ((c - 55232) << 10) | (StringTools.fastCodeAt(s, index + 1) & 1023);
+						};
+						c;
+					};
+					if (c >= 65536) {
+						`.offset ++;
+					};
+					c;
+				};
+				@:ast(switch (code) {
+	case "&".code:
+		buf.add("&amp;");	
+	case "<".code:
+		buf.add("&lt;");	
+	case ">".code:
+		buf.add("&gt;");	
+	case "\"".code if (quotes):
+		buf.add("&quot;");	
+	case "'".code if (quotes):
+		buf.add("&#039;");	
+	case _:
+		buf.addChar(code);	
+}) switch (code) {
+					case 34: {
+						if (quotes) {
+							buf.add("&quot;");
+						} else {
+							buf.addChar(code);
+						};
+					};
+					case 38: {
+						{
+							buf.add("&amp;");
+						};
+					};
+					case 39: {
+						if (quotes) {
+							buf.add("&#039;");
+						} else {
+							buf.addChar(code);
+						};
+					};
+					case 60: {
+						{
+							buf.add("&lt;");
+						};
+					};
+					case 62: {
+						{
+							buf.add("&gt;");
+						};
+					};
+					default: {
+						buf.addChar(code);
+					}
+				};
+			};
+		};
+		return buf.toString();
+	}
+
+	public static function htmlUnescape(s:String) {
+		return s.split("&gt;").join(">").split("&lt;").join("<").split("&quot;").join("\"").split("&#039;").join("'").split("&amp;").join("&");
+	}
+
+	public static inline function contains(s:String, value:String) {
+		return s.indexOf(value, null) != -1;
+	}
+
+	public static function startsWith(s:String, start:String) {
+		return (s.length >= start.length && s.lastIndexOf(start, 0) == 0);
+	}
+
+	public static function endsWith(s:String, end:String) {
+		var elen = end.length;
+		var slen = s.length;
+		return (slen >= elen && s.indexOf(end, (slen - elen)) == (slen - elen));
+	}
+
+	public static function isSpace(s:String, pos:Int) {
+		var c = s.charCodeAt(pos);
+		return (c > 8 && c < 14) || c == 32;
+	}
+
+	public static function ltrim(s:String) {
+		var l = s.length;
+		var r = 0;
+		while (r < l && StringTools.isSpace(s, r)) {
+			r ++;
+		};
+		if (r > 0) {
+			return s.substr(r, l - r);
+		} else {
+			return s;
+		};
+	}
+
+	public static function rtrim(s:String) {
+		var l = s.length;
+		var r = 0;
+		while (r < l && StringTools.isSpace(s, l - r - 1)) {
+			r ++;
+		};
+		if (r > 0) {
+			return s.substr(0, l - r);
+		} else {
+			return s;
+		};
+	}
+
+	public static function trim(s:String) {
+		return StringTools.ltrim(StringTools.rtrim(s));
+	}
+
+	public static function lpad(s:String, c:String, l:Int) {
+		if (c.length <= 0) {
+			return s;
+		};
+		var buf = new StringBuf();
+		l -= s.length;
+		while (buf.get_length() < l) {
+			buf.add(c);
+		};
+		buf.add(s);
+		return buf.toString();
+	}
+
+	public static function rpad(s:String, c:String, l:Int) {
+		if (c.length <= 0) {
+			return s;
+		};
+		var buf = new StringBuf();
+		buf.add(s);
+		while (buf.get_length() < l) {
+			buf.add(c);
+		};
+		return buf.toString();
+	}
+
+	public static function replace(s:String, sub:String, by:String) {
+		return s.split(sub).join(by);
+	}
+
+	public static function hex(n:Int, digits:Null<Int> = null) {
+		var s = "";
+		var hexChars = "0123456789ABCDEF";
+		do ({
+			s = hexChars.charAt(n & 15) + s;
+			n >>>= 4;
+		}) while(n > 0);
+		if (digits != null) {
+			while (s.length < digits) {
+				s = "0" + s;
+			};
+		};
+		return s;
+	}
+
+	@:has_untyped
+	public static function fastCodeAt(s:String, index:Int) {
+		return s.cca(index);
+	}
+
+	@:has_untyped
+	public static function unsafeCodeAt(s:String, index:Int) {
+		return s.cca(index);
+	}
+
+	public static inline function iterator(s:String) {
+		return new haxe.iterators.StringIterator(s);
+	}
+
+	public static inline function keyValueIterator(s:String) {
+		return new haxe.iterators.StringKeyValueIterator(s);
+	}
+
+	@:noUsing
+	public static inline function isEof(c:Int) {
+		return c == null;
+	}
+
+	@:noCompletion @:deprecated("StringTools.quoteUnixArg() is deprecated. Use haxe.SysTools.quoteUnixArg() instead.")
+	public static function quoteUnixArg(argument:String) {
+		return if (argument == "") {
+			"''";
+		} else {
+			if (! new EReg("[^a-zA-Z0-9_@%+=:,./-]", "").match(argument)) {
+				argument;
+			} else {
+				"'" + StringTools.replace(argument, "'", "'\"'\"'") + "'";
+			};
+		};
+	}
+
+	@:value(cast haxe.SysTools.winMetaCharacters) @:noCompletion @:deprecated("StringTools.winMetaCharacters is deprecated. Use haxe.SysTools.winMetaCharacters instead.")
+	public static var winMetaCharacters:Array<Int> = cast haxe.SysTools.winMetaCharacters;
+
+	@:noCompletion @:deprecated("StringTools.quoteWinArg() is deprecated. Use haxe.SysTools.quoteWinArg() instead.")
+	public static function quoteWinArg(argument:String, escapeMetaCharacters:Bool) {
+		return {
+			var argument = argument;
+			if (! new EReg("^(/)?[^ \t/\\\\\"]+$", "").match(argument)) {
+				var result = new StringBuf();
+				var needquote = argument.indexOf(" ", null) != -1 || argument.indexOf("\t", null) != -1 || argument == "" || argument.indexOf("/", null) > 0;
+				if (needquote) {
+					result.add("\"");
+				};
+				var bs_buf = new StringBuf();
+				{
+					var ` = 0;
+					var ` = argument.length;
+					while (` < `) {
+						var i = ` ++;
+						@:ast(switch (argument.charCodeAt(i)) {
+	case "\\".code:
+		bs_buf.add("\\");	
+	case "\"".code:
+		var bs = bs_buf.toString();
+		result.add(bs);
+		result.add(bs);
+		bs_buf = new StringBuf();
+		result.add("\\\"");	
+	case var c:
+		if (bs_buf.length > 0) {
+			result.add(bs_buf.toString());
+			bs_buf = new StringBuf();
+		};
+		result.addChar(c);	
+}) {
+							var ` = argument.charCodeAt(i);
+							if (` == null) {
+								var c = `;
+								{
+									if (bs_buf.get_length() > 0) {
+										result.add(bs_buf.toString());
+										bs_buf = new StringBuf();
+									};
+									result.addChar(c);
+								};
+							} else switch (`) {
+								case 34: {
+									{
+										var bs = bs_buf.toString();
+										result.add(bs);
+										result.add(bs);
+										bs_buf = new StringBuf();
+										result.add("\\\"");
+									};
+								};
+								case 92: {
+									{
+										bs_buf.add("\\");
+									};
+								};
+								default: {
+									var c = `;
+									{
+										if (bs_buf.get_length() > 0) {
+											result.add(bs_buf.toString());
+											bs_buf = new StringBuf();
+										};
+										result.addChar(c);
+									};
+								}
+							};
+						};
+					};
+				};
+				result.add(bs_buf.toString());
+				if (needquote) {
+					result.add(bs_buf.toString());
+					result.add("\"");
+				};
+				argument = result.toString();
+			};
+			if (escapeMetaCharacters) {
+				var result = new StringBuf();
+				{
+					var ` = 0;
+					var ` = argument.length;
+					while (` < `) {
+						var i = ` ++;
+						var c = argument.charCodeAt(i);
+						if (cast haxe.SysTools.winMetaCharacters.indexOf(c, null) >= 0) {
+							result.addChar(94);
+						};
+						result.addChar(c);
+					};
+				};
+				result.toString();
+			} else {
+				argument;
+			};
+		};
+	}
+
+	@:value(65536)
+	static inline var MIN_SURROGATE_CODE_POINT:Int = 65536;
+
+	static inline function utf16CodePointAt(s:String, index:Int) {
+		var c = StringTools.fastCodeAt(s, index);
+		if (c >= 55296 && c <= 56319) {
+			c = ((c - 55232) << 10) | (StringTools.fastCodeAt(s, index + 1) & 1023);
+		};
+		return c;
+	}
+}

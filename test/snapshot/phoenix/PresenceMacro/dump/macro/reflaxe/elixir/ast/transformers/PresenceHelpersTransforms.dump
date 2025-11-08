@@ -1,0 +1,448 @@
+class reflaxe.elixir.ast.transformers.PresenceHelpersTransforms {
+
+	static inline function isPresenceModuleName(name:String) {
+		if (name == null) {
+			return false;
+		};
+		if (name.indexOf("Web.Presence", null) >= 0) {
+			return true;
+		};
+		var suffix = ".Presence";
+		var len = name.length;
+		return len >= suffix.length && name.substr(len - suffix.length, null) == suffix;
+	}
+
+	static inline function isAtomToString(funExpr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (funExpr.def) {
+	case ECapture(inner, _):
+		switch (inner.def) {
+			case ERemoteCall({ def : EVar(m) }, f, _) if (m == "Atom" && f == "to_string"):
+				true;			
+			case EField({ def : EVar(m2) }, f2) if (m2 == "Atom" && f2 == "to_string"):
+				true;			
+			default:
+				false;			
+		};	
+	case ERemoteCall({ def : EVar(m3) }, f3, _) if (m3 == "Atom" && f3 == "to_string"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = funExpr.def;
+			switch (enumIndex `) {
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var m3 = `;
+								var f3 = `;
+								if (m3 == "Atom" && f3 == "to_string") {
+									true;
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					};
+				};
+				case 43: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var inner = `;
+						{
+							@:ast(switch (inner.def) {
+	case ERemoteCall({ def : EVar(m) }, f, _) if (m == "Atom" && f == "to_string"):
+		true;	
+	case EField({ def : EVar(m2) }, f2) if (m2 == "Atom" && f2 == "to_string"):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = inner.def;
+								switch (enumIndex `) {
+									case 24: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var m = `;
+													var f = `;
+													if (m == "Atom" && f == "to_string") {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									};
+									case 28: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var ` = `.def;
+											var ` = `.metadata;
+											var ` = `.pos;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var m2 = `;
+													var f2 = `;
+													if (m2 == "Atom" && f2 == "to_string") {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									};
+									default: {
+										false;
+									}
+								};
+							};
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	public static function presenceHelpersNormalizationPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var inPresence = (n.metadata?.isPresence == true) || isPresenceModuleName(name);
+		if (!inPresence) return n;
+		var newBody = [];
+		for (b  in  body) newBody.push(rewriteEnumMapForPresence(b));
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var inPresence2 = (n.metadata?.isPresence == true) || isPresenceModuleName(name);
+		if (!inPresence2) return n;
+		makeASTWithMeta(EDefmodule(name, rewriteEnumMapForPresence(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var inPresence = ({
+									var tmp = n.metadata;
+									if (tmp != null) tmp.isPresence else null;
+								} == true) || if (name == null) {
+									false;
+								} else {
+									if (name.indexOf("Web.Presence", null) >= 0) {
+										true;
+									} else {
+										var suffix = ".Presence";
+										var len = name.length;
+										len >= suffix.length && name.substr(len - suffix.length, null) == suffix;
+									};
+								};
+								if (! inPresence) {
+									return n;
+								};
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.PresenceHelpersTransforms.rewriteEnumMapForPresence(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var inPresence2 = ({
+									var tmp = n.metadata;
+									if (tmp != null) tmp.isPresence else null;
+								} == true) || if (name == null) {
+									false;
+								} else {
+									if (name.indexOf("Web.Presence", null) >= 0) {
+										true;
+									} else {
+										var suffix = ".Presence";
+										var len = name.length;
+										len >= suffix.length && name.substr(len - suffix.length, null) == suffix;
+									};
+								};
+								if (! inPresence2) {
+									return n;
+								};
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.PresenceHelpersTransforms.rewriteEnumMapForPresence(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteEnumMapForPresence(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ERemoteCall({ def : EVar(enumMod) }, "map", [keysExpr, fun]) if (enumMod == "Enum" && isAtomToString(fun)):
+		switch (keysExpr.def) {
+			case ERemoteCall({ def : EVar(mapMod) }, "keys", [arg]) if (mapMod == "Map"):
+				makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "keys", [arg]), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							if (` == "map") {
+								if (`.length == 2) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var keysExpr = `;
+										var fun = `;
+										var enumMod = `;
+										if (enumMod == "Enum" && @:ast(switch (funExpr.def) {
+	case ECapture(inner, _):
+		switch (inner.def) {
+			case ERemoteCall({ def : EVar(m) }, f, _) if (m == "Atom" && f == "to_string"):
+				true;			
+			case EField({ def : EVar(m2) }, f2) if (m2 == "Atom" && f2 == "to_string"):
+				true;			
+			default:
+				false;			
+		};	
+	case ERemoteCall({ def : EVar(m3) }, f3, _) if (m3 == "Atom" && f3 == "to_string"):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = fun.def;
+											switch (enumIndex `) {
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var m3 = `;
+																var f3 = `;
+																if (m3 == "Atom" && f3 == "to_string") {
+																	true;
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+												};
+												case 43: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var inner = `;
+														{
+															@:ast(switch (inner.def) {
+	case ERemoteCall({ def : EVar(m) }, f, _) if (m == "Atom" && f == "to_string"):
+		true;	
+	case EField({ def : EVar(m2) }, f2) if (m2 == "Atom" && f2 == "to_string"):
+		true;	
+	default:
+		false;	
+}) {
+																var ` = inner.def;
+																switch (enumIndex `) {
+																	case 24: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		{
+																			var ` = `.def;
+																			var ` = `.metadata;
+																			var ` = `.pos;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var m = `;
+																					var f = `;
+																					if (m == "Atom" && f == "to_string") {
+																						true;
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																	};
+																	case 28: {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var ` = `.def;
+																			var ` = `.metadata;
+																			var ` = `.pos;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var m2 = `;
+																					var f2 = `;
+																					if (m2 == "Atom" && f2 == "to_string") {
+																						true;
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																	};
+																	default: {
+																		false;
+																	}
+																};
+															};
+														};
+													};
+												};
+												default: {
+													false;
+												}
+											};
+										}) {
+											@:ast(switch (keysExpr.def) {
+	case ERemoteCall({ def : EVar(mapMod) }, "keys", [arg]) if (mapMod == "Map"):
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "keys", [arg]), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+												var ` = keysExpr.def;
+												if (enumIndex ` == 24) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															if (` == "keys") {
+																if (`.length == 1) {
+																	var ` = `[0];
+																	{
+																		var arg = `;
+																		var mapMod = `;
+																		if (mapMod == "Map") {
+																			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+																			}, "keys", [arg]), metadata : x.metadata, pos : x.pos};
+																		} else {
+																			x;
+																		};
+																	};
+																} else {
+																	x;
+																};
+															} else {
+																x;
+															};
+														} else {
+															x;
+														};
+													};
+												} else {
+													x;
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

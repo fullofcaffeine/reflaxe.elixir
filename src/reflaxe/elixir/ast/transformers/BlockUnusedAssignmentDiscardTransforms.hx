@@ -132,7 +132,7 @@ class BlockUnusedAssignmentDiscardTransforms {
                                     // Do not discard assigns anywhere; render/1 and ~H rely on it implicitly
                                     if (nm == "assigns") { out.push(s); break; }
                                     // Preserve effectful Presence track/update/untrack assignment even if not referenced later
-                                    if (isPresenceEffectCall(rhs)) { out.push(s); break; }
+                                    if (isPresenceEffectCall(rhs) || isLogTraceCall(rhs)) { out.push(s); break; }
                                     if (nm == "query" && filterPredicateUsesQueryLater(stmts, i + 1)) {
                                         out.push(s);
                                     } else if (isDowncaseSearch(rhs)) {
@@ -159,7 +159,7 @@ class BlockUnusedAssignmentDiscardTransforms {
                                 case PVar(nm2):
                                     if (nm2 == "children") { out.push(s); break; }
                                     if (nm2 == "assigns") { out.push(s); break; }
-                                    if (isPresenceEffectCall(rhs2)) { out.push(s); break; }
+                                    if (isPresenceEffectCall(rhs2) || isLogTraceCall(rhs2)) { out.push(s); break; }
                                     if (isDowncaseSearch(rhs2)) {
                                         out.push(s);
                                     } else if (
@@ -337,6 +337,17 @@ class BlockUnusedAssignmentDiscardTransforms {
                 // API-based, not app-specific: match Presence module and known mutating calls
                 var isPresence = (mod == "Phoenix.Presence") || StringTools.endsWith(mod, ".Presence") || (mod == "Presence");
                 if (!isPresence) false else (func == "track" || func == "update" || func == "untrack");
+            default:
+                false;
+        };
+    }
+
+    static function isLogTraceCall(e: ElixirAST): Bool {
+        return switch (e.def) {
+            case ERemoteCall({def: EVar(mod)}, func, _):
+                (mod == "Log" || StringTools.endsWith(mod, ".Log")) && func == "trace";
+            case ECall({def: EVar(mod2)}, func2, _):
+                (mod2 == "Log" || StringTools.endsWith(mod2, ".Log")) && func2 == "trace";
             default:
                 false;
         };

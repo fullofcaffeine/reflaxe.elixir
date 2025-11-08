@@ -1,0 +1,70 @@
+class reflaxe.elixir.ast.transformers.ListIndexAccessToEnumAtTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EAccess(target, key):
+		switch [target.def, key.def] {
+			case [EField(obj, field), EInteger(_)] if (field == "metas"):
+				var fieldExpr = makeAST(EField(obj, field));
+				makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "at", [fieldExpr, key]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 29) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var key = `;
+						{
+							@:ast(switch [target.def, key.def] {
+	case [EField(obj, field), EInteger(_)] if (field == "metas"):
+		var fieldExpr = makeAST(EField(obj, field));
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "at", [fieldExpr, key]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = target.def;
+								var ` = key.def;
+								if (enumIndex ` == 28) {
+									var ` = `[0];
+									var ` = `[1];
+									if (enumIndex ` == 33) {
+										var ` = `[0];
+										{
+											var field = `;
+											var obj = `;
+											if (field == "metas") {
+												var fieldExpr = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EField(obj, field), metadata : {}, pos : pos};
+												};
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+												}, "at", [fieldExpr, key]), metadata : n.metadata, pos : n.pos};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

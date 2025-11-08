@@ -1,0 +1,1003 @@
+class reflaxe.elixir.ast.transformers.CaseDiscriminantTempNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts) if (stmts.length >= 2):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var cur = stmts[i];
+			function nearestLhsFor(targetVar:String):Null<String> {
+				var k = i - 1;
+				while (k >= 0) {
+					switch (out[k].def) {
+						case EBinary(Match, leftK, _):
+							switch (leftK.def) {
+								case EVar(nm):
+									if (equalModuloLeadingUnderscore(targetVar, nm)) return nm;								
+								default:
+							};						
+						case EMatch(patK, _):
+							switch (patK) {
+								case PVar(nmk):
+									if (equalModuloLeadingUnderscore(targetVar, nmk)) return nmk;								
+								default:
+							};						
+						default:
+					};
+					k--;
+				};
+				return null;
+			};
+			var replaced:Null<ElixirAST> = null;
+			switch (cur.def) {
+				case ECase(tgt, cls):
+					switch (tgt.def) {
+						case EVar(tv):
+							var lhs = nearestLhsFor(tv);
+							if (lhs != null) replaced = makeASTWithMeta(ECase(makeAST(EVar(lhs)), cls), cur.metadata, cur.pos);						
+						default:
+					};				
+				case EParen(inner):
+					switch (inner.def) {
+						case ECase(tgt2, cls2):
+							switch (tgt2.def) {
+								case EVar(tv2):
+									var lhs2 = nearestLhsFor(tv2);
+									if (lhs2 != null) replaced = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs2)), cls2))), cur.metadata, cur.pos);								
+								default:
+							};						
+						default:
+					};				
+				case EBinary(Match, leftN, rhsN):
+					switch (rhsN.def) {
+						case ECase(tN, csN):
+							switch (tN.def) {
+								case EVar(tvN):
+									var lhsN = nearestLhsFor(tvN);
+									if (lhsN != null) {
+										var newR = makeASTWithMeta(ECase(makeAST(EVar(lhsN)), csN), rhsN.metadata, rhsN.pos);
+										replaced = makeASTWithMeta(EBinary(Match, leftN, newR), cur.metadata, cur.pos);
+									};								
+								default:
+							};						
+						default:
+					};				
+				case EMatch(patM, rhsM):
+					switch (rhsM.def) {
+						case ECase(tM, csM):
+							switch (tM.def) {
+								case EVar(tvM):
+									var lhsM = nearestLhsFor(tvM);
+									if (lhsM != null) {
+										var newR2 = makeASTWithMeta(ECase(makeAST(EVar(lhsM)), csM), rhsM.metadata, rhsM.pos);
+										replaced = makeASTWithMeta(EMatch(patM, newR2), cur.metadata, cur.pos);
+									};								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+			out.push(replaced != null ? replaced : cur);
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(stmts2) if (stmts2.length >= 2):
+		var out2:Array<ElixirAST> = [];
+		for (j  in  0 ... stmts2.length) {
+			var cur2 = stmts2[j];
+			function nearestLhs2(targetVar:String):Null<String> {
+				var k2 = j - 1;
+				while (k2 >= 0) {
+					switch (out2[k2].def) {
+						case EBinary(Match, l2, _):
+							switch (l2.def) {
+								case EVar(nm):
+									if (equalModuloLeadingUnderscore(targetVar, nm)) return nm;								
+								default:
+							};						
+						case EMatch(p2, _):
+							switch (p2) {
+								case PVar(nm2):
+									if (equalModuloLeadingUnderscore(targetVar, nm2)) return nm2;								
+								default:
+							};						
+						default:
+					};
+					k2--;
+				};
+				return null;
+			};
+			var rep2:Null<ElixirAST> = null;
+			switch (cur2.def) {
+				case ECase(t2, c2):
+					switch (t2.def) {
+						case EVar(tv):
+							var lhs = nearestLhs2(tv);
+							if (lhs != null) rep2 = makeASTWithMeta(ECase(makeAST(EVar(lhs)), c2), cur2.metadata, cur2.pos);						
+						default:
+					};				
+				case EParen(in2):
+					switch (in2.def) {
+						case ECase(tt, cc):
+							switch (tt.def) {
+								case EVar(tv3):
+									var lhs3 = nearestLhs2(tv3);
+									if (lhs3 != null) rep2 = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs3)), cc))), cur2.metadata, cur2.pos);								
+								default:
+							};						
+						default:
+					};				
+				case EBinary(Match, lN, rN):
+					switch (rN.def) {
+						case ECase(tN2, csN2):
+							switch (tN2.def) {
+								case EVar(tvn):
+									var lhn = nearestLhs2(tvn);
+									if (lhn != null) {
+										var nr = makeASTWithMeta(ECase(makeAST(EVar(lhn)), csN2), rN.metadata, rN.pos);
+										rep2 = makeASTWithMeta(EBinary(Match, lN, nr), cur2.metadata, cur2.pos);
+									};								
+								default:
+							};						
+						default:
+					};				
+				case EMatch(pN2, rN2):
+					switch (rN2.def) {
+						case ECase(tM2, csM2):
+							switch (tM2.def) {
+								case EVar(tvM2):
+									var lhm2 = nearestLhs2(tvM2);
+									if (lhm2 != null) {
+										var nr2 = makeASTWithMeta(ECase(makeAST(EVar(lhm2)), csM2), rN2.metadata, rN2.pos);
+										rep2 = makeASTWithMeta(EMatch(pN2, nr2), cur2.metadata, cur2.pos);
+									};								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+			out2.push(rep2 != null ? rep2 : cur2);
+		};
+		makeASTWithMeta(EDo(out2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							if (stmts.length >= 2) {
+								var out = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										var cur = stmts[i];
+										var nearestLhsFor = function(targetVar:String) {
+											var k = i - 1;
+											while (k >= 0) {
+												@:ast(switch (out[k].def) {
+	case EBinary(Match, leftK, _):
+		switch (leftK.def) {
+			case EVar(nm):
+				if (equalModuloLeadingUnderscore(targetVar, nm)) return nm;			
+			default:
+		};	
+	case EMatch(patK, _):
+		switch (patK) {
+			case PVar(nmk):
+				if (equalModuloLeadingUnderscore(targetVar, nmk)) return nmk;			
+			default:
+		};	
+	default:
+}) {
+													var ` = out[k].def;
+													switch (enumIndex `) {
+														case 8: {
+															var ` = `[0];
+															var ` = `[1];
+															{
+																var patK = `;
+																{
+																	@:ast(switch (patK) {
+	case PVar(nmk):
+		if (equalModuloLeadingUnderscore(targetVar, nmk)) return nmk;	
+	default:
+}) if (enumIndex patK == 0) {
+																		var ` = patK[0];
+																		{
+																			var nmk = `;
+																			{
+																				if (if (targetVar == nmk) {
+																					true;
+																				} else {
+																					var a2 = if ((targetVar != null && targetVar.length > 0 && targetVar.charAt(0) == "_")) {
+																						targetVar.substr(1, null);
+																					} else {
+																						targetVar;
+																					};
+																					var b2 = if ((nmk != null && nmk.length > 0 && nmk.charAt(0) == "_")) {
+																						nmk.substr(1, null);
+																					} else {
+																						nmk;
+																					};
+																					a2 == b2;
+																				}) {
+																					return nmk;
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+														case 26: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 27) {
+																{
+																	var leftK = `;
+																	{
+																		@:ast(switch (leftK.def) {
+	case EVar(nm):
+		if (equalModuloLeadingUnderscore(targetVar, nm)) return nm;	
+	default:
+}) {
+																			var ` = leftK.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var nm = `;
+																					{
+																						if (if (targetVar == nm) {
+																							true;
+																						} else {
+																							var a2 = if ((targetVar != null && targetVar.length > 0 && targetVar.charAt(0) == "_")) {
+																								targetVar.substr(1, null);
+																							} else {
+																								targetVar;
+																							};
+																							var b2 = if ((nm != null && nm.length > 0 && nm.charAt(0) == "_")) {
+																								nm.substr(1, null);
+																							} else {
+																								nm;
+																							};
+																							a2 == b2;
+																						}) {
+																							return nm;
+																						};
+																					};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															} else {};
+														};
+														default: {}
+													};
+												};
+												k --;
+											};
+											return null;
+										};
+										var replaced = null;
+										@:ast(switch (cur.def) {
+	case ECase(tgt, cls):
+		switch (tgt.def) {
+			case EVar(tv):
+				var lhs = nearestLhsFor(tv);
+				if (lhs != null) replaced = makeASTWithMeta(ECase(makeAST(EVar(lhs)), cls), cur.metadata, cur.pos);			
+			default:
+		};	
+	case EParen(inner):
+		switch (inner.def) {
+			case ECase(tgt2, cls2):
+				switch (tgt2.def) {
+					case EVar(tv2):
+						var lhs2 = nearestLhsFor(tv2);
+						if (lhs2 != null) replaced = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs2)), cls2))), cur.metadata, cur.pos);					
+					default:
+				};			
+			default:
+		};	
+	case EBinary(Match, leftN, rhsN):
+		switch (rhsN.def) {
+			case ECase(tN, csN):
+				switch (tN.def) {
+					case EVar(tvN):
+						var lhsN = nearestLhsFor(tvN);
+						if (lhsN != null) {
+							var newR = makeASTWithMeta(ECase(makeAST(EVar(lhsN)), csN), rhsN.metadata, rhsN.pos);
+							replaced = makeASTWithMeta(EBinary(Match, leftN, newR), cur.metadata, cur.pos);
+						};					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(patM, rhsM):
+		switch (rhsM.def) {
+			case ECase(tM, csM):
+				switch (tM.def) {
+					case EVar(tvM):
+						var lhsM = nearestLhsFor(tvM);
+						if (lhsM != null) {
+							var newR2 = makeASTWithMeta(ECase(makeAST(EVar(lhsM)), csM), rhsM.metadata, rhsM.pos);
+							replaced = makeASTWithMeta(EMatch(patM, newR2), cur.metadata, cur.pos);
+						};					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = cur.def;
+											switch (enumIndex `) {
+												case 6: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var tgt = `;
+														var cls = `;
+														{
+															@:ast(switch (tgt.def) {
+	case EVar(tv):
+		var lhs = nearestLhsFor(tv);
+		if (lhs != null) replaced = makeASTWithMeta(ECase(makeAST(EVar(lhs)), cls), cur.metadata, cur.pos);	
+	default:
+}) {
+																var ` = tgt.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var tv = `;
+																		{
+																			var lhs = nearestLhsFor(tv);
+																			if (lhs != null) {
+																				replaced = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhs), metadata : {}, pos : pos};
+																				}, cls), metadata : cur.metadata, pos : cur.pos};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var patM = `;
+														var rhsM = `;
+														{
+															@:ast(switch (rhsM.def) {
+	case ECase(tM, csM):
+		switch (tM.def) {
+			case EVar(tvM):
+				var lhsM = nearestLhsFor(tvM);
+				if (lhsM != null) {
+					var newR2 = makeASTWithMeta(ECase(makeAST(EVar(lhsM)), csM), rhsM.metadata, rhsM.pos);
+					replaced = makeASTWithMeta(EMatch(patM, newR2), cur.metadata, cur.pos);
+				};			
+			default:
+		};	
+	default:
+}) {
+																var ` = rhsM.def;
+																if (enumIndex ` == 6) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var tM = `;
+																		var csM = `;
+																		{
+																			@:ast(switch (tM.def) {
+	case EVar(tvM):
+		var lhsM = nearestLhsFor(tvM);
+		if (lhsM != null) {
+			var newR2 = makeASTWithMeta(ECase(makeAST(EVar(lhsM)), csM), rhsM.metadata, rhsM.pos);
+			replaced = makeASTWithMeta(EMatch(patM, newR2), cur.metadata, cur.pos);
+		};	
+	default:
+}) {
+																				var ` = tM.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var tvM = `;
+																						{
+																							var lhsM = nearestLhsFor(tvM);
+																							if (lhsM != null) {
+																								var newR2 = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhsM), metadata : {}, pos : pos};
+																								}, csM), metadata : rhsM.metadata, pos : rhsM.pos};
+																								replaced = {def : reflaxe.elixir.ast.ElixirASTDef.EMatch(patM, newR2), metadata : cur.metadata, pos : cur.pos};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var leftN = `;
+															var rhsN = `;
+															{
+																@:ast(switch (rhsN.def) {
+	case ECase(tN, csN):
+		switch (tN.def) {
+			case EVar(tvN):
+				var lhsN = nearestLhsFor(tvN);
+				if (lhsN != null) {
+					var newR = makeASTWithMeta(ECase(makeAST(EVar(lhsN)), csN), rhsN.metadata, rhsN.pos);
+					replaced = makeASTWithMeta(EBinary(Match, leftN, newR), cur.metadata, cur.pos);
+				};			
+			default:
+		};	
+	default:
+}) {
+																	var ` = rhsN.def;
+																	if (enumIndex ` == 6) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var tN = `;
+																			var csN = `;
+																			{
+																				@:ast(switch (tN.def) {
+	case EVar(tvN):
+		var lhsN = nearestLhsFor(tvN);
+		if (lhsN != null) {
+			var newR = makeASTWithMeta(ECase(makeAST(EVar(lhsN)), csN), rhsN.metadata, rhsN.pos);
+			replaced = makeASTWithMeta(EBinary(Match, leftN, newR), cur.metadata, cur.pos);
+		};	
+	default:
+}) {
+																					var ` = tN.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var tvN = `;
+																							{
+																								var lhsN = nearestLhsFor(tvN);
+																								if (lhsN != null) {
+																									var newR = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhsN), metadata : {}, pos : pos};
+																									}, csN), metadata : rhsN.metadata, pos : rhsN.pos};
+																									replaced = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, leftN, newR), metadata : cur.metadata, pos : cur.pos};
+																								};
+																							};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+													} else {};
+												};
+												case 54: {
+													var ` = `[0];
+													{
+														var inner = `;
+														{
+															@:ast(switch (inner.def) {
+	case ECase(tgt2, cls2):
+		switch (tgt2.def) {
+			case EVar(tv2):
+				var lhs2 = nearestLhsFor(tv2);
+				if (lhs2 != null) replaced = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs2)), cls2))), cur.metadata, cur.pos);			
+			default:
+		};	
+	default:
+}) {
+																var ` = inner.def;
+																if (enumIndex ` == 6) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var tgt2 = `;
+																		var cls2 = `;
+																		{
+																			@:ast(switch (tgt2.def) {
+	case EVar(tv2):
+		var lhs2 = nearestLhsFor(tv2);
+		if (lhs2 != null) replaced = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs2)), cls2))), cur.metadata, cur.pos);	
+	default:
+}) {
+																				var ` = tgt2.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var tv2 = `;
+																						{
+																							var lhs2 = nearestLhsFor(tv2);
+																							if (lhs2 != null) {
+																								replaced = {def : reflaxe.elixir.ast.ElixirASTDef.EParen({
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhs2), metadata : {}, pos : pos};
+																									}, cls2), metadata : {}, pos : pos};
+																								}), metadata : cur.metadata, pos : cur.pos};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												default: {}
+											};
+										};
+										out.push(if (replaced != null) {
+											replaced;
+										} else {
+											cur;
+										});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							if (stmts2.length >= 2) {
+								var out2 = [];
+								{
+									var ` = 0;
+									var ` = stmts2.length;
+									while (` < `) {
+										var j = ` ++;
+										var cur2 = stmts2[j];
+										var nearestLhs2 = function(targetVar:String) {
+											var k2 = j - 1;
+											while (k2 >= 0) {
+												@:ast(switch (out2[k2].def) {
+	case EBinary(Match, l2, _):
+		switch (l2.def) {
+			case EVar(nm):
+				if (equalModuloLeadingUnderscore(targetVar, nm)) return nm;			
+			default:
+		};	
+	case EMatch(p2, _):
+		switch (p2) {
+			case PVar(nm2):
+				if (equalModuloLeadingUnderscore(targetVar, nm2)) return nm2;			
+			default:
+		};	
+	default:
+}) {
+													var ` = out2[k2].def;
+													switch (enumIndex `) {
+														case 8: {
+															var ` = `[0];
+															var ` = `[1];
+															{
+																var p2 = `;
+																{
+																	@:ast(switch (p2) {
+	case PVar(nm2):
+		if (equalModuloLeadingUnderscore(targetVar, nm2)) return nm2;	
+	default:
+}) if (enumIndex p2 == 0) {
+																		var ` = p2[0];
+																		{
+																			var nm2 = `;
+																			{
+																				if (if (targetVar == nm2) {
+																					true;
+																				} else {
+																					var a2 = if ((targetVar != null && targetVar.length > 0 && targetVar.charAt(0) == "_")) {
+																						targetVar.substr(1, null);
+																					} else {
+																						targetVar;
+																					};
+																					var b2 = if ((nm2 != null && nm2.length > 0 && nm2.charAt(0) == "_")) {
+																						nm2.substr(1, null);
+																					} else {
+																						nm2;
+																					};
+																					a2 == b2;
+																				}) {
+																					return nm2;
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+														case 26: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 27) {
+																{
+																	var l2 = `;
+																	{
+																		@:ast(switch (l2.def) {
+	case EVar(nm):
+		if (equalModuloLeadingUnderscore(targetVar, nm)) return nm;	
+	default:
+}) {
+																			var ` = l2.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var nm = `;
+																					{
+																						if (if (targetVar == nm) {
+																							true;
+																						} else {
+																							var a2 = if ((targetVar != null && targetVar.length > 0 && targetVar.charAt(0) == "_")) {
+																								targetVar.substr(1, null);
+																							} else {
+																								targetVar;
+																							};
+																							var b2 = if ((nm != null && nm.length > 0 && nm.charAt(0) == "_")) {
+																								nm.substr(1, null);
+																							} else {
+																								nm;
+																							};
+																							a2 == b2;
+																						}) {
+																							return nm;
+																						};
+																					};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															} else {};
+														};
+														default: {}
+													};
+												};
+												k2 --;
+											};
+											return null;
+										};
+										var rep2 = null;
+										@:ast(switch (cur2.def) {
+	case ECase(t2, c2):
+		switch (t2.def) {
+			case EVar(tv):
+				var lhs = nearestLhs2(tv);
+				if (lhs != null) rep2 = makeASTWithMeta(ECase(makeAST(EVar(lhs)), c2), cur2.metadata, cur2.pos);			
+			default:
+		};	
+	case EParen(in2):
+		switch (in2.def) {
+			case ECase(tt, cc):
+				switch (tt.def) {
+					case EVar(tv3):
+						var lhs3 = nearestLhs2(tv3);
+						if (lhs3 != null) rep2 = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs3)), cc))), cur2.metadata, cur2.pos);					
+					default:
+				};			
+			default:
+		};	
+	case EBinary(Match, lN, rN):
+		switch (rN.def) {
+			case ECase(tN2, csN2):
+				switch (tN2.def) {
+					case EVar(tvn):
+						var lhn = nearestLhs2(tvn);
+						if (lhn != null) {
+							var nr = makeASTWithMeta(ECase(makeAST(EVar(lhn)), csN2), rN.metadata, rN.pos);
+							rep2 = makeASTWithMeta(EBinary(Match, lN, nr), cur2.metadata, cur2.pos);
+						};					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(pN2, rN2):
+		switch (rN2.def) {
+			case ECase(tM2, csM2):
+				switch (tM2.def) {
+					case EVar(tvM2):
+						var lhm2 = nearestLhs2(tvM2);
+						if (lhm2 != null) {
+							var nr2 = makeASTWithMeta(ECase(makeAST(EVar(lhm2)), csM2), rN2.metadata, rN2.pos);
+							rep2 = makeASTWithMeta(EMatch(pN2, nr2), cur2.metadata, cur2.pos);
+						};					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = cur2.def;
+											switch (enumIndex `) {
+												case 6: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var t2 = `;
+														var c2 = `;
+														{
+															@:ast(switch (t2.def) {
+	case EVar(tv):
+		var lhs = nearestLhs2(tv);
+		if (lhs != null) rep2 = makeASTWithMeta(ECase(makeAST(EVar(lhs)), c2), cur2.metadata, cur2.pos);	
+	default:
+}) {
+																var ` = t2.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var tv = `;
+																		{
+																			var lhs = nearestLhs2(tv);
+																			if (lhs != null) {
+																				rep2 = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhs), metadata : {}, pos : pos};
+																				}, c2), metadata : cur2.metadata, pos : cur2.pos};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var pN2 = `;
+														var rN2 = `;
+														{
+															@:ast(switch (rN2.def) {
+	case ECase(tM2, csM2):
+		switch (tM2.def) {
+			case EVar(tvM2):
+				var lhm2 = nearestLhs2(tvM2);
+				if (lhm2 != null) {
+					var nr2 = makeASTWithMeta(ECase(makeAST(EVar(lhm2)), csM2), rN2.metadata, rN2.pos);
+					rep2 = makeASTWithMeta(EMatch(pN2, nr2), cur2.metadata, cur2.pos);
+				};			
+			default:
+		};	
+	default:
+}) {
+																var ` = rN2.def;
+																if (enumIndex ` == 6) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var tM2 = `;
+																		var csM2 = `;
+																		{
+																			@:ast(switch (tM2.def) {
+	case EVar(tvM2):
+		var lhm2 = nearestLhs2(tvM2);
+		if (lhm2 != null) {
+			var nr2 = makeASTWithMeta(ECase(makeAST(EVar(lhm2)), csM2), rN2.metadata, rN2.pos);
+			rep2 = makeASTWithMeta(EMatch(pN2, nr2), cur2.metadata, cur2.pos);
+		};	
+	default:
+}) {
+																				var ` = tM2.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var tvM2 = `;
+																						{
+																							var lhm2 = nearestLhs2(tvM2);
+																							if (lhm2 != null) {
+																								var nr2 = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhm2), metadata : {}, pos : pos};
+																								}, csM2), metadata : rN2.metadata, pos : rN2.pos};
+																								rep2 = {def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pN2, nr2), metadata : cur2.metadata, pos : cur2.pos};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var lN = `;
+															var rN = `;
+															{
+																@:ast(switch (rN.def) {
+	case ECase(tN2, csN2):
+		switch (tN2.def) {
+			case EVar(tvn):
+				var lhn = nearestLhs2(tvn);
+				if (lhn != null) {
+					var nr = makeASTWithMeta(ECase(makeAST(EVar(lhn)), csN2), rN.metadata, rN.pos);
+					rep2 = makeASTWithMeta(EBinary(Match, lN, nr), cur2.metadata, cur2.pos);
+				};			
+			default:
+		};	
+	default:
+}) {
+																	var ` = rN.def;
+																	if (enumIndex ` == 6) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var tN2 = `;
+																			var csN2 = `;
+																			{
+																				@:ast(switch (tN2.def) {
+	case EVar(tvn):
+		var lhn = nearestLhs2(tvn);
+		if (lhn != null) {
+			var nr = makeASTWithMeta(ECase(makeAST(EVar(lhn)), csN2), rN.metadata, rN.pos);
+			rep2 = makeASTWithMeta(EBinary(Match, lN, nr), cur2.metadata, cur2.pos);
+		};	
+	default:
+}) {
+																					var ` = tN2.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var tvn = `;
+																							{
+																								var lhn = nearestLhs2(tvn);
+																								if (lhn != null) {
+																									var nr = {def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhn), metadata : {}, pos : pos};
+																									}, csN2), metadata : rN.metadata, pos : rN.pos};
+																									rep2 = {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, lN, nr), metadata : cur2.metadata, pos : cur2.pos};
+																								};
+																							};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+													} else {};
+												};
+												case 54: {
+													var ` = `[0];
+													{
+														var in2 = `;
+														{
+															@:ast(switch (in2.def) {
+	case ECase(tt, cc):
+		switch (tt.def) {
+			case EVar(tv3):
+				var lhs3 = nearestLhs2(tv3);
+				if (lhs3 != null) rep2 = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs3)), cc))), cur2.metadata, cur2.pos);			
+			default:
+		};	
+	default:
+}) {
+																var ` = in2.def;
+																if (enumIndex ` == 6) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var tt = `;
+																		var cc = `;
+																		{
+																			@:ast(switch (tt.def) {
+	case EVar(tv3):
+		var lhs3 = nearestLhs2(tv3);
+		if (lhs3 != null) rep2 = makeASTWithMeta(EParen(makeAST(ECase(makeAST(EVar(lhs3)), cc))), cur2.metadata, cur2.pos);	
+	default:
+}) {
+																				var ` = tt.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var tv3 = `;
+																						{
+																							var lhs3 = nearestLhs2(tv3);
+																							if (lhs3 != null) {
+																								rep2 = {def : reflaxe.elixir.ast.ElixirASTDef.EParen({
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.ECase({
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(lhs3), metadata : {}, pos : pos};
+																									}, cc), metadata : {}, pos : pos};
+																								}), metadata : cur2.metadata, pos : cur2.pos};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												default: {}
+											};
+										};
+										out2.push(if (rep2 != null) {
+											rep2;
+										} else {
+											cur2;
+										});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function equalModuloLeadingUnderscore(a:String, b:String) {
+		if (a == b) {
+			return true;
+		};
+		var a2 = if ((a != null && a.length > 0 && a.charAt(0) == "_")) {
+			a.substr(1, null);
+		} else {
+			a;
+		};
+		var b2 = if ((b != null && b.length > 0 && b.charAt(0) == "_")) {
+			b.substr(1, null);
+		} else {
+			b;
+		};
+		return a2 == b2;
+	}
+}

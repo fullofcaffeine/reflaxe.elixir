@@ -1,0 +1,366 @@
+class reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var s = stmts[i];
+			inline function canRename(name:String):Bool {
+				if (name == null) return false;
+				if (name == "socket" || name == "params" || name == "assigns") return false;
+				return name == "g" || StringTools.startsWith(name, "raw_") || StringTools.startsWith(name, "updated_") || StringTools.startsWith(name, "this");
+			};
+			var renamed = switch (s.def) {
+				case EMatch(PVar(varName), rhs) if (canRename(varName) && !usedLater(stmts, i + 1, varName)):
+					makeASTWithMeta(EMatch(PVar("_" + varName), rhs), s.metadata, s.pos);				
+				case EBinary(Match, { def : EVar(v) }, rhs) if (canRename(v) && !usedLater(stmts, i + 1, v)):
+					makeASTWithMeta(EBinary(Match, { def : EVar("_" + v), metadata : s.metadata, pos : s.pos }, rhs), s.metadata, s.pos);				
+				default:
+					s;				
+			};
+			out.push(renamed);
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									var s = stmts[i];
+									{};
+									var renamed = @:ast(switch (s.def) {
+	case EMatch(PVar(varName), rhs) if (canRename(varName) && !usedLater(stmts, i + 1, varName)):
+		makeASTWithMeta(EMatch(PVar("_" + varName), rhs), s.metadata, s.pos);	
+	case EBinary(Match, { def : EVar(v) }, rhs) if (canRename(v) && !usedLater(stmts, i + 1, v)):
+		makeASTWithMeta(EBinary(Match, { def : EVar("_" + v), metadata : s.metadata, pos : s.pos }, rhs), s.metadata, s.pos);	
+	default:
+		s;	
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var varName = `;
+														var rhs = `;
+														if (if (varName == null) {
+															false;
+														} else {
+															if (varName == "socket" || varName == "params" || varName == "assigns") {
+																false;
+															} else {
+																varName == "g" || StringTools.startsWith(varName, "raw_") || StringTools.startsWith(varName, "updated_") || StringTools.startsWith(varName, "this");
+															};
+														} && ! reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.usedLater(stmts, i + 1, varName)) {
+															{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("_" + varName), rhs), metadata : s.metadata, pos : s.pos};
+														} else {
+															s;
+														};
+													};
+												} else {
+													s;
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var v = `;
+																var rhs = `;
+																if (if (v == null) {
+																	false;
+																} else {
+																	if (v == "socket" || v == "params" || v == "assigns") {
+																		false;
+																	} else {
+																		v == "g" || StringTools.startsWith(v, "raw_") || StringTools.startsWith(v, "updated_") || StringTools.startsWith(v, "this");
+																	};
+																} && ! reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.usedLater(stmts, i + 1, v)) {
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_" + v), metadata : s.metadata, pos : s.pos}, rhs), metadata : s.metadata, pos : s.pos};
+																} else {
+																	s;
+																};
+															};
+														} else {
+															s;
+														};
+													};
+												} else {
+													s;
+												};
+											};
+											default: {
+												s;
+											}
+										};
+									};
+									out.push(renamed);
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		var found = [false];
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(stmts[j], name, function() {
+						found[0] = true;
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+
+	static function walk(n:reflaxe.elixir.ast.ElixirAST, name:String, hit:() -> Void) {
+		if (n == null || n.def == null) {
+			return;
+		};
+		@:ast(switch (n.def) {
+	case EVar(v) if (v == name):
+		hit();	
+	case EBinary(_, l, r):
+		walk(l, name, hit);
+		walk(r, name, hit);	
+	case EMatch(_, rhs):
+		walk(rhs, name, hit);	
+	case EBlock(ss):
+		for (s  in  ss) walk(s, name, hit);	
+	case EDo(ss2):
+		for (s  in  ss2) walk(s, name, hit);	
+	case EIf(c, t, e):
+		walk(c, name, hit);
+		walk(t, name, hit);
+		if (e != null) walk(e, name, hit);	
+	case ECase(expr, cs):
+		walk(expr, name, hit);
+		for (c  in  cs) {
+			if (c.guard != null) walk(c.guard, name, hit);
+			walk(c.body, name, hit);
+		};	
+	case ECall(t, _, as):
+		if (t != null) walk(t, name, hit);
+		if (as != null) for (a  in  as) walk(a, name, hit);	
+	case ERemoteCall(t2, _, as2):
+		walk(t2, name, hit);
+		if (as2 != null) for (a2  in  as2) walk(a2, name, hit);	
+	case EField(obj, _):
+		walk(obj, name, hit);	
+	case EAccess(obj2, key):
+		walk(obj2, name, hit);
+		walk(key, name, hit);	
+	default:
+}) {
+			var ` = n.def;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						var cs = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(expr, name, hit);
+							{
+								var ` = 0;
+								while (` < cs.length) {
+									var c = cs[`];
+									++ `;
+									if (c.guard != null) {
+										reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(c.guard, name, hit);
+									};
+									reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(c.body, name, hit);
+								};
+							};
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var rhs = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(rhs, name, hit);
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var c = `;
+						var t = `;
+						var e = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(c, name, hit);
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(t, name, hit);
+							if (e != null) {
+								reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(e, name, hit);
+							};
+						};
+					};
+				};
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t = `;
+						var as = `;
+						{
+							if (t != null) {
+								reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(t, name, hit);
+							};
+							if (as != null) {
+								{
+									var ` = 0;
+									while (` < as.length) {
+										var a = as[`];
+										++ `;
+										reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(a, name, hit);
+									};
+								};
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t2 = `;
+						var as2 = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(t2, name, hit);
+							if (as2 != null) {
+								{
+									var ` = 0;
+									while (` < as2.length) {
+										var a2 = as2[`];
+										++ `;
+										reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(a2, name, hit);
+									};
+								};
+							};
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var l = `;
+						var r = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(l, name, hit);
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(r, name, hit);
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var obj = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(obj, name, hit);
+						};
+					};
+				};
+				case 29: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var obj2 = `;
+						var key = `;
+						{
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(obj2, name, hit);
+							reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(key, name, hit);
+						};
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == name) {
+							hit();
+						} else {};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var ss = `;
+						{
+							{
+								var ` = 0;
+								while (` < ss.length) {
+									var s = ss[`];
+									++ `;
+									reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(s, name, hit);
+								};
+							};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var ss2 = `;
+						{
+							{
+								var ` = 0;
+								while (` < ss2.length) {
+									var s = ss2[`];
+									++ `;
+									reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.walk(s, name, hit);
+								};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+	}
+}

@@ -1,0 +1,71 @@
+class reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.validate(ast, null);
+	}
+
+	public static function contextualPass(ast:reflaxe.elixir.ast.ElixirAST, ctx:reflaxe.elixir.CompilationContext) {
+		return reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.validate(ast, ctx);
+	}
+
+	static function validate(ast:reflaxe.elixir.ast.ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, _) if (type == "H"):
+		if (content.indexOf("Phoenix.HTML.raw(") != -1) {
+			if (ctx != null) ctx.warning("HEEx contains Phoenix.HTML.raw(...) — prefer inline ~H content", n.pos);
+		};
+		n;	
+	case ERaw(code) if (code.indexOf("~H\"") != -1 || code.indexOf("~H\"\"\"") != -1):
+		if (code.indexOf("Phoenix.HTML.raw(") != -1) {
+			if (ctx != null) ctx.warning("ERaw ~H contains Phoenix.HTML.raw(...) — prefer inline ~H content", n.pos);
+		};
+		n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							var content = `;
+							if (type == "H") {
+								if (content.indexOf("Phoenix.HTML.raw(", null) != -1) {
+									if (ctx != null) {
+										ctx.warning("HEEx contains Phoenix.HTML.raw(...) — prefer inline ~H content", n.pos);
+									};
+								};
+								n;
+							} else {
+								n;
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							if (code.indexOf("~H\"", null) != -1 || code.indexOf("~H\"\"\"", null) != -1) {
+								if (code.indexOf("Phoenix.HTML.raw(", null) != -1) {
+									if (ctx != null) {
+										ctx.warning("ERaw ~H contains Phoenix.HTML.raw(...) — prefer inline ~H content", n.pos);
+									};
+								};
+								n;
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

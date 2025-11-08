@@ -1,0 +1,4817 @@
+class reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms {
+
+	static inline function safeBinder(name:String) {
+		return if ((name != null && name.length > 0 && name.charAt(0) == "_")) {
+			name.substr(1, null);
+		} else {
+			name;
+		};
+	}
+
+	static inline function isPresenceModuleName(name:String) {
+		return false;
+	}
+
+	static inline function mapValuesOnce(target:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (target.def) {
+	case ERemoteCall({ def : EVar(mod) }, "values", args) if (mod == "Map" && args != null && args.length == 1):
+		target;	
+	default:
+		makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [target]));	
+}) {
+			var ` = target.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "values") {
+							{
+								var mod = `;
+								var args = `;
+								if (mod == "Map" && args != null && args.length == 1) {
+									target;
+								} else {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+										}, "values", [target]), metadata : {}, pos : pos};
+									};
+								};
+							};
+						} else {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+								}, "values", [target]), metadata : {}, pos : pos};
+							};
+						};
+					} else {
+						{
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+							}, "values", [target]), metadata : {}, pos : pos};
+						};
+					};
+				};
+			} else {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+					}, "values", [target]), metadata : {}, pos : pos};
+				};
+			};
+		};
+	}
+
+	public static function presenceReduceRewritePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var inPresence = (n.metadata?.isPresence == true) || (name != null && name.indexOf("Web.Presence") > 0);
+		if (!inPresence) return n;
+		var newBody:Array<ElixirAST> = [];
+		for (b  in  body) newBody.push(rewriteInNode(b));
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var looksPresence = (n.metadata?.isPresence == true) || (name != null && name.indexOf("Web.Presence") > 0);
+		if (!looksPresence) return n;
+		makeASTWithMeta(EDefmodule(name, rewriteInNode(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var inPresence = ({
+									var tmp = n.metadata;
+									if (tmp != null) tmp.isPresence else null;
+								} == true) || (name != null && name.indexOf("Web.Presence", null) > 0);
+								if (! inPresence) {
+									return n;
+								};
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.rewriteInNode(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var looksPresence = ({
+									var tmp = n.metadata;
+									if (tmp != null) tmp.isPresence else null;
+								} == true) || (name != null && name.indexOf("Web.Presence", null) > 0);
+								if (! looksPresence) {
+									return n;
+								};
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.rewriteInNode(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteInNode(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(stmts) if (stmts.length >= 3):
+		var listVar:Null<String> = null;
+		var listCall:Null<ElixirAST> = null;
+		var accName:Null<String> = null;
+		var listIdx = -1;
+		var accIdx = -1;
+		for (i  in  0 ... stmts.length) switch (stmts[i].def) {
+			case EBinary(Match, left, rhs):
+				var lhsName:Null<String> = switch (left.def) {
+					case EVar(n):
+						n;					
+					default:
+						null;					
+				};
+				switch (rhs.def) {
+					case ERemoteCall(mod, "list", args) if (args.length == 1):
+						var argOk = switch (args[0].def) {
+							case EString(s) if (s == "users"):
+								true;							
+							default:
+								false;							
+						};
+						if (lhsName != null && argOk) {
+							listVar = lhsName;
+							listCall = rhs;
+							listIdx = i;
+						};					
+					default:
+				};			
+			case EMatch(pat, rhs):
+				var lhsName2:Null<String> = switch (pat) {
+					case PVar(n):
+						n;					
+					default:
+						null;					
+				};
+				switch (rhs.def) {
+					case ERemoteCall(mod2, "list", args2) if (args2.length == 1):
+						var argOk2 = switch (args2[0].def) {
+							case EString(s2) if (s2 == "users"):
+								true;							
+							default:
+								false;							
+						};
+						if (lhsName2 != null && argOk2) {
+							listVar = lhsName2;
+							listCall = rhs;
+							listIdx = i;
+						};					
+					default:
+				};			
+			default:
+		};
+		for (i  in  0 ... stmts.length) switch (stmts[i].def) {
+			case EBinary(Match, l, r):
+				var nm = switch (l.def) {
+					case EVar(n):
+						n;					
+					default:
+						null;					
+				};
+				switch (r.def) {
+					case EList(items) if (items.length == 0):
+						accName = nm;
+						accIdx = i;					
+					default:
+				};			
+			case EMatch(PVar(n2), r2):
+				switch (r2.def) {
+					case EList(items2) if (items2.length == 0):
+						accName = n2;
+						accIdx = i;					
+					default:
+				};			
+			default:
+		};
+		var eachAt = -1;
+		var eachNode:Null<ElixirAST> = null;
+		var eachListMatches = false;
+		var eachFn:Null<ElixirAST> = null;
+		if (listVar != null) for (i  in  0 ... stmts.length) switch (stmts[i].def) {
+			case ERemoteCall({ def : EVar("Enum") }, "each", args) if (args.length == 2):
+				eachAt = i;
+				eachNode = stmts[i];
+				eachListMatches = switch (args[0].def) {
+					case EVar(n) if (n == listVar):
+						true;					
+					default:
+						false;					
+				};
+				eachFn = args[1];			
+			default:
+		};
+		if (listVar != null && accName != null && eachAt >= 0 && eachListMatches && eachFn != null) {
+			var innerBody:Array<ElixirAST> = switch (eachFn.def) {
+				case EFn(clauses) if (clauses.length == 1):
+					switch (clauses[0].body.def) {
+						case EBlock(ss):
+							ss;						
+						default:
+							[clauses[0].body];						
+					};				
+				default:
+					[];				
+			};
+			var cond:Null<ElixirAST> = findAccAppendCond(innerBody, accName);
+			if (cond == null) cond = findMetaFilterCond(innerBody, "meta");
+			if (cond == null) cond = findFirstIfCond(innerBody);
+			var binder = "entry";
+			var metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder)), "metas")), makeAST(EInteger(0))));
+			cond = replaceVarInExpr(cond, "entry", binder);
+			cond = ElixirASTTransformer.transformNode(cond, function(t:ElixirAST):ElixirAST {
+				return switch (t.def) {
+					case EVar(v) if (v.toLowerCase() == "meta"):
+						makeASTWithMeta(metaExpr.def, t.metadata, t.pos);					
+					default:
+						t;					
+				};
+			});
+			var appendMeta = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExpr]))));
+			var outerCond = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [makeAST(EField(makeAST(EVar(binder)), "metas"))])), makeAST(EInteger(0))));
+			var inner = (cond != null) ? makeAST(EIf(cond, appendMeta, makeAST(EVar("acc")))) : appendMeta;
+			var body = makeAST(EIf(outerCond, inner, makeAST(EVar("acc"))));
+			var reduceFn = makeAST(EFn([{ args : [PVar(binder), PVar("acc")], guard : null, body : body }]));
+			var valuesForListVar = mapValuesOnce(makeAST(EVar(listVar)));
+			var reduceForListVar = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesForListVar, makeAST(EList([])), reduceFn]));
+			var out2:Array<ElixirAST> = [];
+			for (i  in  0 ... stmts.length) {
+				if (i == listIdx) {
+					out2.push(stmts[i]);
+				} else if (i == accIdx) {
+					out2.push(makeAST(EBinary(Match, makeAST(EVar(accName)), reduceForListVar)));
+				} else if (i == eachAt) { } else {
+					var isTail = (i == stmts.length - 1);
+					if (isTail) {
+						var tailIsAcc = switch (stmts[i].def) {
+							case EVar(v) if (v == accName):
+								true;							
+							default:
+								false;							
+						};
+						if (!tailIsAcc) out2.push(stmts[i]);
+					} else out2.push(stmts[i]);
+				};
+			};
+			return makeASTWithMeta(EBlock(out2), x.metadata, x.pos);
+		};
+		var accVar:Null<String> = null;
+		var accInitIdx = -1;
+		for (i  in  0 ... stmts.length) switch (stmts[i].def) {
+			case EBinary(Match, left, rhs):
+				switch (left.def) {
+					case EVar(n):
+						switch (rhs.def) {
+							case EList(items) if (items.length == 0):
+								accVar = n;
+								accInitIdx = i;							
+							default:
+						};					
+					default:
+				};			
+			case EMatch(pat, rhs2):
+				switch (pat) {
+					case PVar(n2):
+						switch (rhs2.def) {
+							case EList(items2) if (items2.length == 0):
+								accVar = n2;
+								accInitIdx = i;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};
+		if (accVar == null) {
+			var tailIsEmptyList = switch (stmts[stmts.length - 1].def) {
+				case EList(items) if (items.length == 0):
+					true;				
+				default:
+					false;				
+			};
+			var eachPos = -1;
+			var eachList:Null<ElixirAST> = null;
+			var eachClause:Null<{ var args : Array<EPattern>; var body : ElixirAST; var guard : Null<ElixirAST>}> = null;
+			for (i  in  0 ... stmts.length) switch (stmts[i].def) {
+				case ERemoteCall(modE, funcE, argsE) if (funcE == "each" && argsE != null && argsE.length == 2):
+					switch (modE.def) {
+						case EVar(mE) if (mE == "Enum"):
+							eachPos = i;
+							eachList = argsE[0];
+							switch (argsE[1].def) {
+								case EFn(csE) if (csE.length == 1):
+									eachClause = csE[0];								
+								default:
+							};						
+						default:
+					};				
+				case EBinary(Match, _, rhsE) | EMatch(_, rhsE):
+					switch (rhsE.def) {
+						case ERemoteCall(modE2, funcE2, argsE2) if (funcE2 == "each" && argsE2 != null && argsE2.length == 2):
+							switch (modE2.def) {
+								case EVar(mE2) if (mE2 == "Enum"):
+									eachPos = i;
+									eachList = argsE2[0];
+									switch (argsE2[1].def) {
+										case EFn(csE2) if (csE2.length == 1):
+											eachClause = csE2[0];										
+										default:
+									};								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+			if (tailIsEmptyList && eachPos != -1 && eachList != null && eachClause != null) {
+				var binder0 = extractSingleArgName(eachClause.args);
+				if (binder0 == null) binder0 = "entry";
+				var fnBodyStmts:Array<ElixirAST> = switch (eachClause.body.def) {
+					case EBlock(ssx):
+						ssx;					
+					default:
+						[eachClause.body];					
+				};
+				var metaAlias:Null<String> = null;
+				var metaExpr:Null<ElixirAST> = null;
+				for (s3  in  fnBodyStmts) switch (s3.def) {
+					case EBinary(Match, leftB3, rightB3):
+						switch (rightB3.def) {
+							case EAccess(arr3, idx3):
+								switch (arr3.def) {
+									case EField(obj3, field3) if (field3 == "metas"):
+										metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), field3)), idx3));									
+									default:
+								};							
+							default:
+						};
+						switch (leftB3.def) {
+							case EVar(mn3):
+								metaAlias = mn3;							
+							default:
+						};					
+					default:
+				};
+				var eqCond:Null<ElixirAST> = null;
+				for (s4  in  fnBodyStmts) switch (s4.def) {
+					case EIf(c4, _, _):
+						switch (c4.def) {
+							case EBinary(Equal, l4, r4):
+								var leftIsMetaField = switch (l4.def) {
+									case EField({ def : EVar(mv4) }, _fld4) if (metaAlias != null && mv4 == metaAlias):
+										true;									
+									default:
+										false;									
+								};
+								if (leftIsMetaField) eqCond = c4;							
+							default:
+						};					
+					default:
+				};
+				var outerCondS = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [makeAST(EField(makeAST(EVar(binder0)), "metas"))])), makeAST(EInteger(0))));
+				var appendVal:ElixirAST = (metaExpr != null) ? metaExpr : makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), "metas")), makeAST(EInteger(0))));
+				var appendExpr = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([appendVal]))));
+				var innerBranch = (eqCond != null) ? makeAST(EIf(eqCond, appendExpr, makeAST(EVar("acc")))) : appendExpr;
+				var reduceBody = makeAST(EIf(outerCondS, innerBranch, makeAST(EVar("acc"))));
+				var reduceFnS = makeAST(EFn([{ args : [PVar(binder0), PVar("acc")], guard : eachClause.guard, body : reduceBody }]));
+				var reduceCallS = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [mapValuesOnce(eachList), makeAST(EList([])), reduceFnS]));
+				var outS:Array<ElixirAST> = [];
+				for (i  in  0 ... stmts.length) {
+					if (i == eachPos) { } else if (i == stmts.length - 1) {
+						outS.push(reduceCallS);
+					} else {
+						outS.push(stmts[i]);
+					};
+				};
+				return makeASTWithMeta(EBlock(outS), x.metadata, x.pos);
+			};
+			return x;
+		};
+		var eachIdx = -1;
+		var listTarget:Null<ElixirAST> = null;
+		var fnClause:Null<{ var args : Array<EPattern>; var body : ElixirAST; var guard : Null<ElixirAST>}> = null;
+		for (i  in  accInitIdx + 1 ... stmts.length) switch (stmts[i].def) {
+			case ERemoteCall(mod, func, args) if (func == "each" && args.length == 2):
+				switch (mod.def) {
+					case EVar(m) if (m == "Enum"):
+						listTarget = args[0];
+						switch (args[1].def) {
+							case EFn(clauses) if (clauses.length == 1):
+								fnClause = clauses[0];
+								eachIdx = i;							
+							default:
+						};					
+					default:
+				};			
+			case EBinary(Match, _, rhs) | EMatch(_, rhs):
+				switch (rhs.def) {
+					case ERemoteCall(mod2, func2, args2) if (func2 == "each" && args2.length == 2):
+						switch (mod2.def) {
+							case EVar(m2) if (m2 == "Enum"):
+								listTarget = args2[0];
+								switch (args2[1].def) {
+									case EFn(clauses) if (clauses.length == 1):
+										fnClause = clauses[0];
+										eachIdx = i;									
+									default:
+								};							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};
+		if (eachIdx == -1 || listTarget == null || fnClause == null) return x;
+		var returnsAcc = switch (stmts[stmts.length - 1].def) {
+			case EVar(vn) if (vn == accVar):
+				true;			
+			default:
+				false;			
+		};
+		var valuesCall = mapValuesOnce(listTarget);
+		var binderName = extractSingleArgName(fnClause.args);
+		if (binderName == null) binderName = "entry";
+		var rawStmts:Array<ElixirAST> = switch (fnClause.body.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[fnClause.body];			
+		};
+		var hasReflectHead = false;
+		var metaAliasName:Null<String> = null;
+		for (s  in  rawStmts) {
+			switch (s.def) {
+				case EBinary(Match, leftP, rightP):
+					switch (rightP.def) {
+						case EAccess(tgtP, _):
+							switch (tgtP.def) {
+								case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP]) if (astEquals(argP, listTarget)):
+									hasReflectHead = true;								
+								default:
+							};						
+						default:
+					};
+					switch (leftP.def) {
+						case EVar(mn):
+							switch (rightP.def) {
+								case EAccess(arrP, _):
+									switch (arrP.def) {
+										case EField(_, fieldP) if (fieldP == "metas"):
+											metaAliasName = mn;										
+										default:
+									};								
+								default:
+							};						
+						default:
+					};				
+				case EMatch(patP, rightP2):
+					switch (rightP2.def) {
+						case EAccess(tgtP2, _):
+							switch (tgtP2.def) {
+								case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP2]) if (astEquals(argP2, listTarget)):
+									hasReflectHead = true;								
+								default:
+							};						
+						default:
+					};
+					switch (patP) {
+						case PVar(mn2):
+							switch (rightP2.def) {
+								case EAccess(arrP2, _):
+									switch (arrP2.def) {
+										case EField(_, fieldP2) if (fieldP2 == "metas"):
+											metaAliasName = mn2;										
+										default:
+									};								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+		};
+		if (hasReflectHead) {
+			var binderSafe = safeBinder(binderName);
+			var metaExprSyn = makeAST(EAccess(makeAST(EField(makeAST(EVar(binderSafe)), "metas")), makeAST(EInteger(0))));
+			var condFromBody:Null<ElixirAST> = findMetaFilterCond(rawStmts, metaAliasName);
+			if (metaAliasName != null) condFromBody = replaceVarWithExpr(condFromBody, metaAliasName, metaExprSyn);
+			condFromBody = replaceVarInExpr(condFromBody, "entry", binderSafe);
+			var appendMetaSyn = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExprSyn]))));
+			var outerCondSyn = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [makeAST(EField(makeAST(EVar(binderSafe)), "metas"))])), makeAST(EInteger(0))));
+			var innerSyn = (condFromBody != null) ? makeAST(EIf(condFromBody, appendMetaSyn, makeAST(EVar("acc")))) : appendMetaSyn;
+			var bodySyn = makeAST(EIf(outerCondSyn, innerSyn, makeAST(EVar("acc"))));
+			var reduceSynFn = makeAST(EFn([{ args : [PVar(binderSafe), PVar("acc")], guard : fnClause.guard, body : bodySyn }]));
+			var reduceSynCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesCall, makeAST(EList([])), reduceSynFn]));
+			var outSyn:Array<ElixirAST> = [];
+			for (i  in  0 ... stmts.length) {
+				if (i == accInitIdx) outSyn.push(reduceSynCall) else if (i == eachIdx || i == stmts.length - 1) { } else outSyn.push(stmts[i]);
+			};
+			return makeASTWithMeta(EBlock(outSyn), x.metadata, x.pos);
+		};
+		var cleaned:Array<ElixirAST> = [];
+		var localEntryAlias:Null<String> = null;
+		for (s  in  rawStmts) {
+			var drop = false;
+			switch (s.def) {
+				case EInteger(v) if (v == 0 || v == 1):
+					drop = true;				
+				case EFloat(f) if (f == 0.0):
+					drop = true;				
+				case EBinary(Match, left, right):
+					switch (right.def) {
+						case EAccess(tgt, key0):
+							if (isHeadSelectOfFields(tgt, listTarget)) drop = true;						
+						default:
+					};
+					if (!drop) switch (left.def) {
+						case EVar(aliasName):
+							switch (right.def) {
+								case ERemoteCall({ def : EVar("Map") }, "get", [m, _key]) if (astEquals(m, listTarget)):
+									localEntryAlias = aliasName;
+									drop = true;								
+								default:
+							};						
+						default:
+					};				
+				case EMatch(pat, right2):
+					switch (right2.def) {
+						case EAccess(tgt2, key02):
+							if (isHeadSelectOfFields(tgt2, listTarget)) drop = true;						
+						default:
+					};
+					if (!drop) switch (pat) {
+						case PVar(aliasName2):
+							switch (right2.def) {
+								case ERemoteCall({ def : EVar("Map") }, "get", [m2, _key2]) if (astEquals(m2, listTarget)):
+									localEntryAlias = aliasName2;
+									drop = true;								
+								default:
+							};						
+						default:
+					};				
+				default:
+			};
+			if (!drop) cleaned.push(s);
+		};
+		var rewritten:Array<ElixirAST> = [];
+		for (s  in  cleaned) {
+			var s2 = s;
+			if (localEntryAlias != null) s2 = replaceVarInExpr(s2, localEntryAlias, binderName);
+			s2 = rewriteAccAppend(s2, accVar, "acc");
+			rewritten.push(s2);
+		};
+		var condFromBody2:Null<ElixirAST> = findAccAppendCond(rawStmts, accVar);
+		if (condFromBody2 != null) {
+			var binderSafe2 = safeBinder(binderName);
+			var metaExpr2 = makeAST(EAccess(makeAST(EField(makeAST(EVar(binderSafe2)), "metas")), makeAST(EInteger(0))));
+			if (localEntryAlias != null) condFromBody2 = replaceVarInExpr(condFromBody2, localEntryAlias, binderSafe2);
+			condFromBody2 = replaceVarInExpr(condFromBody2, "entry", binderSafe2);
+			condFromBody2 = ElixirASTTransformer.transformNode(condFromBody2, function(t:ElixirAST):ElixirAST {
+				return switch (t.def) {
+					case EVar(v) if (v.toLowerCase() == "meta"):
+						makeASTWithMeta(metaExpr2.def, t.metadata, t.pos);					
+					default:
+						t;					
+				};
+			});
+			var appendMeta2 = makeAST(EBinary(Concat, makeAST(EVar("acc")), makeAST(EList([metaExpr2]))));
+			var outerCond2 = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [makeAST(EField(makeAST(EVar(binderSafe2)), "metas"))])), makeAST(EInteger(0))));
+			var inner2 = makeAST(EIf(condFromBody2, appendMeta2, makeAST(EVar("acc"))));
+			var body2 = makeAST(EBlock([makeAST(EIf(outerCond2, inner2, makeAST(EVar("acc")))), makeAST(EVar("acc"))]));
+			var reduceFn2 = makeAST(EFn([{ args : [PVar(binderSafe2), PVar("acc")], guard : fnClause.guard, body : body2 }]));
+			var reduceCall2 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesCall, makeAST(EList([])), reduceFn2]));
+			var out2:Array<ElixirAST> = [];
+			for (i  in  0 ... stmts.length) {
+				if (i == accInitIdx) out2.push(reduceCall2) else if (i == eachIdx || i == stmts.length - 1) { } else out2.push(stmts[i]);
+			};
+			return makeASTWithMeta(EBlock(out2), x.metadata, x.pos);
+		};
+		var synthesized:Null<ElixirAST> = tryBuildPresenceReduceBody(rewritten, binderName);
+		var bodyExpr:ElixirAST = (synthesized != null) ? synthesized : switch (rewritten.length) {
+			case 0:
+				makeAST(EVar("acc"));			
+			default:
+				var last = rewritten[rewritten.length - 1];
+				var needsAccTail = switch (last.def) {
+					case EVar(nm) if (nm == "acc"):
+						false;					
+					default:
+						true;					
+				};
+				if (needsAccTail) makeAST(EBlock(rewritten.concat([makeAST(EVar("acc"))]))) else makeAST(EBlock(rewritten));			
+		};
+		bodyExpr = ElixirASTTransformer.transformNode(bodyExpr, function(t:ElixirAST):ElixirAST {
+			return switch (t.def) {
+				case EBinary(Match, leftT, rhsT):
+					switch (leftT.def) {
+						case EVar(lhsT) if (lhsT == accVar):
+							var repl = rewriteAccAppend(t, accVar, "acc");
+							if (repl != null) makeASTWithMeta(EBinary(Match, makeAST(EVar("acc")), repl), t.metadata, t.pos) else t;						
+						default:
+							t;						
+					};				
+				case EInteger(v) if (v == 0 || v == 1):
+					makeASTWithMeta(EBlock([]), t.metadata, t.pos);				
+				case EFloat(f) if (f == 0.0):
+					makeASTWithMeta(EBlock([]), t.metadata, t.pos);				
+				default:
+					t;				
+			};
+		});
+		if (localEntryAlias != null) bodyExpr = replaceVarInExpr(bodyExpr, localEntryAlias, binderName);
+		var reduceFn = makeAST(EFn([{ args : [PVar(binderName), PVar("acc")], guard : fnClause.guard, body : bodyExpr }]));
+		var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [valuesCall, makeAST(EList([])), reduceFn]));
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			if (i == accInitIdx) {
+				out.push(reduceCall);
+			} else if (i == eachIdx || i == stmts.length - 1) { } else {
+				out.push(stmts[i]);
+			};
+		};
+		makeASTWithMeta(EBlock(out), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						if (stmts.length >= 3) {
+							var listVar = null;
+							var listCall = null;
+							var accName = null;
+							var listIdx = -1;
+							var accIdx = -1;
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									@:ast(switch (stmts[i].def) {
+	case EBinary(Match, left, rhs):
+		var lhsName:Null<String> = switch (left.def) {
+			case EVar(n):
+				n;			
+			default:
+				null;			
+		};
+		switch (rhs.def) {
+			case ERemoteCall(mod, "list", args) if (args.length == 1):
+				var argOk = switch (args[0].def) {
+					case EString(s) if (s == "users"):
+						true;					
+					default:
+						false;					
+				};
+				if (lhsName != null && argOk) {
+					listVar = lhsName;
+					listCall = rhs;
+					listIdx = i;
+				};			
+			default:
+		};	
+	case EMatch(pat, rhs):
+		var lhsName2:Null<String> = switch (pat) {
+			case PVar(n):
+				n;			
+			default:
+				null;			
+		};
+		switch (rhs.def) {
+			case ERemoteCall(mod2, "list", args2) if (args2.length == 1):
+				var argOk2 = switch (args2[0].def) {
+					case EString(s2) if (s2 == "users"):
+						true;					
+					default:
+						false;					
+				};
+				if (lhsName2 != null && argOk2) {
+					listVar = lhsName2;
+					listCall = rhs;
+					listIdx = i;
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = stmts[i].def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													var rhs = `;
+													{
+														var lhsName2 = @:ast(switch (pat) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+															var ` = pat[0];
+															{
+																var n = `;
+																{
+																	n;
+																};
+															};
+														} else {
+															null;
+														};
+														@:ast(switch (rhs.def) {
+	case ERemoteCall(mod2, "list", args2) if (args2.length == 1):
+		var argOk2 = switch (args2[0].def) {
+			case EString(s2) if (s2 == "users"):
+				true;			
+			default:
+				false;			
+		};
+		if (lhsName2 != null && argOk2) {
+			listVar = lhsName2;
+			listCall = rhs;
+			listIdx = i;
+		};	
+	default:
+}) {
+															var ` = rhs.def;
+															if (enumIndex ` == 24) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (` == "list") {
+																	{
+																		var mod2 = `;
+																		var args2 = `;
+																		if (args2.length == 1) {
+																			var argOk2 = @:ast(switch (args2[0].def) {
+	case EString(s2) if (s2 == "users"):
+		true;	
+	default:
+		false;	
+}) {
+																				var ` = args2[0].def;
+																				if (enumIndex ` == 32) {
+																					var ` = `[0];
+																					{
+																						var s2 = `;
+																						if (s2 == "users") {
+																							true;
+																						} else {
+																							false;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			};
+																			if (lhsName2 != null && argOk2) {
+																				listVar = lhsName2;
+																				listCall = rhs;
+																				listIdx = i;
+																			};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var rhs = `;
+														{
+															var lhsName = @:ast(switch (left.def) {
+	case EVar(n):
+		n;	
+	default:
+		null;	
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var n = `;
+																		{
+																			n;
+																		};
+																	};
+																} else {
+																	null;
+																};
+															};
+															@:ast(switch (rhs.def) {
+	case ERemoteCall(mod, "list", args) if (args.length == 1):
+		var argOk = switch (args[0].def) {
+			case EString(s) if (s == "users"):
+				true;			
+			default:
+				false;			
+		};
+		if (lhsName != null && argOk) {
+			listVar = lhsName;
+			listCall = rhs;
+			listIdx = i;
+		};	
+	default:
+}) {
+																var ` = rhs.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (` == "list") {
+																		{
+																			var mod = `;
+																			var args = `;
+																			if (args.length == 1) {
+																				var argOk = @:ast(switch (args[0].def) {
+	case EString(s) if (s == "users"):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = args[0].def;
+																					if (enumIndex ` == 32) {
+																						var ` = `[0];
+																						{
+																							var s = `;
+																							if (s == "users") {
+																								true;
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				};
+																				if (lhsName != null && argOk) {
+																					listVar = lhsName;
+																					listCall = rhs;
+																					listIdx = i;
+																				};
+																			} else {};
+																		};
+																	} else {};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+								};
+							};
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									@:ast(switch (stmts[i].def) {
+	case EBinary(Match, l, r):
+		var nm = switch (l.def) {
+			case EVar(n):
+				n;			
+			default:
+				null;			
+		};
+		switch (r.def) {
+			case EList(items) if (items.length == 0):
+				accName = nm;
+				accIdx = i;			
+			default:
+		};	
+	case EMatch(PVar(n2), r2):
+		switch (r2.def) {
+			case EList(items2) if (items2.length == 0):
+				accName = n2;
+				accIdx = i;			
+			default:
+		};	
+	default:
+}) {
+										var ` = stmts[i].def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var n2 = `;
+														var r2 = `;
+														{
+															@:ast(switch (r2.def) {
+	case EList(items2) if (items2.length == 0):
+		accName = n2;
+		accIdx = i;	
+	default:
+}) {
+																var ` = r2.def;
+																if (enumIndex ` == 15) {
+																	var ` = `[0];
+																	{
+																		var items2 = `;
+																		if (items2.length == 0) {
+																			accName = n2;
+																			accIdx = i;
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var l = `;
+														var r = `;
+														{
+															var nm = @:ast(switch (l.def) {
+	case EVar(n):
+		n;	
+	default:
+		null;	
+}) {
+																var ` = l.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var n = `;
+																		{
+																			n;
+																		};
+																	};
+																} else {
+																	null;
+																};
+															};
+															@:ast(switch (r.def) {
+	case EList(items) if (items.length == 0):
+		accName = nm;
+		accIdx = i;	
+	default:
+}) {
+																var ` = r.def;
+																if (enumIndex ` == 15) {
+																	var ` = `[0];
+																	{
+																		var items = `;
+																		if (items.length == 0) {
+																			accName = nm;
+																			accIdx = i;
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+								};
+							};
+							var eachAt = -1;
+							var eachNode = null;
+							var eachListMatches = false;
+							var eachFn = null;
+							if (listVar != null) {
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										@:ast(switch (stmts[i].def) {
+	case ERemoteCall({ def : EVar("Enum") }, "each", args) if (args.length == 2):
+		eachAt = i;
+		eachNode = stmts[i];
+		eachListMatches = switch (args[0].def) {
+			case EVar(n) if (n == listVar):
+				true;			
+			default:
+				false;			
+		};
+		eachFn = args[1];	
+	default:
+}) {
+											var ` = stmts[i].def;
+											if (enumIndex ` == 24) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "Enum") {
+															if (` == "each") {
+																{
+																	var args = `;
+																	if (args.length == 2) {
+																		eachAt = i;
+																		eachNode = stmts[i];
+																		eachListMatches = @:ast(switch (args[0].def) {
+	case EVar(n) if (n == listVar):
+		true;	
+	default:
+		false;	
+}) {
+																			var ` = args[0].def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var n = `;
+																					if (n == listVar) {
+																						true;
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																		eachFn = args[1];
+																	} else {};
+																};
+															} else {};
+														} else {};
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							};
+							if (listVar != null && accName != null && eachAt >= 0 && eachListMatches && eachFn != null) {
+								var innerBody = @:ast(switch (eachFn.def) {
+	case EFn(clauses) if (clauses.length == 1):
+		switch (clauses[0].body.def) {
+			case EBlock(ss):
+				ss;			
+			default:
+				[clauses[0].body];			
+		};	
+	default:
+		[];	
+}) {
+									var ` = eachFn.def;
+									if (enumIndex ` == 42) {
+										var ` = `[0];
+										{
+											var clauses = `;
+											if (clauses.length == 1) {
+												@:ast(switch (clauses[0].body.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[clauses[0].body];	
+}) {
+													var ` = clauses[0].body.def;
+													if (enumIndex ` == 53) {
+														var ` = `[0];
+														{
+															var ss = `;
+															{
+																ss;
+															};
+														};
+													} else {
+														[clauses[0].body];
+													};
+												};
+											} else {
+												[];
+											};
+										};
+									} else {
+										[];
+									};
+								};
+								var cond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findAccAppendCond(innerBody, accName);
+								if (cond == null) {
+									cond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCond(innerBody, "meta");
+								};
+								if (cond == null) {
+									cond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findFirstIfCond(innerBody);
+								};
+								var binder = "entry";
+								var metaExpr = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : {}, pos : pos};
+										}, "metas"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								cond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(cond, "entry", binder);
+								cond = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cond, function(t:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (t.def) {
+	case EVar(v) if (v.toLowerCase() == "meta"):
+		makeASTWithMeta(metaExpr.def, t.metadata, t.pos);	
+	default:
+		t;	
+}) {
+										var ` = t.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v.toLowerCase() == "meta") {
+													{def : metaExpr.def, metadata : t.metadata, pos : t.pos};
+												} else {
+													t;
+												};
+											};
+										} else {
+											t;
+										};
+									};
+								});
+								var appendMeta = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([metaExpr]), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var outerCond = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+										}, "length", [{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : {}, pos : pos};
+											}, "metas"), metadata : {}, pos : pos};
+										}]), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var inner = if ((cond != null)) {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, appendMeta, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									};
+								} else {
+									appendMeta;
+								};
+								var body = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf(outerCond, inner, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var reduceFn = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(binder), reflaxe.elixir.ast.EPattern.PVar("acc")], guard : null, body : body}]), metadata : {}, pos : pos};
+								};
+								var valuesForListVar = {
+									var target = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(listVar), metadata : {}, pos : pos};
+									};
+									@:ast(switch (target.def) {
+	case ERemoteCall({ def : EVar(mod) }, "values", args) if (mod == "Map" && args != null && args.length == 1):
+		target;	
+	default:
+		makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [target]));	
+}) {
+										var ` = target.def;
+										if (enumIndex ` == 24) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var ` = `.def;
+												var ` = `.metadata;
+												var ` = `.pos;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													if (` == "values") {
+														{
+															var mod = `;
+															var args = `;
+															if (mod == "Map" && args != null && args.length == 1) {
+																target;
+															} else {
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+																	}, "values", [target]), metadata : {}, pos : pos};
+																};
+															};
+														};
+													} else {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+															}, "values", [target]), metadata : {}, pos : pos};
+														};
+													};
+												} else {
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+														}, "values", [target]), metadata : {}, pos : pos};
+													};
+												};
+											};
+										} else {
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+												}, "values", [target]), metadata : {}, pos : pos};
+											};
+										};
+									};
+								};
+								var reduceForListVar = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "reduce", [valuesForListVar, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+									}, reduceFn]), metadata : {}, pos : pos};
+								};
+								var out2 = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										if (i == listIdx) {
+											out2.push(stmts[i]);
+										} else {
+											if (i == accIdx) {
+												out2.push({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+													}, reduceForListVar), metadata : {}, pos : pos};
+												});
+											} else {
+												if (i == eachAt) {} else {
+													var isTail = (i == stmts.length - 1);
+													if (isTail) {
+														var tailIsAcc = @:ast(switch (stmts[i].def) {
+	case EVar(v) if (v == accName):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = stmts[i].def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var v = `;
+																	if (v == accName) {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+														if (! tailIsAcc) {
+															out2.push(stmts[i]);
+														};
+													} else {
+														out2.push(stmts[i]);
+													};
+												};
+											};
+										};
+									};
+								};
+								return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out2), metadata : x.metadata, pos : x.pos};
+							};
+							var accVar = [null];
+							var accInitIdx = -1;
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									@:ast(switch (stmts[i].def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(n):
+				switch (rhs.def) {
+					case EList(items) if (items.length == 0):
+						accVar = n;
+						accInitIdx = i;					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(n2):
+				switch (rhs2.def) {
+					case EList(items2) if (items2.length == 0):
+						accVar = n2;
+						accInitIdx = i;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = stmts[i].def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													var rhs2 = `;
+													{
+														@:ast(switch (pat) {
+	case PVar(n2):
+		switch (rhs2.def) {
+			case EList(items2) if (items2.length == 0):
+				accVar = n2;
+				accInitIdx = i;			
+			default:
+		};	
+	default:
+}) if (enumIndex pat == 0) {
+															var ` = pat[0];
+															{
+																var n2 = `;
+																{
+																	@:ast(switch (rhs2.def) {
+	case EList(items2) if (items2.length == 0):
+		accVar = n2;
+		accInitIdx = i;	
+	default:
+}) {
+																		var ` = rhs2.def;
+																		if (enumIndex ` == 15) {
+																			var ` = `[0];
+																			{
+																				var items2 = `;
+																				if (items2.length == 0) {
+																					accVar[0] = n2;
+																					accInitIdx = i;
+																				} else {};
+																			};
+																		} else {};
+																	};
+																};
+															};
+														} else {};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var rhs = `;
+														{
+															@:ast(switch (left.def) {
+	case EVar(n):
+		switch (rhs.def) {
+			case EList(items) if (items.length == 0):
+				accVar = n;
+				accInitIdx = i;			
+			default:
+		};	
+	default:
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var n = `;
+																		{
+																			@:ast(switch (rhs.def) {
+	case EList(items) if (items.length == 0):
+		accVar = n;
+		accInitIdx = i;	
+	default:
+}) {
+																				var ` = rhs.def;
+																				if (enumIndex ` == 15) {
+																					var ` = `[0];
+																					{
+																						var items = `;
+																						if (items.length == 0) {
+																							accVar[0] = n;
+																							accInitIdx = i;
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+								};
+							};
+							if (accVar[0] == null) {
+								var tailIsEmptyList = @:ast(switch (stmts[stmts.length - 1].def) {
+	case EList(items) if (items.length == 0):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = stmts[stmts.length - 1].def;
+									if (enumIndex ` == 15) {
+										var ` = `[0];
+										{
+											var items = `;
+											if (items.length == 0) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								var eachPos = -1;
+								var eachList = null;
+								var eachClause = null;
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										@:ast(switch (stmts[i].def) {
+	case ERemoteCall(modE, funcE, argsE) if (funcE == "each" && argsE != null && argsE.length == 2):
+		switch (modE.def) {
+			case EVar(mE) if (mE == "Enum"):
+				eachPos = i;
+				eachList = argsE[0];
+				switch (argsE[1].def) {
+					case EFn(csE) if (csE.length == 1):
+						eachClause = csE[0];					
+					default:
+				};			
+			default:
+		};	
+	case EBinary(Match, _, rhsE) | EMatch(_, rhsE):
+		switch (rhsE.def) {
+			case ERemoteCall(modE2, funcE2, argsE2) if (funcE2 == "each" && argsE2 != null && argsE2.length == 2):
+				switch (modE2.def) {
+					case EVar(mE2) if (mE2 == "Enum"):
+						eachPos = i;
+						eachList = argsE2[0];
+						switch (argsE2[1].def) {
+							case EFn(csE2) if (csE2.length == 1):
+								eachClause = csE2[0];							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = stmts[i].def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var rhsE = `;
+														{
+															@:ast(switch (rhsE.def) {
+	case ERemoteCall(modE2, funcE2, argsE2) if (funcE2 == "each" && argsE2 != null && argsE2.length == 2):
+		switch (modE2.def) {
+			case EVar(mE2) if (mE2 == "Enum"):
+				eachPos = i;
+				eachList = argsE2[0];
+				switch (argsE2[1].def) {
+					case EFn(csE2) if (csE2.length == 1):
+						eachClause = csE2[0];					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+																var ` = rhsE.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var modE2 = `;
+																		var funcE2 = `;
+																		var argsE2 = `;
+																		if (funcE2 == "each" && argsE2 != null && argsE2.length == 2) {
+																			@:ast(switch (modE2.def) {
+	case EVar(mE2) if (mE2 == "Enum"):
+		eachPos = i;
+		eachList = argsE2[0];
+		switch (argsE2[1].def) {
+			case EFn(csE2) if (csE2.length == 1):
+				eachClause = csE2[0];			
+			default:
+		};	
+	default:
+}) {
+																				var ` = modE2.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var mE2 = `;
+																						if (mE2 == "Enum") {
+																							eachPos = i;
+																							eachList = argsE2[0];
+																							@:ast(switch (argsE2[1].def) {
+	case EFn(csE2) if (csE2.length == 1):
+		eachClause = csE2[0];	
+	default:
+}) {
+																								var ` = argsE2[1].def;
+																								if (enumIndex ` == 42) {
+																									var ` = `[0];
+																									{
+																										var csE2 = `;
+																										if (csE2.length == 1) {
+																											eachClause = csE2[0];
+																										} else {};
+																									};
+																								} else {};
+																							};
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var modE = `;
+														var funcE = `;
+														var argsE = `;
+														if (funcE == "each" && argsE != null && argsE.length == 2) {
+															@:ast(switch (modE.def) {
+	case EVar(mE) if (mE == "Enum"):
+		eachPos = i;
+		eachList = argsE[0];
+		switch (argsE[1].def) {
+			case EFn(csE) if (csE.length == 1):
+				eachClause = csE[0];			
+			default:
+		};	
+	default:
+}) {
+																var ` = modE.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var mE = `;
+																		if (mE == "Enum") {
+																			eachPos = i;
+																			eachList = argsE[0];
+																			@:ast(switch (argsE[1].def) {
+	case EFn(csE) if (csE.length == 1):
+		eachClause = csE[0];	
+	default:
+}) {
+																				var ` = argsE[1].def;
+																				if (enumIndex ` == 42) {
+																					var ` = `[0];
+																					{
+																						var csE = `;
+																						if (csE.length == 1) {
+																							eachClause = csE[0];
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												};
+												case 26: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var rhsE = `;
+															{
+																@:ast(switch (rhsE.def) {
+	case ERemoteCall(modE2, funcE2, argsE2) if (funcE2 == "each" && argsE2 != null && argsE2.length == 2):
+		switch (modE2.def) {
+			case EVar(mE2) if (mE2 == "Enum"):
+				eachPos = i;
+				eachList = argsE2[0];
+				switch (argsE2[1].def) {
+					case EFn(csE2) if (csE2.length == 1):
+						eachClause = csE2[0];					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+																	var ` = rhsE.def;
+																	if (enumIndex ` == 24) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		{
+																			var modE2 = `;
+																			var funcE2 = `;
+																			var argsE2 = `;
+																			if (funcE2 == "each" && argsE2 != null && argsE2.length == 2) {
+																				@:ast(switch (modE2.def) {
+	case EVar(mE2) if (mE2 == "Enum"):
+		eachPos = i;
+		eachList = argsE2[0];
+		switch (argsE2[1].def) {
+			case EFn(csE2) if (csE2.length == 1):
+				eachClause = csE2[0];			
+			default:
+		};	
+	default:
+}) {
+																					var ` = modE2.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var mE2 = `;
+																							if (mE2 == "Enum") {
+																								eachPos = i;
+																								eachList = argsE2[0];
+																								@:ast(switch (argsE2[1].def) {
+	case EFn(csE2) if (csE2.length == 1):
+		eachClause = csE2[0];	
+	default:
+}) {
+																									var ` = argsE2[1].def;
+																									if (enumIndex ` == 42) {
+																										var ` = `[0];
+																										{
+																											var csE2 = `;
+																											if (csE2.length == 1) {
+																												eachClause = csE2[0];
+																											} else {};
+																										};
+																									} else {};
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	} else {};
+																};
+															};
+														};
+													} else {};
+												};
+												default: {}
+											};
+										};
+									};
+								};
+								if (tailIsEmptyList && eachPos != -1 && eachList != null && eachClause != null) {
+									var binder0 = {
+										var args = eachClause.args;
+										if (args == null || args.length == 0) {
+											null;
+										} else {
+											@:ast(switch (args[0]) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) {
+												var ` = args[0];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var n = `;
+														{
+															n;
+														};
+													};
+												} else {
+													null;
+												};
+											};
+										};
+									};
+									if (binder0 == null) {
+										binder0 = "entry";
+									};
+									var fnBodyStmts = @:ast(switch (eachClause.body.def) {
+	case EBlock(ssx):
+		ssx;	
+	default:
+		[eachClause.body];	
+}) {
+										var ` = eachClause.body.def;
+										if (enumIndex ` == 53) {
+											var ` = `[0];
+											{
+												var ssx = `;
+												{
+													ssx;
+												};
+											};
+										} else {
+											[eachClause.body];
+										};
+									};
+									var metaAlias = null;
+									var metaExpr = null;
+									{
+										var ` = 0;
+										while (` < fnBodyStmts.length) {
+											var s3 = fnBodyStmts[`];
+											++ `;
+											@:ast(switch (s3.def) {
+	case EBinary(Match, leftB3, rightB3):
+		switch (rightB3.def) {
+			case EAccess(arr3, idx3):
+				switch (arr3.def) {
+					case EField(obj3, field3) if (field3 == "metas"):
+						metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), field3)), idx3));					
+					default:
+				};			
+			default:
+		};
+		switch (leftB3.def) {
+			case EVar(mn3):
+				metaAlias = mn3;			
+			default:
+		};	
+	default:
+}) {
+												var ` = s3.def;
+												if (enumIndex ` == 26) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 27) {
+														{
+															var leftB3 = `;
+															var rightB3 = `;
+															{
+																@:ast(switch (rightB3.def) {
+	case EAccess(arr3, idx3):
+		switch (arr3.def) {
+			case EField(obj3, field3) if (field3 == "metas"):
+				metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), field3)), idx3));			
+			default:
+		};	
+	default:
+}) {
+																	var ` = rightB3.def;
+																	if (enumIndex ` == 29) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var arr3 = `;
+																			var idx3 = `;
+																			{
+																				@:ast(switch (arr3.def) {
+	case EField(obj3, field3) if (field3 == "metas"):
+		metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder0)), field3)), idx3));	
+	default:
+}) {
+																					var ` = arr3.def;
+																					if (enumIndex ` == 28) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						{
+																							var obj3 = `;
+																							var field3 = `;
+																							if (field3 == "metas") {
+																								metaExpr = {
+																									var pos = null;
+																									{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder0), metadata : {}, pos : pos};
+																										}, field3), metadata : {}, pos : pos};
+																									}, idx3), metadata : {}, pos : pos};
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+																@:ast(switch (leftB3.def) {
+	case EVar(mn3):
+		metaAlias = mn3;	
+	default:
+}) {
+																	var ` = leftB3.def;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var mn3 = `;
+																			{
+																				metaAlias = mn3;
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+													} else {};
+												} else {};
+											};
+										};
+									};
+									var eqCond = null;
+									{
+										var ` = 0;
+										while (` < fnBodyStmts.length) {
+											var s4 = fnBodyStmts[`];
+											++ `;
+											@:ast(switch (s4.def) {
+	case EIf(c4, _, _):
+		switch (c4.def) {
+			case EBinary(Equal, l4, r4):
+				var leftIsMetaField = switch (l4.def) {
+					case EField({ def : EVar(mv4) }, _fld4) if (metaAlias != null && mv4 == metaAlias):
+						true;					
+					default:
+						false;					
+				};
+				if (leftIsMetaField) eqCond = c4;			
+			default:
+		};	
+	default:
+}) {
+												var ` = s4.def;
+												if (enumIndex ` == 10) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var c4 = `;
+														{
+															@:ast(switch (c4.def) {
+	case EBinary(Equal, l4, r4):
+		var leftIsMetaField = switch (l4.def) {
+			case EField({ def : EVar(mv4) }, _fld4) if (metaAlias != null && mv4 == metaAlias):
+				true;			
+			default:
+				false;			
+		};
+		if (leftIsMetaField) eqCond = c4;	
+	default:
+}) {
+																var ` = c4.def;
+																if (enumIndex ` == 26) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (enumIndex ` == 6) {
+																		{
+																			var l4 = `;
+																			var r4 = `;
+																			{
+																				var leftIsMetaField = @:ast(switch (l4.def) {
+	case EField({ def : EVar(mv4) }, _fld4) if (metaAlias != null && mv4 == metaAlias):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = l4.def;
+																					if (enumIndex ` == 28) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						{
+																							var ` = `.def;
+																							var ` = `.metadata;
+																							var ` = `.pos;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var mv4 = `;
+																									var _fld4 = `;
+																									if (metaAlias != null && mv4 == metaAlias) {
+																										true;
+																									} else {
+																										false;
+																									};
+																								};
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				};
+																				if (leftIsMetaField) {
+																					eqCond = c4;
+																				};
+																			};
+																		};
+																	} else {};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+										};
+									};
+									var outerCondS = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+											}, "length", [{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder0), metadata : {}, pos : pos};
+												}, "metas"), metadata : {}, pos : pos};
+											}]), metadata : {}, pos : pos};
+										}, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									};
+									var appendVal = if ((metaExpr != null)) {
+										metaExpr;
+									} else {
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder0), metadata : {}, pos : pos};
+												}, "metas"), metadata : {}, pos : pos};
+											}, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+											}), metadata : {}, pos : pos};
+										};
+									};
+									var appendExpr = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+										}, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EList([appendVal]), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									};
+									var innerBranch = if ((eqCond != null)) {
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EIf(eqCond, appendExpr, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+											}), metadata : {}, pos : pos};
+										};
+									} else {
+										appendExpr;
+									};
+									var reduceBody = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EIf(outerCondS, innerBranch, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									};
+									var reduceFnS = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(binder0), reflaxe.elixir.ast.EPattern.PVar("acc")], guard : eachClause.guard, body : reduceBody}]), metadata : {}, pos : pos};
+									};
+									var reduceCallS = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+										}, "reduce", [@:ast(switch (target.def) {
+	case ERemoteCall({ def : EVar(mod) }, "values", args) if (mod == "Map" && args != null && args.length == 1):
+		target;	
+	default:
+		makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [target]));	
+}) {
+											var ` = eachList.def;
+											if ((enumIndex ` == 24)) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if ((enumIndex ` == 38)) {
+														var ` = `[0];
+														if ((` == "values")) {
+															var mod = `;
+															var args = `;
+															if ((mod == "Map" && args != null && args.length == 1)) eachList else {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+																}, "values", [eachList]), metadata : {}, pos : pos};
+															};
+														} else {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+															}, "values", [eachList]), metadata : {}, pos : pos};
+														};
+													} else {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+														}, "values", [eachList]), metadata : {}, pos : pos};
+													};
+												};
+											} else {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+												}, "values", [eachList]), metadata : {}, pos : pos};
+											};
+										}, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+										}, reduceFnS]), metadata : {}, pos : pos};
+									};
+									var outS = [];
+									{
+										var ` = 0;
+										var ` = stmts.length;
+										while (` < `) {
+											var i = ` ++;
+											if (i == eachPos) {} else {
+												if (i == stmts.length - 1) {
+													outS.push(reduceCallS);
+												} else {
+													outS.push(stmts[i]);
+												};
+											};
+										};
+									};
+									return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(outS), metadata : x.metadata, pos : x.pos};
+								};
+								return x;
+							};
+							var eachIdx = -1;
+							var listTarget = null;
+							var fnClause = null;
+							{
+								var ` = accInitIdx + 1;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									@:ast(switch (stmts[i].def) {
+	case ERemoteCall(mod, func, args) if (func == "each" && args.length == 2):
+		switch (mod.def) {
+			case EVar(m) if (m == "Enum"):
+				listTarget = args[0];
+				switch (args[1].def) {
+					case EFn(clauses) if (clauses.length == 1):
+						fnClause = clauses[0];
+						eachIdx = i;					
+					default:
+				};			
+			default:
+		};	
+	case EBinary(Match, _, rhs) | EMatch(_, rhs):
+		switch (rhs.def) {
+			case ERemoteCall(mod2, func2, args2) if (func2 == "each" && args2.length == 2):
+				switch (mod2.def) {
+					case EVar(m2) if (m2 == "Enum"):
+						listTarget = args2[0];
+						switch (args2[1].def) {
+							case EFn(clauses) if (clauses.length == 1):
+								fnClause = clauses[0];
+								eachIdx = i;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = stmts[i].def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var rhs = `;
+													{
+														@:ast(switch (rhs.def) {
+	case ERemoteCall(mod2, func2, args2) if (func2 == "each" && args2.length == 2):
+		switch (mod2.def) {
+			case EVar(m2) if (m2 == "Enum"):
+				listTarget = args2[0];
+				switch (args2[1].def) {
+					case EFn(clauses) if (clauses.length == 1):
+						fnClause = clauses[0];
+						eachIdx = i;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+															var ` = rhs.def;
+															if (enumIndex ` == 24) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																{
+																	var mod2 = `;
+																	var func2 = `;
+																	var args2 = `;
+																	if (func2 == "each" && args2.length == 2) {
+																		@:ast(switch (mod2.def) {
+	case EVar(m2) if (m2 == "Enum"):
+		listTarget = args2[0];
+		switch (args2[1].def) {
+			case EFn(clauses) if (clauses.length == 1):
+				fnClause = clauses[0];
+				eachIdx = i;			
+			default:
+		};	
+	default:
+}) {
+																			var ` = mod2.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var m2 = `;
+																					if (m2 == "Enum") {
+																						listTarget = args2[0];
+																						@:ast(switch (args2[1].def) {
+	case EFn(clauses) if (clauses.length == 1):
+		fnClause = clauses[0];
+		eachIdx = i;	
+	default:
+}) {
+																							var ` = args2[1].def;
+																							if (enumIndex ` == 42) {
+																								var ` = `[0];
+																								{
+																									var clauses = `;
+																									if (clauses.length == 1) {
+																										fnClause = clauses[0];
+																										eachIdx = i;
+																									} else {};
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	} else {};
+																};
+															} else {};
+														};
+													};
+												};
+											};
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var mod = `;
+													var func = `;
+													var args = `;
+													if (func == "each" && args.length == 2) {
+														@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Enum"):
+		listTarget = args[0];
+		switch (args[1].def) {
+			case EFn(clauses) if (clauses.length == 1):
+				fnClause = clauses[0];
+				eachIdx = i;			
+			default:
+		};	
+	default:
+}) {
+															var ` = mod.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var m = `;
+																	if (m == "Enum") {
+																		listTarget = args[0];
+																		@:ast(switch (args[1].def) {
+	case EFn(clauses) if (clauses.length == 1):
+		fnClause = clauses[0];
+		eachIdx = i;	
+	default:
+}) {
+																			var ` = args[1].def;
+																			if (enumIndex ` == 42) {
+																				var ` = `[0];
+																				{
+																					var clauses = `;
+																					if (clauses.length == 1) {
+																						fnClause = clauses[0];
+																						eachIdx = i;
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	} else {};
+																};
+															} else {};
+														};
+													} else {};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var rhs = `;
+														{
+															@:ast(switch (rhs.def) {
+	case ERemoteCall(mod2, func2, args2) if (func2 == "each" && args2.length == 2):
+		switch (mod2.def) {
+			case EVar(m2) if (m2 == "Enum"):
+				listTarget = args2[0];
+				switch (args2[1].def) {
+					case EFn(clauses) if (clauses.length == 1):
+						fnClause = clauses[0];
+						eachIdx = i;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+																var ` = rhs.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var mod2 = `;
+																		var func2 = `;
+																		var args2 = `;
+																		if (func2 == "each" && args2.length == 2) {
+																			@:ast(switch (mod2.def) {
+	case EVar(m2) if (m2 == "Enum"):
+		listTarget = args2[0];
+		switch (args2[1].def) {
+			case EFn(clauses) if (clauses.length == 1):
+				fnClause = clauses[0];
+				eachIdx = i;			
+			default:
+		};	
+	default:
+}) {
+																				var ` = mod2.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var m2 = `;
+																						if (m2 == "Enum") {
+																							listTarget = args2[0];
+																							@:ast(switch (args2[1].def) {
+	case EFn(clauses) if (clauses.length == 1):
+		fnClause = clauses[0];
+		eachIdx = i;	
+	default:
+}) {
+																								var ` = args2[1].def;
+																								if (enumIndex ` == 42) {
+																									var ` = `[0];
+																									{
+																										var clauses = `;
+																										if (clauses.length == 1) {
+																											fnClause = clauses[0];
+																											eachIdx = i;
+																										} else {};
+																									};
+																								} else {};
+																							};
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+								};
+							};
+							if (eachIdx == -1 || listTarget == null || fnClause == null) {
+								return x;
+							};
+							var returnsAcc = @:ast(switch (stmts[stmts.length - 1].def) {
+	case EVar(vn) if (vn == accVar):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = stmts[stmts.length - 1].def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var vn = `;
+										if (vn == accVar[0]) {
+											true;
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							var valuesCall = @:ast(switch (target.def) {
+	case ERemoteCall({ def : EVar(mod) }, "values", args) if (mod == "Map" && args != null && args.length == 1):
+		target;	
+	default:
+		makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [target]));	
+}) {
+								var ` = listTarget.def;
+								if (enumIndex ` == 24) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var ` = `.def;
+										var ` = `.metadata;
+										var ` = `.pos;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											if (` == "values") {
+												{
+													var mod = `;
+													var args = `;
+													if (mod == "Map" && args != null && args.length == 1) {
+														listTarget;
+													} else {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+															}, "values", [listTarget]), metadata : {}, pos : pos};
+														};
+													};
+												};
+											} else {
+												{
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+													}, "values", [listTarget]), metadata : {}, pos : pos};
+												};
+											};
+										} else {
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+												}, "values", [listTarget]), metadata : {}, pos : pos};
+											};
+										};
+									};
+								} else {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+										}, "values", [listTarget]), metadata : {}, pos : pos};
+									};
+								};
+							};
+							var binderName = {
+								var args = fnClause.args;
+								if (args == null || args.length == 0) {
+									null;
+								} else {
+									@:ast(switch (args[0]) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) {
+										var ` = args[0];
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											{
+												var n = `;
+												{
+													n;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+								};
+							};
+							if (binderName == null) {
+								binderName = "entry";
+							};
+							var rawStmts = @:ast(switch (fnClause.body.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[fnClause.body];	
+}) {
+								var ` = fnClause.body.def;
+								if (enumIndex ` == 53) {
+									var ` = `[0];
+									{
+										var ss = `;
+										{
+											ss;
+										};
+									};
+								} else {
+									[fnClause.body];
+								};
+							};
+							var hasReflectHead = false;
+							var metaAliasName = null;
+							{
+								var ` = 0;
+								while (` < rawStmts.length) {
+									var s = rawStmts[`];
+									++ `;
+									@:ast(switch (s.def) {
+	case EBinary(Match, leftP, rightP):
+		switch (rightP.def) {
+			case EAccess(tgtP, _):
+				switch (tgtP.def) {
+					case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP]) if (astEquals(argP, listTarget)):
+						hasReflectHead = true;					
+					default:
+				};			
+			default:
+		};
+		switch (leftP.def) {
+			case EVar(mn):
+				switch (rightP.def) {
+					case EAccess(arrP, _):
+						switch (arrP.def) {
+							case EField(_, fieldP) if (fieldP == "metas"):
+								metaAliasName = mn;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(patP, rightP2):
+		switch (rightP2.def) {
+			case EAccess(tgtP2, _):
+				switch (tgtP2.def) {
+					case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP2]) if (astEquals(argP2, listTarget)):
+						hasReflectHead = true;					
+					default:
+				};			
+			default:
+		};
+		switch (patP) {
+			case PVar(mn2):
+				switch (rightP2.def) {
+					case EAccess(arrP2, _):
+						switch (arrP2.def) {
+							case EField(_, fieldP2) if (fieldP2 == "metas"):
+								metaAliasName = mn2;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var patP = `;
+													var rightP2 = `;
+													{
+														@:ast(switch (rightP2.def) {
+	case EAccess(tgtP2, _):
+		switch (tgtP2.def) {
+			case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP2]) if (astEquals(argP2, listTarget)):
+				hasReflectHead = true;			
+			default:
+		};	
+	default:
+}) {
+															var ` = rightP2.def;
+															if (enumIndex ` == 29) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var tgtP2 = `;
+																	{
+																		@:ast(switch (tgtP2.def) {
+	case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP2]) if (astEquals(argP2, listTarget)):
+		hasReflectHead = true;	
+	default:
+}) {
+																			var ` = tgtP2.def;
+																			if (enumIndex ` == 24) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					var ` = `.def;
+																					var ` = `.metadata;
+																					var ` = `.pos;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						if (` == "Reflect") {
+																							if (` == "fields") {
+																								if (`.length == 1) {
+																									var ` = `[0];
+																									{
+																										var argP2 = `;
+																										if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.astEquals(argP2, listTarget)) {
+																											hasReflectHead = true;
+																										} else {};
+																									};
+																								} else {};
+																							} else {};
+																						} else {};
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															} else {};
+														};
+														@:ast(switch (patP) {
+	case PVar(mn2):
+		switch (rightP2.def) {
+			case EAccess(arrP2, _):
+				switch (arrP2.def) {
+					case EField(_, fieldP2) if (fieldP2 == "metas"):
+						metaAliasName = mn2;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) if (enumIndex patP == 0) {
+															var ` = patP[0];
+															{
+																var mn2 = `;
+																{
+																	@:ast(switch (rightP2.def) {
+	case EAccess(arrP2, _):
+		switch (arrP2.def) {
+			case EField(_, fieldP2) if (fieldP2 == "metas"):
+				metaAliasName = mn2;			
+			default:
+		};	
+	default:
+}) {
+																		var ` = rightP2.def;
+																		if (enumIndex ` == 29) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var arrP2 = `;
+																				{
+																					@:ast(switch (arrP2.def) {
+	case EField(_, fieldP2) if (fieldP2 == "metas"):
+		metaAliasName = mn2;	
+	default:
+}) {
+																						var ` = arrP2.def;
+																						if (enumIndex ` == 28) {
+																							var ` = `[0];
+																							var ` = `[1];
+																							{
+																								var fieldP2 = `;
+																								if (fieldP2 == "metas") {
+																									metaAliasName = mn2;
+																								} else {};
+																							};
+																						} else {};
+																					};
+																				};
+																			};
+																		} else {};
+																	};
+																};
+															};
+														} else {};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var leftP = `;
+														var rightP = `;
+														{
+															@:ast(switch (rightP.def) {
+	case EAccess(tgtP, _):
+		switch (tgtP.def) {
+			case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP]) if (astEquals(argP, listTarget)):
+				hasReflectHead = true;			
+			default:
+		};	
+	default:
+}) {
+																var ` = rightP.def;
+																if (enumIndex ` == 29) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var tgtP = `;
+																		{
+																			@:ast(switch (tgtP.def) {
+	case ERemoteCall({ def : EVar("Reflect") }, "fields", [argP]) if (astEquals(argP, listTarget)):
+		hasReflectHead = true;	
+	default:
+}) {
+																				var ` = tgtP.def;
+																				if (enumIndex ` == 24) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					var ` = `[2];
+																					{
+																						var ` = `.def;
+																						var ` = `.metadata;
+																						var ` = `.pos;
+																						if (enumIndex ` == 38) {
+																							var ` = `[0];
+																							if (` == "Reflect") {
+																								if (` == "fields") {
+																									if (`.length == 1) {
+																										var ` = `[0];
+																										{
+																											var argP = `;
+																											if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.astEquals(argP, listTarget)) {
+																												hasReflectHead = true;
+																											} else {};
+																										};
+																									} else {};
+																								} else {};
+																							} else {};
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+															@:ast(switch (leftP.def) {
+	case EVar(mn):
+		switch (rightP.def) {
+			case EAccess(arrP, _):
+				switch (arrP.def) {
+					case EField(_, fieldP) if (fieldP == "metas"):
+						metaAliasName = mn;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+																var ` = leftP.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var mn = `;
+																		{
+																			@:ast(switch (rightP.def) {
+	case EAccess(arrP, _):
+		switch (arrP.def) {
+			case EField(_, fieldP) if (fieldP == "metas"):
+				metaAliasName = mn;			
+			default:
+		};	
+	default:
+}) {
+																				var ` = rightP.def;
+																				if (enumIndex ` == 29) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					{
+																						var arrP = `;
+																						{
+																							@:ast(switch (arrP.def) {
+	case EField(_, fieldP) if (fieldP == "metas"):
+		metaAliasName = mn;	
+	default:
+}) {
+																								var ` = arrP.def;
+																								if (enumIndex ` == 28) {
+																									var ` = `[0];
+																									var ` = `[1];
+																									{
+																										var fieldP = `;
+																										if (fieldP == "metas") {
+																											metaAliasName = mn;
+																										} else {};
+																									};
+																								} else {};
+																							};
+																						};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+								};
+							};
+							if (hasReflectHead) {
+								var binderSafe = if ((binderName != null && binderName.length > 0 && binderName.charAt(0) == "_")) {
+									binderName.substr(1, null);
+								} else {
+									binderName;
+								};
+								var metaExprSyn = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binderSafe), metadata : {}, pos : pos};
+										}, "metas"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var condFromBody = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCond(rawStmts, metaAliasName);
+								if (metaAliasName != null) {
+									condFromBody = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarWithExpr(condFromBody, metaAliasName, metaExprSyn);
+								};
+								condFromBody = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(condFromBody, "entry", binderSafe);
+								var appendMetaSyn = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([metaExprSyn]), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var outerCondSyn = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+										}, "length", [{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binderSafe), metadata : {}, pos : pos};
+											}, "metas"), metadata : {}, pos : pos};
+										}]), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var innerSyn = if ((condFromBody != null)) {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condFromBody, appendMetaSyn, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									};
+								} else {
+									appendMetaSyn;
+								};
+								var bodySyn = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf(outerCondSyn, innerSyn, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var reduceSynFn = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(binderSafe), reflaxe.elixir.ast.EPattern.PVar("acc")], guard : fnClause.guard, body : bodySyn}]), metadata : {}, pos : pos};
+								};
+								var reduceSynCall = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "reduce", [valuesCall, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+									}, reduceSynFn]), metadata : {}, pos : pos};
+								};
+								var outSyn = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										if (i == accInitIdx) {
+											outSyn.push(reduceSynCall);
+										} else {
+											if (i == eachIdx || i == stmts.length - 1) {} else {
+												outSyn.push(stmts[i]);
+											};
+										};
+									};
+								};
+								return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(outSyn), metadata : x.metadata, pos : x.pos};
+							};
+							var cleaned = [];
+							var localEntryAlias = null;
+							{
+								var ` = 0;
+								while (` < rawStmts.length) {
+									var s = rawStmts[`];
+									++ `;
+									var drop = false;
+									@:ast(switch (s.def) {
+	case EInteger(v) if (v == 0 || v == 1):
+		drop = true;	
+	case EFloat(f) if (f == 0.0):
+		drop = true;	
+	case EBinary(Match, left, right):
+		switch (right.def) {
+			case EAccess(tgt, key0):
+				if (isHeadSelectOfFields(tgt, listTarget)) drop = true;			
+			default:
+		};
+		if (!drop) switch (left.def) {
+			case EVar(aliasName):
+				switch (right.def) {
+					case ERemoteCall({ def : EVar("Map") }, "get", [m, _key]) if (astEquals(m, listTarget)):
+						localEntryAlias = aliasName;
+						drop = true;					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(pat, right2):
+		switch (right2.def) {
+			case EAccess(tgt2, key02):
+				if (isHeadSelectOfFields(tgt2, listTarget)) drop = true;			
+			default:
+		};
+		if (!drop) switch (pat) {
+			case PVar(aliasName2):
+				switch (right2.def) {
+					case ERemoteCall({ def : EVar("Map") }, "get", [m2, _key2]) if (astEquals(m2, listTarget)):
+						localEntryAlias = aliasName2;
+						drop = true;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													var right2 = `;
+													{
+														@:ast(switch (right2.def) {
+	case EAccess(tgt2, key02):
+		if (isHeadSelectOfFields(tgt2, listTarget)) drop = true;	
+	default:
+}) {
+															var ` = right2.def;
+															if (enumIndex ` == 29) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var tgt2 = `;
+																	var key02 = `;
+																	{
+																		if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.isHeadSelectOfFields(tgt2, listTarget)) {
+																			drop = true;
+																		};
+																	};
+																};
+															} else {};
+														};
+														if (! drop) {
+															@:ast(switch (pat) {
+	case PVar(aliasName2):
+		switch (right2.def) {
+			case ERemoteCall({ def : EVar("Map") }, "get", [m2, _key2]) if (astEquals(m2, listTarget)):
+				localEntryAlias = aliasName2;
+				drop = true;			
+			default:
+		};	
+	default:
+}) if (enumIndex pat == 0) {
+																var ` = pat[0];
+																{
+																	var aliasName2 = `;
+																	{
+																		@:ast(switch (right2.def) {
+	case ERemoteCall({ def : EVar("Map") }, "get", [m2, _key2]) if (astEquals(m2, listTarget)):
+		localEntryAlias = aliasName2;
+		drop = true;	
+	default:
+}) {
+																			var ` = right2.def;
+																			if (enumIndex ` == 24) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					var ` = `.def;
+																					var ` = `.metadata;
+																					var ` = `.pos;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						if (` == "Map") {
+																							if (` == "get") {
+																								if (`.length == 2) {
+																									var ` = `[0];
+																									var ` = `[1];
+																									{
+																										var m2 = `;
+																										var _key2 = `;
+																										if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.astEquals(m2, listTarget)) {
+																											localEntryAlias = aliasName2;
+																											drop = true;
+																										} else {};
+																									};
+																								} else {};
+																							} else {};
+																						} else {};
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	};
+																};
+															} else {};
+														};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var right = `;
+														{
+															@:ast(switch (right.def) {
+	case EAccess(tgt, key0):
+		if (isHeadSelectOfFields(tgt, listTarget)) drop = true;	
+	default:
+}) {
+																var ` = right.def;
+																if (enumIndex ` == 29) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var tgt = `;
+																		var key0 = `;
+																		{
+																			if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.isHeadSelectOfFields(tgt, listTarget)) {
+																				drop = true;
+																			};
+																		};
+																	};
+																} else {};
+															};
+															if (! drop) {
+																@:ast(switch (left.def) {
+	case EVar(aliasName):
+		switch (right.def) {
+			case ERemoteCall({ def : EVar("Map") }, "get", [m, _key]) if (astEquals(m, listTarget)):
+				localEntryAlias = aliasName;
+				drop = true;			
+			default:
+		};	
+	default:
+}) {
+																	var ` = left.def;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var aliasName = `;
+																			{
+																				@:ast(switch (right.def) {
+	case ERemoteCall({ def : EVar("Map") }, "get", [m, _key]) if (astEquals(m, listTarget)):
+		localEntryAlias = aliasName;
+		drop = true;	
+	default:
+}) {
+																					var ` = right.def;
+																					if (enumIndex ` == 24) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						var ` = `[2];
+																						{
+																							var ` = `.def;
+																							var ` = `.metadata;
+																							var ` = `.pos;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								if (` == "Map") {
+																									if (` == "get") {
+																										if (`.length == 2) {
+																											var ` = `[0];
+																											var ` = `[1];
+																											{
+																												var m = `;
+																												var _key = `;
+																												if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.astEquals(m, listTarget)) {
+																													localEntryAlias = aliasName;
+																													drop = true;
+																												} else {};
+																											};
+																										} else {};
+																									} else {};
+																								} else {};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	} else {};
+																};
+															};
+														};
+													};
+												} else {};
+											};
+											case 33: {
+												var ` = `[0];
+												{
+													var v = `;
+													if (v == 0 || v == 1) {
+														drop = true;
+													} else {};
+												};
+											};
+											case 34: {
+												var ` = `[0];
+												{
+													var f = `;
+													if (f == 0.0) {
+														drop = true;
+													} else {};
+												};
+											};
+											default: {}
+										};
+									};
+									if (! drop) {
+										cleaned.push(s);
+									};
+								};
+							};
+							var rewritten = [];
+							{
+								var ` = 0;
+								while (` < cleaned.length) {
+									var s = cleaned[`];
+									++ `;
+									var s2 = s;
+									if (localEntryAlias != null) {
+										s2 = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(s2, localEntryAlias, binderName);
+									};
+									s2 = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.rewriteAccAppend(s2, accVar[0], "acc");
+									rewritten.push(s2);
+								};
+							};
+							var condFromBody2 = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findAccAppendCond(rawStmts, accVar[0]);
+							if (condFromBody2 != null) {
+								var binderSafe2 = if ((binderName != null && binderName.length > 0 && binderName.charAt(0) == "_")) {
+									binderName.substr(1, null);
+								} else {
+									binderName;
+								};
+								var metaExpr2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binderSafe2), metadata : {}, pos : pos};
+										}, "metas"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								if (localEntryAlias != null) {
+									condFromBody2 = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(condFromBody2, localEntryAlias, binderSafe2);
+								};
+								condFromBody2 = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(condFromBody2, "entry", binderSafe2);
+								condFromBody2 = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(condFromBody2, function(t:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (t.def) {
+	case EVar(v) if (v.toLowerCase() == "meta"):
+		makeASTWithMeta(metaExpr2.def, t.metadata, t.pos);	
+	default:
+		t;	
+}) {
+										var ` = t.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v.toLowerCase() == "meta") {
+													{def : metaExpr2.def, metadata : t.metadata, pos : t.pos};
+												} else {
+													t;
+												};
+											};
+										} else {
+											t;
+										};
+									};
+								});
+								var appendMeta2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([metaExpr2]), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var outerCond2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+										}, "length", [{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binderSafe2), metadata : {}, pos : pos};
+											}, "metas"), metadata : {}, pos : pos};
+										}]), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var inner2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condFromBody2, appendMeta2, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var body2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EIf(outerCond2, inner2, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								};
+								var reduceFn2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(binderSafe2), reflaxe.elixir.ast.EPattern.PVar("acc")], guard : fnClause.guard, body : body2}]), metadata : {}, pos : pos};
+								};
+								var reduceCall2 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "reduce", [valuesCall, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+									}, reduceFn2]), metadata : {}, pos : pos};
+								};
+								var out2 = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										if (i == accInitIdx) {
+											out2.push(reduceCall2);
+										} else {
+											if (i == eachIdx || i == stmts.length - 1) {} else {
+												out2.push(stmts[i]);
+											};
+										};
+									};
+								};
+								return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out2), metadata : x.metadata, pos : x.pos};
+							};
+							var synthesized = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.tryBuildPresenceReduceBody(rewritten, binderName);
+							var bodyExpr = if ((synthesized != null)) {
+								synthesized;
+							} else {
+								@:ast(switch (rewritten.length) {
+	case 0:
+		makeAST(EVar("acc"));	
+	default:
+		var last = rewritten[rewritten.length - 1];
+		var needsAccTail = switch (last.def) {
+			case EVar(nm) if (nm == "acc"):
+				false;			
+			default:
+				true;			
+		};
+		if (needsAccTail) makeAST(EBlock(rewritten.concat([makeAST(EVar("acc"))]))) else makeAST(EBlock(rewritten));	
+}) {
+									var ` = rewritten.length;
+									if (` == 0) {
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+											};
+										};
+									} else {
+										var last = rewritten[rewritten.length - 1];
+										var needsAccTail = @:ast(switch (last.def) {
+	case EVar(nm) if (nm == "acc"):
+		false;	
+	default:
+		true;	
+}) {
+											var ` = last.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var nm = `;
+													if (nm == "acc") {
+														false;
+													} else {
+														true;
+													};
+												};
+											} else {
+												true;
+											};
+										};
+										if (needsAccTail) {
+											{
+												var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(rewritten.concat([{
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+												}]));
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											};
+										} else {
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(rewritten), metadata : {}, pos : pos};
+											};
+										};
+									};
+								};
+							};
+							bodyExpr = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(bodyExpr, function(t:reflaxe.elixir.ast.ElixirAST) {
+								return @:ast(switch (t.def) {
+	case EBinary(Match, leftT, rhsT):
+		switch (leftT.def) {
+			case EVar(lhsT) if (lhsT == accVar):
+				var repl = rewriteAccAppend(t, accVar, "acc");
+				if (repl != null) makeASTWithMeta(EBinary(Match, makeAST(EVar("acc")), repl), t.metadata, t.pos) else t;			
+			default:
+				t;			
+		};	
+	case EInteger(v) if (v == 0 || v == 1):
+		makeASTWithMeta(EBlock([]), t.metadata, t.pos);	
+	case EFloat(f) if (f == 0.0):
+		makeASTWithMeta(EBlock([]), t.metadata, t.pos);	
+	default:
+		t;	
+}) {
+									var ` = t.def;
+									switch (enumIndex `) {
+										case 26: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 27) {
+												{
+													var leftT = `;
+													var rhsT = `;
+													{
+														@:ast(switch (leftT.def) {
+	case EVar(lhsT) if (lhsT == accVar):
+		var repl = rewriteAccAppend(t, accVar, "acc");
+		if (repl != null) makeASTWithMeta(EBinary(Match, makeAST(EVar("acc")), repl), t.metadata, t.pos) else t;	
+	default:
+		t;	
+}) {
+															var ` = leftT.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var lhsT = `;
+																	if (lhsT == accVar[0]) {
+																		var repl = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.rewriteAccAppend(t, accVar[0], "acc");
+																		if (repl != null) {
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+																			}, repl), metadata : t.metadata, pos : t.pos};
+																		} else {
+																			t;
+																		};
+																	} else {
+																		t;
+																	};
+																};
+															} else {
+																t;
+															};
+														};
+													};
+												};
+											} else {
+												t;
+											};
+										};
+										case 33: {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == 0 || v == 1) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([]), metadata : t.metadata, pos : t.pos};
+												} else {
+													t;
+												};
+											};
+										};
+										case 34: {
+											var ` = `[0];
+											{
+												var f = `;
+												if (f == 0.0) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([]), metadata : t.metadata, pos : t.pos};
+												} else {
+													t;
+												};
+											};
+										};
+										default: {
+											t;
+										}
+									};
+								};
+							});
+							if (localEntryAlias != null) {
+								bodyExpr = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(bodyExpr, localEntryAlias, binderName);
+							};
+							var reduceFn = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(binderName), reflaxe.elixir.ast.EPattern.PVar("acc")], guard : fnClause.guard, body : bodyExpr}]), metadata : {}, pos : pos};
+							};
+							var reduceCall = {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+								}, "reduce", [valuesCall, {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+								}, reduceFn]), metadata : {}, pos : pos};
+							};
+							var out = [];
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									if (i == accInitIdx) {
+										out.push(reduceCall);
+									} else {
+										if (i == eachIdx || i == stmts.length - 1) {} else {
+											out.push(stmts[i]);
+										};
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static inline function extractSingleArgName(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null || args.length == 0) {
+			return null;
+		};
+		return @:ast(switch (args[0]) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) {
+			var ` = args[0];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	static function isHeadSelectOfFields(target:reflaxe.elixir.ast.ElixirAST, listExpr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (target.def) {
+	case ERemoteCall({ def : EVar("Reflect") }, "fields", [arg]) if (astEquals(arg, listExpr)):
+		true;	
+	case ERemoteCall({ def : EVar("Map") }, "keys", [arg2]) if (astEquals(arg2, listExpr)):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = target.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						switch (`) {
+							case "Map": {
+								if (` == "keys") {
+									if (`.length == 1) {
+										var ` = `[0];
+										{
+											var arg2 = `;
+											if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.astEquals(arg2, listExpr)) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} else {
+									false;
+								};
+							};
+							case "Reflect": {
+								if (` == "fields") {
+									if (`.length == 1) {
+										var ` = `[0];
+										{
+											var arg = `;
+											if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.astEquals(arg, listExpr)) {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} else {
+									false;
+								};
+							};
+							default: {
+								false;
+							}
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function astEquals(a:reflaxe.elixir.ast.ElixirAST, b:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTPrinter.print(a, 0) == reflaxe.elixir.ast.ElixirASTPrinter.print(b, 0);
+	}
+
+	static function replaceVarInExpr(n:reflaxe.elixir.ast.ElixirAST, from:String, to:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(name) if (name == from):
+		makeASTWithMeta(EVar(to), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var name = `;
+						if (name == from) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(to), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function rewriteAccAppend(n:reflaxe.elixir.ast.ElixirAST, accName:String, accVarName:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(lv) if (lv == accName):
+				switch (rhs.def) {
+					case ERemoteCall({ def : EVar("Enum") }, "concat", [a0, a1]):
+						switch (a0.def) {
+							case EVar(v0) if (v0 == accName):
+								switch (a1.def) {
+									case EList(items) if (items.length == 1):
+										var newRhs = makeAST(EBinary(Concat, makeAST(EVar(accVarName)), makeAST(EList([items[0]]))));
+										makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), newRhs), x.metadata, x.pos);									
+									default:
+										x;									
+								};							
+							default:
+								x;							
+						};					
+					case EBinary(Concat, llist, rlist):
+						switch (llist.def) {
+							case EVar(v1) if (v1 == accName):
+								makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), makeAST(EBinary(Concat, makeAST(EVar(accVarName)), rlist))), x.metadata, x.pos);							
+							default:
+								x;							
+						};					
+					default:
+						x;					
+				};			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 26) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var left = `;
+							var rhs = `;
+							{
+								@:ast(switch (left.def) {
+	case EVar(lv) if (lv == accName):
+		switch (rhs.def) {
+			case ERemoteCall({ def : EVar("Enum") }, "concat", [a0, a1]):
+				switch (a0.def) {
+					case EVar(v0) if (v0 == accName):
+						switch (a1.def) {
+							case EList(items) if (items.length == 1):
+								var newRhs = makeAST(EBinary(Concat, makeAST(EVar(accVarName)), makeAST(EList([items[0]]))));
+								makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), newRhs), x.metadata, x.pos);							
+							default:
+								x;							
+						};					
+					default:
+						x;					
+				};			
+			case EBinary(Concat, llist, rlist):
+				switch (llist.def) {
+					case EVar(v1) if (v1 == accName):
+						makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), makeAST(EBinary(Concat, makeAST(EVar(accVarName)), rlist))), x.metadata, x.pos);					
+					default:
+						x;					
+				};			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var lv = `;
+											if (lv == accName) {
+												@:ast(switch (rhs.def) {
+	case ERemoteCall({ def : EVar("Enum") }, "concat", [a0, a1]):
+		switch (a0.def) {
+			case EVar(v0) if (v0 == accName):
+				switch (a1.def) {
+					case EList(items) if (items.length == 1):
+						var newRhs = makeAST(EBinary(Concat, makeAST(EVar(accVarName)), makeAST(EList([items[0]]))));
+						makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), newRhs), x.metadata, x.pos);					
+					default:
+						x;					
+				};			
+			default:
+				x;			
+		};	
+	case EBinary(Concat, llist, rlist):
+		switch (llist.def) {
+			case EVar(v1) if (v1 == accName):
+				makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), makeAST(EBinary(Concat, makeAST(EVar(accVarName)), rlist))), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+													var ` = rhs.def;
+													switch (enumIndex `) {
+														case 24: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	if (` == "Enum") {
+																		if (` == "concat") {
+																			if (`.length == 2) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				{
+																					var a0 = `;
+																					var a1 = `;
+																					{
+																						@:ast(switch (a0.def) {
+	case EVar(v0) if (v0 == accName):
+		switch (a1.def) {
+			case EList(items) if (items.length == 1):
+				var newRhs = makeAST(EBinary(Concat, makeAST(EVar(accVarName)), makeAST(EList([items[0]]))));
+				makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), newRhs), x.metadata, x.pos);			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+																							var ` = a0.def;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var v0 = `;
+																									if (v0 == accName) {
+																										@:ast(switch (a1.def) {
+	case EList(items) if (items.length == 1):
+		var newRhs = makeAST(EBinary(Concat, makeAST(EVar(accVarName)), makeAST(EList([items[0]]))));
+		makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), newRhs), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																											var ` = a1.def;
+																											if (enumIndex ` == 15) {
+																												var ` = `[0];
+																												{
+																													var items = `;
+																													if (items.length == 1) {
+																														var newRhs = {
+																															var pos = null;
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+																																var pos = null;
+																																{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accVarName), metadata : {}, pos : pos};
+																															}, {
+																																var pos = null;
+																																{def : reflaxe.elixir.ast.ElixirASTDef.EList([items[0]]), metadata : {}, pos : pos};
+																															}), metadata : {}, pos : pos};
+																														};
+																														{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																															var pos = null;
+																															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accVarName), metadata : {}, pos : pos};
+																														}, newRhs), metadata : x.metadata, pos : x.pos};
+																													} else {
+																														x;
+																													};
+																												};
+																											} else {
+																												x;
+																											};
+																										};
+																									} else {
+																										x;
+																									};
+																								};
+																							} else {
+																								x;
+																							};
+																						};
+																					};
+																				};
+																			} else {
+																				x;
+																			};
+																		} else {
+																			x;
+																		};
+																	} else {
+																		x;
+																	};
+																} else {
+																	x;
+																};
+															};
+														};
+														case 26: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 23) {
+																{
+																	var llist = `;
+																	var rlist = `;
+																	{
+																		@:ast(switch (llist.def) {
+	case EVar(v1) if (v1 == accName):
+		makeASTWithMeta(EBinary(Match, makeAST(EVar(accVarName)), makeAST(EBinary(Concat, makeAST(EVar(accVarName)), rlist))), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+																			var ` = llist.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var v1 = `;
+																					if (v1 == accName) {
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accVarName), metadata : {}, pos : pos};
+																						}, {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accVarName), metadata : {}, pos : pos};
+																							}, rlist), metadata : {}, pos : pos};
+																						}), metadata : x.metadata, pos : x.pos};
+																					} else {
+																						x;
+																					};
+																				};
+																			} else {
+																				x;
+																			};
+																		};
+																	};
+																};
+															} else {
+																x;
+															};
+														};
+														default: {
+															x;
+														}
+													};
+												};
+											} else {
+												x;
+											};
+										};
+									} else {
+										x;
+									};
+								};
+							};
+						};
+					} else {
+						x;
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function tryBuildPresenceReduceBody(stmts:Array<reflaxe.elixir.ast.ElixirAST>, binder:String) {
+		var outerIf = null;
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				@:ast(switch (s.def) {
+	case EIf(c, t, e):
+		outerIf = { cond : c, thenBr : t, elseBr : (e == null ? makeAST(EVar("acc")) : e) };
+		break;	
+	default:
+}) {
+					var ` = s.def;
+					if (enumIndex ` == 10) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								outerIf = {cond : c, thenBr : t, elseBr : (if (e == null) {
+									{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									};
+								} else {
+									e;
+								})};
+								break;
+							};
+						};
+					} else {};
+				};
+			};
+		};
+		if (outerIf == null) {
+			return null;
+		};
+		var outerCond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(outerIf.cond, binder, binder);
+		var thenStmts = @:ast(switch (outerIf.thenBr.def) {
+	case EBlock(ss):
+		ss;	
+	default:
+		[outerIf.thenBr];	
+}) {
+			var ` = outerIf.thenBr.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var ss = `;
+					{
+						ss;
+					};
+				};
+			} else {
+				[outerIf.thenBr];
+			};
+		};
+		var metaExpr = null;
+		var metaAlias = null;
+		var innerIf = null;
+		{
+			var ` = 0;
+			while (` < thenStmts.length) {
+				var t = thenStmts[`];
+				++ `;
+				@:ast(switch (t.def) {
+	case EBinary(Match, leftB, right):
+		switch (right.def) {
+			case EAccess(arr, idx):
+				switch (arr.def) {
+					case EField(obj, field) if (field == "metas"):
+						metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder)), field)), idx));
+						switch (leftB.def) {
+							case EVar(mv):
+								metaAlias = mv;							
+							default:
+						};					
+					default:
+				};			
+			default:
+		};	
+	case EIf(_c2, _t2, _e2):
+		innerIf = t;	
+	default:
+}) {
+					var ` = t.def;
+					switch (enumIndex `) {
+						case 10: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var _c2 = `;
+								var _t2 = `;
+								var _e2 = `;
+								{
+									innerIf = t;
+								};
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var leftB = `;
+									var right = `;
+									{
+										@:ast(switch (right.def) {
+	case EAccess(arr, idx):
+		switch (arr.def) {
+			case EField(obj, field) if (field == "metas"):
+				metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder)), field)), idx));
+				switch (leftB.def) {
+					case EVar(mv):
+						metaAlias = mv;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = right.def;
+											if (enumIndex ` == 29) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var arr = `;
+													var idx = `;
+													{
+														@:ast(switch (arr.def) {
+	case EField(obj, field) if (field == "metas"):
+		metaExpr = makeAST(EAccess(makeAST(EField(makeAST(EVar(binder)), field)), idx));
+		switch (leftB.def) {
+			case EVar(mv):
+				metaAlias = mv;			
+			default:
+		};	
+	default:
+}) {
+															var ` = arr.def;
+															if (enumIndex ` == 28) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var obj = `;
+																	var field = `;
+																	if (field == "metas") {
+																		metaExpr = {
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : {}, pos : pos};
+																				}, field), metadata : {}, pos : pos};
+																			}, idx), metadata : {}, pos : pos};
+																		};
+																		@:ast(switch (leftB.def) {
+	case EVar(mv):
+		metaAlias = mv;	
+	default:
+}) {
+																			var ` = leftB.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var mv = `;
+																					{
+																						metaAlias = mv;
+																					};
+																				};
+																			} else {};
+																		};
+																	} else {};
+																};
+															} else {};
+														};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		if (innerIf == null) {
+			return null;
+		};
+		var innerCond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCond(thenStmts, metaAlias);
+		if (innerCond == null) {
+			innerCond = @:ast(switch (innerIf.def) {
+	case EIf(c2, _, _):
+		c2;	
+	default:
+		null;	
+}) {
+				var ` = innerIf.def;
+				if (enumIndex ` == 10) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var c2 = `;
+						{
+							c2;
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		};
+		if (innerCond == null) {
+			return null;
+		};
+		if (metaAlias != null && metaExpr != null) {
+			innerCond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarWithExpr(innerCond, metaAlias, metaExpr);
+		};
+		innerCond = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.replaceVarInExpr(innerCond, @:ast(switch (obj.def) {
+	case EVar(n):
+		n;	
+	default:
+		"";	
+}) {
+			var ` = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("entry"), metadata : {}, pos : pos};
+			}.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				"";
+			};
+		}, binder);
+		var appendMeta = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EList([if ((metaExpr != null)) metaExpr else {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EAccess({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : {}, pos : pos};
+						}, "metas"), metadata : {}, pos : pos};
+					}, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+					}), metadata : {}, pos : pos};
+				}]), metadata : {}, pos : pos};
+			}), metadata : {}, pos : pos};
+		};
+		var newInner = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(innerCond, appendMeta, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+			}), metadata : {}, pos : pos};
+		};
+		var newOuter = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(outerCond, newInner, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+			}), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([newOuter, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+	}
+
+	static inline function objString(obj:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (obj.def) {
+	case EVar(n):
+		n;	
+	default:
+		"";	
+}) {
+			var ` = obj.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				"";
+			};
+		};
+	}
+
+	static function replaceVarWithExpr(n:reflaxe.elixir.ast.ElixirAST, from:String, toExpr:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(name) if (name == from):
+		makeASTWithMeta(toExpr.def, x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var name = `;
+						if (name == from) {
+							{def : toExpr.def, metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function findMetaFilterCond(nodes:Array<reflaxe.elixir.ast.ElixirAST>, metaAlias:Null<String>) {
+		if (nodes == null) {
+			return null;
+		};
+		{
+			var ` = 0;
+			while (` < nodes.length) {
+				var n = nodes[`];
+				++ `;
+				var c = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCondInNode(n, metaAlias);
+				if (c != null) {
+					return c;
+				};
+			};
+		};
+		return null;
+	}
+
+	static function findMetaFilterCondInNode(n:reflaxe.elixir.ast.ElixirAST, metaAlias:Null<String>) {
+		if (n == null || metaAlias == null) {
+			return null;
+		};
+		return @:ast(switch (n.def) {
+	case EIf(cond, thenBr, elseBr):
+		if (exprUsesVar(cond, metaAlias)) cond else {
+			var a = findMetaFilterCondInNode(thenBr, metaAlias);
+			if (a != null) a else findMetaFilterCondInNode(elseBr, metaAlias);
+		};	
+	case EBlock(ss):
+		findMetaFilterCond(ss, metaAlias);	
+	default:
+		null;	
+}) {
+			var ` = n.def;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenBr = `;
+						var elseBr = `;
+						{
+							if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.exprUsesVar(cond, metaAlias)) {
+								cond;
+							} else {
+								var a = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCondInNode(thenBr, metaAlias);
+								if (a != null) {
+									a;
+								} else {
+									reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCondInNode(elseBr, metaAlias);
+								};
+							};
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var ss = `;
+						{
+							reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findMetaFilterCond(ss, metaAlias);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function exprUsesVar(e:reflaxe.elixir.ast.ElixirAST, name:String) {
+		var used = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(e, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		used = true;	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == name) {
+							used[0] = true;
+						} else {};
+					};
+				} else {};
+			};
+			return x;
+		});
+		return used[0];
+	}
+
+	static function findAccAppendCond(nodes:Array<reflaxe.elixir.ast.ElixirAST>, accName:String) {
+		if (nodes == null) {
+			return null;
+		};
+		{
+			var ` = 0;
+			while (` < nodes.length) {
+				var n = nodes[`];
+				++ `;
+				var c = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findAccAppendCondInNode(n, accName);
+				if (c != null) {
+					return c;
+				};
+			};
+		};
+		return null;
+	}
+
+	static function findAccAppendCondInNode(n:reflaxe.elixir.ast.ElixirAST, accName:String) {
+		if (n == null) {
+			return null;
+		};
+		return @:ast(switch (n.def) {
+	case EIf(cond, thenBr, elseBr):
+		if (branchAppendsAcc(thenBr, accName)) cond else {
+			var a = findAccAppendCondInNode(thenBr, accName);
+			if (a != null) a else findAccAppendCondInNode(elseBr, accName);
+		};	
+	case EBlock(ss):
+		findAccAppendCond(ss, accName);	
+	default:
+		null;	
+}) {
+			var ` = n.def;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenBr = `;
+						var elseBr = `;
+						{
+							if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.branchAppendsAcc(thenBr, accName)) {
+								cond;
+							} else {
+								var a = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findAccAppendCondInNode(thenBr, accName);
+								if (a != null) {
+									a;
+								} else {
+									reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findAccAppendCondInNode(elseBr, accName);
+								};
+							};
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var ss = `;
+						{
+							reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findAccAppendCond(ss, accName);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function branchAppendsAcc(expr:reflaxe.elixir.ast.ElixirAST, accName:String) {
+		var found = false;
+		@:ast(switch (expr?.def) {
+	case EBlock(ss):
+		for (s  in  ss) if (isAccAppendAssign(s, accName)) {
+			found = true;
+			break;
+		};	
+	default:
+		if (isAccAppendAssign(expr, accName)) found = true;	
+}) {
+			var ` = if (expr != null) expr.def else null;
+			if (` == null) {
+				if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.isAccAppendAssign(expr, accName)) {
+					found = true;
+				};
+			} else if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var ss = `;
+					{
+						{
+							var ` = 0;
+							while (` < ss.length) {
+								var s = ss[`];
+								++ `;
+								if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.isAccAppendAssign(s, accName)) {
+									found = true;
+									break;
+								};
+							};
+						};
+					};
+				};
+			} else {
+				if (reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.isAccAppendAssign(expr, accName)) {
+					found = true;
+				};
+			};
+		};
+		return found;
+	}
+
+	static function findFirstIfCond(nodes:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (nodes == null) {
+			return null;
+		};
+		{
+			var ` = 0;
+			while (` < nodes.length) {
+				var n = nodes[`];
+				++ `;
+				var c = reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findFirstIfCondInNode(n);
+				if (c != null) {
+					return c;
+				};
+			};
+		};
+		return null;
+	}
+
+	static function findFirstIfCondInNode(n:reflaxe.elixir.ast.ElixirAST) {
+		if (n == null) {
+			return null;
+		};
+		return @:ast(switch (n.def) {
+	case EIf(cond, thenBr, elseBr):
+		cond;	
+	case EBlock(ss):
+		findFirstIfCond(ss);	
+	default:
+		null;	
+}) {
+			var ` = n.def;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenBr = `;
+						var elseBr = `;
+						{
+							cond;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var ss = `;
+						{
+							reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.findFirstIfCond(ss);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function isAccAppendAssign(s:reflaxe.elixir.ast.ElixirAST, accName:String) {
+		return @:ast(switch (s.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v) if (v == accName):
+				switch (rhs.def) {
+					case ERemoteCall({ def : EVar("Enum") }, "concat", [a0, _]):
+						switch (a0.def) {
+							case EVar(v0) if (v0 == accName):
+								true;							
+							default:
+								false;							
+						};					
+					case EBinary(Concat, llist, _):
+						switch (llist.def) {
+							case EVar(v1) if (v1 == accName):
+								true;							
+							default:
+								false;							
+						};					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = s.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 27) {
+					{
+						var left = `;
+						var rhs = `;
+						{
+							@:ast(switch (left.def) {
+	case EVar(v) if (v == accName):
+		switch (rhs.def) {
+			case ERemoteCall({ def : EVar("Enum") }, "concat", [a0, _]):
+				switch (a0.def) {
+					case EVar(v0) if (v0 == accName):
+						true;					
+					default:
+						false;					
+				};			
+			case EBinary(Concat, llist, _):
+				switch (llist.def) {
+					case EVar(v1) if (v1 == accName):
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+								var ` = left.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v = `;
+										if (v == accName) {
+											@:ast(switch (rhs.def) {
+	case ERemoteCall({ def : EVar("Enum") }, "concat", [a0, _]):
+		switch (a0.def) {
+			case EVar(v0) if (v0 == accName):
+				true;			
+			default:
+				false;			
+		};	
+	case EBinary(Concat, llist, _):
+		switch (llist.def) {
+			case EVar(v1) if (v1 == accName):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+												var ` = rhs.def;
+												switch (enumIndex `) {
+													case 24: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																if (` == "Enum") {
+																	if (` == "concat") {
+																		if (`.length == 2) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var a0 = `;
+																				{
+																					@:ast(switch (a0.def) {
+	case EVar(v0) if (v0 == accName):
+		true;	
+	default:
+		false;	
+}) {
+																						var ` = a0.def;
+																						if (enumIndex ` == 38) {
+																							var ` = `[0];
+																							{
+																								var v0 = `;
+																								if (v0 == accName) {
+																									true;
+																								} else {
+																									false;
+																								};
+																							};
+																						} else {
+																							false;
+																						};
+																					};
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																	} else {
+																		false;
+																	};
+																} else {
+																	false;
+																};
+															} else {
+																false;
+															};
+														};
+													};
+													case 26: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														if (enumIndex ` == 23) {
+															{
+																var llist = `;
+																{
+																	@:ast(switch (llist.def) {
+	case EVar(v1) if (v1 == accName):
+		true;	
+	default:
+		false;	
+}) {
+																		var ` = llist.def;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			{
+																				var v1 = `;
+																				if (v1 == accName) {
+																					true;
+																				} else {
+																					false;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																	};
+																};
+															};
+														} else {
+															false;
+														};
+													};
+													default: {
+														false;
+													}
+												};
+											};
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						};
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

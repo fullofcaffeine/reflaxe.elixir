@@ -1,0 +1,103 @@
+class reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms {
+
+	@:value(~/Enum\.reduce\([\s\S]*?fn\s+([a-zA-Z_][\w!?]*)\s*,\s*([a-zA-Z_][\w!?]*)\s*->\s*([\s\S]*?)end\)/)
+	static var RE_BLOCK:EReg = new EReg("Enum\\.reduce\\([\\s\\S]*?fn\\s+([a-zA-Z_][\\w!?]*)\\s*,\\s*([a-zA-Z_][\\w!?]*)\\s*->\\s*([\\s\\S]*?)end\\)", "g");
+
+	@:value(~/^\s*([a-zA-Z_][\w!?]*)\s*=\s*([a-zA-Z_][\w!?]*)\s*$/)
+	static var RE_BINDER_ALIAS:EReg = new EReg("^\\s*([a-zA-Z_][\\w!?]*)\\s*=\\s*([a-zA-Z_][\\w!?]*)\\s*$", "m");
+
+	@:value(~/^\s*([a-zA-Z_][\w!?]*)\s*=\s*Enum\.concat\(\s*\1\s*,\s*([\s\S]*?)\)\s*$/)
+	static var RE_SELF_APPEND:EReg = new EReg("^\\s*([a-zA-Z_][\\w!?]*)\\s*=\\s*Enum\\.concat\\(\\s*\\1\\s*,\\s*([\\s\\S]*?)\\)\\s*$", "m");
+
+	static function canonicalizeBlock(body:String, binder:String, acc:String) {
+		var out = body;
+		var binderAlias = null;
+		var m = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BINDER_ALIAS.match(out);
+		if (m && reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BINDER_ALIAS.matched(2) == binder) {
+			binderAlias = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BINDER_ALIAS.matched(1);
+			out = StringTools.replace(out, reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BINDER_ALIAS.matched(0) + "\n", "");
+		};
+		while (reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_SELF_APPEND.match(out)) {
+			var full = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_SELF_APPEND.matched(0);
+			var listPart = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_SELF_APPEND.matched(2);
+			if (binderAlias != null) {
+				listPart = listPart.split(binderAlias).join(binder);
+			};
+			var repl = acc + " = Enum.concat(" + acc + ", " + listPart + ")";
+			out = StringTools.replace(out, full, repl);
+		};
+		return out;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERaw(code):
+		var out = code;
+		if (out != null && out.indexOf("Enum.reduce") != -1) {
+			var cursor = 0;
+			var rebuilt = new StringBuf();
+			while (RE_BLOCK.matchSub(out, cursor)) {
+				var start = RE_BLOCK.matchedPos().pos;
+				var len = RE_BLOCK.matchedPos().len;
+				var before = out.substr(cursor, start - cursor);
+				rebuilt.add(before);
+				var binder = RE_BLOCK.matched(1);
+				var acc = RE_BLOCK.matched(2);
+				var body = RE_BLOCK.matched(3);
+				var canon = canonicalizeBlock(body, binder, acc);
+				var block = RE_BLOCK.matched(0);
+				var blockCanon = block.replace(body, canon);
+				rebuilt.add(blockCanon);
+				cursor = start + len;
+			};
+			rebuilt.add(out.substr(cursor));
+			var newCode = rebuilt.toString();
+			if (newCode != out) return makeASTWithMeta(ERaw(newCode), n.metadata, n.pos) else n;
+		};
+		n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 62) {
+					var ` = `[0];
+					{
+						var code = `;
+						{
+							var out = code;
+							if (out != null && out.indexOf("Enum.reduce", null) != -1) {
+								var cursor = 0;
+								var rebuilt = new StringBuf();
+								while (reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matchSub(out, cursor, null)) {
+									var start = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matchedPos().pos;
+									var len = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matchedPos().len;
+									var before = out.substr(cursor, start - cursor);
+									rebuilt.add(before);
+									var binder = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matched(1);
+									var acc = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matched(2);
+									var body = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matched(3);
+									var canon = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.canonicalizeBlock(body, binder, acc);
+									var block = reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.RE_BLOCK.matched(0);
+									var blockCanon = StringTools.replace(block, body, canon);
+									rebuilt.add(blockCanon);
+									cursor = start + len;
+								};
+								rebuilt.add(out.substr(cursor, null));
+								var newCode = rebuilt.toString();
+								if (newCode != out) {
+									return {def : reflaxe.elixir.ast.ElixirASTDef.ERaw(newCode), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,353 @@
+class reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var isController = name != null && name.indexOf("Controller") != -1;
+		if (!isController) return n;
+		var newBody = [for (b  in  body) ensureConnInDefs(b)];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock):
+		var isController2 = name2 != null && name2.indexOf("Controller") != -1;
+		if (!isController2) return n;
+		var nb = ensureConnInDefs(doBlock);
+		makeASTWithMeta(EDefmodule(name2, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var isController = name != null && name.indexOf("Controller", null) != -1;
+								if (! isController) {
+									return n;
+								};
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms.ensureConnInDefs(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							{
+								var isController2 = name2 != null && name2.indexOf("Controller", null) != -1;
+								if (! isController2) {
+									return n;
+								};
+								var nb = reflaxe.elixir.ast.transformers.ControllerEnsureConnParamTransforms.ensureConnInDefs(doBlock);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function ensureConnInDefs(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EDef(fname, args, guards, body):
+		var needsConn = VariableUsageCollector.usedInFunctionScope(body, "conn");
+		var hasConn = false;
+		var hadUnderscored = false;
+		if (args != null) for (a  in  args) switch (a) {
+			case PVar(nm) if (nm == "conn"):
+				hasConn = true;			
+			case PVar(nm2) if (nm2 == "_conn"):
+				hadUnderscored = true;			
+			default:
+		};
+		if (hadUnderscored && !hasConn) {
+			var newArgs:Array<EPattern> = [];
+			for (a  in  args) switch (a) {
+				case PVar(n) if (n == "_conn"):
+					newArgs.push(PVar("conn"));				
+				case PAlias(nm, pat) if (nm == "_conn"):
+					newArgs.push(PAlias("conn", pat));				
+				default:
+					newArgs.push(a);				
+			};
+			makeASTWithMeta(EDef(fname, newArgs, guards, body), x.metadata, x.pos);
+		} else if (needsConn && !hasConn) {
+			var newArgs2:Array<EPattern> = args != null ? args.copy() : [];
+			newArgs2.unshift(PVar("conn"));
+			makeASTWithMeta(EDef(fname, newArgs2, guards, body), x.metadata, x.pos);
+		} else x;	
+	case EDefp(fname2, args2, guards2, body2):
+		var needsConn2 = VariableUsageCollector.usedInFunctionScope(body2, "conn");
+		var hasConn2 = false;
+		var hadUnderscored2 = false;
+		if (args2 != null) for (a2  in  args2) switch (a2) {
+			case PVar(nm2) if (nm2 == "conn"):
+				hasConn2 = true;			
+			case PVar(nm3) if (nm3 == "_conn"):
+				hadUnderscored2 = true;			
+			default:
+		};
+		if (hadUnderscored2 && !hasConn2) {
+			var newArgs3:Array<EPattern> = [];
+			for (a3  in  args2) switch (a3) {
+				case PVar(nn) if (nn == "_conn"):
+					newArgs3.push(PVar("conn"));				
+				case PAlias(nn2, pat2) if (nn2 == "_conn"):
+					newArgs3.push(PAlias("conn", pat2));				
+				default:
+					newArgs3.push(a3);				
+			};
+			makeASTWithMeta(EDefp(fname2, newArgs3, guards2, body2), x.metadata, x.pos);
+		} else if (needsConn2 && !hasConn2) {
+			var newArgs2:Array<EPattern> = args2 != null ? args2.copy() : [];
+			newArgs2.unshift(PVar("conn"));
+			makeASTWithMeta(EDefp(fname2, newArgs2, guards2, body2), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fname = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var needsConn = reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body, "conn");
+								var hasConn = false;
+								var hadUnderscored = false;
+								if (args != null) {
+									{
+										var ` = 0;
+										while (` < args.length) {
+											var a = args[`];
+											++ `;
+											@:ast(switch (a) {
+	case PVar(nm) if (nm == "conn"):
+		hasConn = true;	
+	case PVar(nm2) if (nm2 == "_conn"):
+		hadUnderscored = true;	
+	default:
+}) if (enumIndex a == 0) {
+												var ` = a[0];
+												{
+													var nm = `;
+													if (nm == "conn") {
+														hasConn = true;
+													} else {
+														var nm2 = `;
+														if (nm2 == "_conn") {
+															hadUnderscored = true;
+														} else {};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+								if (hadUnderscored && ! hasConn) {
+									var newArgs = [];
+									{
+										var ` = 0;
+										while (` < args.length) {
+											var a = args[`];
+											++ `;
+											@:ast(switch (a) {
+	case PVar(n) if (n == "_conn"):
+		newArgs.push(PVar("conn"));	
+	case PAlias(nm, pat) if (nm == "_conn"):
+		newArgs.push(PAlias("conn", pat));	
+	default:
+		newArgs.push(a);	
+}) switch (enumIndex a) {
+												case 0: {
+													var ` = a[0];
+													{
+														var n = `;
+														if (n == "_conn") {
+															newArgs.push(reflaxe.elixir.ast.EPattern.PVar("conn"));
+														} else {
+															newArgs.push(a);
+														};
+													};
+												};
+												case 9: {
+													var ` = a[0];
+													var ` = a[1];
+													{
+														var nm = `;
+														var pat = `;
+														if (nm == "_conn") {
+															newArgs.push(reflaxe.elixir.ast.EPattern.PAlias("conn", pat));
+														} else {
+															newArgs.push(a);
+														};
+													};
+												};
+												default: {
+													newArgs.push(a);
+												}
+											};
+										};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname, newArgs, guards, body), metadata : x.metadata, pos : x.pos};
+								} else {
+									if (needsConn && ! hasConn) {
+										var newArgs2 = if (args != null) {
+											args.copy();
+										} else {
+											[];
+										};
+										newArgs2.unshift(reflaxe.elixir.ast.EPattern.PVar("conn"));
+										{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname, newArgs2, guards, body), metadata : x.metadata, pos : x.pos};
+									} else {
+										x;
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fname2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var needsConn2 = reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body2, "conn");
+								var hasConn2 = false;
+								var hadUnderscored2 = false;
+								if (args2 != null) {
+									{
+										var ` = 0;
+										while (` < args2.length) {
+											var a2 = args2[`];
+											++ `;
+											@:ast(switch (a2) {
+	case PVar(nm2) if (nm2 == "conn"):
+		hasConn2 = true;	
+	case PVar(nm3) if (nm3 == "_conn"):
+		hadUnderscored2 = true;	
+	default:
+}) if (enumIndex a2 == 0) {
+												var ` = a2[0];
+												{
+													var nm2 = `;
+													if (nm2 == "conn") {
+														hasConn2 = true;
+													} else {
+														var nm3 = `;
+														if (nm3 == "_conn") {
+															hadUnderscored2 = true;
+														} else {};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+								if (hadUnderscored2 && ! hasConn2) {
+									var newArgs3 = [];
+									{
+										var ` = 0;
+										while (` < args2.length) {
+											var a3 = args2[`];
+											++ `;
+											@:ast(switch (a3) {
+	case PVar(nn) if (nn == "_conn"):
+		newArgs3.push(PVar("conn"));	
+	case PAlias(nn2, pat2) if (nn2 == "_conn"):
+		newArgs3.push(PAlias("conn", pat2));	
+	default:
+		newArgs3.push(a3);	
+}) switch (enumIndex a3) {
+												case 0: {
+													var ` = a3[0];
+													{
+														var nn = `;
+														if (nn == "_conn") {
+															newArgs3.push(reflaxe.elixir.ast.EPattern.PVar("conn"));
+														} else {
+															newArgs3.push(a3);
+														};
+													};
+												};
+												case 9: {
+													var ` = a3[0];
+													var ` = a3[1];
+													{
+														var nn2 = `;
+														var pat2 = `;
+														if (nn2 == "_conn") {
+															newArgs3.push(reflaxe.elixir.ast.EPattern.PAlias("conn", pat2));
+														} else {
+															newArgs3.push(a3);
+														};
+													};
+												};
+												default: {
+													newArgs3.push(a3);
+												}
+											};
+										};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(fname2, newArgs3, guards2, body2), metadata : x.metadata, pos : x.pos};
+								} else {
+									if (needsConn2 && ! hasConn2) {
+										var newArgs2 = if (args2 != null) {
+											args2.copy();
+										} else {
+											[];
+										};
+										newArgs2.unshift(reflaxe.elixir.ast.EPattern.PVar("conn"));
+										{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(fname2, newArgs2, guards2, body2), metadata : x.metadata, pos : x.pos};
+									} else {
+										x;
+									};
+								};
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+}

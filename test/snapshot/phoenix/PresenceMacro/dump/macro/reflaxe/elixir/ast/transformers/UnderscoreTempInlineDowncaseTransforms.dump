@@ -1,0 +1,245 @@
+class reflaxe.elixir.ast.transformers.UnderscoreTempInlineDowncaseTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.UnderscoreTempInlineDowncaseTransforms.rewrite(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.UnderscoreTempInlineDowncaseTransforms.rewrite(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		var i = 0;
+		while (i < stmts.length) {
+			if (i + 1 < stmts.length) {
+				@:ast(switch (stmts[i].def) {
+	case EBinary(Match, { def : EVar(tmp) }, rhs) if (tmp != null && tmp.length > 1 && tmp.charAt(0) == "_"):
+		switch (stmts[i + 1].def) {
+			case ERemoteCall({ def : EVar("String") }, fnName, args) if (fnName == "downcase" && args != null && args.length == 1):
+				switch (args[0].def) {
+					case EVar(v) if (v == tmp):
+						out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [rhs]), stmts[i + 1].metadata, stmts[i + 1].pos));
+						i += 2;
+						continue;					
+					default:
+				};			
+			default:
+		};	
+	case EMatch(PVar(tmp2), rhs2) if (tmp2 != null && tmp2.length > 1 && tmp2.charAt(0) == "_"):
+		switch (stmts[i + 1].def) {
+			case ERemoteCall({ def : EVar("String") }, fnName2, args2) if (fnName2 == "downcase" && args2 != null && args2.length == 1):
+				switch (args2[0].def) {
+					case EVar(v2) if (v2 == tmp2):
+						out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [rhs2]), stmts[i + 1].metadata, stmts[i + 1].pos));
+						i += 2;
+						continue;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+					var ` = stmts[i].def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var tmp2 = `;
+									var rhs2 = `;
+									if (tmp2 != null && tmp2.length > 1 && tmp2.charAt(0) == "_") {
+										@:ast(switch (stmts[i + 1].def) {
+	case ERemoteCall({ def : EVar("String") }, fnName2, args2) if (fnName2 == "downcase" && args2 != null && args2.length == 1):
+		switch (args2[0].def) {
+			case EVar(v2) if (v2 == tmp2):
+				out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [rhs2]), stmts[i + 1].metadata, stmts[i + 1].pos));
+				i += 2;
+				continue;			
+			default:
+		};	
+	default:
+}) {
+											var ` = stmts[i + 1].def;
+											if (enumIndex ` == 24) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "String") {
+															{
+																var fnName2 = `;
+																var args2 = `;
+																if (fnName2 == "downcase" && args2 != null && args2.length == 1) {
+																	@:ast(switch (args2[0].def) {
+	case EVar(v2) if (v2 == tmp2):
+		out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [rhs2]), stmts[i + 1].metadata, stmts[i + 1].pos));
+		i += 2;
+		continue;	
+	default:
+}) {
+																		var ` = args2[0].def;
+																		if (enumIndex ` == 38) {
+																			var ` = `[0];
+																			{
+																				var v2 = `;
+																				if (v2 == tmp2) {
+																					out.push({def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+																					}, "downcase", [rhs2]), metadata : stmts[i + 1].metadata, pos : stmts[i + 1].pos});
+																					i += 2;
+																					continue;
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														} else {};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var tmp = `;
+											var rhs = `;
+											if (tmp != null && tmp.length > 1 && tmp.charAt(0) == "_") {
+												@:ast(switch (stmts[i + 1].def) {
+	case ERemoteCall({ def : EVar("String") }, fnName, args) if (fnName == "downcase" && args != null && args.length == 1):
+		switch (args[0].def) {
+			case EVar(v) if (v == tmp):
+				out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [rhs]), stmts[i + 1].metadata, stmts[i + 1].pos));
+				i += 2;
+				continue;			
+			default:
+		};	
+	default:
+}) {
+													var ` = stmts[i + 1].def;
+													if (enumIndex ` == 24) {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																if (` == "String") {
+																	{
+																		var fnName = `;
+																		var args = `;
+																		if (fnName == "downcase" && args != null && args.length == 1) {
+																			@:ast(switch (args[0].def) {
+	case EVar(v) if (v == tmp):
+		out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [rhs]), stmts[i + 1].metadata, stmts[i + 1].pos));
+		i += 2;
+		continue;	
+	default:
+}) {
+																				var ` = args[0].def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var v = `;
+																						if (v == tmp) {
+																							out.push({def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+																							}, "downcase", [rhs]), metadata : stmts[i + 1].metadata, pos : stmts[i + 1].pos});
+																							i += 2;
+																							continue;
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+			};
+			out.push(stmts[i]);
+			i ++;
+		};
+		return out;
+	}
+}

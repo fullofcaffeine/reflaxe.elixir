@@ -1,0 +1,208 @@
+class reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "changeset"):
+		var nb = collapseNested(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "changeset") {
+							var nb = reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.collapseNested(body);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function collapseNested(b:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBinary(Match, left, rhs):
+		var isCs = switch (left.def) {
+			case EVar(nm) if (nm == "cs"):
+				true;			
+			default:
+				false;			
+		};
+		switch (rhs.def) {
+			case EBinary(Match, leftInner, expr) if (isCs):
+				makeASTWithMeta(EBinary(Match, left, expr), x.metadata, x.pos);			
+			case EBinary(Match, leftInner2, expr2):
+				var innerIsCs = switch (leftInner2.def) {
+					case EVar(n2) if (n2 == "cs"):
+						true;					
+					default:
+						false;					
+				};
+				var outerIsThis = switch (left.def) {
+					case EVar(n3) if (n3 != null && (n3.indexOf("this") == 0 || n3.indexOf("_this") == 0)):
+						true;					
+					default:
+						false;					
+				};
+				if (innerIsCs && outerIsThis) {
+					makeASTWithMeta(EBinary(Match, leftInner2, expr2), x.metadata, x.pos);
+				} else x;			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 26) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var left = `;
+							var rhs = `;
+							{
+								var isCs = @:ast(switch (left.def) {
+	case EVar(nm) if (nm == "cs"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm == "cs") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								@:ast(switch (rhs.def) {
+	case EBinary(Match, leftInner, expr) if (isCs):
+		makeASTWithMeta(EBinary(Match, left, expr), x.metadata, x.pos);	
+	case EBinary(Match, leftInner2, expr2):
+		var innerIsCs = switch (leftInner2.def) {
+			case EVar(n2) if (n2 == "cs"):
+				true;			
+			default:
+				false;			
+		};
+		var outerIsThis = switch (left.def) {
+			case EVar(n3) if (n3 != null && (n3.indexOf("this") == 0 || n3.indexOf("_this") == 0)):
+				true;			
+			default:
+				false;			
+		};
+		if (innerIsCs && outerIsThis) {
+			makeASTWithMeta(EBinary(Match, leftInner2, expr2), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+									var ` = rhs.def;
+									if (enumIndex ` == 26) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (enumIndex ` == 27) {
+											{
+												var leftInner = `;
+												var expr = `;
+												if (isCs) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, expr), metadata : x.metadata, pos : x.pos};
+												} else {
+													var leftInner2 = `;
+													var expr2 = `;
+													{
+														var innerIsCs = @:ast(switch (leftInner2.def) {
+	case EVar(n2) if (n2 == "cs"):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = leftInner2.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var n2 = `;
+																	if (n2 == "cs") {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+														var outerIsThis = @:ast(switch (left.def) {
+	case EVar(n3) if (n3 != null && (n3.indexOf("this") == 0 || n3.indexOf("_this") == 0)):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = left.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var n3 = `;
+																	if (n3 != null && (n3.indexOf("this", null) == 0 || n3.indexOf("_this", null) == 0)) {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+														if (innerIsCs && outerIsThis) {
+															{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, leftInner2, expr2), metadata : x.metadata, pos : x.pos};
+														} else {
+															x;
+														};
+													};
+												};
+											};
+										} else {
+											x;
+										};
+									} else {
+										x;
+									};
+								};
+							};
+						};
+					} else {
+						x;
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

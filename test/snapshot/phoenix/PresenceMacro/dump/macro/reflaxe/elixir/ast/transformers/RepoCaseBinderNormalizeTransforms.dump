@@ -1,0 +1,1082 @@
+class reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECase(expr, clauses) if (isRepoDelete(expr)):
+		var newClauses = renameSuccessBinder(clauses);
+		makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);	
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length) {
+			var cur = stmts[i];
+			switch (cur.def) {
+				case ECase(expr2, clauses2):
+					var isDeleteCase = false;
+					var matchVar:Null<String> = null;
+					switch (expr2.def) {
+						case EVar(nm):
+							matchVar = nm;						
+						default:
+					};
+					if (!isRepoDelete(expr2) && matchVar != null) {
+						var j = i - 1;
+						var scans = 0;
+						while (j >= 0 && scans < 3) {
+							switch (stmts[j].def) {
+								case EBinary(Match, left, rhs):
+									switch (left.def) {
+										case EVar(nm) if (nm == matchVar):
+											if (isRepoDelete(rhs)) isDeleteCase = true;										
+										default:
+									};								
+								case EMatch(pat, rhs2):
+									switch (pat) {
+										case PVar(nm2) if (nm2 == matchVar):
+											if (isRepoDelete(rhs2)) isDeleteCase = true;										
+										default:
+									};								
+								default:
+							};
+							if (isDeleteCase) break;
+							j--;
+							scans++;
+						};
+					} else if (isRepoDelete(expr2)) {
+						isDeleteCase = true;
+					};
+					if (isDeleteCase) {
+						var renamed = renameSuccessBinder(clauses2);
+						out.push(makeASTWithMeta(ECase(expr2, renamed), cur.metadata, cur.pos));
+					} else {
+						out.push(cur);
+					};				
+				default:
+					out.push(cur);				
+			};
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+								var ` = expr.def;
+								if (enumIndex ` == 24) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var mod = `;
+										var func = `;
+										var _args = `;
+										if (func == "delete") {
+											@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+												var ` = mod.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var m = `;
+														if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+															true;
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							}) {
+								var newClauses = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.renameSuccessBinder(clauses);
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, newClauses), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									var ` = stmts.length;
+									while (` < `) {
+										var i = ` ++;
+										var cur = stmts[i];
+										@:ast(switch (cur.def) {
+	case ECase(expr2, clauses2):
+		var isDeleteCase = false;
+		var matchVar:Null<String> = null;
+		switch (expr2.def) {
+			case EVar(nm):
+				matchVar = nm;			
+			default:
+		};
+		if (!isRepoDelete(expr2) && matchVar != null) {
+			var j = i - 1;
+			var scans = 0;
+			while (j >= 0 && scans < 3) {
+				switch (stmts[j].def) {
+					case EBinary(Match, left, rhs):
+						switch (left.def) {
+							case EVar(nm) if (nm == matchVar):
+								if (isRepoDelete(rhs)) isDeleteCase = true;							
+							default:
+						};					
+					case EMatch(pat, rhs2):
+						switch (pat) {
+							case PVar(nm2) if (nm2 == matchVar):
+								if (isRepoDelete(rhs2)) isDeleteCase = true;							
+							default:
+						};					
+					default:
+				};
+				if (isDeleteCase) break;
+				j--;
+				scans++;
+			};
+		} else if (isRepoDelete(expr2)) {
+			isDeleteCase = true;
+		};
+		if (isDeleteCase) {
+			var renamed = renameSuccessBinder(clauses2);
+			out.push(makeASTWithMeta(ECase(expr2, renamed), cur.metadata, cur.pos));
+		} else {
+			out.push(cur);
+		};	
+	default:
+		out.push(cur);	
+}) {
+											var ` = cur.def;
+											if (enumIndex ` == 6) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var expr2 = `;
+													var clauses2 = `;
+													{
+														var isDeleteCase = false;
+														var matchVar = null;
+														@:ast(switch (expr2.def) {
+	case EVar(nm):
+		matchVar = nm;	
+	default:
+}) {
+															var ` = expr2.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var nm = `;
+																	{
+																		matchVar = nm;
+																	};
+																};
+															} else {};
+														};
+														if (! @:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+															var ` = expr2.def;
+															if (enumIndex ` == 24) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																{
+																	var mod = `;
+																	var func = `;
+																	var _args = `;
+																	if (func == "delete") {
+																		@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+																			var ` = mod.def;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var m = `;
+																					if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+																						true;
+																					} else {
+																						false;
+																					};
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} && matchVar != null) {
+															var j = i - 1;
+															var scans = 0;
+															while (j >= 0 && scans < 3) {
+																@:ast(switch (stmts[j].def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(nm) if (nm == matchVar):
+				if (isRepoDelete(rhs)) isDeleteCase = true;			
+			default:
+		};	
+	case EMatch(pat, rhs2):
+		switch (pat) {
+			case PVar(nm2) if (nm2 == matchVar):
+				if (isRepoDelete(rhs2)) isDeleteCase = true;			
+			default:
+		};	
+	default:
+}) {
+																	var ` = stmts[j].def;
+																	switch (enumIndex `) {
+																		case 8: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var pat = `;
+																				var rhs2 = `;
+																				{
+																					@:ast(switch (pat) {
+	case PVar(nm2) if (nm2 == matchVar):
+		if (isRepoDelete(rhs2)) isDeleteCase = true;	
+	default:
+}) if (enumIndex pat == 0) {
+																						var ` = pat[0];
+																						{
+																							var nm2 = `;
+																							if (nm2 == matchVar) {
+																								if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+																									var ` = rhs2.def;
+																									if (enumIndex ` == 24) {
+																										var ` = `[0];
+																										var ` = `[1];
+																										var ` = `[2];
+																										{
+																											var mod = `;
+																											var func = `;
+																											var _args = `;
+																											if (func == "delete") {
+																												@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+																													var ` = mod.def;
+																													if (enumIndex ` == 38) {
+																														var ` = `[0];
+																														{
+																															var m = `;
+																															if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+																																true;
+																															} else {
+																																false;
+																															};
+																														};
+																													} else {
+																														false;
+																													};
+																												};
+																											} else {
+																												false;
+																											};
+																										};
+																									} else {
+																										false;
+																									};
+																								}) {
+																									isDeleteCase = true;
+																								};
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																		case 26: {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			if (enumIndex ` == 27) {
+																				{
+																					var left = `;
+																					var rhs = `;
+																					{
+																						@:ast(switch (left.def) {
+	case EVar(nm) if (nm == matchVar):
+		if (isRepoDelete(rhs)) isDeleteCase = true;	
+	default:
+}) {
+																							var ` = left.def;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var nm = `;
+																									if (nm == matchVar) {
+																										if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+																											var ` = rhs.def;
+																											if (enumIndex ` == 24) {
+																												var ` = `[0];
+																												var ` = `[1];
+																												var ` = `[2];
+																												{
+																													var mod = `;
+																													var func = `;
+																													var _args = `;
+																													if (func == "delete") {
+																														@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+																															var ` = mod.def;
+																															if (enumIndex ` == 38) {
+																																var ` = `[0];
+																																{
+																																	var m = `;
+																																	if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+																																		true;
+																																	} else {
+																																		false;
+																																	};
+																																};
+																															} else {
+																																false;
+																															};
+																														};
+																													} else {
+																														false;
+																													};
+																												};
+																											} else {
+																												false;
+																											};
+																										}) {
+																											isDeleteCase = true;
+																										};
+																									} else {};
+																								};
+																							} else {};
+																						};
+																					};
+																				};
+																			} else {};
+																		};
+																		default: {}
+																	};
+																};
+																if (isDeleteCase) {
+																	break;
+																};
+																j --;
+																scans ++;
+															};
+														} else {
+															if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+																var ` = expr2.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var mod = `;
+																		var func = `;
+																		var _args = `;
+																		if (func == "delete") {
+																			@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+																				var ` = mod.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var m = `;
+																						if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+																							true;
+																						} else {
+																							false;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															}) {
+																isDeleteCase = true;
+															};
+														};
+														if (isDeleteCase) {
+															var renamed = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.renameSuccessBinder(clauses2);
+															out.push({def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr2, renamed), metadata : cur.metadata, pos : cur.pos});
+														} else {
+															out.push(cur);
+														};
+													};
+												};
+											} else {
+												out.push(cur);
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isRepoDelete(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _args) if (func == "delete"):
+		switch (mod.def) {
+			case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var mod = `;
+					var func = `;
+					var _args = `;
+					if (func == "delete") {
+						@:ast(switch (mod.def) {
+	case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = mod.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")) {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function isNumericArtifact(name:String) {
+		if (name == null) {
+			return false;
+		};
+		var base = if ((name.length > 0 && name.charAt(0) == "_")) {
+			name.substr(1, null);
+		} else {
+			name;
+		};
+		return new EReg("^[gs]\\d+$", "").match(base);
+	}
+
+	static function renameSuccessBinder(clauses:Array<reflaxe.elixir.ast.ECaseClause>) {
+		var out = [];
+		{
+			var ` = 0;
+			while (` < clauses.length) {
+				var cl = clauses[`];
+				++ `;
+				var okBinder = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.isOkBinder(cl.pattern);
+				if (okBinder != null && if (okBinder == null) {
+					false;
+				} else {
+					var base = if ((okBinder.length > 0 && okBinder.charAt(0) == "_")) {
+						okBinder.substr(1, null);
+					} else {
+						okBinder;
+					};
+					new EReg("^[gs]\\d+$", "").match(base);
+				}) {
+					var used = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.collectUsedLowerVars(cl.body);
+					var newName = if ((used.indexOf(okBinder, null) != -1)) {
+						"deleted";
+					} else {
+						"_deleted";
+					};
+					var renamedPat = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.tryRenameSuccessBinder(cl.pattern, newName);
+					var renamedBody = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.renameVarDeep(cl.body, okBinder, newName);
+					if (renamedPat != null) {
+						out.push({pattern : renamedPat, guard : cl.guard, body : renamedBody});
+						continue;
+					};
+				} else {
+					if (okBinder != null) {
+						var body2 = reflaxe.elixir.ast.transformers.RepoCaseBinderNormalizeTransforms.alignNumericArtifactsToBinder(cl.body, okBinder);
+						out.push({pattern : cl.pattern, guard : cl.guard, body : body2});
+						continue;
+					};
+				};
+				out.push(cl);
+			};
+		};
+		return out;
+	}
+
+	static function alignNumericArtifactsToBinder(body:reflaxe.elixir.ast.ElixirAST, binder:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EVar(name) if (isNumericArtifact(name)):
+		makeASTWithMeta(EVar(binder), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var name = `;
+						if (if (name == null) {
+							false;
+						} else {
+							var base = if ((name.length > 0 && name.charAt(0) == "_")) {
+								name.substr(1, null);
+							} else {
+								name;
+							};
+							new EReg("^[gs]\\d+$", "").match(base);
+						}) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binder), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function renameVarDeep(body:reflaxe.elixir.ast.ElixirAST, fromName:String, toName:String) {
+		if (fromName == toName || fromName == null || toName == null) {
+			return body;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EVar(name) if (name == fromName):
+		makeASTWithMeta(EVar(toName), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var name = `;
+						if (name == fromName) {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(toName), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function isOkBinder(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PTuple(els) if (els.length == 2):
+		switch (els[0]) {
+			case PLiteral({ def : EAtom(a) }) if (a == "ok"):
+				switch (els[1]) {
+					case PVar(nm):
+						nm;					
+					default:
+						null;					
+				};			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var els = `;
+				if (els.length == 2) {
+					@:ast(switch (els[0]) {
+	case PLiteral({ def : EAtom(a) }) if (a == "ok"):
+		switch (els[1]) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) {
+						var ` = els[0];
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 31) {
+									var ` = `[0];
+									{
+										var a = `;
+										if (a == "ok") {
+											@:ast(switch (els[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+												var ` = els[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var nm = `;
+														{
+															nm;
+														};
+													};
+												} else {
+													null;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+						} else {
+							null;
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+
+	static function tryRenameSuccessBinder(p:reflaxe.elixir.ast.EPattern, newName:String) {
+		return @:ast(switch (p) {
+	case PTuple(els) if (els.length == 2):
+		switch (els[1]) {
+			case PVar(_):
+				PTuple([els[0], PVar(newName)]);			
+			default:
+				null;			
+		};	
+	default:
+		null;	
+}) if (enumIndex p == 2) {
+			var ` = p[0];
+			{
+				var els = `;
+				if (els.length == 2) {
+					@:ast(switch (els[1]) {
+	case PVar(_):
+		PTuple([els[0], PVar(newName)]);	
+	default:
+		null;	
+}) {
+						var ` = els[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								reflaxe.elixir.ast.EPattern.PTuple([els[0], reflaxe.elixir.ast.EPattern.PVar(newName)]);
+							};
+						} else {
+							null;
+						};
+					};
+				} else {
+					null;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+
+	static function collectUsedLowerVars(ast:reflaxe.elixir.ast.ElixirAST) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var scan = [null];
+		scan[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EVar(name):
+		if (name != null && name.length > 0 && name.charAt(0).toLowerCase() == name.charAt(0)) names.set(name, true);	
+	case EField(t, _):
+		scan(t);	
+	case EAccess(t, k):
+		scan(t);
+		scan(k);	
+	case EBinary(_, l, r):
+		scan(l);
+		scan(r);	
+	case EBlock(es):
+		for (e  in  es) scan(e);	
+	case EIf(c, t, e):
+		scan(c);
+		scan(t);
+		if (e != null) scan(e);	
+	case ECase(expr, cs):
+		scan(expr);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	case ECall(t, _, as):
+		if (t != null) scan(t);
+		if (as != null) for (a  in  as) scan(a);	
+	case ERemoteCall(targetExpr, _, argsList):
+		scan(targetExpr);
+		if (argsList != null) for (a  in  argsList) scan(a);	
+	case EList(items):
+		for (i  in  items) scan(i);	
+	case ETuple(items):
+		for (i  in  items) scan(i);	
+	case EMap(pairs):
+		for (p  in  pairs) {
+			scan(p.key);
+			scan(p.value);
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								scan[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (e != null) {
+									scan[0](e);
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						{
+							var items = `;
+							{
+								{
+									var ` = 0;
+									while (` < items.length) {
+										var i = items[`];
+										++ `;
+										scan[0](i);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var items = `;
+							{
+								{
+									var ` = 0;
+									while (` < items.length) {
+										var i = items[`];
+										++ `;
+										scan[0](i);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										scan[0](p.key);
+										scan[0](p.value);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									scan[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var targetExpr = `;
+							var argsList = `;
+							{
+								scan[0](targetExpr);
+								if (argsList != null) {
+									{
+										var ` = 0;
+										while (` < argsList.length) {
+											var a = argsList[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								scan[0](l);
+								scan[0](r);
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var t = `;
+							{
+								scan[0](t);
+							};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var t = `;
+							var k = `;
+							{
+								scan[0](t);
+								scan[0](k);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var name = `;
+							{
+								if (name != null && name.length > 0 && name.charAt(0).toLowerCase() == name.charAt(0)) {
+									{
+										names.set(name, true);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var es = `;
+							{
+								{
+									var ` = 0;
+									while (` < es.length) {
+										var e = es[`];
+										++ `;
+										scan[0](e);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		scan[0](ast);
+		return {
+			var ` = [];
+			for (k in names.keys()) {
+				`.push(k);
+			};
+			`;
+		};
+	}
+}

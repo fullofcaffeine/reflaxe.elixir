@@ -1,0 +1,13 @@
+class reflaxe.elixir.ast.transformers.registry.groups.CollectionsAndLoops {
+
+	public static function build() {
+		var passes = [];
+		passes.push({name : "UnrolledLoopTransform", description : "Transform unrolled loops (sequential statements) back to Enum.each", enabled : true, pass : reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass});
+		passes.push({name : "MapIteratorTransform", description : "Transform Map iterator patterns from g.next() to idiomatic Enum operations", enabled : true, pass : reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass});
+		passes.push({name : "MapSetRewrite", description : "Rewrite var.set(key, value) to var = Map.put(var, :key, value)", enabled : true, pass : reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapSetRewritePass});
+		passes.push({name : "ComprehensionConversion", description : "Convert imperative loops to comprehensions", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_comprehensionConversionPass});
+		passes.push({name : "ListEffectLifting", description : "Lift side-effecting expressions out of list literals", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_listEffectLiftingPass});
+		passes.push({name : "ForToEnumEachSideEffect", description : "Rewrite EFor with side-effect body to Enum.each(collection, fn -> body end)", enabled : false, pass : reflaxe.elixir.ast.transformers.ForToEnumEachSideEffectTransforms.pass});
+		return passes;
+	}
+}

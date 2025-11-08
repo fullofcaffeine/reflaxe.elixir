@@ -466,14 +466,21 @@ class AnnotationTransforms {
             case EDefmodule(name, body) if (ast.metadata?.isRouter == true):
                 #if debug_annotation_transforms
                 #end
-                
+                // Collect referenced modules from the Haxe DSL before we replace the body
+                var refs = collectRouterReferences(body);
+                var meta = ast.metadata != null ? ast.metadata : {};
+                meta.routerRefs = refs;
                 var routerBody = buildRouterBody(name, body);
-                return makeASTWithMeta(EDefmodule(name, routerBody), ast.metadata, ast.pos);
+                return makeASTWithMeta(EDefmodule(name, routerBody), meta, ast.pos);
             case EModule(name, attrs, body) if (ast.metadata?.isRouter == true):
                 #if debug_annotation_transforms
                 #end
-                var routerBody2 = buildRouterBody(name, makeAST(EBlock(body)));
-                return makeASTWithMeta(EDefmodule(name, routerBody2), ast.metadata, ast.pos);
+                var orig = makeAST(EBlock(body));
+                var refs2 = collectRouterReferences(orig);
+                var meta2 = ast.metadata != null ? ast.metadata : {};
+                meta2.routerRefs = refs2;
+                var routerBody2 = buildRouterBody(name, orig);
+                return makeASTWithMeta(EDefmodule(name, routerBody2), meta2, ast.pos);
                 
             default:
                 return ast;
@@ -538,8 +545,79 @@ class AnnotationTransforms {
         
         // Use raw Elixir code injection for now
         statements.push(makeAST(ERaw(routerCode)));
-        
+
         return makeAST(EBlock(statements));
+    }
+
+    /**
+     * collectRouterReferences
+     *
+     * WHAT: Walk the original @:router DSL body to find referenced module names
+     * (controllers, lives, routers) from get/post/put/patch/delete/resources/
+     * live/forward/match/pipe_through/scope/live_session calls.
+     *
+     * HOW: Traverse the AST and capture EVar/EField module-like tokens from
+     * arguments to those macros, including nested callback bodies.
+     */
+    static function collectRouterReferences(existingBody: ElixirAST): Array<String> {
+        var macroNames = new Map<String,Bool>();
+        for (n in ["get","post","put","patch","delete","resources","live","forward","match","scope","pipe_through","live_session"]) macroNames.set(n, true);
+
+        var out = new Map<String,Bool>();
+
+        inline function record(name:String):Void {
+            if (name == null) return;
+            if (name.indexOf(".") != -1) name = name.split(".")[0];
+            if (name.length == 0) return;
+            var c = name.charAt(0);
+            if (c < 'A' || c > 'Z') return;
+            if (name == "Phoenix" || name == "Kernel") return;
+            out.set(name, true);
+        }
+
+        ElixirASTTransformer.transformNode(existingBody, function(n) {
+            switch (n.def) {
+                case ECall(target, _fname, args) if (target != null):
+                    switch (target.def) {
+                        case EVar(fn) if (macroNames.exists(fn)):
+                            if (args != null) for (a in args) switch (a.def) {
+                                case EVar(m): record(m);
+                                case EField(t, f):
+                                    var base = switch (t.def) { case EVar(b): b; case EField(_, _): null; default: null; };
+                                    record(base != null ? base + "." + f : f);
+                                case EFn(_): // nested callbacks handled by traversal
+                                default:
+                            }
+                        default:
+                    }
+                default:
+            }
+            return n;
+        });
+
+        // Fallback string-based scan to catch module refs in compiled DSL bodies
+        try {
+            var printed = reflaxe.elixir.ast.ElixirASTPrinter.printAST(existingBody);
+            if (printed != null && printed.length > 0) {
+                var re = ~/[,\(\s]([A-Z][A-Za-z0-9_]*(?:\.[A-Z][A-Za-z0-9_]*)*)[\),\s]/g;
+                var pos = 0;
+                while (re.matchSub(printed, pos)) {
+                    var token = re.matched(1);
+                    pos = re.matchedPos().pos + re.matchedPos().len;
+                    if (token == "Phoenix" || token == "Kernel" || token == "Mix") continue;
+                    if (token.indexOf("Layouts") != -1) continue;
+                    record(token);
+                }
+            }
+        } catch (e:Dynamic) {}
+
+        #if debug_router_refs
+        for (k in out.keys()) {
+            #if sys Sys.println('[RouterRefs] ' + k); #else trace('[RouterRefs] ' + k); #end
+        }
+        #end
+
+        return [for (k in out.keys()) k];
     }
     
     /**
@@ -1352,11 +1430,25 @@ class AnnotationTransforms {
         )));
         
         // def verified_routes do
+        // VerifiedRoutes expects endpoint/router as atoms (e.g., :"my_app_web.endpoint")
+        inline function toSnake(s:String):String {
+            var buf = new StringBuf();
+            for (i in 0...s.length) {
+                var ch = s.charAt(i);
+                var isUpper = (ch.toUpperCase() == ch && ch.toLowerCase() != ch);
+                if (isUpper && i > 0) buf.add("_");
+                buf.add(ch.toLowerCase());
+            }
+            return buf.toString();
+        }
+        var moduleSnake = toSnake(moduleName);
+        var endpointAtom = makeAST(EAtom(moduleSnake + ".endpoint"));
+        var routerAtom = makeAST(EAtom(moduleSnake + ".router"));
         var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EUse("Phoenix.VerifiedRoutes", [
                 makeAST(EKeywordList([
-                    {key: "endpoint", value: makeAST(EVar(moduleName + ".Endpoint"))},
-                    {key: "router", value: makeAST(EVar(moduleName + ".Router"))},
+                    {key: "endpoint", value: endpointAtom},
+                    {key: "router", value: routerAtom},
                     {key: "statics", value: makeAST(ERemoteCall(
                         makeAST(EVar(moduleName)),
                         "static_paths",

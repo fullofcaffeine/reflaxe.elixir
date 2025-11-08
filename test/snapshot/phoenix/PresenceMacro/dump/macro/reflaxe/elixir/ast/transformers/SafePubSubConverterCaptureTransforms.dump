@@ -1,0 +1,446 @@
+class reflaxe.elixir.ast.transformers.SafePubSubConverterCaptureTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, func, args) if ((func == "parse_with_converter" || func == "parseWithConverter") && args != null && args.length == 2 && isSafePubSub(mod)):
+		var msgArg = args[0];
+		var parserArg = args[1];
+		var captured = switch (parserArg.def) {
+			case ECapture(_, _):
+				parserArg;			
+			case EVar(name):
+				var sname = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+				makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sname, [])), 1));			
+			case ERemoteCall(tgt, pname, _):
+				var sp = reflaxe.elixir.ast.NameUtils.toSnakeCase(pname);
+				makeAST(ECapture(makeAST(ERemoteCall(tgt, sp, [])), 1));			
+			case EAtom(atomName):
+				var atomStr = Std.string(atomName);
+				var idx = atomStr.lastIndexOf(".");
+				var fnName = idx >= 0 ? atomStr.substr(idx + 1) : atomStr;
+				if (fnName != null && fnName.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), fnName, [])), 1)) else parserArg;			
+			case EString(str) | ECharlist(str):
+				var sidx = str.lastIndexOf(".");
+				var sfn = sidx >= 0 ? str.substr(sidx + 1) : str;
+				if (sfn != null && sfn.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sfn, [])), 1)) else parserArg;			
+			default:
+				parserArg;			
+		};
+		var rewritten = makeASTWithMeta(ERemoteCall(mod, func, [msgArg, captured]), n.metadata, n.pos);
+		rewritten;	
+	case ECall(target, funcName, callArgs) if ((target == null) && (funcName == "parse_with_converter" || funcName == "parseWithConverter") && callArgs != null && callArgs.length == 2):
+		var messageArgLocal = callArgs[0];
+		var parserArgLocal = callArgs[1];
+		var capturedParser = switch (parserArgLocal.def) {
+			case ECapture(_, _):
+				parserArgLocal;			
+			case EVar(varName):
+				var sname2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(varName);
+				makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sname2, [])), 1));			
+			case ERemoteCall(targetForCapture, parserFuncName, _):
+				var sp2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(parserFuncName);
+				makeAST(ECapture(makeAST(ERemoteCall(targetForCapture, sp2, [])), 1));			
+			case EAtom(atomValue):
+				var atomString = Std.string(atomValue);
+				var dotIndex = atomString.lastIndexOf(".");
+				var functionName = dotIndex >= 0 ? atomString.substr(dotIndex + 1) : atomString;
+				if (functionName != null && functionName.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), functionName, [])), 1)) else parserArgLocal;			
+			case EString(str) | ECharlist(str):
+				var dotIndex2 = str.lastIndexOf(".");
+				var functionName2 = dotIndex2 >= 0 ? str.substr(dotIndex2 + 1) : str;
+				if (functionName2 != null && functionName2.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), functionName2, [])), 1)) else parserArgLocal;			
+			default:
+				parserArgLocal;			
+		};
+		var rewrittenCall = makeASTWithMeta(ECall(null, funcName, [messageArgLocal, capturedParser]), n.metadata, n.pos);
+		rewrittenCall;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var target = `;
+							var funcName = `;
+							var callArgs = `;
+							if ((target == null) && (funcName == "parse_with_converter" || funcName == "parseWithConverter") && callArgs != null && callArgs.length == 2) {
+								var messageArgLocal = callArgs[0];
+								var parserArgLocal = callArgs[1];
+								var capturedParser = @:ast(switch (parserArgLocal.def) {
+	case ECapture(_, _):
+		parserArgLocal;	
+	case EVar(varName):
+		var sname2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(varName);
+		makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sname2, [])), 1));	
+	case ERemoteCall(targetForCapture, parserFuncName, _):
+		var sp2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(parserFuncName);
+		makeAST(ECapture(makeAST(ERemoteCall(targetForCapture, sp2, [])), 1));	
+	case EAtom(atomValue):
+		var atomString = Std.string(atomValue);
+		var dotIndex = atomString.lastIndexOf(".");
+		var functionName = dotIndex >= 0 ? atomString.substr(dotIndex + 1) : atomString;
+		if (functionName != null && functionName.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), functionName, [])), 1)) else parserArgLocal;	
+	case EString(str) | ECharlist(str):
+		var dotIndex2 = str.lastIndexOf(".");
+		var functionName2 = dotIndex2 >= 0 ? str.substr(dotIndex2 + 1) : str;
+		if (functionName2 != null && functionName2.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), functionName2, [])), 1)) else parserArgLocal;	
+	default:
+		parserArgLocal;	
+}) {
+									var ` = parserArgLocal.def;
+									switch (enumIndex `) {
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var targetForCapture = `;
+												var parserFuncName = `;
+												{
+													var sp2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(parserFuncName);
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(targetForCapture, sp2, []), metadata : {}, pos : pos};
+														}, 1), metadata : {}, pos : pos};
+													};
+												};
+											};
+										};
+										case 31: {
+											var ` = `[0];
+											{
+												var atomValue = `;
+												{
+													var atomString = Std.string(atomValue);
+													var dotIndex = atomString.lastIndexOf(".", null);
+													var functionName = if (dotIndex >= 0) {
+														atomString.substr(dotIndex + 1, null);
+													} else {
+														atomString;
+													};
+													if (functionName != null && functionName.length > 0) {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+																}, functionName, []), metadata : {}, pos : pos};
+															}, 1), metadata : {}, pos : pos};
+														};
+													} else {
+														parserArgLocal;
+													};
+												};
+											};
+										};
+										case 32: {
+											var ` = `[0];
+											{
+												var str = `;
+												{
+													var dotIndex2 = str.lastIndexOf(".", null);
+													var functionName2 = if (dotIndex2 >= 0) {
+														str.substr(dotIndex2 + 1, null);
+													} else {
+														str;
+													};
+													if (functionName2 != null && functionName2.length > 0) {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+																}, functionName2, []), metadata : {}, pos : pos};
+															}, 1), metadata : {}, pos : pos};
+														};
+													} else {
+														parserArgLocal;
+													};
+												};
+											};
+										};
+										case 37: {
+											var ` = `[0];
+											{
+												var str = `;
+												{
+													var dotIndex2 = str.lastIndexOf(".", null);
+													var functionName2 = if (dotIndex2 >= 0) {
+														str.substr(dotIndex2 + 1, null);
+													} else {
+														str;
+													};
+													if (functionName2 != null && functionName2.length > 0) {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+																}, functionName2, []), metadata : {}, pos : pos};
+															}, 1), metadata : {}, pos : pos};
+														};
+													} else {
+														parserArgLocal;
+													};
+												};
+											};
+										};
+										case 38: {
+											var ` = `[0];
+											{
+												var varName = `;
+												{
+													var sname2 = reflaxe.elixir.ast.NameUtils.toSnakeCase(varName);
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+															}, sname2, []), metadata : {}, pos : pos};
+														}, 1), metadata : {}, pos : pos};
+													};
+												};
+											};
+										};
+										case 43: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												parserArgLocal;
+											};
+										};
+										default: {
+											parserArgLocal;
+										}
+									};
+								};
+								var rewrittenCall = {def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, funcName, [messageArgLocal, capturedParser]), metadata : n.metadata, pos : n.pos};
+								rewrittenCall;
+							} else {
+								n;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							var func = `;
+							var args = `;
+							if ((func == "parse_with_converter" || func == "parseWithConverter") && args != null && args.length == 2 && reflaxe.elixir.ast.transformers.SafePubSubConverterCaptureTransforms.isSafePubSub(mod)) {
+								var msgArg = args[0];
+								var parserArg = args[1];
+								var captured = @:ast(switch (parserArg.def) {
+	case ECapture(_, _):
+		parserArg;	
+	case EVar(name):
+		var sname = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+		makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sname, [])), 1));	
+	case ERemoteCall(tgt, pname, _):
+		var sp = reflaxe.elixir.ast.NameUtils.toSnakeCase(pname);
+		makeAST(ECapture(makeAST(ERemoteCall(tgt, sp, [])), 1));	
+	case EAtom(atomName):
+		var atomStr = Std.string(atomName);
+		var idx = atomStr.lastIndexOf(".");
+		var fnName = idx >= 0 ? atomStr.substr(idx + 1) : atomStr;
+		if (fnName != null && fnName.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), fnName, [])), 1)) else parserArg;	
+	case EString(str) | ECharlist(str):
+		var sidx = str.lastIndexOf(".");
+		var sfn = sidx >= 0 ? str.substr(sidx + 1) : str;
+		if (sfn != null && sfn.length > 0) makeAST(ECapture(makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), sfn, [])), 1)) else parserArg;	
+	default:
+		parserArg;	
+}) {
+									var ` = parserArg.def;
+									switch (enumIndex `) {
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var tgt = `;
+												var pname = `;
+												{
+													var sp = reflaxe.elixir.ast.NameUtils.toSnakeCase(pname);
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(tgt, sp, []), metadata : {}, pos : pos};
+														}, 1), metadata : {}, pos : pos};
+													};
+												};
+											};
+										};
+										case 31: {
+											var ` = `[0];
+											{
+												var atomName = `;
+												{
+													var atomStr = Std.string(atomName);
+													var idx = atomStr.lastIndexOf(".", null);
+													var fnName = if (idx >= 0) {
+														atomStr.substr(idx + 1, null);
+													} else {
+														atomStr;
+													};
+													if (fnName != null && fnName.length > 0) {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+																}, fnName, []), metadata : {}, pos : pos};
+															}, 1), metadata : {}, pos : pos};
+														};
+													} else {
+														parserArg;
+													};
+												};
+											};
+										};
+										case 32: {
+											var ` = `[0];
+											{
+												var str = `;
+												{
+													var sidx = str.lastIndexOf(".", null);
+													var sfn = if (sidx >= 0) {
+														str.substr(sidx + 1, null);
+													} else {
+														str;
+													};
+													if (sfn != null && sfn.length > 0) {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+																}, sfn, []), metadata : {}, pos : pos};
+															}, 1), metadata : {}, pos : pos};
+														};
+													} else {
+														parserArg;
+													};
+												};
+											};
+										};
+										case 37: {
+											var ` = `[0];
+											{
+												var str = `;
+												{
+													var sidx = str.lastIndexOf(".", null);
+													var sfn = if (sidx >= 0) {
+														str.substr(sidx + 1, null);
+													} else {
+														str;
+													};
+													if (sfn != null && sfn.length > 0) {
+														{
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+																}, sfn, []), metadata : {}, pos : pos};
+															}, 1), metadata : {}, pos : pos};
+														};
+													} else {
+														parserArg;
+													};
+												};
+											};
+										};
+										case 38: {
+											var ` = `[0];
+											{
+												var name = `;
+												{
+													var sname = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+													{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.ECapture({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+															}, sname, []), metadata : {}, pos : pos};
+														}, 1), metadata : {}, pos : pos};
+													};
+												};
+											};
+										};
+										case 43: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												parserArg;
+											};
+										};
+										default: {
+											parserArg;
+										}
+									};
+								};
+								var rewritten = {def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, func, [msgArg, captured]), metadata : n.metadata, pos : n.pos};
+								rewritten;
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function isSafePubSub(mod:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (mod.def) {
+	case EVar(m) if (m == "Phoenix.SafePubSub" || m == "SafePubSub"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = mod.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var m = `;
+					if (m == "Phoenix.SafePubSub" || m == "SafePubSub") {
+						true;
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

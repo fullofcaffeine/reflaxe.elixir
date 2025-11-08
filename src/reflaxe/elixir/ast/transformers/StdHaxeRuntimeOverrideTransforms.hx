@@ -35,7 +35,7 @@ class StdHaxeRuntimeOverrideTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDefmodule(name, _):
-                    if (name == "ArrayIterator") arrayIteratorDef(n) else if (name == "PosException") posExceptionDef(n) else if (name == "StringTools") stringToolsDef(n) else n;
+                    if (name == "ArrayIterator") arrayIteratorDef(n) else if (name == "PosException") posExceptionDef(n) else if (name == "StringTools") stringToolsDef(n) else if (name == "Log") logDef(n) else n;
                 case EModule(name, attrs, _):
                     if (name == "ArrayIterator") {
                         var blk = arrayIteratorBlock(n.metadata, n.pos);
@@ -46,11 +46,31 @@ class StdHaxeRuntimeOverrideTransforms {
                     } else if (name == "StringTools") {
                         var blk3 = stringToolsBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk3]), n.metadata, n.pos);
+                    } else if (name == "Log") {
+                        var blk4 = logBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [blk4]), n.metadata, n.pos);
                     } else n;
                 default:
                     n;
             }
         });
+    }
+
+    static inline function logDef(orig: ElixirAST): ElixirAST {
+        return makeASTWithMeta(EDefmodule("Log", logBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
+    }
+    static inline function logBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+        var raw = makeAST(ERaw(
+            "  def format_output(v, infos) do\n" +
+            "    str = inspect(v)\n" +
+            "    if Kernel.is_nil(infos), do: str\n" +
+            "    str\n" +
+            "  end\n" +
+            "  def trace(v, infos) do\n" +
+            "    (\n\n            case infos do\n              nil -> IO.inspect(v)\n              infos ->\n                file = Map.get(infos, :fileName)\n                line = Map.get(infos, :lineNumber)\n                base = if file != nil and line != nil, do: \"#{file}:#{line}\", else: nil\n                class = Map.get(infos, :className)\n                method = Map.get(infos, :methodName)\n                label = cond do\n                  class != nil and method != nil and base != nil -> \"#{class}.#{method} - #{base}\"\n                  base != nil -> base\n                  true -> nil\n                end\n                if label != nil, do: IO.inspect(v, label: label), else: IO.inspect(v)\n            end\n            \n)\n" +
+            "  end\n"
+        ));
+        return makeASTWithMeta(EBlock([raw]), meta, pos);
     }
 
     static inline function arrayIteratorDef(orig: ElixirAST): ElixirAST {

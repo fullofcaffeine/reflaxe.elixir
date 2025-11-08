@@ -1,0 +1,639 @@
+class reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts) if (stmts.length > 1):
+		makeASTWithMeta(EBlock(promote(stmts, n)), n.metadata, n.pos);	
+	case EDo(stmts2) if (stmts2.length > 1):
+		makeASTWithMeta(EDo(promote(stmts2, n)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							if (stmts.length > 1) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.promote(stmts, n));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							if (stmts2.length > 1) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.promote(stmts2, n));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function promote(stmts:Array<reflaxe.elixir.ast.ElixirAST>, ctx:reflaxe.elixir.ast.ElixirAST) {
+		var out = [];
+		var hasDefinedQuery = function(before:Int) {
+			{
+				var ` = 0;
+				var ` = before;
+				while (` < `) {
+					var k = ` ++;
+					@:ast(switch (stmts[k].def) {
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(nm) if (nm == "query"):
+				return true;			
+			default:
+		};	
+	case EMatch(pat, _):
+		switch (pat) {
+			case PVar(n) if (n == "query"):
+				return true;			
+			default:
+		};	
+	default:
+}) {
+						var ` = stmts[k].def;
+						switch (enumIndex `) {
+							case 8: {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var pat = `;
+									{
+										@:ast(switch (pat) {
+	case PVar(n) if (n == "query"):
+		return true;	
+	default:
+}) if (enumIndex pat == 0) {
+											var ` = pat[0];
+											{
+												var n = `;
+												if (n == "query") {
+													return true;
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+							case 26: {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 27) {
+									{
+										var left = `;
+										{
+											@:ast(switch (left.def) {
+	case EVar(nm) if (nm == "query"):
+		return true;	
+	default:
+}) {
+												var ` = left.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var nm = `;
+														if (nm == "query") {
+															return true;
+														} else {};
+													};
+												} else {};
+											};
+										};
+									};
+								} else {};
+							};
+							default: {}
+						};
+					};
+				};
+			};
+			return false;
+		};
+		var bodyUsesQuery = function(e:reflaxe.elixir.ast.ElixirAST) {
+			var found = [false];
+			reflaxe.elixir.ast.ElixirASTTransformer.transformNode(e, function(x:reflaxe.elixir.ast.ElixirAST) {
+				if (found[0]) {
+					return x;
+				};
+				@:ast(switch (x.def) {
+	case EVar(nm) if (nm == "query"):
+		found = true;
+		return x;	
+	default:
+		return x;	
+}) {
+					var ` = x.def;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						{
+							var nm = `;
+							if (nm == "query") {
+								found[0] = true;
+								return x;
+							} else {
+								return x;
+							};
+						};
+					} else {
+						return x;
+					};
+				};
+			});
+			return found[0];
+		};
+		var i = 0;
+		while (i < stmts.length) {
+			var s = stmts[i];
+			if (i + 1 < stmts.length) {
+				var next = stmts[i + 1];
+				var isWildcardDowncase = @:ast(switch (s.def) {
+	case EMatch(PWildcard, rhs):
+		switch (rhs.def) {
+			case ERemoteCall({ def : EVar(m) }, "downcase", _) if (m == "String"):
+				true;			
+			default:
+				false;			
+		};	
+	case EBinary(Match, leftWild, rhs2):
+		var isWild = switch (leftWild.def) {
+			case EVar(nm) if (nm == "_"):
+				true;			
+			default:
+				false;			
+		};
+		if (!isWild) false else switch (rhs2.def) {
+			case ERemoteCall({ def : EVar(m2) }, "downcase", _) if (m2 == "String"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 8) {
+								{
+									var rhs = `;
+									{
+										@:ast(switch (rhs.def) {
+	case ERemoteCall({ def : EVar(m) }, "downcase", _) if (m == "String"):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = rhs.def;
+											if (enumIndex ` == 24) {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "downcase") {
+															{
+																var m = `;
+																if (m == "String") {
+																	true;
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var leftWild = `;
+									var rhs2 = `;
+									{
+										var isWild = @:ast(switch (leftWild.def) {
+	case EVar(nm) if (nm == "_"):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = leftWild.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var nm = `;
+													if (nm == "_") {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+										if (! isWild) {
+											false;
+										} else {
+											@:ast(switch (rhs2.def) {
+	case ERemoteCall({ def : EVar(m2) }, "downcase", _) if (m2 == "String"):
+		true;	
+	default:
+		false;	
+}) {
+												var ` = rhs2.def;
+												if (enumIndex ` == 24) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var ` = `.def;
+														var ` = `.metadata;
+														var ` = `.pos;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															if (` == "downcase") {
+																{
+																	var m2 = `;
+																	if (m2 == "String") {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										};
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						default: {
+							false;
+						}
+					};
+				};
+				var nextUsesQueryInFilter = @:ast(switch (next.def) {
+	case ERemoteCall({ def : EVar(m2) }, "filter", args) if (m2 == "Enum" && args.length == 2):
+		switch (args[1].def) {
+			case EFn(clauses) if (clauses.length == 1):
+				bodyUsesQuery(clauses[0].body);			
+			default:
+				false;			
+		};	
+	case ECall(_, "filter", args2) if (args2.length == 2):
+		switch (args2[1].def) {
+			case EFn(clauses) if (clauses.length == 1):
+				bodyUsesQuery(clauses[0].body);			
+			default:
+				false;			
+		};	
+	case EMatch(_, rhsNext):
+		switch (rhsNext.def) {
+			case ERemoteCall({ def : EVar(m3) }, "filter", a3) if (m3 == "Enum" && a3.length == 2):
+				switch (a3[1].def) {
+					case EFn(clauses3) if (clauses3.length == 1):
+						bodyUsesQuery(clauses3[0].body);					
+					default:
+						false;					
+				};			
+			case ECall(_, "filter", a4) if (a4.length == 2):
+				switch (a4[1].def) {
+					case EFn(clauses4) if (clauses4.length == 1):
+						bodyUsesQuery(clauses4[0].body);					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+					var ` = next.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var rhsNext = `;
+								{
+									@:ast(switch (rhsNext.def) {
+	case ERemoteCall({ def : EVar(m3) }, "filter", a3) if (m3 == "Enum" && a3.length == 2):
+		switch (a3[1].def) {
+			case EFn(clauses3) if (clauses3.length == 1):
+				bodyUsesQuery(clauses3[0].body);			
+			default:
+				false;			
+		};	
+	case ECall(_, "filter", a4) if (a4.length == 2):
+		switch (a4[1].def) {
+			case EFn(clauses4) if (clauses4.length == 1):
+				bodyUsesQuery(clauses4[0].body);			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+										var ` = rhsNext.def;
+										switch (enumIndex `) {
+											case 22: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (` == "filter") {
+													{
+														var a4 = `;
+														if (a4.length == 2) {
+															@:ast(switch (a4[1].def) {
+	case EFn(clauses4) if (clauses4.length == 1):
+		bodyUsesQuery(clauses4[0].body);	
+	default:
+		false;	
+}) {
+																var ` = a4[1].def;
+																if (enumIndex ` == 42) {
+																	var ` = `[0];
+																	{
+																		var clauses4 = `;
+																		if (clauses4.length == 1) {
+																			bodyUsesQuery(clauses4[0].body);
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "filter") {
+															{
+																var m3 = `;
+																var a3 = `;
+																if (m3 == "Enum" && a3.length == 2) {
+																	@:ast(switch (a3[1].def) {
+	case EFn(clauses3) if (clauses3.length == 1):
+		bodyUsesQuery(clauses3[0].body);	
+	default:
+		false;	
+}) {
+																		var ` = a3[1].def;
+																		if (enumIndex ` == 42) {
+																			var ` = `[0];
+																			{
+																				var clauses3 = `;
+																				if (clauses3.length == 1) {
+																					bodyUsesQuery(clauses3[0].body);
+																				} else {
+																					false;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													} else {
+														false;
+													};
+												};
+											};
+											default: {
+												false;
+											}
+										};
+									};
+								};
+							};
+						};
+						case 22: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (` == "filter") {
+								{
+									var args2 = `;
+									if (args2.length == 2) {
+										@:ast(switch (args2[1].def) {
+	case EFn(clauses) if (clauses.length == 1):
+		bodyUsesQuery(clauses[0].body);	
+	default:
+		false;	
+}) {
+											var ` = args2[1].def;
+											if (enumIndex ` == 42) {
+												var ` = `[0];
+												{
+													var clauses = `;
+													if (clauses.length == 1) {
+														bodyUsesQuery(clauses[0].body);
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						case 24: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									if (` == "filter") {
+										{
+											var m2 = `;
+											var args = `;
+											if (m2 == "Enum" && args.length == 2) {
+												@:ast(switch (args[1].def) {
+	case EFn(clauses) if (clauses.length == 1):
+		bodyUsesQuery(clauses[0].body);	
+	default:
+		false;	
+}) {
+													var ` = args[1].def;
+													if (enumIndex ` == 42) {
+														var ` = `[0];
+														{
+															var clauses = `;
+															if (clauses.length == 1) {
+																bodyUsesQuery(clauses[0].body);
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} else {
+									false;
+								};
+							};
+						};
+						default: {
+							false;
+						}
+					};
+				};
+				if (isWildcardDowncase && nextUsesQueryInFilter && ! hasDefinedQuery(i)) {
+					@:ast(switch (s.def) {
+	case EMatch(PWildcard, rhsPromote):
+		out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhsPromote), ctx.metadata, ctx.pos));
+		i++;
+		continue;	
+	case EBinary(Match, _, rhsPromote2):
+		out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhsPromote2), ctx.metadata, ctx.pos));
+		i++;
+		continue;	
+	default:
+}) {
+						var ` = s.def;
+						switch (enumIndex `) {
+							case 8: {
+								var ` = `[0];
+								var ` = `[1];
+								if (enumIndex ` == 8) {
+									{
+										var rhsPromote = `;
+										{
+											out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("query"), metadata : {}, pos : pos};
+											}, rhsPromote), metadata : ctx.metadata, pos : ctx.pos});
+											i ++;
+											continue;
+										};
+									};
+								} else {};
+							};
+							case 26: {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 27) {
+									{
+										var rhsPromote2 = `;
+										{
+											out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("query"), metadata : {}, pos : pos};
+											}, rhsPromote2), metadata : ctx.metadata, pos : ctx.pos});
+											i ++;
+											continue;
+										};
+									};
+								} else {};
+							};
+							default: {}
+						};
+					};
+				};
+			};
+			out.push(s);
+			i ++;
+		};
+		return out;
+	}
+}

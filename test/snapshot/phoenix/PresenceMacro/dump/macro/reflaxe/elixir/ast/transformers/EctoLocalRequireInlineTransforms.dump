@@ -1,0 +1,345 @@
+class reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms {
+
+	static inline function isEctoQueryCall(n:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (n.def) {
+	case ERemoteCall(mod, func, _):
+		var ok = (func == "from" || func == "where" || func == "order_by" || func == "preload" || func == "join" || func == "fragment");
+		if (!ok) return false;
+		switch (mod.def) {
+			case EVar(m) if (m == "Ecto.Query"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var mod = `;
+					var func = `;
+					{
+						var ok = (func == "from" || func == "where" || func == "order_by" || func == "preload" || func == "join" || func == "fragment");
+						if (! ok) {
+							return false;
+						};
+						@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Ecto.Query"):
+		true;	
+	default:
+		false;	
+}) {
+							var ` = mod.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m == "Ecto.Query") {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function containsEctoQueryCall(n:reflaxe.elixir.ast.ElixirAST) {
+		var found = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0]) {
+				return x;
+			};
+			if (@:ast(switch (n.def) {
+	case ERemoteCall(mod, func, _):
+		var ok = (func == "from" || func == "where" || func == "order_by" || func == "preload" || func == "join" || func == "fragment");
+		if (!ok) return false;
+		switch (mod.def) {
+			case EVar(m) if (m == "Ecto.Query"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var func = `;
+						{
+							var ok = (func == "from" || func == "where" || func == "order_by" || func == "preload" || func == "join" || func == "fragment");
+							if (! ok) {
+								false;
+							} else {
+								@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Ecto.Query"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = mod.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											if (m == "Ecto.Query") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+							};
+						};
+					};
+				} else {
+					false;
+				};
+			}) {
+				found[0] = true;
+				return x;
+			};
+			return x;
+		});
+		return found[0];
+	}
+
+	static function processStmts(stmts:Array<reflaxe.elixir.ast.ElixirAST>, ctx:reflaxe.elixir.ast.ElixirAST) {
+		var out = [];
+		var hasRequire = false;
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				@:ast(switch (s.def) {
+	case ERequire(mod, _) if (mod == "Ecto.Query"):
+		hasRequire = true;
+		out.push(s);	
+	default:
+		if (!hasRequire && containsEctoQueryCall(s)) {
+			out.push(makeASTWithMeta(ERequire("Ecto.Query", null), ctx.metadata, ctx.pos));
+			hasRequire = true;
+			out.push(s);
+		} else {
+			out.push(s);
+		};	
+}) {
+					var ` = s.def;
+					if (enumIndex ` == 47) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var mod = `;
+							if (mod == "Ecto.Query") {
+								hasRequire = true;
+								out.push(s);
+							} else {
+								if (! hasRequire && reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.containsEctoQueryCall(s)) {
+									out.push({def : reflaxe.elixir.ast.ElixirASTDef.ERequire("Ecto.Query", null), metadata : ctx.metadata, pos : ctx.pos});
+									hasRequire = true;
+									out.push(s);
+								} else {
+									out.push(s);
+								};
+							};
+						};
+					} else {
+						if (! hasRequire && reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.containsEctoQueryCall(s)) {
+							out.push({def : reflaxe.elixir.ast.ElixirASTDef.ERequire("Ecto.Query", null), metadata : ctx.metadata, pos : ctx.pos});
+							hasRequire = true;
+							out.push(s);
+						} else {
+							out.push(s);
+						};
+					};
+				};
+			};
+		};
+		return out;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		switch (body.def) {
+			case EBlock(ss):
+				makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(processStmts(ss, n)))), n.metadata, n.pos);			
+			case EDo(ss2):
+				makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(processStmts(ss2, n)))), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	case EDefp(name, args, guards, body):
+		switch (body.def) {
+			case EBlock(ss):
+				makeASTWithMeta(EDefp(name, args, guards, makeAST(EBlock(processStmts(ss, n)))), n.metadata, n.pos);			
+			case EDo(ss2):
+				makeASTWithMeta(EDefp(name, args, guards, makeAST(EDo(processStmts(ss2, n)))), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								@:ast(switch (body.def) {
+	case EBlock(ss):
+		makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(processStmts(ss, n)))), n.metadata, n.pos);	
+	case EDo(ss2):
+		makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(processStmts(ss2, n)))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = body.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+															var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.processStmts(ss, n));
+															var pos = null;
+															{def : def, metadata : {}, pos : pos};
+														});
+														var meta = n.metadata;
+														var pos = n.pos;
+														{def : def, metadata : meta, pos : pos};
+													};
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var ss2 = `;
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+															var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.processStmts(ss2, n));
+															var pos = null;
+															{def : def, metadata : {}, pos : pos};
+														});
+														var meta = n.metadata;
+														var pos = n.pos;
+														{def : def, metadata : meta, pos : pos};
+													};
+												};
+											};
+										};
+										default: {
+											n;
+										}
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								@:ast(switch (body.def) {
+	case EBlock(ss):
+		makeASTWithMeta(EDefp(name, args, guards, makeAST(EBlock(processStmts(ss, n)))), n.metadata, n.pos);	
+	case EDo(ss2):
+		makeASTWithMeta(EDefp(name, args, guards, makeAST(EDo(processStmts(ss2, n)))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = body.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, {
+															var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.processStmts(ss, n));
+															var pos = null;
+															{def : def, metadata : {}, pos : pos};
+														});
+														var meta = n.metadata;
+														var pos = n.pos;
+														{def : def, metadata : meta, pos : pos};
+													};
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var ss2 = `;
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, {
+															var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.EctoLocalRequireInlineTransforms.processStmts(ss2, n));
+															var pos = null;
+															{def : def, metadata : {}, pos : pos};
+														});
+														var meta = n.metadata;
+														var pos = n.pos;
+														{def : def, metadata : meta, pos : pos};
+													};
+												};
+											};
+										};
+										default: {
+											n;
+										}
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

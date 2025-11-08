@@ -1,0 +1,828 @@
+class reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms {
+
+	@:value([{ camel : "createTable", snake : "create_table" }, { camel : "dropTable", snake : "drop_table" }, { camel : "addColumn", snake : "add_column" }, { camel : "addIndex", snake : "add_index" }, { camel : "addTimestamps", snake : "add_timestamps" }, { camel : "addCheckConstraint", snake : "add_check_constraint" }])
+	static var CamelToSnake(default,never):Array<{ snake : String, camel : String }> = [{camel : "createTable", snake : "create_table"}, {camel : "dropTable", snake : "drop_table"}, {camel : "addColumn", snake : "add_column"}, {camel : "addIndex", snake : "add_index"}, {camel : "addTimestamps", snake : "add_timestamps"}, {camel : "addCheckConstraint", snake : "add_check_constraint"}];
+
+	static function buildOrder(names:Map<String, Int>) {
+		var order = [];
+		{};
+		if (names.exists("create_table")) {
+			order.push("create_table");
+		};
+		if (names.exists("drop_table") && ! names.exists("add_timestamps")) {
+			order.push("drop_table");
+		};
+		if (names.exists("add_column")) {
+			order.push("add_column");
+		};
+		if (names.exists("add_timestamps")) {
+			order.push("add_timestamps");
+		};
+		if (names.exists("drop_table") && names.exists("add_timestamps") && order.indexOf("drop_table", null) == -1) {
+			order.push("drop_table");
+		};
+		if (names.exists("add_index")) {
+			order.push("add_index");
+		};
+		if (names.exists("timestamps")) {
+			order.push("timestamps");
+		};
+		if (names.exists("add_check_constraint")) {
+			order.push("add_check_constraint");
+		};
+		var extras = [];
+		for (k in names.keys()) {
+			if (order.indexOf(k, null) == -1) {
+				extras.push(k);
+			};
+		};
+		extras.sort(function(a:String, b:String) return Reflect.compare(a, b));
+		{
+			var ` = 0;
+			while (` < extras.length) {
+				var k = extras[`];
+				++ `;
+				order.push(k);
+			};
+		};
+		return order;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		if (!isMigrationModule(n.metadata, attrs, body)) return n;
+		var needed = detectMigrationCalls(body);
+		if (!needed.hasAny) return n;
+		if (!hasStandardHelpers(needed.names)) return n;
+		var newAttrs = injectCompileNowarn(attrs, needed);
+		var newBody = body.copy();
+		var order = buildOrder(needed.names);
+		for (key  in  order) newBody.push(makeStub(key, needed.names.get(key)));
+		makeASTWithMeta(EModule(name, newAttrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock):
+		if (!isMigrationDoBlock(doBlock)) return n;
+		var stmts:Array<ElixirAST> = switch (doBlock.def) {
+			case EBlock(ss):
+				ss;			
+			case EDo(ss2):
+				ss2;			
+			default:
+				[doBlock];			
+		};
+		var needed2 = detectMigrationCalls(stmts);
+		if (!needed2.hasAny) return n;
+		if (!hasStandardHelpers(needed2.names)) return n;
+		var attrs2:Array<EAttribute> = injectCompileNowarn([], needed2);
+		var body2 = stmts.copy();
+		var order2 = buildOrder(needed2.names);
+		for (key  in  order2) body2.push(makeStub(key, needed2.names.get(key)));
+		makeASTWithMeta(EModule(name2, attrs2, body2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								if (! reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.isMigrationModule(n.metadata, attrs, body)) {
+									return n;
+								};
+								var needed = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.detectMigrationCalls(body);
+								if (! needed.hasAny) {
+									return n;
+								};
+								if (! reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.hasStandardHelpers(needed.names)) {
+									return n;
+								};
+								var newAttrs = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.injectCompileNowarn(attrs, needed);
+								var newBody = body.copy();
+								var order = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.buildOrder(needed.names);
+								{
+									var ` = 0;
+									while (` < order.length) {
+										var key = order[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.makeStub(key, {
+											var this = needed.names;
+											cast this.get(key);
+										}));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, newAttrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							{
+								if (! reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.isMigrationDoBlock(doBlock)) {
+									return n;
+								};
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	case EDo(ss2):
+		ss2;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													ss;
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var ss2 = `;
+												{
+													ss2;
+												};
+											};
+										};
+										default: {
+											[doBlock];
+										}
+									};
+								};
+								var needed2 = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.detectMigrationCalls(stmts);
+								if (! needed2.hasAny) {
+									return n;
+								};
+								if (! reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.hasStandardHelpers(needed2.names)) {
+									return n;
+								};
+								var attrs2 = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.injectCompileNowarn([], needed2);
+								var body2 = stmts.copy();
+								var order2 = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.buildOrder(needed2.names);
+								{
+									var ` = 0;
+									while (` < order2.length) {
+										var key = order2[`];
+										++ `;
+										body2.push(reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.makeStub(key, {
+											var this = needed2.names;
+											cast this.get(key);
+										}));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name2, attrs2, body2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function isMigrationModule(meta:reflaxe.elixir.ast.ElixirMetadata, attrs:Array<reflaxe.elixir.ast.EAttribute>, body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (meta != null && meta.ectoContext != null) {
+			@:ast(switch (meta.ectoContext) {
+	case Migration:
+		return true;	
+	default:
+}) {
+				var ` = meta.ectoContext;
+				if (` == null) {} else if (enumIndex ` == 4) {
+					{
+						return true;
+					};
+				} else {};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < attrs.length) {
+				var a = attrs[`];
+				++ `;
+				@:ast(switch (a.value.def) {
+	case EVar(v) if (v == "Ecto.Migration"):
+		return true;	
+	case _:
+}) {
+					var ` = a.value.def;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == "Ecto.Migration") {
+								return true;
+							} else {};
+						};
+					} else {};
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				@:ast(switch (b.def) {
+	case EUse(mod, _):
+		if (mod == "Ecto.Migration") return true;	
+	default:
+}) {
+					var ` = b.def;
+					if (enumIndex ` == 46) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var mod = `;
+							{
+								if (mod == "Ecto.Migration") {
+									return true;
+								};
+							};
+						};
+					} else {};
+				};
+			};
+		};
+		var hasUpDown = false;
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				@:ast(switch (b.def) {
+	case EDef("up", _, _, _) | EDef("down", _, _, _):
+		hasUpDown = true;	
+	default:
+}) {
+					var ` = b.def;
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						switch (`) {
+							case "down", "up": {
+								{
+									hasUpDown = true;
+								};
+							};
+							default: {}
+						};
+					} else {};
+				};
+			};
+		};
+		return hasUpDown;
+	}
+
+	static function isMigrationDoBlock(doBlock:reflaxe.elixir.ast.ElixirAST) {
+		var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	case EDo(ss2):
+		ss2;	
+	default:
+		[doBlock];	
+}) {
+			var ` = doBlock.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var ss = `;
+						{
+							ss;
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var ss2 = `;
+						{
+							ss2;
+						};
+					};
+				};
+				default: {
+					[doBlock];
+				}
+			};
+		};
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				@:ast(switch (s.def) {
+	case EUse(mod, _):
+		if (mod == "Ecto.Migration") return true;	
+	default:
+}) {
+					var ` = s.def;
+					if (enumIndex ` == 46) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var mod = `;
+							{
+								if (mod == "Ecto.Migration") {
+									return true;
+								};
+							};
+						};
+					} else {};
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				@:ast(switch (s.def) {
+	case EDef("up", _, _, _) | EDef("down", _, _, _):
+		return true;	
+	default:
+}) {
+					var ` = s.def;
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						switch (`) {
+							case "down", "up": {
+								{
+									return true;
+								};
+							};
+							default: {}
+						};
+					} else {};
+				};
+			};
+		};
+		return false;
+	}
+
+	static function hasStandardHelpers(names:Map<String, Int>) {
+		if (names == null) {
+			return false;
+		};
+		var std = ["create_table", "drop_table", "add_column", "add_index", "add_timestamps", "timestamps", "add_check_constraint"];
+		{
+			var ` = 0;
+			while (` < std.length) {
+				var k = std[`];
+				++ `;
+				if (names.exists(k)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	static function detectMigrationCalls(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var has = [false];
+		var scan = [null];
+		scan[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case ECall(_, func, args):
+		var sn = deriveSnake(func);
+		var ar = 1 + (args != null ? args.length : 0);
+		names.set(sn, maxArity(names.get(sn), ar));
+		has = true;	
+	case ERemoteCall(_, func2, args2):
+		var sn2 = deriveSnake(func2);
+		var ar2 = 1 + (args2 != null ? args2.length : 0);
+		names.set(sn2, maxArity(names.get(sn2), ar2));
+		has = true;	
+	case EDef("up", args, _, upBody):
+		if (args != null && args.length >= 1) scan(upBody);	
+	case EDef("down", args2, _, downBody):
+		if (args2 != null && args2.length >= 1) scan(downBody);	
+	case EBlock(es):
+		for (e  in  es) scan(e);	
+	case EIf(c, t, e):
+		scan(c);
+		scan(t);
+		if (e != null) scan(e);	
+	case ECase(e, cs):
+		scan(e);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	case EFn(cs):
+		for (cl  in  cs) scan(cl.body);	
+	case ECall(t, _, as):
+		if (t != null) scan(t);
+		if (as != null) for (a  in  as) scan(a);	
+	case ERemoteCall(m, _, as):
+		scan(m);
+		if (as != null) for (a  in  as) scan(a);	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						switch (`) {
+							case "down": {
+								{
+									var args2 = `;
+									var downBody = `;
+									{
+										if (args2 != null && args2.length >= 1) {
+											scan[0](downBody);
+										};
+									};
+								};
+							};
+							case "up": {
+								{
+									var args = `;
+									var upBody = `;
+									{
+										if (args != null && args.length >= 1) {
+											scan[0](upBody);
+										};
+									};
+								};
+							};
+							default: {}
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var cs = `;
+							{
+								scan[0](e);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (e != null) {
+									scan[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var func = `;
+							var args = `;
+							{
+								var sn = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.deriveSnake(func);
+								var ar = 1 + (if (args != null) {
+									args.length;
+								} else {
+									0;
+								});
+								{
+									var value = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.maxArity(names.get(sn), ar);
+									names.set(sn, value);
+								};
+								has[0] = true;
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var func2 = `;
+							var args2 = `;
+							{
+								var sn2 = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.deriveSnake(func2);
+								var ar2 = 1 + (if (args2 != null) {
+									args2.length;
+								} else {
+									0;
+								});
+								{
+									var value = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.maxArity(names.get(sn2), ar2);
+									names.set(sn2, value);
+								};
+								has[0] = true;
+							};
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var cs = `;
+							{
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var cl = cs[`];
+										++ `;
+										scan[0](cl.body);
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var es = `;
+							{
+								{
+									var ` = 0;
+									while (` < es.length) {
+										var e = es[`];
+										++ `;
+										scan[0](e);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				scan[0](b);
+			};
+		};
+		return {hasAny : has[0], names : names};
+	}
+
+	static function maxArity(old:Null<Int>, now:Int) {
+		return if (old != null && old > now) {
+			old;
+		} else {
+			now;
+		};
+	}
+
+	static function deriveSnake(func:String) {
+		{
+			var ` = 0;
+			var ` = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.CamelToSnake;
+			while (` < `.length) {
+				var entry = `[`];
+				++ `;
+				if (entry.camel == func) {
+					return entry.snake;
+				};
+			};
+		};
+		var isSnake = func.toLowerCase() == func;
+		if (isSnake) {
+			return func;
+		};
+		return new EReg("([a-z0-9])([A-Z])", "g").replace(func, "$1_$2").toLowerCase();
+	}
+
+	static function injectCompileNowarn(attrs:Array<reflaxe.elixir.ast.EAttribute>, info:{ names : Map<String, Int>, hasAny : Bool }) {
+		var pairs = [];
+		var order = reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.buildOrder(info.names);
+		{
+			var ` = 0;
+			while (` < order.length) {
+				var key = order[`];
+				++ `;
+				pairs.push({key : key, value : {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EInteger({
+						var this = info.names;
+						cast this.get(key);
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}});
+			};
+		};
+		if (pairs.length == 0) {
+			return attrs;
+		};
+		var value = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+				var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+					var this;
+					this = reflaxe.elixir.ast.NameUtils.toSnakeCase("nowarn_unused_function");
+					cast this;
+				});
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EKeywordList(pairs), metadata : {}, pos : pos};
+			}]);
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		};
+		var compileAttr = {name : "compile", value : value};
+		var hasCompile = false;
+		{
+			var ` = 0;
+			while (` < attrs.length) {
+				var a = attrs[`];
+				++ `;
+				if (a.name == "compile") {
+					hasCompile = true;
+					break;
+				};
+			};
+		};
+		var newAttrs = attrs.copy();
+		if (! hasCompile) {
+			newAttrs.unshift(compileAttr);
+		};
+		return newAttrs;
+	}
+
+	static function makeStub(name:String, arity:Int) {
+		var args = [];
+		{
+			var ` = 0;
+			var ` = arity;
+			while (` < `) {
+				var i = ` ++;
+				args.push(reflaxe.elixir.ast.EPattern.PVar(if (i == 0) {
+					"struct";
+				} else {
+					"_arg";
+				}));
+			};
+		};
+		@:ast(switch (name) {
+	case "create_table" | "drop_table":
+		if (arity >= 2) args = [PVar("struct"), PVar("_name")];	
+	case "add_timestamps" | "timestamps":
+		if (arity >= 2) args = [PVar("struct"), PVar("_table")] else args = [PVar("struct")];	
+	case "add_column":
+		switch (arity) {
+			case 4:
+				args = [PVar("struct"), PVar("_table"), PVar("_column"), PVar("_type")];			
+			case 6:
+				args = [PVar("struct"), PVar("_table"), PVar("_name"), PVar("_type"), PVar("_primary_key"), PVar("_default_value")];			
+			default:
+		};	
+	case "add_index":
+		switch (arity) {
+			case 3:
+				args = [PVar("struct"), PVar("_table"), PVar("_columns")];			
+			case 4:
+				args = [PVar("struct"), PVar("_table"), PVar("_columns"), PVar("_options")];			
+			default:
+		};	
+	case "add_check_constraint":
+		if (arity >= 4) args = [PVar("struct"), PVar("_table"), PVar("_name"), PVar("_condition")];	
+	default:
+}) switch (name) {
+			case "add_check_constraint": {
+				{
+					if (arity >= 4) {
+						args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_table"), reflaxe.elixir.ast.EPattern.PVar("_name"), reflaxe.elixir.ast.EPattern.PVar("_condition")];
+					};
+				};
+			};
+			case "add_column": {
+				{
+					@:ast(switch (arity) {
+	case 4:
+		args = [PVar("struct"), PVar("_table"), PVar("_column"), PVar("_type")];	
+	case 6:
+		args = [PVar("struct"), PVar("_table"), PVar("_name"), PVar("_type"), PVar("_primary_key"), PVar("_default_value")];	
+	default:
+}) switch (arity) {
+						case 4: {
+							{
+								args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_table"), reflaxe.elixir.ast.EPattern.PVar("_column"), reflaxe.elixir.ast.EPattern.PVar("_type")];
+							};
+						};
+						case 6: {
+							{
+								args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_table"), reflaxe.elixir.ast.EPattern.PVar("_name"), reflaxe.elixir.ast.EPattern.PVar("_type"), reflaxe.elixir.ast.EPattern.PVar("_primary_key"), reflaxe.elixir.ast.EPattern.PVar("_default_value")];
+							};
+						};
+						default: {}
+					};
+				};
+			};
+			case "add_index": {
+				{
+					@:ast(switch (arity) {
+	case 3:
+		args = [PVar("struct"), PVar("_table"), PVar("_columns")];	
+	case 4:
+		args = [PVar("struct"), PVar("_table"), PVar("_columns"), PVar("_options")];	
+	default:
+}) switch (arity) {
+						case 3: {
+							{
+								args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_table"), reflaxe.elixir.ast.EPattern.PVar("_columns")];
+							};
+						};
+						case 4: {
+							{
+								args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_table"), reflaxe.elixir.ast.EPattern.PVar("_columns"), reflaxe.elixir.ast.EPattern.PVar("_options")];
+							};
+						};
+						default: {}
+					};
+				};
+			};
+			case "create_table", "drop_table": {
+				{
+					if (arity >= 2) {
+						args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_name")];
+					};
+				};
+			};
+			case "add_timestamps", "timestamps": {
+				{
+					if (arity >= 2) {
+						args = [reflaxe.elixir.ast.EPattern.PVar("struct"), reflaxe.elixir.ast.EPattern.PVar("_table")];
+					} else {
+						args = [reflaxe.elixir.ast.EPattern.PVar("struct")];
+					};
+				};
+			};
+			default: {}
+		};
+		var body = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([]), metadata : {}, pos : pos};
+		};
+		if (name != null && StringTools.startsWith(name, "should_")) {
+			body = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBoolean(true), metadata : {}, pos : pos};
+				}]), metadata : {}, pos : pos};
+			};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, null, body), metadata : {}, pos : pos};
+		};
+	}
+}

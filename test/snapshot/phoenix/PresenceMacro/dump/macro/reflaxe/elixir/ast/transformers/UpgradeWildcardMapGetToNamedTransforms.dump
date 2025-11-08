@@ -1,0 +1,250 @@
+class reflaxe.elixir.ast.transformers.UpgradeWildcardMapGetToNamedTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(Match, { def : EVar("_") }, rhs):
+		var key = extractMapGetKey(rhs);
+		if (key != null) {
+			Sys.println("[UpgradeWildcardMapGet] _ = Map.get(..., '" + key + "') → " + key + " = Map.get(...)");
+			makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs), n.metadata, n.pos);
+		} else n;	
+	case EMatch(PVar("_"), rhs2):
+		var key2 = extractMapGetKey(rhs2);
+		if (key2 != null) {
+			Sys.println("[UpgradeWildcardMapGet] _ <- Map.get(..., '" + key2 + "') → " + key2 + " = Map.get(...)");
+			makeASTWithMeta(EBinary(Match, makeAST(EVar(key2)), rhs2), n.metadata, n.pos);
+		} else n;	
+	case EBinary(Match, { def : EVar("_") }, { def : EParen(inner) }):
+		var k3 = extractMapGetKey(inner);
+		if (k3 != null) {
+			Sys.println("[UpgradeWildcardMapGet] (paren) _ = Map.get(..., '" + k3 + "') → " + k3 + " = Map.get(...)");
+			makeASTWithMeta(EBinary(Match, makeAST(EVar(k3)), inner), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							if (` == "_") {
+								{
+									var rhs2 = `;
+									{
+										var key2 = reflaxe.elixir.ast.transformers.UpgradeWildcardMapGetToNamedTransforms.extractMapGetKey(rhs2);
+										if (key2 != null) {
+											Sys.println("[UpgradeWildcardMapGet] _ <- Map.get(..., '" + key2 + "') → " + key2 + " = Map.get(...)");
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(key2), metadata : {}, pos : pos};
+											}, rhs2), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									if (` == "_") {
+										{
+											var rhs = `;
+											{
+												var key = reflaxe.elixir.ast.transformers.UpgradeWildcardMapGetToNamedTransforms.extractMapGetKey(rhs);
+												if (key != null) {
+													Sys.println("[UpgradeWildcardMapGet] _ = Map.get(..., '" + key + "') → " + key + " = Map.get(...)");
+													{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(key), metadata : {}, pos : pos};
+													}, rhs), metadata : n.metadata, pos : n.pos};
+												} else {
+													n;
+												};
+											};
+										};
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function extractMapGetKey(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case ERemoteCall(mod, name, args):
+		var isMap = switch (mod.def) {
+			case EVar(m):
+				m == "Map";			
+			default:
+				false;			
+		};
+		if (isMap && name == "get" && args != null && args.length >= 2) switch (args[1].def) {
+			case EString(s):
+				s;			
+			default:
+				null;			
+		} else null;	
+	case ECall(target, funcName, args2):
+		var isMapGet = (funcName == "get") && (target != null) && switch (target.def) {
+			case EVar(m2):
+				m2 == "Map";			
+			default:
+				false;			
+		};
+		if (isMapGet && args2 != null && args2.length >= 2) switch (args2[1].def) {
+			case EString(s2):
+				s2;			
+			default:
+				null;			
+		} else null;	
+	default:
+		null;	
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var funcName = `;
+						var args2 = `;
+						{
+							var isMapGet = (funcName == "get") && (target != null) && @:ast(switch (target.def) {
+	case EVar(m2):
+		m2 == "Map";	
+	default:
+		false;	
+}) {
+								var ` = target.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m2 = `;
+										{
+											m2 == "Map";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							if (isMapGet && args2 != null && args2.length >= 2) {
+								@:ast(switch (args2[1].def) {
+	case EString(s2):
+		s2;	
+	default:
+		null;	
+}) {
+									var ` = args2[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var s2 = `;
+											{
+												s2;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var name = `;
+						var args = `;
+						{
+							var isMap = @:ast(switch (mod.def) {
+	case EVar(m):
+		m == "Map";	
+	default:
+		false;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										{
+											m == "Map";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							if (isMap && name == "get" && args != null && args.length >= 2) {
+								@:ast(switch (args[1].def) {
+	case EString(s):
+		s;	
+	default:
+		null;	
+}) {
+									var ` = args[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var s = `;
+											{
+												s;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

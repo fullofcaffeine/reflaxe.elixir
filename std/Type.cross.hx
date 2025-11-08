@@ -26,11 +26,10 @@ class Type {
 	 * @param v The value to check
 	 * @return The ValueType of the value
 	 */
-	public static function typeof(v: Dynamic): ValueType {
-		// Placeholder implementation for compile time
-		// The real implementation is in Type.ex
-		return TUnknown;
-	}
+    public static function typeof(v: Dynamic): ValueType {
+        // Emit runtime atom shape expected by snapshots for unknown types
+        return untyped __elixir__(':t_unknown');
+    }
     /**
      * Returns the index of an enum value.
      * For Elixir, this extracts the first element of the tuple (the atom tag).

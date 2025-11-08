@@ -1,0 +1,1745 @@
+class reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
+		var pvar = secondArgVar(args);
+		var svar = thirdArgVar(args);
+		var repaired = repairBody(body, pvar, svar);
+		makeASTWithMeta(EDef(name, args, guards, repaired), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
+		var paramsVarAlt = secondArgVar(args2);
+		var socketVarAlt = thirdArgVar(args2);
+		var repairedAlt = repairBody(body2, paramsVarAlt, socketVarAlt);
+		makeASTWithMeta(EDefp(name2, args2, guards2, repairedAlt), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.isHandleEvent3(name, args)) {
+								var pvar = @:ast(switch (args[1]) {
+	case PVar(n):
+		n;	
+	default:
+		"params";	
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var n = `;
+											{
+												n;
+											};
+										};
+									} else {
+										"params";
+									};
+								};
+								var svar = @:ast(switch (args[2]) {
+	case PVar(n):
+		n;	
+	default:
+		"socket";	
+}) {
+									var ` = args[2];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var n = `;
+											{
+												n;
+											};
+										};
+									} else {
+										"socket";
+									};
+								};
+								var repaired = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.repairBody(body, pvar, svar);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, repaired), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.isHandleEvent3(name2, args2)) {
+								var paramsVarAlt = @:ast(switch (args[1]) {
+	case PVar(n):
+		n;	
+	default:
+		"params";	
+}) {
+									var ` = args2[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var n = `;
+											{
+												n;
+											};
+										};
+									} else {
+										"params";
+									};
+								};
+								var socketVarAlt = @:ast(switch (args[2]) {
+	case PVar(n):
+		n;	
+	default:
+		"socket";	
+}) {
+									var ` = args2[2];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var n = `;
+											{
+												n;
+											};
+										};
+									} else {
+										"socket";
+									};
+								};
+								var repairedAlt = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.repairBody(body2, paramsVarAlt, socketVarAlt);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, repairedAlt), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function isHandleEvent3(name:String, args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (name != "handle_event" || args == null || args.length != 3) {
+			return false;
+		};
+		return @:ast(switch (args[0]) {
+	case PLiteral({ def : EString(_) }):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = args[0];
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 32) {
+						var ` = `[0];
+						{
+							true;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static inline function secondArgVar(args:Array<reflaxe.elixir.ast.EPattern>) {
+		return @:ast(switch (args[1]) {
+	case PVar(n):
+		n;	
+	default:
+		"params";	
+}) {
+			var ` = args[1];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				"params";
+			};
+		};
+	}
+
+	static inline function thirdArgVar(args:Array<reflaxe.elixir.ast.EPattern>) {
+		return @:ast(switch (args[2]) {
+	case PVar(n):
+		n;	
+	default:
+		"socket";	
+}) {
+			var ` = args[2];
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				"socket";
+			};
+		};
+	}
+
+	static inline function toSnake(s:String) return reflaxe.elixir.ast.NameUtils.toSnakeCase(s)
+
+	static inline function needsInt(name:String) return name == "id" || StringTools.endsWith(name, "_id")
+
+	static function buildExtract(varName:String, paramsVar:String) {
+		var key = reflaxe.elixir.ast.NameUtils.toSnakeCase(varName);
+		var get = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+			}, "get", [{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(paramsVar), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EString(key), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+		if (! varName == "id" || StringTools.endsWith(varName, "_id")) {
+			return get;
+		};
+		var isBin = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+			}, "is_binary", [get]), metadata : {}, pos : pos};
+		};
+		var toInt = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+			}, "to_integer", [get]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(isBin, toInt, get), metadata : {}, pos : pos};
+		};
+	}
+
+	static function repairBody(body:reflaxe.elixir.ast.ElixirAST, paramsVar:String, socketVar:String) {
+		var paramLocals = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectParamLocals(body, paramsVar);
+		var repairCalls = function(n:reflaxe.elixir.ast.ElixirAST) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (x.def) {
+	case ECall(target, fname, args) if (args != null && args.length >= 2):
+		var a0IsSocket = switch (args[0].def) {
+			case EVar(v) if (v == socketVar):
+				true;			
+			default:
+				false;			
+		};
+		var lastIsSocket = switch (args[args.length - 1].def) {
+			case EVar(v2) if (v2 == socketVar):
+				true;			
+			default:
+				false;			
+		};
+		if (a0IsSocket && lastIsSocket) {
+			var newArgs = args.copy();
+			newArgs[0] = makeAST(EVar(paramsVar));
+			makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);
+		} else if (lastIsSocket) {
+			var a0IsParams = switch (args[0].def) {
+				case EVar(vp) if (vp == paramsVar):
+					true;				
+				default:
+					false;				
+			};
+			if (a0IsParams) {
+				var newArgs2 = args.copy();
+				var replaced = false;
+				var declaredBody = new Map<String,Bool>();
+				reflaxe.elixir.ast.ASTUtils.walk(body, function(nn:ElixirAST) {
+					switch (nn.def) {
+						case EMatch(p, _):
+							collectPat(p, declaredBody);						
+						case EBinary(Match, l, _):
+							collectLhs(l, declaredBody);						
+						default:
+					};
+				});
+				var preferred:Null<String> = null;
+				if (declaredBody.exists("id")) preferred = "id" else for (k  in  declaredBody.keys()) if (StringTools.endsWith(k, "_id")) {
+					preferred = k;
+					break;
+				};
+				if (preferred != null) {
+					newArgs2[0] = makeAST(EVar(preferred));
+					replaced = true;
+				} else if (paramLocals != null) {
+					var candidates = [for (k  in  paramLocals.keys()) k];
+					if (candidates.length == 1) {
+						newArgs2[0] = makeAST(EVar(candidates[0]));
+						replaced = true;
+					};
+				};
+				if (replaced) {
+					Sys.println("[HandleEventWrapperFinal] Rewriting call " + fname + "(" + paramsVar + ", ..., " + socketVar + ") to use local id/*_id");
+					makeASTWithMeta(ECall(target, fname, newArgs2), x.metadata, x.pos);
+				} else {
+					var newArgs3 = args.copy();
+					newArgs3[0] = buildExtract("id", paramsVar);
+					Sys.println("[HandleEventWrapperFinal] Fallback: passing id extracted from " + paramsVar + " to " + fname);
+					makeASTWithMeta(ECall(target, fname, newArgs3), x.metadata, x.pos);
+				};
+			} else x;
+		} else x;	
+	case ERemoteCall(mod, fname2, args2) if (args2 != null && args2.length >= 2):
+		var a0IsSocket2 = switch (args2[0].def) {
+			case EVar(v3) if (v3 == socketVar):
+				true;			
+			default:
+				false;			
+		};
+		var lastIsSocket2 = switch (args2[args2.length - 1].def) {
+			case EVar(v4) if (v4 == socketVar):
+				true;			
+			default:
+				false;			
+		};
+		if (a0IsSocket2 && lastIsSocket2) {
+			var newArgs2 = args2.copy();
+			newArgs2[0] = makeAST(EVar(paramsVar));
+			Sys.println("[HandleEventWrapperFinal] Rewriting remote call " + fname2 + "(socket, ..., socket)");
+			makeASTWithMeta(ERemoteCall(mod, fname2, newArgs2), x.metadata, x.pos);
+		} else if (lastIsSocket2) {
+			var a0IsParams2 = switch (args2[0].def) {
+				case EVar(vp2) if (vp2 == paramsVar):
+					true;				
+				default:
+					false;				
+			};
+			if (a0IsParams2) {
+				var newArgs3 = args2.copy();
+				var replaced2 = false;
+				var declaredBody2 = new Map<String,Bool>();
+				reflaxe.elixir.ast.ASTUtils.walk(body, function(nn2:ElixirAST) {
+					switch (nn2.def) {
+						case EMatch(p2, _):
+							collectPat(p2, declaredBody2);						
+						case EBinary(Match, l2, _):
+							collectLhs(l2, declaredBody2);						
+						default:
+					};
+				});
+				var preferred2:Null<String> = null;
+				if (declaredBody2.exists("id")) preferred2 = "id" else for (k2  in  declaredBody2.keys()) if (StringTools.endsWith(k2, "_id")) {
+					preferred2 = k2;
+					break;
+				};
+				if (preferred2 != null) {
+					newArgs3[0] = makeAST(EVar(preferred2));
+					replaced2 = true;
+				} else if (paramLocals != null) {
+					var candidates2 = [for (k  in  paramLocals.keys()) k];
+					if (candidates2.length == 1) {
+						newArgs3[0] = makeAST(EVar(candidates2[0]));
+						replaced2 = true;
+					};
+				};
+				if (replaced2) {
+					makeASTWithMeta(ERemoteCall(mod, fname2, newArgs3), x.metadata, x.pos);
+				} else {
+					var newArgs4 = args2.copy();
+					newArgs4[0] = buildExtract("id", paramsVar);
+					makeASTWithMeta(ERemoteCall(mod, fname2, newArgs4), x.metadata, x.pos);
+				};
+			} else x;
+		} else x;	
+	default:
+		x;	
+}) {
+					var ` = x.def;
+					switch (enumIndex `) {
+						case 22: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var target = `;
+								var fname = `;
+								var args = `;
+								if (args != null && args.length >= 2) {
+									var a0IsSocket = @:ast(switch (args[0].def) {
+	case EVar(v) if (v == socketVar):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = args[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == socketVar) {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+									var lastIsSocket = @:ast(switch (args[args.length - 1].def) {
+	case EVar(v2) if (v2 == socketVar):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = args[args.length - 1].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v2 = `;
+												if (v2 == socketVar) {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+									if (a0IsSocket && lastIsSocket) {
+										var newArgs = args.copy();
+										newArgs[0] = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(paramsVar), metadata : {}, pos : pos};
+										};
+										{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, newArgs), metadata : x.metadata, pos : x.pos};
+									} else {
+										if (lastIsSocket) {
+											var a0IsParams = @:ast(switch (args[0].def) {
+	case EVar(vp) if (vp == paramsVar):
+		true;	
+	default:
+		false;	
+}) {
+												var ` = args[0].def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var vp = `;
+														if (vp == paramsVar) {
+															true;
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+											if (a0IsParams) {
+												var newArgs2 = args.copy();
+												var replaced = false;
+												var declaredBody = {
+													{};
+													new haxe.ds.StringMap();
+												};
+												reflaxe.elixir.ast.ASTUtils.walk(body, function(nn:reflaxe.elixir.ast.ElixirAST) {
+													@:ast(switch (nn.def) {
+	case EMatch(p, _):
+		collectPat(p, declaredBody);	
+	case EBinary(Match, l, _):
+		collectLhs(l, declaredBody);	
+	default:
+}) {
+														var ` = nn.def;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var p = `;
+																	{
+																		reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(p, declaredBody);
+																	};
+																};
+															};
+															case 26: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var l = `;
+																		{
+																			reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectLhs(l, declaredBody);
+																		};
+																	};
+																} else {};
+															};
+															default: {}
+														};
+													};
+												});
+												var preferred = null;
+												if (declaredBody.exists("id")) {
+													preferred = "id";
+												} else {
+													for (k in declaredBody.keys()) {
+														if (StringTools.endsWith(k, "_id")) {
+															preferred = k;
+															break;
+														};
+													};
+												};
+												if (preferred != null) {
+													newArgs2[0] = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(preferred), metadata : {}, pos : pos};
+													};
+													replaced = true;
+												} else {
+													if (paramLocals != null) {
+														var candidates = {
+															var ` = [];
+															for (k in paramLocals.keys()) {
+																`.push(k);
+															};
+															`;
+														};
+														if (candidates.length == 1) {
+															newArgs2[0] = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar(candidates[0]), metadata : {}, pos : pos};
+															};
+															replaced = true;
+														};
+													};
+												};
+												if (replaced) {
+													Sys.println("[HandleEventWrapperFinal] Rewriting call " + fname + "(" + paramsVar + ", ..., " + socketVar + ") to use local id/*_id");
+													{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, newArgs2), metadata : x.metadata, pos : x.pos};
+												} else {
+													var newArgs3 = args.copy();
+													newArgs3[0] = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.buildExtract("id", paramsVar);
+													Sys.println("[HandleEventWrapperFinal] Fallback: passing id extracted from " + paramsVar + " to " + fname);
+													{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, fname, newArgs3), metadata : x.metadata, pos : x.pos};
+												};
+											} else {
+												x;
+											};
+										} else {
+											x;
+										};
+									};
+								} else {
+									x;
+								};
+							};
+						};
+						case 24: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var mod = `;
+								var fname2 = `;
+								var args2 = `;
+								if (args2 != null && args2.length >= 2) {
+									var a0IsSocket2 = @:ast(switch (args2[0].def) {
+	case EVar(v3) if (v3 == socketVar):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = args2[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v3 = `;
+												if (v3 == socketVar) {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+									var lastIsSocket2 = @:ast(switch (args2[args2.length - 1].def) {
+	case EVar(v4) if (v4 == socketVar):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = args2[args2.length - 1].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v4 = `;
+												if (v4 == socketVar) {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+									if (a0IsSocket2 && lastIsSocket2) {
+										var newArgs2 = args2.copy();
+										newArgs2[0] = {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(paramsVar), metadata : {}, pos : pos};
+										};
+										Sys.println("[HandleEventWrapperFinal] Rewriting remote call " + fname2 + "(socket, ..., socket)");
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fname2, newArgs2), metadata : x.metadata, pos : x.pos};
+									} else {
+										if (lastIsSocket2) {
+											var a0IsParams2 = @:ast(switch (args2[0].def) {
+	case EVar(vp2) if (vp2 == paramsVar):
+		true;	
+	default:
+		false;	
+}) {
+												var ` = args2[0].def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													{
+														var vp2 = `;
+														if (vp2 == paramsVar) {
+															true;
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+											if (a0IsParams2) {
+												var newArgs3 = args2.copy();
+												var replaced2 = false;
+												var declaredBody2 = {
+													{};
+													new haxe.ds.StringMap();
+												};
+												reflaxe.elixir.ast.ASTUtils.walk(body, function(nn2:reflaxe.elixir.ast.ElixirAST) {
+													@:ast(switch (nn2.def) {
+	case EMatch(p2, _):
+		collectPat(p2, declaredBody2);	
+	case EBinary(Match, l2, _):
+		collectLhs(l2, declaredBody2);	
+	default:
+}) {
+														var ` = nn2.def;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var p2 = `;
+																	{
+																		reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(p2, declaredBody2);
+																	};
+																};
+															};
+															case 26: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var l2 = `;
+																		{
+																			reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectLhs(l2, declaredBody2);
+																		};
+																	};
+																} else {};
+															};
+															default: {}
+														};
+													};
+												});
+												var preferred2 = null;
+												if (declaredBody2.exists("id")) {
+													preferred2 = "id";
+												} else {
+													for (k2 in declaredBody2.keys()) {
+														if (StringTools.endsWith(k2, "_id")) {
+															preferred2 = k2;
+															break;
+														};
+													};
+												};
+												if (preferred2 != null) {
+													newArgs3[0] = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(preferred2), metadata : {}, pos : pos};
+													};
+													replaced2 = true;
+												} else {
+													if (paramLocals != null) {
+														var candidates2 = {
+															var ` = [];
+															for (k in paramLocals.keys()) {
+																`.push(k);
+															};
+															`;
+														};
+														if (candidates2.length == 1) {
+															newArgs3[0] = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar(candidates2[0]), metadata : {}, pos : pos};
+															};
+															replaced2 = true;
+														};
+													};
+												};
+												if (replaced2) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fname2, newArgs3), metadata : x.metadata, pos : x.pos};
+												} else {
+													var newArgs4 = args2.copy();
+													newArgs4[0] = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.buildExtract("id", paramsVar);
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fname2, newArgs4), metadata : x.metadata, pos : x.pos};
+												};
+											} else {
+												x;
+											};
+										} else {
+											x;
+										};
+									};
+								} else {
+									x;
+								};
+							};
+						};
+						default: {
+							x;
+						}
+					};
+				};
+			});
+		};
+		var upgradeWildcardMapGets = function(n:reflaxe.elixir.ast.ElixirAST) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (x.def) {
+	case EBinary(Match, { def : EVar("_") }, rhs):
+		var key = extractMapGetKey(rhs);
+		if (key != null) {
+			makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs), x.metadata, x.pos);
+		} else x;	
+	case EMatch(PVar("_"), rhs2):
+		var key2 = extractMapGetKey(rhs2);
+		if (key2 != null) {
+			makeASTWithMeta(EBinary(Match, makeAST(EVar(key2)), rhs2), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+					var ` = x.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								if (` == "_") {
+									{
+										var rhs2 = `;
+										{
+											var key2 = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.extractMapGetKey(rhs2);
+											if (key2 != null) {
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(key2), metadata : {}, pos : pos};
+												}, rhs2), metadata : x.metadata, pos : x.pos};
+											} else {
+												x;
+											};
+										};
+									};
+								} else {
+									x;
+								};
+							} else {
+								x;
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var ` = `.def;
+									var ` = `.metadata;
+									var ` = `.pos;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										if (` == "_") {
+											{
+												var rhs = `;
+												{
+													var key = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.extractMapGetKey(rhs);
+													if (key != null) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(key), metadata : {}, pos : pos};
+														}, rhs), metadata : x.metadata, pos : x.pos};
+													} else {
+														x;
+													};
+												};
+											};
+										} else {
+											x;
+										};
+									} else {
+										x;
+									};
+								};
+							} else {
+								x;
+							};
+						};
+						default: {
+							x;
+						}
+					};
+				};
+			});
+		};
+		var inlineUndeclared = function(n:reflaxe.elixir.ast.ElixirAST) {
+			var declared = {
+				{};
+				new haxe.ds.StringMap();
+			};
+			reflaxe.elixir.ast.ASTUtils.walk(n, function(y:reflaxe.elixir.ast.ElixirAST) {
+				if (y == null || y.def == null) {
+					return;
+				};
+				@:ast(switch (y.def) {
+	case EMatch(p, _):
+		collectPat(p, declared);	
+	case EBinary(Match, l, _):
+		collectLhs(l, declared);	
+	default:
+}) {
+					var ` = y.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var p = `;
+								{
+									reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(p, declared);
+								};
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var l = `;
+									{
+										reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectLhs(l, declared);
+									};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+			});
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(y:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (y.def) {
+	case EVar(v) if (allow(v) && !declared.exists(v)):
+		buildExtract(v, paramsVar);	
+	default:
+		y;	
+}) {
+					var ` = y.def;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						{
+							var v = `;
+							if (if (v == null || v.length == 0) {
+								false;
+							} else {
+								if (v == "socket" || v == "params" || v == "_params" || v == "event") {
+									false;
+								} else {
+									var c = v.charAt(0);
+									c.toLowerCase() == c;
+								};
+							} && ! declared.exists(v)) {
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.buildExtract(v, paramsVar);
+							} else {
+								y;
+							};
+						};
+					} else {
+						y;
+					};
+				};
+			});
+		};
+		var step1 = repairCalls(body);
+		var step1b = upgradeWildcardMapGets(step1);
+		var step2 = inlineUndeclared(step1b);
+		var declared = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(step2, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EMatch(p, _):
+		collectPat(p, declared);	
+	case EBinary(Match, l, _):
+		collectLhs(l, declared);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var p = `;
+							{
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(p, declared);
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var l = `;
+								{
+									reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectLhs(l, declared);
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+		{
+			declared.set(paramsVar, true);
+		};
+		{
+			declared.set(socketVar, true);
+		};
+		var used = reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectAllUsed(step2);
+		var declList = {
+			var ` = [];
+			for (k in declared.keys()) {
+				`.push(k);
+			};
+			`;
+		}.join(",");
+		Sys.println("[HandleEventWrapperFinal] declared={" + declList + "}");
+		Sys.println("[HandleEventWrapperFinal] used={" + used.join(",") + "}");
+		var missing = [];
+		{
+			var ` = 0;
+			while (` < used.length) {
+				var u = used[`];
+				++ `;
+				if (! declared.exists(u) && if (u == null || u.length == 0) {
+					false;
+				} else {
+					if (u == "socket" || u == "params" || u == "_params" || u == "event") {
+						false;
+					} else {
+						var c = u.charAt(0);
+						c.toLowerCase() == c;
+					};
+				}) {
+					missing.push(u);
+				};
+			};
+		};
+		if (missing.length == 0) {
+			return step2;
+		};
+		Sys.println("[HandleEventWrapperFinal] prefix binds for: " + missing.join(","));
+		var prefix = {
+			var ` = [];
+			{
+				var ` = 0;
+				while (` < missing.length) {
+					var v = missing[`];
+					++ `;
+					`.push({
+						var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(v), metadata : {}, pos : pos};
+						}, reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.buildExtract(v, paramsVar));
+						var pos = null;
+						{def : def, metadata : {}, pos : pos};
+					});
+				};
+			};
+			`;
+		};
+		return @:ast(switch (step2.def) {
+	case EBlock(sts):
+		makeASTWithMeta(EBlock(prefix.concat(sts)), step2.metadata, step2.pos);	
+	case EDo(sts2):
+		makeASTWithMeta(EDo(prefix.concat(sts2)), step2.metadata, step2.pos);	
+	default:
+		makeASTWithMeta(EBlock(prefix.concat([step2])), step2.metadata, step2.pos);	
+}) {
+			var ` = step2.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var sts = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(prefix.concat(sts));
+								var meta = step2.metadata;
+								var pos = step2.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var sts2 = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EDo(prefix.concat(sts2));
+								var meta = step2.metadata;
+								var pos = step2.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				default: {
+					{
+						var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(prefix.concat([step2]));
+						var meta = step2.metadata;
+						var pos = step2.pos;
+						{def : def, metadata : meta, pos : pos};
+					};
+				}
+			};
+		};
+	}
+
+	static function collectParamLocals(body:reflaxe.elixir.ast.ElixirAST, paramsVar:String) {
+		var m = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EBinary(Match, { def : EVar(lhs) }, rhs):
+		if (rhsLooksLikeMapGet(rhs, paramsVar)) m.set(lhs, true);	
+	case EMatch(PVar(lhs2), rhs2):
+		if (rhsLooksLikeMapGet(rhs2, paramsVar)) m.set(lhs2, true);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var lhs2 = `;
+								var rhs2 = `;
+								{
+									if (reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.rhsLooksLikeMapGet(rhs2, paramsVar)) {
+										{
+											m.set(lhs2, true);
+										};
+									};
+								};
+							};
+						} else {};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var lhs = `;
+										var rhs = `;
+										{
+											if (reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.rhsLooksLikeMapGet(rhs, paramsVar)) {
+												{
+													m.set(lhs, true);
+												};
+											};
+										};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+		return m;
+	}
+
+	static function rhsLooksLikeMapGet(rhs:reflaxe.elixir.ast.ElixirAST, paramsVar:String) {
+		return @:ast(switch (rhs.def) {
+	case ERemoteCall(mod, name, args) if (name == "get" && args != null && args.length >= 2):
+		switch (mod.def) {
+			case EVar(m) if (m == "Map"):
+				true;			
+			default:
+				false;			
+		};	
+	case ECall(target, name2, args2) if (name2 == "get" && args2 != null && args2.length >= 2):
+		switch (target.def) {
+			case EVar(m2) if (m2 == "Map"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = rhs.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var name2 = `;
+						var args2 = `;
+						if (name2 == "get" && args2 != null && args2.length >= 2) {
+							@:ast(switch (target.def) {
+	case EVar(m2) if (m2 == "Map"):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = target.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m2 = `;
+										if (m2 == "Map") {
+											true;
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var name = `;
+						var args = `;
+						if (name == "get" && args != null && args.length >= 2) {
+							@:ast(switch (mod.def) {
+	case EVar(m) if (m == "Map"):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										if (m == "Map") {
+											true;
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function extractMapGetKey(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case ERemoteCall(mod, name, args):
+		var isMap = switch (mod.def) {
+			case EVar(m):
+				m == "Map";			
+			default:
+				false;			
+		};
+		if (isMap && name == "get" && args != null && args.length >= 2) switch (args[1].def) {
+			case EString(s):
+				s;			
+			default:
+				null;			
+		} else null;	
+	case ECall(target, funcName, args2):
+		var isMapGet = (funcName == "get") && (target != null) && switch (target.def) {
+			case EVar(m2):
+				m2 == "Map";			
+			default:
+				false;			
+		};
+		if (isMapGet && args2 != null && args2.length >= 2) switch (args2[1].def) {
+			case EString(s2):
+				s2;			
+			default:
+				null;			
+		} else null;	
+	default:
+		null;	
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var funcName = `;
+						var args2 = `;
+						{
+							var isMapGet = (funcName == "get") && (target != null) && @:ast(switch (target.def) {
+	case EVar(m2):
+		m2 == "Map";	
+	default:
+		false;	
+}) {
+								var ` = target.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m2 = `;
+										{
+											m2 == "Map";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							if (isMapGet && args2 != null && args2.length >= 2) {
+								@:ast(switch (args2[1].def) {
+	case EString(s2):
+		s2;	
+	default:
+		null;	
+}) {
+									var ` = args2[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var s2 = `;
+											{
+												s2;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var name = `;
+						var args = `;
+						{
+							var isMap = @:ast(switch (mod.def) {
+	case EVar(m):
+		m == "Map";	
+	default:
+		false;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										{
+											m == "Map";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							if (isMap && name == "get" && args != null && args.length >= 2) {
+								@:ast(switch (args[1].def) {
+	case EString(s):
+		s;	
+	default:
+		null;	
+}) {
+									var ` = args[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var s = `;
+											{
+												s;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function collectAllUsed(ast:reflaxe.elixir.ast.ElixirAST) {
+		var names = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return n;
+			};
+			@:ast(switch (n.def) {
+	case EVar(v):
+		if (allow(v)) names.set(v, true);	
+	case EString(s):
+		var block = new EReg("\\#\\{([^}]*)\\}", "g");
+		var pos = 0;
+		while (block.matchSub(s, pos)) {
+			var inner = block.matched(1);
+			var tok = new EReg("[a-z_][a-z0-9_]*", "gi");
+			var tpos = 0;
+			while (tok.matchSub(inner, tpos)) {
+				var id = tok.matched(0);
+				if (allow(id)) names.set(id, true);
+				tpos = tok.matchedPos().pos + tok.matchedPos().len;
+			};
+			pos = block.matchedPos().pos + block.matchedPos().len;
+		};	
+	case ERaw(code):
+		if (code != null) {
+			var tok2 = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+			var p2 = 0;
+			while (tok2.matchSub(code, p2)) {
+				var id2 = tok2.matched(0);
+				if (allow(id2)) names.set(id2, true);
+				p2 = tok2.matchedPos().pos + tok2.matchedPos().len;
+			};
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 32: {
+						var ` = `[0];
+						{
+							var s = `;
+							{
+								var block = new EReg("\\#\\{([^}]*)\\}", "g");
+								var pos = 0;
+								while (block.matchSub(s, pos, null)) {
+									var inner = block.matched(1);
+									var tok = new EReg("[a-z_][a-z0-9_]*", "gi");
+									var tpos = 0;
+									while (tok.matchSub(inner, tpos, null)) {
+										var id = tok.matched(0);
+										if (if (id == null || id.length == 0) {
+											false;
+										} else {
+											if (id == "socket" || id == "params" || id == "_params" || id == "event") {
+												false;
+											} else {
+												var c = id.charAt(0);
+												c.toLowerCase() == c;
+											};
+										}) {
+											{
+												names.set(id, true);
+											};
+										};
+										tpos = tok.matchedPos().pos + tok.matchedPos().len;
+									};
+									pos = block.matchedPos().pos + block.matchedPos().len;
+								};
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								if (if (v == null || v.length == 0) {
+									false;
+								} else {
+									if (v == "socket" || v == "params" || v == "_params" || v == "event") {
+										false;
+									} else {
+										var c = v.charAt(0);
+										c.toLowerCase() == c;
+									};
+								}) {
+									{
+										names.set(v, true);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code != null) {
+									var tok2 = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+									var p2 = 0;
+									while (tok2.matchSub(code, p2, null)) {
+										var id2 = tok2.matched(0);
+										if (if (id2 == null || id2.length == 0) {
+											false;
+										} else {
+											if (id2 == "socket" || id2 == "params" || id2 == "_params" || id2 == "event") {
+												false;
+											} else {
+												var c = id2.charAt(0);
+												c.toLowerCase() == c;
+											};
+										}) {
+											{
+												names.set(id2, true);
+											};
+										};
+										p2 = tok2.matchedPos().pos + tok2.matchedPos().len;
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return n;
+		});
+		if (! names.iterator().hasNext()) {
+			try {
+				var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(ast, 0);
+				var block2 = new EReg("\\#\\{([^}]*)\\}", "g");
+				var pos2 = 0;
+				while (block2.matchSub(printed, pos2, null)) {
+					var inner2 = block2.matched(1);
+					var tok3 = new EReg("[A-Za-z_][A-Za-z0-9_]*", "gi");
+					var tpos2 = 0;
+					while (tok3.matchSub(inner2, tpos2, null)) {
+						var id3 = tok3.matched(0);
+						if (if (id3 == null || id3.length == 0) {
+							false;
+						} else {
+							if (id3 == "socket" || id3 == "params" || id3 == "_params" || id3 == "event") {
+								false;
+							} else {
+								var c = id3.charAt(0);
+								c.toLowerCase() == c;
+							};
+						}) {
+							{
+								names.set(id3, true);
+							};
+						};
+						tpos2 = tok3.matchedPos().pos + tok3.matchedPos().len;
+					};
+					pos2 = block2.matchedPos().pos + block2.matchedPos().len;
+				};
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					{};
+					{};
+				} else throw `;
+			};
+		};
+		return {
+			var ` = [];
+			for (k in names.keys()) {
+				`.push(k);
+			};
+			`;
+		};
+	}
+
+	static inline function allow(name:String) {
+		if (name == null || name.length == 0) {
+			return false;
+		};
+		if (name == "socket" || name == "params" || name == "_params" || name == "event") {
+			return false;
+		};
+		var c = name.charAt(0);
+		return c.toLowerCase() == c;
+	}
+
+	static function collectPat(p:reflaxe.elixir.ast.EPattern, out:Map<String, Bool>) {
+		@:ast(switch (p) {
+	case PVar(n):
+		out.set(n, true);	
+	case PTuple(es) | PList(es):
+		for (e  in  es) collectPat(e, out);	
+	case PCons(h, t):
+		collectPat(h, out);
+		collectPat(t, out);	
+	case PMap(kvs):
+		for (kv  in  kvs) collectPat(kv.value, out);	
+	case PStruct(_, fs):
+		for (f  in  fs) collectPat(f.value, out);	
+	case PPin(inner):
+		collectPat(inner, out);	
+	default:
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						{
+							out.set(n, true);
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(e, out);
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(e, out);
+							};
+						};
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(h, out);
+						reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(t, out);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(kv.value, out);
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(f.value, out);
+							};
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectPat(inner, out);
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	static function collectLhs(lhs:reflaxe.elixir.ast.ElixirAST, out:Map<String, Bool>) {
+		@:ast(switch (lhs.def) {
+	case EVar(n):
+		out.set(n, true);	
+	case EBinary(Match, l2, _):
+		collectLhs(l2, out);	
+	default:
+}) {
+			var ` = lhs.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var l2 = `;
+							{
+								reflaxe.elixir.ast.transformers.HandleEventWrapperFinalRepairTransforms.collectLhs(l2, out);
+							};
+						};
+					} else {};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							{
+								out.set(n, true);
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+	}
+}

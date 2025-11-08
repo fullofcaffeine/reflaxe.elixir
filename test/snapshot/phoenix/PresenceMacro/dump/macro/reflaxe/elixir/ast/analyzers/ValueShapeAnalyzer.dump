@@ -1,0 +1,320 @@
+class reflaxe.elixir.ast.analyzers.ValueShapeAnalyzer {
+
+	public static function classify(body:reflaxe.elixir.ast.ElixirAST) {
+		var shape = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{};
+		var visit = [null];
+		visit[0] = function(e:reflaxe.elixir.ast.ElixirAST) {
+			if (e == null || e.def == null) {
+				return;
+			};
+			@:ast(switch (e.def) {
+	case EVar(nm):
+		markIdLike(nm);	
+	case EField(target, _):
+		switch (target.def) {
+			case EVar(nm):
+				shape.set(nm, "struct");			
+			default:
+		};
+		visit(target);	
+	case EAccess(target, key):
+		switch (target.def) {
+			case EVar(nm):
+				shape.set(nm, "struct");			
+			default:
+		};
+		visit(target);
+		visit(key);	
+	case EBlock(ss):
+		for (s  in  ss) visit(s);	
+	case EIf(c, t, el):
+		visit(c);
+		visit(t);
+		if (el != null) visit(el);	
+	case ECase(expr, cs):
+		visit(expr);
+		for (c  in  cs) {
+			if (c.guard != null) visit(c.guard);
+			visit(c.body);
+		};	
+	case ECall(t, _, as):
+		if (t != null) visit(t);
+		if (as != null) for (a  in  as) visit(a);	
+	case ERemoteCall(targetExpr, _, argsList):
+		visit(targetExpr);
+		if (argsList != null) for (a  in  argsList) visit(a);	
+	case EList(els):
+		for (el  in  els) visit(el);	
+	case ETuple(els):
+		for (el  in  els) visit(el);	
+	case EMap(pairs):
+		for (p  in  pairs) {
+			visit(p.key);
+			visit(p.value);
+		};	
+	default:
+}) {
+				var ` = e.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								visit[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											visit[0](c.guard);
+										};
+										visit[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var el = `;
+							{
+								visit[0](c);
+								visit[0](t);
+								if (el != null) {
+									visit[0](el);
+								};
+							};
+						};
+					};
+					case 15: {
+						var ` = `[0];
+						{
+							var els = `;
+							{
+								{
+									var ` = 0;
+									while (` < els.length) {
+										var el = els[`];
+										++ `;
+										visit[0](el);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						{
+							var els = `;
+							{
+								{
+									var ` = 0;
+									while (` < els.length) {
+										var el = els[`];
+										++ `;
+										visit[0](el);
+									};
+								};
+							};
+						};
+					};
+					case 17: {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										visit[0](p.key);
+										visit[0](p.value);
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var as = `;
+							{
+								if (t != null) {
+									visit[0](t);
+								};
+								if (as != null) {
+									{
+										var ` = 0;
+										while (` < as.length) {
+											var a = as[`];
+											++ `;
+											visit[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var targetExpr = `;
+							var argsList = `;
+							{
+								visit[0](targetExpr);
+								if (argsList != null) {
+									{
+										var ` = 0;
+										while (` < argsList.length) {
+											var a = argsList[`];
+											++ `;
+											visit[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 28: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var target = `;
+							{
+								@:ast(switch (target.def) {
+	case EVar(nm):
+		shape.set(nm, "struct");	
+	default:
+}) {
+									var ` = target.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											{
+												{
+													shape.set(nm, "struct");
+												};
+											};
+										};
+									} else {};
+								};
+								visit[0](target);
+							};
+						};
+					};
+					case 29: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var target = `;
+							var key = `;
+							{
+								@:ast(switch (target.def) {
+	case EVar(nm):
+		shape.set(nm, "struct");	
+	default:
+}) {
+									var ` = target.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var nm = `;
+											{
+												{
+													shape.set(nm, "struct");
+												};
+											};
+										};
+									} else {};
+								};
+								visit[0](target);
+								visit[0](key);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var nm = `;
+							{
+								{
+									if (nm == null) {
+										null;
+									} else {
+										var base = if ((nm.length > 0 && nm.charAt(0) == "_")) {
+											nm.substr(1, null);
+										} else {
+											nm;
+										};
+										if (base == "id" || StringTools.endsWith(base, "_id")) {
+											if (! shape.exists(nm)) {
+												{
+													shape.set(nm, "id_like");
+												};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var ` = 0;
+									while (` < ss.length) {
+										var s = ss[`];
+										++ `;
+										visit[0](s);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		visit[0](body);
+		return shape;
+	}
+
+	public static inline function isIdLike(name:String, shapes:Map<String, String>) {
+		if (name == null) {
+			return false;
+		};
+		var base = if ((name.length > 0 && name.charAt(0) == "_")) {
+			name.substr(1, null);
+		} else {
+			name;
+		};
+		return (base == "id" || StringTools.endsWith(base, "_id")) || (shapes.exists(name) && cast shapes.get(name) == "id_like");
+	}
+
+	public static inline function isStructLike(name:String, shapes:Map<String, String>) {
+		return name != null && shapes.exists(name) && cast shapes.get(name) == "struct";
+	}
+}

@@ -1,0 +1,188 @@
+@:directlyUsed @:used
+private class _Date.Date_Impl_ {
+
+	public static inline function now() {
+		return DateTime.utc_now();
+	}
+
+	@:has_untyped
+	public static function fromTime(t:Float) {
+		return __elixir__("DateTime.from_unix!(Std.int({0}), :millisecond)", t);
+	}
+
+	@:has_untyped
+	public static function fromString(s:String) {
+		return __elixir__("\n            case DateTime.from_iso8601({0}) do\n                {:ok, dt, _} -> dt\n                _ -> DateTime.utc_now()\n            end", s);
+	}
+
+	@:has_untyped @:noCompletion
+	public static inline function _new(year:Int, month:Int, day:Int, hour:Int, min:Int, sec:Int) {
+		var this1;
+		var elixirMonth = month + 1;
+		this1 = __elixir__("\n            {:ok, naive} = NaiveDateTime.new({0}, {1}, {2}, {3}, {4}, {5})\n            DateTime.from_naive!(naive, \"Etc/UTC\")", year, elixirMonth, day, hour, min, sec);
+		return cast this1;
+	}
+
+	@:has_untyped
+	public static function getTime(this1:DateTime) {
+		return __elixir__("DateTime.to_unix({0}, :millisecond)", this1);
+	}
+
+	public static inline function getFullYear(this1:DateTime) {
+		return this1.year;
+	}
+
+	public static inline function getMonth(this1:DateTime) {
+		return this1.month - 1;
+	}
+
+	public static inline function getDate(this1:DateTime) {
+		return this1.day;
+	}
+
+	public static inline function getDay(this1:DateTime) {
+		var date = this1.to_date();
+		var dow = Date.day_of_week(date);
+		return if ((dow == 7)) 0 else dow;
+	}
+
+	public static inline function getHours(this1:DateTime) {
+		return this1.hour;
+	}
+
+	public static inline function getMinutes(this1:DateTime) {
+		return this1.minute;
+	}
+
+	public static inline function getSeconds(this1:DateTime) {
+		return this1.second;
+	}
+
+	@:has_untyped
+	public static inline function toString(this1:DateTime) {
+		return __elixir__("case {0} do\n  %NaiveDateTime{} = nd -> NaiveDateTime.to_iso8601(nd)\n  %DateTime{} = dt -> DateTime.to_iso8601(dt)\n  other -> Kernel.to_string(other)\nend", this1);
+	}
+
+	public static inline function getUTCFullYear(this1:DateTime) {
+		return cast this1.year;
+	}
+
+	public static inline function getUTCMonth(this1:DateTime) {
+		return cast this1.month - 1;
+	}
+
+	public static inline function getUTCDate(this1:DateTime) {
+		return cast this1.day;
+	}
+
+	public static inline function getUTCDay(this1:DateTime) {
+		return {
+			var date = cast this1.to_date();
+			var dow = Date.day_of_week(date);
+			if ((dow == 7)) 0 else dow;
+		};
+	}
+
+	public static inline function getUTCHours(this1:DateTime) {
+		return cast this1.hour;
+	}
+
+	public static inline function getUTCMinutes(this1:DateTime) {
+		return cast this1.minute;
+	}
+
+	public static inline function getUTCSeconds(this1:DateTime) {
+		return cast this1.second;
+	}
+
+	public static inline function getTimezoneOffset(this1:DateTime) {
+		return 0;
+	}
+
+	public static inline function add(this1:DateTime, amount:Int, unit:elixir.TimeUnit) {
+		return DateTime.add(this1, amount, unit);
+	}
+
+	public static inline function diff(this1:DateTime, other:Date, unit:elixir.TimeUnit) {
+		return DateTime.diff(this1, other, unit);
+	}
+
+	public static inline function compare(this1:DateTime, other:Date) {
+		return DateTime.compare(this1, other);
+	}
+
+	public static inline function toNaiveDateTime(this1:DateTime) {
+		return this1.to_naive();
+	}
+
+	public static inline function toElixirDate(this1:DateTime) {
+		return this1.to_date();
+	}
+
+	public static inline function fromNaiveDateTime(dt:NaiveDateTime) {
+		return DateTime.from_naive!(dt, "Etc/UTC");
+	}
+
+	public static inline function truncate(this1:DateTime, precision:elixir.TimePrecision) {
+		return DateTime.truncate(this1, precision);
+	}
+
+	public static inline function isBefore(this1:DateTime, other:Date) {
+		return DateTime.compare(cast this1, other) == cast ":lt";
+	}
+
+	public static inline function isAfter(this1:DateTime, other:Date) {
+		return DateTime.compare(cast this1, other) == cast ":gt";
+	}
+
+	public static inline function isEqual(this1:DateTime, other:Date) {
+		return DateTime.compare(cast this1, other) == cast ":eq";
+	}
+
+	@:has_untyped
+	public static inline function format(this1:DateTime, format:String) {
+		return __elixir__("Calendar.strftime({0}, {1})", this1, format);
+	}
+
+	@:has_untyped
+	public static inline function beginningOfDay(this1:DateTime) {
+		return __elixir__("\n            %DateTime{{0} | hour: 0, minute: 0, second: 0, microsecond: {0, 6}}", this1);
+	}
+
+	@:has_untyped
+	public static inline function endOfDay(this1:DateTime) {
+		return __elixir__("\n            %DateTime{{0} | hour: 23, minute: 59, second: 59, microsecond: {999999, 6}}", this1);
+	}
+
+	@:op(A > B)
+	static inline function gt(a:Date, b:Date) {
+		return DateTime.compare(cast a, b) == cast ":gt";
+	}
+
+	@:op(A < B)
+	static inline function lt(a:Date, b:Date) {
+		return DateTime.compare(cast a, b) == cast ":lt";
+	}
+
+	@:op(A >= B)
+	static inline function gte(a:Date, b:Date) {
+		var result = DateTime.compare(cast a, b);
+		return result == cast ":gt" || result == cast ":eq";
+	}
+
+	@:op(A <= B)
+	static inline function lte(a:Date, b:Date) {
+		var result = DateTime.compare(cast a, b);
+		return result == cast ":lt" || result == cast ":eq";
+	}
+
+	@:op(A == B)
+	static inline function eq(a:Date, b:Date) {
+		return DateTime.compare(cast a, b) == cast ":eq";
+	}
+
+	@:op(A != B)
+	static inline function neq(a:Date, b:Date) {
+		return DateTime.compare(cast a, b) != cast ":eq";
+	}
+}

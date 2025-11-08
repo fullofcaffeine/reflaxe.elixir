@@ -1,0 +1,96 @@
+class reflaxe.elixir.ast.transformers.StringToolsFixTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (name == "StringTools"):
+		var newBody = [];
+		for (b  in  body) newBody.push(fixIsSpace(b));
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if (name == "StringTools"):
+		makeASTWithMeta(EDefmodule(name, fixIsSpace(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name == "StringTools") {
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(reflaxe.elixir.ast.transformers.StringToolsFixTransforms.fixIsSpace(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name == "StringTools") {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.StringToolsFixTransforms.fixIsSpace(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function fixIsSpace(n:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (n.def) {
+	case EDef(fnName, params, guards, body) if (fnName == "is_space" && params.length == 2):
+		makeASTWithMeta(EDef(fnName, [PVar("s"), PVar("pos")], guards, body), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 2) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				var ` = `[3];
+				{
+					var fnName = `;
+					var params = `;
+					var guards = `;
+					var body = `;
+					if (fnName == "is_space" && params.length == 2) {
+						{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fnName, [reflaxe.elixir.ast.EPattern.PVar("s"), reflaxe.elixir.ast.EPattern.PVar("pos")], guards, body), metadata : n.metadata, pos : n.pos};
+					} else {
+						n;
+					};
+				};
+			} else {
+				n;
+			};
+		};
+	}
+}

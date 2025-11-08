@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.builders.BuildContext = { whileLoopCounter : Int, isFeatureEnabled : (feature : String) -> Bool, buildFromTypedExpr : (expr : haxe.macro.TypedExpr, ?context : Dynamic) -> reflaxe.elixir.ast.ElixirAST }

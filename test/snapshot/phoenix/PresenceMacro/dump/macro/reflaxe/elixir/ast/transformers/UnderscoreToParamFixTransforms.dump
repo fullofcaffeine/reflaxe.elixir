@@ -1,0 +1,218 @@
+class reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var hasSocket = hasSocketParam(args);
+		if (!hasSocket) return n;
+		var nb = rewriteBody(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name, args2, guards2, body2):
+		var hasSocket2 = hasSocketParam(args2);
+		if (!hasSocket2) return n;
+		var nb2 = rewriteBody(body2);
+		makeASTWithMeta(EDefp(name, args2, guards2, nb2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var hasSocket = reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms.hasSocketParam(args);
+								if (! hasSocket) {
+									return n;
+								};
+								var nb = reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms.rewriteBody(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var hasSocket2 = reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms.hasSocketParam(args2);
+								if (! hasSocket2) {
+									return n;
+								};
+								var nb2 = reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms.rewriteBody(body2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function hasSocketParam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return false;
+		};
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(nm) if (nm == "socket"):
+		return true;	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var nm = `;
+						if (nm == "socket") {
+							return true;
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return false;
+	}
+
+	static function rewriteBody(body:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == "_socket"):
+		makeASTWithMeta(EVar("socket"), x.metadata, x.pos);	
+	case EBinary(Match, left, right):
+		var rhs = switch (right.def) {
+			case EVar(rv) if (rv == "_socket"):
+				makeASTWithMeta(EVar("socket"), right.metadata, right.pos);			
+			default:
+				right;			
+		};
+		switch (rhs.def) {
+			case EVar("socket"):
+				switch (left.def) {
+					case EVar(_):
+						makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), rhs), x.metadata, x.pos);					
+					default:
+						makeASTWithMeta(EBinary(Match, left, rhs), x.metadata, x.pos);					
+				};			
+			default:
+				makeASTWithMeta(EBinary(Match, left, rhs), x.metadata, x.pos);			
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var right = `;
+								{
+									var rhs = @:ast(switch (right.def) {
+	case EVar(rv) if (rv == "_socket"):
+		makeASTWithMeta(EVar("socket"), right.metadata, right.pos);	
+	default:
+		right;	
+}) {
+										var ` = right.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var rv = `;
+												if (rv == "_socket") {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : right.metadata, pos : right.pos};
+												} else {
+													right;
+												};
+											};
+										} else {
+											right;
+										};
+									};
+									@:ast(switch (rhs.def) {
+	case EVar("socket"):
+		switch (left.def) {
+			case EVar(_):
+				makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), rhs), x.metadata, x.pos);			
+			default:
+				makeASTWithMeta(EBinary(Match, left, rhs), x.metadata, x.pos);			
+		};	
+	default:
+		makeASTWithMeta(EBinary(Match, left, rhs), x.metadata, x.pos);	
+}) {
+										var ` = rhs.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											if (` == "socket") {
+												{
+													@:ast(switch (left.def) {
+	case EVar(_):
+		makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), rhs), x.metadata, x.pos);	
+	default:
+		makeASTWithMeta(EBinary(Match, left, rhs), x.metadata, x.pos);	
+}) {
+														var ` = left.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar("_"), metadata : left.metadata, pos : left.pos}, rhs), metadata : x.metadata, pos : x.pos};
+															};
+														} else {
+															{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, rhs), metadata : x.metadata, pos : x.pos};
+														};
+													};
+												};
+											} else {
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, rhs), metadata : x.metadata, pos : x.pos};
+											};
+										} else {
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, left, rhs), metadata : x.metadata, pos : x.pos};
+										};
+									};
+								};
+							};
+						} else {
+							x;
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == "_socket") {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,308 @@
+class reflaxe.elixir.ast.transformers.PresenceRewriteGetUsersEditingTodoToReduceTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (looksPresence(n, name)):
+		var nb = [for (b  in  body) applyToDefs(b)];
+		makeASTWithMeta(EModule(name, attrs, nb), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock) if (looksPresence(n, name2)):
+		makeASTWithMeta(EDefmodule(name2, applyToDefs(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (({
+								var tmp = n.metadata;
+								if (tmp != null) tmp.isPresence else null;
+							} == true) || (name != null && name.indexOf("Web.Presence", null) > 0) || StringTools.endsWith(name, ".Presence")) {
+								var nb = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.PresenceRewriteGetUsersEditingTodoToReduceTransforms.applyToDefs(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							if (({
+								var tmp = n.metadata;
+								if (tmp != null) tmp.isPresence else null;
+							} == true) || (name2 != null && name2.indexOf("Web.Presence", null) > 0) || StringTools.endsWith(name2, ".Presence")) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, reflaxe.elixir.ast.transformers.PresenceRewriteGetUsersEditingTodoToReduceTransforms.applyToDefs(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function looksPresence(node:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return ({
+			var tmp = node.metadata;
+			if (tmp != null) tmp.isPresence else null;
+		} == true) || (name != null && name.indexOf("Web.Presence", null) > 0) || StringTools.endsWith(name, ".Presence");
+	}
+
+	static function applyToDefs(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EDef("get_users_editing_todo", args, guards, body) if (args != null && args.length == 2):
+		var todoIdVar = switch (args[1]) {
+			case PVar(nm) if (nm != null && nm.length > 0):
+				(nm.charAt(0) == "_" && nm.length > 1) ? nm.substr(1) : nm;			
+			default:
+				"todo_id";			
+		};
+		var listCall = makeAST(ERemoteCall(makeAST(EVar("__MODULE__")), "list", [makeAST(EString("users"))]));
+		var initAll = makeAST(EBinary(Match, makeAST(EVar("all_users")), listCall));
+		var values = makeAST(ERemoteCall(makeAST(EVar("Map")), "values", [makeAST(EVar("all_users"))]));
+		var entryField = makeAST(EField(makeAST(EVar("entry")), "metas"));
+		var lenCall = makeAST(ECall(null, "length", [entryField]));
+		var metaIndex0 = makeAST(EAccess(entryField, makeAST(EInteger(0))));
+		var initMeta = makeAST(EBinary(Match, makeAST(EVar("meta")), metaIndex0));
+		var condEq = makeAST(EBinary(EBinaryOp.Equal, makeAST(EField(makeAST(EVar("meta")), "editing_todo_id")), makeAST(EVar(todoIdVar))));
+		var append = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar("acc")), makeAST(EList([makeAST(EVar("meta"))]))]));
+		var thenInner = makeAST(EIf(condEq, append, makeAST(EVar("acc"))));
+		var thenBlock = makeAST(EBlock([initMeta, thenInner]));
+		var reduceBody = makeAST(EIf(makeAST(EBinary(EBinaryOp.Greater, lenCall, makeAST(EInteger(0)))), thenBlock, makeAST(EVar("acc"))));
+		var fnClause = { args : [PVar("entry"), PVar("acc")], guard : null, body : reduceBody };
+		var reducer = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [values, makeAST(EList([])), makeAST(EFn([fnClause]))]));
+		var newBody = makeAST(EBlock([initAll, reducer]));
+		var newArgs = args;
+		switch (args[1]) {
+			case PVar(nm2) if (nm2 != null && nm2.length > 1 && nm2.charAt(0) == "_"):
+				newArgs = [args[0], PVar(nm2.substr(1))];			
+			default:
+		};
+		makeASTWithMeta(EDef("get_users_editing_todo", newArgs, guards, newBody), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					if (` == "get_users_editing_todo") {
+						{
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (args != null && args.length == 2) {
+								var todoIdVar = @:ast(switch (args[1]) {
+	case PVar(nm) if (nm != null && nm.length > 0):
+		(nm.charAt(0) == "_" && nm.length > 1) ? nm.substr(1) : nm;	
+	default:
+		"todo_id";	
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var nm = `;
+											if (nm != null && nm.length > 0) {
+												if ((nm.charAt(0) == "_" && nm.length > 1)) {
+													nm.substr(1, null);
+												} else {
+													nm;
+												};
+											} else {
+												"todo_id";
+											};
+										};
+									} else {
+										"todo_id";
+									};
+								};
+								var listCall = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("__MODULE__"), metadata : {}, pos : pos};
+									}, "list", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EString("users"), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								};
+								var initAll = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("all_users"), metadata : {}, pos : pos};
+									}, listCall), metadata : {}, pos : pos};
+								};
+								var values = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+									}, "values", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("all_users"), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								};
+								var entryField = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("entry"), metadata : {}, pos : pos};
+									}, "metas"), metadata : {}, pos : pos};
+								};
+								var lenCall = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, "length", [entryField]), metadata : {}, pos : pos};
+								};
+								var metaIndex0 = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EAccess(entryField, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var initMeta = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("meta"), metadata : {}, pos : pos};
+									}, metaIndex0), metadata : {}, pos : pos};
+								};
+								var condEq = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Equal, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EField({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("meta"), metadata : {}, pos : pos};
+										}, "editing_todo_id"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(todoIdVar), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var append = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "concat", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("meta"), metadata : {}, pos : pos};
+										}]), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								};
+								var thenInner = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condEq, append, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var thenBlock = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([initMeta, thenInner]), metadata : {}, pos : pos};
+								};
+								var reduceBody = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, lenCall, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+										}), metadata : {}, pos : pos};
+									}, thenBlock, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var fnClause = {args : [reflaxe.elixir.ast.EPattern.PVar("entry"), reflaxe.elixir.ast.EPattern.PVar("acc")], guard : null, body : reduceBody};
+								var reducer = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "reduce", [values, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EFn([fnClause]), metadata : {}, pos : pos};
+									}]), metadata : {}, pos : pos};
+								};
+								var newBody = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([initAll, reducer]), metadata : {}, pos : pos};
+								};
+								var newArgs = args;
+								@:ast(switch (args[1]) {
+	case PVar(nm2) if (nm2 != null && nm2.length > 1 && nm2.charAt(0) == "_"):
+		newArgs = [args[0], PVar(nm2.substr(1))];	
+	default:
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var nm2 = `;
+											if (nm2 != null && nm2.length > 1 && nm2.charAt(0) == "_") {
+												newArgs = [args[0], reflaxe.elixir.ast.EPattern.PVar(nm2.substr(1, null))];
+											} else {};
+										};
+									} else {};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef("get_users_editing_todo", newArgs, guards, newBody), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					} else {
+						x;
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

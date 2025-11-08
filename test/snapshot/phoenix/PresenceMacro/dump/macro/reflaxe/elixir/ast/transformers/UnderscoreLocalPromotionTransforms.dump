@@ -1,0 +1,262 @@
+class reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var renameMap:Map<String,String> = new Map();
+		for (i  in  0 ... stmts.length) {
+			var s = stmts[i];
+			var s0 = applyRenames(s, renameMap);
+			var s1 = switch (s0.def) {
+				case EMatch(PVar(varName), rhs) if (shouldPromote(varName, stmts, i)):
+					var base = varName.substr(1);
+					renameMap.set(varName, base);
+					makeASTWithMeta(EMatch(PVar(base), rhs), s0.metadata, s0.pos);				
+				case EBinary(Match, left, right):
+					switch (left.def) {
+						case EVar(vname) if (shouldPromote(vname, stmts, i)):
+							var base2 = vname.substr(1);
+							renameMap.set(vname, base2);
+							makeASTWithMeta(EBinary(Match, makeAST(EVar(base2)), right), s0.metadata, s0.pos);						
+						default:
+							s0;						
+					};				
+				default:
+					s0;				
+			};
+			out.push(s1);
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var out = [];
+							var renameMap = {
+								{};
+								new haxe.ds.StringMap();
+							};
+							{
+								var ` = 0;
+								var ` = stmts.length;
+								while (` < `) {
+									var i = ` ++;
+									var s = stmts[i];
+									var s0 = reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.applyRenames(s, renameMap);
+									var s1 = @:ast(switch (s0.def) {
+	case EMatch(PVar(varName), rhs) if (shouldPromote(varName, stmts, i)):
+		var base = varName.substr(1);
+		renameMap.set(varName, base);
+		makeASTWithMeta(EMatch(PVar(base), rhs), s0.metadata, s0.pos);	
+	case EBinary(Match, left, right):
+		switch (left.def) {
+			case EVar(vname) if (shouldPromote(vname, stmts, i)):
+				var base2 = vname.substr(1);
+				renameMap.set(vname, base2);
+				makeASTWithMeta(EBinary(Match, makeAST(EVar(base2)), right), s0.metadata, s0.pos);			
+			default:
+				s0;			
+		};	
+	default:
+		s0;	
+}) {
+										var ` = s0.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var varName = `;
+														var rhs = `;
+														if (varName != null && varName.length > 0 && varName.charAt(0) == "_" && reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.usedLater(stmts, i + 1, varName) && ! reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.declaredLater(stmts, i + 1, varName.substr(1, null))) {
+															var base = varName.substr(1, null);
+															{
+																renameMap.set(varName, base);
+															};
+															{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(base), rhs), metadata : s0.metadata, pos : s0.pos};
+														} else {
+															s0;
+														};
+													};
+												} else {
+													s0;
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														var right = `;
+														{
+															@:ast(switch (left.def) {
+	case EVar(vname) if (shouldPromote(vname, stmts, i)):
+		var base2 = vname.substr(1);
+		renameMap.set(vname, base2);
+		makeASTWithMeta(EBinary(Match, makeAST(EVar(base2)), right), s0.metadata, s0.pos);	
+	default:
+		s0;	
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var vname = `;
+																		if (vname != null && vname.length > 0 && vname.charAt(0) == "_" && reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.usedLater(stmts, i + 1, vname) && ! reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.declaredLater(stmts, i + 1, vname.substr(1, null))) {
+																			var base2 = vname.substr(1, null);
+																			{
+																				renameMap.set(vname, base2);
+																			};
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(base2), metadata : {}, pos : pos};
+																			}, right), metadata : s0.metadata, pos : s0.pos};
+																		} else {
+																			s0;
+																		};
+																	};
+																} else {
+																	s0;
+																};
+															};
+														};
+													};
+												} else {
+													s0;
+												};
+											};
+											default: {
+												s0;
+											}
+										};
+									};
+									out.push(s1);
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function shouldPromote(varName:String, stmts:Array<reflaxe.elixir.ast.ElixirAST>, idx:Int) {
+		return varName != null && varName.length > 0 && varName.charAt(0) == "_" && reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.usedLater(stmts, idx + 1, varName) && ! reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.declaredLater(stmts, idx + 1, varName.substr(1, null));
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		var found = [false];
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:reflaxe.elixir.ast.ElixirAST) {
+						@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == name) {
+										found[0] = true;
+									} else {};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+
+	static function declaredLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		var found = false;
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found) {
+					@:ast(switch (stmts[j].def) {
+	case EMatch(PVar(v), _):
+		if (v == name) found = true;	
+	default:
+}) {
+						var ` = stmts[j].def;
+						if (enumIndex ` == 8) {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var v = `;
+									{
+										if (v == name) {
+											found = true;
+										};
+									};
+								};
+							} else {};
+						} else {};
+					};
+				};
+			};
+		};
+		return found;
+	}
+
+	static function applyRenames(node:reflaxe.elixir.ast.ElixirAST, rename:Map<String, String>) {
+		if (Lambda.count(cast rename, null) == 0) {
+			return node;
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EVar(v) if (rename.exists(v)):
+		makeASTWithMeta(EVar(rename.get(v)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (rename.exists(v)) {
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EVar(rename.get(v));
+								var meta = n.metadata;
+								var pos = n.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

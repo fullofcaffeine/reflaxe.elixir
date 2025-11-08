@@ -698,9 +698,8 @@ class ElixirASTPrinter {
                 trace('[XRay InlineIf] isInline decision: $isInline');
                 #end
                 
-                // Print condition without unnecessary parentheses
-                // Always parenthesize the condition to avoid parser ambiguity in complex shapes
-                var conditionStr = '(' + print(condition, 0) + ')';
+                // Print condition with minimal parentheses using dedicated helper
+                var conditionStr = printIfCondition(condition);
                 
                 if (isInline && elseBranch != null) {
                     // Inline if-else expression: if condition, do: then_val, else: else_val
@@ -1677,6 +1676,17 @@ class ElixirASTPrinter {
                     }
                 }
                 var printed = safeIdent(name);
+                // Presence module normalization (print‑time, shape‑based):
+                // Replace __MODULE__ with <App>Web.Presence inside Presence modules.
+                if (printed == "__MODULE__" && currentModuleName != null && (StringTools.endsWith(currentModuleName, ".Presence") || StringTools.endsWith(currentModuleName, "Web.Presence"))) {
+                    var appPrefix:String = null;
+                    try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) {}
+                    if (appPrefix == null || appPrefix.length == 0) {
+                        printed = "MyAppWeb.Presence";
+                    } else {
+                        printed = appPrefix + "Web.Presence";
+                    }
+                }
                 if (name != null && name.length >= 23 && name.substr(0,23) == "__elixir_switch_result_") {
                     printed = "switch_result_" + name.substr(23);
                 }
@@ -2563,15 +2573,15 @@ class ElixirASTPrinter {
         // Check if this is a parenthesized simple expression
         switch(condition.def) {
             case EBinary(_, left, right):
-                // Parenthesize when complex constructs appear; also wrap the entire expression for safety
+                // Parenthesize sub-expressions only when complex constructs appear; avoid
+                // wrapping the entire condition to match idiomatic shapes
                 var needsLeft = switch (left.def) { case ECase(_, _) | ECond(_) | EWith(_,_,_) | EIf(_,_,_): true; default: false; };
                 var needsRight = switch (right) { case null: false; case _: switch (right.def) { case ECase(_, _) | ECond(_) | EWith(_,_,_) | EIf(_,_,_): true; default: false; } };
                 var leftStr = needsLeft ? '(' + print(left, 0) + ')' : print(left, 0);
                 var opStr = binaryOpToString(switch (condition.def) { case EBinary(op, _, _): op; default: Add; });
                 var rightStr = (right == null) ? '0' : (needsRight ? '(' + print(right, 0) + ')' : print(right, 0));
                 var exprStr = leftStr + ' ' + opStr + ' ' + rightStr;
-                // Always parenthesize binary expressions in if/unless conditions to prevent parser ambiguities
-                return '(' + exprStr + ')';
+                return exprStr;
             case EParen(inner):
                 // If the inner expression is simple, don't add parentheses
                 if (isSimpleVariable(inner)) {

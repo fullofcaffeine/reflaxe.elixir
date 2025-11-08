@@ -1,0 +1,302 @@
+class reflaxe.elixir.ast.transformers.DropUnusedAssignToCaseTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.DropUnusedAssignToCaseTransforms.rewrite(stmts));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.DropUnusedAssignToCaseTransforms.rewrite(stmts2));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var s = stmts[i];
+				@:ast(switch (s.def) {
+	case EBinary(Match, left, rhs) if (isCase(rhs)):
+		switch (left.def) {
+			case EVar(name) if (!usedLater(stmts, i + 1, name)):
+				out.push(rhs);			
+			default:
+				out.push(s);			
+		};	
+	case EMatch(PVar(name2), rhs2) if (isCase(rhs2) && !usedLater(stmts, i + 1, name2)):
+		out.push(rhs2);	
+	default:
+		out.push(s);	
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								{
+									var name2 = `;
+									var rhs2 = `;
+									if ({
+										var cur = rhs2;
+										while (true) {
+											@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;
+		continue;	
+	default:
+		break;	
+}) {
+												var ` = cur.def;
+												if (enumIndex ` == 54) {
+													var ` = `[0];
+													{
+														var inner = `;
+														{
+															cur = inner;
+															continue;
+														};
+													};
+												} else {
+													break;
+												};
+											};
+										};
+										@:ast(switch (cur.def) {
+	case ECase(_, _):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = cur.def;
+											if (enumIndex ` == 6) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													true;
+												};
+											} else {
+												false;
+											};
+										};
+									} && ! reflaxe.elixir.ast.transformers.DropUnusedAssignToCaseTransforms.usedLater(stmts, i + 1, name2)) {
+										out.push(rhs2);
+									} else {
+										out.push(s);
+									};
+								};
+							} else {
+								out.push(s);
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									var rhs = `;
+									if ({
+										var cur = rhs;
+										while (true) {
+											@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;
+		continue;	
+	default:
+		break;	
+}) {
+												var ` = cur.def;
+												if (enumIndex ` == 54) {
+													var ` = `[0];
+													{
+														var inner = `;
+														{
+															cur = inner;
+															continue;
+														};
+													};
+												} else {
+													break;
+												};
+											};
+										};
+										@:ast(switch (cur.def) {
+	case ECase(_, _):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = cur.def;
+											if (enumIndex ` == 6) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													true;
+												};
+											} else {
+												false;
+											};
+										};
+									}) {
+										@:ast(switch (left.def) {
+	case EVar(name) if (!usedLater(stmts, i + 1, name)):
+		out.push(rhs);	
+	default:
+		out.push(s);	
+}) {
+											var ` = left.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var name = `;
+													if (! reflaxe.elixir.ast.transformers.DropUnusedAssignToCaseTransforms.usedLater(stmts, i + 1, name)) {
+														out.push(rhs);
+													} else {
+														out.push(s);
+													};
+												};
+											} else {
+												out.push(s);
+											};
+										};
+									} else {
+										out.push(s);
+									};
+								};
+							} else {
+								out.push(s);
+							};
+						};
+						default: {
+							out.push(s);
+						}
+					};
+				};
+			};
+		};
+		return out;
+	}
+
+	static inline function isCase(e:reflaxe.elixir.ast.ElixirAST) {
+		var cur = e;
+		while (true) {
+			@:ast(switch (cur.def) {
+	case EParen(inner):
+		cur = inner;
+		continue;	
+	default:
+		break;	
+}) {
+				var ` = cur.def;
+				if (enumIndex ` == 54) {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							cur = inner;
+							continue;
+						};
+					};
+				} else {
+					break;
+				};
+			};
+		};
+		return @:ast(switch (cur.def) {
+	case ECase(_, _):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = cur.def;
+			if (enumIndex ` == 6) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					true;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function usedLater(stmts:Array<reflaxe.elixir.ast.ElixirAST>, start:Int, name:String) {
+		var found = [false];
+		{
+			var ` = start;
+			var ` = stmts.length;
+			while (` < `) {
+				var j = ` ++;
+				if (! found[0]) {
+					reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:reflaxe.elixir.ast.ElixirAST) {
+						@:ast(switch (x.def) {
+	case EVar(v) if (v == name):
+		found = true;	
+	default:
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var v = `;
+									if (v == name) {
+										found[0] = true;
+									} else {};
+								};
+							} else {};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+}

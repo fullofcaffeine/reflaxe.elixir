@@ -1,0 +1,101 @@
+class reflaxe.elixir.ast.naming.ElixirNaming {
+
+	public static function toVarName(ident:String) {
+		if (ident == null || ident.length == 0) {
+			return "item";
+		};
+		if (reflaxe.elixir.ast.naming.ElixirNaming.isSpecialMacro(ident)) {
+			return ident;
+		};
+		if (ident == "_") {
+			return "item";
+		};
+		if (reflaxe.elixir.ast.naming.ElixirNaming.isCompilerTemp(ident)) {
+			return reflaxe.elixir.ast.naming.ElixirNaming.stripLeadingUnderscore(ident);
+		};
+		var underscorePrefix = "";
+		var coreIdent = ident;
+		while (coreIdent.length > 0 && coreIdent.charAt(0) == "_") {
+			underscorePrefix += "_";
+			coreIdent = coreIdent.substr(1, null);
+		};
+		var snakeCased = reflaxe.elixir.ast.NameUtils.toSnakeCase(coreIdent);
+		var result = underscorePrefix + snakeCased;
+		if (result.length > 0 && reflaxe.elixir.ast.naming.ElixirNaming.isNumericStart(result)) {
+			result = "_" + result;
+		};
+		result = reflaxe.elixir.ast.naming.ElixirNaming.escapeIfReserved(result);
+		if (result.length == 0) {
+			result = "item";
+		};
+		return result;
+	}
+
+	static function isSpecialMacro(s:String) {
+		return @:ast(switch (s) {
+	case "__MODULE__" | "__FILE__" | "__ENV__" | "__DIR__" | "__CALLER__" | "__STACKTRACE__":
+		true;	
+	default:
+		false;	
+}) switch (s) {
+			case "__CALLER__", "__DIR__", "__ENV__", "__FILE__", "__MODULE__", "__STACKTRACE__": {
+				{
+					true;
+				};
+			};
+			default: {
+				false;
+			}
+		};
+	}
+
+	static function isCompilerTemp(s:String) {
+		if (s.length < 2 || s.charAt(0) != "_" || s.charAt(1) != "g") {
+			return false;
+		};
+		if (s.length == 2) {
+			return true;
+		};
+		{
+			var ` = 2;
+			var ` = s.length;
+			while (` < `) {
+				var i = ` ++;
+				var c = s.charAt(i);
+				if (c < "0" || c > "9") {
+					return false;
+				};
+			};
+		};
+		return true;
+	}
+
+	static function stripLeadingUnderscore(s:String) {
+		if (s.charAt(0) == "_") {
+			return s.substr(1, null);
+		};
+		return s;
+	}
+
+	static function isNumericStart(s:String) {
+		if (s.length == 0) {
+			return false;
+		};
+		var c = s.charAt(0);
+		return c >= "0" && c <= "9";
+	}
+
+	@:value(["after", "and", "catch", "cond", "do", "else", "end", "false", "fn", "in", "nil", "not", "or", "rescue", "true", "when", "with", "try", "alias", "case", "def", "defp", "defmodule", "defmacro", "defmacrop", "defstruct", "defdelegate", "defprotocol", "defimpl", "for", "if", "import", "quote", "receive", "require", "super", "unless", "unquote", "use"])
+	static var RESERVED_KEYWORDS:Array<String> = ["after", "and", "catch", "cond", "do", "else", "end", "false", "fn", "in", "nil", "not", "or", "rescue", "true", "when", "with", "try", "alias", "case", "def", "defp", "defmodule", "defmacro", "defmacrop", "defstruct", "defdelegate", "defprotocol", "defimpl", "for", "if", "import", "quote", "receive", "require", "super", "unless", "unquote", "use"];
+
+	public static function isReserved(name:String) {
+		return reflaxe.elixir.ast.naming.ElixirNaming.RESERVED_KEYWORDS.indexOf(name, null) != -1;
+	}
+
+	static function escapeIfReserved(name:String) {
+		if (reflaxe.elixir.ast.naming.ElixirNaming.isReserved(name)) {
+			return name + "_";
+		};
+		return name;
+	}
+}

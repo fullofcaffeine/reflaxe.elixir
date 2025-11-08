@@ -1,0 +1,34 @@
+class reflaxe.elixir.ast.transformers.PushSentinelSanitizeTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ECall(func, method, _) if (func == null && method == "push"):
+		makeAST(ENil);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 22) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var func = `;
+						var method = `;
+						if (func == null && method == "push") {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

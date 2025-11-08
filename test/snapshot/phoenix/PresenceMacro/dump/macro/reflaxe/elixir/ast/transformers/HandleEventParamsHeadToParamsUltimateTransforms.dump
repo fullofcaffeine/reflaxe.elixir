@@ -1,0 +1,144 @@
+class reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsUltimateTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
+		var newArgs = (args != null && args.length >= 2) ? args.copy() : args;
+		if (newArgs != null && newArgs.length >= 2) {
+			newArgs[1] = PVar("params");
+			var nb = rewriteBodyToParams(body);
+			makeASTWithMeta(EDef(name, newArgs, guards, nb), n.metadata, n.pos);
+		} else n;	
+	case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
+		var newArgs2 = (args2 != null && args2.length >= 2) ? args2.copy() : args2;
+		if (newArgs2 != null && newArgs2.length >= 2) {
+			newArgs2[1] = PVar("params");
+			var nb2 = rewriteBodyToParams(body2);
+			makeASTWithMeta(EDefp(name2, newArgs2, guards2, nb2), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (name == "handle_event" && args != null && args.length == 3) {
+								var newArgs = if ((args != null && args.length >= 2)) {
+									args.copy();
+								} else {
+									args;
+								};
+								if (newArgs != null && newArgs.length >= 2) {
+									newArgs[1] = reflaxe.elixir.ast.EPattern.PVar("params");
+									var nb = reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsUltimateTransforms.rewriteBodyToParams(body);
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, newArgs, guards, nb), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (name2 == "handle_event" && args2 != null && args2.length == 3) {
+								var newArgs2 = if ((args2 != null && args2.length >= 2)) {
+									args2.copy();
+								} else {
+									args2;
+								};
+								if (newArgs2 != null && newArgs2.length >= 2) {
+									newArgs2[1] = reflaxe.elixir.ast.EPattern.PVar("params");
+									var nb2 = reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsUltimateTransforms.rewriteBodyToParams(body2);
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, newArgs2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isHandleEvent3(name:String, args:Array<reflaxe.elixir.ast.EPattern>) {
+		return name == "handle_event" && args != null && args.length == 3;
+	}
+
+	static function usesVar(node:reflaxe.elixir.ast.ElixirAST, v:String) {
+		var found = [false];
+		reflaxe.elixir.ast.ASTUtils.walk(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0]) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case EVar(nm) if (nm == v):
+		found = true;	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == v) {
+							found[0] = true;
+						} else {};
+					};
+				} else {};
+			};
+		});
+		return found[0];
+	}
+
+	static function rewriteBodyToParams(body:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(nm) if (nm == "_params"):
+		makeASTWithMeta(EVar("params"), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == "_params") {
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("params"), metadata : x.metadata, pos : x.pos};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,12 @@
+@:used @:enum
+private extern class elixir._DateTime.ComparisonResult_Impl_ {
+
+	@:value(cast ":lt") @:impl @:enum
+	static inline var Lt:elixir.ComparisonResult = cast ":lt";
+
+	@:value(cast ":eq") @:impl @:enum
+	static inline var Eq:elixir.ComparisonResult = cast ":eq";
+
+	@:value(cast ":gt") @:impl @:enum
+	static inline var Gt:elixir.ComparisonResult = cast ":gt";
+}

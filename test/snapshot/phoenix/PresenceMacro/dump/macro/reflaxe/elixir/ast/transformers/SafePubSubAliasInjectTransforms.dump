@@ -1,0 +1,627 @@
+class reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms {
+
+	public static function injectPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		if (name == "Phoenix.SafePubSub") return n;
+		if (!(moduleUsesSafePubSub(body) || moduleQualifiedUsed(body, "Phoenix.SafePubSub"))) return n;
+		var newBody = insertAlias(body);
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		if (name == "Phoenix.SafePubSub") return n;
+		var stmts:Array<ElixirAST> = switch (doBlock.def) {
+			case EBlock(ss):
+				ss;			
+			case EDo(ss):
+				ss;			
+			default:
+				[doBlock];			
+		};
+		if (!(moduleUsesSafePubSub(stmts) || moduleQualifiedUsed(stmts, "Phoenix.SafePubSub"))) return n;
+		var replaced = insertAlias(stmts);
+		var newDo = makeAST(EBlock(replaced));
+		makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								if (name == "Phoenix.SafePubSub") {
+									return n;
+								};
+								if (! (reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.moduleUsesSafePubSub(body) || reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.moduleQualifiedUsed(body, "Phoenix.SafePubSub"))) {
+									return n;
+								};
+								var newBody = reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.insertAlias(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								if (name == "Phoenix.SafePubSub") {
+									return n;
+								};
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	case EDo(ss):
+		ss;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													ss;
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													ss;
+												};
+											};
+										};
+										default: {
+											[doBlock];
+										}
+									};
+								};
+								if (! (reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.moduleUsesSafePubSub(stmts) || reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.moduleQualifiedUsed(stmts, "Phoenix.SafePubSub"))) {
+									return n;
+								};
+								var replaced = reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.insertAlias(stmts);
+								var newDo = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(replaced), metadata : {}, pos : pos};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function moduleUsesSafePubSub(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var found = [false];
+		var scan = [null];
+		scan[0] = function(e:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || e == null || e.def == null) {
+				return;
+			};
+			@:ast(switch (e.def) {
+	case ERemoteCall({ def : EVar(m) }, _, _) if (m == "SafePubSub"):
+		found = true;	
+	case EVar(v) if (v == "SafePubSub"):
+		found = true;	
+	case ECall(tgt, _, _):
+		if (tgt != null) switch (tgt.def) {
+			case EVar(m) if (m == "SafePubSub"):
+				found = true;			
+			default:
+		};	
+	case ERaw(code):
+		if (code != null && code.indexOf("SafePubSub.") != -1) found = true;	
+	case EDef(_, _, _, b):
+		scan(b);	
+	case EDefp(_, _, _, privateBody):
+		scan(privateBody);	
+	case EBlock(stmts):
+		for (s  in  stmts) scan(s);	
+	case EIf(c, t, el):
+		scan(c);
+		scan(t);
+		if (el != null) scan(el);	
+	case ECase(expr, cs):
+		scan(expr);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	case EBinary(_, l, r):
+		scan(l);
+		scan(r);	
+	case EMatch(_, rhs):
+		scan(rhs);	
+	case ECall(tgt, _, args):
+		if (tgt != null) scan(tgt);
+		for (a  in  args) scan(a);	
+	case ERemoteCall(remoteTarget, _, remoteArgs):
+		scan(remoteTarget);
+		for (arg  in  remoteArgs) scan(arg);	
+	default:
+}) {
+				var ` = e.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var b = `;
+							{
+								scan[0](b);
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var privateBody = `;
+							{
+								scan[0](privateBody);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								scan[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var rhs = `;
+							{
+								scan[0](rhs);
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var el = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (el != null) {
+									scan[0](el);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							{
+								if (tgt != null) {
+									@:ast(switch (tgt.def) {
+	case EVar(m) if (m == "SafePubSub"):
+		found = true;	
+	default:
+}) {
+										var ` = tgt.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var m = `;
+												if (m == "SafePubSub") {
+													found[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									if (m == "SafePubSub") {
+										found[0] = true;
+									} else {
+										var remoteTarget = `;
+										var remoteArgs = `;
+										{
+											scan[0](remoteTarget);
+											{
+												var ` = 0;
+												while (` < remoteArgs.length) {
+													var arg = remoteArgs[`];
+													++ `;
+													scan[0](arg);
+												};
+											};
+										};
+									};
+								};
+							} else {
+								var remoteTarget = `;
+								var remoteArgs = `;
+								{
+									scan[0](remoteTarget);
+									{
+										var ` = 0;
+										while (` < remoteArgs.length) {
+											var arg = remoteArgs[`];
+											++ `;
+											scan[0](arg);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								scan[0](l);
+								scan[0](r);
+							};
+						};
+					};
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == "SafePubSub") {
+								found[0] = true;
+							} else {};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										scan[0](s);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code != null && code.indexOf("SafePubSub.", null) != -1) {
+									found[0] = true;
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				scan[0](b);
+			};
+		};
+		return found[0];
+	}
+
+	static function moduleQualifiedUsed(body:Array<reflaxe.elixir.ast.ElixirAST>, moduleName:String) {
+		var used = [false];
+		var scan = [null];
+		scan[0] = function(e:reflaxe.elixir.ast.ElixirAST) {
+			if (used[0] || e == null || e.def == null) {
+				return;
+			};
+			@:ast(switch (e.def) {
+	case ERemoteCall(mod, _, _):
+		switch (mod.def) {
+			case EVar(m) if (m == moduleName):
+				used = true;			
+			default:
+		};	
+	case ECall(tgt, _, _):
+		if (tgt != null) switch (tgt.def) {
+			case EVar(moduleVar) if (moduleVar == moduleName):
+				used = true;			
+			default:
+		};	
+	case ERaw(code):
+		if (code != null && code.indexOf(moduleName + ".") != -1) used = true;	
+	case EDef(_, _, _, b):
+		scan(b);	
+	case EDefp(_, _, _, privateBody):
+		scan(privateBody);	
+	case EBlock(stmts):
+		for (s  in  stmts) scan(s);	
+	case EIf(c, t, el):
+		scan(c);
+		scan(t);
+		if (el != null) scan(el);	
+	case ECase(expr, cs):
+		scan(expr);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	case EBinary(_, l, r):
+		scan(l);
+		scan(r);	
+	case EMatch(_, rhs):
+		scan(rhs);	
+	case ERemoteCall(m, _, args):
+		scan(m);
+		if (args != null) for (a  in  args) scan(a);	
+	case ECall(t, _, argsList):
+		if (t != null) scan(t);
+		if (argsList != null) for (a  in  argsList) scan(a);	
+	default:
+}) {
+				var ` = e.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var b = `;
+							{
+								scan[0](b);
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var privateBody = `;
+							{
+								scan[0](privateBody);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var cs = `;
+							{
+								scan[0](expr);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var rhs = `;
+							{
+								scan[0](rhs);
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var el = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (el != null) {
+									scan[0](el);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var tgt = `;
+							{
+								if (tgt != null) {
+									@:ast(switch (tgt.def) {
+	case EVar(moduleVar) if (moduleVar == moduleName):
+		used = true;	
+	default:
+}) {
+										var ` = tgt.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var moduleVar = `;
+												if (moduleVar == moduleName) {
+													used[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var mod = `;
+							{
+								@:ast(switch (mod.def) {
+	case EVar(m) if (m == moduleName):
+		used = true;	
+	default:
+}) {
+									var ` = mod.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											if (m == moduleName) {
+												used[0] = true;
+											} else {};
+										};
+									} else {};
+								};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var l = `;
+							var r = `;
+							{
+								scan[0](l);
+								scan[0](r);
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										scan[0](s);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code != null && code.indexOf(moduleName + ".", null) != -1) {
+									used[0] = true;
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				scan[0](b);
+			};
+		};
+		return used[0];
+	}
+
+	static function insertAlias(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var aliasNode = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EAlias("Phoenix.SafePubSub", "SafePubSub"), metadata : {}, pos : pos};
+		};
+		var out = [aliasNode];
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				out.push(b);
+			};
+		};
+		return out;
+	}
+}

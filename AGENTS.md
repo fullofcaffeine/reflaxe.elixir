@@ -127,6 +127,17 @@ Use this loop to implement/verify user-facing features end‑to‑end without co
 7) Track everything in shrimp
 - Each task must include the QA sentinel step in its verification criteria and should link the specific specs being exercised.
 
+### 📋 Task Management — Shrimp MCP (Required)
+
+- Shrimp MCP is the canonical task manager for this repo across sessions. Always follow its workflow end‑to‑end.
+- Keep shrimp tasks up to date: create/append tasks with clear descriptions, dependencies, related files, and explicit verification criteria.
+- Execute tasks sequentially (one at a time), time‑bounded. Avoid blocking commands and long‑running foreground processes.
+- A task is only “Done” after verification succeeds:
+  - Snapshot tests (bounded make targets) pass without warnings‑as‑errors, and
+  - When applicable, the QA sentinel run is clean (readiness OK, logs clean), and Playwright smokes pass.
+- Record completion in shrimp (verify/complete), and move to the next task. Do not skip verification.
+- Never edit generated `.ex` outputs to “fix” tests; fix at the compiler/stdlib/transform layers per Runtime Artifacts SoT rules.
+
 ### 🧭 JS Client Build Guardrails (Classpath)
 
 - For browser JS builds (e.g., `examples/todo-app/build-client.hxml`), do not add repository-level classpaths like `../../std`, `../../src`, or vendored sources directly.

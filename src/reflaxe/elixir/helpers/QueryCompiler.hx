@@ -46,7 +46,7 @@ class QueryCompiler {
 
         #if debug_query
         var cls = Context.getLocalClass().get();
-        trace('[QueryCompiler] Processing class: ${cls.name} with ${fields.length} fields');
+        #if debug_query_compiler trace('[QueryCompiler] Processing class: ${cls.name} with ${fields.length} fields'); #end
         trace('[QueryCompiler] This is a compatibility shim - actual transformation happens in AST transformer');
         #end
 

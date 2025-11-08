@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.ValidationResult = { reason : String, patterns : Array<String>, groupKey : String, canGroup : Bool }

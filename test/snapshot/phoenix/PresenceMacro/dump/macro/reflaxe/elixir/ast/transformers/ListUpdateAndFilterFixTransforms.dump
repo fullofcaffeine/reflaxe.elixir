@@ -1,0 +1,2007 @@
+class reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms {
+
+	static inline function baseName(n:String) {
+		return if ((n != null && n.length > 0 && n.charAt(0) == "_")) {
+			n.substr(1, null);
+		} else {
+			n;
+		};
+	}
+
+	static function unwrapFnArg(a:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (a.def) {
+	case EFn(clauses):
+		clauses;	
+	case EParen(inner):
+		unwrapFnArg(inner);	
+	case EDo(body) if (body != null && body.length == 1):
+		unwrapFnArg(body[0]);	
+	default:
+		null;	
+}) {
+			var ` = a.def;
+			switch (enumIndex `) {
+				case 42: {
+					var ` = `[0];
+					{
+						var clauses = `;
+						{
+							clauses;
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.unwrapFnArg(inner);
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var body = `;
+						if (body != null && body.length == 1) {
+							reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.unwrapFnArg(body[0]);
+						} else {
+							null;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function isVarNamed(e:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return @:ast(switch (e.def) {
+	case EVar(v):
+		v == name;	
+	case EParen(inner):
+		isVarNamed(inner, name);	
+	case EDo(body) if (body != null && body.length == 1):
+		isVarNamed(body[0], name);	
+	case EBlock(exprs) if (exprs != null && exprs.length == 1):
+		isVarNamed(exprs[0], name);	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			switch (enumIndex `) {
+				case 38: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							v == name;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						if (exprs != null && exprs.length == 1) {
+							reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.isVarNamed(exprs[0], name);
+						} else {
+							false;
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.isVarNamed(inner, name);
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var body = `;
+						if (body != null && body.length == 1) {
+							reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.isVarNamed(body[0], name);
+						} else {
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function fixMapThenBranch(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case ERemoteCall({ def : EVar(m) }, "map", args) if (m == "Enum" && args != null && args.length == 2):
+		var clauses = unwrapFnArg(args[1]);
+		switch (clauses) {
+			case _ if (clauses != null && clauses.length == 1):
+				var cl = clauses[0];
+				var vName:Null<String> = null;
+				if (cl.args != null && cl.args.length == 1) switch (cl.args[0]) {
+					case PVar(nm):
+						vName = nm;					
+					default:
+				};
+				var newBody = cl.body;
+				switch (cl.body.def) {
+					case EIf(cond, thenB, elseB):
+						var left = null;
+						var right = null;
+						switch (cond.def) {
+							case EBinary(Equal | StrictEqual, l, r):
+								left = l;
+								right = r;							
+							default:
+						};
+						var aName:Null<String> = null;
+						var bName:Null<String> = null;
+						inline function fieldIsId(e:ElixirAST):Null<String> {
+							return switch (e.def) {
+								case EField({ def : EVar(v) }, fld) if (fld == "id"):
+									v;								
+								default:
+									null;								
+							};
+						};
+						if (left != null && right != null) {
+							aName = fieldIsId(left);
+							bName = fieldIsId(right);
+						};
+						if (vName != null && aName != null && bName != null && (aName == vName || bName == vName)) {
+							if (isVarNamed(thenB, vName) && isVarNamed(elseB, vName)) {
+								var other = (aName == vName) ? bName : aName;
+								var fixedThen = makeAST(EVar(other));
+								var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : makeAST(EIf(cond, fixedThen, elseB)) }]));
+								return makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [args[0], rebuiltFn]));
+							};
+						};					
+					default:
+				};
+				return n;			
+			default:
+				return n;			
+		};	
+	default:
+		return n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							if (` == "map") {
+								{
+									var m = `;
+									var args = `;
+									if (m == "Enum" && args != null && args.length == 2) {
+										var clauses = reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.unwrapFnArg(args[1]);
+										@:ast(switch (clauses) {
+	case _ if (clauses != null && clauses.length == 1):
+		var cl = clauses[0];
+		var vName:Null<String> = null;
+		if (cl.args != null && cl.args.length == 1) switch (cl.args[0]) {
+			case PVar(nm):
+				vName = nm;			
+			default:
+		};
+		var newBody = cl.body;
+		switch (cl.body.def) {
+			case EIf(cond, thenB, elseB):
+				var left = null;
+				var right = null;
+				switch (cond.def) {
+					case EBinary(Equal | StrictEqual, l, r):
+						left = l;
+						right = r;					
+					default:
+				};
+				var aName:Null<String> = null;
+				var bName:Null<String> = null;
+				inline function fieldIsId(e:ElixirAST):Null<String> {
+					return switch (e.def) {
+						case EField({ def : EVar(v) }, fld) if (fld == "id"):
+							v;						
+						default:
+							null;						
+					};
+				};
+				if (left != null && right != null) {
+					aName = fieldIsId(left);
+					bName = fieldIsId(right);
+				};
+				if (vName != null && aName != null && bName != null && (aName == vName || bName == vName)) {
+					if (isVarNamed(thenB, vName) && isVarNamed(elseB, vName)) {
+						var other = (aName == vName) ? bName : aName;
+						var fixedThen = makeAST(EVar(other));
+						var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : makeAST(EIf(cond, fixedThen, elseB)) }]));
+						return makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [args[0], rebuiltFn]));
+					};
+				};			
+			default:
+		};
+		return n;	
+	default:
+		return n;	
+}) if (clauses != null && clauses.length == 1) {
+											var cl = clauses[0];
+											var vName = null;
+											if (cl.args != null && cl.args.length == 1) {
+												@:ast(switch (cl.args[0]) {
+	case PVar(nm):
+		vName = nm;	
+	default:
+}) {
+													var ` = cl.args[0];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var nm = `;
+															{
+																vName = nm;
+															};
+														};
+													} else {};
+												};
+											};
+											var newBody = cl.body;
+											@:ast(switch (cl.body.def) {
+	case EIf(cond, thenB, elseB):
+		var left = null;
+		var right = null;
+		switch (cond.def) {
+			case EBinary(Equal | StrictEqual, l, r):
+				left = l;
+				right = r;			
+			default:
+		};
+		var aName:Null<String> = null;
+		var bName:Null<String> = null;
+		inline function fieldIsId(e:ElixirAST):Null<String> {
+			return switch (e.def) {
+				case EField({ def : EVar(v) }, fld) if (fld == "id"):
+					v;				
+				default:
+					null;				
+			};
+		};
+		if (left != null && right != null) {
+			aName = fieldIsId(left);
+			bName = fieldIsId(right);
+		};
+		if (vName != null && aName != null && bName != null && (aName == vName || bName == vName)) {
+			if (isVarNamed(thenB, vName) && isVarNamed(elseB, vName)) {
+				var other = (aName == vName) ? bName : aName;
+				var fixedThen = makeAST(EVar(other));
+				var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : makeAST(EIf(cond, fixedThen, elseB)) }]));
+				return makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [args[0], rebuiltFn]));
+			};
+		};	
+	default:
+}) {
+												var ` = cl.body.def;
+												if (enumIndex ` == 10) {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var cond = `;
+														var thenB = `;
+														var elseB = `;
+														{
+															var left = null;
+															var right = null;
+															@:ast(switch (cond.def) {
+	case EBinary(Equal | StrictEqual, l, r):
+		left = l;
+		right = r;	
+	default:
+}) {
+																var ` = cond.def;
+																if (enumIndex ` == 26) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	switch (enumIndex `) {
+																		case 6, 8: {
+																			{
+																				var l = `;
+																				var r = `;
+																				{
+																					left = l;
+																					right = r;
+																				};
+																			};
+																		};
+																		default: {}
+																	};
+																} else {};
+															};
+															var aName = null;
+															var bName = null;
+															{};
+															if (left != null && right != null) {
+																aName = @:ast(switch (e.def) {
+	case EField({ def : EVar(v) }, fld) if (fld == "id"):
+		v;	
+	default:
+		null;	
+}) {
+																	var ` = left.def;
+																	if (enumIndex ` == 28) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var ` = `.def;
+																			var ` = `.metadata;
+																			var ` = `.pos;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var v = `;
+																					var fld = `;
+																					if (fld == "id") {
+																						v;
+																					} else {
+																						null;
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																		};
+																	} else {
+																		null;
+																	};
+																};
+																bName = @:ast(switch (e.def) {
+	case EField({ def : EVar(v) }, fld) if (fld == "id"):
+		v;	
+	default:
+		null;	
+}) {
+																	var ` = right.def;
+																	if (enumIndex ` == 28) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var ` = `.def;
+																			var ` = `.metadata;
+																			var ` = `.pos;
+																			if (enumIndex ` == 38) {
+																				var ` = `[0];
+																				{
+																					var v = `;
+																					var fld = `;
+																					if (fld == "id") {
+																						v;
+																					} else {
+																						null;
+																					};
+																				};
+																			} else {
+																				null;
+																			};
+																		};
+																	} else {
+																		null;
+																	};
+																};
+															};
+															if (vName != null && aName != null && bName != null && (aName == vName || bName == vName)) {
+																if (reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.isVarNamed(thenB, vName) && reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.isVarNamed(elseB, vName)) {
+																	var other = if ((aName == vName)) {
+																		bName;
+																	} else {
+																		aName;
+																	};
+																	var fixedThen = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar(other), metadata : {}, pos : pos};
+																	};
+																	var rebuiltFn = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : {
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, fixedThen, elseB), metadata : {}, pos : pos};
+																		}}]), metadata : {}, pos : pos};
+																	};
+																	return {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+																		}, "map", [args[0], rebuiltFn]), metadata : {}, pos : pos};
+																	};
+																};
+															};
+														};
+													};
+												} else {};
+											};
+											return n;
+										} else {
+											return n;
+										};
+									} else {
+										return n;
+									};
+								};
+							} else {
+								return n;
+							};
+						} else {
+							return n;
+						};
+					};
+				} else {
+					return n;
+				};
+			};
+		});
+	}
+
+	static function fixFilterCompareToId(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case EDef(fname, fargs, fguards, fbody):
+		var idParam:Null<String> = null;
+		if (fargs != null) for (p  in  fargs) switch (p) {
+			case PVar(nm) if (baseName(nm) == "id"):
+				idParam = nm;			
+			default:
+		};
+		if (idParam == null) return n;
+		var newBody = ElixirASTTransformer.transformNode(fbody, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+					var filterFnClauses = unwrapFnArg(args[1]);
+					switch (filterFnClauses) {
+						case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+							var cl = filterFnClauses[0];
+							var fixedBody = switch (cl.body.def) {
+								case EBinary(NotEqual | StrictNotEqual, l, r):
+									inline function isElemId(e:ElixirAST):Bool {
+										return switch (e.def) {
+											case EField({ def : EVar(_) }, fld) if (fld == "id"):
+												true;											
+											default:
+												false;											
+										};
+									};
+									function isSelfVar(e:ElixirAST):Bool {
+										return switch (e.def) {
+											case EVar(_):
+												true;											
+											case EParen(inner):
+												isSelfVar(inner);											
+											case EDo(body) if (body != null && body.length == 1):
+												isSelfVar(body[0]);											
+											case EBlock(exprs) if (exprs != null && exprs.length == 1):
+												isSelfVar(exprs[0]);											
+											default:
+												false;											
+										};
+									};
+									if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam)))) else cl.body;								
+								default:
+									cl.body;								
+							};
+							if (fixedBody != cl.body) {
+								var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : fixedBody }]));
+								makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
+							} else x;						
+						default:
+							x;						
+					};				
+				case EFn(clauses) if (clauses.length == 1):
+					var cl2 = clauses[0];
+					var binder:Null<String> = switch (cl2.args.length == 1 ? cl2.args[0] : null) {
+						case PVar(nm):
+							nm;						
+						default:
+							null;						
+					};
+					if (binder == null) return x;
+					switch (cl2.body.def) {
+						case EBinary(NotEqual | StrictNotEqual, l2, r2):
+							inline function isBinder(e:ElixirAST):Bool return switch (e.def) {
+								case EVar(nm) if (nm == binder):
+									true;								
+								default:
+									false;								
+							};
+							inline function isIdFieldOfBinder(e:ElixirAST):Bool return switch (e.def) {
+								case EField({ def : EVar(nm) }, fld) if (fld == "id" && nm == binder):
+									true;								
+								default:
+									false;								
+							};
+							if (isIdFieldOfBinder(l2) && isBinder(r2)) {
+								var nb = makeAST(EBinary(NotEqual, l2, makeAST(EVar(idParam))));
+								makeASTWithMeta(EFn([{ args : cl2.args, guard : cl2.guard, body : nb }]), x.metadata, x.pos);
+							} else x;						
+						default:
+							x;						
+					};				
+				default:
+					x;				
+			};
+		});
+		return makeASTWithMeta(EDef(fname, fargs, fguards, newBody), n.metadata, n.pos);	
+	case EDefp(fnamep, fargsp, fguardsp, fbodyp):
+		var idParamP:Null<String> = null;
+		if (fargsp != null) for (p  in  fargsp) switch (p) {
+			case PVar(nm) if (baseName(nm) == "id"):
+				idParamP = nm;			
+			default:
+		};
+		if (idParamP == null) return n;
+		var newBodyP = ElixirASTTransformer.transformNode(fbodyp, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+					var filterFnClauses = unwrapFnArg(args[1]);
+					switch (filterFnClauses) {
+						case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+							var cl = filterFnClauses[0];
+							var fixedBody = switch (cl.body.def) {
+								case EBinary(NotEqual | StrictNotEqual, l, r):
+									inline function isElemId(e:ElixirAST):Bool {
+										return switch (e.def) {
+											case EField({ def : EVar(_) }, fld) if (fld == "id"):
+												true;											
+											default:
+												false;											
+										};
+									};
+									function isSelfVar(e:ElixirAST):Bool {
+										return switch (e.def) {
+											case EVar(_):
+												true;											
+											case EParen(inner):
+												isSelfVar(inner);											
+											case EDo(body) if (body != null && body.length == 1):
+												isSelfVar(body[0]);											
+											case EBlock(exprs) if (exprs != null && exprs.length == 1):
+												isSelfVar(exprs[0]);											
+											default:
+												false;											
+										};
+									};
+									if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParamP)))) else cl.body;								
+								default:
+									cl.body;								
+							};
+							if (fixedBody != cl.body) {
+								var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : fixedBody }]));
+								makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
+							} else x;						
+						default:
+							x;						
+					};				
+				case EFn(clauses) if (clauses.length == 1):
+					var clb = clauses[0];
+					var binder2:Null<String> = switch (clb.args.length == 1 ? clb.args[0] : null) {
+						case PVar(nmb):
+							nmb;						
+						default:
+							null;						
+					};
+					if (binder2 == null) return x;
+					switch (clb.body.def) {
+						case EBinary(NotEqual | StrictNotEqual, lB, rB):
+							inline function isBinder(e:ElixirAST):Bool return switch (e.def) {
+								case EVar(nm2) if (nm2 == binder2):
+									true;								
+								default:
+									false;								
+							};
+							inline function isIdFieldOfBinder(e:ElixirAST):Bool return switch (e.def) {
+								case EField({ def : EVar(nm3) }, fld) if (fld == "id" && nm3 == binder2):
+									true;								
+								default:
+									false;								
+							};
+							if (isIdFieldOfBinder(lB) && isBinder(rB)) {
+								var nbp = makeAST(EBinary(NotEqual, lB, makeAST(EVar(idParamP))));
+								makeASTWithMeta(EFn([{ args : clb.args, guard : clb.guard, body : nbp }]), x.metadata, x.pos);
+							} else x;						
+						default:
+							x;						
+					};				
+				default:
+					x;				
+			};
+		});
+		return makeASTWithMeta(EDefp(fnamep, fargsp, fguardsp, newBodyP), n.metadata, n.pos);	
+	default:
+		return n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fname = `;
+							var fargs = `;
+							var fguards = `;
+							var fbody = `;
+							{
+								var idParam = [null];
+								if (fargs != null) {
+									{
+										var ` = 0;
+										while (` < fargs.length) {
+											var p = fargs[`];
+											++ `;
+											@:ast(switch (p) {
+	case PVar(nm) if (baseName(nm) == "id"):
+		idParam = nm;	
+	default:
+}) if (enumIndex p == 0) {
+												var ` = p[0];
+												{
+													var nm = `;
+													if (if ((nm != null && nm.length > 0 && nm.charAt(0) == "_")) {
+														nm.substr(1, null);
+													} else {
+														nm;
+													} == "id") {
+														idParam[0] = nm;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+								if (idParam[0] == null) {
+									return n;
+								};
+								var newBody = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(fbody, function(x:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (x.def) {
+	case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+		var filterFnClauses = unwrapFnArg(args[1]);
+		switch (filterFnClauses) {
+			case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+				var cl = filterFnClauses[0];
+				var fixedBody = switch (cl.body.def) {
+					case EBinary(NotEqual | StrictNotEqual, l, r):
+						inline function isElemId(e:ElixirAST):Bool {
+							return switch (e.def) {
+								case EField({ def : EVar(_) }, fld) if (fld == "id"):
+									true;								
+								default:
+									false;								
+							};
+						};
+						function isSelfVar(e:ElixirAST):Bool {
+							return switch (e.def) {
+								case EVar(_):
+									true;								
+								case EParen(inner):
+									isSelfVar(inner);								
+								case EDo(body) if (body != null && body.length == 1):
+									isSelfVar(body[0]);								
+								case EBlock(exprs) if (exprs != null && exprs.length == 1):
+									isSelfVar(exprs[0]);								
+								default:
+									false;								
+							};
+						};
+						if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam)))) else cl.body;					
+					default:
+						cl.body;					
+				};
+				if (fixedBody != cl.body) {
+					var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : fixedBody }]));
+					makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
+				} else x;			
+			default:
+				x;			
+		};	
+	case EFn(clauses) if (clauses.length == 1):
+		var cl2 = clauses[0];
+		var binder:Null<String> = switch (cl2.args.length == 1 ? cl2.args[0] : null) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (binder == null) return x;
+		switch (cl2.body.def) {
+			case EBinary(NotEqual | StrictNotEqual, l2, r2):
+				inline function isBinder(e:ElixirAST):Bool return switch (e.def) {
+					case EVar(nm) if (nm == binder):
+						true;					
+					default:
+						false;					
+				};
+				inline function isIdFieldOfBinder(e:ElixirAST):Bool return switch (e.def) {
+					case EField({ def : EVar(nm) }, fld) if (fld == "id" && nm == binder):
+						true;					
+					default:
+						false;					
+				};
+				if (isIdFieldOfBinder(l2) && isBinder(r2)) {
+					var nb = makeAST(EBinary(NotEqual, l2, makeAST(EVar(idParam))));
+					makeASTWithMeta(EFn([{ args : cl2.args, guard : cl2.guard, body : nb }]), x.metadata, x.pos);
+				} else x;			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+										var ` = x.def;
+										switch (enumIndex `) {
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "filter") {
+															{
+																var m = `;
+																var args = `;
+																if (m == "Enum" && args != null && args.length == 2) {
+																	var filterFnClauses = reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.unwrapFnArg(args[1]);
+																	@:ast(switch (filterFnClauses) {
+	case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+		var cl = filterFnClauses[0];
+		var fixedBody = switch (cl.body.def) {
+			case EBinary(NotEqual | StrictNotEqual, l, r):
+				inline function isElemId(e:ElixirAST):Bool {
+					return switch (e.def) {
+						case EField({ def : EVar(_) }, fld) if (fld == "id"):
+							true;						
+						default:
+							false;						
+					};
+				};
+				function isSelfVar(e:ElixirAST):Bool {
+					return switch (e.def) {
+						case EVar(_):
+							true;						
+						case EParen(inner):
+							isSelfVar(inner);						
+						case EDo(body) if (body != null && body.length == 1):
+							isSelfVar(body[0]);						
+						case EBlock(exprs) if (exprs != null && exprs.length == 1):
+							isSelfVar(exprs[0]);						
+						default:
+							false;						
+					};
+				};
+				if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam)))) else cl.body;			
+			default:
+				cl.body;			
+		};
+		if (fixedBody != cl.body) {
+			var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : fixedBody }]));
+			makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
+		} else x;	
+	default:
+		x;	
+}) if (filterFnClauses != null && filterFnClauses.length == 1) {
+																		var cl = filterFnClauses[0];
+																		var fixedBody = @:ast(switch (cl.body.def) {
+	case EBinary(NotEqual | StrictNotEqual, l, r):
+		inline function isElemId(e:ElixirAST):Bool {
+			return switch (e.def) {
+				case EField({ def : EVar(_) }, fld) if (fld == "id"):
+					true;				
+				default:
+					false;				
+			};
+		};
+		function isSelfVar(e:ElixirAST):Bool {
+			return switch (e.def) {
+				case EVar(_):
+					true;				
+				case EParen(inner):
+					isSelfVar(inner);				
+				case EDo(body) if (body != null && body.length == 1):
+					isSelfVar(body[0]);				
+				case EBlock(exprs) if (exprs != null && exprs.length == 1):
+					isSelfVar(exprs[0]);				
+				default:
+					false;				
+			};
+		};
+		if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam)))) else cl.body;	
+	default:
+		cl.body;	
+}) {
+																			var ` = cl.body.def;
+																			if (enumIndex ` == 26) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				switch (enumIndex `) {
+																					case 7, 9: {
+																						{
+																							var l = `;
+																							var r = `;
+																							{
+																								{};
+																								var isSelfVar = [null];
+																								isSelfVar[0] = function(e:reflaxe.elixir.ast.ElixirAST) {
+																									return @:ast(switch (e.def) {
+	case EVar(_):
+		true;	
+	case EParen(inner):
+		isSelfVar(inner);	
+	case EDo(body) if (body != null && body.length == 1):
+		isSelfVar(body[0]);	
+	case EBlock(exprs) if (exprs != null && exprs.length == 1):
+		isSelfVar(exprs[0]);	
+	default:
+		false;	
+}) {
+																										var ` = e.def;
+																										switch (enumIndex `) {
+																											case 38: {
+																												var ` = `[0];
+																												{
+																													true;
+																												};
+																											};
+																											case 53: {
+																												var ` = `[0];
+																												{
+																													var exprs = `;
+																													if (exprs != null && exprs.length == 1) {
+																														isSelfVar[0](exprs[0]);
+																													} else {
+																														false;
+																													};
+																												};
+																											};
+																											case 54: {
+																												var ` = `[0];
+																												{
+																													var inner = `;
+																													{
+																														isSelfVar[0](inner);
+																													};
+																												};
+																											};
+																											case 55: {
+																												var ` = `[0];
+																												{
+																													var body = `;
+																													if (body != null && body.length == 1) {
+																														isSelfVar[0](body[0]);
+																													} else {
+																														false;
+																													};
+																												};
+																											};
+																											default: {
+																												false;
+																											}
+																										};
+																									};
+																								};
+																								if (@:ast(switch (e.def) {
+	case EField({ def : EVar(_) }, fld) if (fld == "id"):
+		true;	
+	default:
+		false;	
+}) {
+																									var ` = l.def;
+																									if (enumIndex ` == 28) {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var ` = `.def;
+																											var ` = `.metadata;
+																											var ` = `.pos;
+																											if (enumIndex ` == 38) {
+																												var ` = `[0];
+																												{
+																													var fld = `;
+																													if (fld == "id") {
+																														true;
+																													} else {
+																														false;
+																													};
+																												};
+																											} else {
+																												false;
+																											};
+																										};
+																									} else {
+																										false;
+																									};
+																								} && isSelfVar[0](r)) {
+																									{
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, l, {
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam[0]), metadata : {}, pos : pos};
+																										}), metadata : {}, pos : pos};
+																									};
+																								} else {
+																									cl.body;
+																								};
+																							};
+																						};
+																					};
+																					default: {
+																						cl.body;
+																					}
+																				};
+																			} else {
+																				cl.body;
+																			};
+																		};
+																		if (fixedBody != cl.body) {
+																			var rebuiltFn = {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : fixedBody}]), metadata : {}, pos : pos};
+																			};
+																			{
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+																				}, "filter", [args[0], rebuiltFn]), metadata : {}, pos : pos};
+																			};
+																		} else {
+																			x;
+																		};
+																	} else {
+																		x;
+																	};
+																} else {
+																	x;
+																};
+															};
+														} else {
+															x;
+														};
+													} else {
+														x;
+													};
+												};
+											};
+											case 42: {
+												var ` = `[0];
+												{
+													var clauses = `;
+													if (clauses.length == 1) {
+														var cl2 = clauses[0];
+														var binder = @:ast(switch (cl2.args.length == 1 ? cl2.args[0] : null) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+															var ` = if (cl2.args.length == 1) {
+																cl2.args[0];
+															} else {
+																null;
+															};
+															if (` == null) {
+																null;
+															} else if (enumIndex ` == 0) {
+																var ` = `[0];
+																{
+																	var nm = `;
+																	{
+																		nm;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+														if (binder == null) {
+															return x;
+														};
+														@:ast(switch (cl2.body.def) {
+	case EBinary(NotEqual | StrictNotEqual, l2, r2):
+		inline function isBinder(e:ElixirAST):Bool return switch (e.def) {
+			case EVar(nm) if (nm == binder):
+				true;			
+			default:
+				false;			
+		};
+		inline function isIdFieldOfBinder(e:ElixirAST):Bool return switch (e.def) {
+			case EField({ def : EVar(nm) }, fld) if (fld == "id" && nm == binder):
+				true;			
+			default:
+				false;			
+		};
+		if (isIdFieldOfBinder(l2) && isBinder(r2)) {
+			var nb = makeAST(EBinary(NotEqual, l2, makeAST(EVar(idParam))));
+			makeASTWithMeta(EFn([{ args : cl2.args, guard : cl2.guard, body : nb }]), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+															var ` = cl2.body.def;
+															if (enumIndex ` == 26) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																switch (enumIndex `) {
+																	case 7, 9: {
+																		{
+																			var l2 = `;
+																			var r2 = `;
+																			{
+																				{};
+																				{};
+																				if (@:ast(switch (e.def) {
+	case EField({ def : EVar(nm) }, fld) if (fld == "id" && nm == binder):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = l2.def;
+																					if (enumIndex ` == 28) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						{
+																							var ` = `.def;
+																							var ` = `.metadata;
+																							var ` = `.pos;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var nm = `;
+																									var fld = `;
+																									if (fld == "id" && nm == binder) {
+																										true;
+																									} else {
+																										false;
+																									};
+																								};
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				} && @:ast(switch (e.def) {
+	case EVar(nm) if (nm == binder):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = r2.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var nm = `;
+																							if (nm == binder) {
+																								true;
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				}) {
+																					var nb = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, l2, {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParam[0]), metadata : {}, pos : pos};
+																						}), metadata : {}, pos : pos};
+																					};
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl2.args, guard : cl2.guard, body : nb}]), metadata : x.metadata, pos : x.pos};
+																				} else {
+																					x;
+																				};
+																			};
+																		};
+																	};
+																	default: {
+																		x;
+																	}
+																};
+															} else {
+																x;
+															};
+														};
+													} else {
+														x;
+													};
+												};
+											};
+											default: {
+												x;
+											}
+										};
+									};
+								});
+								return {def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname, fargs, fguards, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fnamep = `;
+							var fargsp = `;
+							var fguardsp = `;
+							var fbodyp = `;
+							{
+								var idParamP = [null];
+								if (fargsp != null) {
+									{
+										var ` = 0;
+										while (` < fargsp.length) {
+											var p = fargsp[`];
+											++ `;
+											@:ast(switch (p) {
+	case PVar(nm) if (baseName(nm) == "id"):
+		idParamP = nm;	
+	default:
+}) if (enumIndex p == 0) {
+												var ` = p[0];
+												{
+													var nm = `;
+													if (if ((nm != null && nm.length > 0 && nm.charAt(0) == "_")) {
+														nm.substr(1, null);
+													} else {
+														nm;
+													} == "id") {
+														idParamP[0] = nm;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+								if (idParamP[0] == null) {
+									return n;
+								};
+								var newBodyP = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(fbodyp, function(x:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (x.def) {
+	case ERemoteCall({ def : EVar(m) }, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+		var filterFnClauses = unwrapFnArg(args[1]);
+		switch (filterFnClauses) {
+			case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+				var cl = filterFnClauses[0];
+				var fixedBody = switch (cl.body.def) {
+					case EBinary(NotEqual | StrictNotEqual, l, r):
+						inline function isElemId(e:ElixirAST):Bool {
+							return switch (e.def) {
+								case EField({ def : EVar(_) }, fld) if (fld == "id"):
+									true;								
+								default:
+									false;								
+							};
+						};
+						function isSelfVar(e:ElixirAST):Bool {
+							return switch (e.def) {
+								case EVar(_):
+									true;								
+								case EParen(inner):
+									isSelfVar(inner);								
+								case EDo(body) if (body != null && body.length == 1):
+									isSelfVar(body[0]);								
+								case EBlock(exprs) if (exprs != null && exprs.length == 1):
+									isSelfVar(exprs[0]);								
+								default:
+									false;								
+							};
+						};
+						if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParamP)))) else cl.body;					
+					default:
+						cl.body;					
+				};
+				if (fixedBody != cl.body) {
+					var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : fixedBody }]));
+					makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
+				} else x;			
+			default:
+				x;			
+		};	
+	case EFn(clauses) if (clauses.length == 1):
+		var clb = clauses[0];
+		var binder2:Null<String> = switch (clb.args.length == 1 ? clb.args[0] : null) {
+			case PVar(nmb):
+				nmb;			
+			default:
+				null;			
+		};
+		if (binder2 == null) return x;
+		switch (clb.body.def) {
+			case EBinary(NotEqual | StrictNotEqual, lB, rB):
+				inline function isBinder(e:ElixirAST):Bool return switch (e.def) {
+					case EVar(nm2) if (nm2 == binder2):
+						true;					
+					default:
+						false;					
+				};
+				inline function isIdFieldOfBinder(e:ElixirAST):Bool return switch (e.def) {
+					case EField({ def : EVar(nm3) }, fld) if (fld == "id" && nm3 == binder2):
+						true;					
+					default:
+						false;					
+				};
+				if (isIdFieldOfBinder(lB) && isBinder(rB)) {
+					var nbp = makeAST(EBinary(NotEqual, lB, makeAST(EVar(idParamP))));
+					makeASTWithMeta(EFn([{ args : clb.args, guard : clb.guard, body : nbp }]), x.metadata, x.pos);
+				} else x;			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+										var ` = x.def;
+										switch (enumIndex `) {
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "filter") {
+															{
+																var m = `;
+																var args = `;
+																if (m == "Enum" && args != null && args.length == 2) {
+																	var filterFnClauses = reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.unwrapFnArg(args[1]);
+																	@:ast(switch (filterFnClauses) {
+	case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+		var cl = filterFnClauses[0];
+		var fixedBody = switch (cl.body.def) {
+			case EBinary(NotEqual | StrictNotEqual, l, r):
+				inline function isElemId(e:ElixirAST):Bool {
+					return switch (e.def) {
+						case EField({ def : EVar(_) }, fld) if (fld == "id"):
+							true;						
+						default:
+							false;						
+					};
+				};
+				function isSelfVar(e:ElixirAST):Bool {
+					return switch (e.def) {
+						case EVar(_):
+							true;						
+						case EParen(inner):
+							isSelfVar(inner);						
+						case EDo(body) if (body != null && body.length == 1):
+							isSelfVar(body[0]);						
+						case EBlock(exprs) if (exprs != null && exprs.length == 1):
+							isSelfVar(exprs[0]);						
+						default:
+							false;						
+					};
+				};
+				if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParamP)))) else cl.body;			
+			default:
+				cl.body;			
+		};
+		if (fixedBody != cl.body) {
+			var rebuiltFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : fixedBody }]));
+			makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
+		} else x;	
+	default:
+		x;	
+}) if (filterFnClauses != null && filterFnClauses.length == 1) {
+																		var cl = filterFnClauses[0];
+																		var fixedBody = @:ast(switch (cl.body.def) {
+	case EBinary(NotEqual | StrictNotEqual, l, r):
+		inline function isElemId(e:ElixirAST):Bool {
+			return switch (e.def) {
+				case EField({ def : EVar(_) }, fld) if (fld == "id"):
+					true;				
+				default:
+					false;				
+			};
+		};
+		function isSelfVar(e:ElixirAST):Bool {
+			return switch (e.def) {
+				case EVar(_):
+					true;				
+				case EParen(inner):
+					isSelfVar(inner);				
+				case EDo(body) if (body != null && body.length == 1):
+					isSelfVar(body[0]);				
+				case EBlock(exprs) if (exprs != null && exprs.length == 1):
+					isSelfVar(exprs[0]);				
+				default:
+					false;				
+			};
+		};
+		if (isElemId(l) && isSelfVar(r)) makeAST(EBinary(NotEqual, l, makeAST(EVar(idParamP)))) else cl.body;	
+	default:
+		cl.body;	
+}) {
+																			var ` = cl.body.def;
+																			if (enumIndex ` == 26) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				switch (enumIndex `) {
+																					case 7, 9: {
+																						{
+																							var l = `;
+																							var r = `;
+																							{
+																								{};
+																								var isSelfVar = [null];
+																								isSelfVar[0] = function(e:reflaxe.elixir.ast.ElixirAST) {
+																									return @:ast(switch (e.def) {
+	case EVar(_):
+		true;	
+	case EParen(inner):
+		isSelfVar(inner);	
+	case EDo(body) if (body != null && body.length == 1):
+		isSelfVar(body[0]);	
+	case EBlock(exprs) if (exprs != null && exprs.length == 1):
+		isSelfVar(exprs[0]);	
+	default:
+		false;	
+}) {
+																										var ` = e.def;
+																										switch (enumIndex `) {
+																											case 38: {
+																												var ` = `[0];
+																												{
+																													true;
+																												};
+																											};
+																											case 53: {
+																												var ` = `[0];
+																												{
+																													var exprs = `;
+																													if (exprs != null && exprs.length == 1) {
+																														isSelfVar[0](exprs[0]);
+																													} else {
+																														false;
+																													};
+																												};
+																											};
+																											case 54: {
+																												var ` = `[0];
+																												{
+																													var inner = `;
+																													{
+																														isSelfVar[0](inner);
+																													};
+																												};
+																											};
+																											case 55: {
+																												var ` = `[0];
+																												{
+																													var body = `;
+																													if (body != null && body.length == 1) {
+																														isSelfVar[0](body[0]);
+																													} else {
+																														false;
+																													};
+																												};
+																											};
+																											default: {
+																												false;
+																											}
+																										};
+																									};
+																								};
+																								if (@:ast(switch (e.def) {
+	case EField({ def : EVar(_) }, fld) if (fld == "id"):
+		true;	
+	default:
+		false;	
+}) {
+																									var ` = l.def;
+																									if (enumIndex ` == 28) {
+																										var ` = `[0];
+																										var ` = `[1];
+																										{
+																											var ` = `.def;
+																											var ` = `.metadata;
+																											var ` = `.pos;
+																											if (enumIndex ` == 38) {
+																												var ` = `[0];
+																												{
+																													var fld = `;
+																													if (fld == "id") {
+																														true;
+																													} else {
+																														false;
+																													};
+																												};
+																											} else {
+																												false;
+																											};
+																										};
+																									} else {
+																										false;
+																									};
+																								} && isSelfVar[0](r)) {
+																									{
+																										var pos = null;
+																										{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, l, {
+																											var pos = null;
+																											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParamP[0]), metadata : {}, pos : pos};
+																										}), metadata : {}, pos : pos};
+																									};
+																								} else {
+																									cl.body;
+																								};
+																							};
+																						};
+																					};
+																					default: {
+																						cl.body;
+																					}
+																				};
+																			} else {
+																				cl.body;
+																			};
+																		};
+																		if (fixedBody != cl.body) {
+																			var rebuiltFn = {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : fixedBody}]), metadata : {}, pos : pos};
+																			};
+																			{
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+																				}, "filter", [args[0], rebuiltFn]), metadata : {}, pos : pos};
+																			};
+																		} else {
+																			x;
+																		};
+																	} else {
+																		x;
+																	};
+																} else {
+																	x;
+																};
+															};
+														} else {
+															x;
+														};
+													} else {
+														x;
+													};
+												};
+											};
+											case 42: {
+												var ` = `[0];
+												{
+													var clauses = `;
+													if (clauses.length == 1) {
+														var clb = clauses[0];
+														var binder2 = @:ast(switch (clb.args.length == 1 ? clb.args[0] : null) {
+	case PVar(nmb):
+		nmb;	
+	default:
+		null;	
+}) {
+															var ` = if (clb.args.length == 1) {
+																clb.args[0];
+															} else {
+																null;
+															};
+															if (` == null) {
+																null;
+															} else if (enumIndex ` == 0) {
+																var ` = `[0];
+																{
+																	var nmb = `;
+																	{
+																		nmb;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+														if (binder2 == null) {
+															return x;
+														};
+														@:ast(switch (clb.body.def) {
+	case EBinary(NotEqual | StrictNotEqual, lB, rB):
+		inline function isBinder(e:ElixirAST):Bool return switch (e.def) {
+			case EVar(nm2) if (nm2 == binder2):
+				true;			
+			default:
+				false;			
+		};
+		inline function isIdFieldOfBinder(e:ElixirAST):Bool return switch (e.def) {
+			case EField({ def : EVar(nm3) }, fld) if (fld == "id" && nm3 == binder2):
+				true;			
+			default:
+				false;			
+		};
+		if (isIdFieldOfBinder(lB) && isBinder(rB)) {
+			var nbp = makeAST(EBinary(NotEqual, lB, makeAST(EVar(idParamP))));
+			makeASTWithMeta(EFn([{ args : clb.args, guard : clb.guard, body : nbp }]), x.metadata, x.pos);
+		} else x;	
+	default:
+		x;	
+}) {
+															var ` = clb.body.def;
+															if (enumIndex ` == 26) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																switch (enumIndex `) {
+																	case 7, 9: {
+																		{
+																			var lB = `;
+																			var rB = `;
+																			{
+																				{};
+																				{};
+																				if (@:ast(switch (e.def) {
+	case EField({ def : EVar(nm3) }, fld) if (fld == "id" && nm3 == binder2):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = lB.def;
+																					if (enumIndex ` == 28) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						{
+																							var ` = `.def;
+																							var ` = `.metadata;
+																							var ` = `.pos;
+																							if (enumIndex ` == 38) {
+																								var ` = `[0];
+																								{
+																									var nm3 = `;
+																									var fld = `;
+																									if (fld == "id" && nm3 == binder2) {
+																										true;
+																									} else {
+																										false;
+																									};
+																								};
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				} && @:ast(switch (e.def) {
+	case EVar(nm2) if (nm2 == binder2):
+		true;	
+	default:
+		false;	
+}) {
+																					var ` = rB.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var nm2 = `;
+																							if (nm2 == binder2) {
+																								true;
+																							} else {
+																								false;
+																							};
+																						};
+																					} else {
+																						false;
+																					};
+																				}) {
+																					var nbp = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, lB, {
+																							var pos = null;
+																							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(idParamP[0]), metadata : {}, pos : pos};
+																						}), metadata : {}, pos : pos};
+																					};
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : clb.args, guard : clb.guard, body : nbp}]), metadata : x.metadata, pos : x.pos};
+																				} else {
+																					x;
+																				};
+																			};
+																		};
+																	};
+																	default: {
+																		x;
+																	}
+																};
+															} else {
+																x;
+															};
+														};
+													} else {
+														x;
+													};
+												};
+											};
+											default: {
+												x;
+											}
+										};
+									};
+								});
+								return {def : reflaxe.elixir.ast.ElixirASTDef.EDefp(fnamep, fargsp, fguardsp, newBodyP), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						return n;
+					}
+				};
+			};
+		});
+	}
+
+	static function fixGenericIfReplace(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var nb = cl.body;
+			switch (cl.body.def) {
+				case EIf(cond, thenB, elseB):
+					inline function fieldVar(e:ElixirAST):Null<String> {
+						return switch (e.def) {
+							case EField({ def : EVar(v) }, fld) if (fld == "id"):
+								v;							
+							default:
+								null;							
+						};
+					};
+					inline function sameVar(e:ElixirAST, name:String):Bool {
+						return switch (e.def) {
+							case EVar(v) if (v == name):
+								true;							
+							default:
+								false;							
+						};
+					};
+					var a:ElixirAST = null;
+					var b:ElixirAST = null;
+					switch (cond.def) {
+						case EBinary(Equal, l, r):
+							a = l;
+							b = r;						
+						default:
+					};
+					var va = a != null ? fieldVar(a) : null;
+					var vb = b != null ? fieldVar(b) : null;
+					if (va != null && vb != null) {
+						if (sameVar(thenB, va) && sameVar(elseB, va)) {
+							nb = makeAST(EIf(cond, makeAST(EVar(vb)), elseB));
+						} else if (sameVar(thenB, vb) && sameVar(elseB, vb)) {
+							nb = makeAST(EIf(cond, makeAST(EVar(va)), elseB));
+						};
+					};				
+				default:
+			};
+			newClauses.push({ args : cl.args, guard : cl.guard, body : nb });
+		};
+		return makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	default:
+		return n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 42) {
+					var ` = `[0];
+					{
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var nb = cl.body;
+									@:ast(switch (cl.body.def) {
+	case EIf(cond, thenB, elseB):
+		inline function fieldVar(e:ElixirAST):Null<String> {
+			return switch (e.def) {
+				case EField({ def : EVar(v) }, fld) if (fld == "id"):
+					v;				
+				default:
+					null;				
+			};
+		};
+		inline function sameVar(e:ElixirAST, name:String):Bool {
+			return switch (e.def) {
+				case EVar(v) if (v == name):
+					true;				
+				default:
+					false;				
+			};
+		};
+		var a:ElixirAST = null;
+		var b:ElixirAST = null;
+		switch (cond.def) {
+			case EBinary(Equal, l, r):
+				a = l;
+				b = r;			
+			default:
+		};
+		var va = a != null ? fieldVar(a) : null;
+		var vb = b != null ? fieldVar(b) : null;
+		if (va != null && vb != null) {
+			if (sameVar(thenB, va) && sameVar(elseB, va)) {
+				nb = makeAST(EIf(cond, makeAST(EVar(vb)), elseB));
+			} else if (sameVar(thenB, vb) && sameVar(elseB, vb)) {
+				nb = makeAST(EIf(cond, makeAST(EVar(va)), elseB));
+			};
+		};	
+	default:
+}) {
+										var ` = cl.body.def;
+										if (enumIndex ` == 10) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var cond = `;
+												var thenB = `;
+												var elseB = `;
+												{
+													{};
+													{};
+													var a = null;
+													var b = null;
+													@:ast(switch (cond.def) {
+	case EBinary(Equal, l, r):
+		a = l;
+		b = r;	
+	default:
+}) {
+														var ` = cond.def;
+														if (enumIndex ` == 26) {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 6) {
+																{
+																	var l = `;
+																	var r = `;
+																	{
+																		a = l;
+																		b = r;
+																	};
+																};
+															} else {};
+														} else {};
+													};
+													var va = if (a != null) {
+														@:ast(switch (e.def) {
+	case EField({ def : EVar(v) }, fld) if (fld == "id"):
+		v;	
+	default:
+		null;	
+}) {
+															var ` = a.def;
+															if (enumIndex ` == 28) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var ` = `.def;
+																	var ` = `.metadata;
+																	var ` = `.pos;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var v = `;
+																			var fld = `;
+																			if (fld == "id") {
+																				v;
+																			} else {
+																				null;
+																			};
+																		};
+																	} else {
+																		null;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+													} else {
+														null;
+													};
+													var vb = if (b != null) {
+														@:ast(switch (e.def) {
+	case EField({ def : EVar(v) }, fld) if (fld == "id"):
+		v;	
+	default:
+		null;	
+}) {
+															var ` = b.def;
+															if (enumIndex ` == 28) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var ` = `.def;
+																	var ` = `.metadata;
+																	var ` = `.pos;
+																	if (enumIndex ` == 38) {
+																		var ` = `[0];
+																		{
+																			var v = `;
+																			var fld = `;
+																			if (fld == "id") {
+																				v;
+																			} else {
+																				null;
+																			};
+																		};
+																	} else {
+																		null;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+													} else {
+														null;
+													};
+													if (va != null && vb != null) {
+														if (@:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = thenB.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var v = `;
+																	if (v == va) {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} && @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+															var ` = elseB.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var v = `;
+																	if (v == va) {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														}) {
+															nb = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar(vb), metadata : {}, pos : pos};
+																}, elseB), metadata : {}, pos : pos};
+															};
+														} else {
+															if (@:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+																var ` = thenB.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v = `;
+																		if (v == vb) {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															} && @:ast(switch (e.def) {
+	case EVar(v) if (v == name):
+		true;	
+	default:
+		false;	
+}) {
+																var ` = elseB.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v = `;
+																		if (v == vb) {
+																			true;
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															}) {
+																nb = {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EVar(va), metadata : {}, pos : pos};
+																	}, elseB), metadata : {}, pos : pos};
+																};
+															};
+														};
+													};
+												};
+											};
+										} else {};
+									};
+									newClauses.push({args : cl.args, guard : cl.guard, body : nb});
+								};
+							};
+							return {def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					return n;
+				};
+			};
+		});
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		var a = reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.fixMapThenBranch(ast);
+		var b = reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.fixFilterCompareToId(a);
+		var c = reflaxe.elixir.ast.transformers.ListUpdateAndFilterFixTransforms.fixGenericIfReplace(b);
+		return c;
+	}
+}

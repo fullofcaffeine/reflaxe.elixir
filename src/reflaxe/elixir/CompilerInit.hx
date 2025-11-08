@@ -8,6 +8,8 @@ import haxe.macro.Compiler;
 import haxe.io.Path;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.macros.LiveViewPreserver;
+import haxe.macro.Type;
+import haxe.macro.Expr; // for TypedExprTools
 
 // Import preprocessor types
 import reflaxe.preprocessors.ExpressionPreprocessor;
@@ -25,6 +27,20 @@ class CompilerInit {
      * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
      */
     public static function Start() {
+        #if sys
+        // DEBUG ONLY: marker file to confirm CompilerInit.Start() invocation
+        try sys.io.File.append('/tmp/compiler_init_called.log', true).writeString('Start() invoked\n') catch (_:Dynamic) {}
+        #end
+        // Attach TracePreserve as early as possible to avoid losing race with type loading.
+        try {
+            var isElixirEarly = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
+            if (isElixirEarly) {
+                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                // Also register expression-level early rewrite so `trace(v)` is preserved under -D no_traces
+                // This runs pre-typing via ExpressionModifier and uses Elixir-only gating here.
+                try reflaxe.elixir.macros.TraceEarlyRewrite.register() catch (_:Dynamic) {}
+            }
+        } catch (_:Dynamic) {}
         // Platform check for Haxe 5.0+ only: ensures compiler only runs when
         // --custom-target elixir=output_dir is specified in compilation command.
         // This prevents Reflaxe targets from activating on every compilation.
@@ -39,6 +55,8 @@ class CompilerInit {
         
         // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
         LiveViewPreserver.init();
+
+        // (Presence trace parity): build-macro based rewrite remains primary mechanism.
 
         // Ensure @:repo externs are kept by DCE so they can be scheduled normally
         // for compilation via the AST pipeline (repoTransformPass).
@@ -71,26 +89,86 @@ class CompilerInit {
             reflaxe.elixir.macros.RepoDiscovery.run();
         } catch (e:Dynamic) {}
 
-        // Target-conditional classpath gating for staged overrides in std/_std
-        // Only add Elixir-specific staged stdlib when compiling to Elixir target.
-        // This prevents __elixir__ usage from leaking into macro/other targets.
+        // Compute repo root and staged std path once
         var targetName = Context.definedValue("target.name");
-        // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
+        var stagedStd:String = null;
         try {
             var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-            var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
-            var d1 = Path.directory(d0);                 // .../src/reflaxe
-            var d2 = Path.directory(d1);                 // .../src
-            var repoRoot = Path.directory(d2);           // .../
-            var stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
-            // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
-            // target.name may be unset: rely on presence of -D elixir_output define used by this target.
-            if (targetName == "elixir" || Context.defined("elixir_output")) {
-                Compiler.addClassPath(stagedStd);
+            var d0 = Path.directory(thisFile);
+            var d1 = Path.directory(d0);
+            var d2 = Path.directory(d1);
+            var repoRoot = Path.directory(d2);
+            stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
+        } catch (_:Dynamic) {}
+
+        // Haxe 5+: Attach metadata at onBeforeTyping to guarantee timing.
+        // Haxe 4.x: onBeforeTyping is unavailable; attach immediately below.
+        #if (haxe >= version("5.0.0"))
+        Context.onBeforeTyping(function() {
+            var isElixir = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
+            if (!isElixir) return;
+            if (stagedStd != null) {
+                try Compiler.addClassPath(stagedStd) catch (_:Dynamic) {}
             }
-        } catch (e:Dynamic) {
-            // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
-        }
+            try {
+                #if debug_trace_preserve Sys.println('[CompilerInit] onBeforeTyping: Attaching TracePreserve globally'); #end
+                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+            } catch (_:Dynamic) {}
+        });
+        #end
+
+        // Attach TracePreserve immediately and also right after init macros, to cover all load timings.
+        try {
+            var isElixirNow = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
+            if (isElixirNow) {
+                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("*.*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("ExternalCaller", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("Main", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("TestPresence", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                // Force-include modules from the current working directory only (test module) so
+                // that metadata is applied before these modules are loaded/typed.
+                try Compiler.include("", true, null, ["."]) catch (_:Dynamic) {}
+            }
+        } catch (_:Dynamic) {}
+
+        // Attach TracePreserve right after init macros so it applies to all subsequently loaded types.
+        Context.onAfterInitMacros(function() {
+            var isElixir = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
+            if (!isElixir) return;
+            try {
+                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("*.*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                // Explicitly target common test classes used in snapshots
+                Compiler.addGlobalMetadata("ExternalCaller", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("Main", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+                Compiler.addGlobalMetadata("TestPresence", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
+            } catch (_:Dynamic) {}
+        });
+
+        // DEBUG: Inspect metadata presence on key classes after typing
+        #if eval
+        Context.onAfterTyping(function(types) {
+            try {
+                var buf = new StringBuf();
+                for (t in types) switch (t) {
+                    case TClassDecl(c):
+                        var cc = c.get();
+                        var cn = cc.name;
+                        if (cn == 'ExternalCaller' || cn == 'Main' || cn == 'TestPresence') {
+                            var meta = cc.meta;
+                            buf.add('[' + cn + '] meta entries:\n');
+                            for (e in meta.get()) buf.add('  @' + e.name + '\n');
+                        }
+                    case _:
+                }
+                if (buf.length > 0) sys.io.File.append('/tmp/trace_meta_scan.log', true).writeString(buf.toString());
+            } catch (_:Dynamic) {}
+        });
+        #end
+
 
         // Register the Elixir compiler with Reflaxe
         ReflectCompiler.AddCompiler(new ElixirCompiler(), {

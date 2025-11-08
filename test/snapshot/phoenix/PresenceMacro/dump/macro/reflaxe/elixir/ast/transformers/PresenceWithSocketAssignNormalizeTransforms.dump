@@ -1,0 +1,568 @@
+class reflaxe.elixir.ast.transformers.PresenceWithSocketAssignNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (looksLikePresenceModule(name, n)):
+		var newBody = [for (b  in  body) normalize(b)];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if (looksLikePresenceModule(name, n)):
+		makeASTWithMeta(EDefmodule(name, normalize(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (if (n != null && n.metadata != null && n.metadata.isPresence == true) {
+								true;
+							} else {
+								if (name == null) {
+									false;
+								} else {
+									StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
+								};
+							}) {
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.PresenceWithSocketAssignNormalizeTransforms.normalize(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (if (n != null && n.metadata != null && n.metadata.isPresence == true) {
+								true;
+							} else {
+								if (name == null) {
+									false;
+								} else {
+									StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
+								};
+							}) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.PresenceWithSocketAssignNormalizeTransforms.normalize(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function looksLikePresenceModule(name:String, node:reflaxe.elixir.ast.ElixirAST) {
+		if (node != null && node.metadata != null && node.metadata.isPresence == true) {
+			return true;
+		};
+		if (name == null) {
+			return false;
+		};
+		return StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web.Presence");
+	}
+
+	static function normalize(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(stmts) if (stmts.length >= 2):
+		var lastIsSocket = switch (stmts[stmts.length - 1].def) {
+			case EVar(v) if (v == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		if (!lastIsSocket) return x;
+		var out:Array<ElixirAST> = [];
+		for (i  in  0 ... stmts.length - 1) {
+			var s = stmts[i];
+			switch (s.def) {
+				case ERemoteCall(mod, func, args) if (isPresenceEffect(mod, func)):
+					out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), s), s.metadata, s.pos));
+					continue;				
+				case EMatch(PWildcard, rhs) if (isPresenceEffectExpr(rhs)):
+					out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), rhs), s.metadata, s.pos));
+					continue;				
+				default:
+			};
+			out.push(s);
+		};
+		out.push(stmts[stmts.length - 1]);
+		makeASTWithMeta(EBlock(out), x.metadata, x.pos);	
+	case EDo(statements) if (statements.length >= 2):
+		var lastIsSocket = switch (statements[statements.length - 1].def) {
+			case EVar(variable) if (variable == "socket"):
+				true;			
+			default:
+				false;			
+		};
+		if (!lastIsSocket) return x;
+		var normalized:Array<ElixirAST> = [];
+		for (i  in  0 ... statements.length - 1) {
+			var stmt = statements[i];
+			switch (stmt.def) {
+				case ERemoteCall(moduleExpr, functionName, arguments) if (isPresenceEffect(moduleExpr, functionName)):
+					normalized.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), stmt), stmt.metadata, stmt.pos));
+					continue;				
+				case EMatch(PWildcard, rhs) if (isPresenceEffectExpr(rhs)):
+					normalized.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), rhs), stmt.metadata, stmt.pos));
+					continue;				
+				default:
+			};
+			normalized.push(stmt);
+		};
+		normalized.push(statements[statements.length - 1]);
+		makeASTWithMeta(EDo(normalized), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							if (stmts.length >= 2) {
+								var lastIsSocket = @:ast(switch (stmts[stmts.length - 1].def) {
+	case EVar(v) if (v == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = stmts[stmts.length - 1].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (v == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (! lastIsSocket) {
+									return x;
+								};
+								var out = [];
+								{
+									var ` = 0;
+									var ` = stmts.length - 1;
+									while (` < `) {
+										var i = ` ++;
+										var s = stmts[i];
+										@:ast(switch (s.def) {
+	case ERemoteCall(mod, func, args) if (isPresenceEffect(mod, func)):
+		out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), s), s.metadata, s.pos));
+		continue;	
+	case EMatch(PWildcard, rhs) if (isPresenceEffectExpr(rhs)):
+		out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), rhs), s.metadata, s.pos));
+		continue;	
+	default:
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													if (enumIndex ` == 8) {
+														{
+															var rhs = `;
+															if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _):
+		isPresenceEffect(mod, func);	
+	default:
+		false;	
+}) {
+																var ` = rhs.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var mod = `;
+																		var func = `;
+																		{
+																			{
+																				var modName = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+																					var ` = mod.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var m = `;
+																							{
+																								m;
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																				if (modName == null) {
+																					false;
+																				} else {
+																					var isPresence = (modName == "Phoenix.Presence") || StringTools.endsWith(modName, ".Presence") || (modName == "Presence");
+																					isPresence && (func == "track" || func == "update" || func == "untrack");
+																				};
+																			};
+																		};
+																	};
+																} else {
+																	false;
+																};
+															}) {
+																out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : {}, pos : pos};
+																}, rhs), metadata : s.metadata, pos : s.pos});
+																continue;
+															} else {};
+														};
+													} else {};
+												};
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var mod = `;
+														var func = `;
+														var args = `;
+														if ({
+															var modName = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+																var ` = mod.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var m = `;
+																		{
+																			m;
+																		};
+																	};
+																} else {
+																	null;
+																};
+															};
+															if (modName == null) {
+																false;
+															} else {
+																var isPresence = (modName == "Phoenix.Presence") || StringTools.endsWith(modName, ".Presence") || (modName == "Presence");
+																isPresence && (func == "track" || func == "update" || func == "untrack");
+															};
+														}) {
+															out.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : {}, pos : pos};
+															}, s), metadata : s.metadata, pos : s.pos});
+															continue;
+														} else {};
+													};
+												};
+												default: {}
+											};
+										};
+										out.push(s);
+									};
+								};
+								out.push(stmts[stmts.length - 1]);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var statements = `;
+							if (statements.length >= 2) {
+								var lastIsSocket = @:ast(switch (statements[statements.length - 1].def) {
+	case EVar(variable) if (variable == "socket"):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = statements[statements.length - 1].def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var variable = `;
+											if (variable == "socket") {
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (! lastIsSocket) {
+									return x;
+								};
+								var normalized = [];
+								{
+									var ` = 0;
+									var ` = statements.length - 1;
+									while (` < `) {
+										var i = ` ++;
+										var stmt = statements[i];
+										@:ast(switch (stmt.def) {
+	case ERemoteCall(moduleExpr, functionName, arguments) if (isPresenceEffect(moduleExpr, functionName)):
+		normalized.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), stmt), stmt.metadata, stmt.pos));
+		continue;	
+	case EMatch(PWildcard, rhs) if (isPresenceEffectExpr(rhs)):
+		normalized.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("socket")), rhs), stmt.metadata, stmt.pos));
+		continue;	
+	default:
+}) {
+											var ` = stmt.def;
+											switch (enumIndex `) {
+												case 8: {
+													var ` = `[0];
+													var ` = `[1];
+													if (enumIndex ` == 8) {
+														{
+															var rhs = `;
+															if (@:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _):
+		isPresenceEffect(mod, func);	
+	default:
+		false;	
+}) {
+																var ` = rhs.def;
+																if (enumIndex ` == 24) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var mod = `;
+																		var func = `;
+																		{
+																			{
+																				var modName = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+																					var ` = mod.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var m = `;
+																							{
+																								m;
+																							};
+																						};
+																					} else {
+																						null;
+																					};
+																				};
+																				if (modName == null) {
+																					false;
+																				} else {
+																					var isPresence = (modName == "Phoenix.Presence") || StringTools.endsWith(modName, ".Presence") || (modName == "Presence");
+																					isPresence && (func == "track" || func == "update" || func == "untrack");
+																				};
+																			};
+																		};
+																	};
+																} else {
+																	false;
+																};
+															}) {
+																normalized.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : {}, pos : pos};
+																}, rhs), metadata : stmt.metadata, pos : stmt.pos});
+																continue;
+															} else {};
+														};
+													} else {};
+												};
+												case 24: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var moduleExpr = `;
+														var functionName = `;
+														var arguments = `;
+														if ({
+															var modName = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+																var ` = moduleExpr.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var m = `;
+																		{
+																			m;
+																		};
+																	};
+																} else {
+																	null;
+																};
+															};
+															if (modName == null) {
+																false;
+															} else {
+																var isPresence = (modName == "Phoenix.Presence") || StringTools.endsWith(modName, ".Presence") || (modName == "Presence");
+																isPresence && (functionName == "track" || functionName == "update" || functionName == "untrack");
+															};
+														}) {
+															normalized.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : {}, pos : pos};
+															}, stmt), metadata : stmt.metadata, pos : stmt.pos});
+															continue;
+														} else {};
+													};
+												};
+												default: {}
+											};
+										};
+										normalized.push(stmt);
+									};
+								};
+								normalized.push(statements[statements.length - 1]);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(normalized), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isPresenceEffect(mod:reflaxe.elixir.ast.ElixirAST, func:String) {
+		var modName = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+			var ` = mod.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var m = `;
+					{
+						m;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+		if (modName == null) {
+			return false;
+		};
+		var isPresence = (modName == "Phoenix.Presence") || StringTools.endsWith(modName, ".Presence") || (modName == "Presence");
+		return isPresence && (func == "track" || func == "update" || func == "untrack");
+	}
+
+	static inline function isPresenceEffectExpr(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall(mod, func, _):
+		isPresenceEffect(mod, func);	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var mod = `;
+					var func = `;
+					{
+						{
+							var modName = @:ast(switch (mod.def) {
+	case EVar(m):
+		m;	
+	default:
+		null;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										{
+											m;
+										};
+									};
+								} else {
+									null;
+								};
+							};
+							if (modName == null) {
+								false;
+							} else {
+								var isPresence = (modName == "Phoenix.Presence") || StringTools.endsWith(modName, ".Presence") || (modName == "Presence");
+								isPresence && (func == "track" || func == "update" || func == "untrack");
+							};
+						};
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

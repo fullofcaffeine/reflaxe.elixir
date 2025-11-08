@@ -1,0 +1,316 @@
+class reflaxe.elixir.ast.transformers.BinaryOperandBlockToIIFETransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBinary(op, left, right):
+		var newLeft = wrapIfNeeded(left);
+		var newRight = wrapIfNeeded(right);
+		if (newLeft != left || newRight != right) makeASTWithMeta(EBinary(op, newLeft, newRight), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 26) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var left = `;
+						var right = `;
+						{
+							var newLeft = @:ast(switch (e.def) {
+	case EBlock(_) | EDo(_):
+		makeIIFE(e);	
+	case EParen(inner):
+		switch (inner.def) {
+			case EBlock(_) | EDo(_):
+				makeIIFE(inner);			
+			default:
+				e;			
+		};	
+	default:
+		e;	
+}) {
+								var ` = left.def;
+								switch (enumIndex `) {
+									case 53: {
+										var ` = `[0];
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : left}]), metadata : {}, pos : pos};
+												}, "", []), metadata : {}, pos : pos};
+											};
+										};
+									};
+									case 54: {
+										var ` = `[0];
+										{
+											var inner = `;
+											{
+												@:ast(switch (inner.def) {
+	case EBlock(_) | EDo(_):
+		makeIIFE(inner);	
+	default:
+		e;	
+}) {
+													var ` = inner.def;
+													switch (enumIndex `) {
+														case 53: {
+															var ` = `[0];
+															{
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : inner}]), metadata : {}, pos : pos};
+																	}, "", []), metadata : {}, pos : pos};
+																};
+															};
+														};
+														case 55: {
+															var ` = `[0];
+															{
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : inner}]), metadata : {}, pos : pos};
+																	}, "", []), metadata : {}, pos : pos};
+																};
+															};
+														};
+														default: {
+															left;
+														}
+													};
+												};
+											};
+										};
+									};
+									case 55: {
+										var ` = `[0];
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : left}]), metadata : {}, pos : pos};
+												}, "", []), metadata : {}, pos : pos};
+											};
+										};
+									};
+									default: {
+										left;
+									}
+								};
+							};
+							var newRight = @:ast(switch (e.def) {
+	case EBlock(_) | EDo(_):
+		makeIIFE(e);	
+	case EParen(inner):
+		switch (inner.def) {
+			case EBlock(_) | EDo(_):
+				makeIIFE(inner);			
+			default:
+				e;			
+		};	
+	default:
+		e;	
+}) {
+								var ` = right.def;
+								switch (enumIndex `) {
+									case 53: {
+										var ` = `[0];
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : right}]), metadata : {}, pos : pos};
+												}, "", []), metadata : {}, pos : pos};
+											};
+										};
+									};
+									case 54: {
+										var ` = `[0];
+										{
+											var inner = `;
+											{
+												@:ast(switch (inner.def) {
+	case EBlock(_) | EDo(_):
+		makeIIFE(inner);	
+	default:
+		e;	
+}) {
+													var ` = inner.def;
+													switch (enumIndex `) {
+														case 53: {
+															var ` = `[0];
+															{
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : inner}]), metadata : {}, pos : pos};
+																	}, "", []), metadata : {}, pos : pos};
+																};
+															};
+														};
+														case 55: {
+															var ` = `[0];
+															{
+																{
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : inner}]), metadata : {}, pos : pos};
+																	}, "", []), metadata : {}, pos : pos};
+																};
+															};
+														};
+														default: {
+															right;
+														}
+													};
+												};
+											};
+										};
+									};
+									case 55: {
+										var ` = `[0];
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : right}]), metadata : {}, pos : pos};
+												}, "", []), metadata : {}, pos : pos};
+											};
+										};
+									};
+									default: {
+										right;
+									}
+								};
+							};
+							if (newLeft != left || newRight != right) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(op, newLeft, newRight), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static inline function wrapIfNeeded(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case EBlock(_) | EDo(_):
+		makeIIFE(e);	
+	case EParen(inner):
+		switch (inner.def) {
+			case EBlock(_) | EDo(_):
+				makeIIFE(inner);			
+			default:
+				e;			
+		};	
+	default:
+		e;	
+}) {
+			var ` = e.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						{
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : e}]), metadata : {}, pos : pos};
+							}, "", []), metadata : {}, pos : pos};
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							@:ast(switch (inner.def) {
+	case EBlock(_) | EDo(_):
+		makeIIFE(inner);	
+	default:
+		e;	
+}) {
+								var ` = inner.def;
+								switch (enumIndex `) {
+									case 53: {
+										var ` = `[0];
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : inner}]), metadata : {}, pos : pos};
+												}, "", []), metadata : {}, pos : pos};
+											};
+										};
+									};
+									case 55: {
+										var ` = `[0];
+										{
+											{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : inner}]), metadata : {}, pos : pos};
+												}, "", []), metadata : {}, pos : pos};
+											};
+										};
+									};
+									default: {
+										e;
+									}
+								};
+							};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						{
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : e}]), metadata : {}, pos : pos};
+							}, "", []), metadata : {}, pos : pos};
+						};
+					};
+				};
+				default: {
+					e;
+				}
+			};
+		};
+	}
+
+	static inline function makeIIFE(body:reflaxe.elixir.ast.ElixirAST) {
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ECall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [], guard : null, body : body}]), metadata : {}, pos : pos};
+			}, "", []), metadata : {}, pos : pos};
+		};
+	}
+}

@@ -1,0 +1,6 @@
+class reflaxe.elixir.ast.transformers.DebugDumpMainBodyTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return ast;
+	}
+}

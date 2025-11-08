@@ -1,0 +1,171 @@
+class reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl {
+
+	public function new(list:Array<haxe.macro.TypedExpr>) {
+		this.tvarPos = new haxe.ds.IntMap();
+		this.tvarMap = new haxe.ds.IntMap();
+		this.foundUnused = false;
+		this.exprList = list;
+	}
+
+	var exprList:Array<haxe.macro.TypedExpr>;
+
+	@:value(false)
+	var foundUnused:Bool;
+
+	@:value([])
+	var tvarMap:Map<Int, Null<haxe.macro.TVar>>;
+
+	@:value([])
+	var tvarPos:Map<Int, haxe.macro.Position>;
+
+	public function markUnusedLocalVariables() {
+		this.foundUnused = false;
+		this.tvarMap = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		this.tvarPos = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		{
+			var ` = 0;
+			var ` = this.exprList;
+			while (` < `.length) {
+				var e = `[`];
+				++ `;
+				this.iter(e);
+			};
+		};
+		{
+			var ` = {
+				var this = this.tvarMap;
+				cast new haxe.iterators.MapKeyValueIterator(cast this);
+			};
+			while (`.hasNext()) {
+				var ` = `.next();
+				var id = `.key;
+				var tvar = `.value;
+				{
+					if (tvar != null) {
+						if (! reflaxe.helpers.NullableMetaAccessHelper.maybeHas(tvar.meta, "-reflaxe.unused")) {
+							reflaxe.helpers.NullableMetaAccessHelper.maybeAdd(tvar.meta, "-reflaxe.unused", [], {
+								var maybe = {
+									var this = this.tvarPos;
+									cast this.get(id);
+								};
+								cast {
+									if (maybe == null) {
+										throw "Trusted on null value.";
+									};
+									@:nullSafety(Off) maybe;
+								};
+							});
+							this.foundUnused = true;
+						};
+					};
+				};
+			};
+		};
+		return this.exprList;
+	}
+
+	function iter(te:haxe.macro.TypedExpr) {
+		@:ast(switch (te.expr) {
+	case TVar(tvar, maybeExpr):
+		{
+			if (tvarMap.exists(tvar.id)) {
+				throw "Logic error";
+			};
+			if (tvar.meta.maybeHas("-reflaxe.unused")) {
+				if (maybeExpr != null && !maybeExpr.isMutator()) {
+					return;
+				};
+			} else {
+				tvarMap.set(tvar.id, tvar);
+				tvarPos.set(tvar.id, te.pos);
+			};
+		};	
+	case TLocal(tvar):
+		{
+			if (tvarMap.exists(tvar.id)) {
+				tvarMap.set(tvar.id, null);
+			};
+		};	
+	case _:
+}) {
+			var ` = te.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var tvar = `;
+						{
+							{
+								if ({
+									var this = this.tvarMap;
+									var key = tvar.id;
+									cast this.exists(key);
+								}) {
+									{
+										var this = this.tvarMap;
+										var key = tvar.id;
+										var value = null;
+										cast this.set(key, value);
+									};
+								};
+							};
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var tvar = `;
+						var maybeExpr = `;
+						{
+							{
+								if ({
+									var this = this.tvarMap;
+									var key = tvar.id;
+									cast this.exists(key);
+								}) {
+									throw "Logic error";
+								};
+								if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(tvar.meta, "-reflaxe.unused")) {
+									if (maybeExpr != null && ! reflaxe.helpers.TypedExprHelper.isMutator(maybeExpr)) {
+										return;
+									};
+								} else {
+									{
+										var this = this.tvarMap;
+										var key = tvar.id;
+										cast this.set(key, tvar);
+									};
+									{
+										var this = this.tvarPos;
+										var key = tvar.id;
+										var value = te.pos;
+										cast this.set(key, value);
+									};
+								};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		haxe.macro.TypedExprTools.iter(te, this.iter);
+	}
+
+	public static function mark(list:Array<haxe.macro.TypedExpr>) {
+		var muv = new reflaxe.preprocessors.implementations.MarkUnusedVariablesImpl(list);
+		var result = muv.markUnusedLocalVariables();
+		while (muv.foundUnused) {
+			result = muv.markUnusedLocalVariables();
+		};
+		return result;
+	}
+}

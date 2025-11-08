@@ -1,0 +1,2270 @@
+class reflaxe.elixir.preprocessor.TypedExprPreprocessor {
+
+	@:value(~/^_?g[0-9]*$/)
+	static var INFRASTRUCTURE_VAR_PATTERN(default,never):EReg = new EReg("^_?g[0-9]*$", "");
+
+	@:value(new Map())
+	static var lastSubstitutions:Map<Int, haxe.macro.TypedExpr> = {
+		{};
+		new haxe.ds.IntMap();
+	};
+
+	public static function getLastSubstitutions() {
+		return reflaxe.elixir.preprocessor.TypedExprPreprocessor.lastSubstitutions;
+	}
+
+	public static function preprocess(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return null;
+		};
+		if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isMapIterationPattern(expr)) {
+			return reflaxe.elixir.preprocessor.TypedExprPreprocessor.transformMapIteration(expr);
+		};
+		expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.mergeVarSwitchPatterns(expr);
+		if (! reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(expr)) {
+			return expr;
+		};
+		var substitutions = if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.lastSubstitutions != null) {
+			reflaxe.elixir.preprocessor.TypedExprPreprocessor.lastSubstitutions;
+		} else {
+			{
+				{};
+				new haxe.ds.IntMap();
+			};
+		};
+		var result = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions);
+		reflaxe.elixir.preprocessor.TypedExprPreprocessor.lastSubstitutions = substitutions;
+		return result;
+	}
+
+	static function mergeVarSwitchPatterns(expr:haxe.macro.TypedExpr) {
+		@:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		var transformed = exprs.map(function(e) ->  @:implicitReturn return mergeVarSwitchPatterns(e));
+		function exprEq(a:TypedExpr, b:TypedExpr):Bool {
+			if (a == null || b == null) return false;
+			switch (a.expr) {
+				case TLocal(va):
+					switch (b.expr) {
+						case TLocal(vb):
+							return va.id == vb.id;						
+						default:
+							return false;						
+					};				
+				case TField(oa, fa):
+					switch (b.expr) {
+						case TField(ob, fb):
+							var ownerEq = exprEq(oa, ob);
+							var nameA = switch (fa) {
+								case FInstance(_, _, cf):
+									cf.get().name;								
+								case FStatic(_, cf):
+									cf.get().name;								
+								case FAnon(cf):
+									cf.get().name;								
+								case FDynamic(s):
+									s;								
+								default:
+									null;								
+							};
+							var nameB = switch (fb) {
+								case FInstance(_, _, cf2):
+									cf2.get().name;								
+								case FStatic(_, cf2):
+									cf2.get().name;								
+								case FAnon(cf2):
+									cf2.get().name;								
+								case FDynamic(s2):
+									s2;								
+								default:
+									null;								
+							};
+							return ownerEq && nameA != null && nameA == nameB;						
+						default:
+							return false;						
+					};				
+				case TConst(ca):
+					switch (b.expr) {
+						case TConst(cb):
+							return Std.string(ca) == Std.string(cb);						
+						default:
+							return false;						
+					};				
+				case TParenthesis(ia):
+					switch (b.expr) {
+						case TParenthesis(ib):
+							return exprEq(ia, ib);						
+						default:
+							return exprEq(ia, b);						
+					};				
+				default:
+					return false;				
+			};
+		};
+		var merged:Array<TypedExpr> = [];
+		var j = 0;
+		while (j < transformed.length) {
+			var cur = transformed[j];
+			if (j + 1 < transformed.length) {
+				switch (cur.expr) {
+					case TVar(v, initExpr) if (initExpr != null):
+						var nxt = transformed[j + 1];
+						switch (nxt.expr) {
+							case TSwitch(targetExpr, cases2, def2):
+								if (exprEq(initExpr, targetExpr)) {
+									var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+									merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+									j += 2;
+									continue;
+								};							
+							default:
+						};					
+					default:
+				};
+			};
+			merged.push(cur);
+			j++;
+		};
+		return { expr : TBlock(merged), pos : expr.pos, t : expr.t };	
+	default:
+		return haxe.macro.TypedExprTools.map(expr, function(e) ->  @:implicitReturn return mergeVarSwitchPatterns(e));	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						var transformed = {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = exprs;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(function(e:haxe.macro.TypedExpr) {
+										return reflaxe.elixir.preprocessor.TypedExprPreprocessor.mergeVarSwitchPatterns(e);
+									}(v));
+								};
+							};
+							`;
+						};
+						var exprEq = [null];
+						exprEq[0] = function(a:haxe.macro.TypedExpr, b:haxe.macro.TypedExpr) {
+							if (a == null || b == null) {
+								return false;
+							};
+							@:ast(switch (a.expr) {
+	case TLocal(va):
+		switch (b.expr) {
+			case TLocal(vb):
+				return va.id == vb.id;			
+			default:
+				return false;			
+		};	
+	case TField(oa, fa):
+		switch (b.expr) {
+			case TField(ob, fb):
+				var ownerEq = exprEq(oa, ob);
+				var nameA = switch (fa) {
+					case FInstance(_, _, cf):
+						cf.get().name;					
+					case FStatic(_, cf):
+						cf.get().name;					
+					case FAnon(cf):
+						cf.get().name;					
+					case FDynamic(s):
+						s;					
+					default:
+						null;					
+				};
+				var nameB = switch (fb) {
+					case FInstance(_, _, cf2):
+						cf2.get().name;					
+					case FStatic(_, cf2):
+						cf2.get().name;					
+					case FAnon(cf2):
+						cf2.get().name;					
+					case FDynamic(s2):
+						s2;					
+					default:
+						null;					
+				};
+				return ownerEq && nameA != null && nameA == nameB;			
+			default:
+				return false;			
+		};	
+	case TConst(ca):
+		switch (b.expr) {
+			case TConst(cb):
+				return Std.string(ca) == Std.string(cb);			
+			default:
+				return false;			
+		};	
+	case TParenthesis(ia):
+		switch (b.expr) {
+			case TParenthesis(ib):
+				return exprEq(ia, ib);			
+			default:
+				return exprEq(ia, b);			
+		};	
+	default:
+		return false;	
+}) {
+								var ` = a.expr;
+								switch (enumIndex `) {
+									case 0: {
+										var ` = `[0];
+										{
+											var ca = `;
+											{
+												@:ast(switch (b.expr) {
+	case TConst(cb):
+		return Std.string(ca) == Std.string(cb);	
+	default:
+		return false;	
+}) {
+													var ` = b.expr;
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var cb = `;
+															{
+																return Std.string(ca) == Std.string(cb);
+															};
+														};
+													} else {
+														return false;
+													};
+												};
+											};
+										};
+									};
+									case 1: {
+										var ` = `[0];
+										{
+											var va = `;
+											{
+												@:ast(switch (b.expr) {
+	case TLocal(vb):
+		return va.id == vb.id;	
+	default:
+		return false;	
+}) {
+													var ` = b.expr;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var vb = `;
+															{
+																return va.id == vb.id;
+															};
+														};
+													} else {
+														return false;
+													};
+												};
+											};
+										};
+									};
+									case 4: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var oa = `;
+											var fa = `;
+											{
+												@:ast(switch (b.expr) {
+	case TField(ob, fb):
+		var ownerEq = exprEq(oa, ob);
+		var nameA = switch (fa) {
+			case FInstance(_, _, cf):
+				cf.get().name;			
+			case FStatic(_, cf):
+				cf.get().name;			
+			case FAnon(cf):
+				cf.get().name;			
+			case FDynamic(s):
+				s;			
+			default:
+				null;			
+		};
+		var nameB = switch (fb) {
+			case FInstance(_, _, cf2):
+				cf2.get().name;			
+			case FStatic(_, cf2):
+				cf2.get().name;			
+			case FAnon(cf2):
+				cf2.get().name;			
+			case FDynamic(s2):
+				s2;			
+			default:
+				null;			
+		};
+		return ownerEq && nameA != null && nameA == nameB;	
+	default:
+		return false;	
+}) {
+													var ` = b.expr;
+													if (enumIndex ` == 4) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var ob = `;
+															var fb = `;
+															{
+																var ownerEq = exprEq[0](oa, ob);
+																var nameA = @:ast(switch (fa) {
+	case FInstance(_, _, cf):
+		cf.get().name;	
+	case FStatic(_, cf):
+		cf.get().name;	
+	case FAnon(cf):
+		cf.get().name;	
+	case FDynamic(s):
+		s;	
+	default:
+		null;	
+}) switch (enumIndex fa) {
+																	case 0: {
+																		var ` = fa[0];
+																		var ` = fa[1];
+																		var ` = fa[2];
+																		{
+																			var cf = `;
+																			{
+																				cf.get().name;
+																			};
+																		};
+																	};
+																	case 1: {
+																		var ` = fa[0];
+																		var ` = fa[1];
+																		{
+																			var cf = `;
+																			{
+																				cf.get().name;
+																			};
+																		};
+																	};
+																	case 2: {
+																		var ` = fa[0];
+																		{
+																			var cf = `;
+																			{
+																				cf.get().name;
+																			};
+																		};
+																	};
+																	case 3: {
+																		var ` = fa[0];
+																		{
+																			var s = `;
+																			{
+																				s;
+																			};
+																		};
+																	};
+																	default: {
+																		null;
+																	}
+																};
+																var nameB = @:ast(switch (fb) {
+	case FInstance(_, _, cf2):
+		cf2.get().name;	
+	case FStatic(_, cf2):
+		cf2.get().name;	
+	case FAnon(cf2):
+		cf2.get().name;	
+	case FDynamic(s2):
+		s2;	
+	default:
+		null;	
+}) switch (enumIndex fb) {
+																	case 0: {
+																		var ` = fb[0];
+																		var ` = fb[1];
+																		var ` = fb[2];
+																		{
+																			var cf2 = `;
+																			{
+																				cf2.get().name;
+																			};
+																		};
+																	};
+																	case 1: {
+																		var ` = fb[0];
+																		var ` = fb[1];
+																		{
+																			var cf2 = `;
+																			{
+																				cf2.get().name;
+																			};
+																		};
+																	};
+																	case 2: {
+																		var ` = fb[0];
+																		{
+																			var cf2 = `;
+																			{
+																				cf2.get().name;
+																			};
+																		};
+																	};
+																	case 3: {
+																		var ` = fb[0];
+																		{
+																			var s2 = `;
+																			{
+																				s2;
+																			};
+																		};
+																	};
+																	default: {
+																		null;
+																	}
+																};
+																return ownerEq && nameA != null && nameA == nameB;
+															};
+														};
+													} else {
+														return false;
+													};
+												};
+											};
+										};
+									};
+									case 6: {
+										var ` = `[0];
+										{
+											var ia = `;
+											{
+												@:ast(switch (b.expr) {
+	case TParenthesis(ib):
+		return exprEq(ia, ib);	
+	default:
+		return exprEq(ia, b);	
+}) {
+													var ` = b.expr;
+													if (enumIndex ` == 6) {
+														var ` = `[0];
+														{
+															var ib = `;
+															{
+																return exprEq[0](ia, ib);
+															};
+														};
+													} else {
+														return exprEq[0](ia, b);
+													};
+												};
+											};
+										};
+									};
+									default: {
+										return false;
+									}
+								};
+							};
+						};
+						var merged = [];
+						var j = 0;
+						while (j < transformed.length) {
+							var cur = transformed[j];
+							if (j + 1 < transformed.length) {
+								@:ast(switch (cur.expr) {
+	case TVar(v, initExpr) if (initExpr != null):
+		var nxt = transformed[j + 1];
+		switch (nxt.expr) {
+			case TSwitch(targetExpr, cases2, def2):
+				if (exprEq(initExpr, targetExpr)) {
+					var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+					merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+					j += 2;
+					continue;
+				};			
+			default:
+		};	
+	default:
+}) {
+									var ` = cur.expr;
+									if (enumIndex ` == 13) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var v = `;
+											var initExpr = `;
+											if (initExpr != null) {
+												var nxt = transformed[j + 1];
+												@:ast(switch (nxt.expr) {
+	case TSwitch(targetExpr, cases2, def2):
+		if (exprEq(initExpr, targetExpr)) {
+			var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+			merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+			j += 2;
+			continue;
+		};	
+	default:
+}) {
+													var ` = nxt.expr;
+													if (enumIndex ` == 18) {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															var targetExpr = `;
+															var cases2 = `;
+															var def2 = `;
+															{
+																if (exprEq[0](initExpr, targetExpr)) {
+																	var mergedInit = {expr : haxe.macro.TypedExprDef.TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t};
+																	merged.push({expr : haxe.macro.TypedExprDef.TVar(v, mergedInit), pos : cur.pos, t : cur.t});
+																	j += 2;
+																	continue;
+																};
+															};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+							};
+							merged.push(cur);
+							j ++;
+						};
+						return {expr : haxe.macro.TypedExprDef.TBlock(merged), pos : expr.pos, t : expr.t};
+					};
+				};
+			} else {
+				return haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.mergeVarSwitchPatterns(e));
+			};
+		};
+	}
+
+	static function containsInfrastructurePattern(expr:haxe.macro.TypedExpr) {
+		var result = @:ast(switch (expr.expr) {
+	case TVar(v, init):
+		var isInfra = init != null && isInfrastructureVar(v.name);
+		isInfra;	
+	case TBlock(exprs):
+		Lambda.exists(exprs, function(e) ->  @:implicitReturn return containsInfrastructurePattern(e));	
+	case TReturn(e) if (e != null):
+		var hasPattern = containsInfrastructurePattern(e);
+		hasPattern;	
+	case TFunction(func):
+		func.expr != null && containsInfrastructurePattern(func.expr);	
+	case TIf(cond, e1, e2):
+		containsInfrastructurePattern(cond) || containsInfrastructurePattern(e1) || (e2 != null && containsInfrastructurePattern(e2));	
+	case TSwitch(e, cases, edef):
+		containsInfrastructurePattern(e) || Lambda.exists(cases, function(c) ->  @:implicitReturn return Lambda.exists(c.values, function(v) ->  @:implicitReturn return containsInfrastructurePattern(v)) || containsInfrastructurePattern(c.expr)) || (edef != null && containsInfrastructurePattern(edef));	
+	case TTry(e, catches):
+		containsInfrastructurePattern(e) || Lambda.exists(catches, function(c) ->  @:implicitReturn return containsInfrastructurePattern(c.expr));	
+	case TWhile(cond, e, _):
+		containsInfrastructurePattern(cond) || containsInfrastructurePattern(e);	
+	case TFor(v, iter, e):
+		containsInfrastructurePattern(iter) || containsInfrastructurePattern(e);	
+	default:
+		false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 12: {
+					var ` = `[0];
+					{
+						var func = `;
+						{
+							func.expr != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(func.expr);
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						{
+							var isInfra = init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name);
+							isInfra;
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							Lambda.exists(exprs, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e));
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var iter = `;
+						var e = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(iter) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(cond) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e1) || (e2 != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e2));
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var e = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(cond) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						var cases = `;
+						var edef = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e) || Lambda.exists(cases, function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) return Lambda.exists(c.values, function(v:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(v)) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(c.expr)) || (edef != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(edef));
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e) || Lambda.exists(catches, function(c:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(c.expr));
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e = `;
+						if (e != null) {
+							var hasPattern = reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e);
+							hasPattern;
+						} else {
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+		return result;
+	}
+
+	static function applySubstitutionsRecursively(expr:haxe.macro.TypedExpr, subs:Map<Int, haxe.macro.TypedExpr>) {
+		return @:ast(switch (expr.expr) {
+	case TLocal(v):
+		if (subs.exists(v.id)) {
+			subs.get(v.id);
+		} else {
+			expr;
+		};	
+	case TVar(v, init):
+		if (init != null) {
+			var processedInit = applySubstitutionsRecursively(init, subs);
+			return { expr : TVar(v, processedInit), pos : expr.pos, t : expr.t };
+		} else {
+			return expr;
+		};	
+	case TBlock(exprs):
+		var hasInfraVars = Lambda.exists(exprs, function(e) ->  @:implicitReturn return switch (e.expr) {
+			case TVar(v, init):
+				init != null && isInfrastructureVar(v.name);			
+			case _:
+				false;			
+		});
+		if (hasInfraVars) {
+			var result = processBlock(exprs, expr.pos, expr.t, subs);
+			return result;
+		} else {
+			var transformed = exprs.map(function(e) ->  @:implicitReturn return applySubstitutionsRecursively(e, subs));
+			function exprEq(a:TypedExpr, b:TypedExpr):Bool {
+				if (a == null || b == null) return false;
+				switch (a.expr) {
+					case TLocal(va):
+						switch (b.expr) {
+							case TLocal(vb):
+								return va.id == vb.id;							
+							default:
+								return false;							
+						};					
+					case TField(oa, fa):
+						switch (b.expr) {
+							case TField(ob, fb):
+								var ownerEq = exprEq(oa, ob);
+								var nameA = switch (fa) {
+									case FInstance(_, _, cf):
+										cf.get().name;									
+									case FStatic(_, cf):
+										cf.get().name;									
+									case FAnon(cf):
+										cf.get().name;									
+									case FDynamic(s):
+										s;									
+									default:
+										null;									
+								};
+								var nameB = switch (fb) {
+									case FInstance(_, _, cf2):
+										cf2.get().name;									
+									case FStatic(_, cf2):
+										cf2.get().name;									
+									case FAnon(cf2):
+										cf2.get().name;									
+									case FDynamic(s2):
+										s2;									
+									default:
+										null;									
+								};
+								return ownerEq && nameA != null && nameA == nameB;							
+							default:
+								return false;							
+						};					
+					case TConst(ca):
+						switch (b.expr) {
+							case TConst(cb):
+								return Std.string(ca) == Std.string(cb);							
+							default:
+								return false;							
+						};					
+					case TParenthesis(ia):
+						switch (b.expr) {
+							case TParenthesis(ib):
+								return exprEq(ia, ib);							
+							default:
+								return exprEq(ia, b);							
+						};					
+					default:
+						return false;					
+				};
+			};
+			var merged:Array<TypedExpr> = [];
+			var j = 0;
+			while (j < transformed.length) {
+				var cur = transformed[j];
+				if (j + 1 < transformed.length) {
+					switch (cur.expr) {
+						case TVar(v, initExpr) if (initExpr != null):
+							var nxt = transformed[j + 1];
+							switch (nxt.expr) {
+								case TSwitch(targetExpr, cases2, def2):
+									if (exprEq(initExpr, targetExpr)) {
+										var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+										merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+										j += 2;
+										continue;
+									};								
+								default:
+							};						
+						default:
+					};
+				};
+				merged.push(cur);
+				j++;
+			};
+			return { expr : TBlock(merged), pos : expr.pos, t : expr.t };
+		};	
+	default:
+		haxe.macro.TypedExprTools.map(expr, function(e) ->  @:implicitReturn return applySubstitutionsRecursively(e, subs));	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							if ({
+								var key = v.id;
+								subs.exists(key);
+							}) {
+								{
+									var key = v.id;
+									subs.get(key);
+								};
+							} else {
+								expr;
+							};
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						{
+							if (init != null) {
+								var processedInit = reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(init, subs);
+								return {expr : haxe.macro.TypedExprDef.TVar(v, processedInit), pos : expr.pos, t : expr.t};
+							} else {
+								return expr;
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							var hasInfraVars = Lambda.exists(exprs, function(e:haxe.macro.TypedExpr) return @:ast(switch (e.expr) {
+	case TVar(v, init):
+		init != null && isInfrastructureVar(v.name);	
+	case _:
+		false;	
+}) {
+								var ` = e.expr;
+								if (enumIndex ` == 13) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var v = `;
+										var init = `;
+										{
+											init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name);
+										};
+									};
+								} else {
+									false;
+								};
+							});
+							if (hasInfraVars) {
+								var result = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processBlock(exprs, expr.pos, expr.t, subs);
+								return result;
+							} else {
+								var transformed = {
+									var ` = [];
+									{
+										var ` = 0;
+										var ` = exprs;
+										while (` < `.length) {
+											var v = `[`];
+											++ `;
+											`.push(function(e:haxe.macro.TypedExpr) {
+												return reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(e, subs);
+											}(v));
+										};
+									};
+									`;
+								};
+								var exprEq = [null];
+								exprEq[0] = function(a:haxe.macro.TypedExpr, b:haxe.macro.TypedExpr) {
+									if (a == null || b == null) {
+										return false;
+									};
+									@:ast(switch (a.expr) {
+	case TLocal(va):
+		switch (b.expr) {
+			case TLocal(vb):
+				return va.id == vb.id;			
+			default:
+				return false;			
+		};	
+	case TField(oa, fa):
+		switch (b.expr) {
+			case TField(ob, fb):
+				var ownerEq = exprEq(oa, ob);
+				var nameA = switch (fa) {
+					case FInstance(_, _, cf):
+						cf.get().name;					
+					case FStatic(_, cf):
+						cf.get().name;					
+					case FAnon(cf):
+						cf.get().name;					
+					case FDynamic(s):
+						s;					
+					default:
+						null;					
+				};
+				var nameB = switch (fb) {
+					case FInstance(_, _, cf2):
+						cf2.get().name;					
+					case FStatic(_, cf2):
+						cf2.get().name;					
+					case FAnon(cf2):
+						cf2.get().name;					
+					case FDynamic(s2):
+						s2;					
+					default:
+						null;					
+				};
+				return ownerEq && nameA != null && nameA == nameB;			
+			default:
+				return false;			
+		};	
+	case TConst(ca):
+		switch (b.expr) {
+			case TConst(cb):
+				return Std.string(ca) == Std.string(cb);			
+			default:
+				return false;			
+		};	
+	case TParenthesis(ia):
+		switch (b.expr) {
+			case TParenthesis(ib):
+				return exprEq(ia, ib);			
+			default:
+				return exprEq(ia, b);			
+		};	
+	default:
+		return false;	
+}) {
+										var ` = a.expr;
+										switch (enumIndex `) {
+											case 0: {
+												var ` = `[0];
+												{
+													var ca = `;
+													{
+														@:ast(switch (b.expr) {
+	case TConst(cb):
+		return Std.string(ca) == Std.string(cb);	
+	default:
+		return false;	
+}) {
+															var ` = b.expr;
+															if (enumIndex ` == 0) {
+																var ` = `[0];
+																{
+																	var cb = `;
+																	{
+																		return Std.string(ca) == Std.string(cb);
+																	};
+																};
+															} else {
+																return false;
+															};
+														};
+													};
+												};
+											};
+											case 1: {
+												var ` = `[0];
+												{
+													var va = `;
+													{
+														@:ast(switch (b.expr) {
+	case TLocal(vb):
+		return va.id == vb.id;	
+	default:
+		return false;	
+}) {
+															var ` = b.expr;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																{
+																	var vb = `;
+																	{
+																		return va.id == vb.id;
+																	};
+																};
+															} else {
+																return false;
+															};
+														};
+													};
+												};
+											};
+											case 4: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var oa = `;
+													var fa = `;
+													{
+														@:ast(switch (b.expr) {
+	case TField(ob, fb):
+		var ownerEq = exprEq(oa, ob);
+		var nameA = switch (fa) {
+			case FInstance(_, _, cf):
+				cf.get().name;			
+			case FStatic(_, cf):
+				cf.get().name;			
+			case FAnon(cf):
+				cf.get().name;			
+			case FDynamic(s):
+				s;			
+			default:
+				null;			
+		};
+		var nameB = switch (fb) {
+			case FInstance(_, _, cf2):
+				cf2.get().name;			
+			case FStatic(_, cf2):
+				cf2.get().name;			
+			case FAnon(cf2):
+				cf2.get().name;			
+			case FDynamic(s2):
+				s2;			
+			default:
+				null;			
+		};
+		return ownerEq && nameA != null && nameA == nameB;	
+	default:
+		return false;	
+}) {
+															var ` = b.expr;
+															if (enumIndex ` == 4) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var ob = `;
+																	var fb = `;
+																	{
+																		var ownerEq = exprEq[0](oa, ob);
+																		var nameA = @:ast(switch (fa) {
+	case FInstance(_, _, cf):
+		cf.get().name;	
+	case FStatic(_, cf):
+		cf.get().name;	
+	case FAnon(cf):
+		cf.get().name;	
+	case FDynamic(s):
+		s;	
+	default:
+		null;	
+}) switch (enumIndex fa) {
+																			case 0: {
+																				var ` = fa[0];
+																				var ` = fa[1];
+																				var ` = fa[2];
+																				{
+																					var cf = `;
+																					{
+																						cf.get().name;
+																					};
+																				};
+																			};
+																			case 1: {
+																				var ` = fa[0];
+																				var ` = fa[1];
+																				{
+																					var cf = `;
+																					{
+																						cf.get().name;
+																					};
+																				};
+																			};
+																			case 2: {
+																				var ` = fa[0];
+																				{
+																					var cf = `;
+																					{
+																						cf.get().name;
+																					};
+																				};
+																			};
+																			case 3: {
+																				var ` = fa[0];
+																				{
+																					var s = `;
+																					{
+																						s;
+																					};
+																				};
+																			};
+																			default: {
+																				null;
+																			}
+																		};
+																		var nameB = @:ast(switch (fb) {
+	case FInstance(_, _, cf2):
+		cf2.get().name;	
+	case FStatic(_, cf2):
+		cf2.get().name;	
+	case FAnon(cf2):
+		cf2.get().name;	
+	case FDynamic(s2):
+		s2;	
+	default:
+		null;	
+}) switch (enumIndex fb) {
+																			case 0: {
+																				var ` = fb[0];
+																				var ` = fb[1];
+																				var ` = fb[2];
+																				{
+																					var cf2 = `;
+																					{
+																						cf2.get().name;
+																					};
+																				};
+																			};
+																			case 1: {
+																				var ` = fb[0];
+																				var ` = fb[1];
+																				{
+																					var cf2 = `;
+																					{
+																						cf2.get().name;
+																					};
+																				};
+																			};
+																			case 2: {
+																				var ` = fb[0];
+																				{
+																					var cf2 = `;
+																					{
+																						cf2.get().name;
+																					};
+																				};
+																			};
+																			case 3: {
+																				var ` = fb[0];
+																				{
+																					var s2 = `;
+																					{
+																						s2;
+																					};
+																				};
+																			};
+																			default: {
+																				null;
+																			}
+																		};
+																		return ownerEq && nameA != null && nameA == nameB;
+																	};
+																};
+															} else {
+																return false;
+															};
+														};
+													};
+												};
+											};
+											case 6: {
+												var ` = `[0];
+												{
+													var ia = `;
+													{
+														@:ast(switch (b.expr) {
+	case TParenthesis(ib):
+		return exprEq(ia, ib);	
+	default:
+		return exprEq(ia, b);	
+}) {
+															var ` = b.expr;
+															if (enumIndex ` == 6) {
+																var ` = `[0];
+																{
+																	var ib = `;
+																	{
+																		return exprEq[0](ia, ib);
+																	};
+																};
+															} else {
+																return exprEq[0](ia, b);
+															};
+														};
+													};
+												};
+											};
+											default: {
+												return false;
+											}
+										};
+									};
+								};
+								var merged = [];
+								var j = 0;
+								while (j < transformed.length) {
+									var cur = transformed[j];
+									if (j + 1 < transformed.length) {
+										@:ast(switch (cur.expr) {
+	case TVar(v, initExpr) if (initExpr != null):
+		var nxt = transformed[j + 1];
+		switch (nxt.expr) {
+			case TSwitch(targetExpr, cases2, def2):
+				if (exprEq(initExpr, targetExpr)) {
+					var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+					merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+					j += 2;
+					continue;
+				};			
+			default:
+		};	
+	default:
+}) {
+											var ` = cur.expr;
+											if (enumIndex ` == 13) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var v = `;
+													var initExpr = `;
+													if (initExpr != null) {
+														var nxt = transformed[j + 1];
+														@:ast(switch (nxt.expr) {
+	case TSwitch(targetExpr, cases2, def2):
+		if (exprEq(initExpr, targetExpr)) {
+			var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+			merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+			j += 2;
+			continue;
+		};	
+	default:
+}) {
+															var ` = nxt.expr;
+															if (enumIndex ` == 18) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																{
+																	var targetExpr = `;
+																	var cases2 = `;
+																	var def2 = `;
+																	{
+																		if (exprEq[0](initExpr, targetExpr)) {
+																			var mergedInit = {expr : haxe.macro.TypedExprDef.TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t};
+																			merged.push({expr : haxe.macro.TypedExprDef.TVar(v, mergedInit), pos : cur.pos, t : cur.t});
+																			j += 2;
+																			continue;
+																		};
+																	};
+																};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									};
+									merged.push(cur);
+									j ++;
+								};
+								return {expr : haxe.macro.TypedExprDef.TBlock(merged), pos : expr.pos, t : expr.t};
+							};
+						};
+					};
+				};
+				default: {
+					haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(e, subs));
+				}
+			};
+		};
+	}
+
+	static function processExpr(expr:haxe.macro.TypedExpr, substitutions:Map<Int, haxe.macro.TypedExpr>) {
+		return @:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		processBlock(exprs, expr.pos, expr.t, substitutions);	
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		substitutions.set(v.id, init);
+		{ expr : TBlock([]), pos : expr.pos, t : expr.t };	
+	default:
+		applySubstitutionsRecursively(expr, substitutions);	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+							{
+								var key = v.id;
+								substitutions.set(key, init);
+							};
+							{expr : haxe.macro.TypedExprDef.TBlock([]), pos : expr.pos, t : expr.t};
+						} else {
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(expr, substitutions);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.processBlock(exprs, expr.pos, expr.t, substitutions);
+						};
+					};
+				};
+				default: {
+					reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(expr, substitutions);
+				}
+			};
+		};
+	}
+
+	static function processBlock(exprs:Array<haxe.macro.TypedExpr>, pos:haxe.macro.Position, t:haxe.macro.Type, substitutions:Map<Int, haxe.macro.TypedExpr>) {
+		var processed = [];
+		var i = 0;
+		while (i < exprs.length) {
+			var current = exprs[i];
+			@:ast(switch (current.expr) {
+	case TVar(v, init):
+		if (init != null && isInfrastructureVar(v.name)) {
+			substitutions.set(v.id, init);
+			i++;
+			continue;
+		} else {
+			var transformed = applySubstitutionsRecursively(current, substitutions);
+			processed.push(transformed);
+			i++;
+		};	
+	default:
+		var transformed = applySubstitutionsRecursively(current, substitutions);
+		processed.push(transformed);
+		i++;	
+}) {
+				var ` = current.expr;
+				if (enumIndex ` == 13) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						{
+							if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+								{
+									var key = v.id;
+									substitutions.set(key, init);
+								};
+								i ++;
+								continue;
+							} else {
+								var transformed = reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(current, substitutions);
+								processed.push(transformed);
+								i ++;
+							};
+						};
+					};
+				} else {
+					var transformed = reflaxe.elixir.preprocessor.TypedExprPreprocessor.applySubstitutionsRecursively(current, substitutions);
+					processed.push(transformed);
+					i ++;
+				};
+			};
+		};
+		var exprEq = [null];
+		exprEq[0] = function(a:haxe.macro.TypedExpr, b:haxe.macro.TypedExpr) {
+			if (a == null || b == null) {
+				return false;
+			};
+			@:ast(switch (a.expr) {
+	case TLocal(va):
+		switch (b.expr) {
+			case TLocal(vb):
+				return va.id == vb.id;			
+			default:
+				return false;			
+		};	
+	case TField(oa, fa):
+		switch (b.expr) {
+			case TField(ob, fb):
+				var ownerEq = exprEq(oa, ob);
+				var nameA = switch (fa) {
+					case FInstance(_, _, cf):
+						cf.get().name;					
+					case FStatic(_, cf):
+						cf.get().name;					
+					case FAnon(cf):
+						cf.get().name;					
+					case FDynamic(s):
+						s;					
+					default:
+						null;					
+				};
+				var nameB = switch (fb) {
+					case FInstance(_, _, cf2):
+						cf2.get().name;					
+					case FStatic(_, cf2):
+						cf2.get().name;					
+					case FAnon(cf2):
+						cf2.get().name;					
+					case FDynamic(s2):
+						s2;					
+					default:
+						null;					
+				};
+				return ownerEq && nameA != null && nameA == nameB;			
+			default:
+				return false;			
+		};	
+	case TConst(ca):
+		switch (b.expr) {
+			case TConst(cb):
+				return Std.string(ca) == Std.string(cb);			
+			default:
+				return false;			
+		};	
+	case TParenthesis(ia):
+		switch (b.expr) {
+			case TParenthesis(ib):
+				return exprEq(ia, ib);			
+			default:
+				return exprEq(ia, b);			
+		};	
+	default:
+		return false;	
+}) {
+				var ` = a.expr;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						{
+							var ca = `;
+							{
+								@:ast(switch (b.expr) {
+	case TConst(cb):
+		return Std.string(ca) == Std.string(cb);	
+	default:
+		return false;	
+}) {
+									var ` = b.expr;
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var cb = `;
+											{
+												return Std.string(ca) == Std.string(cb);
+											};
+										};
+									} else {
+										return false;
+									};
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						{
+							var va = `;
+							{
+								@:ast(switch (b.expr) {
+	case TLocal(vb):
+		return va.id == vb.id;	
+	default:
+		return false;	
+}) {
+									var ` = b.expr;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var vb = `;
+											{
+												return va.id == vb.id;
+											};
+										};
+									} else {
+										return false;
+									};
+								};
+							};
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var oa = `;
+							var fa = `;
+							{
+								@:ast(switch (b.expr) {
+	case TField(ob, fb):
+		var ownerEq = exprEq(oa, ob);
+		var nameA = switch (fa) {
+			case FInstance(_, _, cf):
+				cf.get().name;			
+			case FStatic(_, cf):
+				cf.get().name;			
+			case FAnon(cf):
+				cf.get().name;			
+			case FDynamic(s):
+				s;			
+			default:
+				null;			
+		};
+		var nameB = switch (fb) {
+			case FInstance(_, _, cf2):
+				cf2.get().name;			
+			case FStatic(_, cf2):
+				cf2.get().name;			
+			case FAnon(cf2):
+				cf2.get().name;			
+			case FDynamic(s2):
+				s2;			
+			default:
+				null;			
+		};
+		return ownerEq && nameA != null && nameA == nameB;	
+	default:
+		return false;	
+}) {
+									var ` = b.expr;
+									if (enumIndex ` == 4) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var ob = `;
+											var fb = `;
+											{
+												var ownerEq = exprEq[0](oa, ob);
+												var nameA = @:ast(switch (fa) {
+	case FInstance(_, _, cf):
+		cf.get().name;	
+	case FStatic(_, cf):
+		cf.get().name;	
+	case FAnon(cf):
+		cf.get().name;	
+	case FDynamic(s):
+		s;	
+	default:
+		null;	
+}) switch (enumIndex fa) {
+													case 0: {
+														var ` = fa[0];
+														var ` = fa[1];
+														var ` = fa[2];
+														{
+															var cf = `;
+															{
+																cf.get().name;
+															};
+														};
+													};
+													case 1: {
+														var ` = fa[0];
+														var ` = fa[1];
+														{
+															var cf = `;
+															{
+																cf.get().name;
+															};
+														};
+													};
+													case 2: {
+														var ` = fa[0];
+														{
+															var cf = `;
+															{
+																cf.get().name;
+															};
+														};
+													};
+													case 3: {
+														var ` = fa[0];
+														{
+															var s = `;
+															{
+																s;
+															};
+														};
+													};
+													default: {
+														null;
+													}
+												};
+												var nameB = @:ast(switch (fb) {
+	case FInstance(_, _, cf2):
+		cf2.get().name;	
+	case FStatic(_, cf2):
+		cf2.get().name;	
+	case FAnon(cf2):
+		cf2.get().name;	
+	case FDynamic(s2):
+		s2;	
+	default:
+		null;	
+}) switch (enumIndex fb) {
+													case 0: {
+														var ` = fb[0];
+														var ` = fb[1];
+														var ` = fb[2];
+														{
+															var cf2 = `;
+															{
+																cf2.get().name;
+															};
+														};
+													};
+													case 1: {
+														var ` = fb[0];
+														var ` = fb[1];
+														{
+															var cf2 = `;
+															{
+																cf2.get().name;
+															};
+														};
+													};
+													case 2: {
+														var ` = fb[0];
+														{
+															var cf2 = `;
+															{
+																cf2.get().name;
+															};
+														};
+													};
+													case 3: {
+														var ` = fb[0];
+														{
+															var s2 = `;
+															{
+																s2;
+															};
+														};
+													};
+													default: {
+														null;
+													}
+												};
+												return ownerEq && nameA != null && nameA == nameB;
+											};
+										};
+									} else {
+										return false;
+									};
+								};
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var ia = `;
+							{
+								@:ast(switch (b.expr) {
+	case TParenthesis(ib):
+		return exprEq(ia, ib);	
+	default:
+		return exprEq(ia, b);	
+}) {
+									var ` = b.expr;
+									if (enumIndex ` == 6) {
+										var ` = `[0];
+										{
+											var ib = `;
+											{
+												return exprEq[0](ia, ib);
+											};
+										};
+									} else {
+										return exprEq[0](ia, b);
+									};
+								};
+							};
+						};
+					};
+					default: {
+						return false;
+					}
+				};
+			};
+		};
+		var merged = [];
+		var j = 0;
+		while (j < processed.length) {
+			var cur = processed[j];
+			if (j + 1 < processed.length) {
+				@:ast(switch (cur.expr) {
+	case TVar(v, initExpr) if (initExpr != null):
+		var nxt = processed[j + 1];
+		switch (nxt.expr) {
+			case TSwitch(targetExpr, cases2, def2):
+				if (exprEq(initExpr, targetExpr)) {
+					var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+					merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+					j += 2;
+					continue;
+				};			
+			default:
+		};	
+	default:
+}) {
+					var ` = cur.expr;
+					if (enumIndex ` == 13) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var v = `;
+							var initExpr = `;
+							if (initExpr != null) {
+								var nxt = processed[j + 1];
+								@:ast(switch (nxt.expr) {
+	case TSwitch(targetExpr, cases2, def2):
+		if (exprEq(initExpr, targetExpr)) {
+			var mergedInit:TypedExpr = { expr : TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t };
+			merged.push({ expr : TVar(v, mergedInit), pos : cur.pos, t : cur.t });
+			j += 2;
+			continue;
+		};	
+	default:
+}) {
+									var ` = nxt.expr;
+									if (enumIndex ` == 18) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var targetExpr = `;
+											var cases2 = `;
+											var def2 = `;
+											{
+												if (exprEq[0](initExpr, targetExpr)) {
+													var mergedInit = {expr : haxe.macro.TypedExprDef.TSwitch(targetExpr, cases2, def2), pos : nxt.pos, t : nxt.t};
+													merged.push({expr : haxe.macro.TypedExprDef.TVar(v, mergedInit), pos : cur.pos, t : cur.t});
+													j += 2;
+													continue;
+												};
+											};
+										};
+									} else {};
+								};
+							} else {};
+						};
+					} else {};
+				};
+			};
+			merged.push(cur);
+			j ++;
+		};
+		return {expr : haxe.macro.TypedExprDef.TBlock(merged), pos : pos, t : t};
+	}
+
+	static function processSwitchExpr(e:haxe.macro.TypedExpr, cases:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>, edef:Null<haxe.macro.TypedExpr>, pos:haxe.macro.Position, t:haxe.macro.Type, substitutions:Map<Int, haxe.macro.TypedExpr>) {
+		var processedTarget = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions);
+		var processedCases = {
+			var ` = [];
+			{
+				var ` = 0;
+				var ` = cases;
+				while (` < `.length) {
+					var v = `[`];
+					++ `;
+					`.push(function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) {
+						return {
+							var processedBody = @:ast(switch (c.expr.expr) {
+	case TBlock(exprs):
+		var filteredExprs = [];
+		for (expr  in  exprs) {
+			switch (expr.expr) {
+				case TVar(v, init) if (init != null):
+					switch (init.expr) {
+						case TEnumParameter(_, _, _):
+							continue;						
+						case TLocal(tempVar) if (isInfrastructureVar(tempVar.name)):
+							continue;						
+						default:
+							filteredExprs.push(processExpr(expr, substitutions));						
+					};				
+				case TBinop(OpAssign, { expr : TLocal(lhs) }, { expr : TLocal(rhs) }) if (isInfrastructureVar(rhs.name)):
+					continue;				
+				default:
+					filteredExprs.push(processExpr(expr, substitutions));				
+			};
+		};
+		{ expr : TBlock(filteredExprs), pos : c.expr.pos, t : c.expr.t };	
+	default:
+		processExpr(c.expr, substitutions);	
+}) {
+								var ` = c.expr.expr;
+								if ((enumIndex ` == 14)) {
+									var ` = `[0];
+									{
+										var exprs = `;
+										{
+											var filteredExprs = [];
+											{
+												var ` = 0;
+												while ((` < exprs.length)) {
+													var expr = exprs[`];
+													++ `;
+													@:ast(switch (expr.expr) {
+	case TVar(v, init) if (init != null):
+		switch (init.expr) {
+			case TEnumParameter(_, _, _):
+				continue;			
+			case TLocal(tempVar) if (isInfrastructureVar(tempVar.name)):
+				continue;			
+			default:
+				filteredExprs.push(processExpr(expr, substitutions));			
+		};	
+	case TBinop(OpAssign, { expr : TLocal(lhs) }, { expr : TLocal(rhs) }) if (isInfrastructureVar(rhs.name)):
+		continue;	
+	default:
+		filteredExprs.push(processExpr(expr, substitutions));	
+}) {
+														var ` = expr.expr;
+														switch ((enumIndex `)) {
+															case 3: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if ((enumIndex ` == 4)) {
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if ((enumIndex ` == 1)) {
+																		var ` = `[0];
+																		{
+																			var ` = `.expr;
+																			var ` = `.pos;
+																			var ` = `.t;
+																			if ((enumIndex ` == 1)) {
+																				var ` = `[0];
+																				{
+																					var rhs = `;
+																					var lhs = `;
+																					if ((reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(rhs.name))) continue else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+																				};
+																			} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+																		};
+																	} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+																} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+															};
+															case 13: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var v = `;
+																	var init = `;
+																	if ((init != null)) @:ast(switch (init.expr) {
+	case TEnumParameter(_, _, _):
+		continue;	
+	case TLocal(tempVar) if (isInfrastructureVar(tempVar.name)):
+		continue;	
+	default:
+		filteredExprs.push(processExpr(expr, substitutions));	
+}) {
+																		var ` = init.expr;
+																		switch ((enumIndex `)) {
+																			case 1: {
+																				var ` = `[0];
+																				{
+																					var tempVar = `;
+																					if ((reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(tempVar.name))) continue else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+																				};
+																			};
+																			case 26: {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				continue;
+																			};
+																			default: filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions))
+																		};
+																	} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+																};
+															};
+															default: filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions))
+														};
+													};
+												};
+											};
+											{expr : haxe.macro.TypedExprDef.TBlock(filteredExprs), pos : c.expr.pos, t : c.expr.t};
+										};
+									};
+								} else reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(c.expr, substitutions);
+							};
+							{values : {
+								var _this = c.values;
+								{
+									var ` = [];
+									{
+										var ` = 0;
+										var ` = _this;
+										while ((` < `.length)) {
+											var v = `[`];
+											++ `;
+											`.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(v, substitutions));
+										};
+									};
+									`;
+								};
+							}, expr : processedBody};
+						};
+					}(v));
+				};
+			};
+			`;
+		};
+		var processedDefault = if (edef != null) {
+			reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(edef, substitutions);
+		} else {
+			null;
+		};
+		return {expr : haxe.macro.TypedExprDef.TSwitch(processedTarget, processedCases, processedDefault), pos : pos, t : t};
+	}
+
+	public static function isInfrastructureVar(name:String) {
+		return reflaxe.elixir.preprocessor.TypedExprPreprocessor.INFRASTRUCTURE_VAR_PATTERN.match(name);
+	}
+
+	static function usesVariable(expr:haxe.macro.TypedExpr, varName:String) {
+		var found = [false];
+		var check = [null];
+		check[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TLocal(v) if (v.name == varName):
+		found = true;	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v.name == varName) {
+							found[0] = true;
+						} else {};
+					};
+				} else {};
+			};
+			if (! found[0]) {
+				haxe.macro.TypedExprTools.iter(e, check[0]);
+			};
+			return e;
+		};
+		check[0](expr);
+		return found[0];
+	}
+
+	static function substituteVariable(expr:haxe.macro.TypedExpr, varName:String, replacement:haxe.macro.TypedExpr) {
+		return haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) {
+			return @:ast(switch (e.expr) {
+	case TLocal(v) if (v.name == varName):
+		replacement;	
+	default:
+		e;	
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v.name == varName) {
+							replacement;
+						} else {
+							e;
+						};
+					};
+				} else {
+					e;
+				};
+			};
+		});
+	}
+
+	static function scanForInfrastructureVars(expr:haxe.macro.TypedExpr, substitutions:Map<Int, haxe.macro.TypedExpr>) {
+		if (expr == null) {
+			return;
+		};
+		@:ast(switch (expr.expr) {
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		substitutions.set(v.id, init);	
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			scanForInfrastructureVars(e, substitutions);
+		};	
+	default:
+		TypedExprTools.iter(expr, function(e) {
+			scanForInfrastructureVars(e, substitutions);
+		});	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+							{
+								var key = v.id;
+								substitutions.set(key, init);
+							};
+						} else {
+							haxe.macro.TypedExprTools.iter(expr, function(e:haxe.macro.TypedExpr) {
+								reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(e, substitutions);
+							});
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(e, substitutions);
+								};
+							};
+						};
+					};
+				};
+				default: {
+					haxe.macro.TypedExprTools.iter(expr, function(e:haxe.macro.TypedExpr) {
+						reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(e, substitutions);
+					});
+				}
+			};
+		};
+	}
+
+	static function isMapIterationPattern(expr:haxe.macro.TypedExpr) {
+		var hasMapIteration = [false];
+		var scan = [null];
+		scan[0] = function(e:haxe.macro.TypedExpr) {
+			if (e == null) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TFor(v, iter, body):
+		if (containsKeyValueIterator(iter) || containsKeyValueIterator(body)) {
+			hasMapIteration = true;
+		};
+		switch (iter.t) {
+			case TAbstract(t, params):
+				var abstractType = t.get();
+				if (abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+					hasMapIteration = true;
+				};			
+			case TInst(t, params):
+				var classType = t.get();
+				if (classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator") {
+					hasMapIteration = true;
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 15) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var iter = `;
+						var body = `;
+						{
+							if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsKeyValueIterator(iter) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsKeyValueIterator(body)) {
+								hasMapIteration[0] = true;
+							};
+							@:ast(switch (iter.t) {
+	case TAbstract(t, params):
+		var abstractType = t.get();
+		if (abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+			hasMapIteration = true;
+		};	
+	case TInst(t, params):
+		var classType = t.get();
+		if (classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator") {
+			hasMapIteration = true;
+		};	
+	default:
+}) {
+								var ` = iter.t;
+								switch (enumIndex `) {
+									case 2: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var t = `;
+											var params = `;
+											{
+												var classType = t.get();
+												if (classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator") {
+													hasMapIteration[0] = true;
+												};
+											};
+										};
+									};
+									case 8: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var t = `;
+											var params = `;
+											{
+												var abstractType = t.get();
+												if (abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+													hasMapIteration[0] = true;
+												};
+											};
+										};
+									};
+									default: {}
+								};
+							};
+						};
+					};
+				} else {};
+			};
+			if (! hasMapIteration[0]) {
+				haxe.macro.TypedExprTools.iter(e, scan[0]);
+			};
+		};
+		scan[0](expr);
+		return hasMapIteration[0];
+	}
+
+	static function containsKeyValueIterator(expr:haxe.macro.TypedExpr) {
+		var hasIterator = [false];
+		var scan = [null];
+		scan[0] = function(e:haxe.macro.TypedExpr) {
+			if (e == null || hasIterator[0]) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TCall(target, args):
+		switch (target.expr) {
+			case TField(obj, FInstance(_, _, cf)):
+				var methodName = cf.get().name;
+				if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+					hasIterator = true;
+				};			
+			case TField(obj, FAnon(cf)):
+				var methodName = cf.get().name;
+				if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+					hasIterator = true;
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 9) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var args = `;
+						{
+							@:ast(switch (target.expr) {
+	case TField(obj, FInstance(_, _, cf)):
+		var methodName = cf.get().name;
+		if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+			hasIterator = true;
+		};	
+	case TField(obj, FAnon(cf)):
+		var methodName = cf.get().name;
+		if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+			hasIterator = true;
+		};	
+	default:
+}) {
+								var ` = target.expr;
+								if (enumIndex ` == 4) {
+									var ` = `[0];
+									var ` = `[1];
+									switch (enumIndex `) {
+										case 0: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var cf = `;
+												var obj = `;
+												{
+													var methodName = cf.get().name;
+													if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+														hasIterator[0] = true;
+													};
+												};
+											};
+										};
+										case 2: {
+											var ` = `[0];
+											{
+												var cf = `;
+												var obj = `;
+												{
+													var methodName = cf.get().name;
+													if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+														hasIterator[0] = true;
+													};
+												};
+											};
+										};
+										default: {}
+									};
+								} else {};
+							};
+						};
+					};
+				} else {};
+			};
+			if (! hasIterator[0]) {
+				haxe.macro.TypedExprTools.iter(e, scan[0]);
+			};
+		};
+		scan[0](expr);
+		return hasIterator[0];
+	}
+
+	static function transformMapIteration(expr:haxe.macro.TypedExpr) {
+		@:ast(switch (expr.expr) {
+	case TFor(v, iter, body):
+		return { expr : TFor(v, iter, body), pos : expr.pos, t : expr.t };	
+	default:
+		return TypedExprTools.map(expr, function(e) ->  @:implicitReturn return isMapIterationPattern(e) ? transformMapIteration(e) : e);	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var v = `;
+					var iter = `;
+					var body = `;
+					{
+						return {expr : haxe.macro.TypedExprDef.TFor(v, iter, body), pos : expr.pos, t : expr.t};
+					};
+				};
+			} else {
+				return haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isMapIterationPattern(e)) {
+					reflaxe.elixir.preprocessor.TypedExprPreprocessor.transformMapIteration(e);
+				} else {
+					e;
+				});
+			};
+		};
+	}
+}

@@ -1,0 +1,117 @@
+class reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms {
+
+	public static function bindReduceWhileResultPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case ERemoteCall(mod, fn, args) if (isEnumReduceWhile(mod, fn, args)):
+		var acc = args[1];
+		switch (acc.def) {
+			case ETuple(_):
+				node;			
+			case EVar(name):
+				makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);			
+			default:
+				node;			
+		};	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var fn = `;
+						var args = `;
+						if (if (fn != "reduce_while" || args == null || args.length < 3) {
+							false;
+						} else {
+							@:ast(switch (mod.def) {
+	case EVar(m):
+		m == "Enum";	
+	default:
+		false;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										{
+											m == "Enum";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						}) {
+							var acc = args[1];
+							@:ast(switch (acc.def) {
+	case ETuple(_):
+		node;	
+	case EVar(name):
+		makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+								var ` = acc.def;
+								switch (enumIndex `) {
+									case 16: {
+										var ` = `[0];
+										{
+											node;
+										};
+									};
+									case 38: {
+										var ` = `[0];
+										{
+											var name = `;
+											{
+												{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(name), node), metadata : node.metadata, pos : node.pos};
+											};
+										};
+									};
+									default: {
+										node;
+									}
+								};
+							};
+						} else {
+							node;
+						};
+					};
+				} else {
+					node;
+				};
+			};
+		});
+	}
+
+	static inline function isEnumReduceWhile(mod:reflaxe.elixir.ast.ElixirAST, fn:String, args:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (fn != "reduce_while" || args == null || args.length < 3) {
+			return false;
+		};
+		return @:ast(switch (mod.def) {
+	case EVar(m):
+		m == "Enum";	
+	default:
+		false;	
+}) {
+			var ` = mod.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var m = `;
+					{
+						m == "Enum";
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

@@ -1,0 +1,464 @@
+class reflaxe.elixir.ast.transformers.AbsoluteFinalWebModuleQualificationTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		var defined = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var collect = [null];
+		collect[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EModule(name, _, body):
+		defined.set(name, true);
+		for (b  in  body) collect(b);	
+	case EDefmodule(name, doBlock):
+		defined.set(name, true);
+		collect(doBlock);	
+	default:
+		switch (n.def) {
+			case EBlock(es):
+				for (e  in  es) collect(e);			
+			case EIf(c, t, e):
+				collect(c);
+				collect(t);
+				if (e != null) collect(e);			
+			case ECase(ex, cs):
+				collect(ex);
+				for (c  in  cs) {
+					if (c.guard != null) collect(c.guard);
+					collect(c.body);
+				};			
+			case EFn(cs):
+				for (cl  in  cs) collect(cl.body);			
+			case ECall(t, _, as):
+				if (t != null) collect(t);
+				if (as != null) for (a  in  as) collect(a);			
+			case ERemoteCall(m, _, as):
+				collect(m);
+				if (as != null) for (a  in  as) collect(a);			
+			default:
+		};	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var body = `;
+							{
+								{
+									defined.set(name, true);
+								};
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										collect[0](b);
+									};
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								{
+									defined.set(name, true);
+								};
+								collect[0](doBlock);
+							};
+						};
+					};
+					default: {
+						@:ast(switch (n.def) {
+	case EBlock(es):
+		for (e  in  es) collect(e);	
+	case EIf(c, t, e):
+		collect(c);
+		collect(t);
+		if (e != null) collect(e);	
+	case ECase(ex, cs):
+		collect(ex);
+		for (c  in  cs) {
+			if (c.guard != null) collect(c.guard);
+			collect(c.body);
+		};	
+	case EFn(cs):
+		for (cl  in  cs) collect(cl.body);	
+	case ECall(t, _, as):
+		if (t != null) collect(t);
+		if (as != null) for (a  in  as) collect(a);	
+	case ERemoteCall(m, _, as):
+		collect(m);
+		if (as != null) for (a  in  as) collect(a);	
+	default:
+}) {
+							var ` = n.def;
+							switch (enumIndex `) {
+								case 6: {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var ex = `;
+										var cs = `;
+										{
+											collect[0](ex);
+											{
+												var ` = 0;
+												while (` < cs.length) {
+													var c = cs[`];
+													++ `;
+													if (c.guard != null) {
+														collect[0](c.guard);
+													};
+													collect[0](c.body);
+												};
+											};
+										};
+									};
+								};
+								case 10: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var c = `;
+										var t = `;
+										var e = `;
+										{
+											collect[0](c);
+											collect[0](t);
+											if (e != null) {
+												collect[0](e);
+											};
+										};
+									};
+								};
+								case 22: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var t = `;
+										var as = `;
+										{
+											if (t != null) {
+												collect[0](t);
+											};
+											if (as != null) {
+												{
+													var ` = 0;
+													while (` < as.length) {
+														var a = as[`];
+														++ `;
+														collect[0](a);
+													};
+												};
+											};
+										};
+									};
+								};
+								case 24: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var m = `;
+										var as = `;
+										{
+											collect[0](m);
+											if (as != null) {
+												{
+													var ` = 0;
+													while (` < as.length) {
+														var a = as[`];
+														++ `;
+														collect[0](a);
+													};
+												};
+											};
+										};
+									};
+								};
+								case 42: {
+									var ` = `[0];
+									{
+										var cs = `;
+										{
+											{
+												var ` = 0;
+												while (` < cs.length) {
+													var cl = cs[`];
+													++ `;
+													collect[0](cl.body);
+												};
+											};
+										};
+									};
+								};
+								case 53: {
+									var ` = `[0];
+									{
+										var es = `;
+										{
+											{
+												var ` = 0;
+												while (` < es.length) {
+													var e = es[`];
+													++ `;
+													collect[0](e);
+												};
+											};
+										};
+									};
+								};
+								default: {}
+							};
+						};
+					}
+				};
+			};
+		};
+		collect[0](ast);
+		{};
+		{};
+		{};
+		{};
+		var qualify = function(subtree:reflaxe.elixir.ast.ElixirAST, app:String) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(subtree, function(n:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (n.def) {
+	case ERemoteCall(mod, func, args):
+		switch (mod.def) {
+			case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isWhitelisted(m)):
+				var fq = (app != null) ? (app + "." + m) : null;
+				if (fq != null) {
+					makeASTWithMeta(ERemoteCall(makeAST(ElixirASTDef.EVar(fq)), func, args), n.metadata, n.pos);
+				} else n;			
+			default:
+				n;			
+		};	
+	case ECall(target, func, args) if (target != null):
+		switch (target.def) {
+			case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isWhitelisted(m)):
+				var fq2 = (app != null) ? (app + "." + m) : null;
+				if (fq2 != null) {
+					makeASTWithMeta(ERemoteCall(makeAST(ElixirASTDef.EVar(fq2)), func, args), n.metadata, n.pos);
+				} else n;			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+					var ` = n.def;
+					switch (enumIndex `) {
+						case 22: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var target = `;
+								var func = `;
+								var args = `;
+								if (target != null) {
+									@:ast(switch (target.def) {
+	case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isWhitelisted(m)):
+		var fq2 = (app != null) ? (app + "." + m) : null;
+		if (fq2 != null) {
+			makeASTWithMeta(ERemoteCall(makeAST(ElixirASTDef.EVar(fq2)), func, args), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+										var ` = target.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var m = `;
+												if (m != null && m.length > 0 && m.indexOf(".", null) == -1 && {
+													var c = m.charAt(0);
+													c.toUpperCase() == c && c.toLowerCase() != c;
+												} && ! m != null && {
+													var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+													cast this.exists(m);
+												}) {
+													var fq2 = if ((app != null)) {
+														(app + "." + m);
+													} else {
+														null;
+													};
+													if (fq2 != null) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(fq2), metadata : {}, pos : pos};
+														}, func, args), metadata : n.metadata, pos : n.pos};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+						case 24: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var mod = `;
+								var func = `;
+								var args = `;
+								{
+									@:ast(switch (mod.def) {
+	case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isWhitelisted(m)):
+		var fq = (app != null) ? (app + "." + m) : null;
+		if (fq != null) {
+			makeASTWithMeta(ERemoteCall(makeAST(ElixirASTDef.EVar(fq)), func, args), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+										var ` = mod.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var m = `;
+												if (m != null && m.length > 0 && m.indexOf(".", null) == -1 && {
+													var c = m.charAt(0);
+													c.toUpperCase() == c && c.toLowerCase() != c;
+												} && ! m != null && {
+													var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+													cast this.exists(m);
+												}) {
+													var fq = if ((app != null)) {
+														(app + "." + m);
+													} else {
+														null;
+													};
+													if (fq != null) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+															var pos = null;
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(fq), metadata : {}, pos : pos};
+														}, func, args), metadata : n.metadata, pos : n.pos};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											};
+										} else {
+											n;
+										};
+									};
+								};
+							};
+						};
+						default: {
+							n;
+						}
+					};
+				};
+			});
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EModule(name, attrs, body) if (name.indexOf("Web") != -1):
+		var app = appPrefix(name);
+		var newBody:Array<ElixirAST> = [];
+		for (b  in  body) newBody.push(qualify(b, app));
+		makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);	
+	case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
+		var app2 = appPrefix(name);
+		var newDo = qualify(doBlock, app2);
+		makeASTWithMeta(EDefmodule(name, newDo), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name.indexOf("Web", null) != -1) {
+								var app = if (name == null) {
+									null;
+								} else {
+									var i = name.indexOf("Web", null);
+									if (i > 0) {
+										name.substring(0, i);
+									} else {
+										null;
+									};
+								};
+								var newBody = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										newBody.push(qualify(b, app));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : node.metadata, pos : node.pos};
+							} else {
+								node;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name.indexOf("Web", null) != -1) {
+								var app2 = if (name == null) {
+									null;
+								} else {
+									var i = name.indexOf("Web", null);
+									if (i > 0) {
+										name.substring(0, i);
+									} else {
+										null;
+									};
+								};
+								var newDo = qualify(doBlock, app2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : node.metadata, pos : node.pos};
+							} else {
+								node;
+							};
+						};
+					};
+					default: {
+						node;
+					}
+				};
+			};
+		});
+	}
+}

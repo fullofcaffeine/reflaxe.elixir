@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.ECatchClause = { pattern : reflaxe.elixir.ast.EPattern, kind : reflaxe.elixir.ast.ECatchKind, body : reflaxe.elixir.ast.ElixirAST }

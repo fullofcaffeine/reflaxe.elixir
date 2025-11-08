@@ -1,0 +1,470 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.FieldAccessBuilder {
+
+	public static function build(e:haxe.macro.TypedExpr, fa:haxe.macro.FieldAccess, context:reflaxe.elixir.CompilationContext) {
+		@:ast(switch (fa) {
+	case FEnum(enumType, ef):
+		return buildEnumConstructor(enumType, ef, context);	
+	case FStatic(classRef, cf):
+		return buildStaticField(e, classRef, cf, context);	
+	case FAnon(cf) | FInstance(_, _, cf):
+		return buildInstanceField(e, cf, context);	
+	case FDynamic(fieldName):
+		return buildDynamicField(e, fieldName, context);	
+	case FClosure(closureType, cf):
+		return buildClosure(e, closureType, cf, context);	
+	default:
+		return null;	
+}) switch (@:exhaustive enumIndex fa) {
+			case 0: {
+				var ` = fa[0];
+				var ` = fa[1];
+				var ` = fa[2];
+				{
+					var cf = `;
+					{
+						return reflaxe.elixir.ast.builders.FieldAccessBuilder.buildInstanceField(e, cf, context);
+					};
+				};
+			};
+			case 1: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var classRef = `;
+					var cf = `;
+					{
+						return reflaxe.elixir.ast.builders.FieldAccessBuilder.buildStaticField(e, classRef, cf, context);
+					};
+				};
+			};
+			case 2: {
+				var ` = fa[0];
+				{
+					var cf = `;
+					{
+						return reflaxe.elixir.ast.builders.FieldAccessBuilder.buildInstanceField(e, cf, context);
+					};
+				};
+			};
+			case 3: {
+				var ` = fa[0];
+				{
+					var fieldName = `;
+					{
+						return reflaxe.elixir.ast.builders.FieldAccessBuilder.buildDynamicField(e, fieldName, context);
+					};
+				};
+			};
+			case 4: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var closureType = `;
+					var cf = `;
+					{
+						return reflaxe.elixir.ast.builders.FieldAccessBuilder.buildClosure(e, closureType, cf, context);
+					};
+				};
+			};
+			case 5: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var enumType = `;
+					var ef = `;
+					{
+						return reflaxe.elixir.ast.builders.FieldAccessBuilder.buildEnumConstructor(enumType, ef, context);
+					};
+				};
+			};
+		};
+	}
+
+	static function buildEnumConstructor(enumType:haxe.macro.Ref<haxe.macro.EnumType>, ef:haxe.macro.EnumField, context:reflaxe.elixir.CompilationContext) {
+		var enumT = enumType.get();
+		if (enumT.meta.has("elixirIdiomatic")) {
+			var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+			return reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var this;
+				this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+				cast cast this;
+			});
+		} else {
+			var hasParameters = @:ast(switch (ef.type) {
+	case TFun(args, _):
+		args.length > 0;	
+	default:
+		false;	
+}) {
+				var ` = ef.type;
+				if (enumIndex ` == 4) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var args = `;
+						{
+							args.length > 0;
+						};
+					};
+				} else {
+					false;
+				};
+			};
+			var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+			if (hasParameters) {
+				return reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}]);
+			} else {
+				return reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}]);
+			};
+		};
+	}
+
+	static function buildStaticField(e:haxe.macro.TypedExpr, classRef:haxe.macro.Ref<haxe.macro.ClassType>, cf:haxe.macro.Ref<haxe.macro.ClassField>, context:reflaxe.elixir.CompilationContext) {
+		var className = classRef.get().name;
+		var field = cf.get();
+		var fieldName = field.name;
+		var isAtomField = false;
+		var atomValue = null;
+		@:ast(switch (field.type) {
+	case TAbstract(abstractRef, _):
+		var abstractType = abstractRef.get();
+		if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
+			isAtomField = true;
+		};	
+	case _:
+}) {
+			var ` = field.type;
+			if (enumIndex ` == 8) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var abstractRef = `;
+					{
+						var abstractType = abstractRef.get();
+						if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
+							isAtomField = true;
+						};
+					};
+				};
+			} else {};
+		};
+		if (! isAtomField) {
+			var classType = classRef.get();
+			@:ast(switch (classType.kind) {
+	case KAbstractImpl(abstractRef):
+		var abstractType = abstractRef.get();
+		switch (abstractType.type) {
+			case TAbstract(atomRef, _):
+				var atomType = atomRef.get();
+				if (atomType.pack.join(".") == "elixir.types" && atomType.name == "Atom") {
+					isAtomField = true;
+					var fieldExpr = field.expr();
+					if (fieldExpr != null) {
+						switch (fieldExpr.expr) {
+							case TConst(TString(s)):
+								atomValue = s;							
+							case TCast(castExpr, _):
+								switch (castExpr.expr) {
+									case TConst(TString(s)):
+										atomValue = s;									
+									default:
+								};							
+							default:
+						};
+					};
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = classType.kind;
+				if (enumIndex ` == 7) {
+					var ` = `[0];
+					{
+						var abstractRef = `;
+						{
+							var abstractType = abstractRef.get();
+							@:ast(switch (abstractType.type) {
+	case TAbstract(atomRef, _):
+		var atomType = atomRef.get();
+		if (atomType.pack.join(".") == "elixir.types" && atomType.name == "Atom") {
+			isAtomField = true;
+			var fieldExpr = field.expr();
+			if (fieldExpr != null) {
+				switch (fieldExpr.expr) {
+					case TConst(TString(s)):
+						atomValue = s;					
+					case TCast(castExpr, _):
+						switch (castExpr.expr) {
+							case TConst(TString(s)):
+								atomValue = s;							
+							default:
+						};					
+					default:
+				};
+			};
+		};	
+	default:
+}) {
+								var ` = abstractType.type;
+								if (enumIndex ` == 8) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var atomRef = `;
+										{
+											var atomType = atomRef.get();
+											if (atomType.pack.join(".") == "elixir.types" && atomType.name == "Atom") {
+												isAtomField = true;
+												var fieldExpr = field.expr();
+												if (fieldExpr != null) {
+													@:ast(switch (fieldExpr.expr) {
+	case TConst(TString(s)):
+		atomValue = s;	
+	case TCast(castExpr, _):
+		switch (castExpr.expr) {
+			case TConst(TString(s)):
+				atomValue = s;			
+			default:
+		};	
+	default:
+}) {
+														var ` = fieldExpr.expr;
+														switch (enumIndex `) {
+															case 0: {
+																var ` = `[0];
+																if (enumIndex ` == 2) {
+																	var ` = `[0];
+																	{
+																		var s = `;
+																		{
+																			atomValue = s;
+																		};
+																	};
+																} else {};
+															};
+															case 24: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var castExpr = `;
+																	{
+																		@:ast(switch (castExpr.expr) {
+	case TConst(TString(s)):
+		atomValue = s;	
+	default:
+}) {
+																			var ` = castExpr.expr;
+																			if (enumIndex ` == 0) {
+																				var ` = `[0];
+																				if (enumIndex ` == 2) {
+																					var ` = `[0];
+																					{
+																						var s = `;
+																						{
+																							atomValue = s;
+																						};
+																					};
+																				} else {};
+																			} else {};
+																		};
+																	};
+																};
+															};
+															default: {}
+														};
+													};
+												};
+											};
+										};
+									};
+								} else {};
+							};
+						};
+					};
+				} else {};
+			};
+		};
+		if (isAtomField && atomValue != null) {
+			return reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var this;
+				this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomValue);
+				cast cast this;
+			});
+		};
+		var objAST = if (context.compiler != null) {
+			reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
+		} else {
+			null;
+		};
+		if (objAST == null) {
+			return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(className), metadata : {}, pos : pos};
+			}, fieldName, []);
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.EField(objAST, fieldName);
+	}
+
+	static function buildInstanceField(e:haxe.macro.TypedExpr, cf:haxe.macro.Ref<haxe.macro.ClassField>, context:reflaxe.elixir.CompilationContext) {
+		var field = cf.get();
+		var fieldName = field.name;
+		var objAST = if (context.compiler != null) {
+			reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
+		} else {
+			null;
+		};
+		if (objAST == null) {
+			return null;
+		};
+		var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+		return reflaxe.elixir.ast.ElixirASTDef.EField(objAST, snakeField);
+	}
+
+	static function buildDynamicField(e:haxe.macro.TypedExpr, fieldName:String, context:reflaxe.elixir.CompilationContext) {
+		var objAST = if (context.compiler != null) {
+			reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
+		} else {
+			null;
+		};
+		if (objAST == null) {
+			return null;
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+		}, "get", [objAST, {
+			var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var this;
+				this = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+				cast this;
+			});
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		}]);
+	}
+
+	static function buildClosure(e:haxe.macro.TypedExpr, closureType:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>, cf:haxe.macro.Ref<haxe.macro.ClassField>, context:reflaxe.elixir.CompilationContext) {
+		if (closureType == null) {
+			return null;
+		};
+		var className = closureType.c.get().name;
+		var methodName = cf.get().name;
+		var arity = @:ast(switch (cf.get().type) {
+	case TFun(args, _):
+		args.length;	
+	default:
+		0;	
+}) {
+			var ` = cf.get().type;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var args = `;
+					{
+						args.length;
+					};
+				};
+			} else {
+				0;
+			};
+		};
+		var functionRef = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(className), metadata : {}, pos : pos};
+		}, methodName, []);
+		return reflaxe.elixir.ast.ElixirASTDef.ECapture({
+			var pos = null;
+			{def : functionRef, metadata : {}, pos : pos};
+		}, arity);
+	}
+
+	public static function extractFieldName(fa:haxe.macro.FieldAccess) {
+		return @:ast(switch (fa) {
+	case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+		cf.get().name;	
+	case FDynamic(s):
+		s;	
+	case FEnum(_, ef):
+		ef.name;	
+}) switch (@:exhaustive enumIndex fa) {
+			case 0: {
+				var ` = fa[0];
+				var ` = fa[1];
+				var ` = fa[2];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 1: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 2: {
+				var ` = fa[0];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 3: {
+				var ` = fa[0];
+				{
+					var s = `;
+					{
+						s;
+					};
+				};
+			};
+			case 4: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 5: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var ef = `;
+					{
+						ef.name;
+					};
+				};
+			};
+		};
+	}
+}

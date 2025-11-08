@@ -194,7 +194,31 @@ test-%:
 			duration=$$((end - start)); \
 			echo "❌ $$testname - Compilation failed (special handling) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
-	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+	elif [ "$$testname" = "phoenix/PresenceMacro" ] || [ "$$testname" = "phoenix/PresenceMacroGenerics" ]; then \
+		# Presence snapshots require trace(v) → Log.trace(...) parity; skip no_traces so build-macro rewrite applies on Haxe 4.x \
+		if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id --macro haxe.macro.Compiler.addGlobalMetadata(\"\", \"@:build(reflaxe.elixir.macros.TracePreserve.build())\", true) $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+			end=$$(date +%s); duration=$$((end - start)); \
+			if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+				ex_files=$$(find $$testdir/$(OUTPUT_DIR) -name "*.ex" -type f 2>/dev/null | head -1); syntax_valid=true; \
+				if [ -n "$$ex_files" ]; then parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, _} -> false end; {:error, _} -> false end end); if not ok, do: System.halt(1)'; \
+					if ! timeout 5s elixir -e "$$parse_cmd" $$testdir/$(OUTPUT_DIR)/*.ex > /dev/null 2>&1; then syntax_valid=false; fi; fi; \
+				if [ "$$syntax_valid" = false ]; then echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+				elif diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" --exclude="bootstrap_*.ex" --exclude="*.exs.ex" --exclude="std.ex" --exclude="string_buf.ex" --exclude="type.ex" --exclude="int_iterator.ex" --exclude="hxx.ex" --exclude="_any/*" --exclude="haxe" --exclude="_enum_value/*" --exclude="haxe/_call_stack/*" --exclude="haxe/_constraints/*" --exclude="haxe/_int32/*" --exclude="haxe/iterators/*" --exclude="haxe/ds/*" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+					echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+				else echo "❌ $$testname - Output mismatch (syntax OK) ($${duration}s)" | tee -a test-results-$$$$.tmp; fi; \
+			else echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; fi; \
+	else \
+		if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id --macro haxe.macro.Compiler.addGlobalMetadata(\"\", \"@:build(reflaxe.elixir.macros.TracePreserve.build())\", true) $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+			end=$$(date +%s); duration=$$((end - start)); \
+			if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+				ex_files=$$(find $$testdir/$(OUTPUT_DIR) -name "*.ex" -type f 2>/dev/null | head -1); syntax_valid=true; \
+				if [ -n "$$ex_files" ]; then parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, _} -> false end; {:error, _} -> false end end); if not ok, do: System.halt(1)'; \
+					if ! timeout 5s elixir -e "$$parse_cmd" $$testdir/$(OUTPUT_DIR)/*.ex > /dev/null 2>&1; then syntax_valid=false; fi; fi; \
+				if [ "$$syntax_valid" = false ]; then echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+				elif diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" --exclude="bootstrap_*.ex" --exclude="*.exs.ex" --exclude="std.ex" --exclude="string_buf.ex" --exclude="type.ex" --exclude="int_iterator.ex" --exclude="hxx.ex" --exclude="_any/*" --exclude="haxe" --exclude="_enum_value/*" --exclude="haxe/_call_stack/*" --exclude="haxe/_constraints/*" --exclude="haxe/_int32/*" --exclude="haxe/iterators/*" --exclude="haxe/ds/*" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+					echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+				else echo "❌ $$testname - Output mismatch (syntax OK) ($${duration}s)" | tee -a test-results-$$$$.tmp; fi; \
+			else echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; fi; \
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \

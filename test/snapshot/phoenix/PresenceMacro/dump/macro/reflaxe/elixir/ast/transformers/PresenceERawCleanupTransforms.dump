@@ -1,0 +1,100 @@
+class reflaxe.elixir.ast.transformers.PresenceERawCleanupTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var nb = [];
+		for (b  in  body) nb.push(cleanERaw(b));
+		makeASTWithMeta(EModule(name, attrs, nb), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		makeASTWithMeta(EDefmodule(name, cleanERaw(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var nb = [];
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										nb.push(reflaxe.elixir.ast.transformers.PresenceERawCleanupTransforms.cleanERaw(b));
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, reflaxe.elixir.ast.transformers.PresenceERawCleanupTransforms.cleanERaw(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function cleanERaw(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ERaw(code):
+		var out = code;
+		if (out != null && out.indexOf("Phoenix.Presence.") != -1) {
+			out = StringTools.replace(out, "if 1, do: acc ++ [entry.metas[0]], else: acc", "acc ++ [entry.metas[0]]");
+			out = StringTools.replace(out, "\n  acc\nend)", "\nend)");
+		};
+		out != code ? makeASTWithMeta(ERaw(out), x.metadata, x.pos) : x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 62) {
+					var ` = `[0];
+					{
+						var code = `;
+						{
+							var out = code;
+							if (out != null && out.indexOf("Phoenix.Presence.", null) != -1) {
+								out = StringTools.replace(out, "if 1, do: acc ++ [entry.metas[0]], else: acc", "acc ++ [entry.metas[0]]");
+								out = StringTools.replace(out, "\n  acc\nend)", "\nend)");
+							};
+							if (out != code) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(out), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

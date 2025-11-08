@@ -1,0 +1,495 @@
+class reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms {
+
+	public static function fixPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		var i = 0;
+		while (i < stmts.length) {
+			var s = stmts[i];
+			var handled = false;
+			switch (s.def) {
+				case EBinary(Match, left, _):
+					switch (left.def) {
+						case EVar(v) if (v != null && v.length > 1 && v.charAt(0) == "_"):
+							var base = v.substr(1);
+							if (i + 1 < stmts.length) {
+								var nextStmt = stmts[i + 1];
+								var rewritten = rewriteRef(nextStmt, base, v);
+								out.push(s);
+								out.push(rewritten);
+								i += 2;
+								handled = true;
+							};						
+						default:
+					};				
+				case EMatch(pat, _):
+					var base2 = extractUnderscoreBase(pat);
+					if (base2 != null && i + 1 < stmts.length) {
+						var nextStmt2 = stmts[i + 1];
+						var rewritten2 = rewriteRef(nextStmt2, base2, "_" + base2);
+						out.push(s);
+						out.push(rewritten2);
+						i += 2;
+						handled = true;
+					};				
+				default:
+			};
+			if (!handled) {
+				out.push(s);
+				i++;
+			};
+		};
+		makeASTWithMeta(EBlock(out), n.metadata, n.pos);	
+	case EDo(bodyStmts):
+		var block = makeAST(EBlock(bodyStmts));
+		var fixed = fixPass(block);
+		switch (fixed.def) {
+			case EBlock(xs):
+				makeASTWithMeta(EDo(xs), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								var i = 0;
+								while (i < stmts.length) {
+									var s = stmts[i];
+									var handled = false;
+									@:ast(switch (s.def) {
+	case EBinary(Match, left, _):
+		switch (left.def) {
+			case EVar(v) if (v != null && v.length > 1 && v.charAt(0) == "_"):
+				var base = v.substr(1);
+				if (i + 1 < stmts.length) {
+					var nextStmt = stmts[i + 1];
+					var rewritten = rewriteRef(nextStmt, base, v);
+					out.push(s);
+					out.push(rewritten);
+					i += 2;
+					handled = true;
+				};			
+			default:
+		};	
+	case EMatch(pat, _):
+		var base2 = extractUnderscoreBase(pat);
+		if (base2 != null && i + 1 < stmts.length) {
+			var nextStmt2 = stmts[i + 1];
+			var rewritten2 = rewriteRef(nextStmt2, base2, "_" + base2);
+			out.push(s);
+			out.push(rewritten2);
+			i += 2;
+			handled = true;
+		};	
+	default:
+}) {
+										var ` = s.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var pat = `;
+													{
+														var base2 = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(pat);
+														if (base2 != null && i + 1 < stmts.length) {
+															var nextStmt2 = stmts[i + 1];
+															var rewritten2 = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.rewriteRef(nextStmt2, base2, "_" + base2);
+															out.push(s);
+															out.push(rewritten2);
+															i += 2;
+															handled = true;
+														};
+													};
+												};
+											};
+											case 26: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 27) {
+													{
+														var left = `;
+														{
+															@:ast(switch (left.def) {
+	case EVar(v) if (v != null && v.length > 1 && v.charAt(0) == "_"):
+		var base = v.substr(1);
+		if (i + 1 < stmts.length) {
+			var nextStmt = stmts[i + 1];
+			var rewritten = rewriteRef(nextStmt, base, v);
+			out.push(s);
+			out.push(rewritten);
+			i += 2;
+			handled = true;
+		};	
+	default:
+}) {
+																var ` = left.def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v = `;
+																		if (v != null && v.length > 1 && v.charAt(0) == "_") {
+																			var base = v.substr(1, null);
+																			if (i + 1 < stmts.length) {
+																				var nextStmt = stmts[i + 1];
+																				var rewritten = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.rewriteRef(nextStmt, base, v);
+																				out.push(s);
+																				out.push(rewritten);
+																				i += 2;
+																				handled = true;
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+														};
+													};
+												} else {};
+											};
+											default: {}
+										};
+									};
+									if (! handled) {
+										out.push(s);
+										i ++;
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var bodyStmts = `;
+							{
+								var block = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(bodyStmts), metadata : {}, pos : pos};
+								};
+								var fixed = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.fixPass(block);
+								@:ast(switch (fixed.def) {
+	case EBlock(xs):
+		makeASTWithMeta(EDo(xs), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = fixed.def;
+									if (enumIndex ` == 53) {
+										var ` = `[0];
+										{
+											var xs = `;
+											{
+												{def : reflaxe.elixir.ast.ElixirASTDef.EDo(xs), metadata : n.metadata, pos : n.pos};
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function extractUnderscoreBase(p:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (p) {
+	case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == "_"):
+		n.substr(1);	
+	case PTuple(es):
+		for (e  in  es) {
+			var b = extractUnderscoreBase(e);
+			if (b != null) return b;
+		};
+		null;	
+	case PList(es):
+		for (e  in  es) {
+			var b2 = extractUnderscoreBase(e);
+			if (b2 != null) return b2;
+		};
+		null;	
+	case PCons(h, t):
+		var b3 = extractUnderscoreBase(h);
+		if (b3 != null) return b3;
+		extractUnderscoreBase(t);	
+	case PMap(kvs):
+		for (kv  in  kvs) {
+			var b4 = extractUnderscoreBase(kv.value);
+			if (b4 != null) return b4;
+		};
+		null;	
+	case PStruct(_, fs):
+		for (f  in  fs) {
+			var b5 = extractUnderscoreBase(f.value);
+			if (b5 != null) return b5;
+		};
+		null;	
+	case PPin(inner):
+		extractUnderscoreBase(inner);	
+	default:
+		null;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					if (n != null && n.length > 1 && n.charAt(0) == "_") {
+						n.substr(1, null);
+					} else {
+						null;
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								var b = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(e);
+								if (b != null) {
+									return b;
+								};
+							};
+						};
+						null;
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						{
+							var ` = 0;
+							while (` < es.length) {
+								var e = es[`];
+								++ `;
+								var b2 = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(e);
+								if (b2 != null) {
+									return b2;
+								};
+							};
+						};
+						null;
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						var b3 = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(h);
+						if (b3 != null) {
+							return b3;
+						};
+						reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(t);
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						{
+							var ` = 0;
+							while (` < kvs.length) {
+								var kv = kvs[`];
+								++ `;
+								var b4 = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(kv.value);
+								if (b4 != null) {
+									return b4;
+								};
+							};
+						};
+						null;
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var fs = `;
+					{
+						{
+							var ` = 0;
+							while (` < fs.length) {
+								var f = fs[`];
+								++ `;
+								var b5 = reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(f.value);
+								if (b5 != null) {
+									return b5;
+								};
+							};
+						};
+						null;
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.transformers.AdjacentUnderscoreBinderRefFixTransforms.extractUnderscoreBase(inner);
+					};
+				};
+			};
+			default: {
+				null;
+			}
+		};
+	}
+
+	static function rewriteRef(node:reflaxe.elixir.ast.ElixirAST, base:String, underscored:String) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (v == base):
+		makeASTWithMeta(EVar(underscored), x.metadata, x.pos);	
+	case ERaw(code):
+		if (code == null || base == null || base.length == 0) return x;
+		var out = new StringBuf();
+		var i = 0;
+		while (i < code.length) {
+			var idx = code.indexOf(base, i);
+			if (idx == -1) {
+				out.add(code.substr(i));
+				break;
+			};
+			var ok = true;
+			if (idx > 0) {
+				var p = code.charAt(idx - 1);
+				if (isIdent(p)) ok = false;
+			};
+			var endIdx = idx + base.length;
+			if (endIdx < code.length) {
+				var n = code.charAt(endIdx);
+				if (isIdent(n)) ok = false;
+			};
+			if (ok) {
+				out.add(code.substr(i, idx - i));
+				out.add(underscored);
+				i = endIdx;
+			} else {
+				out.add(code.substr(i, idx - i + base.length));
+				i = idx + base.length;
+			};
+		};
+		makeASTWithMeta(ERaw(out.toString()), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 38: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (v == base) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(underscored), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code == null || base == null || base.length == 0) {
+									return x;
+								};
+								var out = new StringBuf();
+								var i = 0;
+								while (i < code.length) {
+									var idx = code.indexOf(base, i);
+									if (idx == -1) {
+										out.add(code.substr(i, null));
+										break;
+									};
+									var ok = true;
+									if (idx > 0) {
+										var p = code.charAt(idx - 1);
+										if (if (p == null || p.length == 0) {
+											false;
+										} else {
+											var c = p.charCodeAt(0);
+											(c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95;
+										}) {
+											ok = false;
+										};
+									};
+									var endIdx = idx + base.length;
+									if (endIdx < code.length) {
+										var n = code.charAt(endIdx);
+										if (if (n == null || n.length == 0) {
+											false;
+										} else {
+											var c = n.charCodeAt(0);
+											(c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95;
+										}) {
+											ok = false;
+										};
+									};
+									if (ok) {
+										out.add(code.substr(i, idx - i));
+										out.add(underscored);
+										i = endIdx;
+									} else {
+										out.add(code.substr(i, idx - i + base.length));
+										i = idx + base.length;
+									};
+								};
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.ERaw(out.toString());
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isIdent(ch:String) {
+		if (ch == null || ch.length == 0) {
+			return false;
+		};
+		var c = ch.charCodeAt(0);
+		return (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c == 95;
+	}
+}

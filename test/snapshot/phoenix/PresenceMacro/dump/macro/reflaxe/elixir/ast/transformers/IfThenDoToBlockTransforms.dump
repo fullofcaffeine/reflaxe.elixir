@@ -1,0 +1,55 @@
+class reflaxe.elixir.ast.transformers.IfThenDoToBlockTransforms {
+
+	public static function normalizePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EIf(cond, thenBr, elseBr):
+		switch (thenBr.def) {
+			case EDo(inner) if (inner != null):
+				makeASTWithMeta(EIf(cond, makeASTWithMeta(EBlock(inner), thenBr.metadata, thenBr.pos), elseBr), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 10) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenBr = `;
+						var elseBr = `;
+						{
+							@:ast(switch (thenBr.def) {
+	case EDo(inner) if (inner != null):
+		makeASTWithMeta(EIf(cond, makeASTWithMeta(EBlock(inner), thenBr.metadata, thenBr.pos), elseBr), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+								var ` = thenBr.def;
+								if (enumIndex ` == 55) {
+									var ` = `[0];
+									{
+										var inner = `;
+										if (inner != null) {
+											{def : reflaxe.elixir.ast.ElixirASTDef.EIf(cond, {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(inner), metadata : thenBr.metadata, pos : thenBr.pos}, elseBr), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

@@ -1,0 +1,177 @@
+class reflaxe.elixir.ast.transformers.MountCaseSocketAssignDropTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "mount" && args != null && args.length == 3):
+		var nb = rewriteInBody(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "mount" && args != null && args.length == 3) {
+							var nb = reflaxe.elixir.ast.transformers.MountCaseSocketAssignDropTransforms.rewriteInBody(body);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewriteInBody(body:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case ECase(expr, clauses):
+		var newClauses = [];
+		for (c  in  clauses) {
+			var newBody = dropSocketAssign(c.body);
+			newClauses.push({ pattern : c.pattern, guard : c.guard, body : newBody });
+		};
+		makeASTWithMeta(ECase(expr, newClauses), x.metadata, x.pos);	
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v) if (v == "socket"):
+				rhs;			
+			default:
+				x;			
+		};	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var c = clauses[`];
+										++ `;
+										var newBody = reflaxe.elixir.ast.transformers.MountCaseSocketAssignDropTransforms.dropSocketAssign(c.body);
+										newClauses.push({pattern : c.pattern, guard : c.guard, body : newBody});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, newClauses), metadata : x.metadata, pos : x.pos};
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								{
+									@:ast(switch (left.def) {
+	case EVar(v) if (v == "socket"):
+		rhs;	
+	default:
+		x;	
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == "socket") {
+													rhs;
+												} else {
+													x;
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								};
+							};
+						} else {
+							x;
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static function dropSocketAssign(b:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (b.def) {
+	case EBinary(Match, left, rhs):
+		switch (left.def) {
+			case EVar(v) if (v == "socket"):
+				rhs;			
+			default:
+				b;			
+		};	
+	default:
+		b;	
+}) {
+			var ` = b.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 27) {
+					{
+						var left = `;
+						var rhs = `;
+						{
+							@:ast(switch (left.def) {
+	case EVar(v) if (v == "socket"):
+		rhs;	
+	default:
+		b;	
+}) {
+								var ` = left.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v = `;
+										if (v == "socket") {
+											rhs;
+										} else {
+											b;
+										};
+									};
+								} else {
+									b;
+								};
+							};
+						};
+					};
+				} else {
+					b;
+				};
+			} else {
+				b;
+			};
+		};
+	}
+}

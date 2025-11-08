@@ -1,0 +1,836 @@
+class reflaxe.elixir.ast.transformers.EctoSchemaBinderFixTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(fname, args, guards, body) if (fname == "changeset" && args.length == 2):
+		var p0:String = switch (args[0]) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		var p1:String = switch (args[1]) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		inline function baseName(n:String):String return (n != null && n.length > 0 && n.charAt(0) == "_") ? n.substr(1) : n;
+		var desired0:String = null;
+		var desired1:String = null;
+		function scanForDesired(n:ElixirAST):Void {
+			if (desired0 != null && desired1 != null) return;
+			switch (n.def) {
+				case ERemoteCall(mod, fn, args) if (args != null && args.length >= 2):
+					var m = switch (mod.def) {
+						case EVar(s):
+							s;						
+						default:
+							null;						
+					};
+					if (m == "Ecto.Changeset" && (fn == "change" || fn == "cast")) {
+						switch (args[0].def) {
+							case EVar(v):
+								desired0 = v;							
+							default:
+						};
+						switch (args[1].def) {
+							case EVar(v2):
+								desired1 = v2;							
+							default:
+						};
+					};				
+				case EBlock(es):
+					for (e  in  es) scanForDesired(e);				
+				case EIf(c, t, e):
+					scanForDesired(c);
+					scanForDesired(t);
+					if (e != null) scanForDesired(e);				
+				case ECase(e, cs):
+					scanForDesired(e);
+					for (c  in  cs) {
+						if (c.guard != null) scanForDesired(c.guard);
+						scanForDesired(c.body);
+					};				
+				case ECall(t, _, as):
+					if (t != null) scanForDesired(t);
+					if (as != null) for (a  in  as) scanForDesired(a);				
+				case ERemoteCall(m2, _, as2):
+					scanForDesired(m2);
+					if (as2 != null) for (a  in  as2) scanForDesired(a);				
+				default:
+			};
+		};
+		scanForDesired(body);
+		var base0 = baseName(p0);
+		var base1 = baseName(p1);
+		var bodyUsesBase0 = base0 != null && VariableUsageCollector.usedInFunctionScope(body, base0);
+		var bodyUsesBase1 = base1 != null && VariableUsageCollector.usedInFunctionScope(body, base1);
+		var rename0 = (desired0 != null) || bodyUsesBase0;
+		var rename1 = (desired1 != null) || bodyUsesBase1;
+		if (desired0 == null && rename0) desired0 = base0;
+		if (desired1 == null && rename1) desired1 = base1;
+		var newArgs:Array<EPattern> = [PVar(rename0 && desired0 != null ? desired0 : p0), PVar(rename1 && desired1 != null ? desired1 : p1)];
+		var newBody = ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (rename0 && p0 != null && v == p0 && desired0 != null):
+					makeASTWithMeta(EVar(desired0), x.metadata, x.pos);				
+				case EVar(v2) if (rename1 && p1 != null && v2 == p1 && desired1 != null):
+					makeASTWithMeta(EVar(desired1), x.metadata, x.pos);				
+				default:
+					x;				
+			};
+		});
+		makeASTWithMeta(EDef(fname, newArgs, guards, newBody), n.metadata, n.pos);	
+	case EDefp(fname2, args2, guards2, body2) if (fname2 == "changeset" && args2.length == 2):
+		var q0:String = switch (args2[0]) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		var q1:String = switch (args2[1]) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		var d0:String = null;
+		var d1:String = null;
+		function scanDesiredInBody(n:ElixirAST):Void {
+			if (d0 != null && d1 != null) return;
+			switch (n.def) {
+				case ERemoteCall(mod, fn, args) if (args != null && args.length >= 2):
+					var m = switch (mod.def) {
+						case EVar(s):
+							s;						
+						default:
+							null;						
+					};
+					if (m == "Ecto.Changeset" && (fn == "change" || fn == "cast")) {
+						switch (args[0].def) {
+							case EVar(v):
+								d0 = v;							
+							default:
+						};
+						switch (args[1].def) {
+							case EVar(v2):
+								d1 = v2;							
+							default:
+						};
+					};				
+				case EBlock(es):
+					for (e  in  es) scanDesiredInBody(e);				
+				case EIf(c, t, e):
+					scanDesiredInBody(c);
+					scanDesiredInBody(t);
+					if (e != null) scanDesiredInBody(e);				
+				case ECase(e, cs):
+					scanDesiredInBody(e);
+					for (c  in  cs) {
+						if (c.guard != null) scanDesiredInBody(c.guard);
+						scanDesiredInBody(c.body);
+					};				
+				case ECall(t, _, as):
+					if (t != null) scanDesiredInBody(t);
+					if (as != null) for (a  in  as) scanDesiredInBody(a);				
+				case ERemoteCall(m2, _, as2):
+					scanDesiredInBody(m2);
+					if (as2 != null) for (a  in  as2) scanDesiredInBody(a);				
+				default:
+			};
+		};
+		scanDesiredInBody(body2);
+		inline function baseNameNoUnderscore(n:String):String return (n != null && n.length > 0 && n.charAt(0) == "_") ? n.substr(1) : n;
+		var baseQ0 = baseNameNoUnderscore(q0);
+		var baseQ1 = baseNameNoUnderscore(q1);
+		var bodyUsesBaseQ0 = baseQ0 != null && VariableUsageCollector.usedInFunctionScope(body2, baseQ0);
+		var bodyUsesBaseQ1 = baseQ1 != null && VariableUsageCollector.usedInFunctionScope(body2, baseQ1);
+		var renameQ0 = (d0 != null) || bodyUsesBaseQ0;
+		var renameQ1 = (d1 != null) || bodyUsesBaseQ1;
+		if (d0 == null && renameQ0) d0 = baseQ0;
+		if (d1 == null && renameQ1) d1 = baseQ1;
+		var newArgsDefp:Array<EPattern> = [PVar(renameQ0 && d0 != null ? d0 : q0), PVar(renameQ1 && d1 != null ? d1 : q1)];
+		var newBodyDefp = ElixirASTTransformer.transformNode(body2, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (renameQ0 && q0 != null && v == q0 && d0 != null):
+					makeASTWithMeta(EVar(d0), x.metadata, x.pos);				
+				case EVar(v2) if (renameQ1 && q1 != null && v2 == q1 && d1 != null):
+					makeASTWithMeta(EVar(d1), x.metadata, x.pos);				
+				default:
+					x;				
+			};
+		});
+		makeASTWithMeta(EDefp(fname2, newArgsDefp, guards2, newBodyDefp), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fname = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (fname == "changeset" && args.length == 2) {
+								var p0 = @:ast(switch (args[0]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+									var ` = args[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var nm = `;
+											{
+												nm;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								var p1 = @:ast(switch (args[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+									var ` = args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var nm = `;
+											{
+												nm;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								{};
+								var desired0 = [null];
+								var desired1 = [null];
+								var scanForDesired = [null];
+								scanForDesired[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+									if (desired0[0] != null && desired1[0] != null) {
+										return;
+									};
+									@:ast(switch (n.def) {
+	case ERemoteCall(mod, fn, args) if (args != null && args.length >= 2):
+		var m = switch (mod.def) {
+			case EVar(s):
+				s;			
+			default:
+				null;			
+		};
+		if (m == "Ecto.Changeset" && (fn == "change" || fn == "cast")) {
+			switch (args[0].def) {
+				case EVar(v):
+					desired0 = v;				
+				default:
+			};
+			switch (args[1].def) {
+				case EVar(v2):
+					desired1 = v2;				
+				default:
+			};
+		};	
+	case EBlock(es):
+		for (e  in  es) scanForDesired(e);	
+	case EIf(c, t, e):
+		scanForDesired(c);
+		scanForDesired(t);
+		if (e != null) scanForDesired(e);	
+	case ECase(e, cs):
+		scanForDesired(e);
+		for (c  in  cs) {
+			if (c.guard != null) scanForDesired(c.guard);
+			scanForDesired(c.body);
+		};	
+	case ECall(t, _, as):
+		if (t != null) scanForDesired(t);
+		if (as != null) for (a  in  as) scanForDesired(a);	
+	case ERemoteCall(m2, _, as2):
+		scanForDesired(m2);
+		if (as2 != null) for (a  in  as2) scanForDesired(a);	
+	default:
+}) {
+										var ` = n.def;
+										switch (enumIndex `) {
+											case 6: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var e = `;
+													var cs = `;
+													{
+														scanForDesired[0](e);
+														{
+															var ` = 0;
+															while (` < cs.length) {
+																var c = cs[`];
+																++ `;
+																if (c.guard != null) {
+																	scanForDesired[0](c.guard);
+																};
+																scanForDesired[0](c.body);
+															};
+														};
+													};
+												};
+											};
+											case 10: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var c = `;
+													var t = `;
+													var e = `;
+													{
+														scanForDesired[0](c);
+														scanForDesired[0](t);
+														if (e != null) {
+															scanForDesired[0](e);
+														};
+													};
+												};
+											};
+											case 22: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var t = `;
+													var as = `;
+													{
+														if (t != null) {
+															scanForDesired[0](t);
+														};
+														if (as != null) {
+															{
+																var ` = 0;
+																while (` < as.length) {
+																	var a = as[`];
+																	++ `;
+																	scanForDesired[0](a);
+																};
+															};
+														};
+													};
+												};
+											};
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var mod = `;
+													var fn = `;
+													var args = `;
+													if (args != null && args.length >= 2) {
+														var m = @:ast(switch (mod.def) {
+	case EVar(s):
+		s;	
+	default:
+		null;	
+}) {
+															var ` = mod.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var s = `;
+																	{
+																		s;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+														if (m == "Ecto.Changeset" && (fn == "change" || fn == "cast")) {
+															@:ast(switch (args[0].def) {
+	case EVar(v):
+		desired0 = v;	
+	default:
+}) {
+																var ` = args[0].def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v = `;
+																		{
+																			desired0[0] = v;
+																		};
+																	};
+																} else {};
+															};
+															@:ast(switch (args[1].def) {
+	case EVar(v2):
+		desired1 = v2;	
+	default:
+}) {
+																var ` = args[1].def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v2 = `;
+																		{
+																			desired1[0] = v2;
+																		};
+																	};
+																} else {};
+															};
+														};
+													} else {
+														var m2 = `;
+														var as2 = `;
+														{
+															scanForDesired[0](m2);
+															if (as2 != null) {
+																{
+																	var ` = 0;
+																	while (` < as2.length) {
+																		var a = as2[`];
+																		++ `;
+																		scanForDesired[0](a);
+																	};
+																};
+															};
+														};
+													};
+												};
+											};
+											case 53: {
+												var ` = `[0];
+												{
+													var es = `;
+													{
+														{
+															var ` = 0;
+															while (` < es.length) {
+																var e = es[`];
+																++ `;
+																scanForDesired[0](e);
+															};
+														};
+													};
+												};
+											};
+											default: {}
+										};
+									};
+								};
+								scanForDesired[0](body);
+								var base0 = if ((p0 != null && p0.length > 0 && p0.charAt(0) == "_")) {
+									p0.substr(1, null);
+								} else {
+									p0;
+								};
+								var base1 = if ((p1 != null && p1.length > 0 && p1.charAt(0) == "_")) {
+									p1.substr(1, null);
+								} else {
+									p1;
+								};
+								var bodyUsesBase0 = base0 != null && reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body, base0);
+								var bodyUsesBase1 = base1 != null && reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body, base1);
+								var rename0 = (desired0[0] != null) || bodyUsesBase0;
+								var rename1 = (desired1[0] != null) || bodyUsesBase1;
+								if (desired0[0] == null && rename0) {
+									desired0[0] = base0;
+								};
+								if (desired1[0] == null && rename1) {
+									desired1[0] = base1;
+								};
+								var newArgs = [reflaxe.elixir.ast.EPattern.PVar(if (rename0 && desired0[0] != null) {
+									desired0[0];
+								} else {
+									p0;
+								}), reflaxe.elixir.ast.EPattern.PVar(if (rename1 && desired1[0] != null) {
+									desired1[0];
+								} else {
+									p1;
+								})];
+								var newBody = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (x.def) {
+	case EVar(v) if (rename0 && p0 != null && v == p0 && desired0 != null):
+		makeASTWithMeta(EVar(desired0), x.metadata, x.pos);	
+	case EVar(v2) if (rename1 && p1 != null && v2 == p1 && desired1 != null):
+		makeASTWithMeta(EVar(desired1), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+										var ` = x.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (rename0 && p0 != null && v == p0 && desired0[0] != null) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(desired0[0]), metadata : x.metadata, pos : x.pos};
+												} else {
+													var v2 = `;
+													if (rename1 && p1 != null && v2 == p1 && desired1[0] != null) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(desired1[0]), metadata : x.metadata, pos : x.pos};
+													} else {
+														x;
+													};
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								});
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname, newArgs, guards, newBody), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var fname2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (fname2 == "changeset" && args2.length == 2) {
+								var q0 = @:ast(switch (args2[0]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+									var ` = args2[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var nm = `;
+											{
+												nm;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								var q1 = @:ast(switch (args2[1]) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+									var ` = args2[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var nm = `;
+											{
+												nm;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								var d0 = [null];
+								var d1 = [null];
+								var scanDesiredInBody = [null];
+								scanDesiredInBody[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+									if (d0[0] != null && d1[0] != null) {
+										return;
+									};
+									@:ast(switch (n.def) {
+	case ERemoteCall(mod, fn, args) if (args != null && args.length >= 2):
+		var m = switch (mod.def) {
+			case EVar(s):
+				s;			
+			default:
+				null;			
+		};
+		if (m == "Ecto.Changeset" && (fn == "change" || fn == "cast")) {
+			switch (args[0].def) {
+				case EVar(v):
+					d0 = v;				
+				default:
+			};
+			switch (args[1].def) {
+				case EVar(v2):
+					d1 = v2;				
+				default:
+			};
+		};	
+	case EBlock(es):
+		for (e  in  es) scanDesiredInBody(e);	
+	case EIf(c, t, e):
+		scanDesiredInBody(c);
+		scanDesiredInBody(t);
+		if (e != null) scanDesiredInBody(e);	
+	case ECase(e, cs):
+		scanDesiredInBody(e);
+		for (c  in  cs) {
+			if (c.guard != null) scanDesiredInBody(c.guard);
+			scanDesiredInBody(c.body);
+		};	
+	case ECall(t, _, as):
+		if (t != null) scanDesiredInBody(t);
+		if (as != null) for (a  in  as) scanDesiredInBody(a);	
+	case ERemoteCall(m2, _, as2):
+		scanDesiredInBody(m2);
+		if (as2 != null) for (a  in  as2) scanDesiredInBody(a);	
+	default:
+}) {
+										var ` = n.def;
+										switch (enumIndex `) {
+											case 6: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var e = `;
+													var cs = `;
+													{
+														scanDesiredInBody[0](e);
+														{
+															var ` = 0;
+															while (` < cs.length) {
+																var c = cs[`];
+																++ `;
+																if (c.guard != null) {
+																	scanDesiredInBody[0](c.guard);
+																};
+																scanDesiredInBody[0](c.body);
+															};
+														};
+													};
+												};
+											};
+											case 10: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var c = `;
+													var t = `;
+													var e = `;
+													{
+														scanDesiredInBody[0](c);
+														scanDesiredInBody[0](t);
+														if (e != null) {
+															scanDesiredInBody[0](e);
+														};
+													};
+												};
+											};
+											case 22: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var t = `;
+													var as = `;
+													{
+														if (t != null) {
+															scanDesiredInBody[0](t);
+														};
+														if (as != null) {
+															{
+																var ` = 0;
+																while (` < as.length) {
+																	var a = as[`];
+																	++ `;
+																	scanDesiredInBody[0](a);
+																};
+															};
+														};
+													};
+												};
+											};
+											case 24: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var mod = `;
+													var fn = `;
+													var args = `;
+													if (args != null && args.length >= 2) {
+														var m = @:ast(switch (mod.def) {
+	case EVar(s):
+		s;	
+	default:
+		null;	
+}) {
+															var ` = mod.def;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var s = `;
+																	{
+																		s;
+																	};
+																};
+															} else {
+																null;
+															};
+														};
+														if (m == "Ecto.Changeset" && (fn == "change" || fn == "cast")) {
+															@:ast(switch (args[0].def) {
+	case EVar(v):
+		d0 = v;	
+	default:
+}) {
+																var ` = args[0].def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v = `;
+																		{
+																			d0[0] = v;
+																		};
+																	};
+																} else {};
+															};
+															@:ast(switch (args[1].def) {
+	case EVar(v2):
+		d1 = v2;	
+	default:
+}) {
+																var ` = args[1].def;
+																if (enumIndex ` == 38) {
+																	var ` = `[0];
+																	{
+																		var v2 = `;
+																		{
+																			d1[0] = v2;
+																		};
+																	};
+																} else {};
+															};
+														};
+													} else {
+														var m2 = `;
+														var as2 = `;
+														{
+															scanDesiredInBody[0](m2);
+															if (as2 != null) {
+																{
+																	var ` = 0;
+																	while (` < as2.length) {
+																		var a = as2[`];
+																		++ `;
+																		scanDesiredInBody[0](a);
+																	};
+																};
+															};
+														};
+													};
+												};
+											};
+											case 53: {
+												var ` = `[0];
+												{
+													var es = `;
+													{
+														{
+															var ` = 0;
+															while (` < es.length) {
+																var e = es[`];
+																++ `;
+																scanDesiredInBody[0](e);
+															};
+														};
+													};
+												};
+											};
+											default: {}
+										};
+									};
+								};
+								scanDesiredInBody[0](body2);
+								{};
+								var baseQ0 = if ((q0 != null && q0.length > 0 && q0.charAt(0) == "_")) {
+									q0.substr(1, null);
+								} else {
+									q0;
+								};
+								var baseQ1 = if ((q1 != null && q1.length > 0 && q1.charAt(0) == "_")) {
+									q1.substr(1, null);
+								} else {
+									q1;
+								};
+								var bodyUsesBaseQ0 = baseQ0 != null && reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body2, baseQ0);
+								var bodyUsesBaseQ1 = baseQ1 != null && reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(body2, baseQ1);
+								var renameQ0 = (d0[0] != null) || bodyUsesBaseQ0;
+								var renameQ1 = (d1[0] != null) || bodyUsesBaseQ1;
+								if (d0[0] == null && renameQ0) {
+									d0[0] = baseQ0;
+								};
+								if (d1[0] == null && renameQ1) {
+									d1[0] = baseQ1;
+								};
+								var newArgsDefp = [reflaxe.elixir.ast.EPattern.PVar(if (renameQ0 && d0[0] != null) {
+									d0[0];
+								} else {
+									q0;
+								}), reflaxe.elixir.ast.EPattern.PVar(if (renameQ1 && d1[0] != null) {
+									d1[0];
+								} else {
+									q1;
+								})];
+								var newBodyDefp = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body2, function(x:reflaxe.elixir.ast.ElixirAST) {
+									return @:ast(switch (x.def) {
+	case EVar(v) if (renameQ0 && q0 != null && v == q0 && d0 != null):
+		makeASTWithMeta(EVar(d0), x.metadata, x.pos);	
+	case EVar(v2) if (renameQ1 && q1 != null && v2 == q1 && d1 != null):
+		makeASTWithMeta(EVar(d1), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+										var ` = x.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (renameQ0 && q0 != null && v == q0 && d0[0] != null) {
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(d0[0]), metadata : x.metadata, pos : x.pos};
+												} else {
+													var v2 = `;
+													if (renameQ1 && q1 != null && v2 == q1 && d1[0] != null) {
+														{def : reflaxe.elixir.ast.ElixirASTDef.EVar(d1[0]), metadata : x.metadata, pos : x.pos};
+													} else {
+														x;
+													};
+												};
+											};
+										} else {
+											x;
+										};
+									};
+								});
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(fname2, newArgsDefp, guards2, newBodyDefp), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

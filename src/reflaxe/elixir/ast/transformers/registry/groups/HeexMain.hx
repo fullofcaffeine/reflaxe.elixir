@@ -19,8 +19,8 @@ class HeexMain {
 
     passes.push({
       name: "HeexStringReturnToSigil",
-      description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils",
-      enabled: true,
+      description: "Rewrite EDef/EDefp bodies with final HTML strings to ~H sigils (disabled by default)",
+      enabled: false,
       pass: reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.transformPass
     });
 
@@ -99,4 +99,3 @@ class HeexMain {
   }
 }
 #end
-

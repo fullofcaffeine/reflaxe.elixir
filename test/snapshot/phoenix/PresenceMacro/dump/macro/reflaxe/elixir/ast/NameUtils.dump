@@ -1,0 +1,40 @@
+class reflaxe.elixir.ast.NameUtils {
+
+	public static function toSnakeCase(name:String) {
+		if (name == null || name.length == 0) {
+			return name;
+		};
+		var result = new EReg("([A-Z]+)([A-Z][a-z])", "g").replace(name, "$1_$2");
+		result = new EReg("([a-z\\d])([A-Z])", "g").replace(result, "$1_$2");
+		return result.toLowerCase();
+	}
+
+	public static function getElixirModuleName(typeName:String) {
+		var parts = typeName.split(".");
+		return parts[parts.length - 1];
+	}
+
+	public static inline function toElixirName(name:String) {
+		return reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+	}
+
+	public static inline function isElixirReserved(name:String) {
+		return reflaxe.elixir.ast.naming.ElixirNaming.isReserved(name);
+	}
+
+	public static function toSafeElixirFunctionName(name:String) {
+		var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+		if (reflaxe.elixir.ast.naming.ElixirNaming.isReserved(snakeName)) {
+			return snakeName + "_fn";
+		};
+		return snakeName;
+	}
+
+	public static function toSafeElixirParameterName(name:String) {
+		var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+		if (reflaxe.elixir.ast.naming.ElixirNaming.isReserved(snakeName)) {
+			return snakeName + "_param";
+		};
+		return snakeName;
+	}
+}

@@ -1,0 +1,214 @@
+class reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms {
+
+	static function cleanupNode(n:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(n, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(stmts):
+		var out = [];
+		for (s  in  stmts) switch (s.def) {
+			case EInteger(v) if (v == 0 || v == 1):
+			case EFloat(f) if (f == 0.0):
+			default:
+				out.push(s);			
+		};
+		makeASTWithMeta(EBlock(out), x.metadata, x.pos);	
+	case EDo(stmts):
+		var out2 = [];
+		for (s  in  stmts) switch (s.def) {
+			case EInteger(v2) if (v2 == 0 || v2 == 1):
+			case EFloat(f2) if (f2 == 0.0):
+			default:
+				out2.push(s);			
+		};
+		makeASTWithMeta(EDo(out2), x.metadata, x.pos);	
+	case ERaw(code):
+		var lines = code.split("\n");
+		var outLines = [];
+		for (ln  in  lines) {
+			var t = ln.trim();
+			if (t == "1" || t == "0") { } else {
+				outLines.push(ln);
+			};
+		};
+		var newCode = outLines.join("\n");
+		if (newCode != code) makeASTWithMeta(ERaw(newCode), x.metadata, x.pos) else x;	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out = [];
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										@:ast(switch (s.def) {
+	case EInteger(v) if (v == 0 || v == 1):
+	case EFloat(f) if (f == 0.0):
+	default:
+		out.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 33: {
+													var ` = `[0];
+													{
+														var v = `;
+														if (v == 0 || v == 1) {} else {
+															out.push(s);
+														};
+													};
+												};
+												case 34: {
+													var ` = `[0];
+													{
+														var f = `;
+														if (f == 0.0) {} else {
+															out.push(s);
+														};
+													};
+												};
+												default: {
+													out.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : x.metadata, pos : x.pos};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								var out2 = [];
+								{
+									var ` = 0;
+									while (` < stmts.length) {
+										var s = stmts[`];
+										++ `;
+										@:ast(switch (s.def) {
+	case EInteger(v2) if (v2 == 0 || v2 == 1):
+	case EFloat(f2) if (f2 == 0.0):
+	default:
+		out2.push(s);	
+}) {
+											var ` = s.def;
+											switch (enumIndex `) {
+												case 33: {
+													var ` = `[0];
+													{
+														var v2 = `;
+														if (v2 == 0 || v2 == 1) {} else {
+															out2.push(s);
+														};
+													};
+												};
+												case 34: {
+													var ` = `[0];
+													{
+														var f2 = `;
+														if (f2 == 0.0) {} else {
+															out2.push(s);
+														};
+													};
+												};
+												default: {
+													out2.push(s);
+												}
+											};
+										};
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out2), metadata : x.metadata, pos : x.pos};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								var lines = code.split("\n");
+								var outLines = [];
+								{
+									var ` = 0;
+									while (` < lines.length) {
+										var ln = lines[`];
+										++ `;
+										var t = StringTools.trim(ln);
+										if (t == "1" || t == "0") {} else {
+											outLines.push(ln);
+										};
+									};
+								};
+								var newCode = outLines.join("\n");
+								if (newCode != code) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(newCode), metadata : x.metadata, pos : x.pos};
+								} else {
+									x;
+								};
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, func, args) if (func == "reduce_while" && args != null && args.length >= 3):
+		var fnArg = args[2];
+		var cleaned = cleanupNode(fnArg);
+		if (cleaned != fnArg) {
+			var newArgs = args.copy();
+			newArgs[2] = cleaned;
+			makeASTWithMeta(ERemoteCall(mod, func, newArgs), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var func = `;
+						var args = `;
+						if (func == "reduce_while" && args != null && args.length >= 3) {
+							var fnArg = args[2];
+							var cleaned = reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.cleanupNode(fnArg);
+							if (cleaned != fnArg) {
+								var newArgs = args.copy();
+								newArgs[2] = cleaned;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, func, newArgs), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

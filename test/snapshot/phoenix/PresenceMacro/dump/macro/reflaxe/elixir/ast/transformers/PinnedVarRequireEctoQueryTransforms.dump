@@ -1,0 +1,224 @@
+class reflaxe.elixir.ast.transformers.PinnedVarRequireEctoQueryTransforms {
+
+	static function bodyHasPin(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var found = [false];
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				if (! found[0]) {
+					reflaxe.elixir.ast.ElixirASTTransformer.transformNode(b, function(x:reflaxe.elixir.ast.ElixirAST) {
+						if (found[0]) {
+							return x;
+						};
+						@:ast(switch (x.def) {
+	case EPin(_):
+		found = true;
+		return x;	
+	default:
+		return x;	
+}) {
+							var ` = x.def;
+							if (enumIndex ` == 39) {
+								var ` = `[0];
+								{
+									found[0] = true;
+									return x;
+								};
+							} else {
+								return x;
+							};
+						};
+					});
+				};
+			};
+		};
+		return found[0];
+	}
+
+	static function hasRequire(body:Array<reflaxe.elixir.ast.ElixirAST>) {
+		{
+			var ` = 0;
+			while (` < body.length) {
+				var b = body[`];
+				++ `;
+				@:ast(switch (b.def) {
+	case ERequire(mod, _) if (mod == "Ecto.Query"):
+		return true;	
+	default:
+}) {
+					var ` = b.def;
+					if (enumIndex ` == 47) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var mod = `;
+							if (mod == "Ecto.Query") {
+								return true;
+							} else {};
+						};
+					} else {};
+				};
+			};
+		};
+		return false;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		if (bodyHasPin(body) && !hasRequire(body)) {
+			var req = makeAST(ERequire("Ecto.Query", null));
+			makeASTWithMeta(EModule(name, attrs, [req].concat(body)), n.metadata, n.pos);
+		} else n;	
+	case EDefmodule(name, doBlock):
+		var stmts:Array<ElixirAST> = switch (doBlock.def) {
+			case EBlock(ss):
+				ss;			
+			case EDo(ss2):
+				ss2;			
+			default:
+				[doBlock];			
+		};
+		if (bodyHasPin(stmts) && !hasRequire(stmts)) {
+			var req2 = makeAST(ERequire("Ecto.Query", null));
+			var newDo:ElixirAST = switch (doBlock.def) {
+				case EBlock(_):
+					makeASTWithMeta(EBlock([req2].concat(stmts)), doBlock.metadata, doBlock.pos);				
+				case EDo(_):
+					makeASTWithMeta(EDo([req2].concat(stmts)), doBlock.metadata, doBlock.pos);				
+				default:
+					doBlock;				
+			};
+			makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								if (reflaxe.elixir.ast.transformers.PinnedVarRequireEctoQueryTransforms.bodyHasPin(body) && ! reflaxe.elixir.ast.transformers.PinnedVarRequireEctoQueryTransforms.hasRequire(body)) {
+									var req = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERequire("Ecto.Query", null), metadata : {}, pos : pos};
+									};
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, [req].concat(body));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(ss):
+		ss;	
+	case EDo(ss2):
+		ss2;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var ss = `;
+												{
+													ss;
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var ss2 = `;
+												{
+													ss2;
+												};
+											};
+										};
+										default: {
+											[doBlock];
+										}
+									};
+								};
+								if (reflaxe.elixir.ast.transformers.PinnedVarRequireEctoQueryTransforms.bodyHasPin(stmts) && ! reflaxe.elixir.ast.transformers.PinnedVarRequireEctoQueryTransforms.hasRequire(stmts)) {
+									var req2 = {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.ERequire("Ecto.Query", null), metadata : {}, pos : pos};
+									};
+									var newDo = @:ast(switch (doBlock.def) {
+	case EBlock(_):
+		makeASTWithMeta(EBlock([req2].concat(stmts)), doBlock.metadata, doBlock.pos);	
+	case EDo(_):
+		makeASTWithMeta(EDo([req2].concat(stmts)), doBlock.metadata, doBlock.pos);	
+	default:
+		doBlock;	
+}) {
+										var ` = doBlock.def;
+										switch (enumIndex `) {
+											case 53: {
+												var ` = `[0];
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EBlock([req2].concat(stmts));
+														var meta = doBlock.metadata;
+														var pos = doBlock.pos;
+														{def : def, metadata : meta, pos : pos};
+													};
+												};
+											};
+											case 55: {
+												var ` = `[0];
+												{
+													{
+														var def = reflaxe.elixir.ast.ElixirASTDef.EDo([req2].concat(stmts));
+														var meta = doBlock.metadata;
+														var pos = doBlock.pos;
+														{def : def, metadata : meta, pos : pos};
+													};
+												};
+											};
+											default: {
+												doBlock;
+											}
+										};
+									};
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+}

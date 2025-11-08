@@ -1,0 +1,295 @@
+class reflaxe.elixir.ast.transformers.ValidateLengthOptsAccessRewrite {
+
+	public static function rewritePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, fn, args) if (isChangesetValidateLength(mod, fn, args)):
+		var a = args.copy();
+		if (a.length >= 3) {
+			a[2] = rewriteKw(a[2]);
+		};
+		makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var fn = `;
+						var args = `;
+						if (if (fn != "validate_length") {
+							false;
+						} else {
+							@:ast(switch (mod.def) {
+	case EVar(name):
+		name != null && (name == "Ecto.Changeset" || name.indexOf("Ecto.Changeset") != -1);	
+	default:
+		false;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var name = `;
+										{
+											name != null && (name == "Ecto.Changeset" || name.indexOf("Ecto.Changeset", null) != -1);
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						}) {
+							var a = args.copy();
+							if (a.length >= 3) {
+								a[2] = reflaxe.elixir.ast.transformers.ValidateLengthOptsAccessRewrite.rewriteKw(a[2]);
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, fn, a), metadata : n.metadata, pos : n.pos};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function rewriteKw(arg:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (arg.def) {
+	case EKeywordList(pairs):
+		var out = [];
+		for (p  in  pairs) {
+			var v = rewriteValue(p.value);
+			out.push({ key : p.key, value : v });
+		};
+		makeAST(EKeywordList(out));	
+	case ERemoteCall({ def : EVar(m) }, f, [listExpr, fun]) if (m == "Enum" && f == "filter"):
+		var newList = rewriteKw(listExpr);
+		makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [newList, fun]));	
+	default:
+		arg;	
+}) {
+			var ` = arg.def;
+			switch (enumIndex `) {
+				case 20: {
+					var ` = `[0];
+					{
+						var pairs = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var p = pairs[`];
+									++ `;
+									var v = reflaxe.elixir.ast.transformers.ValidateLengthOptsAccessRewrite.rewriteValue(p.value);
+									out.push({key : p.key, value : v});
+								};
+							};
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EKeywordList(out), metadata : {}, pos : pos};
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							if (`.length == 2) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var listExpr = `;
+									var fun = `;
+									var f = `;
+									var m = `;
+									if (m == "Enum" && f == "filter") {
+										var newList = reflaxe.elixir.ast.transformers.ValidateLengthOptsAccessRewrite.rewriteKw(listExpr);
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+											}, "filter", [newList, fun]), metadata : {}, pos : pos};
+										};
+									} else {
+										arg;
+									};
+								};
+							} else {
+								arg;
+							};
+						} else {
+							arg;
+						};
+					};
+				};
+				default: {
+					arg;
+				}
+			};
+		};
+	}
+
+	static function rewriteValue(v:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (v.def) {
+	case EField({ def : EVar(name) }, fld) if (name == "opts"):
+		makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(fld))]));	
+	case EAccess({ def : EVar(name2) }, key) if (name2 == "opts"):
+		var atomKey = switch (key.def) {
+			case EAtom(a):
+				a;			
+			default:
+				null;			
+		};
+		if (atomKey != null) makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [makeAST(EVar("opts")), makeAST(EAtom(atomKey))])) else v;	
+	default:
+		v;	
+}) {
+			var ` = v.def;
+			switch (enumIndex `) {
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var name = `;
+								var fld = `;
+								if (name == "opts") {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+										}, "get", [{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("opts"), metadata : {}, pos : pos};
+										}, {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+												var this;
+												this = reflaxe.elixir.ast.NameUtils.toSnakeCase(fld);
+												cast this;
+											});
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										}]);
+										var pos = null;
+										{def : def, metadata : {}, pos : pos};
+									};
+								} else {
+									v;
+								};
+							};
+						} else {
+							v;
+						};
+					};
+				};
+				case 29: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var name2 = `;
+								var key = `;
+								if (name2 == "opts") {
+									var atomKey = @:ast(switch (key.def) {
+	case EAtom(a):
+		a;	
+	default:
+		null;	
+}) {
+										var ` = key.def;
+										if (enumIndex ` == 31) {
+											var ` = `[0];
+											{
+												var a = `;
+												{
+													a;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+									if (atomKey != null) {
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+											}, "get", [{
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("opts"), metadata : {}, pos : pos};
+											}, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(atomKey), metadata : {}, pos : pos};
+											}]), metadata : {}, pos : pos};
+										};
+									} else {
+										v;
+									};
+								} else {
+									v;
+								};
+							};
+						} else {
+							v;
+						};
+					};
+				};
+				default: {
+					v;
+				}
+			};
+		};
+	}
+
+	static inline function isChangesetValidateLength(mod:reflaxe.elixir.ast.ElixirAST, fn:String, args:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (fn != "validate_length") {
+			return false;
+		};
+		return @:ast(switch (mod.def) {
+	case EVar(name):
+		name != null && (name == "Ecto.Changeset" || name.indexOf("Ecto.Changeset") != -1);	
+	default:
+		false;	
+}) {
+			var ` = mod.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var name = `;
+					{
+						name != null && (name == "Ecto.Changeset" || name.indexOf("Ecto.Changeset", null) != -1);
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+}

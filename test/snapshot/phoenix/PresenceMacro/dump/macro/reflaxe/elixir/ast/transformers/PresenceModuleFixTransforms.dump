@@ -1,0 +1,343 @@
+class reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (looksLikePresence(name)):
+		var rewritten = [for (b  in  body) fixStmt(b)];
+		makeASTWithMeta(EModule(name, attrs, rewritten), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock) if (looksLikePresence(name)):
+		var fixed = rewriteDefsInTree(doBlock);
+		makeASTWithMeta(EDefmodule(name, fixed), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name != null && name.indexOf("Web.Presence", null) > 0) {
+								var rewritten = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.fixStmt(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, rewritten), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							if (name != null && name.indexOf("Web.Presence", null) > 0) {
+								var fixed = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.rewriteDefsInTree(doBlock);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, fixed), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function looksLikePresence(name:String) {
+		return name != null && name.indexOf("Web.Presence", null) > 0;
+	}
+
+	static function fixStmt(n:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (n.def) {
+	case EDef(fname, params, guards, body) if (shouldRewrite(fname)):
+		var newParams = underscoreUnusedParams(params, ["socket"]);
+		var newBody = rewriteBodyToSocket(body);
+		makeASTWithMeta(EDef(fname, newParams, guards, newBody), n.metadata, n.pos);	
+	case EDefp(fname2, params2, guards2, body2) if (shouldRewrite(fname2)):
+		var newParams2 = underscoreUnusedParams(params2, ["socket"]);
+		var newBody2 = rewriteBodyToSocket(body2);
+		makeASTWithMeta(EDefp(fname2, newParams2, guards2, newBody2), n.metadata, n.pos);	
+	case EDef(fname3, params3, guards3, { def : ERemoteCall(mod, fn, _args) }) if (repoGetCall(mod, fn)):
+		var newParams3 = underscoreUnusedParams(params3, ["socket"]);
+		makeASTWithMeta(EDef(fname3, newParams3, guards3, makeAST(EVar("socket"))), n.metadata, n.pos);	
+	case EDefp(fname4, params4, guards4, { def : ERemoteCall(mod2, fn2, _args2) }) if (repoGetCall(mod2, fn2)):
+		var newParams4 = underscoreUnusedParams(params4, ["socket"]);
+		makeASTWithMeta(EDefp(fname4, newParams4, guards4, makeAST(EVar("socket"))), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+			var ` = n.def;
+			switch (enumIndex `) {
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var fname = `;
+						var params = `;
+						var guards = `;
+						var body = `;
+						if (fname == "track_user" || fname == "update_user_editing" || fname == "track_with_socket" || fname == "update_with_socket" || fname == "untrack_with_socket") {
+							var newParams = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.underscoreUnusedParams(params, ["socket"]);
+							var newBody = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.rewriteBodyToSocket(body);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname, newParams, guards, newBody), metadata : n.metadata, pos : n.pos};
+						} else {
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 24) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var mod = `;
+									var fn = `;
+									var _args = `;
+									var guards3 = `;
+									var params3 = `;
+									var fname3 = `;
+									if (reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.repoGetCall(mod, fn)) {
+										var newParams3 = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.underscoreUnusedParams(params3, ["socket"]);
+										{def : reflaxe.elixir.ast.ElixirASTDef.EDef(fname3, newParams3, guards3, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : {}, pos : pos};
+										}), metadata : n.metadata, pos : n.pos};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var fname2 = `;
+						var params2 = `;
+						var guards2 = `;
+						var body2 = `;
+						if (fname2 == "track_user" || fname2 == "update_user_editing" || fname2 == "track_with_socket" || fname2 == "update_with_socket" || fname2 == "untrack_with_socket") {
+							var newParams2 = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.underscoreUnusedParams(params2, ["socket"]);
+							var newBody2 = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.rewriteBodyToSocket(body2);
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(fname2, newParams2, guards2, newBody2), metadata : n.metadata, pos : n.pos};
+						} else {
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 24) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var mod2 = `;
+									var fn2 = `;
+									var _args2 = `;
+									var guards4 = `;
+									var params4 = `;
+									var fname4 = `;
+									if (reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.repoGetCall(mod2, fn2)) {
+										var newParams4 = reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.underscoreUnusedParams(params4, ["socket"]);
+										{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(fname4, newParams4, guards4, {
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : {}, pos : pos};
+										}), metadata : n.metadata, pos : n.pos};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+				};
+				default: {
+					n;
+				}
+			};
+		};
+	}
+
+	static function rewriteDefsInTree(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EDef(_, _, _, _):
+		fixStmt(x);	
+	case EDefp(_, _, _, _):
+		fixStmt(x);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.fixStmt(x);
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.fixStmt(x);
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewriteBodyToSocket(body:reflaxe.elixir.ast.ElixirAST) {
+		@:ast(switch (body.def) {
+	case EBlock(stmts) if (stmts.length == 1):
+		switch (stmts[0].def) {
+			case ERemoteCall(mod, fn, _args) if (repoGetCall(mod, fn)):
+				return makeASTWithMeta(EVar("socket"), body.metadata, body.pos);			
+			default:
+		};
+		return makeASTWithMeta(EVar("socket"), body.metadata, body.pos);	
+	default:
+		return makeASTWithMeta(EVar("socket"), body.metadata, body.pos);	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var stmts = `;
+					if (stmts.length == 1) {
+						@:ast(switch (stmts[0].def) {
+	case ERemoteCall(mod, fn, _args) if (repoGetCall(mod, fn)):
+		return makeASTWithMeta(EVar("socket"), body.metadata, body.pos);	
+	default:
+}) {
+							var ` = stmts[0].def;
+							if (enumIndex ` == 24) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var mod = `;
+									var fn = `;
+									var _args = `;
+									if (reflaxe.elixir.ast.transformers.PresenceModuleFixTransforms.repoGetCall(mod, fn)) {
+										return {def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : body.metadata, pos : body.pos};
+									} else {};
+								};
+							} else {};
+						};
+						return {def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : body.metadata, pos : body.pos};
+					} else {
+						return {def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : body.metadata, pos : body.pos};
+					};
+				};
+			} else {
+				return {def : reflaxe.elixir.ast.ElixirASTDef.EVar("socket"), metadata : body.metadata, pos : body.pos};
+			};
+		};
+	}
+
+	static inline function shouldRewrite(fname:String) {
+		return fname == "track_user" || fname == "update_user_editing" || fname == "track_with_socket" || fname == "update_with_socket" || fname == "untrack_with_socket";
+	}
+
+	static function repoGetCall(mod:reflaxe.elixir.ast.ElixirAST, fn:String) {
+		if (fn != "get") {
+			return false;
+		};
+		return @:ast(switch (mod.def) {
+	case EVar(m):
+		if (m == null) false else (StringTools.endsWith(m, ".Repo") || StringTools.endsWith(m, "Web.Repo"));	
+	default:
+		false;	
+}) {
+			var ` = mod.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var m = `;
+					{
+						if (m == null) {
+							false;
+						} else {
+							(StringTools.endsWith(m, ".Repo") || StringTools.endsWith(m, "Web.Repo"));
+						};
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function underscoreUnusedParams(params:Array<reflaxe.elixir.ast.EPattern>, keep:Array<String>) {
+		var out = [];
+		{
+			var ` = 0;
+			while (` < params.length) {
+				var p = params[`];
+				++ `;
+				@:ast(switch (p) {
+	case PVar(n):
+		if (keep.indexOf(n) != -1) out.push(PVar(n)) else out.push(PVar((n != null && n.length > 0 && n.charAt(0) != "_") ? "_" + n : n));	
+	default:
+		out.push(p);	
+}) if (enumIndex p == 0) {
+					var ` = p[0];
+					{
+						var n = `;
+						{
+							if (keep.indexOf(n, null) != -1) {
+								out.push(reflaxe.elixir.ast.EPattern.PVar(n));
+							} else {
+								out.push(reflaxe.elixir.ast.EPattern.PVar(if ((n != null && n.length > 0 && n.charAt(0) != "_")) {
+									"_" + n;
+								} else {
+									n;
+								}));
+							};
+						};
+					};
+				} else {
+					out.push(p);
+				};
+			};
+		};
+		return out;
+	}
+}

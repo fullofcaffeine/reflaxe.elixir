@@ -1,0 +1,87 @@
+class reflaxe.elixir.ast.transformers.registry.groups.EarlyBootstrap {
+
+	public static function build() {
+		var passes = [];
+		passes.push({name : "Identity", description : "Pass-through transformation (no changes)", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_identityPass});
+		passes.push({name : "ResolveClauseLocals", description : "Resolve variable references in case clauses using varIdToName metadata", enabled : true, pass : reflaxe.elixir.ast.transformers.TempVariableTransforms.resolveClauseLocalsPass});
+		passes.push({name : "RemoveRedundantEnumExtraction", description : "Remove redundant elem() calls after pattern extraction in case clauses", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantEnumExtractionPass});
+		passes.push({name : "CaseOkBinderAlign", description : "Rename {:ok, var} binder to match body local (todo) and rewrite body refs", enabled : true, pass : reflaxe.elixir.ast.transformers.CaseOkBinderAlignTransforms.transformPass});
+		passes.push({name : "ResultOkBinderNormalize", description : "Normalize {:ok, binder} to avoid ok_value leaks; align body to binder", enabled : true, pass : reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms.pass});
+		passes.push({name : "ResultOkBinderNormalize_Replay_Ultimate", description : "Ultimate replay of {:ok, binder} normalization inside def/defp and EFn", enabled : true, pass : reflaxe.elixir.ast.transformers.ResultOkBinderNormalizeTransforms.pass, runAfter : ["FinalLocalReferenceAlign"]});
+		passes.push({name : "ThrowStatementTransform", description : "Transform complex throw expressions to avoid syntax errors", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_throwStatementTransformPass});
+		passes.push({name : "InlineMethodCallCombiner", description : "Combine split inline expansion patterns from stdlib", enabled : true, pass : reflaxe.elixir.ast.transformers.InlineExpansionTransforms.inlineMethodCallCombinerPass});
+		passes.push({name : "ExtractTupleInlineAssignments", description : "Extract inline assignments from tuple constructors to fix syntax errors", enabled : true, pass : reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractTupleInlineAssignmentsPass});
+		passes.push({name : "ExtractLiteralValueInlineAssignments", description : "Hoist inline assignments out of map/keyword/struct literal values to preceding block", enabled : true, pass : reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractLiteralValueInlineAssignmentsPass});
+		passes.push({name : "FunctionReferenceTransform", description : "Transform function references to use capture operator (&Module.func/arity)", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_functionReferenceTransformPass});
+		passes.push({name : "DefParamCamelToSnake", description : "Rename function parameters camelCase→snake_case and update body references", enabled : true, pass : reflaxe.elixir.ast.transformers.DefParamCamelToSnakeTransforms.transformPass});
+		passes.push({name : "LocalCamelToSnakeDecl", description : "Rename local EMatch/EVar declarations from camelCase to snake_case and update refs", enabled : true, pass : reflaxe.elixir.ast.transformers.LocalCamelToSnakeDeclTransforms.transformPass});
+		passes.push({name : "BitwiseImport", description : "Add Bitwise import when bitwise operators are used", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_bitwiseImportPass});
+		passes.push({name : "LoopTransformation", description : "Transform non-idiomatic loop patterns (reduce_while with Stream.iterate) to idiomatic Enum operations and comprehensions", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_loopTransformationPass});
+		passes.push({name : "InlineTempBindingInExpr", description : "Collapse EBlock([tmp = exprA, exprB(tmp)]) to exprB(exprA) in expression positions", enabled : true, pass : reflaxe.elixir.ast.transformers.TempVariableTransforms.inlineTempBindingInExprPass});
+		passes.push({name : "PresenceReduceRewrite", description : "Rewrite Presence Enum.each + Reflect.fields/Map.get scans to Enum.reduce(Map.values(map), [], ...) with conditional append", enabled : true, pass : reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass});
+		passes.push({name : "XRayMapBlocks", description : "Debug pass to log map fields containing EBlock values", enabled : false, pass : function(ast:reflaxe.elixir.ast.ElixirAST) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+				@:ast(switch (node.def) {
+	case EMap(pairs):
+		for (p  in  pairs) {
+			switch (p.value.def) {
+				case EBlock(exprs):
+					trace("[XRayMapBlocks] Found EBlock in map value with " + exprs.length + " exprs");
+					for (i  in  0 ... exprs.length) trace("  expr[" + i + "]: " + ElixirASTPrinter.print(exprs[i], 0));				
+				default:
+			};
+		};
+		return node;	
+	default:
+		return node;	
+}) {
+					var ` = node.def;
+					if (enumIndex ` == 17) {
+						var ` = `[0];
+						{
+							var pairs = `;
+							{
+								{
+									var ` = 0;
+									while (` < pairs.length) {
+										var p = pairs[`];
+										++ `;
+										@:ast(switch (p.value.def) {
+	case EBlock(exprs):
+		trace("[XRayMapBlocks] Found EBlock in map value with " + exprs.length + " exprs");
+		for (i  in  0 ... exprs.length) trace("  expr[" + i + "]: " + ElixirASTPrinter.print(exprs[i], 0));	
+	default:
+}) {
+											var ` = p.value.def;
+											if (enumIndex ` == 53) {
+												var ` = `[0];
+												{
+													var exprs = `;
+													{
+														haxe.Log.trace("[XRayMapBlocks] Found EBlock in map value with " + exprs.length + " exprs", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/registry/groups/EarlyBootstrap.hx", lineNumber : 177, className : "reflaxe.elixir.ast.transformers.registry.groups.EarlyBootstrap", methodName : "build"});
+														{
+															var ` = 0;
+															var ` = exprs.length;
+															while (` < `) {
+																var i = ` ++;
+																haxe.Log.trace("  expr[" + i + "]: " + reflaxe.elixir.ast.ElixirASTPrinter.print(exprs[i], 0), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/registry/groups/EarlyBootstrap.hx", lineNumber : 178, className : "reflaxe.elixir.ast.transformers.registry.groups.EarlyBootstrap", methodName : "build"});
+															};
+														};
+													};
+												};
+											} else {};
+										};
+									};
+								};
+								return node;
+							};
+						};
+					} else {
+						return node;
+					};
+				};
+			});
+		}});
+		return passes;
+	}
+}

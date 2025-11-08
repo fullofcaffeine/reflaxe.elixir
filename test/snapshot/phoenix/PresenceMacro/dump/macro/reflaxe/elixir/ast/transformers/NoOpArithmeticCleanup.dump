@@ -1,0 +1,110 @@
+class reflaxe.elixir.ast.transformers.NoOpArithmeticCleanup {
+
+	public static function cleanupPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EBlock(stmts):
+		var filtered:Array<ElixirAST> = [];
+		for (s  in  stmts) switch (s.def) {
+			case EBinary(Add, { def : EInteger(_) } | { def : EFloat(_) }, { def : EInteger(_) } | { def : EFloat(_) }):
+			default:
+				filtered.push(s);			
+		};
+		makeASTWithMeta(EBlock(filtered), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var filtered = [];
+							{
+								var ` = 0;
+								while (` < stmts.length) {
+									var s = stmts[`];
+									++ `;
+									@:ast(switch (s.def) {
+	case EBinary(Add, { def : EInteger(_) } | { def : EFloat(_) }, { def : EInteger(_) } | { def : EFloat(_) }):
+	default:
+		filtered.push(s);	
+}) {
+										var ` = s.def;
+										if (enumIndex ` == 26) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 0) {
+												{
+													var ` = `.def;
+													var ` = `.metadata;
+													var ` = `.pos;
+													switch (enumIndex `) {
+														case 33: {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																switch (enumIndex `) {
+																	case 33: {
+																		var ` = `[0];
+																		{};
+																	};
+																	case 34: {
+																		var ` = `[0];
+																		{};
+																	};
+																	default: {
+																		filtered.push(s);
+																	}
+																};
+															};
+														};
+														case 34: {
+															var ` = `[0];
+															{
+																var ` = `.def;
+																var ` = `.metadata;
+																var ` = `.pos;
+																switch (enumIndex `) {
+																	case 33: {
+																		var ` = `[0];
+																		{};
+																	};
+																	case 34: {
+																		var ` = `[0];
+																		{};
+																	};
+																	default: {
+																		filtered.push(s);
+																	}
+																};
+															};
+														};
+														default: {
+															filtered.push(s);
+														}
+													};
+												};
+											} else {
+												filtered.push(s);
+											};
+										} else {
+											filtered.push(s);
+										};
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(filtered), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

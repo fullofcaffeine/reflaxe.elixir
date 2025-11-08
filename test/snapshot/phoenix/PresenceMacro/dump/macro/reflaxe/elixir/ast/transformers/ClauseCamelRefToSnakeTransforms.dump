@@ -1,0 +1,249 @@
+class reflaxe.elixir.ast.transformers.ClauseCamelRefToSnakeTransforms {
+
+	public static function clauseCamelRefToSnakePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case ECase(target, clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var binders = collectPatternBinders(cl.pattern);
+			var set = new Map<String,Bool>();
+			for (b  in  binders) set.set(b, true);
+			var newBody = ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+				return switch (n.def) {
+					case EVar(v):
+						var snake = toSnake(v);
+						if (snake != v && set.exists(snake)) {
+							makeASTWithMeta(EVar(snake), n.metadata, n.pos);
+						} else n;					
+					default:
+						n;					
+				};
+			});
+			newClauses.push({ pattern : cl.pattern, guard : cl.guard, body : newBody });
+		};
+		makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var binders = reflaxe.elixir.ast.transformers.ClauseCamelRefToSnakeTransforms.collectPatternBinders(cl.pattern);
+									var set = {
+										{};
+										new haxe.ds.StringMap();
+									};
+									{
+										var ` = 0;
+										while (` < binders.length) {
+											var b = binders[`];
+											++ `;
+											{
+												set.set(b, true);
+											};
+										};
+									};
+									var newBody = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:reflaxe.elixir.ast.ElixirAST) {
+										return @:ast(switch (n.def) {
+	case EVar(v):
+		var snake = toSnake(v);
+		if (snake != v && set.exists(snake)) {
+			makeASTWithMeta(EVar(snake), n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+											var ` = n.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var v = `;
+													{
+														var snake = reflaxe.elixir.ast.transformers.ClauseCamelRefToSnakeTransforms.toSnake(v);
+														if (snake != v && set.exists(snake)) {
+															{def : reflaxe.elixir.ast.ElixirASTDef.EVar(snake), metadata : n.metadata, pos : n.pos};
+														} else {
+															n;
+														};
+													};
+												};
+											} else {
+												n;
+											};
+										};
+									});
+									newClauses.push({pattern : cl.pattern, guard : cl.guard, body : newBody});
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(target, newClauses), metadata : node.metadata, pos : node.pos};
+						};
+					};
+				} else {
+					node;
+				};
+			};
+		});
+	}
+
+	static function collectPatternBinders(p:reflaxe.elixir.ast.EPattern) {
+		var out = [];
+		var walk = [null];
+		walk[0] = function(px:reflaxe.elixir.ast.EPattern) {
+			@:ast(switch (px) {
+	case PVar(n):
+		out.push(n);	
+	case PTuple(es):
+		for (e  in  es) walk(e);	
+	case PList(es):
+		for (e  in  es) walk(e);	
+	case PCons(h, t):
+		walk(h);
+		walk(t);	
+	case PMap(kvs):
+		for (kv  in  kvs) walk(kv.value);	
+	case PStruct(_, fs):
+		for (f  in  fs) walk(f.value);	
+	case PPin(inner):
+		walk(inner);	
+	default:
+}) switch (enumIndex px) {
+				case 0: {
+					var ` = px[0];
+					{
+						var n = `;
+						{
+							out.push(n);
+						};
+					};
+				};
+				case 2: {
+					var ` = px[0];
+					{
+						var es = `;
+						{
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									walk[0](e);
+								};
+							};
+						};
+					};
+				};
+				case 3: {
+					var ` = px[0];
+					{
+						var es = `;
+						{
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									walk[0](e);
+								};
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = px[0];
+					var ` = px[1];
+					{
+						var h = `;
+						var t = `;
+						{
+							walk[0](h);
+							walk[0](t);
+						};
+					};
+				};
+				case 5: {
+					var ` = px[0];
+					{
+						var kvs = `;
+						{
+							{
+								var ` = 0;
+								while (` < kvs.length) {
+									var kv = kvs[`];
+									++ `;
+									walk[0](kv.value);
+								};
+							};
+						};
+					};
+				};
+				case 6: {
+					var ` = px[0];
+					var ` = px[1];
+					{
+						var fs = `;
+						{
+							{
+								var ` = 0;
+								while (` < fs.length) {
+									var f = fs[`];
+									++ `;
+									walk[0](f.value);
+								};
+							};
+						};
+					};
+				};
+				case 7: {
+					var ` = px[0];
+					{
+						var inner = `;
+						{
+							walk[0](inner);
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		walk[0](p);
+		return out;
+	}
+
+	static function toSnake(s:String) {
+		if (s == null || s.length == 0) {
+			return s;
+		};
+		var buf = new StringBuf();
+		{
+			var ` = 0;
+			var ` = s.length;
+			while (` < `) {
+				var i = ` ++;
+				var c = s.substr(i, 1);
+				var lower = c.toLowerCase();
+				var upper = c.toUpperCase();
+				if (c == upper && c != lower) {
+					if (i != 0) {
+						buf.add("_");
+					};
+					buf.add(lower);
+				} else {
+					buf.add(c);
+				};
+			};
+		};
+		return buf.toString();
+	}
+}

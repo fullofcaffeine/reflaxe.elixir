@@ -1,0 +1,842 @@
+class reflaxe.elixir.ast.transformers.SupportModuleQualificationTransforms {
+
+	static inline function qualifyAppLocalModule(moduleName:String, appPrefix:String) {
+		return if ((moduleName == "Presence")) {
+			(appPrefix + "Web.Presence");
+		} else {
+			(appPrefix + "." + moduleName);
+		};
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		var defined = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var collect = [null];
+		collect[0] = function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (n == null || n.def == null) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case EModule(name, _, body):
+		defined.set(name, true);
+		for (b  in  body) collect(b);	
+	case EDefmodule(name, doBlock):
+		defined.set(name, true);
+		collect(doBlock);	
+	default:
+		switch (n.def) {
+			case EBlock(es):
+				for (e  in  es) collect(e);			
+			case ECase(e, cs):
+				collect(e);
+				for (c  in  cs) {
+					if (c.guard != null) collect(c.guard);
+					collect(c.body);
+				};			
+			case EIf(c, t, e):
+				collect(c);
+				collect(t);
+				if (e != null) collect(e);			
+			case EFn(cs):
+				for (cl  in  cs) collect(cl.body);			
+			case ECall(t, _, as):
+				if (t != null) collect(t);
+				if (as != null) for (a  in  as) collect(a);			
+			case ERemoteCall(m, _, as):
+				collect(m);
+				if (as != null) for (a  in  as) collect(a);			
+			default:
+		};	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var body = `;
+							{
+								{
+									defined.set(name, true);
+								};
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var b = body[`];
+										++ `;
+										collect[0](b);
+									};
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								{
+									defined.set(name, true);
+								};
+								collect[0](doBlock);
+							};
+						};
+					};
+					default: {
+						@:ast(switch (n.def) {
+	case EBlock(es):
+		for (e  in  es) collect(e);	
+	case ECase(e, cs):
+		collect(e);
+		for (c  in  cs) {
+			if (c.guard != null) collect(c.guard);
+			collect(c.body);
+		};	
+	case EIf(c, t, e):
+		collect(c);
+		collect(t);
+		if (e != null) collect(e);	
+	case EFn(cs):
+		for (cl  in  cs) collect(cl.body);	
+	case ECall(t, _, as):
+		if (t != null) collect(t);
+		if (as != null) for (a  in  as) collect(a);	
+	case ERemoteCall(m, _, as):
+		collect(m);
+		if (as != null) for (a  in  as) collect(a);	
+	default:
+}) {
+							var ` = n.def;
+							switch (enumIndex `) {
+								case 6: {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var e = `;
+										var cs = `;
+										{
+											collect[0](e);
+											{
+												var ` = 0;
+												while (` < cs.length) {
+													var c = cs[`];
+													++ `;
+													if (c.guard != null) {
+														collect[0](c.guard);
+													};
+													collect[0](c.body);
+												};
+											};
+										};
+									};
+								};
+								case 10: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var c = `;
+										var t = `;
+										var e = `;
+										{
+											collect[0](c);
+											collect[0](t);
+											if (e != null) {
+												collect[0](e);
+											};
+										};
+									};
+								};
+								case 22: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var t = `;
+										var as = `;
+										{
+											if (t != null) {
+												collect[0](t);
+											};
+											if (as != null) {
+												{
+													var ` = 0;
+													while (` < as.length) {
+														var a = as[`];
+														++ `;
+														collect[0](a);
+													};
+												};
+											};
+										};
+									};
+								};
+								case 24: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var m = `;
+										var as = `;
+										{
+											collect[0](m);
+											if (as != null) {
+												{
+													var ` = 0;
+													while (` < as.length) {
+														var a = as[`];
+														++ `;
+														collect[0](a);
+													};
+												};
+											};
+										};
+									};
+								};
+								case 42: {
+									var ` = `[0];
+									{
+										var cs = `;
+										{
+											{
+												var ` = 0;
+												while (` < cs.length) {
+													var cl = cs[`];
+													++ `;
+													collect[0](cl.body);
+												};
+											};
+										};
+									};
+								};
+								case 53: {
+									var ` = `[0];
+									{
+										var es = `;
+										{
+											{
+												var ` = 0;
+												while (` < es.length) {
+													var e = es[`];
+													++ `;
+													collect[0](e);
+												};
+											};
+										};
+									};
+								};
+								default: {}
+							};
+						};
+					}
+				};
+			};
+		};
+		collect[0](ast);
+		{};
+		{};
+		{};
+		{};
+		var rewriteIn = function(node:reflaxe.elixir.ast.ElixirAST, app:String) {
+			return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+				return @:ast(switch (n.def) {
+	case ERemoteCall({ def : EVar(moduleName) }, functionName, argumentList) if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+		var qualifiedModule = qualifyAppLocalModule(moduleName, app);
+		makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);	
+	case ECall({ def : EVar(moduleName) }, functionName, argumentList) if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+		var qualifiedModule = qualifyAppLocalModule(moduleName, app);
+		makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+					var ` = n.def;
+					switch (enumIndex `) {
+						case 22: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (` == null) {
+								n;
+							} else {
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var moduleName = `;
+										var functionName = `;
+										var argumentList = `;
+										if (moduleName != null && moduleName.indexOf(".", null) == -1 && moduleName.length > 0 && {
+											var c = moduleName.charAt(0);
+											c.toUpperCase() == c && c.toLowerCase() != c;
+										} && ! moduleName != null && {
+											var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+											cast this.exists(moduleName);
+										}) {
+											var qualifiedModule = if ((moduleName == "Presence")) {
+												(app + "Web.Presence");
+											} else {
+												(app + "." + moduleName);
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(qualifiedModule), metadata : {}, pos : pos};
+											}, functionName, argumentList), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+						case 24: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var moduleName = `;
+										var functionName = `;
+										var argumentList = `;
+										if (moduleName != null && moduleName.indexOf(".", null) == -1 && moduleName.length > 0 && {
+											var c = moduleName.charAt(0);
+											c.toUpperCase() == c && c.toLowerCase() != c;
+										} && ! moduleName != null && {
+											var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+											cast this.exists(moduleName);
+										}) {
+											var qualifiedModule = if ((moduleName == "Presence")) {
+												(app + "Web.Presence");
+											} else {
+												(app + "." + moduleName);
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(qualifiedModule), metadata : {}, pos : pos};
+											}, functionName, argumentList), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							};
+						};
+						default: {
+							n;
+						}
+					};
+				};
+			});
+		};
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body):
+		var eligible = isEctoContext(body) || moduleUsesRepo(body);
+		if (!eligible) return n;
+		var app = deriveApp();
+		if (app == null) return n;
+		var newBody = [for (b  in  body) rewriteIn(b, app)];
+		makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);	
+	case EDefmodule(name, doBlock):
+		var stmts:Array<ElixirAST> = switch (doBlock.def) {
+			case EBlock(es):
+				es;			
+			case EDo(es):
+				es;			
+			default:
+				[doBlock];			
+		};
+		var eligible2 = isEctoContext(stmts) || moduleUsesRepo(stmts);
+		if (!eligible2) return n;
+		var app2 = deriveApp();
+		if (app2 == null) return n;
+		var newDo = makeAST(EBlock([for (s  in  stmts) rewriteIn(s, app2)]));
+		makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							{
+								var eligible = {
+									var has = false;
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var s = body[`];
+											++ `;
+											@:ast(switch (s.def) {
+	case EDefp(nm, _, _, _) if (nm == "from" || nm == "where"):
+		has = true;	
+	case ERemoteCall({ def : EVar(m) }, _, _) if (m == "Ecto.Query"):
+		has = true;	
+	case ERaw(code) if (code != null && (code.indexOf("Ecto.Query") != -1 || code.indexOf("Repo.") != -1)):
+		has = true;	
+	default:
+}) {
+												var ` = s.def;
+												switch (enumIndex `) {
+													case 3: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														var ` = `[3];
+														{
+															var nm = `;
+															if (nm == "from" || nm == "where") {
+																has = true;
+															} else {};
+														};
+													};
+													case 24: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var m = `;
+																	if (m == "Ecto.Query") {
+																		has = true;
+																	} else {};
+																};
+															} else {};
+														};
+													};
+													case 62: {
+														var ` = `[0];
+														{
+															var code = `;
+															if (code != null && (code.indexOf("Ecto.Query", null) != -1 || code.indexOf("Repo.", null) != -1)) {
+																has = true;
+															} else {};
+														};
+													};
+													default: {}
+												};
+											};
+										};
+									};
+									has;
+								} || reflaxe.elixir.ast.transformers.SupportModuleQualificationTransforms.moduleUsesRepo(body);
+								if (! eligible) {
+									return n;
+								};
+								var app = {
+									var p = null;
+									try {
+										p = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+									} catch (`:Dynamic) {
+										{};
+										{};
+										if (true) {
+											{};
+											{};
+										} else throw `;
+									};
+									if (p == null) {
+										try {
+											var d = haxe.macro.Compiler.getDefine("app_name");
+											if (d != null && d.length > 0) {
+												p = d;
+											};
+										} catch (`:Dynamic) {
+											{};
+											{};
+											if (true) {
+												{};
+												{};
+											} else throw `;
+										};
+									};
+									p;
+								};
+								if (app == null) {
+									return n;
+								};
+								var newBody = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(rewriteIn(b, app));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							var doBlock = `;
+							{
+								var stmts = @:ast(switch (doBlock.def) {
+	case EBlock(es):
+		es;	
+	case EDo(es):
+		es;	
+	default:
+		[doBlock];	
+}) {
+									var ` = doBlock.def;
+									switch (enumIndex `) {
+										case 53: {
+											var ` = `[0];
+											{
+												var es = `;
+												{
+													es;
+												};
+											};
+										};
+										case 55: {
+											var ` = `[0];
+											{
+												var es = `;
+												{
+													es;
+												};
+											};
+										};
+										default: {
+											[doBlock];
+										}
+									};
+								};
+								var eligible2 = {
+									var has = false;
+									{
+										var ` = 0;
+										while (` < stmts.length) {
+											var s = stmts[`];
+											++ `;
+											@:ast(switch (s.def) {
+	case EDefp(nm, _, _, _) if (nm == "from" || nm == "where"):
+		has = true;	
+	case ERemoteCall({ def : EVar(m) }, _, _) if (m == "Ecto.Query"):
+		has = true;	
+	case ERaw(code) if (code != null && (code.indexOf("Ecto.Query") != -1 || code.indexOf("Repo.") != -1)):
+		has = true;	
+	default:
+}) {
+												var ` = s.def;
+												switch (enumIndex `) {
+													case 3: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														var ` = `[3];
+														{
+															var nm = `;
+															if (nm == "from" || nm == "where") {
+																has = true;
+															} else {};
+														};
+													};
+													case 24: {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															var ` = `.def;
+															var ` = `.metadata;
+															var ` = `.pos;
+															if (enumIndex ` == 38) {
+																var ` = `[0];
+																{
+																	var m = `;
+																	if (m == "Ecto.Query") {
+																		has = true;
+																	} else {};
+																};
+															} else {};
+														};
+													};
+													case 62: {
+														var ` = `[0];
+														{
+															var code = `;
+															if (code != null && (code.indexOf("Ecto.Query", null) != -1 || code.indexOf("Repo.", null) != -1)) {
+																has = true;
+															} else {};
+														};
+													};
+													default: {}
+												};
+											};
+										};
+									};
+									has;
+								} || reflaxe.elixir.ast.transformers.SupportModuleQualificationTransforms.moduleUsesRepo(stmts);
+								if (! eligible2) {
+									return n;
+								};
+								var app2 = {
+									var p = null;
+									try {
+										p = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+									} catch (`:Dynamic) {
+										{};
+										{};
+										if (true) {
+											{};
+											{};
+										} else throw `;
+									};
+									if (p == null) {
+										try {
+											var d = haxe.macro.Compiler.getDefine("app_name");
+											if (d != null && d.length > 0) {
+												p = d;
+											};
+										} catch (`:Dynamic) {
+											{};
+											{};
+											if (true) {
+												{};
+												{};
+											} else throw `;
+										};
+									};
+									p;
+								};
+								if (app2 == null) {
+									return n;
+								};
+								var newDo = {
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock({
+										var ` = [];
+										{
+											var ` = 0;
+											while ((` < stmts.length)) {
+												var s = stmts[`];
+												++ `;
+												`.push(rewriteIn(s, app2));
+											};
+										};
+										`;
+									});
+									var pos = null;
+									{def : def, metadata : {}, pos : pos};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name, newDo), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function moduleUsesRepo(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var found = [false];
+		var scan = [null];
+		scan[0] = function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] || x == null || x.def == null) {
+				return;
+			};
+			@:ast(switch (x.def) {
+	case ERemoteCall({ def : EVar(m) }, _, _):
+		if (m == "Repo" || (m != null && m.indexOf(".Repo") > 0)) found = true;	
+	case ERaw(code) if (code != null && code.indexOf("Repo.") != -1):
+		found = true;	
+	case ECall(t, _, args):
+		if (t != null) scan(t);
+		if (args != null) for (a  in  args) scan(a);	
+	case ERemoteCall(m2, _, args2):
+		scan(m2);
+		if (args2 != null) for (a  in  args2) scan(a);	
+	case EBlock(es):
+		for (e  in  es) scan(e);	
+	case EIf(c, t, e):
+		scan(c);
+		scan(t);
+		if (e != null) scan(e);	
+	case ECase(e, cs):
+		scan(e);
+		for (c  in  cs) {
+			if (c.guard != null) scan(c.guard);
+			scan(c.body);
+		};	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							var cs = `;
+							{
+								scan[0](e);
+								{
+									var ` = 0;
+									while (` < cs.length) {
+										var c = cs[`];
+										++ `;
+										if (c.guard != null) {
+											scan[0](c.guard);
+										};
+										scan[0](c.body);
+									};
+								};
+							};
+						};
+					};
+					case 10: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var c = `;
+							var t = `;
+							var e = `;
+							{
+								scan[0](c);
+								scan[0](t);
+								if (e != null) {
+									scan[0](e);
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var t = `;
+							var args = `;
+							{
+								if (t != null) {
+									scan[0](t);
+								};
+								if (args != null) {
+									{
+										var ` = 0;
+										while (` < args.length) {
+											var a = args[`];
+											++ `;
+											scan[0](a);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var m = `;
+									{
+										if (m == "Repo" || (m != null && m.indexOf(".Repo", null) > 0)) {
+											found[0] = true;
+										};
+									};
+								};
+							} else {
+								var m2 = `;
+								var args2 = `;
+								{
+									scan[0](m2);
+									if (args2 != null) {
+										{
+											var ` = 0;
+											while (` < args2.length) {
+												var a = args2[`];
+												++ `;
+												scan[0](a);
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var es = `;
+							{
+								{
+									var ` = 0;
+									while (` < es.length) {
+										var e = es[`];
+										++ `;
+										scan[0](e);
+									};
+								};
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							if (code != null && code.indexOf("Repo.", null) != -1) {
+								found[0] = true;
+							} else {};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				scan[0](s);
+			};
+		};
+		return found[0];
+	}
+}

@@ -1,0 +1,302 @@
+class reflaxe.elixir.ast.transformers.DiscriminantRewriteTransforms {
+
+	public static function discriminantRewritePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			if (node == null || node.def == null) {
+				return node;
+			};
+			return @:ast(switch (node.def) {
+	case EBlock(exprs) if (exprs.length >= 1):
+		var i = 0;
+		var out = [];
+		while (i < exprs.length) {
+			if (i < exprs.length - 1) {
+				switch (exprs[i].def) {
+					case EMatch(PVar(varName), initExpr):
+						if (ElixirASTBuilder.isTempPatternVarName(varName)) {
+							switch (exprs[i + 1].def) {
+								case ECase(caseExpr, clauses):
+									switch (caseExpr.def) {
+										case EVar(v) if (v == varName):
+											out.push(makeASTWithMeta(ECase(initExpr, clauses), exprs[i + 1].metadata, exprs[i + 1].pos));
+											i += 2;
+											continue;										
+										default:
+									};								
+								default:
+							};
+						};					
+					default:
+				};
+			};
+			out.push(exprs[i]);
+			i++;
+		};
+		var changed = false;
+		var finalExprs = [];
+		for (idx  in  0 ... out.length) {
+			var e = out[idx];
+			switch (e.def) {
+				case ECase(caseExpr, clauses):
+					switch (caseExpr.def) {
+						case EVar(v) if (ElixirASTBuilder.isTempPatternVarName(v)):
+							var j = idx - 1;
+							var foundInit:Null<ElixirAST> = null;
+							while (j >= 0) {
+								switch (out[j].def) {
+									case EMatch(PVar(n), init) if (namesMatch(n, v)):
+										foundInit = init;
+										break;									
+									default:
+								};
+								if (foundInit != null) break;
+								j--;
+							};
+							if (foundInit != null) {
+								finalExprs.push(makeASTWithMeta(ECase(foundInit, clauses), e.metadata, e.pos));
+								changed = true;
+								continue;
+							};						
+						default:
+					};				
+				default:
+			};
+			finalExprs.push(e);
+		};
+		if (changed || out.length != exprs.length) makeASTWithMeta(EBlock(finalExprs), node.metadata, node.pos) else node;	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var exprs = `;
+						if (exprs.length >= 1) {
+							var i = 0;
+							var out = [];
+							while (i < exprs.length) {
+								if (i < exprs.length - 1) {
+									@:ast(switch (exprs[i].def) {
+	case EMatch(PVar(varName), initExpr):
+		if (ElixirASTBuilder.isTempPatternVarName(varName)) {
+			switch (exprs[i + 1].def) {
+				case ECase(caseExpr, clauses):
+					switch (caseExpr.def) {
+						case EVar(v) if (v == varName):
+							out.push(makeASTWithMeta(ECase(initExpr, clauses), exprs[i + 1].metadata, exprs[i + 1].pos));
+							i += 2;
+							continue;						
+						default:
+					};				
+				default:
+			};
+		};	
+	default:
+}) {
+										var ` = exprs[i].def;
+										if (enumIndex ` == 8) {
+											var ` = `[0];
+											var ` = `[1];
+											if (enumIndex ` == 0) {
+												var ` = `[0];
+												{
+													var varName = `;
+													var initExpr = `;
+													{
+														if (reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(varName)) {
+															@:ast(switch (exprs[i + 1].def) {
+	case ECase(caseExpr, clauses):
+		switch (caseExpr.def) {
+			case EVar(v) if (v == varName):
+				out.push(makeASTWithMeta(ECase(initExpr, clauses), exprs[i + 1].metadata, exprs[i + 1].pos));
+				i += 2;
+				continue;			
+			default:
+		};	
+	default:
+}) {
+																var ` = exprs[i + 1].def;
+																if (enumIndex ` == 6) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	{
+																		var caseExpr = `;
+																		var clauses = `;
+																		{
+																			@:ast(switch (caseExpr.def) {
+	case EVar(v) if (v == varName):
+		out.push(makeASTWithMeta(ECase(initExpr, clauses), exprs[i + 1].metadata, exprs[i + 1].pos));
+		i += 2;
+		continue;	
+	default:
+}) {
+																				var ` = caseExpr.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var v = `;
+																						if (v == varName) {
+																							out.push({def : reflaxe.elixir.ast.ElixirASTDef.ECase(initExpr, clauses), metadata : exprs[i + 1].metadata, pos : exprs[i + 1].pos});
+																							i += 2;
+																							continue;
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														};
+													};
+												};
+											} else {};
+										} else {};
+									};
+								};
+								out.push(exprs[i]);
+								i ++;
+							};
+							var changed = false;
+							var finalExprs = [];
+							{
+								var ` = 0;
+								var ` = out.length;
+								while (` < `) {
+									var idx = ` ++;
+									var e = out[idx];
+									@:ast(switch (e.def) {
+	case ECase(caseExpr, clauses):
+		switch (caseExpr.def) {
+			case EVar(v) if (ElixirASTBuilder.isTempPatternVarName(v)):
+				var j = idx - 1;
+				var foundInit:Null<ElixirAST> = null;
+				while (j >= 0) {
+					switch (out[j].def) {
+						case EMatch(PVar(n), init) if (namesMatch(n, v)):
+							foundInit = init;
+							break;						
+						default:
+					};
+					if (foundInit != null) break;
+					j--;
+				};
+				if (foundInit != null) {
+					finalExprs.push(makeASTWithMeta(ECase(foundInit, clauses), e.metadata, e.pos));
+					changed = true;
+					continue;
+				};			
+			default:
+		};	
+	default:
+}) {
+										var ` = e.def;
+										if (enumIndex ` == 6) {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var caseExpr = `;
+												var clauses = `;
+												{
+													@:ast(switch (caseExpr.def) {
+	case EVar(v) if (ElixirASTBuilder.isTempPatternVarName(v)):
+		var j = idx - 1;
+		var foundInit:Null<ElixirAST> = null;
+		while (j >= 0) {
+			switch (out[j].def) {
+				case EMatch(PVar(n), init) if (namesMatch(n, v)):
+					foundInit = init;
+					break;				
+				default:
+			};
+			if (foundInit != null) break;
+			j--;
+		};
+		if (foundInit != null) {
+			finalExprs.push(makeASTWithMeta(ECase(foundInit, clauses), e.metadata, e.pos));
+			changed = true;
+			continue;
+		};	
+	default:
+}) {
+														var ` = caseExpr.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var v = `;
+																if (reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(v)) {
+																	var j = idx - 1;
+																	var foundInit = null;
+																	while (j >= 0) {
+																		@:ast(switch (out[j].def) {
+	case EMatch(PVar(n), init) if (namesMatch(n, v)):
+		foundInit = init;
+		break;	
+	default:
+}) {
+																			var ` = out[j].def;
+																			if (enumIndex ` == 8) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				if (enumIndex ` == 0) {
+																					var ` = `[0];
+																					{
+																						var n = `;
+																						var init = `;
+																						if (if (n == v) {
+																							true;
+																						} else {
+																							(n.charAt(0) == "_" && n.substr(1, null) == v) || (v.charAt(0) == "_" && v.substr(1, null) == n);
+																						}) {
+																							foundInit = init;
+																							break;
+																						} else {};
+																					};
+																				} else {};
+																			} else {};
+																		};
+																		if (foundInit != null) {
+																			break;
+																		};
+																		j --;
+																	};
+																	if (foundInit != null) {
+																		finalExprs.push({def : reflaxe.elixir.ast.ElixirASTDef.ECase(foundInit, clauses), metadata : e.metadata, pos : e.pos});
+																		changed = true;
+																		continue;
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												};
+											};
+										} else {};
+									};
+									finalExprs.push(e);
+								};
+							};
+							if (changed || out.length != exprs.length) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(finalExprs), metadata : node.metadata, pos : node.pos};
+							} else {
+								node;
+							};
+						} else {
+							node;
+						};
+					};
+				} else {
+					node;
+				};
+			};
+		});
+	}
+
+	static inline function namesMatch(a:String, b:String) {
+		if (a == b) {
+			return true;
+		};
+		return (a.charAt(0) == "_" && a.substr(1, null) == b) || (b.charAt(0) == "_" && b.substr(1, null) == a);
+	}
+}

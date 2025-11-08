@@ -1,0 +1,284 @@
+class reflaxe.elixir.ast.transformers.PresenceInitMetasInGetUsersEditingTodoTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (looksPresence(n, name)):
+		var nb = [for (b  in  body) applyToDefs(b)];
+		makeASTWithMeta(EModule(name, attrs, nb), n.metadata, n.pos);	
+	case EDefmodule(name2, doBlock) if (looksPresence(n, name2)):
+		makeASTWithMeta(EDefmodule(name2, applyToDefs(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (({
+								var tmp = n.metadata;
+								if (tmp != null) tmp.isPresence else null;
+							} == true) || (name != null && name.indexOf("Web.Presence", null) > 0) || StringTools.endsWith(name, ".Presence")) {
+								var nb = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.PresenceInitMetasInGetUsersEditingTodoTransforms.applyToDefs(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, nb), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							if (({
+								var tmp = n.metadata;
+								if (tmp != null) tmp.isPresence else null;
+							} == true) || (name2 != null && name2.indexOf("Web.Presence", null) > 0) || StringTools.endsWith(name2, ".Presence")) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, reflaxe.elixir.ast.transformers.PresenceInitMetasInGetUsersEditingTodoTransforms.applyToDefs(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function looksPresence(node:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return ({
+			var tmp = node.metadata;
+			if (tmp != null) tmp.isPresence else null;
+		} == true) || (name != null && name.indexOf("Web.Presence", null) > 0) || StringTools.endsWith(name, ".Presence");
+	}
+
+	static function applyToDefs(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EDef("get_users_editing_todo", args, guards, body) if (args != null && args.length == 2):
+		var init = makeAST(EBinary(Match, makeAST(EVar("metas")), makeAST(EList([]))));
+		var nb = prependInitAndFixTail(body, init, "metas");
+		makeASTWithMeta(EDef("get_users_editing_todo", args, guards, nb), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					if (` == "get_users_editing_todo") {
+						{
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (args != null && args.length == 2) {
+								var init = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("metas"), metadata : {}, pos : pos};
+									}, {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+									}), metadata : {}, pos : pos};
+								};
+								var nb = reflaxe.elixir.ast.transformers.PresenceInitMetasInGetUsersEditingTodoTransforms.prependInitAndFixTail(body, init, "metas");
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef("get_users_editing_todo", args, guards, nb), metadata : x.metadata, pos : x.pos};
+							} else {
+								x;
+							};
+						};
+					} else {
+						x;
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+
+	static function prependInitAndFixTail(body:reflaxe.elixir.ast.ElixirAST, init:reflaxe.elixir.ast.ElixirAST, varName:String) {
+		var withInit = @:ast(switch (body.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock([init].concat(stmts)), body.metadata, body.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo([init].concat(stmts2)), body.metadata, body.pos);	
+	default:
+		makeASTWithMeta(EBlock([init, body]), body.metadata, body.pos);	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock([init].concat(stmts));
+								var meta = body.metadata;
+								var pos = body.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts2 = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EDo([init].concat(stmts2));
+								var meta = body.metadata;
+								var pos = body.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				default: {
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([init, body]), metadata : body.metadata, pos : body.pos};
+				}
+			};
+		};
+		return @:ast(switch (withInit.def) {
+	case EBlock(stmts) if (stmts.length > 0):
+		var last = stmts[stmts.length - 1];
+		var newLast = switch (last.def) {
+			case EList(_):
+				makeAST(EVar(varName));			
+			default:
+				last;			
+		};
+		var prefix = stmts.copy();
+		prefix.pop();
+		makeASTWithMeta(EBlock(prefix.concat([newLast])), withInit.metadata, withInit.pos);	
+	case EDo(stmts2) if (stmts2.length > 0):
+		var last2 = stmts2[stmts2.length - 1];
+		var newLast2 = switch (last2.def) {
+			case EList(_):
+				makeAST(EVar(varName));			
+			default:
+				last2;			
+		};
+		var prefix2 = stmts2.copy();
+		prefix2.pop();
+		makeASTWithMeta(EDo(prefix2.concat([newLast2])), withInit.metadata, withInit.pos);	
+	default:
+		withInit;	
+}) {
+			var ` = withInit.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						if (stmts.length > 0) {
+							var last = stmts[stmts.length - 1];
+							var newLast = @:ast(switch (last.def) {
+	case EList(_):
+		makeAST(EVar(varName));	
+	default:
+		last;	
+}) {
+								var ` = last.def;
+								if (enumIndex ` == 15) {
+									var ` = `[0];
+									{
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+										};
+									};
+								} else {
+									last;
+								};
+							};
+							var prefix = stmts.copy();
+							prefix.pop();
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(prefix.concat([newLast]));
+								var meta = withInit.metadata;
+								var pos = withInit.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							withInit;
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts2 = `;
+						if (stmts2.length > 0) {
+							var last2 = stmts2[stmts2.length - 1];
+							var newLast2 = @:ast(switch (last2.def) {
+	case EList(_):
+		makeAST(EVar(varName));	
+	default:
+		last2;	
+}) {
+								var ` = last2.def;
+								if (enumIndex ` == 15) {
+									var ` = `[0];
+									{
+										{
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+										};
+									};
+								} else {
+									last2;
+								};
+							};
+							var prefix2 = stmts2.copy();
+							prefix2.pop();
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EDo(prefix2.concat([newLast2]));
+								var meta = withInit.metadata;
+								var pos = withInit.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							withInit;
+						};
+					};
+				};
+				default: {
+					withInit;
+				}
+			};
+		};
+	}
+}

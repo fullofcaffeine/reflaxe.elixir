@@ -1,0 +1,487 @@
+class reflaxe.output.OutputManager {
+
+	public function new(compiler:reflaxe.BaseCompiler) {
+		this.lastId = -1;
+		this.changed = false;
+		this.outputMetadata = null;
+		this.outputFiles = [];
+		this.outputDir = null;
+		this.GENERATED_LIST_FILENAME = "_GeneratedFiles.json";
+		this.compiler = compiler;
+	}
+
+	@:value("_GeneratedFiles.json")
+	public var GENERATED_LIST_FILENAME(default,ctor):String;
+
+	public var compiler(default,null):reflaxe.BaseCompiler;
+
+	@:value(null)
+	public var outputDir(default,null):Null<String>;
+
+	@:value([])
+	var outputFiles:Array<String>;
+
+	@:value(null)
+	var outputMetadata:Null<reflaxe.output.OutputMetadata>;
+
+	@:value(false)
+	var changed:Bool;
+
+	@:value(-1)
+	var lastId:Int;
+
+	var options(get,never):reflaxe.BaseCompilerOptions;
+
+	function get_options() return this.compiler.options
+
+	public function setOutputDir(outputDir:String) {
+		this.outputDir = outputDir;
+		this.checkForOldFiles();
+	}
+
+	function checkForOldFiles() {
+		if (this.shouldDeleteOldOutput()) {
+			this.outputMetadata = this.generatedFilesList();
+			this.lastId = @:mergeBlock {
+				var tmp = {
+					this.outputMetadata.id;
+				};
+				if (tmp != null) tmp else {
+					-1;
+				};
+			};
+		};
+	}
+
+	function shouldDeleteOldOutput() {
+		return this.get_options().fileOutputType != reflaxe.BaseCompilerFileOutputType.SingleFile && this.get_options().deleteOldOutput;
+	}
+
+	function generatedFilesList() {
+		var path = this.generatedFilesPath();
+		if (sys.FileSystem.exists(path)) {
+			return try {
+				(cast {
+					var text = sys.io.File.getContent(path);
+					new haxe.format.JsonParser(text).doParse();
+				});
+			} catch (`:Dynamic) {
+				{};
+				{};
+				if (true) {
+					this.defaultGeneratedData();
+				} else throw `;
+			};
+		};
+		return this.defaultGeneratedData();
+	}
+
+	function defaultGeneratedData() {
+		return {version : 1, id : 0, wasCached : false, filesGenerated : []};
+	}
+
+	function generatedFilesPath() {
+		return reflaxe.output.OutputManager.joinPaths({
+			var maybe = this.outputDir;
+			if (maybe != null) {
+				maybe;
+			} else {
+				"";
+			};
+		}, this.GENERATED_LIST_FILENAME);
+	}
+
+	function ensureOutputDirExists() {
+		if (this.outputDir != null && ! sys.FileSystem.exists(this.outputDir)) {
+			sys.FileSystem.createDirectory(this.outputDir);
+		};
+	}
+
+	public function generateFiles() {
+		@:ast(switch (options.fileOutputType) {
+	case Manual:
+		{
+			compiler.generateFilesManually();
+		};	
+	case SingleFile:
+		{
+			generateSingleFile();
+		};	
+	case FilePerModule:
+		{
+			generateFilePerModule();
+		};	
+	case FilePerClass:
+		{
+			generateFilePerClass();
+		};	
+}) {
+			var ` = this.get_options().fileOutputType;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					{
+						{
+							this.compiler.generateFilesManually();
+						};
+					};
+				};
+				case 1: {
+					{
+						{
+							this.generateSingleFile();
+						};
+					};
+				};
+				case 2: {
+					{
+						{
+							this.generateFilePerModule();
+						};
+					};
+				};
+				case 3: {
+					{
+						{
+							this.generateFilePerClass();
+						};
+					};
+				};
+			};
+		};
+		{
+			var ` = {
+				var this = this.compiler.extraFiles;
+				cast new haxe.iterators.MapKeyValueIterator(cast this);
+			};
+			while (`.hasNext()) {
+				var ` = `.next();
+				var path = `.key;
+				var content = `.value;
+				{
+					var keys = [];
+					{
+						var ` = cast new haxe.iterators.MapKeyValueIterator(content);
+						while (`.hasNext()) {
+							var ` = `.next();
+							var priority = `.key;
+							var cpp = `.value;
+							{
+								if (StringTools.trim(cpp).length > 0) {
+									keys.push(priority);
+								};
+							};
+						};
+					};
+					keys.sort(function(a:Int, b:Int) return a - b);
+					var result = [];
+					{
+						var ` = 0;
+						while (` < keys.length) {
+							var k = keys[`];
+							++ `;
+							var c = cast content.get(k);
+							if (c != null && StringTools.trim(c).length > 0) {
+								result.push(c);
+							};
+						};
+					};
+					this.saveFile(path, @:implicitCast reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString(result.join("\n\n")));
+				};
+			};
+		};
+		if (this.shouldDeleteOldOutput()) {
+			this.deleteOldOutputFiles();
+			this.recordAllOutputMetadata();
+		};
+	}
+
+	function generateSingleFile() {
+		var filePath = {
+			if (this.outputDir != null && (this.get_options().fileOutputExtension.length == 0 || StringTools.endsWith(this.outputDir, this.get_options().fileOutputExtension))) {
+				var file = haxe.io.Path.withoutDirectory(this.outputDir);
+				this.outputDir = haxe.io.Path.directory(this.outputDir);
+				file;
+			} else {
+				this.get_options().defaultOutputFilename;
+			};
+		};
+		if (this.outputDir != null && this.outputDir.length > 0) {
+			this.ensureOutputDirExists();
+		};
+		var arr = [];
+		for (o in this.compiler.generateOutputIterator()) {
+			arr.push(o.data);
+		};
+		this.saveFile(filePath, reflaxe.output.OutputManager.joinStringOrBytes(arr));
+	}
+
+	function generateFilePerModule() {
+		this.ensureOutputDirExists();
+		var files = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		for (c in this.compiler.generateOutputIterator()) {
+			var mid = reflaxe.helpers.BaseTypeHelper.moduleId(c.baseType);
+			var filename = (if (c.overrideDirectory != null) {
+				c.overrideDirectory + "/";
+			} else {
+				"";
+			}) + (@:mergeBlock {
+				var tmp = {
+					c.overrideFileName;
+				};
+				if (tmp != null) tmp else {
+					mid;
+				};
+			});
+			if (! files.exists(filename)) {
+				{
+					var v = [];
+					files.set(filename, v);
+					v;
+				};
+			};
+			var f = cast files.get(filename);
+			if (f != null) {
+				f.push(c.data);
+			};
+		};
+		{
+			var ` = cast new haxe.iterators.MapKeyValueIterator(files);
+			while (`.hasNext()) {
+				var ` = `.next();
+				var moduleId = `.key;
+				var outputList = `.value;
+				{
+					this.saveFile(this.getFileName(moduleId), reflaxe.output.OutputManager.joinStringOrBytes(outputList));
+				};
+			};
+		};
+	}
+
+	function generateFilePerClass() {
+		this.ensureOutputDirExists();
+		for (c in this.compiler.generateOutputIterator()) {
+			var filename = {
+				var defaultName = reflaxe.helpers.BaseTypeHelper.globalName(c.baseType, null);
+				(if (c.overrideDirectory != null) {
+					c.overrideDirectory + "/";
+				} else {
+					"";
+				}) + (@:mergeBlock {
+					var tmp = {
+						c.overrideFileName;
+					};
+					if (tmp != null) tmp else {
+						defaultName;
+					};
+				});
+			};
+			this.saveFile(this.getFileName(filename), c.data);
+		};
+	}
+
+	inline function overrideFileName(defaultName:String, o:{ overrideFileName : Null<String>, overrideDirectory : Null<String> }) {
+		return (if (o.overrideDirectory != null) {
+			o.overrideDirectory + "/";
+		} else {
+			"";
+		}) + (@:mergeBlock {
+			var tmp = {
+				o.overrideFileName;
+			};
+			if (tmp != null) tmp else {
+				defaultName;
+			};
+		});
+	}
+
+	function getFileName(filename:String) {
+		return filename + this.get_options().fileOutputExtension;
+	}
+
+	public function saveFile(path:String, content:reflaxe.output.StringOrBytes) {
+		var sanitizedPath = path;
+		if (StringTools.startsWith(path, "/") && path.length > 1) {
+			var isRealAbsolutePath = StringTools.startsWith(path, "/Users/") || StringTools.startsWith(path, "/tmp/") || StringTools.startsWith(path, "/var/") || StringTools.startsWith(path, "/home/") || StringTools.startsWith(path, "/opt/");
+			if (! isRealAbsolutePath) {
+				sanitizedPath = path.substring(1, null);
+			};
+		};
+		var p = if (haxe.io.Path.isAbsolute(sanitizedPath)) {
+			sanitizedPath;
+		} else {
+			if (this.outputDir != null) {
+				reflaxe.output.OutputManager.joinPaths(this.outputDir, sanitizedPath);
+			} else {
+				sanitizedPath;
+			};
+		};
+		var dir = haxe.io.Path.directory(p);
+		if (! sys.FileSystem.exists(dir)) {
+			sys.FileSystem.createDirectory(dir);
+		};
+		this.saveFileImpl(p, content);
+	}
+
+	function saveFileImpl(path:String, content:reflaxe.output.StringOrBytes) {
+		if (! sys.FileSystem.exists(path) || ! reflaxe.output._StringOrBytes.StringOrBytes_Impl_.matchesFile(content, path)) {
+			reflaxe.output._StringOrBytes.StringOrBytes_Impl_.save(content, path);
+			this.changed = true;
+		};
+		if (this.shouldDeleteOldOutput()) {
+			this.recordOutputFile(path);
+		};
+	}
+
+	function recordOutputFile(path:String) {
+		if (this.outputDir == null) {
+			return;
+		};
+		var dir = if (StringTools.endsWith(this.outputDir, "/")) {
+			this.outputDir;
+		} else {
+			(this.outputDir + "/");
+		};
+		var outputFilePath = StringTools.replace(path, dir, "");
+		this.outputFiles.push(outputFilePath);
+		if (this.outputMetadata != null) {
+			if (reflaxe.ReflectCompiler.isCachedRebuild) {} else {
+				if (this.outputMetadata.filesGenerated.contains(outputFilePath)) {
+					this.outputMetadata.filesGenerated.remove(outputFilePath);
+				};
+			};
+		};
+	}
+
+	function deleteOldOutputFiles() {
+		if (reflaxe.ReflectCompiler.isCachedRebuild) {
+			return;
+		};
+		if (this.outputMetadata != null && this.outputDir != null) {
+			{
+				var ` = 0;
+				var ` = this.outputMetadata.filesGenerated;
+				while (` < `.length) {
+					var file = `[`];
+					++ `;
+					var filePath = reflaxe.output.OutputManager.joinPaths(this.outputDir, file);
+					if (sys.FileSystem.exists(filePath)) {
+						try {
+							sys.FileSystem.deleteFile(filePath);
+						} catch (`:Dynamic) {
+							var ` = haxe.Exception.caught(`);
+							{};
+							if (true) {
+								var e = cast `;
+								{
+									haxe.macro.Context.warning("Could not delete file at \"" + filePath + "\".\n" + Std.string(e), haxe.macro.Context.currentPos(), null);
+								};
+							} else throw `;
+						};
+					};
+				};
+			};
+		};
+	}
+
+	function recordAllOutputMetadata() {
+		if (! this.changed) {
+			Sys.println("No files updated.");
+		};
+		if (this.outputFiles.length <= 0) {
+			return;
+		};
+		var outputMetadata = {version : 1, id : 0, wasCached : reflaxe.ReflectCompiler.isCachedRebuild, filesGenerated : []};
+		if (reflaxe.ReflectCompiler.isCachedRebuild) {
+			{
+				var ` = 0;
+				var ` = this.outputFiles;
+				while (` < `.length) {
+					var outputFile = `[`];
+					++ `;
+					if (! outputMetadata.filesGenerated.contains(outputFile)) {
+						outputMetadata.filesGenerated.push(outputFile);
+					};
+				};
+			};
+			Sys.println("Only recompiled " + this.outputFiles.length + " file" + (if (this.outputFiles.length != 1) {
+				"s";
+			} else {
+				"";
+			}) + ".");
+		} else {
+			outputMetadata.filesGenerated = this.outputFiles;
+		};
+		sys.io.File.saveContent(this.generatedFilesPath(), {
+			var replacer = null;
+			haxe.format.JsonPrinter.print(cast outputMetadata, replacer, "\t");
+		});
+	}
+
+	static function joinPaths(path1:String, path2:String) {
+		return haxe.io.Path.join([path1, path2]);
+	}
+
+	static function joinStringOrBytes(list:Array<reflaxe.output.StringOrBytes>) {
+		var strings = [];
+		var bytes = [];
+		{
+			var ` = 0;
+			while (` < list.length) {
+				var o = list[`];
+				++ `;
+				@:ast(switch (o.data()) {
+	case String(s):
+		strings.push(s);	
+	case Bytes(b):
+		bytes.push(b);	
+}) {
+					var ` = cast o;
+					switch (@:exhaustive enumIndex `) {
+						case 0: {
+							var ` = `[0];
+							{
+								var s = `;
+								{
+									strings.push(s);
+								};
+							};
+						};
+						case 1: {
+							var ` = `[0];
+							{
+								var b = `;
+								{
+									bytes.push(b);
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+		if (strings.length > 0 && bytes.length > 0) {
+			throw "Cannot mix String and Bytes outputs for join.";
+		};
+		return if (strings.length > 0) @:implicitCast reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString({
+			strings.join("\n\n");
+		}) else {
+			if (bytes.length > 0) @:implicitCast reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromBytes({
+				var bb = new haxe.io.BytesBuffer();
+				{
+					var ` = 0;
+					while (` < bytes.length) {
+						var b = bytes[`];
+						++ `;
+						bb.add(b);
+					};
+				};
+				bb.getBytes();
+			}) else @:implicitCast reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString({
+				"";
+			});
+		};
+	}
+}

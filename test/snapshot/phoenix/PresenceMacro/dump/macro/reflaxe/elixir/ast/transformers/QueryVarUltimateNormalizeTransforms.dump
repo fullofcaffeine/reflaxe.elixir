@@ -1,0 +1,281 @@
+class reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var p = detectQueryParam(args);
+		if (p == null) n else makeASTWithMeta(EDef(name, args, guards, rewrite(body, p)), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var p2 = detectQueryParam(args2);
+		if (p2 == null) n else makeASTWithMeta(EDefp(name2, args2, guards2, rewrite(body2, p2)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var p = reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.detectQueryParam(args);
+								if (p == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.rewrite(body, p));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var p2 = reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.detectQueryParam(args2);
+								if (p2 == null) {
+									n;
+								} else {
+									{
+										var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.rewrite(body2, p2));
+										var meta = n.metadata;
+										var pos = n.pos;
+										{def : def, metadata : meta, pos : pos};
+									};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function detectQueryParam(args:Array<reflaxe.elixir.ast.EPattern>) {
+		if (args == null) {
+			return null;
+		};
+		var found = null;
+		var count = 0;
+		{
+			var ` = 0;
+			while (` < args.length) {
+				var a = args[`];
+				++ `;
+				@:ast(switch (a) {
+	case PVar(n) if (StringTools.endsWith(n, "_query")):
+		found = n;
+		count++;	
+	default:
+}) if (enumIndex a == 0) {
+					var ` = a[0];
+					{
+						var n = `;
+						if (StringTools.endsWith(n, "_query")) {
+							found = n;
+							count ++;
+						} else {};
+					};
+				} else {};
+			};
+		};
+		return if (count == 1) {
+			found;
+		} else {
+			null;
+		};
+	}
+
+	static function hasSelfDowncase(body:reflaxe.elixir.ast.ElixirAST, param:String) {
+		var yes = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (yes[0]) {
+				return x;
+			};
+			@:ast(switch (x.def) {
+	case EBinary(Match, { def : EVar(lhs) }, rhs) if (lhs == param):
+		if (isDowncaseOfParam(param, rhs)) yes = true;	
+	case EMatch(PVar(lhs2), rhs2) if (lhs2 == param):
+		if (isDowncaseOfParam(param, rhs2)) yes = true;	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							{
+								var lhs2 = `;
+								var rhs2 = `;
+								if (lhs2 == param) {
+									if (reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.isDowncaseOfParam(param, rhs2)) {
+										yes[0] = true;
+									};
+								} else {};
+							};
+						} else {};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var ` = `.def;
+								var ` = `.metadata;
+								var ` = `.pos;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var lhs = `;
+										var rhs = `;
+										if (lhs == param) {
+											if (reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.isDowncaseOfParam(param, rhs)) {
+												yes[0] = true;
+											};
+										} else {};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+			return x;
+		});
+		return yes[0];
+	}
+
+	static function isDowncaseOfParam(param:String, e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall({ def : EVar(m) }, "downcase", args) if (m == "String" && args != null && args.length == 1):
+		switch (args[0].def) {
+			case EVar(v) if (v == param):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "downcase") {
+							{
+								var m = `;
+								var args = `;
+								if (m == "String" && args != null && args.length == 1) {
+									@:ast(switch (args[0].def) {
+	case EVar(v) if (v == param):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = args[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var v = `;
+												if (v == param) {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function rewrite(body:reflaxe.elixir.ast.ElixirAST, param:String) {
+		var preferParam = reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.hasSelfDowncase(body, param);
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(nm) if (nm == "query"):
+		Sys.println("[QueryUltimateNormalize] query -> " + (preferParam ? param : ("String.downcase(" + param + ")")));
+		if (preferParam) makeASTWithMeta(EVar(param), x.metadata, x.pos) else makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar(param))]), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var nm = `;
+						if (nm == "query") {
+							Sys.println("[QueryUltimateNormalize] query -> " + (if (preferParam) {
+								param;
+							} else {
+								("String.downcase(" + param + ")");
+							}));
+							if (preferParam) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar(param), metadata : x.metadata, pos : x.pos};
+							} else {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("String"), metadata : {}, pos : pos};
+								}, "downcase", [{
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(param), metadata : {}, pos : pos};
+								}]), metadata : x.metadata, pos : x.pos};
+							};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

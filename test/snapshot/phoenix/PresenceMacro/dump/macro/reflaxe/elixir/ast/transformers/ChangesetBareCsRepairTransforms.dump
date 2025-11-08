@@ -1,0 +1,192 @@
+class reflaxe.elixir.ast.transformers.ChangesetBareCsRepairTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body) if (name == "changeset" && args != null && args.length >= 2):
+		var repaired = repairBody(args, body);
+		repaired == null ? n : makeASTWithMeta(EDef(name, args, guards, repaired), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2) if (name2 == "changeset" && args2 != null && args2.length >= 2):
+		var repaired2 = repairBody(args2, body2);
+		repaired2 == null ? n : makeASTWithMeta(EDefp(name2, args2, guards2, repaired2), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							if (name == "changeset" && args != null && args.length >= 2) {
+								var repaired = reflaxe.elixir.ast.transformers.ChangesetBareCsRepairTransforms.repairBody(args, body);
+								if (repaired == null) {
+									n;
+								} else {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, repaired), metadata : n.metadata, pos : n.pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							if (name2 == "changeset" && args2 != null && args2.length >= 2) {
+								var repaired2 = reflaxe.elixir.ast.transformers.ChangesetBareCsRepairTransforms.repairBody(args2, body2);
+								if (repaired2 == null) {
+									n;
+								} else {
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, repaired2), metadata : n.metadata, pos : n.pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function repairBody(args:Array<reflaxe.elixir.ast.EPattern>, body:reflaxe.elixir.ast.ElixirAST) {
+		{};
+		var p1 = {
+			var p = args[0];
+			@:ast(switch (p) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) if (enumIndex p == 0) {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+		var p2 = {
+			var p = args[1];
+			@:ast(switch (p) {
+	case PVar(n):
+		n;	
+	default:
+		null;	
+}) if (enumIndex p == 0) {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						n;
+					};
+				};
+			} else {
+				null;
+			};
+		};
+		if (p1 == null || p2 == null) {
+			return null;
+		};
+		var isBareCs = @:ast(switch (body.def) {
+	case EVar(v) if (v == "cs"):
+		true;	
+	case EBlock(stmts) if (stmts.length > 0):
+		switch (stmts[stmts.length - 1].def) {
+			case EVar(v2) if (v2 == "cs"):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 38: {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v == "cs") {
+							true;
+						} else {
+							false;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						if (stmts.length > 0) {
+							@:ast(switch (stmts[stmts.length - 1].def) {
+	case EVar(v2) if (v2 == "cs"):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = stmts[stmts.length - 1].def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v2 = `;
+										if (v2 == "cs") {
+											true;
+										} else {
+											false;
+										};
+									};
+								} else {
+									false;
+								};
+							};
+						} else {
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+		if (! isBareCs) {
+			return null;
+		};
+		var expr = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Changeset"), metadata : {}, pos : pos};
+			}, "change", [{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(p1), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(p2), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+		return expr;
+	}
+}

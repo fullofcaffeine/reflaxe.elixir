@@ -153,11 +153,27 @@ class UnderscoreVarUsageFixTransforms {
     var replacements = new Map<String,String>();
     for (u in underArgs) {
       var trimmed = u.name.substr(1);
-      var candidate = (trimmed == null || trimmed == "" || trimmed == "_" ? "v" : trimmed);
-      // Avoid accidental collision with common LiveView arg names (socket, params) by picking neutral
-      if (candidate == "socket" || candidate == "params") candidate = "value";
-      replacements.set(u.name, candidate);
-      newArgs[u.idx] = PVar(candidate);
+      // Only rename underscored arg if the base (or underscored) name is referenced in body
+      var baseUsed = false;
+      var underscoredUsed = false;
+      ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+        switch (n.def) {
+          case EVar(v) if (v == trimmed): baseUsed = true;
+          case EVar(v2) if (v2 == u.name): underscoredUsed = true;
+          default:
+        }
+        return n;
+      });
+      if (baseUsed || underscoredUsed) {
+        var candidate = (trimmed == null || trimmed == "" || trimmed == "_" ? "v" : trimmed);
+        // Avoid accidental collision with common LiveView arg names (socket, params) by picking neutral
+        if (candidate == "socket" || candidate == "params") candidate = "value";
+        replacements.set(u.name, candidate);
+        newArgs[u.idx] = PVar(candidate);
+      } else {
+        // Keep original underscored binder when truly unused to preserve idiomatic shapes
+        newArgs[u.idx] = PVar(u.name);
+      }
     }
     // Apply renames in body occurrences
     var newBody = ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {

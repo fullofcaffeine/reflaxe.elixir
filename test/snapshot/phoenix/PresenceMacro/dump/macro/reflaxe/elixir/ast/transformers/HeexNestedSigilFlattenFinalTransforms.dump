@@ -1,0 +1,76 @@
+class reflaxe.elixir.ast.transformers.HeexNestedSigilFlattenFinalTransforms {
+
+	static function flattenNestedHeex(s:String) {
+		if (s == null || s.indexOf("<%=", null) == -1) {
+			return s;
+		};
+		var out = new StringBuf();
+		var i = 0;
+		while (i < s.length) {
+			var open = s.indexOf("<%=", i);
+			if (open == -1) {
+				out.add(s.substr(i, null));
+				break;
+			};
+			out.add(s.substr(i, open - i));
+			var close = s.indexOf("%>", open + 3);
+			if (close == -1) {
+				out.add(s.substr(open, null));
+				break;
+			};
+			var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
+			if (StringTools.startsWith(inner, "~H\"\"\"")) {
+				var start = inner.indexOf("\"\"\"", null);
+				if (start != -1) {
+					var bodyStart = start + 3;
+					var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
+					if (bodyEnd != -1) {
+						var body = inner.substr(bodyStart, bodyEnd - bodyStart);
+						out.add(body);
+						i = close + 2;
+						continue;
+					};
+				};
+			};
+			out.add(s.substr(open, (close + 2) - open));
+			i = close + 2;
+		};
+		return out.toString();
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var flattened = flattenNestedHeex(content);
+		if (flattened != content) makeASTWithMeta(ESigil(type, flattened, modifiers), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var modifiers = `;
+						if (type == "H") {
+							var flattened = reflaxe.elixir.ast.transformers.HeexNestedSigilFlattenFinalTransforms.flattenNestedHeex(content);
+							if (flattened != content) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, flattened, modifiers), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

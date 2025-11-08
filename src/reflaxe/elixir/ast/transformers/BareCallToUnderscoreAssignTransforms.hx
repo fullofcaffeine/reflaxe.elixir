@@ -45,9 +45,20 @@ class BareCallToUnderscoreAssignTransforms {
   static function rewriteStmt(s: ElixirAST): ElixirAST {
     return switch (s.def) {
       case ECall(target, fname, args):
-        makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ECall(target, fname, args), s.metadata, s.pos)), s.metadata, s.pos);
+        // Preserve bare Log.trace calls for snapshot parity
+        switch (target) {
+          case {def: EVar(mod)} if ((mod == "Log" || StringTools.endsWith(mod, ".Log")) && fname == "trace"):
+            s;
+          default:
+            makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ECall(target, fname, args), s.metadata, s.pos)), s.metadata, s.pos);
+        }
       case ERemoteCall(mod, fname2, args2):
-        makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ERemoteCall(mod, fname2, args2), s.metadata, s.pos)), s.metadata, s.pos);
+        // Preserve bare Log.trace calls for snapshot parity
+        switch (mod.def) {
+          case EVar(m) if ((m == "Log" || StringTools.endsWith(m, ".Log")) && fname2 == "trace"): s;
+          default:
+            makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), s.metadata, s.pos), makeASTWithMeta(ERemoteCall(mod, fname2, args2), s.metadata, s.pos)), s.metadata, s.pos);
+        }
       default:
         s;
     }
@@ -55,4 +66,3 @@ class BareCallToUnderscoreAssignTransforms {
 }
 
 #end
-

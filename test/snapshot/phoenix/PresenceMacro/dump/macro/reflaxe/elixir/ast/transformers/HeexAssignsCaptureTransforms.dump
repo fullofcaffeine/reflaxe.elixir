@@ -1,0 +1,540 @@
+class reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms {
+
+	static function extractStringLiteral(e:reflaxe.elixir.ast.ElixirAST) {
+		var cur = e;
+		var depth = 0;
+		while (true) {
+			@:ast(switch (cur.def) {
+	case EString(s):
+		return s;	
+	case ESigil(type, content, _mods) if (type == "H"):
+		return content;	
+	case EParen(inner):
+		cur = inner;
+		depth++;	
+	default:
+		return null;	
+}) {
+				var ` = cur.def;
+				switch (enumIndex `) {
+					case 32: {
+						var ` = `[0];
+						{
+							var s = `;
+							{
+								return s;
+							};
+						};
+					};
+					case 54: {
+						var ` = `[0];
+						{
+							var inner = `;
+							{
+								cur = inner;
+								depth ++;
+							};
+						};
+					};
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							var content = `;
+							var _mods = `;
+							if (type == "H") {
+								return content;
+							} else {
+								return null;
+							};
+						};
+					};
+					default: {
+						return null;
+					}
+				};
+			};
+		};
+		return null;
+	}
+
+	static function findHeexSigil(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		{
+			var ` = 0;
+			var ` = stmts.length;
+			while (` < `) {
+				var i = ` ++;
+				var parens = 0;
+				var node = stmts[i];
+				var found = false;
+				{
+					var ` = 0;
+					while (` < 3) {
+						var k = ` ++;
+						@:ast(switch (node.def) {
+	case ESigil(type, content, modifiers) if (type == "H" && content.indexOf("Phoenix.HTML.raw(content)") != -1):
+		found = true;
+		break;	
+	case ERaw(code) if (code.indexOf("~H\"") != -1 && code.indexOf("Phoenix.HTML.raw(content)") != -1):
+		found = true;
+		break;	
+	case EParen(inner):
+		node = inner;
+		parens++;
+		continue;	
+	default:
+}) {
+							var ` = node.def;
+							switch (enumIndex `) {
+								case 54: {
+									var ` = `[0];
+									{
+										var inner = `;
+										{
+											node = inner;
+											parens ++;
+											continue;
+										};
+									};
+								};
+								case 61: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										var type = `;
+										var content = `;
+										var modifiers = `;
+										if (type == "H" && content.indexOf("Phoenix.HTML.raw(content)", null) != -1) {
+											found = true;
+											break;
+										} else {};
+									};
+								};
+								case 62: {
+									var ` = `[0];
+									{
+										var code = `;
+										if (code.indexOf("~H\"", null) != -1 && code.indexOf("Phoenix.HTML.raw(content)", null) != -1) {
+											found = true;
+											break;
+										} else {};
+									};
+								};
+								default: {}
+							};
+						};
+						break;
+					};
+				};
+				if (found) {
+					return {idx : i, parens : parens};
+				};
+			};
+		};
+		return {idx : -1, parens : 0};
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case EDef(name, args, guards, body) if (name == "render"):
+		switch (body.def) {
+			case EBlock(stmts):
+				var html:Null<String> = null;
+				var assignIdx = -1;
+				for (i  in  0 ... stmts.length) {
+					switch (stmts[i].def) {
+						case EMatch(PVar(varName), rhs) if (varName == "content"):
+							var lit = extractStringLiteral(rhs);
+							if (lit != null) {
+								html = lit;
+								assignIdx = i;
+							};						
+						default:
+					};
+				};
+				var heex = findHeexSigil(stmts);
+				if (heex.idx == -1) return node;
+				trace("[HeexAssignsCapture] Found candidate in render/1: assignIdx=" + assignIdx + ", heexIdx=" + heex.idx + ", hasHtml=" + (html != null));
+				var newStmts = [];
+				for (i  in  0 ... stmts.length) {
+					if (i == assignIdx && html != null) continue;
+					if (i == heex.idx) {
+						var node = stmts[i];
+						var parens = heex.parens;
+						while (parens > 0) {
+							switch (node.def) {
+								case EParen(inner):
+									node = inner;
+									parens--;								
+								default:
+							};
+						};
+						switch (node.def) {
+							case ESigil(type, content, modifiers) if (type == "H"):
+								var newContent = (html != null) ? html : content;
+								var rebuilt:ElixirAST = makeAST(ESigil("H", newContent, modifiers));
+								for (p  in  0 ... heex.parens) rebuilt = makeAST(EParen(rebuilt));
+								newStmts.push(makeASTWithMeta(rebuilt.def, stmts[i].metadata, stmts[i].pos));							
+							case ERaw(code):
+								var code2 = code;
+								if (html != null) code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
+								var idx = code2.indexOf("~H\"\"\"");
+								if (idx != -1) {
+									var start = idx + 4;
+									var endIdx = code2.indexOf("\"\"\"", start);
+									if (endIdx != -1) {
+										var sigilContent = cleanSigil(code2.substr(start, endIdx - start));
+										var rebuilt2:ElixirAST = makeAST(ESigil("H", sigilContent, ""));
+										for (p  in  0 ... heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
+										newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
+										break;
+									};
+								};
+								var fallbackNode:ElixirAST = makeAST(ERaw(code2));
+								for (p  in  0 ... heex.parens) fallbackNode = makeAST(EParen(fallbackNode));
+								newStmts.push(makeASTWithMeta(fallbackNode.def, stmts[i].metadata, stmts[i].pos));							
+							default:
+								newStmts.push(stmts[i]);							
+						};
+					} else {
+						newStmts.push(stmts[i]);
+					};
+				};
+				return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), node.metadata, node.pos);			
+			default:
+				node;			
+		};	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						if (name == "render") {
+							@:ast(switch (body.def) {
+	case EBlock(stmts):
+		var html:Null<String> = null;
+		var assignIdx = -1;
+		for (i  in  0 ... stmts.length) {
+			switch (stmts[i].def) {
+				case EMatch(PVar(varName), rhs) if (varName == "content"):
+					var lit = extractStringLiteral(rhs);
+					if (lit != null) {
+						html = lit;
+						assignIdx = i;
+					};				
+				default:
+			};
+		};
+		var heex = findHeexSigil(stmts);
+		if (heex.idx == -1) return node;
+		trace("[HeexAssignsCapture] Found candidate in render/1: assignIdx=" + assignIdx + ", heexIdx=" + heex.idx + ", hasHtml=" + (html != null));
+		var newStmts = [];
+		for (i  in  0 ... stmts.length) {
+			if (i == assignIdx && html != null) continue;
+			if (i == heex.idx) {
+				var node = stmts[i];
+				var parens = heex.parens;
+				while (parens > 0) {
+					switch (node.def) {
+						case EParen(inner):
+							node = inner;
+							parens--;						
+						default:
+					};
+				};
+				switch (node.def) {
+					case ESigil(type, content, modifiers) if (type == "H"):
+						var newContent = (html != null) ? html : content;
+						var rebuilt:ElixirAST = makeAST(ESigil("H", newContent, modifiers));
+						for (p  in  0 ... heex.parens) rebuilt = makeAST(EParen(rebuilt));
+						newStmts.push(makeASTWithMeta(rebuilt.def, stmts[i].metadata, stmts[i].pos));					
+					case ERaw(code):
+						var code2 = code;
+						if (html != null) code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
+						var idx = code2.indexOf("~H\"\"\"");
+						if (idx != -1) {
+							var start = idx + 4;
+							var endIdx = code2.indexOf("\"\"\"", start);
+							if (endIdx != -1) {
+								var sigilContent = cleanSigil(code2.substr(start, endIdx - start));
+								var rebuilt2:ElixirAST = makeAST(ESigil("H", sigilContent, ""));
+								for (p  in  0 ... heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
+								newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
+								break;
+							};
+						};
+						var fallbackNode:ElixirAST = makeAST(ERaw(code2));
+						for (p  in  0 ... heex.parens) fallbackNode = makeAST(EParen(fallbackNode));
+						newStmts.push(makeASTWithMeta(fallbackNode.def, stmts[i].metadata, stmts[i].pos));					
+					default:
+						newStmts.push(stmts[i]);					
+				};
+			} else {
+				newStmts.push(stmts[i]);
+			};
+		};
+		return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+								var ` = body.def;
+								if (enumIndex ` == 53) {
+									var ` = `[0];
+									{
+										var stmts = `;
+										{
+											var html = null;
+											var assignIdx = -1;
+											{
+												var ` = 0;
+												var ` = stmts.length;
+												while (` < `) {
+													var i = ` ++;
+													@:ast(switch (stmts[i].def) {
+	case EMatch(PVar(varName), rhs) if (varName == "content"):
+		var lit = extractStringLiteral(rhs);
+		if (lit != null) {
+			html = lit;
+			assignIdx = i;
+		};	
+	default:
+}) {
+														var ` = stmts[i].def;
+														if (enumIndex ` == 8) {
+															var ` = `[0];
+															var ` = `[1];
+															if (enumIndex ` == 0) {
+																var ` = `[0];
+																{
+																	var varName = `;
+																	var rhs = `;
+																	if (varName == "content") {
+																		var lit = reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms.extractStringLiteral(rhs);
+																		if (lit != null) {
+																			html = lit;
+																			assignIdx = i;
+																		};
+																	} else {};
+																};
+															} else {};
+														} else {};
+													};
+												};
+											};
+											var heex = reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms.findHeexSigil(stmts);
+											if (heex.idx == -1) {
+												return node;
+											};
+											haxe.Log.trace("[HeexAssignsCapture] Found candidate in render/1: assignIdx=" + assignIdx + ", heexIdx=" + heex.idx + ", hasHtml=" + Std.string((html != null)), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/HeexAssignsCaptureTransforms.hx", lineNumber : 101, className : "reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms", methodName : "transformPass"});
+											var newStmts = [];
+											{
+												var ` = 0;
+												var ` = stmts.length;
+												while (` < `) {
+													var i = ` ++;
+													if (i == assignIdx && html != null) {
+														continue;
+													};
+													if (i == heex.idx) {
+														var node = stmts[i];
+														var parens = heex.parens;
+														while (parens > 0) {
+															@:ast(switch (node.def) {
+	case EParen(inner):
+		node = inner;
+		parens--;	
+	default:
+}) {
+																var ` = node.def;
+																if (enumIndex ` == 54) {
+																	var ` = `[0];
+																	{
+																		var inner = `;
+																		{
+																			node = inner;
+																			parens --;
+																		};
+																	};
+																} else {};
+															};
+														};
+														@:ast(switch (node.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var newContent = (html != null) ? html : content;
+		var rebuilt:ElixirAST = makeAST(ESigil("H", newContent, modifiers));
+		for (p  in  0 ... heex.parens) rebuilt = makeAST(EParen(rebuilt));
+		newStmts.push(makeASTWithMeta(rebuilt.def, stmts[i].metadata, stmts[i].pos));	
+	case ERaw(code):
+		var code2 = code;
+		if (html != null) code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
+		var idx = code2.indexOf("~H\"\"\"");
+		if (idx != -1) {
+			var start = idx + 4;
+			var endIdx = code2.indexOf("\"\"\"", start);
+			if (endIdx != -1) {
+				var sigilContent = cleanSigil(code2.substr(start, endIdx - start));
+				var rebuilt2:ElixirAST = makeAST(ESigil("H", sigilContent, ""));
+				for (p  in  0 ... heex.parens) rebuilt2 = makeAST(EParen(rebuilt2));
+				newStmts.push(makeASTWithMeta(rebuilt2.def, stmts[i].metadata, stmts[i].pos));
+				break;
+			};
+		};
+		var fallbackNode:ElixirAST = makeAST(ERaw(code2));
+		for (p  in  0 ... heex.parens) fallbackNode = makeAST(EParen(fallbackNode));
+		newStmts.push(makeASTWithMeta(fallbackNode.def, stmts[i].metadata, stmts[i].pos));	
+	default:
+		newStmts.push(stmts[i]);	
+}) {
+															var ` = node.def;
+															switch (enumIndex `) {
+																case 61: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var type = `;
+																		var content = `;
+																		var modifiers = `;
+																		if (type == "H") {
+																			var newContent = if ((html != null)) {
+																				html;
+																			} else {
+																				content;
+																			};
+																			var rebuilt = {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ESigil("H", newContent, modifiers), metadata : {}, pos : pos};
+																			};
+																			{
+																				var ` = 0;
+																				var ` = heex.parens;
+																				while (` < `) {
+																					var p = ` ++;
+																					rebuilt = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EParen(rebuilt), metadata : {}, pos : pos};
+																					};
+																				};
+																			};
+																			newStmts.push({def : rebuilt.def, metadata : stmts[i].metadata, pos : stmts[i].pos});
+																		} else {
+																			newStmts.push(stmts[i]);
+																		};
+																	};
+																};
+																case 62: {
+																	var ` = `[0];
+																	{
+																		var code = `;
+																		{
+																			var code2 = code;
+																			if (html != null) {
+																				code2 = code.split("<%= Phoenix.HTML.raw(content) %>").join(html);
+																			};
+																			var idx = code2.indexOf("~H\"\"\"", null);
+																			if (idx != -1) {
+																				var start = idx + 4;
+																				var endIdx = code2.indexOf("\"\"\"", start);
+																				if (endIdx != -1) {
+																					var sigilContent = reflaxe.elixir.ast.transformers.HeexAssignsCaptureTransforms.cleanSigil(code2.substr(start, endIdx - start));
+																					var rebuilt2 = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.ESigil("H", sigilContent, ""), metadata : {}, pos : pos};
+																					};
+																					{
+																						var ` = 0;
+																						var ` = heex.parens;
+																						while (` < `) {
+																							var p = ` ++;
+																							rebuilt2 = {
+																								var pos = null;
+																								{def : reflaxe.elixir.ast.ElixirASTDef.EParen(rebuilt2), metadata : {}, pos : pos};
+																							};
+																						};
+																					};
+																					newStmts.push({def : rebuilt2.def, metadata : stmts[i].metadata, pos : stmts[i].pos});
+																					break;
+																				};
+																			};
+																			var fallbackNode = {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(code2), metadata : {}, pos : pos};
+																			};
+																			{
+																				var ` = 0;
+																				var ` = heex.parens;
+																				while (` < `) {
+																					var p = ` ++;
+																					fallbackNode = {
+																						var pos = null;
+																						{def : reflaxe.elixir.ast.ElixirASTDef.EParen(fallbackNode), metadata : {}, pos : pos};
+																					};
+																				};
+																			};
+																			newStmts.push({def : fallbackNode.def, metadata : stmts[i].metadata, pos : stmts[i].pos});
+																		};
+																	};
+																};
+																default: {
+																	newStmts.push(stmts[i]);
+																}
+															};
+														};
+													} else {
+														newStmts.push(stmts[i]);
+													};
+												};
+											};
+											return {def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(newStmts), metadata : {}, pos : pos};
+											}), metadata : node.metadata, pos : node.pos};
+										};
+									};
+								} else {
+									node;
+								};
+							};
+						} else {
+							node;
+						};
+					};
+				} else {
+					node;
+				};
+			};
+		});
+	}
+
+	static function cleanSigil(s:String) {
+		var lines = s.split("\n");
+		var out = [];
+		{
+			var ` = 0;
+			while (` < lines.length) {
+				var ln = lines[`];
+				++ `;
+				var t = StringTools.replace(ln, "\r", "");
+				t = StringTools.trim(t);
+				if (t == "\"" || t == "'") {
+					continue;
+				};
+				out.push(ln);
+			};
+		};
+		return out.join("\n");
+	}
+}

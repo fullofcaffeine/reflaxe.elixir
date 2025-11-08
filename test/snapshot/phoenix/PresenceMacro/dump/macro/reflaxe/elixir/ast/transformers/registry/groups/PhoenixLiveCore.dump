@@ -1,0 +1,12 @@
+class reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore {
+
+	public static function build() {
+		var passes = [];
+		passes.push({name : "LiveViewCoreComponentsImport", description : "Add CoreComponents import for LiveView modules that use components", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_liveViewCoreComponentsImportPass});
+		passes.push({name : "LiveEventCaseToCallbacks", description : "Rewrite handle_event/2 case dispatch into multiple handle_event/3 callbacks in LiveViews", enabled : true, pass : reflaxe.elixir.ast.transformers.LiveEventCaseToCallbacksTransforms.transformPass});
+		passes.push({name : "LiveViewTypedEventBridge", description : "Synthesize handle_event/3 callbacks from typed handleEvent/2 (enum) dispatcher", enabled : true, pass : reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass});
+		passes.push({name : "PhoenixFunctionMapping", description : "Map custom function names to Phoenix conventions", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_phoenixFunctionMappingPass});
+		passes.push({name : "EctoQueryRequireInjection", description : "Add `require Ecto.Query` to modules that use Ecto.Query macros", enabled : true, pass : reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass});
+		return passes;
+	}
+}

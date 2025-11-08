@@ -1,0 +1,64 @@
+class reflaxe.elixir.ast.transformers.WebDropUnusedLocalAssignmentTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (isWeb(name)):
+		var cleaned = DropUnusedLocalAssignmentTransforms.pass(makeAST(EModule(name, attrs, body)));
+		cleaned;	
+	case EDefmodule(name2, doBlock) if (isWeb(name2)):
+		var cleaned2 = DropUnusedLocalAssignmentTransforms.pass(makeAST(EDefmodule(name2, doBlock)));
+		cleaned2;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name != null && name.indexOf("Web.", null) > 0) {
+								var cleaned = reflaxe.elixir.ast.transformers.DropUnusedLocalAssignmentTransforms.pass({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, body), metadata : {}, pos : pos};
+								});
+								cleaned;
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name2 = `;
+							var doBlock = `;
+							if (name2 != null && name2.indexOf("Web.", null) > 0) {
+								var cleaned2 = reflaxe.elixir.ast.transformers.DropUnusedLocalAssignmentTransforms.pass({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefmodule(name2, doBlock), metadata : {}, pos : pos};
+								});
+								cleaned2;
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isWeb(name:String) {
+		return name != null && name.indexOf("Web.", null) > 0;
+	}
+}

@@ -25,11 +25,13 @@ class DefParamUnusedUnderscoreGlobalSafeTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
-                    // Do not underscore handle_event/3 second arg; reserved for Phoenix params
-                    var newArgs = if (name == "handle_event" && args != null && args.length == 3) args else underscoreArgsIfUnused(args, body);
+                    // Do not underscore in Phoenix handle_event* callbacks (3-arity)
+                    var skip = (name == "handle_event" || StringTools.startsWith(name, "handle_event")) && args != null && args.length == 3;
+                    var newArgs = if (skip) args else if (name == "mount" && args != null && args.length >= 3) preserveMountSessionAndSocket(args, body) else underscoreArgsIfUnused(args, body);
                     makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
                 case EDefp(name2, args2, guards2, body2):
-                    var newArgs2 = if (name2 == "handle_event" && args2 != null && args2.length == 3) args2 else underscoreArgsIfUnused(args2, body2);
+                    var skip2 = (name2 == "handle_event" || StringTools.startsWith(name2, "handle_event")) && args2 != null && args2.length == 3;
+                    var newArgs2 = if (skip2) args2 else if (name2 == "mount" && args2 != null && args2.length >= 3) preserveMountSessionAndSocket(args2, body2) else underscoreArgsIfUnused(args2, body2);
                     makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos);
                 default:
                     n;
@@ -49,6 +51,20 @@ class DefParamUnusedUnderscoreGlobalSafeTransforms {
             default:
                 p;
         }
+    }
+
+    static function preserveMountSessionAndSocket(args:Array<EPattern>, body:ElixirAST):Array<EPattern> {
+        var out:Array<EPattern> = [];
+        for (i in 0...args.length) {
+            var a = args[i];
+            if (i == 1 || i == 2) {
+                switch (a) {
+                    case PVar(nm) if (nm == "session" || nm == "socket"): out.push(a);
+                    default: out.push(underscoreIfUnused(a, body));
+                }
+            } else out.push(underscoreIfUnused(a, body));
+        }
+        return out;
     }
 
     static function usedInBody(body:ElixirAST, name:String):Bool {

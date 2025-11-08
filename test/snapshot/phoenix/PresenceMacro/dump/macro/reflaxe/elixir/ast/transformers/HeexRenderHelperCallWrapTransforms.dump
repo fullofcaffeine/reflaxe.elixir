@@ -1,0 +1,75 @@
+class reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms {
+
+	static function wrap(content:String) {
+		if (content == null) {
+			return content;
+		};
+		var out = new StringBuf();
+		var i = 0;
+		while (i < content.length) {
+			var idx = content.indexOf("<%=", i);
+			if (idx == -1) {
+				out.add(content.substr(i, null));
+				break;
+			};
+			out.add(content.substr(i, idx - i));
+			var j = idx + 3;
+			while (j < content.length && new EReg("^\\s$", "").match(content.charAt(j))) {
+				j ++;
+			};
+			var startExpr = j;
+			var end = content.indexOf("%>", j);
+			if (end == -1) {
+				out.add(content.substr(idx, null));
+				break;
+			};
+			var expr = content.substr(startExpr, end - startExpr);
+			var trimmed = StringTools.trim(expr);
+			var alreadyRaw = StringTools.startsWith(trimmed, "Phoenix.HTML.raw(");
+			var isRenderHelper = new EReg("^render_[a-z0-9_]+\\s*\\(", "").match(trimmed);
+			if (! alreadyRaw && isRenderHelper) {
+				out.add("<%= Phoenix.HTML.raw(" + expr + ") %>");
+			} else {
+				out.add(content.substr(idx, (end + 2) - idx));
+			};
+			i = end + 2;
+		};
+		return out.toString();
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, mods) if (type == "H"):
+		var updated = wrap(content);
+		if (updated != content) makeASTWithMeta(ESigil(type, updated, mods), n.metadata, n.pos) else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var mods = `;
+						if (type == "H") {
+							var updated = reflaxe.elixir.ast.transformers.HeexRenderHelperCallWrapTransforms.wrap(content);
+							if (updated != content) {
+								{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, updated, mods), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

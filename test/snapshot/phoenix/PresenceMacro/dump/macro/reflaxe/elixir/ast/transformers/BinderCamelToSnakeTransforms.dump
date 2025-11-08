@@ -1,0 +1,259 @@
+class reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms {
+
+	public static function binderCamelToSnakePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (node.def) {
+	case ECase(target, clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var renames = new Map<String,String>();
+			var newPattern = renamePatternBinders(cl.pattern, renames);
+			var newBody = (renames.keys().hasNext()) ? replaceBodyVars(cl.body, renames) : cl.body;
+			newClauses.push({ pattern : newPattern, guard : cl.guard, body : newBody });
+		};
+		makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);	
+	default:
+		node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var renames = {
+										{};
+										new haxe.ds.StringMap();
+									};
+									var newPattern = reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(cl.pattern, renames);
+									var newBody = if ((renames.keys().hasNext())) {
+										reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.replaceBodyVars(cl.body, renames);
+									} else {
+										cl.body;
+									};
+									newClauses.push({pattern : newPattern, guard : cl.guard, body : newBody});
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECase(target, newClauses), metadata : node.metadata, pos : node.pos};
+						};
+					};
+				} else {
+					node;
+				};
+			};
+		});
+	}
+
+	static function renamePatternBinders(p:reflaxe.elixir.ast.EPattern, renames:Map<String, String>) {
+		return @:ast(switch (p) {
+	case PVar(n):
+		var snake = toSnake(n);
+		if (snake != n) {
+			renames.set(n, snake);
+			PVar(snake);
+		} else p;	
+	case PTuple(es):
+		PTuple([for (e  in  es) renamePatternBinders(e, renames)]);	
+	case PList(es):
+		PList([for (e  in  es) renamePatternBinders(e, renames)]);	
+	case PCons(h, t):
+		PCons(renamePatternBinders(h, renames), renamePatternBinders(t, renames));	
+	case PMap(kvs):
+		PMap([for (kv  in  kvs) { key : kv.key, value : renamePatternBinders(kv.value, renames) }]);	
+	case PStruct(nm, fs):
+		PStruct(nm, [for (f  in  fs) { key : f.key, value : renamePatternBinders(f.value, renames) }]);	
+	case PPin(inner):
+		PPin(renamePatternBinders(inner, renames));	
+	default:
+		p;	
+}) switch (enumIndex p) {
+			case 0: {
+				var ` = p[0];
+				{
+					var n = `;
+					{
+						var snake = reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.toSnake(n);
+						if (snake != n) {
+							{
+								renames.set(n, snake);
+							};
+							reflaxe.elixir.ast.EPattern.PVar(snake);
+						} else {
+							p;
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						reflaxe.elixir.ast.EPattern.PTuple({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(e, renames));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 3: {
+				var ` = p[0];
+				{
+					var es = `;
+					{
+						reflaxe.elixir.ast.EPattern.PList({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < es.length) {
+									var e = es[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(e, renames));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 4: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var h = `;
+					var t = `;
+					{
+						reflaxe.elixir.ast.EPattern.PCons(reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(h, renames), reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(t, renames));
+					};
+				};
+			};
+			case 5: {
+				var ` = p[0];
+				{
+					var kvs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PMap({
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < kvs.length) {
+									var kv = kvs[`];
+									++ `;
+									`.push({key : kv.key, value : reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(kv.value, renames)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 6: {
+				var ` = p[0];
+				var ` = p[1];
+				{
+					var nm = `;
+					var fs = `;
+					{
+						reflaxe.elixir.ast.EPattern.PStruct(nm, {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fs.length) {
+									var f = fs[`];
+									++ `;
+									`.push({key : f.key, value : reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(f.value, renames)});
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 7: {
+				var ` = p[0];
+				{
+					var inner = `;
+					{
+						reflaxe.elixir.ast.EPattern.PPin(reflaxe.elixir.ast.transformers.BinderCamelToSnakeTransforms.renamePatternBinders(inner, renames));
+					};
+				};
+			};
+			default: {
+				p;
+			}
+		};
+	}
+
+	static function replaceBodyVars(body:reflaxe.elixir.ast.ElixirAST, renames:Map<String, String>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EVar(v) if (renames.exists(v)):
+		makeASTWithMeta(EVar(renames.get(v)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (renames.exists(v)) {
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EVar(renames.get(v));
+								var meta = n.metadata;
+								var pos = n.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function toSnake(s:String) {
+		if (s == null || s.length == 0) {
+			return s;
+		};
+		var buf = new StringBuf();
+		{
+			var ` = 0;
+			var ` = s.length;
+			while (` < `) {
+				var i = ` ++;
+				var c = s.substr(i, 1);
+				var lower = c.toLowerCase();
+				var upper = c.toUpperCase();
+				if (c == upper && c != lower) {
+					if (i != 0) {
+						buf.add("_");
+					};
+					buf.add(lower);
+				} else {
+					buf.add(c);
+				};
+			};
+		};
+		return buf.toString();
+	}
+}

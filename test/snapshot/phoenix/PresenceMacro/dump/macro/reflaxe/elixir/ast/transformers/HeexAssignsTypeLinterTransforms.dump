@@ -1,0 +1,1004 @@
+class reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.lint(ast, null);
+	}
+
+	public static function contextualPass(ast:reflaxe.elixir.ast.ElixirAST, ctx:reflaxe.elixir.CompilationContext) {
+		return reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.lint(ast, ctx);
+	}
+
+	static function error(ctx:Null<reflaxe.elixir.CompilationContext>, msg:String, pos:haxe.macro.Position) {
+		if (ctx != null) {
+			ctx.error(msg, pos);
+		} else {
+			throw msg;
+		};
+	}
+
+	static function lint(ast:reflaxe.elixir.ast.ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (n.def) {
+	case EModule(_name, _attrs, body):
+		for (child  in  body) lintRender(child, ctx);	
+	case EDefmodule(_name, doBlock):
+		lintRender(doBlock, ctx);	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var _name = `;
+							var _attrs = `;
+							var body = `;
+							{
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var child = body[`];
+										++ `;
+										reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.lintRender(child, ctx);
+									};
+								};
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var _name = `;
+							var doBlock = `;
+							{
+								reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.lintRender(doBlock, ctx);
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return n;
+		});
+	}
+
+	static function lintRender(n:reflaxe.elixir.ast.ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>) {
+		@:ast(switch (n.def) {
+	case EDef(name, _args, _guards, body) if (name == "render"):
+		if (!containsHeexOrFragments(body)) {
+			return;
+		};
+		var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
+		if (hxPath == null) {
+			hxPath = findAnySourceFile(body);
+		};
+		if (hxPath == null) return;
+		var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
+		if (hxPathNorm.indexOf("/reflaxe/elixir/") != -1 || hxPathNorm.indexOf("/vendor/") != -1 || hxPathNorm.indexOf("/std/") != -1) {
+			return;
+		};
+		var fileContent:String = null;
+		try fileContent = sys.io.File.getContent(hxPath) catch(e:Dynamic) fileContent = null;
+		if (fileContent == null) return;
+		var nearLine:Null<Int> = findMinSourceLine(body);
+		var assignsType = (nearLine != null) ? extractAssignsTypeNameBefore(fileContent, nearLine) : extractAssignsTypeName(fileContent);
+		if (assignsType == null) return;
+		var fields = extractAssignsFields(assignsType, fileContent);
+		if (fields == null) fields = new Map<String,String>();
+		validateHeexFragments(body, fields, assignsType, ctx);
+		validateNativeEFragments(body, fields, assignsType, ctx);
+		var contents:Array<{ var content : String; var pos : haxe.macro.Expr.Position}> = [];
+		collectHeexContents(body, contents);
+		for (item  in  contents) {
+			var used = collectAtFields(item.content);
+			for (f  in  used) if (!fields.exists(f)) {
+				error(ctx, "HEEx assigns error: Unknown field @" + f + " (not found in typedef " + assignsType + ")", item.pos);
+			};
+			checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
+		};	
+	default:
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 2) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				var ` = `[3];
+				{
+					var name = `;
+					var _args = `;
+					var _guards = `;
+					var body = `;
+					if (name == "render") {
+						if (! reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.containsHeexOrFragments(body)) {
+							return;
+						};
+						var hxPath = if ((n.metadata != null && n.metadata.sourceFile != null)) {
+							n.metadata.sourceFile;
+						} else {
+							null;
+						};
+						if (hxPath == null) {
+							hxPath = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.findAnySourceFile(body);
+						};
+						if (hxPath == null) {
+							return;
+						};
+						var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
+						if (hxPathNorm.indexOf("/reflaxe/elixir/", null) != -1 || hxPathNorm.indexOf("/vendor/", null) != -1 || hxPathNorm.indexOf("/std/", null) != -1) {
+							return;
+						};
+						var fileContent = null;
+						try {
+							fileContent = sys.io.File.getContent(hxPath);
+						} catch (`:Dynamic) {
+							{};
+							{};
+							if (true) {
+								{};
+								fileContent = null;
+							} else throw `;
+						};
+						if (fileContent == null) {
+							return;
+						};
+						var nearLine = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.findMinSourceLine(body);
+						var assignsType = if ((nearLine != null)) {
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignsTypeNameBefore(fileContent, nearLine);
+						} else {
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignsTypeName(fileContent);
+						};
+						if (assignsType == null) {
+							return;
+						};
+						var fields = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignsFields(assignsType, fileContent);
+						if (fields == null) {
+							fields = {
+								{};
+								new haxe.ds.StringMap();
+							};
+						};
+						reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateHeexFragments(body, fields, assignsType, ctx);
+						reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateNativeEFragments(body, fields, assignsType, ctx);
+						var contents = [];
+						reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.collectHeexContents(body, contents);
+						{
+							var ` = 0;
+							while (` < contents.length) {
+								var item = contents[`];
+								++ `;
+								var used = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.collectAtFields(item.content);
+								{
+									var ` = 0;
+									while (` < used.length) {
+										var f = used[`];
+										++ `;
+										if (! fields.exists(f)) {
+											reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.error(ctx, "HEEx assigns error: Unknown field @" + f + " (not found in typedef " + assignsType + ")", item.pos);
+										};
+									};
+								};
+								reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
+							};
+						};
+					} else {};
+				};
+			} else {};
+		};
+	}
+
+	static function findAnySourceFile(node:reflaxe.elixir.ast.ElixirAST) {
+		var found = [null];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0] == null && x.metadata != null && x.metadata.sourceFile != null) {
+				found[0] = x.metadata.sourceFile;
+			};
+			return x;
+		});
+		return found[0];
+	}
+
+	static function collectHeexContents(node:reflaxe.elixir.ast.ElixirAST, out:Array<{ pos : haxe.macro.Position, content : String }>) {
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case ESigil(type, content, _mods) if (type == "H"):
+		out.push({ content : content, pos : x.pos });	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var content = `;
+						var _mods = `;
+						if (type == "H") {
+							out.push({content : content, pos : x.pos});
+						} else {};
+					};
+				} else {};
+			};
+			return x;
+		});
+	}
+
+	static function findMinSourceLine(node:reflaxe.elixir.ast.ElixirAST) {
+		var minLine = [null];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (x.metadata != null && x.metadata.sourceLine != null) {
+				if (minLine[0] == null || x.metadata.sourceLine < minLine[0]) {
+					minLine[0] = x.metadata.sourceLine;
+				};
+			};
+			return x;
+		});
+		return minLine[0];
+	}
+
+	static function containsHeexOrFragments(node:reflaxe.elixir.ast.ElixirAST) {
+		var found = [false];
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			if (found[0]) {
+				return x;
+			};
+			@:ast(switch (x.def) {
+	case ESigil(type, _content, _mods) if (type == "H"):
+		found = true;	
+	case EFragment(_tag, _attrs, _children):
+		found = true;	
+	default:
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							var _content = `;
+							var _mods = `;
+							if (type == "H") {
+								found[0] = true;
+							} else {};
+						};
+					};
+					case 64: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var _tag = `;
+							var _attrs = `;
+							var _children = `;
+							{
+								found[0] = true;
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return x;
+		});
+		return found[0];
+	}
+
+	static function validateHeexFragments(node:reflaxe.elixir.ast.ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>) {
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case ESigil(type, _content, _mods) if (type == "H"):
+		var meta = x.metadata;
+		if (meta != null) {
+			var dyn2:Dynamic = meta;
+			if (Reflect.hasField(dyn2, "heexAST")) {
+				var nodes:Array<ElixirAST> = Reflect.field(dyn2, "heexAST");
+				if (nodes != null && nodes.length > 0) {
+					validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos);
+				};
+			};
+			var dyn:Dynamic = meta;
+			if (Reflect.hasField(dyn, "heexFragments")) {
+				var frags:Array<Dynamic> = Reflect.field(dyn, "heexFragments");
+				if (frags != null) {
+					for (f  in  frags) {
+						var attrs:Array<Dynamic> = f.attributes;
+						if (attrs == null) continue;
+						for (a  in  attrs) {
+							var vexpr:String = a.valueExpr;
+							var used = collectAtFields(vexpr);
+							for (uf  in  used) {
+								if (!fields.exists(uf)) {
+									error(ctx, "HEEx assigns error: Unknown field @" + uf + " (not found in typedef " + typeName + ")", x.pos);
+								};
+							};
+							checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
+						};
+					};
+				};
+			};
+		};	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 61) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var type = `;
+						var _content = `;
+						var _mods = `;
+						if (type == "H") {
+							var meta = x.metadata;
+							if (meta != null) {
+								var dyn2 = meta;
+								if (Reflect.hasField(dyn2, "heexAST")) {
+									var nodes = Reflect.field(dyn2, "heexAST");
+									if (nodes != null && nodes.length > 0) {
+										reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos);
+									};
+								};
+								var dyn = meta;
+								if (Reflect.hasField(dyn, "heexFragments")) {
+									var frags = Reflect.field(dyn, "heexFragments");
+									if (frags != null) {
+										{
+											var ` = 0;
+											while (` < frags.length) {
+												var f = frags[`];
+												++ `;
+												var attrs = f.attributes;
+												if (attrs == null) {
+													continue;
+												};
+												{
+													var ` = 0;
+													while (` < attrs.length) {
+														var a = attrs[`];
+														++ `;
+														var vexpr = a.valueExpr;
+														var used = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.collectAtFields(vexpr);
+														{
+															var ` = 0;
+															while (` < used.length) {
+																var uf = used[`];
+																++ `;
+																if (! fields.exists(uf)) {
+																	reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.error(ctx, "HEEx assigns error: Unknown field @" + uf + " (not found in typedef " + typeName + ")", x.pos);
+																};
+															};
+														};
+														reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
+													};
+												};
+											};
+										};
+									};
+								};
+							};
+						} else {};
+					};
+				} else {};
+			};
+			return x;
+		});
+	}
+
+	static function validateNativeEFragments(node:reflaxe.elixir.ast.ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>) {
+		reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(x:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (x.def) {
+	case EFragment(_tag, _attrs, _children):
+		validateNode(x, fields, typeName, ctx, x.pos);	
+	default:
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 64) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var _tag = `;
+						var _attrs = `;
+						var _children = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateNode(x, fields, typeName, ctx, x.pos);
+						};
+					};
+				} else {};
+			};
+			return x;
+		});
+	}
+
+	static function validateHeexTypedAST(nodes:Array<reflaxe.elixir.ast.ElixirAST>, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position) {
+		{
+			var ` = 0;
+			while (` < nodes.length) {
+				var n = nodes[`];
+				++ `;
+				reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateNode(n, fields, typeName, ctx, pos);
+			};
+		};
+	}
+
+	static function validateNode(n:reflaxe.elixir.ast.ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position) {
+		@:ast(switch (n.def) {
+	case EFragment(_tag, attributes, children):
+		for (a  in  attributes) {
+			validateExprForAssigns(a.value, fields, typeName, ctx, pos);
+		};
+		for (c  in  children) validateNode(c, fields, typeName, ctx, pos);	
+	default:
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 64) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var _tag = `;
+					var attributes = `;
+					var children = `;
+					{
+						{
+							var ` = 0;
+							while (` < attributes.length) {
+								var a = attributes[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateExprForAssigns(a.value, fields, typeName, ctx, pos);
+							};
+						};
+						{
+							var ` = 0;
+							while (` < children.length) {
+								var c = children[`];
+								++ `;
+								reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.validateNode(c, fields, typeName, ctx, pos);
+							};
+						};
+					};
+				};
+			} else {};
+		};
+	}
+
+	static function validateExprForAssigns(expr:reflaxe.elixir.ast.ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position) {
+		var used = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(expr, fields, typeName, ctx, pos, used);
+		for (k in used.keys()) {
+			if (! fields.exists(k)) {
+				reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.error(ctx, "HEEx assigns error: Unknown field @" + k + " (not found in typedef " + typeName + ")", pos);
+			};
+		};
+	}
+
+	static function analyzeExpr(expr:reflaxe.elixir.ast.ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position, used:Map<String, Bool>) {
+		@:ast(switch (expr.def) {
+	case EAssign(name):
+		used.set(name, true);	
+	case EField(target, _):
+		analyzeExpr(target, fields, typeName, ctx, pos, used);	
+	case EAccess(target, key):
+		analyzeExpr(target, fields, typeName, ctx, pos, used);
+		analyzeExpr(key, fields, typeName, ctx, pos, used);	
+	case EBinary(op, left, right):
+		analyzeExpr(left, fields, typeName, ctx, pos, used);
+		analyzeExpr(right, fields, typeName, ctx, pos, used);
+		if (isComparisonOp(op)) {
+			var lName = extractAssignFieldName(left);
+			var rName = extractAssignFieldName(right);
+			var lLit = extractLiteralKind(left);
+			var rLit = extractLiteralKind(right);
+			if (lName != null && rLit != null) checkKindCompat(lName, rLit, fields, typeName, ctx, pos);
+			if (rName != null && lLit != null) checkKindCompat(rName, lLit, fields, typeName, ctx, pos);
+		};	
+	case EIf(cond, thenB, elseB):
+		analyzeExpr(cond, fields, typeName, ctx, pos, used);
+		analyzeExpr(thenB, fields, typeName, ctx, pos, used);
+		if (elseB != null) analyzeExpr(elseB, fields, typeName, ctx, pos, used);	
+	case ECall(target, _fn, args):
+		if (target != null) analyzeExpr(target, fields, typeName, ctx, pos, used);
+		for (a  in  args) analyzeExpr(a, fields, typeName, ctx, pos, used);	
+	case EParen(inner):
+		analyzeExpr(inner, fields, typeName, ctx, pos, used);	
+	default:
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenB = `;
+						var elseB = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(cond, fields, typeName, ctx, pos, used);
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(thenB, fields, typeName, ctx, pos, used);
+							if (elseB != null) {
+								reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(elseB, fields, typeName, ctx, pos, used);
+							};
+						};
+					};
+				};
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var _fn = `;
+						var args = `;
+						{
+							if (target != null) {
+								reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(target, fields, typeName, ctx, pos, used);
+							};
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var a = args[`];
+									++ `;
+									reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(a, fields, typeName, ctx, pos, used);
+								};
+							};
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var left = `;
+						var right = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(left, fields, typeName, ctx, pos, used);
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(right, fields, typeName, ctx, pos, used);
+							if (@:ast(switch (op) {
+	case Equal | NotEqual | Less | Greater | LessEqual | GreaterEqual | StrictEqual | StrictNotEqual:
+		true;	
+	default:
+		false;	
+}) switch (enumIndex op) {
+								case 6, 7, 8, 9, 10, 11, 12, 13: {
+									{
+										true;
+									};
+								};
+								default: {
+									false;
+								}
+							}) {
+								var lName = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignFieldName(left);
+								var rName = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignFieldName(right);
+								var lLit = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractLiteralKind(left);
+								var rLit = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractLiteralKind(right);
+								if (lName != null && rLit != null) {
+									reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.checkKindCompat(lName, rLit, fields, typeName, ctx, pos);
+								};
+								if (rName != null && lLit != null) {
+									reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.checkKindCompat(rName, lLit, fields, typeName, ctx, pos);
+								};
+							};
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(target, fields, typeName, ctx, pos, used);
+						};
+					};
+				};
+				case 29: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var key = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(target, fields, typeName, ctx, pos, used);
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(key, fields, typeName, ctx, pos, used);
+						};
+					};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.analyzeExpr(inner, fields, typeName, ctx, pos, used);
+						};
+					};
+				};
+				case 63: {
+					var ` = `[0];
+					{
+						var name = `;
+						{
+							{
+								used.set(name, true);
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+	}
+
+	static inline function isComparisonOp(op:reflaxe.elixir.ast.EBinaryOp) {
+		return @:ast(switch (op) {
+	case Equal | NotEqual | Less | Greater | LessEqual | GreaterEqual | StrictEqual | StrictNotEqual:
+		true;	
+	default:
+		false;	
+}) switch (enumIndex op) {
+			case 6, 7, 8, 9, 10, 11, 12, 13: {
+				{
+					true;
+				};
+			};
+			default: {
+				false;
+			}
+		};
+	}
+
+	static function extractAssignFieldName(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case EAssign(name):
+		name;	
+	case EField(target, _):
+		extractAssignFieldName(target);	
+	case EAccess(target, _):
+		extractAssignFieldName(target);	
+	default:
+		null;	
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignFieldName(target);
+						};
+					};
+				};
+				case 29: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						{
+							reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.extractAssignFieldName(target);
+						};
+					};
+				};
+				case 63: {
+					var ` = `[0];
+					{
+						var name = `;
+						{
+							name;
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function extractLiteralKind(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case EString(_):
+		"string";	
+	case EInteger(_):
+		"int";	
+	case EBoolean(_):
+		"bool";	
+	case ENil:
+		"nil";	
+	default:
+		null;	
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 32: {
+					var ` = `[0];
+					{
+						"string";
+					};
+				};
+				case 33: {
+					var ` = `[0];
+					{
+						"int";
+					};
+				};
+				case 35: {
+					var ` = `[0];
+					{
+						"bool";
+					};
+				};
+				case 36: {
+					{
+						"nil";
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	static function checkKindCompat(field:String, litKind:String, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position) {
+		var fieldKind = if (fields.exists(field)) {
+			cast fields.get(field);
+		} else {
+			null;
+		};
+		if (fieldKind != null && ! reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.kindsCompatible(fieldKind, litKind)) {
+			reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.error(ctx, "HEEx assigns type error: @" + field + " is " + fieldKind + " but compared to " + litKind + " literal", pos);
+		};
+	}
+
+	static function collectAtFields(s:String) {
+		var found = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var i = 0;
+		while (i < s.length) {
+			var idx = s.indexOf("@", i);
+			if (idx == -1) {
+				break;
+			};
+			var j = idx + 1;
+			if (j < s.length && {
+				var c = s.charCodeAt(j);
+				(c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95;
+			}) {
+				var k = j + 1;
+				while (k < s.length && {
+					var c = s.charCodeAt(k);
+					(c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95 || (c >= 48 && c <= 57);
+				}) {
+					k ++;
+				};
+				var name = s.substr(j, k - j);
+				{
+					found.set(name, true);
+				};
+				i = k;
+			} else {
+				i = j;
+			};
+		};
+		return {
+			var ` = [];
+			for (k in found.keys()) {
+				`.push(k);
+			};
+			`;
+		};
+	}
+
+	static inline function isIdentStart(c:Int) {
+		return (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95;
+	}
+
+	static inline function isIdentPart(c:Int) {
+		return (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95 || (c >= 48 && c <= 57);
+	}
+
+	static function checkLiteralComparisons(content:String, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Position) {
+		var p1 = new EReg("@([A-Za-z_][A-Za-z0-9_]*)\\s*(==|!=|===|!==|<=|>=|<|>)\\s*(\"[^\"]*\"|\\d+|true|false|nil)", "g");
+		var start1 = 0;
+		while (p1.matchSub(content, start1, null)) {
+			var field = p1.matched(1);
+			var lit = p1.matched(3);
+			var litKind = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.literalKind(lit);
+			var fieldKind = if (fields.exists(field)) {
+				cast fields.get(field);
+			} else {
+				null;
+			};
+			if (fieldKind != null && ! reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.kindsCompatible(fieldKind, litKind)) {
+				reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.error(ctx, "HEEx assigns type error: @" + field + " is " + fieldKind + " but compared to " + litKind + " literal", pos);
+			};
+			var mpos = p1.matchedPos();
+			start1 = mpos.pos + mpos.len;
+		};
+		var p2 = new EReg("(\"[^\"]*\"|\\d+|true|false|nil)\\s*(==|!=|===|!==|<=|>=|<|>)\\s*@([A-Za-z_][A-Za-z0-9_]*)", "g");
+		var start2 = 0;
+		while (p2.matchSub(content, start2, null)) {
+			var lit2 = p2.matched(1);
+			var field2 = p2.matched(3);
+			var litKind2 = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.literalKind(lit2);
+			var fieldKind2 = if (fields.exists(field2)) {
+				cast fields.get(field2);
+			} else {
+				null;
+			};
+			if (fieldKind2 != null && ! reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.kindsCompatible(fieldKind2, litKind2)) {
+				reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.error(ctx, "HEEx assigns type error: @" + field2 + " is " + fieldKind2 + " but compared to " + litKind2 + " literal", pos);
+			};
+			var mpos2 = p2.matchedPos();
+			start2 = mpos2.pos + mpos2.len;
+		};
+	}
+
+	static function literalKind(lit:String) {
+		var t = StringTools.trim(lit);
+		if (t == "true" || t == "false") {
+			return "bool";
+		};
+		if (t == "nil") {
+			return "nil";
+		};
+		if (t.length > 0 && t.charAt(0) == "\"") {
+			return "string";
+		};
+		return if (new EReg("^[0-9]+$", "").match(t)) {
+			"int";
+		} else {
+			"unknown";
+		};
+	}
+
+	static function kindsCompatible(fieldKind:String, litKind:String) {
+		if (litKind == "nil") {
+			return true;
+		};
+		if (fieldKind == null || litKind == null) {
+			return true;
+		};
+		return fieldKind == litKind;
+	}
+
+	static function extractAssignsTypeName(hx:String) {
+		var re = new EReg("function\\s+render\\s*\\(\\s*assigns\\s*:\\s*([A-Za-z0-9_\\.]+)", "");
+		return if (re.match(hx)) {
+			re.matched(1);
+		} else {
+			null;
+		};
+	}
+
+	static function extractAssignsTypeNameBefore(hx:String, nearLine:Int) {
+		var lines = hx.split("\n");
+		var bestName = null;
+		var bestLine = -1;
+		var re = new EReg("function\\s+render\\s*\\([^)]*assigns\\s*:\\s*([A-Za-z0-9_\\.]+)", "");
+		{
+			var ` = 0;
+			var ` = lines.length;
+			while (` < `) {
+				var idx = ` ++;
+				var line = lines[idx];
+				if (re.match(line)) {
+					var name = re.matched(1);
+					var lineNo = idx + 1;
+					if (lineNo <= nearLine && lineNo > bestLine) {
+						bestLine = lineNo;
+						bestName = name;
+					};
+				};
+			};
+		};
+		return bestName;
+	}
+
+	static function extractAssignsFields(typeName:String, hx:String) {
+		var out = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var idx = hx.indexOf("typedef " + typeName + "", null);
+		if (idx == -1) {
+			return out;
+		};
+		var braceStart = hx.indexOf("{", idx);
+		if (braceStart == -1) {
+			return out;
+		};
+		var i = braceStart + 1;
+		var depth = 1;
+		while (i < hx.length && depth > 0) {
+			var ch = hx.charAt(i);
+			if (ch == "{") {
+				depth ++;
+			} else {
+				if (ch == "}") {
+					depth --;
+				};
+			};
+			i ++;
+		};
+		var braceEnd = i - 1;
+		if (braceEnd <= braceStart) {
+			return out;
+		};
+		var block = hx.substr(braceStart + 1, braceEnd - (braceStart + 1));
+		var lines = block.split("\n");
+		{
+			var ` = 0;
+			while (` < lines.length) {
+				var ln = lines[`];
+				++ `;
+				var line = StringTools.trim(ln);
+				if (line.length == 0 || StringTools.startsWith(line, "//")) {
+					continue;
+				};
+				var name = null;
+				var typeSpec = null;
+				var reVar = new EReg("^var\\s+([A-Za-z0-9_]+)\\s*:\\s*([^,;]+)\\s*[,;]?$", "");
+				if (reVar.match(line)) {
+					name = reVar.matched(1);
+					typeSpec = StringTools.trim(reVar.matched(2));
+				} else {
+					var rePlain = new EReg("^([A-Za-z0-9_]+)\\s*:\\s*([^,;]+)\\s*[,;]?$", "");
+					if (rePlain.match(line)) {
+						name = rePlain.matched(1);
+						typeSpec = StringTools.trim(rePlain.matched(2));
+					};
+				};
+				if (name != null && typeSpec != null) {
+					{
+						var value = reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.normalizeKind(typeSpec);
+						out.set(name, value);
+					};
+				};
+			};
+		};
+		return out;
+	}
+
+	static function normalizeKind(spec:String) {
+		var s = StringTools.trim(spec);
+		if (StringTools.startsWith(s, "Null<") && StringTools.endsWith(s, ">")) {
+			s = StringTools.trim(s.substr(5, s.length - 6));
+		};
+		if (s == "String") {
+			return "string";
+		};
+		if (s == "Int") {
+			return "int";
+		};
+		if (s == "Float") {
+			return "float";
+		};
+		if (s == "Bool") {
+			return "bool";
+		};
+		if (new EReg("^Array<.*", "").match(s)) {
+			return "array";
+		};
+		if (new EReg("^Map<.*", "").match(s)) {
+			return "map";
+		};
+		return "unknown";
+	}
+}

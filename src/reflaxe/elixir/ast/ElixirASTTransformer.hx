@@ -998,6 +998,7 @@ class ElixirASTTransformer {
                         var body = clause.body;
 
                         // Debug pattern to understand ChangesetUtils issue
+                        #if debug_redundant_extraction
                         var patternDebug = switch(pattern) {
                             case PTuple(elements):
                                 var elemStrs = [for (e in elements) switch(e) {
@@ -1013,6 +1014,7 @@ class ElixirASTTransformer {
                             default: 'other pattern';
                         };
                         trace('[RemoveRedundantEnumExtraction] Clause $i pattern: $patternDebug');
+                        #end
 
                         // Propagate the binding plan flag to the clause body
                         if (currentCaseHasBindingPlan && body != null) {

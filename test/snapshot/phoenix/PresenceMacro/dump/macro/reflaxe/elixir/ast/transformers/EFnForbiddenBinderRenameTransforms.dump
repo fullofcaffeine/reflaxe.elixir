@@ -1,0 +1,163 @@
+class reflaxe.elixir.ast.transformers.EFnForbiddenBinderRenameTransforms {
+
+	static inline function replacementFor(name:String) {
+		return @:ast(switch (name) {
+	case "elem":
+		"entry";	
+	default:
+		null;	
+}) if (name == "elem") {
+			{
+				"entry";
+			};
+		} else {
+			null;
+		};
+	}
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EFn(clauses):
+		var newClauses = [];
+		for (cl  in  clauses) {
+			var renamedArgs:Array<EPattern> = [];
+			var renameMap = new Map<String,String>();
+			if (cl.args != null) {
+				for (a  in  cl.args) switch (a) {
+					case PVar(nm):
+						var repl = replacementFor(nm);
+						if (repl != null) {
+							renameMap.set(nm, repl);
+							renamedArgs.push(PVar(repl));
+						} else {
+							renamedArgs.push(a);
+						};					
+					default:
+						renamedArgs.push(a);					
+				};
+			};
+			var newBody = if (Lambda.count(renameMap) == 0) cl.body else renameVars(cl.body, renameMap);
+			newClauses.push({ args : renamedArgs, guard : cl.guard, body : newBody });
+		};
+		makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 42) {
+					var ` = `[0];
+					{
+						var clauses = `;
+						{
+							var newClauses = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var cl = clauses[`];
+									++ `;
+									var renamedArgs = [];
+									var renameMap = {
+										{};
+										new haxe.ds.StringMap();
+									};
+									if (cl.args != null) {
+										{
+											var ` = 0;
+											var ` = cl.args;
+											while (` < `.length) {
+												var a = `[`];
+												++ `;
+												@:ast(switch (a) {
+	case PVar(nm):
+		var repl = replacementFor(nm);
+		if (repl != null) {
+			renameMap.set(nm, repl);
+			renamedArgs.push(PVar(repl));
+		} else {
+			renamedArgs.push(a);
+		};	
+	default:
+		renamedArgs.push(a);	
+}) if (enumIndex a == 0) {
+													var ` = a[0];
+													{
+														var nm = `;
+														{
+															var repl = @:ast(switch (name) {
+	case "elem":
+		"entry";	
+	default:
+		null;	
+}) if (nm == "elem") {
+																{
+																	"entry";
+																};
+															} else {
+																null;
+															};
+															if (repl != null) {
+																{
+																	renameMap.set(nm, repl);
+																};
+																renamedArgs.push(reflaxe.elixir.ast.EPattern.PVar(repl));
+															} else {
+																renamedArgs.push(a);
+															};
+														};
+													};
+												} else {
+													renamedArgs.push(a);
+												};
+											};
+										};
+									};
+									var newBody = if (Lambda.count(cast renameMap, null) == 0) {
+										cl.body;
+									} else {
+										reflaxe.elixir.ast.transformers.EFnForbiddenBinderRenameTransforms.renameVars(cl.body, renameMap);
+									};
+									newClauses.push({args : renamedArgs, guard : cl.guard, body : newBody});
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EFn(newClauses), metadata : n.metadata, pos : n.pos};
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+
+	static function renameVars(body:reflaxe.elixir.ast.ElixirAST, rename:Map<String, String>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EVar(v) if (rename.exists(v)):
+		makeASTWithMeta(EVar(rename.get(v)), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				if (enumIndex ` == 38) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (rename.exists(v)) {
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EVar(rename.get(v));
+								var meta = x.metadata;
+								var pos = x.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						} else {
+							x;
+						};
+					};
+				} else {
+					x;
+				};
+			};
+		});
+	}
+}

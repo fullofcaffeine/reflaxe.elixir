@@ -1,0 +1,379 @@
+class reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms {
+
+	static function isSelfAppend(rhs:reflaxe.elixir.ast.ElixirAST, lhs:String) {
+		var result = [false];
+		reflaxe.elixir.ast.ASTUtils.walk(rhs, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (result[0]) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case ERemoteCall(_, "concat", args) if (args.length == 2):
+		switch (args[0].def) {
+			case EVar(nm) if (nm == lhs):
+				result = true;			
+			default:
+		};	
+	case ECall(_, "concat", argsC) if (argsC.length == 2):
+		switch (argsC[0].def) {
+			case EVar(nm2) if (nm2 == lhs):
+				result = true;			
+			default:
+		};	
+	case EBinary(Concat, l, _):
+		switch (l.def) {
+			case EVar(nm3) if (nm3 == lhs):
+				result = true;			
+			default:
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var argsC = `;
+								if (argsC.length == 2) {
+									@:ast(switch (argsC[0].def) {
+	case EVar(nm2) if (nm2 == lhs):
+		result = true;	
+	default:
+}) {
+										var ` = argsC[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm2 = `;
+												if (nm2 == lhs) {
+													result[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var args = `;
+								if (args.length == 2) {
+									@:ast(switch (args[0].def) {
+	case EVar(nm) if (nm == lhs):
+		result = true;	
+	default:
+}) {
+										var ` = args[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm = `;
+												if (nm == lhs) {
+													result[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 23) {
+							{
+								var l = `;
+								{
+									@:ast(switch (l.def) {
+	case EVar(nm3) if (nm3 == lhs):
+		result = true;	
+	default:
+}) {
+										var ` = l.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm3 = `;
+												if (nm3 == lhs) {
+													result[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+		return result[0];
+	}
+
+	static function rewriteToAcc(lhsName:String, rhs:reflaxe.elixir.ast.ElixirAST, accName:String, meta:Dynamic, pos:Dynamic) {
+		var newRight = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(rhs, function(z:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (z.def) {
+	case ERemoteCall(_, "concat", argsX) if (argsX.length == 2):
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), argsX[1]]), z.metadata, z.pos);	
+	case ECall(_, "concat", argsCX) if (argsCX.length == 2):
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), argsCX[1]]), z.metadata, z.pos);	
+	case EBinary(Concat, _, r):
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), r]), z.metadata, z.pos);	
+	default:
+		z;	
+}) {
+				var ` = z.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var argsCX = `;
+								if (argsCX.length == 2) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "concat", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+									}, argsCX[1]]), metadata : z.metadata, pos : z.pos};
+								} else {
+									z;
+								};
+							};
+						} else {
+							z;
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var argsX = `;
+								if (argsX.length == 2) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "concat", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+									}, argsX[1]]), metadata : z.metadata, pos : z.pos};
+								} else {
+									z;
+								};
+							};
+						} else {
+							z;
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 23) {
+							{
+								var r = `;
+								{
+									{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+									}, "concat", [{
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+									}, r]), metadata : z.metadata, pos : z.pos};
+								};
+							};
+						} else {
+							z;
+						};
+					};
+					default: {
+						z;
+					}
+				};
+			};
+		});
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+		}, newRight), metadata : cast meta, pos : cast pos};
+	}
+
+	static function transformWithAccContext(ast:reflaxe.elixir.ast.ElixirAST, currentAcc:Null<String>) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EFn(clauses) if (clauses.length == 1):
+		var cl = clauses[0];
+		if (cl.args.length < 2) return n;
+		var accName:Null<String> = switch (cl.args[1]) {
+			case PVar(a):
+				a;			
+			default:
+				null;			
+		};
+		if (accName == null) return n;
+		var newBody = transformWithAccContext(cl.body, accName);
+		makeASTWithMeta(EFn([{ args : cl.args, guard : cl.guard, body : newBody }]), n.metadata, n.pos);	
+	case EBinary(Match, left, rhs) if (currentAcc != null):
+		var lhsName:Null<String> = switch (left.def) {
+			case EVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (lhsName != null && isSelfAppend(rhs, lhsName)) {
+			rewriteToAcc(lhsName, rhs, currentAcc, n.metadata, n.pos);
+		} else n;	
+	case EMatch(pat, rhs2) if (currentAcc != null):
+		var lhsName2:Null<String> = switch (pat) {
+			case PVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (lhsName2 != null && isSelfAppend(rhs2, lhsName2)) {
+			rewriteToAcc(lhsName2, rhs2, currentAcc, n.metadata, n.pos);
+		} else n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs2 = `;
+							if (currentAcc != null) {
+								var lhsName2 = @:ast(switch (pat) {
+	case PVar(nm):
+		nm;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+									var ` = pat[0];
+									{
+										var nm = `;
+										{
+											nm;
+										};
+									};
+								} else {
+									null;
+								};
+								if (lhsName2 != null && reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.isSelfAppend(rhs2, lhsName2)) {
+									reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.rewriteToAcc(lhsName2, rhs2, currentAcc, n.metadata, n.pos);
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var left = `;
+								var rhs = `;
+								if (currentAcc != null) {
+									var lhsName = @:ast(switch (left.def) {
+	case EVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+										var ` = left.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm = `;
+												{
+													nm;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+									if (lhsName != null && reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.isSelfAppend(rhs, lhsName)) {
+										reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.rewriteToAcc(lhsName, rhs, currentAcc, n.metadata, n.pos);
+									} else {
+										n;
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 42: {
+						var ` = `[0];
+						{
+							var clauses = `;
+							if (clauses.length == 1) {
+								var cl = clauses[0];
+								if (cl.args.length < 2) {
+									return n;
+								};
+								var accName = @:ast(switch (cl.args[1]) {
+	case PVar(a):
+		a;	
+	default:
+		null;	
+}) {
+									var ` = cl.args[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var a = `;
+											{
+												a;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+								if (accName == null) {
+									return n;
+								};
+								var newBody = reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.transformWithAccContext(cl.body, accName);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : newBody}]), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.transformWithAccContext(ast, null);
+	}
+}

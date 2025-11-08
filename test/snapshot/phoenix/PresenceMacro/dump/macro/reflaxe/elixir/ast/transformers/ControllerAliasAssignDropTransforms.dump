@@ -1,0 +1,283 @@
+class reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EModule(name, attrs, body) if (isController(name)):
+		var out = [for (b  in  body) cleanse(b)];
+		makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);	
+	case EDefmodule(moduleName, doBlock) if (isController(moduleName)):
+		makeASTWithMeta(EDefmodule(moduleName, cleanse(doBlock)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var name = `;
+							var attrs = `;
+							var body = `;
+							if (name != null && name.indexOf("Web.", null) > 0 && StringTools.endsWith(name, "Controller")) {
+								var out = {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < body.length) {
+											var b = body[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.cleanse(b));
+										};
+									};
+									`;
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.EModule(name, attrs, out), metadata : n.metadata, pos : n.pos};
+							} else {
+								n;
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var moduleName = `;
+							var doBlock = `;
+							if (moduleName != null && moduleName.indexOf("Web.", null) > 0 && StringTools.endsWith(moduleName, "Controller")) {
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.cleanse(doBlock));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static inline function isController(name:String) {
+		return name != null && name.indexOf("Web.", null) > 0 && StringTools.endsWith(name, "Controller");
+	}
+
+	static function cleanse(node:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(node, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(functionName, parameters, guards, body):
+		makeASTWithMeta(EDef(functionName, parameters, guards, drop(body)), n.metadata, n.pos);	
+	case EDefp(functionName, parameters, guards, body):
+		makeASTWithMeta(EDefp(functionName, parameters, guards, drop(body)), n.metadata, n.pos);	
+	case ECase(expr, clauses):
+		var newClauses = [];
+		for (cl  in  clauses) newClauses.push({ pattern : cl.pattern, guard : cl.guard, body : drop(cl.body) });
+		makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var functionName = `;
+							var parameters = `;
+							var guards = `;
+							var body = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDef(functionName, parameters, guards, reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.drop(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var functionName = `;
+							var parameters = `;
+							var guards = `;
+							var body = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDefp(functionName, parameters, guards, reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.drop(body));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var expr = `;
+							var clauses = `;
+							{
+								var newClauses = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var cl = clauses[`];
+										++ `;
+										newClauses.push({pattern : cl.pattern, guard : cl.guard, body : reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.drop(cl.body)});
+									};
+								};
+								{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, newClauses), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function drop(b:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (b.def) {
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(filter(stmts)), b.metadata, b.pos);	
+	case EDo(stmts):
+		makeASTWithMeta(EDo(filter(stmts)), b.metadata, b.pos);	
+	default:
+		b;	
+}) {
+			var ` = b.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.filter(stmts));
+								var meta = b.metadata;
+								var pos = b.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.filter(stmts));
+								var meta = b.metadata;
+								var pos = b.pos;
+								{def : def, metadata : meta, pos : pos};
+							};
+						};
+					};
+				};
+				default: {
+					b;
+				}
+			};
+		};
+	}
+
+	static inline function isAliasName(n:String) {
+		return n == "json" || n == "data" || n == "conn";
+	}
+
+	static function isAssignTo(stmt:reflaxe.elixir.ast.ElixirAST, name:String) {
+		return @:ast(switch (stmt.def) {
+	case EBinary(Match, { def : EVar(nm) }, _):
+		nm == name;	
+	case EMatch(PVar(binderName), _):
+		binderName == name;	
+	default:
+		false;	
+}) {
+			var ` = stmt.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var binderName = `;
+							{
+								binderName == name;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 27) {
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								{
+									var nm = `;
+									{
+										nm == name;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function filter(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts == null) {
+			return stmts;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				if (reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.isAssignTo(s, "json") || reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.isAssignTo(s, "data") || reflaxe.elixir.ast.transformers.ControllerAliasAssignDropTransforms.isAssignTo(s, "conn")) {
+					continue;
+				};
+				out.push(s);
+			};
+		};
+		return out;
+	}
+}

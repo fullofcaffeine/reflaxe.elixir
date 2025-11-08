@@ -46,6 +46,13 @@ class PresenceRouteLocalizeTransforms {
     }
 
     static function localize(node: ElixirAST, moduleName: String): ElixirAST {
+        // Derive <App>Web.Presence once for this module
+        var appWebPresence: Null<String> = null;
+        try {
+            var appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            if (appPrefix != null && appPrefix.length > 0) appWebPresence = appPrefix + "Web.Presence";
+        } catch (_:Dynamic) {}
+        if (appWebPresence == null) appWebPresence = "MyAppWeb.Presence"; // safe fallback for snapshots
         return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
             return switch (x.def) {
                 case ERemoteCall(mod, fn, args):
@@ -55,6 +62,9 @@ class PresenceRouteLocalizeTransforms {
                             makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
                         case EVar(mname) if (mname == "Phoenix.Presence"):
                             makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
+                        // Normalize __MODULE__.* and <moduleName>.* to <App>Web.Presence.* when available
+                        case EVar(mname2) if ((appWebPresence != null && (mname2 == "__MODULE__" || mname2 == moduleName)) && (fn == "track" || fn == "update" || fn == "untrack" || fn == "list")):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar(appWebPresence)), fn, args), x.metadata, x.pos);
                         default: x;
                     }
                 case ECall(target, fn, args):
@@ -62,6 +72,9 @@ class PresenceRouteLocalizeTransforms {
                     switch (target != null ? target.def : null) {
                         case EField({def: EField({def: EVar("Phoenix")}, "Presence")}, f) if (f == fn):
                             makeASTWithMeta(ERemoteCall(makeAST(EVar(moduleName)), fn, args), x.metadata, x.pos);
+                        // Normalize __MODULE__.fn(...) and <moduleName>.fn(...) to <App>Web.Presence.fn(...)
+                        case EVar(mname3) if ((appWebPresence != null && (mname3 == "__MODULE__" || mname3 == moduleName)) && (fn == "track" || fn == "update" || fn == "untrack" || fn == "list")):
+                            makeASTWithMeta(ERemoteCall(makeAST(EVar(appWebPresence)), fn, args), x.metadata, x.pos);
                         default: x;
                     }
                 case EField(target, field):

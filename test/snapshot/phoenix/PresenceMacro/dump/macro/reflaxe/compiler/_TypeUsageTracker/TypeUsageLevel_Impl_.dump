@@ -1,0 +1,26 @@
+@:enum
+private class reflaxe.compiler._TypeUsageTracker.TypeUsageLevel_Impl_ {
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var Expression:reflaxe.compiler.TypeUsageLevel = cast 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var VariableType:reflaxe.compiler.TypeUsageLevel = cast 2;
+
+	@:value(cast 4) @:impl @:enum
+	public static inline var StaticAccess:reflaxe.compiler.TypeUsageLevel = cast 4;
+
+	@:value(cast 8) @:impl @:enum
+	public static inline var Constructed:reflaxe.compiler.TypeUsageLevel = cast 8;
+
+	@:value(cast 16) @:impl @:enum
+	public static inline var FunctionDeclaration:reflaxe.compiler.TypeUsageLevel = cast 16;
+
+	@:value(cast 32) @:impl @:enum
+	public static inline var VariableDeclaration:reflaxe.compiler.TypeUsageLevel = cast 32;
+
+	@:value(cast 64) @:impl @:enum
+	public static inline var ExtendedFrom:reflaxe.compiler.TypeUsageLevel = cast 64;
+
+	public static function LevelCount() return 7
+}

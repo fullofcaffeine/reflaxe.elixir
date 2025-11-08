@@ -1,0 +1,525 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.ReturnBuilder {
+
+	public static function build(e:Null<haxe.macro.TypedExpr>, context:reflaxe.elixir.CompilationContext) {
+		if (e != null) {
+			if (reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(e)) {
+				return reflaxe.elixir.ast.builders.ReturnBuilder.processReturnSwitch(e, context);
+			};
+			var result = if (context.compiler != null) {
+				reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
+			} else {
+				return null;
+			};
+			if (result == null) {
+				return {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				}.def;
+			};
+			return result.def;
+		} else {
+			return reflaxe.elixir.ast.ElixirASTDef.ENil;
+		};
+	}
+
+	static function isSwitchExpression(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return false;
+		};
+		return @:ast(switch (e.expr) {
+	case TSwitch(_, _, _):
+		true;	
+	case TMeta(_, innerExpr):
+		switch (innerExpr.expr) {
+			case TBlock(exprs) if (exprs.length >= 2):
+				checkInfrastructurePattern(exprs);			
+			default:
+				isSwitchExpression(innerExpr);			
+		};	
+	case TParenthesis(innerExpr):
+		isSwitchExpression(innerExpr);	
+	case TBlock(exprs) if (exprs.length >= 2):
+		checkInfrastructurePattern(exprs);	
+	default:
+		false;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(innerExpr);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						if (exprs.length >= 2) {
+							reflaxe.elixir.ast.builders.ReturnBuilder.checkInfrastructurePattern(exprs);
+						} else {
+							false;
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var innerExpr = `;
+						{
+							@:ast(switch (innerExpr.expr) {
+	case TBlock(exprs) if (exprs.length >= 2):
+		checkInfrastructurePattern(exprs);	
+	default:
+		isSwitchExpression(innerExpr);	
+}) {
+								var ` = innerExpr.expr;
+								if (enumIndex ` == 14) {
+									var ` = `[0];
+									{
+										var exprs = `;
+										if (exprs.length >= 2) {
+											reflaxe.elixir.ast.builders.ReturnBuilder.checkInfrastructurePattern(exprs);
+										} else {
+											reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(innerExpr);
+										};
+									};
+								} else {
+									reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(innerExpr);
+								};
+							};
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function checkInfrastructurePattern(exprs:Array<haxe.macro.TypedExpr>) {
+		var lastExpr = exprs[exprs.length - 1];
+		return @:ast(switch (lastExpr.expr) {
+	case TSwitch(target, _, _):
+		var unwrappedTarget = switch (target.expr) {
+			case TParenthesis(inner):
+				inner;			
+			default:
+				target;			
+		};
+		switch (unwrappedTarget.expr) {
+			case TLocal(v):
+				for (i  in  0 ... exprs.length - 1) {
+					switch (exprs[i].expr) {
+						case TVar(tvar, init) if (init != null && tvar.id == v.id):
+							return true;						
+						default:
+					};
+				};
+				false;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) {
+			var ` = lastExpr.expr;
+			if (enumIndex ` == 18) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var target = `;
+					{
+						var unwrappedTarget = @:ast(switch (target.expr) {
+	case TParenthesis(inner):
+		inner;	
+	default:
+		target;	
+}) {
+							var ` = target.expr;
+							if (enumIndex ` == 6) {
+								var ` = `[0];
+								{
+									var inner = `;
+									{
+										inner;
+									};
+								};
+							} else {
+								target;
+							};
+						};
+						@:ast(switch (unwrappedTarget.expr) {
+	case TLocal(v):
+		for (i  in  0 ... exprs.length - 1) {
+			switch (exprs[i].expr) {
+				case TVar(tvar, init) if (init != null && tvar.id == v.id):
+					return true;				
+				default:
+			};
+		};
+		false;	
+	default:
+		false;	
+}) {
+							var ` = unwrappedTarget.expr;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								{
+									var v = `;
+									{
+										{
+											var ` = 0;
+											var ` = exprs.length - 1;
+											while (` < `) {
+												var i = ` ++;
+												@:ast(switch (exprs[i].expr) {
+	case TVar(tvar, init) if (init != null && tvar.id == v.id):
+		return true;	
+	default:
+}) {
+													var ` = exprs[i].expr;
+													if (enumIndex ` == 13) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var tvar = `;
+															var init = `;
+															if (init != null && tvar.id == v.id) {
+																return true;
+															} else {};
+														};
+													} else {};
+												};
+											};
+										};
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function processReturnSwitch(e:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		var unwrappedExpr = @:ast(switch (e.expr) {
+	case TMeta(_, innerExpr):
+		innerExpr;	
+	default:
+		e;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 25) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var innerExpr = `;
+					{
+						innerExpr;
+					};
+				};
+			} else {
+				e;
+			};
+		};
+		var processedExpr = @:ast(switch (unwrappedExpr.expr) {
+	case TBlock(exprs) if (exprs.length >= 2):
+		var lastExpr = exprs[exprs.length - 1];
+		switch (lastExpr.expr) {
+			case TSwitch(target, cases, edef):
+				var unwrappedTarget = switch (target.expr) {
+					case TParenthesis(inner):
+						inner;					
+					default:
+						target;					
+				};
+				switch (unwrappedTarget.expr) {
+					case TLocal(v):
+						var originalExpr:Null<TypedExpr> = null;
+						for (i  in  0 ... exprs.length - 1) {
+							switch (exprs[i].expr) {
+								case TVar(tvar, init) if (init != null && tvar.id == v.id):
+									originalExpr = init;
+									break;								
+								default:
+							};
+						};
+						if (originalExpr != null) {
+							var newSwitch:TypedExpr = { expr : TSwitch(originalExpr, cases, edef), pos : lastExpr.pos, t : lastExpr.t };
+							newSwitch;
+						} else {
+							lastExpr;
+						};					
+					default:
+						lastExpr;					
+				};			
+			default:
+				unwrappedExpr;			
+		};	
+	default:
+		unwrappedExpr;	
+}) {
+			var ` = unwrappedExpr.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					if (exprs.length >= 2) {
+						var lastExpr = exprs[exprs.length - 1];
+						@:ast(switch (lastExpr.expr) {
+	case TSwitch(target, cases, edef):
+		var unwrappedTarget = switch (target.expr) {
+			case TParenthesis(inner):
+				inner;			
+			default:
+				target;			
+		};
+		switch (unwrappedTarget.expr) {
+			case TLocal(v):
+				var originalExpr:Null<TypedExpr> = null;
+				for (i  in  0 ... exprs.length - 1) {
+					switch (exprs[i].expr) {
+						case TVar(tvar, init) if (init != null && tvar.id == v.id):
+							originalExpr = init;
+							break;						
+						default:
+					};
+				};
+				if (originalExpr != null) {
+					var newSwitch:TypedExpr = { expr : TSwitch(originalExpr, cases, edef), pos : lastExpr.pos, t : lastExpr.t };
+					newSwitch;
+				} else {
+					lastExpr;
+				};			
+			default:
+				lastExpr;			
+		};	
+	default:
+		unwrappedExpr;	
+}) {
+							var ` = lastExpr.expr;
+							if (enumIndex ` == 18) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var target = `;
+									var cases = `;
+									var edef = `;
+									{
+										var unwrappedTarget = @:ast(switch (target.expr) {
+	case TParenthesis(inner):
+		inner;	
+	default:
+		target;	
+}) {
+											var ` = target.expr;
+											if (enumIndex ` == 6) {
+												var ` = `[0];
+												{
+													var inner = `;
+													{
+														inner;
+													};
+												};
+											} else {
+												target;
+											};
+										};
+										@:ast(switch (unwrappedTarget.expr) {
+	case TLocal(v):
+		var originalExpr:Null<TypedExpr> = null;
+		for (i  in  0 ... exprs.length - 1) {
+			switch (exprs[i].expr) {
+				case TVar(tvar, init) if (init != null && tvar.id == v.id):
+					originalExpr = init;
+					break;				
+				default:
+			};
+		};
+		if (originalExpr != null) {
+			var newSwitch:TypedExpr = { expr : TSwitch(originalExpr, cases, edef), pos : lastExpr.pos, t : lastExpr.t };
+			newSwitch;
+		} else {
+			lastExpr;
+		};	
+	default:
+		lastExpr;	
+}) {
+											var ` = unwrappedTarget.expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var v = `;
+													{
+														var originalExpr = null;
+														{
+															var ` = 0;
+															var ` = exprs.length - 1;
+															while (` < `) {
+																var i = ` ++;
+																@:ast(switch (exprs[i].expr) {
+	case TVar(tvar, init) if (init != null && tvar.id == v.id):
+		originalExpr = init;
+		break;	
+	default:
+}) {
+																	var ` = exprs[i].expr;
+																	if (enumIndex ` == 13) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		{
+																			var tvar = `;
+																			var init = `;
+																			if (init != null && tvar.id == v.id) {
+																				originalExpr = init;
+																				break;
+																			} else {};
+																		};
+																	} else {};
+																};
+															};
+														};
+														if (originalExpr != null) {
+															var newSwitch = {expr : haxe.macro.TypedExprDef.TSwitch(originalExpr, cases, edef), pos : lastExpr.pos, t : lastExpr.t};
+															newSwitch;
+														} else {
+															lastExpr;
+														};
+													};
+												};
+											} else {
+												lastExpr;
+											};
+										};
+									};
+								};
+							} else {
+								unwrappedExpr;
+							};
+						};
+					} else {
+						unwrappedExpr;
+					};
+				};
+			} else {
+				unwrappedExpr;
+			};
+		};
+		var switchExpr = reflaxe.elixir.ast.builders.ReturnBuilder.extractSwitch(processedExpr);
+		if (switchExpr == null) {
+			return if (context.compiler != null) {
+				var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(processedExpr, context);
+				if (result != null) {
+					result.def;
+				} else {
+					null;
+				};
+			} else {
+				null;
+			};
+		};
+		var result = if (context.compiler != null) {
+			reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(switchExpr, context);
+		} else {
+			return null;
+		};
+		if (result == null) {
+			return null;
+		};
+		@:ast(switch (e.expr) {
+	case TMeta(meta, _):
+		if (result.metadata == null) {
+			result.metadata = { };
+		};	
+	default:
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 25) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var meta = `;
+					{
+						if (result.metadata == null) {
+							result.metadata = {};
+						};
+					};
+				};
+			} else {};
+		};
+		return result.def;
+	}
+
+	static function extractSwitch(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return null;
+		};
+		return @:ast(switch (e.expr) {
+	case TSwitch(_, _, _):
+		e;	
+	case TMeta(_, innerExpr):
+		extractSwitch(innerExpr);	
+	case TParenthesis(innerExpr):
+		extractSwitch(innerExpr);	
+	default:
+		null;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.extractSwitch(innerExpr);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						e;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.extractSwitch(innerExpr);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

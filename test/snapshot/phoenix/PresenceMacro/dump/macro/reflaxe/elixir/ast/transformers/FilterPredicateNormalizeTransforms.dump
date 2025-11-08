@@ -1,0 +1,296 @@
+class reflaxe.elixir.ast.transformers.FilterPredicateNormalizeTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall({ def : EVar(mod) }, "filter", args) if (mod == "Enum" && args != null && args.length == 2):
+		var normalized = ensureFnPredicate(args[0], args[1], n.metadata, n.pos);
+		if (normalized == null) n else makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "filter", [normalized.list, normalized.predicate]), n.metadata, n.pos);	
+	case ECall(target, "filter", args2) if (args2 != null && args2.length == 1):
+		var normalized2 = ensureFnPredicate(target, args2[0], n.metadata, n.pos);
+		if (normalized2 == null) n else makeASTWithMeta(ECall(normalized2.list, "filter", [normalized2.predicate]), n.metadata, n.pos);	
+	case EMatch(pat, rhs):
+		switch (rhs.def) {
+			case ERemoteCall({ def : EVar(mod2) }, "filter", a3) if (mod2 == "Enum" && a3 != null && a3.length == 2):
+				var normalized3 = ensureFnPredicate(a3[0], a3[1], rhs.metadata, rhs.pos);
+				if (normalized3 == null) n else {
+					var repl = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [normalized3.list, normalized3.predicate]));
+					makeASTWithMeta(EMatch(pat, repl), n.metadata, n.pos);
+				};			
+			case ECall(t2, "filter", a4) if (a4 != null && a4.length == 1):
+				var normalized4 = ensureFnPredicate(t2, a4[0], rhs.metadata, rhs.pos);
+				if (normalized4 == null) n else {
+					var repl2 = makeAST(ECall(normalized4.list, "filter", [normalized4.predicate]));
+					makeASTWithMeta(EMatch(pat, repl2), n.metadata, n.pos);
+				};			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 8: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var pat = `;
+							var rhs = `;
+							{
+								@:ast(switch (rhs.def) {
+	case ERemoteCall({ def : EVar(mod2) }, "filter", a3) if (mod2 == "Enum" && a3 != null && a3.length == 2):
+		var normalized3 = ensureFnPredicate(a3[0], a3[1], rhs.metadata, rhs.pos);
+		if (normalized3 == null) n else {
+			var repl = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [normalized3.list, normalized3.predicate]));
+			makeASTWithMeta(EMatch(pat, repl), n.metadata, n.pos);
+		};	
+	case ECall(t2, "filter", a4) if (a4 != null && a4.length == 1):
+		var normalized4 = ensureFnPredicate(t2, a4[0], rhs.metadata, rhs.pos);
+		if (normalized4 == null) n else {
+			var repl2 = makeAST(ECall(normalized4.list, "filter", [normalized4.predicate]));
+			makeASTWithMeta(EMatch(pat, repl2), n.metadata, n.pos);
+		};	
+	default:
+		n;	
+}) {
+									var ` = rhs.def;
+									switch (enumIndex `) {
+										case 22: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (` == "filter") {
+												{
+													var t2 = `;
+													var a4 = `;
+													if (a4 != null && a4.length == 1) {
+														var normalized4 = reflaxe.elixir.ast.transformers.FilterPredicateNormalizeTransforms.ensureFnPredicate(t2, a4[0], rhs.metadata, rhs.pos);
+														if (normalized4 == null) {
+															n;
+														} else {
+															var repl2 = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.ECall(normalized4.list, "filter", [normalized4.predicate]), metadata : {}, pos : pos};
+															};
+															{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, repl2), metadata : n.metadata, pos : n.pos};
+														};
+													} else {
+														n;
+													};
+												};
+											} else {
+												n;
+											};
+										};
+										case 24: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var ` = `.def;
+												var ` = `.metadata;
+												var ` = `.pos;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													if (` == "filter") {
+														{
+															var mod2 = `;
+															var a3 = `;
+															if (mod2 == "Enum" && a3 != null && a3.length == 2) {
+																var normalized3 = reflaxe.elixir.ast.transformers.FilterPredicateNormalizeTransforms.ensureFnPredicate(a3[0], a3[1], rhs.metadata, rhs.pos);
+																if (normalized3 == null) {
+																	n;
+																} else {
+																	var repl = {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+																			var pos = null;
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+																		}, "filter", [normalized3.list, normalized3.predicate]), metadata : {}, pos : pos};
+																	};
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(pat, repl), metadata : n.metadata, pos : n.pos};
+																};
+															} else {
+																n;
+															};
+														};
+													} else {
+														n;
+													};
+												} else {
+													n;
+												};
+											};
+										};
+										default: {
+											n;
+										}
+									};
+								};
+							};
+						};
+					};
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "filter") {
+							{
+								var target = `;
+								var args2 = `;
+								if (args2 != null && args2.length == 1) {
+									var normalized2 = reflaxe.elixir.ast.transformers.FilterPredicateNormalizeTransforms.ensureFnPredicate(target, args2[0], n.metadata, n.pos);
+									if (normalized2 == null) {
+										n;
+									} else {
+										{def : reflaxe.elixir.ast.ElixirASTDef.ECall(normalized2.list, "filter", [normalized2.predicate]), metadata : n.metadata, pos : n.pos};
+									};
+								} else {
+									n;
+								};
+							};
+						} else {
+							n;
+						};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var ` = `.def;
+							var ` = `.metadata;
+							var ` = `.pos;
+							if (enumIndex ` == 38) {
+								var ` = `[0];
+								if (` == "filter") {
+									{
+										var mod = `;
+										var args = `;
+										if (mod == "Enum" && args != null && args.length == 2) {
+											var normalized = reflaxe.elixir.ast.transformers.FilterPredicateNormalizeTransforms.ensureFnPredicate(args[0], args[1], n.metadata, n.pos);
+											if (normalized == null) {
+												n;
+											} else {
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+												}, "filter", [normalized.list, normalized.predicate]), metadata : n.metadata, pos : n.pos};
+											};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function ensureFnPredicate(listExpr:reflaxe.elixir.ast.ElixirAST, pred:reflaxe.elixir.ast.ElixirAST, meta:Dynamic, pos:Dynamic) {
+		if (pred == null || pred.def == null) {
+			return null;
+		};
+		return @:ast(switch (pred.def) {
+	case EFn(_):
+		{ list : listExpr, predicate : pred };	
+	case ECapture(_, _):
+		var binder = makeAST(EVar("elem"));
+		var call = makeAST(ECall(pred, "", [binder]));
+		var fnNode = makeAST(EFn([{ args : [PVar("elem")], guard : null, body : call }]));
+		{ list : listExpr, predicate : fnNode };	
+	case EVar(_) | EField(_, _):
+		var binder2 = makeAST(EVar("elem"));
+		var call2 = makeAST(ECall(pred, "", [binder2]));
+		var fnNode2 = makeAST(EFn([{ args : [PVar("elem")], guard : null, body : call2 }]));
+		{ list : listExpr, predicate : fnNode2 };	
+	default:
+		var fnNode3 = makeAST(EFn([{ args : [PVar("elem")], guard : null, body : pred }]));
+		{ list : listExpr, predicate : fnNode3 };	
+}) {
+			var ` = pred.def;
+			switch (enumIndex `) {
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var binder2 = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("elem"), metadata : {}, pos : pos};
+						};
+						var call2 = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECall(pred, "", [binder2]), metadata : {}, pos : pos};
+						};
+						var fnNode2 = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("elem")], guard : null, body : call2}]), metadata : {}, pos : pos};
+						};
+						{list : listExpr, predicate : fnNode2};
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var binder2 = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("elem"), metadata : {}, pos : pos};
+						};
+						var call2 = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECall(pred, "", [binder2]), metadata : {}, pos : pos};
+						};
+						var fnNode2 = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("elem")], guard : null, body : call2}]), metadata : {}, pos : pos};
+						};
+						{list : listExpr, predicate : fnNode2};
+					};
+				};
+				case 42: {
+					var ` = `[0];
+					{
+						{list : listExpr, predicate : pred};
+					};
+				};
+				case 43: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var binder = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("elem"), metadata : {}, pos : pos};
+						};
+						var call = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ECall(pred, "", [binder]), metadata : {}, pos : pos};
+						};
+						var fnNode = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("elem")], guard : null, body : call}]), metadata : {}, pos : pos};
+						};
+						{list : listExpr, predicate : fnNode};
+					};
+				};
+				default: {
+					var fnNode3 = {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("elem")], guard : null, body : pred}]), metadata : {}, pos : pos};
+					};
+					{list : listExpr, predicate : fnNode3};
+				}
+			};
+		};
+	}
+}

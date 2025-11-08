@@ -1,0 +1,873 @@
+class reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms {
+
+	static function isSelfAppend(rhs:reflaxe.elixir.ast.ElixirAST, lhs:String) {
+		var result = [false];
+		reflaxe.elixir.ast.ASTUtils.walk(rhs, function(n:reflaxe.elixir.ast.ElixirAST) {
+			if (result[0]) {
+				return;
+			};
+			@:ast(switch (n.def) {
+	case ERemoteCall(_, "concat", args) if (args.length == 2):
+		switch (args[0].def) {
+			case EVar(nm) if (nm == lhs):
+				result = true;			
+			default:
+		};	
+	case ECall(_, "concat", argsC) if (argsC.length == 2):
+		switch (argsC[0].def) {
+			case EVar(nm2) if (nm2 == lhs):
+				result = true;			
+			default:
+		};	
+	case EBinary(Concat, l, _):
+		switch (l.def) {
+			case EVar(nm3) if (nm3 == lhs):
+				result = true;			
+			default:
+		};	
+	default:
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 22: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var argsC = `;
+								if (argsC.length == 2) {
+									@:ast(switch (argsC[0].def) {
+	case EVar(nm2) if (nm2 == lhs):
+		result = true;	
+	default:
+}) {
+										var ` = argsC[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm2 = `;
+												if (nm2 == lhs) {
+													result[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					case 24: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (` == "concat") {
+							{
+								var args = `;
+								if (args.length == 2) {
+									@:ast(switch (args[0].def) {
+	case EVar(nm) if (nm == lhs):
+		result = true;	
+	default:
+}) {
+										var ` = args[0].def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm = `;
+												if (nm == lhs) {
+													result[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								} else {};
+							};
+						} else {};
+					};
+					case 26: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 23) {
+							{
+								var l = `;
+								{
+									@:ast(switch (l.def) {
+	case EVar(nm3) if (nm3 == lhs):
+		result = true;	
+	default:
+}) {
+										var ` = l.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm3 = `;
+												if (nm3 == lhs) {
+													result[0] = true;
+												} else {};
+											};
+										} else {};
+									};
+								};
+							};
+						} else {};
+					};
+					default: {}
+				};
+			};
+		});
+		return result[0];
+	}
+
+	public static function unifyPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall(mod, "reduce", args) if (args.length == 3):
+		var fnNode = args[2];
+		switch (fnNode.def) {
+			case EFn(clauses) if (clauses.length == 1):
+				var cl = clauses[0];
+				if (cl.args.length < 2) return n;
+				var accName:Null<String> = switch (cl.args[1]) {
+					case PVar(a):
+						a;					
+					default:
+						null;					
+				};
+				var binderName:Null<String> = switch (cl.args[0]) {
+					case PVar(b):
+						b;					
+					default:
+						null;					
+				};
+				if (accName == null) return n;
+				var accAliasSet = new Map<String,Bool>();
+				var binderAliasSet = new Map<String,Bool>();
+				ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
+					switch (x.def) {
+						case EBinary(Match, left, rhs):
+							var lhs:Null<String> = switch (left.def) {
+								case EVar(nm):
+									nm;								
+								default:
+									null;								
+							};
+							if (lhs != null) {
+								if (isSelfAppend(rhs, lhs) && lhs != accName) {
+									accAliasSet.set(lhs, true);
+									Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs + " (acc=" + accName + ")");
+								};
+								switch (rhs.def) {
+									case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName):
+										binderAliasSet.set(lhs, true);
+										Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs + " (binder=" + binderName + ")");									
+									default:
+								};
+							};						
+						case EMatch(pat, rhs2):
+							var lhs2:Null<String> = switch (pat) {
+								case PVar(n2):
+									n2;								
+								default:
+									null;								
+							};
+							if (lhs2 != null) {
+								if (isSelfAppend(rhs2, lhs2) && lhs2 != accName) {
+									accAliasSet.set(lhs2, true);
+									Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs2 + " (acc=" + accName + ")");
+								};
+								switch (rhs2.def) {
+									case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName):
+										binderAliasSet.set(lhs2, true);
+										Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs2 + " (binder=" + binderName + ")");									
+									default:
+								};
+							};						
+						default:
+					};
+					return x;
+				});
+				var accAliases = [for (k  in  accAliasSet.keys()) k];
+				var binderAliases = [for (k  in  binderAliasSet.keys()) k];
+				Sys.println("[ReduceAccAliasUnify] reducer acc=" + accName + (binderName != null ? (", binder=" + binderName) : "") + ", accAliases=" + accAliases.length + ", binderAliases=" + binderAliases.length);
+				if (accAliases.length == 0 && binderAliases.length == 0) return n;
+				var newBody = ElixirASTTransformer.transformNode(cl.body, function(y:ElixirAST):ElixirAST {
+					return switch (y.def) {
+						case EVar(v):
+							if (accAliases.indexOf(v) != -1) {
+								makeASTWithMeta(EVar(accName), y.metadata, y.pos);
+							} else if (binderName != null && binderAliases.indexOf(v) != -1) {
+								makeASTWithMeta(EVar(binderName), y.metadata, y.pos);
+							} else {
+								y;
+							};						
+						case EBinary(Match, left, rhs):
+							var isAccAliasLhs = switch (left.def) {
+								case EVar(vl) if (accAliases.indexOf(vl) != -1):
+									true;								
+								default:
+									false;								
+							};
+							var isBinderAliasLhs = switch (left.def) {
+								case EVar(vl2) if (binderAliases.indexOf(vl2) != -1):
+									true;								
+								default:
+									false;								
+							};
+							if (isAccAliasLhs) {
+								var newLeft = makeAST(EVar(accName));
+								makeASTWithMeta(EBinary(Match, newLeft, rhs), y.metadata, y.pos);
+							} else if (isBinderAliasLhs) {
+								rhs;
+							} else {
+								y;
+							};						
+						case EMatch(pat, rhs2):
+							var isAccAliasPat = switch (pat) {
+								case PVar(vp) if (accAliases.indexOf(vp) != -1):
+									true;								
+								default:
+									false;								
+							};
+							var isBinderAliasPat = switch (pat) {
+								case PVar(vp2) if (binderAliases.indexOf(vp2) != -1):
+									true;								
+								default:
+									false;								
+							};
+							if (isAccAliasPat) {
+								makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), rhs2), y.metadata, y.pos);
+							} else if (isBinderAliasPat) {
+								rhs2;
+							} else {
+								y;
+							};						
+						default:
+							y;						
+					};
+				});
+				var newFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody }]));
+				makeASTWithMeta(ERemoteCall(mod, "reduce", [args[0], args[1], newFn]), n.metadata, n.pos);			
+			default:
+				n;			
+		};	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (` == "reduce") {
+						{
+							var mod = `;
+							var args = `;
+							if (args.length == 3) {
+								var fnNode = args[2];
+								@:ast(switch (fnNode.def) {
+	case EFn(clauses) if (clauses.length == 1):
+		var cl = clauses[0];
+		if (cl.args.length < 2) return n;
+		var accName:Null<String> = switch (cl.args[1]) {
+			case PVar(a):
+				a;			
+			default:
+				null;			
+		};
+		var binderName:Null<String> = switch (cl.args[0]) {
+			case PVar(b):
+				b;			
+			default:
+				null;			
+		};
+		if (accName == null) return n;
+		var accAliasSet = new Map<String,Bool>();
+		var binderAliasSet = new Map<String,Bool>();
+		ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
+			switch (x.def) {
+				case EBinary(Match, left, rhs):
+					var lhs:Null<String> = switch (left.def) {
+						case EVar(nm):
+							nm;						
+						default:
+							null;						
+					};
+					if (lhs != null) {
+						if (isSelfAppend(rhs, lhs) && lhs != accName) {
+							accAliasSet.set(lhs, true);
+							Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs + " (acc=" + accName + ")");
+						};
+						switch (rhs.def) {
+							case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName):
+								binderAliasSet.set(lhs, true);
+								Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs + " (binder=" + binderName + ")");							
+							default:
+						};
+					};				
+				case EMatch(pat, rhs2):
+					var lhs2:Null<String> = switch (pat) {
+						case PVar(n2):
+							n2;						
+						default:
+							null;						
+					};
+					if (lhs2 != null) {
+						if (isSelfAppend(rhs2, lhs2) && lhs2 != accName) {
+							accAliasSet.set(lhs2, true);
+							Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs2 + " (acc=" + accName + ")");
+						};
+						switch (rhs2.def) {
+							case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName):
+								binderAliasSet.set(lhs2, true);
+								Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs2 + " (binder=" + binderName + ")");							
+							default:
+						};
+					};				
+				default:
+			};
+			return x;
+		});
+		var accAliases = [for (k  in  accAliasSet.keys()) k];
+		var binderAliases = [for (k  in  binderAliasSet.keys()) k];
+		Sys.println("[ReduceAccAliasUnify] reducer acc=" + accName + (binderName != null ? (", binder=" + binderName) : "") + ", accAliases=" + accAliases.length + ", binderAliases=" + binderAliases.length);
+		if (accAliases.length == 0 && binderAliases.length == 0) return n;
+		var newBody = ElixirASTTransformer.transformNode(cl.body, function(y:ElixirAST):ElixirAST {
+			return switch (y.def) {
+				case EVar(v):
+					if (accAliases.indexOf(v) != -1) {
+						makeASTWithMeta(EVar(accName), y.metadata, y.pos);
+					} else if (binderName != null && binderAliases.indexOf(v) != -1) {
+						makeASTWithMeta(EVar(binderName), y.metadata, y.pos);
+					} else {
+						y;
+					};				
+				case EBinary(Match, left, rhs):
+					var isAccAliasLhs = switch (left.def) {
+						case EVar(vl) if (accAliases.indexOf(vl) != -1):
+							true;						
+						default:
+							false;						
+					};
+					var isBinderAliasLhs = switch (left.def) {
+						case EVar(vl2) if (binderAliases.indexOf(vl2) != -1):
+							true;						
+						default:
+							false;						
+					};
+					if (isAccAliasLhs) {
+						var newLeft = makeAST(EVar(accName));
+						makeASTWithMeta(EBinary(Match, newLeft, rhs), y.metadata, y.pos);
+					} else if (isBinderAliasLhs) {
+						rhs;
+					} else {
+						y;
+					};				
+				case EMatch(pat, rhs2):
+					var isAccAliasPat = switch (pat) {
+						case PVar(vp) if (accAliases.indexOf(vp) != -1):
+							true;						
+						default:
+							false;						
+					};
+					var isBinderAliasPat = switch (pat) {
+						case PVar(vp2) if (binderAliases.indexOf(vp2) != -1):
+							true;						
+						default:
+							false;						
+					};
+					if (isAccAliasPat) {
+						makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), rhs2), y.metadata, y.pos);
+					} else if (isBinderAliasPat) {
+						rhs2;
+					} else {
+						y;
+					};				
+				default:
+					y;				
+			};
+		});
+		var newFn = makeAST(EFn([{ args : cl.args, guard : cl.guard, body : newBody }]));
+		makeASTWithMeta(ERemoteCall(mod, "reduce", [args[0], args[1], newFn]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+									var ` = fnNode.def;
+									if (enumIndex ` == 42) {
+										var ` = `[0];
+										{
+											var clauses = `;
+											if (clauses.length == 1) {
+												var cl = clauses[0];
+												if (cl.args.length < 2) {
+													return n;
+												};
+												var accName = @:ast(switch (cl.args[1]) {
+	case PVar(a):
+		a;	
+	default:
+		null;	
+}) {
+													var ` = cl.args[1];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var a = `;
+															{
+																a;
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												var binderName = @:ast(switch (cl.args[0]) {
+	case PVar(b):
+		b;	
+	default:
+		null;	
+}) {
+													var ` = cl.args[0];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														{
+															var b = `;
+															{
+																b;
+															};
+														};
+													} else {
+														null;
+													};
+												};
+												if (accName == null) {
+													return n;
+												};
+												var accAliasSet = {
+													{};
+													new haxe.ds.StringMap();
+												};
+												var binderAliasSet = {
+													{};
+													new haxe.ds.StringMap();
+												};
+												reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:reflaxe.elixir.ast.ElixirAST) {
+													@:ast(switch (x.def) {
+	case EBinary(Match, left, rhs):
+		var lhs:Null<String> = switch (left.def) {
+			case EVar(nm):
+				nm;			
+			default:
+				null;			
+		};
+		if (lhs != null) {
+			if (isSelfAppend(rhs, lhs) && lhs != accName) {
+				accAliasSet.set(lhs, true);
+				Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs + " (acc=" + accName + ")");
+			};
+			switch (rhs.def) {
+				case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName):
+					binderAliasSet.set(lhs, true);
+					Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs + " (binder=" + binderName + ")");				
+				default:
+			};
+		};	
+	case EMatch(pat, rhs2):
+		var lhs2:Null<String> = switch (pat) {
+			case PVar(n2):
+				n2;			
+			default:
+				null;			
+		};
+		if (lhs2 != null) {
+			if (isSelfAppend(rhs2, lhs2) && lhs2 != accName) {
+				accAliasSet.set(lhs2, true);
+				Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs2 + " (acc=" + accName + ")");
+			};
+			switch (rhs2.def) {
+				case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName):
+					binderAliasSet.set(lhs2, true);
+					Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs2 + " (binder=" + binderName + ")");				
+				default:
+			};
+		};	
+	default:
+}) {
+														var ` = x.def;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var pat = `;
+																	var rhs2 = `;
+																	{
+																		var lhs2 = @:ast(switch (pat) {
+	case PVar(n2):
+		n2;	
+	default:
+		null;	
+}) if (enumIndex pat == 0) {
+																			var ` = pat[0];
+																			{
+																				var n2 = `;
+																				{
+																					n2;
+																				};
+																			};
+																		} else {
+																			null;
+																		};
+																		if (lhs2 != null) {
+																			if (reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms.isSelfAppend(rhs2, lhs2) && lhs2 != accName) {
+																				{
+																					accAliasSet.set(lhs2, true);
+																				};
+																				Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs2 + " (acc=" + accName + ")");
+																			};
+																			@:ast(switch (rhs2.def) {
+	case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName):
+		binderAliasSet.set(lhs2, true);
+		Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs2 + " (binder=" + binderName + ")");	
+	default:
+}) {
+																				var ` = rhs2.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var rv2 = `;
+																						if (binderName != null && rv2 == binderName && lhs2 != binderName) {
+																							{
+																								binderAliasSet.set(lhs2, true);
+																							};
+																							Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs2 + " (binder=" + binderName + ")");
+																						} else {};
+																					};
+																				} else {};
+																			};
+																		};
+																	};
+																};
+															};
+															case 26: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var left = `;
+																		var rhs = `;
+																		{
+																			var lhs = @:ast(switch (left.def) {
+	case EVar(nm):
+		nm;	
+	default:
+		null;	
+}) {
+																				var ` = left.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var nm = `;
+																						{
+																							nm;
+																						};
+																					};
+																				} else {
+																					null;
+																				};
+																			};
+																			if (lhs != null) {
+																				if (reflaxe.elixir.ast.transformers.ReduceAccAliasUnifyTransforms.isSelfAppend(rhs, lhs) && lhs != accName) {
+																					{
+																						accAliasSet.set(lhs, true);
+																					};
+																					Sys.println("[ReduceAccAliasUnify] acc alias: " + lhs + " (acc=" + accName + ")");
+																				};
+																				@:ast(switch (rhs.def) {
+	case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName):
+		binderAliasSet.set(lhs, true);
+		Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs + " (binder=" + binderName + ")");	
+	default:
+}) {
+																					var ` = rhs.def;
+																					if (enumIndex ` == 38) {
+																						var ` = `[0];
+																						{
+																							var rv = `;
+																							if (binderName != null && rv == binderName && lhs != binderName) {
+																								{
+																									binderAliasSet.set(lhs, true);
+																								};
+																								Sys.println("[ReduceAccAliasUnify] binder alias: " + lhs + " (binder=" + binderName + ")");
+																							} else {};
+																						};
+																					} else {};
+																				};
+																			};
+																		};
+																	};
+																} else {};
+															};
+															default: {}
+														};
+													};
+													return x;
+												});
+												var accAliases = {
+													var ` = [];
+													for (k in accAliasSet.keys()) {
+														`.push(k);
+													};
+													`;
+												};
+												var binderAliases = {
+													var ` = [];
+													for (k in binderAliasSet.keys()) {
+														`.push(k);
+													};
+													`;
+												};
+												Sys.println("[ReduceAccAliasUnify] reducer acc=" + accName + (if (binderName != null) {
+													(", binder=" + binderName);
+												} else {
+													"";
+												}) + ", accAliases=" + accAliases.length + ", binderAliases=" + binderAliases.length);
+												if (accAliases.length == 0 && binderAliases.length == 0) {
+													return n;
+												};
+												var newBody = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(y:reflaxe.elixir.ast.ElixirAST) {
+													return @:ast(switch (y.def) {
+	case EVar(v):
+		if (accAliases.indexOf(v) != -1) {
+			makeASTWithMeta(EVar(accName), y.metadata, y.pos);
+		} else if (binderName != null && binderAliases.indexOf(v) != -1) {
+			makeASTWithMeta(EVar(binderName), y.metadata, y.pos);
+		} else {
+			y;
+		};	
+	case EBinary(Match, left, rhs):
+		var isAccAliasLhs = switch (left.def) {
+			case EVar(vl) if (accAliases.indexOf(vl) != -1):
+				true;			
+			default:
+				false;			
+		};
+		var isBinderAliasLhs = switch (left.def) {
+			case EVar(vl2) if (binderAliases.indexOf(vl2) != -1):
+				true;			
+			default:
+				false;			
+		};
+		if (isAccAliasLhs) {
+			var newLeft = makeAST(EVar(accName));
+			makeASTWithMeta(EBinary(Match, newLeft, rhs), y.metadata, y.pos);
+		} else if (isBinderAliasLhs) {
+			rhs;
+		} else {
+			y;
+		};	
+	case EMatch(pat, rhs2):
+		var isAccAliasPat = switch (pat) {
+			case PVar(vp) if (accAliases.indexOf(vp) != -1):
+				true;			
+			default:
+				false;			
+		};
+		var isBinderAliasPat = switch (pat) {
+			case PVar(vp2) if (binderAliases.indexOf(vp2) != -1):
+				true;			
+			default:
+				false;			
+		};
+		if (isAccAliasPat) {
+			makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), rhs2), y.metadata, y.pos);
+		} else if (isBinderAliasPat) {
+			rhs2;
+		} else {
+			y;
+		};	
+	default:
+		y;	
+}) {
+														var ` = y.def;
+														switch (enumIndex `) {
+															case 8: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var pat = `;
+																	var rhs2 = `;
+																	{
+																		var isAccAliasPat = @:ast(switch (pat) {
+	case PVar(vp) if (accAliases.indexOf(vp) != -1):
+		true;	
+	default:
+		false;	
+}) if (enumIndex pat == 0) {
+																			var ` = pat[0];
+																			{
+																				var vp = `;
+																				if (accAliases.indexOf(vp, null) != -1) {
+																					true;
+																				} else {
+																					false;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																		var isBinderAliasPat = @:ast(switch (pat) {
+	case PVar(vp2) if (binderAliases.indexOf(vp2) != -1):
+		true;	
+	default:
+		false;	
+}) if (enumIndex pat == 0) {
+																			var ` = pat[0];
+																			{
+																				var vp2 = `;
+																				if (binderAliases.indexOf(vp2, null) != -1) {
+																					true;
+																				} else {
+																					false;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																		if (isAccAliasPat) {
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																			}, rhs2), metadata : y.metadata, pos : y.pos};
+																		} else {
+																			if (isBinderAliasPat) {
+																				rhs2;
+																			} else {
+																				y;
+																			};
+																		};
+																	};
+																};
+															};
+															case 26: {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 27) {
+																	{
+																		var left = `;
+																		var rhs = `;
+																		{
+																			var isAccAliasLhs = @:ast(switch (left.def) {
+	case EVar(vl) if (accAliases.indexOf(vl) != -1):
+		true;	
+	default:
+		false;	
+}) {
+																				var ` = left.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var vl = `;
+																						if (accAliases.indexOf(vl, null) != -1) {
+																							true;
+																						} else {
+																							false;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			};
+																			var isBinderAliasLhs = @:ast(switch (left.def) {
+	case EVar(vl2) if (binderAliases.indexOf(vl2) != -1):
+		true;	
+	default:
+		false;	
+}) {
+																				var ` = left.def;
+																				if (enumIndex ` == 38) {
+																					var ` = `[0];
+																					{
+																						var vl2 = `;
+																						if (binderAliases.indexOf(vl2, null) != -1) {
+																							true;
+																						} else {
+																							false;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			};
+																			if (isAccAliasLhs) {
+																				var newLeft = {
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : {}, pos : pos};
+																				};
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, newLeft, rhs), metadata : y.metadata, pos : y.pos};
+																			} else {
+																				if (isBinderAliasLhs) {
+																					rhs;
+																				} else {
+																					y;
+																				};
+																			};
+																		};
+																	};
+																} else {
+																	y;
+																};
+															};
+															case 38: {
+																var ` = `[0];
+																{
+																	var v = `;
+																	{
+																		if (accAliases.indexOf(v, null) != -1) {
+																			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accName), metadata : y.metadata, pos : y.pos};
+																		} else {
+																			if (binderName != null && binderAliases.indexOf(v, null) != -1) {
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EVar(binderName), metadata : y.metadata, pos : y.pos};
+																			} else {
+																				y;
+																			};
+																		};
+																	};
+																};
+															};
+															default: {
+																y;
+															}
+														};
+													};
+												});
+												var newFn = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : cl.args, guard : cl.guard, body : newBody}]), metadata : {}, pos : pos};
+												};
+												{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(mod, "reduce", [args[0], args[1], newFn]), metadata : n.metadata, pos : n.pos};
+											} else {
+												n;
+											};
+										};
+									} else {
+										n;
+									};
+								};
+							} else {
+								n;
+							};
+						};
+					} else {
+						n;
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

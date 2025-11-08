@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.HeexFragmentMeta = { tag : String, childrenText : String, attributes : Array<reflaxe.elixir.ast.HeexAttributeMeta> }

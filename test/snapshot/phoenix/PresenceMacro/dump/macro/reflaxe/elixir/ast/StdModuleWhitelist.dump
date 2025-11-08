@@ -1,0 +1,51 @@
+class reflaxe.elixir.ast.StdModuleWhitelist {
+
+	@:value((function() {
+	var m = new Map<String,Bool>();
+	for (name  in  ["Kernel", "Enum", "Map", "List", "Bitwise", "String", "Integer", "Float", "IO", "File", "Path", "System", "Process", "Task", "GenServer", "Agent", "Registry", "Node", "Application", "Supervisor", "DynamicSupervisor", "Logger", "Date", "DateTime", "NaiveDateTime", "Time", "Calendar", "URI", "Code", "Stream", "Range", "Regex", "Keyword", "Access", "Reflect", "Type", "StringBuf", "StringTools", "Log", "SafeAssigns", "TodoPubSub", "Ecto", "Phoenix"]) m.set(name, true);
+	return m;
+})())
+	static var ROOTS:Map<String, Bool> = (function() {
+		var m = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			var ` = ["Kernel", "Enum", "Map", "List", "Bitwise", "String", "Integer", "Float", "IO", "File", "Path", "System", "Process", "Task", "GenServer", "Agent", "Registry", "Node", "Application", "Supervisor", "DynamicSupervisor", "Logger", "Date", "DateTime", "NaiveDateTime", "Time", "Calendar", "URI", "Code", "Stream", "Range", "Regex", "Keyword", "Access", "Reflect", "Type", "StringBuf", "StringTools", "Log", "SafeAssigns", "TodoPubSub", "Ecto", "Phoenix"];
+			while (` < `.length) {
+				var name = `[`];
+				++ `;
+				{
+					m.set(name, true);
+				};
+			};
+		};
+		return m;
+	})();
+
+	public static inline function isWhitelistedRoot(name:String) {
+		return name != null && {
+			var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+			cast this.exists(name);
+		};
+	}
+
+	public static inline function isWhitelistedQualified(moduleName:String) {
+		if (moduleName == null) {
+			return false;
+		};
+		var idx = moduleName.indexOf(".", null);
+		if (idx <= 0) {
+			return moduleName != null && {
+				var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+				cast this.exists(moduleName);
+			};
+		};
+		var root = moduleName.substring(0, idx);
+		return root != null && {
+			var this = reflaxe.elixir.ast.StdModuleWhitelist.ROOTS;
+			cast this.exists(root);
+		};
+	}
+}

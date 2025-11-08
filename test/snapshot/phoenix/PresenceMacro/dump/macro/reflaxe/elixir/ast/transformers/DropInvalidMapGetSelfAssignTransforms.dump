@@ -1,0 +1,299 @@
+class reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var nb = filterBody(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(privateName, privateArgs, privateGuards, privateBody):
+		var newBody = filterBody(privateBody);
+		makeASTWithMeta(EDefp(privateName, privateArgs, privateGuards, newBody), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var nb = reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.filterBody(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var privateName = `;
+							var privateArgs = `;
+							var privateGuards = `;
+							var privateBody = `;
+							{
+								var newBody = reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.filterBody(privateBody);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(privateName, privateArgs, privateGuards, newBody), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function filterBody(body:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (body.def) {
+	case EBlock(stmts):
+		var out:Array<ElixirAST> = [];
+		for (s  in  stmts) if (!isSelfAssignMapGet(s)) out.push(s);
+		makeASTWithMeta(EBlock(out), body.metadata, body.pos);	
+	case EDo(statements):
+		var out:Array<ElixirAST> = [];
+		for (stmt  in  statements) if (!isSelfAssignMapGet(stmt)) out.push(stmt);
+		makeASTWithMeta(EDo(out), body.metadata, body.pos);	
+	default:
+		body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 53: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < stmts.length) {
+									var s = stmts[`];
+									++ `;
+									if (! reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.isSelfAssignMapGet(s)) {
+										out.push(s);
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(out), metadata : body.metadata, pos : body.pos};
+						};
+					};
+				};
+				case 55: {
+					var ` = `[0];
+					{
+						var statements = `;
+						{
+							var out = [];
+							{
+								var ` = 0;
+								while (` < statements.length) {
+									var stmt = statements[`];
+									++ `;
+									if (! reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.isSelfAssignMapGet(stmt)) {
+										out.push(stmt);
+									};
+								};
+							};
+							{def : reflaxe.elixir.ast.ElixirASTDef.EDo(out), metadata : body.metadata, pos : body.pos};
+						};
+					};
+				};
+				default: {
+					body;
+				}
+			};
+		};
+	}
+
+	static function isSelfAssignMapGet(n:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (n.def) {
+	case EBinary(Match, lhs, rhs):
+		var keyL = extractMapGetKey(lhs);
+		var keyR = extractMapGetKey(rhs);
+		keyL != null && keyR != null && keyL == keyR;	
+	default:
+		false;	
+}) {
+			var ` = n.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 27) {
+					{
+						var lhs = `;
+						var rhs = `;
+						{
+							var keyL = reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.extractMapGetKey(lhs);
+							var keyR = reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.extractMapGetKey(rhs);
+							keyL != null && keyR != null && keyL == keyR;
+						};
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function extractMapGetKey(expr:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (expr.def) {
+	case ERemoteCall(mod, name, args):
+		var isMap = switch (mod.def) {
+			case EVar(m):
+				m == "Map";			
+			default:
+				false;			
+		};
+		if (isMap && name == "get" && args != null && args.length >= 2) switch (args[1].def) {
+			case EString(s):
+				s;			
+			default:
+				null;			
+		} else null;	
+	case ECall(target, funcName, argsList):
+		var isMapGet = (funcName == "get") && (target != null) && switch (target.def) {
+			case EVar(m2):
+				m2 == "Map";			
+			default:
+				false;			
+		};
+		if (isMapGet && argsList != null && argsList.length >= 2) switch (argsList[1].def) {
+			case EString(key):
+				key;			
+			default:
+				null;			
+		} else null;	
+	default:
+		null;	
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var funcName = `;
+						var argsList = `;
+						{
+							var isMapGet = (funcName == "get") && (target != null) && @:ast(switch (target.def) {
+	case EVar(m2):
+		m2 == "Map";	
+	default:
+		false;	
+}) {
+								var ` = target.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m2 = `;
+										{
+											m2 == "Map";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							if (isMapGet && argsList != null && argsList.length >= 2) {
+								@:ast(switch (argsList[1].def) {
+	case EString(key):
+		key;	
+	default:
+		null;	
+}) {
+									var ` = argsList[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var key = `;
+											{
+												key;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var mod = `;
+						var name = `;
+						var args = `;
+						{
+							var isMap = @:ast(switch (mod.def) {
+	case EVar(m):
+		m == "Map";	
+	default:
+		false;	
+}) {
+								var ` = mod.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var m = `;
+										{
+											m == "Map";
+										};
+									};
+								} else {
+									false;
+								};
+							};
+							if (isMap && name == "get" && args != null && args.length >= 2) {
+								@:ast(switch (args[1].def) {
+	case EString(s):
+		s;	
+	default:
+		null;	
+}) {
+									var ` = args[1].def;
+									if (enumIndex ` == 32) {
+										var ` = `[0];
+										{
+											var s = `;
+											{
+												s;
+											};
+										};
+									} else {
+										null;
+									};
+								};
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

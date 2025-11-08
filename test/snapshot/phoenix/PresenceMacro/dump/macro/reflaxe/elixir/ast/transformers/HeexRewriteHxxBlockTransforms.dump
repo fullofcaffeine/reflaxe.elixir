@@ -1,0 +1,225 @@
+class reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms {
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var updated = rewrite(content);
+		if (updated != content) makeASTWithMeta(ESigil(type, updated, modifiers), n.metadata, n.pos) else n;	
+	case ERaw(code):
+		if (code != null && code.indexOf("~H\"\"\"") != -1) {
+			var updatedCode = replaceNestedHeexSigil(code);
+			if (updatedCode != code) return makeASTWithMeta(ERaw(updatedCode), n.metadata, n.pos);
+		};
+		n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							var content = `;
+							var modifiers = `;
+							if (type == "H") {
+								var updated = reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.rewrite(content);
+								if (updated != content) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, updated, modifiers), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code != null && code.indexOf("~H\"\"\"", null) != -1) {
+									var updatedCode = reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.replaceNestedHeexSigil(code);
+									if (updatedCode != code) {
+										return {def : reflaxe.elixir.ast.ElixirASTDef.ERaw(updatedCode), metadata : n.metadata, pos : n.pos};
+									};
+								};
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function rewrite(s:String) {
+		var out = s;
+		out = reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.replaceBlock(out, "HXX.block");
+		out = reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.replaceBlock(out, "hxx.HXX.block");
+		out = reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.replaceNestedHeexSigil(out);
+		return out;
+	}
+
+	static function replaceBlock(s:String, callee:String) {
+		var i = 0;
+		var res = new StringBuf();
+		while (i < s.length) {
+			var open = s.indexOf("<%=", i);
+			if (open == -1) {
+				res.add(s.substr(i, null));
+				break;
+			};
+			res.add(s.substr(i, open - i));
+			var close = s.indexOf("%>", open + 3);
+			if (close == -1) {
+				res.add(s.substr(open, null));
+				break;
+			};
+			var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
+			if (StringTools.startsWith(inner, callee + "(")) {
+				var paren = inner.indexOf("(", null);
+				var arg = StringTools.trim(inner.substr(paren + 1, null));
+				if (StringTools.endsWith(arg, ")")) {
+					arg = arg.substr(0, arg.length - 1);
+				};
+				var un = reflaxe.elixir.ast.transformers.HeexRewriteHxxBlockTransforms.unquote(arg);
+				if (un != null) {
+					res.add(un);
+					i = close + 2;
+					continue;
+				};
+			};
+			res.add(s.substr(open, (close + 2) - open));
+			i = close + 2;
+		};
+		return res.toString();
+	}
+
+	static function unquote(x:String) {
+		var t = StringTools.trim(x);
+		if (t.length >= 2) {
+			var a = t.charAt(0);
+			var b = t.charAt(t.length - 1);
+			if ((a == "\"" && b == "\"") || (a == "'" && b == "'")) {
+				return t.substr(1, t.length - 2);
+			};
+		};
+		return null;
+	}
+
+	static function replaceNestedHeexSigil(s:String) {
+		var i = 0;
+		var res = new StringBuf();
+		while (i < s.length) {
+			var open = s.indexOf("<%=", i);
+			if (open == -1) {
+				res.add(s.substr(i, null));
+				break;
+			};
+			res.add(s.substr(i, open - i));
+			var close = s.indexOf("%>", open + 3);
+			if (close == -1) {
+				res.add(s.substr(open, null));
+				break;
+			};
+			var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
+			if (StringTools.startsWith(inner, "~H\"\"\"")) {
+				var start = inner.indexOf("\"\"\"", null);
+				if (start != -1) {
+					var bodyStart = start + 3;
+					var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
+					if (bodyEnd != -1) {
+						var body = inner.substr(bodyStart, bodyEnd - bodyStart);
+						res.add(body);
+						i = close + 2;
+						continue;
+					};
+				};
+			};
+			res.add(s.substr(open, (close + 2) - open));
+			i = close + 2;
+		};
+		return res.toString();
+	}
+
+	static function indexOfTopLevel(s:String, token:String) {
+		var depth = 0;
+		var inS = false;
+		var inD = false;
+		{
+			var ` = 0;
+			var ` = s.length - token.length + 1;
+			while (` < `) {
+				var idx = ` ++;
+				var ch = s.charAt(idx);
+				if (! inS && ch == "\"" && ! inD) {
+					inD = true;
+					continue;
+				} else {
+					if (inD && ch == "\"") {
+						inD = false;
+						continue;
+					};
+				};
+				if (! inD && ch == "'" && ! inS) {
+					inS = true;
+					continue;
+				} else {
+					if (inS && ch == "'") {
+						inS = false;
+						continue;
+					};
+				};
+				if (inS || inD) {
+					continue;
+				};
+				if (ch == "(" || ch == "{" || ch == "[") {
+					depth ++;
+				} else {
+					if (ch == ")" || ch == "}" || ch == "]") {
+						depth --;
+					};
+				};
+				if (depth != 0) {
+					continue;
+				};
+				if (s.substr(idx, token.length) == token) {
+					return idx;
+				};
+			};
+		};
+		return -1;
+	}
+
+	static function extractQuoted(s:String) {
+		if (s.length == 0) {
+			return null;
+		};
+		var quote = s.charAt(0);
+		if (quote != "\"" && quote != "'") {
+			return null;
+		};
+		var i = 1;
+		while (i < s.length) {
+			var ch = s.charAt(i);
+			var prev = s.charAt(i - 1);
+			if (ch == quote && prev != "\\") {
+				var val = s.substr(1, i - 1);
+				val = StringTools.replace(val, "\\\"", "\"");
+				val = StringTools.replace(val, "\\'", "'");
+				val = StringTools.replace(val, "\\\\", "\\");
+				return {value : val, length : i + 1};
+			};
+			i ++;
+		};
+		return null;
+	}
+}

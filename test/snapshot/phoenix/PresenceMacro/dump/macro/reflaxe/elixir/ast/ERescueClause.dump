@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.ERescueClause = { ?varName : Null<String>, pattern : reflaxe.elixir.ast.EPattern, body : reflaxe.elixir.ast.ElixirAST }

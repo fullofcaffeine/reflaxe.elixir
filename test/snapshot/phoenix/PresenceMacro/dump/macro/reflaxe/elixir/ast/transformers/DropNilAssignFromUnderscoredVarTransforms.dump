@@ -1,0 +1,388 @@
+class reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms {
+
+	public static function pass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case EDef(name, args, guards, body):
+		var nb = clean(body);
+		makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);	
+	case EDefp(name2, args2, guards2, body2):
+		var nb2 = clean(body2);
+		makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);	
+	case EBlock(stmts):
+		makeASTWithMeta(EBlock(filter(stmts, n)), n.metadata, n.pos);	
+	case EDo(stmts2):
+		makeASTWithMeta(EDo(filter(stmts2, n)), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name = `;
+							var args = `;
+							var guards = `;
+							var body = `;
+							{
+								var nb = reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms.clean(body);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, nb), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						var ` = `[3];
+						{
+							var name2 = `;
+							var args2 = `;
+							var guards2 = `;
+							var body2 = `;
+							{
+								var nb2 = reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms.clean(body2);
+								{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name2, args2, guards2, nb2), metadata : n.metadata, pos : n.pos};
+							};
+						};
+					};
+					case 53: {
+						var ` = `[0];
+						{
+							var stmts = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms.filter(stmts, n));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var stmts2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms.filter(stmts2, n));
+									var meta = n.metadata;
+									var pos = n.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	static function clean(body:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(x:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (x.def) {
+	case EBlock(ss):
+		makeASTWithMeta(EBlock(filter(ss, x)), x.metadata, x.pos);	
+	case EDo(ss2):
+		makeASTWithMeta(EDo(filter(ss2, x)), x.metadata, x.pos);	
+	default:
+		x;	
+}) {
+				var ` = x.def;
+				switch (enumIndex `) {
+					case 53: {
+						var ` = `[0];
+						{
+							var ss = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EBlock(reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms.filter(ss, x));
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					case 55: {
+						var ` = `[0];
+						{
+							var ss2 = `;
+							{
+								{
+									var def = reflaxe.elixir.ast.ElixirASTDef.EDo(reflaxe.elixir.ast.transformers.DropNilAssignFromUnderscoredVarTransforms.filter(ss2, x));
+									var meta = x.metadata;
+									var pos = x.pos;
+									{def : def, metadata : meta, pos : pos};
+								};
+							};
+						};
+					};
+					default: {
+						x;
+					}
+				};
+			};
+		});
+	}
+
+	static function filter(stmts:Array<reflaxe.elixir.ast.ElixirAST>, ctx:reflaxe.elixir.ast.ElixirAST) {
+		if (stmts == null || stmts.length == 0) {
+			return stmts;
+		};
+		var out = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				var drop = @:ast(switch (s.def) {
+	case EBinary(Match, left, right):
+		var isNil = switch (left.def) {
+			case EVar(nm) if (nm == "nil"):
+				true;			
+			case EAtom(v) if (v == ":nil" || v == "nil"):
+				true;			
+			case ENil:
+				true;			
+			default:
+				false;			
+		};
+		var isUnderscored = switch (right.def) {
+			case EVar(nm2) if (nm2 != null && nm2.length > 0 && nm2.charAt(0) == "_"):
+				true;			
+			default:
+				false;			
+		};
+		isNil && isUnderscored;	
+	case EMatch(pat, rhs):
+		var isNilPat = switch (pat) {
+			case PVar(nm3) if (nm3 == "nil"):
+				true;			
+			case PLiteral(lit):
+				switch (lit.def) {
+					case EAtom(v) if (v == ":nil" || v == "nil"):
+						true;					
+					case ENil:
+						true;					
+					default:
+						false;					
+				};			
+			default:
+				false;			
+		};
+		var isUnderscoredRhs = switch (rhs.def) {
+			case EVar(nm4) if (nm4 != null && nm4.length > 0 && nm4.charAt(0) == "_"):
+				true;			
+			default:
+				false;			
+		};
+		isNilPat && isUnderscoredRhs;	
+	default:
+		false;	
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 8: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var pat = `;
+								var rhs = `;
+								{
+									var isNilPat = @:ast(switch (pat) {
+	case PVar(nm3) if (nm3 == "nil"):
+		true;	
+	case PLiteral(lit):
+		switch (lit.def) {
+			case EAtom(v) if (v == ":nil" || v == "nil"):
+				true;			
+			case ENil:
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) switch (enumIndex pat) {
+										case 0: {
+											var ` = pat[0];
+											{
+												var nm3 = `;
+												if (nm3 == "nil") {
+													true;
+												} else {
+													false;
+												};
+											};
+										};
+										case 1: {
+											var ` = pat[0];
+											{
+												var lit = `;
+												{
+													@:ast(switch (lit.def) {
+	case EAtom(v) if (v == ":nil" || v == "nil"):
+		true;	
+	case ENil:
+		true;	
+	default:
+		false;	
+}) {
+														var ` = lit.def;
+														switch (enumIndex `) {
+															case 31: {
+																var ` = `[0];
+																{
+																	var v = `;
+																	if (v == ":nil" || v == "nil") {
+																		true;
+																	} else {
+																		false;
+																	};
+																};
+															};
+															case 36: {
+																{
+																	true;
+																};
+															};
+															default: {
+																false;
+															}
+														};
+													};
+												};
+											};
+										};
+										default: {
+											false;
+										}
+									};
+									var isUnderscoredRhs = @:ast(switch (rhs.def) {
+	case EVar(nm4) if (nm4 != null && nm4.length > 0 && nm4.charAt(0) == "_"):
+		true;	
+	default:
+		false;	
+}) {
+										var ` = rhs.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var nm4 = `;
+												if (nm4 != null && nm4.length > 0 && nm4.charAt(0) == "_") {
+													true;
+												} else {
+													false;
+												};
+											};
+										} else {
+											false;
+										};
+									};
+									isNilPat && isUnderscoredRhs;
+								};
+							};
+						};
+						case 26: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (enumIndex ` == 27) {
+								{
+									var left = `;
+									var right = `;
+									{
+										var isNil = @:ast(switch (left.def) {
+	case EVar(nm) if (nm == "nil"):
+		true;	
+	case EAtom(v) if (v == ":nil" || v == "nil"):
+		true;	
+	case ENil:
+		true;	
+	default:
+		false;	
+}) {
+											var ` = left.def;
+											switch (enumIndex `) {
+												case 31: {
+													var ` = `[0];
+													{
+														var v = `;
+														if (v == ":nil" || v == "nil") {
+															true;
+														} else {
+															false;
+														};
+													};
+												};
+												case 36: {
+													{
+														true;
+													};
+												};
+												case 38: {
+													var ` = `[0];
+													{
+														var nm = `;
+														if (nm == "nil") {
+															true;
+														} else {
+															false;
+														};
+													};
+												};
+												default: {
+													false;
+												}
+											};
+										};
+										var isUnderscored = @:ast(switch (right.def) {
+	case EVar(nm2) if (nm2 != null && nm2.length > 0 && nm2.charAt(0) == "_"):
+		true;	
+	default:
+		false;	
+}) {
+											var ` = right.def;
+											if (enumIndex ` == 38) {
+												var ` = `[0];
+												{
+													var nm2 = `;
+													if (nm2 != null && nm2.length > 0 && nm2.charAt(0) == "_") {
+														true;
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+										isNil && isUnderscored;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+						default: {
+							false;
+						}
+					};
+				};
+				if (! drop) {
+					out.push(s);
+				};
+			};
+		};
+		return out;
+	}
+}

@@ -1,0 +1,239 @@
+class reflaxe.elixir.ast.transformers.HeexControlTagTransforms {
+
+	public static function rewrite(content:String) {
+		if (content == null) {
+			return content;
+		};
+		var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+		if (lowered.indexOf("<if", null) == -1) {
+			return lowered;
+		};
+		var out = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewriteControlTags(lowered);
+		return out;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ESigil(type, content, modifiers) if (type == "H"):
+		var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+		var updated = rewriteControlTags(lowered);
+		if (updated != content) makeASTWithMeta(ESigil(type, updated, modifiers), n.metadata, n.pos) else n;	
+	case ERaw(code):
+		if (code != null && code.indexOf("~H\"\"\"") != -1) {
+			var idx = code.indexOf("~H\"\"\"");
+			var start = idx + 4;
+			var open = code.indexOf("\"", idx);
+			if (open != -1) {
+				var triple = code.indexOf("\"\"\"", idx);
+				if (triple != -1) {
+					var contentStart = triple + 3;
+					var contentEnd = code.indexOf("\"\"\"", contentStart);
+					if (contentEnd != -1) {
+						var before = code.substr(0, contentStart);
+						var body = code.substr(contentStart, contentEnd - contentStart);
+						var after = code.substr(contentEnd);
+						var updatedBody = rewriteControlTags(body);
+						if (updatedBody != body) return makeASTWithMeta(ERaw(before + updatedBody + after), n.metadata, n.pos);
+					};
+				};
+			};
+		};
+		n;	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				switch (enumIndex `) {
+					case 61: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var type = `;
+							var content = `;
+							var modifiers = `;
+							if (type == "H") {
+								var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+								var updated = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewriteControlTags(lowered);
+								if (updated != content) {
+									{def : reflaxe.elixir.ast.ElixirASTDef.ESigil(type, updated, modifiers), metadata : n.metadata, pos : n.pos};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						};
+					};
+					case 62: {
+						var ` = `[0];
+						{
+							var code = `;
+							{
+								if (code != null && code.indexOf("~H\"\"\"", null) != -1) {
+									var idx = code.indexOf("~H\"\"\"", null);
+									var start = idx + 4;
+									var open = code.indexOf("\"", idx);
+									if (open != -1) {
+										var triple = code.indexOf("\"\"\"", idx);
+										if (triple != -1) {
+											var contentStart = triple + 3;
+											var contentEnd = code.indexOf("\"\"\"", contentStart);
+											if (contentEnd != -1) {
+												var before = code.substr(0, contentStart);
+												var body = code.substr(contentStart, contentEnd - contentStart);
+												var after = code.substr(contentEnd, null);
+												var updatedBody = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewriteControlTags(body);
+												if (updatedBody != body) {
+													return {def : reflaxe.elixir.ast.ElixirASTDef.ERaw(before + updatedBody + after), metadata : n.metadata, pos : n.pos};
+												};
+											};
+										};
+									};
+								};
+								n;
+							};
+						};
+					};
+					default: {
+						n;
+					}
+				};
+			};
+		});
+	}
+
+	public static function rewriteControlTags(s:String) {
+		if (s == null || s.indexOf("<if", null) == -1) {
+			return s;
+		};
+		var out = new StringBuf();
+		var i = 0;
+		while (i < s.length) {
+			var idx = s.indexOf("<if", i);
+			if (idx == -1) {
+				out.add(s.substr(i, null));
+				break;
+			};
+			out.add(s.substr(i, idx - i));
+			var j = idx + 3;
+			while (j < s.length && new EReg("^\\s$", "").match(s.charAt(j))) {
+				j ++;
+			};
+			if (j >= s.length || s.charAt(j) != "{") {
+				out.add("<if");
+				i = idx + 3;
+				continue;
+			};
+			var braceStart = j;
+			j ++;
+			var braceDepth = 1;
+			while (j < s.length && braceDepth > 0) {
+				var ch = s.charAt(j);
+				if (ch == "{") {
+					braceDepth ++;
+				} else {
+					if (ch == "}") {
+						braceDepth --;
+					};
+				};
+				j ++;
+			};
+			if (braceDepth != 0) {
+				out.add(s.substr(idx, null));
+				break;
+			};
+			var braceEnd = j - 1;
+			while (j < s.length && new EReg("^\\s$", "").match(s.charAt(j))) {
+				j ++;
+			};
+			if (j >= s.length || s.charAt(j) != ">") {
+				out.add(s.substr(idx, j - idx));
+				i = j + 1;
+				continue;
+			};
+			var openEnd = j + 1;
+			var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
+			cond = StringTools.replace(cond, "assigns.", "@");
+			var k = openEnd;
+			var depth = 1;
+			var elsePos = -1;
+			while (k < s.length && depth > 0) {
+				var nextIf = s.indexOf("<if", k);
+				var nextElse = s.indexOf("<else>", k);
+				var nextClose = s.indexOf("</if>", k);
+				var next = -1;
+				var tag = 0;
+				if (nextIf != -1) {
+					next = nextIf;
+					tag = 1;
+				};
+				if (nextElse != -1 && (next == -1 || nextElse < next)) {
+					next = nextElse;
+					tag = 2;
+				};
+				if (nextClose != -1 && (next == -1 || nextClose < next)) {
+					next = nextClose;
+					tag = 3;
+				};
+				if (next == -1) {
+					break;
+				};
+				if (tag == 1) {
+					depth ++;
+					k = next + 3;
+				} else {
+					if (tag == 2 && depth == 1 && elsePos == -1) {
+						elsePos = next;
+						k = next + 6;
+					} else {
+						if (tag == 3) {
+							depth --;
+							k = next + 5;
+						} else {
+							k = next + 1;
+						};
+					};
+				};
+			};
+			if (depth != 0) {
+				out.add(s.substr(idx, null));
+				break;
+			};
+			var closeIdx = k - 5;
+			var thenStart = openEnd;
+			var thenEnd = if (elsePos != -1) {
+				elsePos;
+			} else {
+				closeIdx;
+			};
+			var elseStart = if (elsePos != -1) {
+				(elsePos + 6);
+			} else {
+				-1;
+			};
+			var elseEnd = closeIdx;
+			var thenHtml = s.substr(thenStart, thenEnd - thenStart);
+			var elseHtml = if (elseStart != -1) {
+				s.substr(elseStart, elseEnd - elseStart);
+			} else {
+				null;
+			};
+			out.add("<%= if " + cond + " do %>");
+			out.add(thenHtml);
+			if (elseHtml != null && StringTools.trim(elseHtml) != "") {
+				out.add("<% else %>");
+				out.add(elseHtml);
+			};
+			out.add("<% end %>");
+			var afterClose = s.indexOf(">", closeIdx + 1);
+			i = if ((afterClose == -1)) {
+				s.length;
+			} else {
+				afterClose + 1;
+			};
+		};
+		return out.toString();
+	}
+}

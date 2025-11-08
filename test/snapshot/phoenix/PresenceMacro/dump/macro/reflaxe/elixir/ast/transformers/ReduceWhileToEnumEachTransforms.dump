@@ -1,0 +1,297 @@
+class reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms {
+
+	static function isStreamIterateZero(e:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (e.def) {
+	case ERemoteCall({ def : EVar("Stream") }, "iterate", _):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = e.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var ` = `.def;
+					var ` = `.metadata;
+					var ` = `.pos;
+					if (enumIndex ` == 38) {
+						var ` = `[0];
+						if (` == "Stream") {
+							if (` == "iterate") {
+								{
+									true;
+								};
+							} else {
+								false;
+							};
+						} else {
+							false;
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function filterSentinelStmts(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var out = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var s = stmts[`];
+				++ `;
+				var keep = true;
+				@:ast(switch (s.def) {
+	case EInteger(v) if (v == 1 || v == 0):
+		keep = false;	
+	case ETuple(elements):
+		if (elements.length >= 1) switch (elements[0].def) {
+			case EAtom(name) if (name == "cont" || name == "halt"):
+				keep = false;			
+			default:
+		};	
+	default:
+}) {
+					var ` = s.def;
+					switch (enumIndex `) {
+						case 16: {
+							var ` = `[0];
+							{
+								var elements = `;
+								{
+									if (elements.length >= 1) {
+										@:ast(switch (elements[0].def) {
+	case EAtom(name) if (name == "cont" || name == "halt"):
+		keep = false;	
+	default:
+}) {
+											var ` = elements[0].def;
+											if (enumIndex ` == 31) {
+												var ` = `[0];
+												{
+													var name = `;
+													if (name == "cont" || name == "halt") {
+														keep = false;
+													} else {};
+												};
+											} else {};
+										};
+									};
+								};
+							};
+						};
+						case 33: {
+							var ` = `[0];
+							{
+								var v = `;
+								if (v == 1 || v == 0) {
+									keep = false;
+								} else {};
+							};
+						};
+						default: {}
+					};
+				};
+				if (keep) {
+					out.push(s);
+				};
+			};
+		};
+		return out;
+	}
+
+	public static function transformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:reflaxe.elixir.ast.ElixirAST) {
+			return @:ast(switch (n.def) {
+	case ERemoteCall({ def : EVar("Enum") }, "reduce_while", args) if (args != null && args.length == 3 && isStreamIterateZero(args[0])):
+		var listExpr:Null<ElixirAST> = null;
+		switch (args[1].def) {
+			case ETuple(items) if (items.length == 1):
+				listExpr = items[0];			
+			default:
+		};
+		if (listExpr == null) return n;
+		var reducer = args[2];
+		var bodyBlock:Null<ElixirAST> = null;
+		switch (reducer.def) {
+			case EFn(clauses) if (clauses.length >= 1):
+				var b = clauses[0].body;
+				switch (b.def) {
+					case EIf(_, thenBr, elseBr):
+						var thenStmts:Array<ElixirAST> = [];
+						switch (thenBr.def) {
+							case EBlock(sts):
+								thenStmts = sts;							
+							default:
+								thenStmts = [thenBr];							
+						};
+						var filtered = filterSentinelStmts(thenStmts);
+						bodyBlock = makeAST(EBlock(filtered));					
+					default:
+				};			
+			default:
+		};
+		if (bodyBlock == null) return n;
+		var eachFnClause:EFnClause = { args : [PVar("_elem")], guard : null, body : bodyBlock };
+		var eachFn = makeAST(EFn([eachFnClause]));
+		makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "each", [listExpr, eachFn]), n.metadata, n.pos);	
+	default:
+		n;	
+}) {
+				var ` = n.def;
+				if (enumIndex ` == 24) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							if (` == "Enum") {
+								if (` == "reduce_while") {
+									{
+										var args = `;
+										if (args != null && args.length == 3 && reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms.isStreamIterateZero(args[0])) {
+											var listExpr = null;
+											@:ast(switch (args[1].def) {
+	case ETuple(items) if (items.length == 1):
+		listExpr = items[0];	
+	default:
+}) {
+												var ` = args[1].def;
+												if (enumIndex ` == 16) {
+													var ` = `[0];
+													{
+														var items = `;
+														if (items.length == 1) {
+															listExpr = items[0];
+														} else {};
+													};
+												} else {};
+											};
+											if (listExpr == null) {
+												return n;
+											};
+											var reducer = args[2];
+											var bodyBlock = null;
+											@:ast(switch (reducer.def) {
+	case EFn(clauses) if (clauses.length >= 1):
+		var b = clauses[0].body;
+		switch (b.def) {
+			case EIf(_, thenBr, elseBr):
+				var thenStmts:Array<ElixirAST> = [];
+				switch (thenBr.def) {
+					case EBlock(sts):
+						thenStmts = sts;					
+					default:
+						thenStmts = [thenBr];					
+				};
+				var filtered = filterSentinelStmts(thenStmts);
+				bodyBlock = makeAST(EBlock(filtered));			
+			default:
+		};	
+	default:
+}) {
+												var ` = reducer.def;
+												if (enumIndex ` == 42) {
+													var ` = `[0];
+													{
+														var clauses = `;
+														if (clauses.length >= 1) {
+															var b = clauses[0].body;
+															@:ast(switch (b.def) {
+	case EIf(_, thenBr, elseBr):
+		var thenStmts:Array<ElixirAST> = [];
+		switch (thenBr.def) {
+			case EBlock(sts):
+				thenStmts = sts;			
+			default:
+				thenStmts = [thenBr];			
+		};
+		var filtered = filterSentinelStmts(thenStmts);
+		bodyBlock = makeAST(EBlock(filtered));	
+	default:
+}) {
+																var ` = b.def;
+																if (enumIndex ` == 10) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var thenBr = `;
+																		var elseBr = `;
+																		{
+																			var thenStmts = [];
+																			@:ast(switch (thenBr.def) {
+	case EBlock(sts):
+		thenStmts = sts;	
+	default:
+		thenStmts = [thenBr];	
+}) {
+																				var ` = thenBr.def;
+																				if (enumIndex ` == 53) {
+																					var ` = `[0];
+																					{
+																						var sts = `;
+																						{
+																							thenStmts = sts;
+																						};
+																					};
+																				} else {
+																					thenStmts = [thenBr];
+																				};
+																			};
+																			var filtered = reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms.filterSentinelStmts(thenStmts);
+																			bodyBlock = {
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(filtered), metadata : {}, pos : pos};
+																			};
+																		};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+											if (bodyBlock == null) {
+												return n;
+											};
+											var eachFnClause = {args : [reflaxe.elixir.ast.EPattern.PVar("_elem")], guard : null, body : bodyBlock};
+											var eachFn = {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EFn([eachFnClause]), metadata : {}, pos : pos};
+											};
+											{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+											}, "each", [listExpr, eachFn]), metadata : n.metadata, pos : n.pos};
+										} else {
+											n;
+										};
+									};
+								} else {
+									n;
+								};
+							} else {
+								n;
+							};
+						} else {
+							n;
+						};
+					};
+				} else {
+					n;
+				};
+			};
+		});
+	}
+}

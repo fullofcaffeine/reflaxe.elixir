@@ -1,0 +1,21 @@
+@:realPath("phoenix.Socket") @:used @:native("Socket")
+extern class Socket {
+
+	function new(endpointUrl:Null<String>, opts:Null<phoenix.SocketOptions>):Void;
+
+	function connect():Void;
+
+	function disconnect(code:Null<Int>, reason:Null<String>):Void;
+
+	function isConnected():Bool;
+
+	function channel(topic:String, params:Null<Dynamic>):Channel;
+
+	function remove(channel:Channel):Void;
+
+	function connectionState():String;
+
+	function makeRef():String;
+
+	function sendHeartbeat():Void;
+}

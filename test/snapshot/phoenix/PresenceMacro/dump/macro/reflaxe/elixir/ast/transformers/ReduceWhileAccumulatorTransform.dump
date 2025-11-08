@@ -1,0 +1,1013 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform {
+
+	public static function reduceWhileAccumulatorPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformReduceWhile(ast);
+	}
+
+	static function transformReduceWhile(node:reflaxe.elixir.ast.ElixirAST) {
+		var transformedNode = reflaxe.elixir.ast.ElixirASTTransformer.transformAST(node, reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformReduceWhile);
+		if (transformedNode == null) {
+			return null;
+		};
+		@:ast(switch (transformedNode.def) {
+	case ERemoteCall(module, "reduce_while", args) if (isEnumModule(module)):
+		if (args.length >= 3) {
+			var collection = args[0];
+			var initialAcc = args[1];
+			var fnArg = args[2];
+			switch (fnArg.def) {
+				case EFn(clauses):
+					var transformedClauses = [];
+					for (clause  in  clauses) {
+						var transformedClause = transformReduceWhileClause(clause, initialAcc);
+						transformedClauses.push(transformedClause);
+					};
+					return makeAST(ERemoteCall(module, "reduce_while", [collection, initialAcc, makeAST(EFn(transformedClauses))]));				
+				default:
+					return transformedNode;				
+			};
+		};	
+	default:
+}) {
+			var ` = transformedNode.def;
+			if (enumIndex ` == 24) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (` == "reduce_while") {
+					{
+						var module = `;
+						var args = `;
+						if (reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.isEnumModule(module)) {
+							if (args.length >= 3) {
+								var collection = args[0];
+								var initialAcc = args[1];
+								var fnArg = args[2];
+								@:ast(switch (fnArg.def) {
+	case EFn(clauses):
+		var transformedClauses = [];
+		for (clause  in  clauses) {
+			var transformedClause = transformReduceWhileClause(clause, initialAcc);
+			transformedClauses.push(transformedClause);
+		};
+		return makeAST(ERemoteCall(module, "reduce_while", [collection, initialAcc, makeAST(EFn(transformedClauses))]));	
+	default:
+		return transformedNode;	
+}) {
+									var ` = fnArg.def;
+									if (enumIndex ` == 42) {
+										var ` = `[0];
+										{
+											var clauses = `;
+											{
+												var transformedClauses = [];
+												{
+													var ` = 0;
+													while (` < clauses.length) {
+														var clause = clauses[`];
+														++ `;
+														var transformedClause = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformReduceWhileClause(clause, initialAcc);
+														transformedClauses.push(transformedClause);
+													};
+												};
+												return {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(module, "reduce_while", [collection, initialAcc, {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EFn(transformedClauses), metadata : {}, pos : pos};
+													}]), metadata : {}, pos : pos};
+												};
+											};
+										};
+									} else {
+										return transformedNode;
+									};
+								};
+							};
+						} else {};
+					};
+				} else {};
+			} else {};
+		};
+		return transformedNode;
+	}
+
+	static function transformReduceWhileClause(clause:{ guard : Null<reflaxe.elixir.ast.ElixirAST>, body : reflaxe.elixir.ast.ElixirAST, args : Array<reflaxe.elixir.ast.EPattern> }, initialAcc:reflaxe.elixir.ast.ElixirAST) {
+		var accVarNames = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.extractAccumulatorVars(clause.args);
+		if (accVarNames.length == 0) {
+			return clause;
+		};
+		var transformedBody = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformClauseBody(clause.body, accVarNames);
+		return {args : clause.args, guard : clause.guard, body : transformedBody};
+	}
+
+	static function extractAccumulatorVars(args:Array<reflaxe.elixir.ast.EPattern>) {
+		var varNames = [];
+		if (args.length >= 2) {
+			@:ast(switch (args[1]) {
+	case PTuple(patterns):
+		for (p  in  patterns) {
+			switch (p) {
+				case PVar(name):
+					varNames.push(name);				
+				default:
+			};
+		};	
+	case PVar(name):
+		varNames.push(name);	
+	default:
+}) {
+				var ` = args[1];
+				switch (enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						{
+							var name = `;
+							{
+								varNames.push(name);
+							};
+						};
+					};
+					case 2: {
+						var ` = `[0];
+						{
+							var patterns = `;
+							{
+								{
+									var ` = 0;
+									while (` < patterns.length) {
+										var p = patterns[`];
+										++ `;
+										@:ast(switch (p) {
+	case PVar(name):
+		varNames.push(name);	
+	default:
+}) if (enumIndex p == 0) {
+											var ` = p[0];
+											{
+												var name = `;
+												{
+													varNames.push(name);
+												};
+											};
+										} else {};
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		return varNames;
+	}
+
+	static function transformClauseBody(body:reflaxe.elixir.ast.ElixirAST, accVarNames:Array<String>) {
+		return reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(body, accVarNames, {
+			{};
+			new haxe.ds.StringMap();
+		}, false);
+	}
+
+	@:value({ preserveAssignments : false })
+	static function transformBodyRecursive(body:reflaxe.elixir.ast.ElixirAST, accVarNames:Array<String>, accUpdates:Map<String, reflaxe.elixir.ast.ElixirAST>, preserveAssignments:Bool = false) {
+		if (body == null) {
+			return null;
+		};
+		@:ast(switch (body.def) {
+	case EIf(condition, thenBranch, elseBranch):
+		var hasReturnTuple = containsReturnTuple(thenBranch) || (elseBranch != null && containsReturnTuple(elseBranch));
+		if (elseBranch != null) { };
+		if (hasReturnTuple) {
+			var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy(), true);
+			var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy(), true) : null;
+			return makeAST(EIf(condition, transformedThen, transformedElse));
+		};
+		var hasAccAssignments = checkForAccumulatorAssignments(thenBranch, accVarNames) || (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));
+		if (hasAccAssignments) {
+			var resultVarName = findAccumulatorVarInIf(thenBranch, elseBranch, accVarNames);
+			if (resultVarName != null) {
+				var transformedIf = makeAST(EIf(condition, extractValueFromAssignment(thenBranch, resultVarName), elseBranch != null ? extractValueFromAssignment(elseBranch, resultVarName) : null));
+				accUpdates.set(resultVarName, transformedIf);
+				return makeAST(EBlock([]));
+			};
+		};
+		var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy());
+		var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy()) : null;
+		return makeAST(EIf(condition, transformedThen, transformedElse));	
+	case ECase(expr, branches):
+		var hasAccAssignments = false;
+		var accVarName:String = null;
+		for (branch  in  branches) {
+			if (checkForAccumulatorAssignments(branch.body, accVarNames)) {
+				hasAccAssignments = true;
+				accVarName = findAssignedAccumulator(branch.body, accVarNames);
+				if (accVarName != null) break;
+			};
+		};
+		if (hasAccAssignments && accVarName != null) {
+			var transformedBranches = [];
+			for (branch  in  branches) {
+				var transformedBody = extractValueFromAssignment(branch.body, accVarName);
+				if (transformedBody == branch.body) {
+					transformedBody = transformBodyRecursive(branch.body, accVarNames, accUpdates.copy());
+				};
+				transformedBranches.push({ pattern : branch.pattern, guard : branch.guard, body : transformedBody });
+			};
+			var transformedCase = makeAST(ECase(expr, transformedBranches));
+			accUpdates.set(accVarName, transformedCase);
+			return makeAST(EBlock([]));
+		} else {
+			var transformedBranches = [];
+			for (branch  in  branches) {
+				transformedBranches.push({ pattern : branch.pattern, guard : branch.guard, body : transformBodyRecursive(branch.body, accVarNames, accUpdates.copy()) });
+			};
+			return makeAST(ECase(expr, transformedBranches));
+		};	
+	case EBlock(exprs):
+		var transformedExprs = [];
+		var localUpdates = accUpdates.copy();
+		for (i  in  0 ... exprs.length) {
+			var expr = exprs[i];
+			switch (expr.def) {
+				case EMatch(PVar(varName), value) if (accVarNames.indexOf(varName) >= 0):
+					localUpdates.set(varName, value);
+					if (preserveAssignments) {
+						trace("[XRay ReduceWhile] Preserving assignment: $varName = ...");
+						transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
+					};				
+				case ETuple([atom, accTuple]):
+					switch (atom.def) {
+						case EAtom(atom) if (atom == "cont" || atom == "halt"):
+							var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
+							transformedExprs.push(makeAST(ETuple([makeAST(EAtom(atom)), newAcc])));						
+						default:
+							transformedExprs.push(expr);						
+					};				
+				default:
+					var transformed = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+					if (transformed != null) {
+						transformedExprs.push(transformed);
+					};				
+			};
+		};
+		return makeAST(EBlock(transformedExprs));	
+	case ETuple([atom, accTuple]):
+		switch (atom.def) {
+			case EAtom(atom) if (atom == "cont" || atom == "halt"):
+				var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
+				return makeAST(ETuple([makeAST(EAtom(atom)), newAcc]));			
+			default:
+				return body;			
+		};	
+	default:
+		return body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var expr = `;
+						var branches = `;
+						{
+							var hasAccAssignments = false;
+							var accVarName = null;
+							{
+								var ` = 0;
+								while (` < branches.length) {
+									var branch = branches[`];
+									++ `;
+									if (reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.checkForAccumulatorAssignments(branch.body, accVarNames)) {
+										hasAccAssignments = true;
+										accVarName = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.findAssignedAccumulator(branch.body, accVarNames);
+										if (accVarName != null) {
+											break;
+										};
+									};
+								};
+							};
+							if (hasAccAssignments && accVarName != null) {
+								var transformedBranches = [];
+								{
+									var ` = 0;
+									while (` < branches.length) {
+										var branch = branches[`];
+										++ `;
+										var transformedBody = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.extractValueFromAssignment(branch.body, accVarName);
+										if (transformedBody == branch.body) {
+											transformedBody = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(branch.body, accVarNames, cast cast accUpdates.copy(), null);
+										};
+										transformedBranches.push({pattern : branch.pattern, guard : branch.guard, body : transformedBody});
+									};
+								};
+								var transformedCase = {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, transformedBranches), metadata : {}, pos : pos};
+								};
+								{
+									accUpdates.set(accVarName, transformedCase);
+								};
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([]), metadata : {}, pos : pos};
+								};
+							} else {
+								var transformedBranches = [];
+								{
+									var ` = 0;
+									while (` < branches.length) {
+										var branch = branches[`];
+										++ `;
+										transformedBranches.push({pattern : branch.pattern, guard : branch.guard, body : reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(branch.body, accVarNames, cast cast accUpdates.copy(), null)});
+									};
+								};
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECase(expr, transformedBranches), metadata : {}, pos : pos};
+								};
+							};
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var condition = `;
+						var thenBranch = `;
+						var elseBranch = `;
+						{
+							var hasReturnTuple = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.containsReturnTuple(thenBranch) || (elseBranch != null && reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.containsReturnTuple(elseBranch));
+							if (elseBranch != null) {};
+							if (hasReturnTuple) {
+								var transformedThen = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(thenBranch, accVarNames, cast cast accUpdates.copy(), true);
+								var transformedElse = if (elseBranch != null) {
+									reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(elseBranch, accVarNames, cast cast accUpdates.copy(), true);
+								} else {
+									null;
+								};
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condition, transformedThen, transformedElse), metadata : {}, pos : pos};
+								};
+							};
+							var hasAccAssignments = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.checkForAccumulatorAssignments(thenBranch, accVarNames) || (elseBranch != null && reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.checkForAccumulatorAssignments(elseBranch, accVarNames));
+							if (hasAccAssignments) {
+								var resultVarName = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.findAccumulatorVarInIf(thenBranch, elseBranch, accVarNames);
+								if (resultVarName != null) {
+									var transformedIf = {
+										var def = reflaxe.elixir.ast.ElixirASTDef.EIf(condition, reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.extractValueFromAssignment(thenBranch, resultVarName), if ((elseBranch != null)) reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.extractValueFromAssignment(elseBranch, resultVarName) else null);
+										var pos = null;
+										{def : def, metadata : {}, pos : pos};
+									};
+									{
+										accUpdates.set(resultVarName, transformedIf);
+									};
+									return {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([]), metadata : {}, pos : pos};
+									};
+								};
+							};
+							var transformedThen = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(thenBranch, accVarNames, cast cast accUpdates.copy(), null);
+							var transformedElse = if (elseBranch != null) {
+								reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(elseBranch, accVarNames, cast cast accUpdates.copy(), null);
+							} else {
+								null;
+							};
+							return {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condition, transformedThen, transformedElse), metadata : {}, pos : pos};
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					if (`.length == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var atom = `;
+							var accTuple = `;
+							{
+								@:ast(switch (atom.def) {
+	case EAtom(atom) if (atom == "cont" || atom == "halt"):
+		var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
+		return makeAST(ETuple([makeAST(EAtom(atom)), newAcc]));	
+	default:
+		return body;	
+}) {
+									var ` = atom.def;
+									if (enumIndex ` == 31) {
+										var ` = `[0];
+										{
+											var atom = `;
+											if (atom == "cont" || atom == "halt") {
+												var newAcc = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
+												return {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(atom), metadata : {}, pos : pos};
+													}, newAcc]), metadata : {}, pos : pos};
+												};
+											} else {
+												return body;
+											};
+										};
+									} else {
+										return body;
+									};
+								};
+							};
+						};
+					} else {
+						return body;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							var transformedExprs = [];
+							var localUpdates = cast cast accUpdates.copy();
+							{
+								var ` = 0;
+								var ` = exprs.length;
+								while (` < `) {
+									var i = ` ++;
+									var expr = exprs[i];
+									@:ast(switch (expr.def) {
+	case EMatch(PVar(varName), value) if (accVarNames.indexOf(varName) >= 0):
+		localUpdates.set(varName, value);
+		if (preserveAssignments) {
+			trace("[XRay ReduceWhile] Preserving assignment: $varName = ...");
+			transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
+		};	
+	case ETuple([atom, accTuple]):
+		switch (atom.def) {
+			case EAtom(atom) if (atom == "cont" || atom == "halt"):
+				var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
+				transformedExprs.push(makeAST(ETuple([makeAST(EAtom(atom)), newAcc])));			
+			default:
+				transformedExprs.push(expr);			
+		};	
+	default:
+		var transformed = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+		if (transformed != null) {
+			transformedExprs.push(transformed);
+		};	
+}) {
+										var ` = expr.def;
+										switch (enumIndex `) {
+											case 8: {
+												var ` = `[0];
+												var ` = `[1];
+												if (enumIndex ` == 0) {
+													var ` = `[0];
+													{
+														var varName = `;
+														var value = `;
+														if (accVarNames.indexOf(varName, null) >= 0) {
+															{
+																localUpdates.set(varName, value);
+															};
+															if (preserveAssignments) {
+																haxe.Log.trace("[XRay ReduceWhile] Preserving assignment: " + varName + " = ...", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/ReduceWhileAccumulatorTransform.hx", lineNumber : 307, className : "reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform", methodName : "transformBodyRecursive"});
+																transformedExprs.push({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(varName), value), metadata : {}, pos : pos};
+																});
+															};
+														} else {
+															var transformed = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+															if (transformed != null) {
+																transformedExprs.push(transformed);
+															};
+														};
+													};
+												} else {
+													var transformed = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+													if (transformed != null) {
+														transformedExprs.push(transformed);
+													};
+												};
+											};
+											case 16: {
+												var ` = `[0];
+												if (`.length == 2) {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														var atom = `;
+														var accTuple = `;
+														{
+															@:ast(switch (atom.def) {
+	case EAtom(atom) if (atom == "cont" || atom == "halt"):
+		var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
+		transformedExprs.push(makeAST(ETuple([makeAST(EAtom(atom)), newAcc])));	
+	default:
+		transformedExprs.push(expr);	
+}) {
+																var ` = atom.def;
+																if (enumIndex ` == 31) {
+																	var ` = `[0];
+																	{
+																		var atom = `;
+																		if (atom == "cont" || atom == "halt") {
+																			var newAcc = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
+																			transformedExprs.push({
+																				var pos = null;
+																				{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+																					var pos = null;
+																					{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(atom), metadata : {}, pos : pos};
+																				}, newAcc]), metadata : {}, pos : pos};
+																			});
+																		} else {
+																			transformedExprs.push(expr);
+																		};
+																	};
+																} else {
+																	transformedExprs.push(expr);
+																};
+															};
+														};
+													};
+												} else {
+													var transformed = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+													if (transformed != null) {
+														transformedExprs.push(transformed);
+													};
+												};
+											};
+											default: {
+												var transformed = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+												if (transformed != null) {
+													transformedExprs.push(transformed);
+												};
+											}
+										};
+									};
+								};
+							};
+							return {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(transformedExprs), metadata : {}, pos : pos};
+							};
+						};
+					};
+				};
+				default: {
+					return body;
+				}
+			};
+		};
+	}
+
+	static function applyAccumulatorUpdates(accTuple:reflaxe.elixir.ast.ElixirAST, varNames:Array<String>, updates:Map<String, reflaxe.elixir.ast.ElixirAST>) {
+		var hasUpdates = false;
+		for (key in updates.keys()) {
+			hasUpdates = true;
+			break;
+		};
+		if (! hasUpdates) {
+			return accTuple;
+		};
+		@:ast(switch (accTuple.def) {
+	case ETuple(elements):
+		var newElements = [];
+		for (i  in  0 ... elements.length) {
+			if (i < varNames.length && updates.exists(varNames[i])) {
+				newElements.push(updates.get(varNames[i]));
+			} else {
+				newElements.push(elements[i]);
+			};
+		};
+		return makeAST(ETuple(newElements));	
+	case EVar(name) if (updates.exists(name)):
+		return updates.get(name);	
+	default:
+		return accTuple;	
+}) {
+			var ` = accTuple.def;
+			switch (enumIndex `) {
+				case 16: {
+					var ` = `[0];
+					{
+						var elements = `;
+						{
+							var newElements = [];
+							{
+								var ` = 0;
+								var ` = elements.length;
+								while (` < `) {
+									var i = ` ++;
+									if (i < varNames.length && updates.exists(varNames[i])) {
+										newElements.push(cast updates.get(varNames[i]));
+									} else {
+										newElements.push(elements[i]);
+									};
+								};
+							};
+							return {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ETuple(newElements), metadata : {}, pos : pos};
+							};
+						};
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var name = `;
+						if (updates.exists(name)) {
+							return cast updates.get(name);
+						} else {
+							return accTuple;
+						};
+					};
+				};
+				default: {
+					return accTuple;
+				}
+			};
+		};
+	}
+
+	static function buildUpdatedAccumulator(varNames:Array<String>, updates:Map<String, reflaxe.elixir.ast.ElixirAST>) {
+		var accValues = [];
+		{
+			var ` = 0;
+			while (` < varNames.length) {
+				var varName = varNames[`];
+				++ `;
+				if (updates.exists(varName)) {
+					accValues.push(cast updates.get(varName));
+				} else {
+					accValues.push({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar(varName), metadata : {}, pos : pos};
+					});
+				};
+			};
+		};
+		if (accValues.length == 1) {
+			return accValues[0];
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ETuple(accValues), metadata : {}, pos : pos};
+		};
+	}
+
+	static function containsReturnTuple(node:reflaxe.elixir.ast.ElixirAST) {
+		if (node == null) {
+			return false;
+		};
+		@:ast(switch (node.def) {
+	case ETuple([atom, _]):
+		switch (atom.def) {
+			case EAtom(a) if (a == "cont" || a == "halt"):
+				return true;			
+			default:
+		};	
+	case EBlock(exprs):
+		for (expr  in  exprs) {
+			if (containsReturnTuple(expr)) {
+				return true;
+			};
+		};	
+	case EIf(_, thenBranch, elseBranch):
+		if (containsReturnTuple(thenBranch)) return true;
+		if (elseBranch != null && containsReturnTuple(elseBranch)) return true;	
+	default:
+}) {
+			var ` = node.def;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var thenBranch = `;
+						var elseBranch = `;
+						{
+							if (reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.containsReturnTuple(thenBranch)) {
+								return true;
+							};
+							if (elseBranch != null && reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.containsReturnTuple(elseBranch)) {
+								return true;
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					if (`.length == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var atom = `;
+							{
+								@:ast(switch (atom.def) {
+	case EAtom(a) if (a == "cont" || a == "halt"):
+		return true;	
+	default:
+}) {
+									var ` = atom.def;
+									if (enumIndex ` == 31) {
+										var ` = `[0];
+										{
+											var a = `;
+											if (a == "cont" || a == "halt") {
+												return true;
+											} else {};
+										};
+									} else {};
+								};
+							};
+						};
+					} else {};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									if (reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.containsReturnTuple(expr)) {
+										return true;
+									};
+								};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		return false;
+	}
+
+	static function isEnumModule(module:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (module.def) {
+	case EVar("Enum"):
+		true;	
+	case EAtom(atom) if (atom == "Elixir.Enum"):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = module.def;
+			switch (enumIndex `) {
+				case 31: {
+					var ` = `[0];
+					{
+						var atom = `;
+						if (atom == "Elixir.Enum") {
+							true;
+						} else {
+							false;
+						};
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					if (` == "Enum") {
+						{
+							true;
+						};
+					} else {
+						false;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function checkForAccumulatorAssignments(node:reflaxe.elixir.ast.ElixirAST, accVarNames:Array<String>) {
+		if (node == null) {
+			return false;
+		};
+		@:ast(switch (node.def) {
+	case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
+		return true;	
+	case EBlock(exprs):
+		for (expr  in  exprs) {
+			if (checkForAccumulatorAssignments(expr, accVarNames)) {
+				return true;
+			};
+		};
+		return false;	
+	case EIf(_, thenBranch, elseBranch):
+		return checkForAccumulatorAssignments(thenBranch, accVarNames) || (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));	
+	default:
+		return false;	
+}) {
+			var ` = node.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var varName = `;
+							if (accVarNames.indexOf(varName, null) >= 0) {
+								return true;
+							} else {
+								return false;
+							};
+						};
+					} else {
+						return false;
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var thenBranch = `;
+						var elseBranch = `;
+						{
+							return reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.checkForAccumulatorAssignments(thenBranch, accVarNames) || (elseBranch != null && reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.checkForAccumulatorAssignments(elseBranch, accVarNames));
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									if (reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.checkForAccumulatorAssignments(expr, accVarNames)) {
+										return true;
+									};
+								};
+							};
+							return false;
+						};
+					};
+				};
+				default: {
+					return false;
+				}
+			};
+		};
+	}
+
+	static function findAccumulatorVarInIf(thenBranch:reflaxe.elixir.ast.ElixirAST, elseBranch:reflaxe.elixir.ast.ElixirAST, accVarNames:Array<String>) {
+		var varName = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.findAssignedAccumulator(thenBranch, accVarNames);
+		if (varName != null) {
+			return varName;
+		};
+		if (elseBranch != null) {
+			return reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.findAssignedAccumulator(elseBranch, accVarNames);
+		};
+		return null;
+	}
+
+	static function findAssignedAccumulator(node:reflaxe.elixir.ast.ElixirAST, accVarNames:Array<String>) {
+		if (node == null) {
+			return null;
+		};
+		@:ast(switch (node.def) {
+	case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
+		return varName;	
+	case EBlock(exprs):
+		for (expr  in  exprs) {
+			var result = findAssignedAccumulator(expr, accVarNames);
+			if (result != null) return result;
+		};
+		return null;	
+	default:
+		return null;	
+}) {
+			var ` = node.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var varName = `;
+							if (accVarNames.indexOf(varName, null) >= 0) {
+								return varName;
+							} else {
+								return null;
+							};
+						};
+					} else {
+						return null;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									var result = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.findAssignedAccumulator(expr, accVarNames);
+									if (result != null) {
+										return result;
+									};
+								};
+							};
+							return null;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+	}
+
+	static function extractValueFromAssignment(node:reflaxe.elixir.ast.ElixirAST, varName:String) {
+		if (node == null) {
+			return null;
+		};
+		@:ast(switch (node.def) {
+	case EMatch(PVar(name), value) if (name == varName):
+		return value;	
+	case EBlock(exprs):
+		for (expr  in  exprs) {
+			var result = extractValueFromAssignment(expr, varName);
+			if (result != null) return result;
+		};
+		return node;	
+	default:
+		return node;	
+}) {
+			var ` = node.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						{
+							var name = `;
+							var value = `;
+							if (name == varName) {
+								return value;
+							} else {
+								return node;
+							};
+						};
+					} else {
+						return node;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var expr = exprs[`];
+									++ `;
+									var result = reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.extractValueFromAssignment(expr, varName);
+									if (result != null) {
+										return result;
+									};
+								};
+							};
+							return node;
+						};
+					};
+				};
+				default: {
+					return node;
+				}
+			};
+		};
+	}
+}
