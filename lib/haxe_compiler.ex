@@ -178,6 +178,10 @@ defmodule HaxeCompiler do
     env = build_haxe_env()
     
     # Change to the directory containing the hxml file so relative paths work
+    # Bound execution time to avoid hangs during mix compile / phx.server
+    timeout_ms = haxe_timeout_ms()
+
+    # Build command options (no native timeout here; we enforce via Task/yield)
     cmd_opts = case Path.dirname(hxml_file) do
       "." -> [stderr_to_stdout: true, env: env]
       dir -> [cd: dir, stderr_to_stdout: true, env: env]
@@ -192,19 +196,40 @@ defmodule HaxeCompiler do
     
     args = cmd_args ++ [final_hxml]
     
-    case System.cmd(haxe_cmd, args, cmd_opts) do
-      {output, 0} ->
+    # Run Haxe in a separate task to enforce timeout cleanly
+    task = Task.async(fn -> System.cmd(haxe_cmd, args, cmd_opts) end)
+    case Task.yield(task, timeout_ms) || Task.shutdown(task, :brutal_kill) do
+      {:ok, {output, 0}} ->
         {:ok, output}
-      {output, exit_code} ->
-        # Parse structured error information from Haxe output
+      {:ok, {output, exit_code}} ->
         structured_errors = parse_haxe_errors(output)
         store_compilation_errors(structured_errors)
-        
         {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
+      nil ->
+        {:error, "Haxe compilation timed out after #{div(timeout_ms, 1000)}s. Set HAXE_TIMEOUT_MS to adjust."}
     end
   rescue
     error ->
-      {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
+      # Convert timeout exits into a clear, actionable message
+      message = Exception.message(error)
+      if String.contains?(message, "timed out") do
+        # Recompute timeout to avoid referencing an out-of-scope variable
+        tm = haxe_timeout_ms()
+        {:error, "Haxe compilation timed out after #{div(tm, 1000)}s. Set HAXE_TIMEOUT_MS to adjust."}
+      else
+        {:error, "Failed to execute Haxe: #{message}"}
+      end
+  end
+
+  defp haxe_timeout_ms() do
+    case System.get_env("HAXE_TIMEOUT_MS") do
+      nil ->
+        case System.get_env("HAXE_TIMEOUT_SECS") do
+          nil -> 300_000
+          secs -> String.to_integer(secs) * 1000
+        end
+      ms -> String.to_integer(ms)
+    end
   end
   
   defp find_generated_elixir_files(target_dir) do
@@ -291,41 +316,20 @@ defmodule HaxeCompiler do
   
   defp parse_error_line(line) do
     cond do
-      # Warning embedded after file/line (e.g., "/path/File.hx:130 ... Warning : (W...) ...")
-      String.contains?(line, " Warning :") and String.match?(line, ~r/\.hx:\d+/) ->
-        parse_warning_with_file_prefix(line)
-
       # Haxe error format: "src/Main.hx:10: characters 5-12 : Type not found : UnknownType"
       String.match?(line, ~r/\.hx:\d+:/) ->
         parse_standard_error(line)
-
-      # Stack trace lines: "    at Main.main (src/Main.hx line 10)"
+      
+      # Stack trace lines: "    at Main.main (src/Main.hx line 10)"  
       String.match?(line, ~r/\s+at\s+.*\.hx\s+line\s+\d+/) ->
         parse_stacktrace_line(line)
-
-      # Plain warning format: "Warning : ..."
+      
+      # Warning format: "Warning : ..."
       String.starts_with?(line, "Warning :") ->
         parse_warning(line)
-
+        
       true ->
         nil
-    end
-  end
-
-  defp parse_warning_with_file_prefix(line) do
-    # Example: "/path/to/File.hx:130 lines 130-138: Warning : (WUnusedPattern) ..."
-    case Regex.run(~r/^(.+\.hx):\d+.*?Warning\s*:\s*(.*)$/u, line) do
-      [_, file_path, msg] ->
-        %{
-          type: :warning,
-          level: :haxe,
-          file: Path.relative_to_cwd(file_path),
-          message: String.trim(msg),
-          raw_line: line,
-          timestamp: DateTime.utc_now()
-        }
-      _ ->
-        parse_warning(line)
     end
   end
   
