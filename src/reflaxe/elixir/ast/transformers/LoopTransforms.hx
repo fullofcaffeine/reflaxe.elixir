@@ -113,7 +113,7 @@ class LoopTransforms {
     #end
 
     // Bounded complexity guard for index scanning across large concatenations
-    static inline var CHECK_INDEX_BUDGET_DEFAULT = 500; // conservative to avoid pathological scans
+    static inline var CHECK_INDEX_BUDGET_DEFAULT = #if no_traces 64 #else 500 #end; // tighter budget in CI to avoid pathological scans
     static var checkIndexBudget:Int = CHECK_INDEX_BUDGET_DEFAULT;
 
     static inline var STRING_COMPLEXITY_THRESHOLD = 300;
@@ -336,6 +336,12 @@ class LoopTransforms {
      * - Log.trace("Iteration 2", ...)
      */
     public static function unrolledLoopTransformPass(ast: ElixirAST): ElixirAST {
+        #if no_traces
+        // When no_traces is defined, skip this exploratory transform entirely to
+        // avoid any scanning overhead in production/CI runs. This pass is primarily
+        // for XRay/debugging and is not required for correctness.
+        return ast;
+        #end
         // Use Sys.println to ensure output is visible
         #if sys
         #if debug_loop_transforms
@@ -2286,10 +2292,16 @@ class LoopTransforms {
             #if debug_ast_transformer Sys.println('[XRay LoopTransforms]   No function call at index $startIdx'); #end
             return null;
         }
-        
+
         #if debug_ast_transformer Sys.println('[XRay LoopTransforms] detectLoopGroup: Checking from index $startIdx, first call: ${firstCall.module}.${firstCall.func}'); #end
         if (firstCall.args.length > 0) {
             #if debug_ast_transformer Sys.println('[XRay LoopTransforms]   First arg type: ' + firstCall.args[0].def); #end
+        }
+
+        // Early guard: this transform currently targets Log.trace-style unrolled outputs only.
+        // Avoid scanning unrelated string-building calls (e.g., list.push, IO.puts, etc.).
+        if (!(firstCall.module == 'Log' && firstCall.func == 'trace')) {
+            return null;
         }
         
         // Count how many consecutive statements match the pattern
@@ -2301,25 +2313,25 @@ class LoopTransforms {
             
             // Stop if not a function call or different function
             if (call == null) {
-                trace('[XRay LoopTransforms]   Statement $i is not a function call, stopping');
+                #if !no_traces trace('[XRay LoopTransforms]   Statement $i is not a function call, stopping'); #end
                 break;
             }
             
             if (call.module != firstCall.module || call.func != firstCall.func) {
-                trace('[XRay LoopTransforms]   Statement $i has different function (${call.module}.${call.func}), stopping');
+                #if !no_traces trace('[XRay LoopTransforms]   Statement $i has different function (${call.module}.${call.func}), stopping'); #end
                 break;
             }
             
             // Check if it has the expected index
             if (call.args.length > 0) {
-                trace('[XRay LoopTransforms]   Checking for index $expectedIndex in arg: ' + call.args[0].def);
+                #if !no_traces trace('[XRay LoopTransforms]   Checking for index $expectedIndex in arg: ' + call.args[0].def); #end
                 var hasExpectedIndex = checkForIndex(call.args[0], expectedIndex);
                 if (!hasExpectedIndex) {
-                    trace('[XRay LoopTransforms]   No index $expectedIndex found, stopping');
+                    #if !no_traces trace('[XRay LoopTransforms]   No index $expectedIndex found, stopping'); #end
                     // Index pattern broken, stop here
                     break;
                 }
-                trace('[XRay LoopTransforms]   ✓ Statement ${i} matches with index $expectedIndex');
+                #if !no_traces trace('[XRay LoopTransforms]   ✓ Statement ${i} matches with index $expectedIndex'); #end
             }
             
             count++;
@@ -2328,11 +2340,11 @@ class LoopTransforms {
         
         // Need at least 2 consecutive statements to be considered a loop
         if (count < 2) {
-            trace('[XRay LoopTransforms] detectLoopGroup: Only $count matching statements, not enough for a loop');
+            #if !no_traces trace('[XRay LoopTransforms] detectLoopGroup: Only $count matching statements, not enough for a loop'); #end
             return null;
         }
         
-        trace('[XRay LoopTransforms] ✅ DETECTED LOOP GROUP: ${firstCall.module}.${firstCall.func} with $count iterations');
+        #if !no_traces trace('[XRay LoopTransforms] ✅ DETECTED LOOP GROUP: ${firstCall.module}.${firstCall.func} with $count iterations'); #end
         
         // Transform this group to Enum.each
         var transformed = transformToEnumEach(firstCall, count);
@@ -2340,7 +2352,7 @@ class LoopTransforms {
         // Check if transformation was successful
         if (transformed == null) {
             // Transformation was skipped due to safety check
-            trace('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements');
+            #if !no_traces trace('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements'); #end
             return null;
         }
         

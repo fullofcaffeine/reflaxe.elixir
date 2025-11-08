@@ -20,7 +20,7 @@ class CollectionsAndLoops {
     passes.push({
       name: "UnrolledLoopTransform",
       description: "Transform unrolled loops (sequential statements) back to Enum.each",
-      enabled: true,
+      enabled: #if no_traces false #else true #end,
       pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
     });
 
@@ -65,4 +65,3 @@ class CollectionsAndLoops {
   }
 }
 #end
-
