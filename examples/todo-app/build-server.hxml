@@ -1,9 +1,8 @@
 # Haxe→Elixir compilation for Phoenix LiveView server-side code
 # Generates idiomatic Elixir code for the BEAM VM
 
-# Include Reflaxe.Elixir source (for examples running from subdirectories)
--cp ../../src
--cp ../../std
+# Bring in Reflaxe.Elixir via library, avoid repo-level classpaths to prevent
+# shadowing stdlib and slowing compilation. The library hxml wires macros.
 -lib reflaxe
 
 # Source directories
