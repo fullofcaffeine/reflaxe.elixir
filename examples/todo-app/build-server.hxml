@@ -53,6 +53,7 @@
 --macro exclude('client')
 --macro exclude('server.live.UserLive')
 --macro exclude('server.services.UserGenServer')
+--macro exclude('test')
 ## Include controllers and contexts in server build (needed for test WAE)
 ## (Removed earlier excludes for server.controllers.UserController and contexts.*)
 
