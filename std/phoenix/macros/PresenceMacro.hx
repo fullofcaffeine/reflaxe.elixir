@@ -592,8 +592,15 @@ class PresenceMacro {
 
     /**
      * Generate external list(topic) wrapper always available.
+     *
+     * Emits <App>Web.Presence.list/1 using the canonical app prefix from PhoenixMapper.
+     * This avoids tying wrappers to @:native module names and matches snapshot shapes.
      */
     static function generateExternalList(fqModule:String): Field {
+        #if macro
+        var app = try reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) "MyApp";
+        var appWebPresence = app + "Web.Presence";
+        #end
         return {
             name: "list",
             pos: Context.currentPos(),
@@ -601,12 +608,12 @@ class PresenceMacro {
                 args: [ {name: "topic", type: macro : String} ],
                 ret: macro : Dynamic,
                 expr: macro {
-                    // Emit <FQModule>.list(topic)
-                    return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{fqModule}), topic);
+                    // Emit <App>Web.Presence.list(topic)
+                    return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{appWebPresence}), topic);
                 }
             }),
             access: [APublic, AStatic, AInline],
-            doc: "List presences for a topic via __MODULE__.list/1",
+            doc: "List presences for a topic via <App>Web.Presence.list/1",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }

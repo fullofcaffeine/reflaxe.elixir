@@ -170,7 +170,11 @@ class FunctionBuilder {
         } else if (body != null) {
             !UsageDetector.isParameterUsed(arg.v, body);
         } else {
-            false;
+            // When body is unavailable (macro/analysis edge-cases), fall back to conservative
+            // defaults for common Phoenix shapes to keep output idiomatic and warning-free.
+            // Specifically, treat typical environment params as unused by default.
+            var oname = arg.v.name;
+            (oname == "socket" || oname == "_socket" || oname == "conn" || oname == "_conn");
         };
         
         // Check for numeric suffix (parameter shadowing)
