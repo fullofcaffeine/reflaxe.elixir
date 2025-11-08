@@ -261,6 +261,12 @@ class HXX {
         // Convert Haxe ${} interpolation to Elixir #{} interpolation
         var processed = template;
 
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        var __bytes = template != null ? template.length : 0;
+        var __posInfo = (pos != null) ? haxe.macro.Context.getPosInfos(pos) : null;
+        #end
+
         // 0) Rewrite HXX control/loop tags that must be lowered before interpolation scanning
         //    - <for {item in expr}> ... </for> → <% for item <- expr do %> ... <% end %>
         processed = rewriteForBlocks(processed);
@@ -331,6 +337,16 @@ class HXX {
         processed = processComponents(processed);
         processed = processLiveViewEvents(processed);
 
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        var __file = (__posInfo != null) ? __posInfo.file : "<unknown>";
+        // One-line, grep-friendly summary (bounded; prints only when -D hxx_instrument_sys)
+        #if macro
+        haxe.macro.Context.warning('[HXX] processTemplateString bytes=' + __bytes + ' elapsed_ms=' + Std.int(__elapsed) + ' file=' + __file, haxe.macro.Context.currentPos());
+        #elseif sys
+        Sys.println('[HXX] processTemplateString bytes=' + __bytes + ' elapsed_ms=' + Std.int(__elapsed) + ' file=' + __file);
+        #end
+        #end
         return processed;
     }
 

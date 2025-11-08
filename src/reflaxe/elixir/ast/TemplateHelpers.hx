@@ -260,6 +260,11 @@ class TemplateHelpers {
      */
     public static function rewriteInterpolations(s:String):String {
         if (s == null) return s;
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        var __bytes = s.length;
+        var __iters = 0;
+        #end
         // First, convert attribute-level ${...} into HEEx attribute expressions: attr={...}
         s = rewriteAttributeInterpolations(s);
         // Then, convert attribute-level <%= ... %> into HEEx attribute expressions: attr={...}
@@ -269,6 +274,7 @@ class TemplateHelpers {
         var out = new StringBuf();
         var i = 0;
         while (i < s.length) {
+            #if hxx_instrument_sys __iters++; #end
             var j1 = s.indexOf("#{", i);
             var j2 = s.indexOf("${", i);
             var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
@@ -312,7 +318,16 @@ class TemplateHelpers {
             i = k;
         }
         // Return as-is; attribute contexts are normalized elsewhere.
-        return out.toString();
+        var __res = out.toString();
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        #if macro
+        haxe.macro.Context.warning('[HXX] rewriteInterpolations bytes=' + __bytes + ' iters=' + __iters + ' elapsed_ms=' + Std.int(__elapsed), haxe.macro.Context.currentPos());
+        #elseif sys
+        Sys.println('[HXX] rewriteInterpolations bytes=' + __bytes + ' iters=' + __iters + ' elapsed_ms=' + Std.int(__elapsed));
+        #end
+        #end
+        return __res;
     }
 
     /**
@@ -322,6 +337,9 @@ class TemplateHelpers {
     public static function rewriteForBlocks(src:String):String {
         var out = new StringBuf();
         var i = 0;
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        #end
         #if hxx_instrument
         var localIters = 0;
         #end
@@ -356,7 +374,16 @@ class TemplateHelpers {
         #if hxx_instrument
         trace('[HXX-INSTR] forBlocks: iters=' + localIters + ' len=' + (src != null ? src.length : 0));
         #end
-        return out.toString();
+        var __s = out.toString();
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        #if macro
+        haxe.macro.Context.warning('[HXX] rewriteForBlocks bytes=' + (src != null ? src.length : 0) + ' iters=' + ( #if hxx_instrument localIters #else 0 #end ) + ' elapsed_ms=' + Std.int(__elapsed), haxe.macro.Context.currentPos());
+        #elseif sys
+        Sys.println('[HXX] rewriteForBlocks bytes=' + (src != null ? src.length : 0) + ' iters=' + ( #if hxx_instrument localIters #else 0 #end ) + ' elapsed_ms=' + Std.int(__elapsed));
+        #end
+        #end
+        return __s;
     }
 
     // Convert attribute values written as <%= ... %> (and conditional blocks) into HEEx { ... }
