@@ -39,6 +39,8 @@ class HeexStringReturnToSigilTransforms {
 
     static function convertInterpolations(s:String):String {
         if (s == null) return s;
+        // Fast-path: if no interpolation tokens are present, avoid scanning
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1) return s;
         #if hxx_instrument
         var t0 = haxe.Timer.stamp();
         var loops = 0;
