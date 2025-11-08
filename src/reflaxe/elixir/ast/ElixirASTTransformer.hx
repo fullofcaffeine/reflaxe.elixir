@@ -207,6 +207,9 @@ class ElixirASTTransformer {
         var result = ast;
         
         for (passConfig in passes) {
+            #if hxx_instrument_sys
+            var __pt0 = haxe.Timer.stamp();
+            #end
             #if debug_ast_transformer
             #if sys
             Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');
@@ -272,6 +275,11 @@ class ElixirASTTransformer {
 
                 result = passConfig.pass(result);
             }
+
+            #if hxx_instrument_sys
+            var __pelapsed = Std.int((haxe.Timer.stamp() - __pt0) * 1000);
+            #if sys Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + __pelapsed); #end
+            #end
 
             #if debug_ast_snapshots
             // Per‑pass function snapshot: when debug_ast_snapshots_func is set,
