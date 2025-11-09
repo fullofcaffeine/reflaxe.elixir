@@ -259,16 +259,22 @@ defmodule Mix.Tasks.Compile.Haxe do
   defp display_compilation_errors([], _config), do: :ok
   
   defp display_compilation_errors(errors, config) do
-    Mix.shell().error("")
-    Mix.shell().error("== Compilation error in Haxe files ==")
-    
-    Enum.each(errors, fn error ->
-      display_single_error(error, config)
-    end)
-    
-    Mix.shell().error("")
-    Mix.shell().info("Hint: Run 'mix haxe.errors' for detailed error analysis")
-    Mix.shell().info("      Run 'mix haxe.errors --json' for LLM-friendly format")
+    only_warnings? =
+      errors != [] and Enum.all?(errors, fn e -> (e[:type] || e.type) == :warning end)
+
+    if only_warnings? do
+      Mix.shell().info("")
+      Mix.shell().info("== Haxe warnings ==")
+      Enum.each(errors, &display_single_error(&1, config))
+      Mix.shell().info("")
+    else
+      Mix.shell().error("")
+      Mix.shell().error("== Compilation error in Haxe files ==")
+      Enum.each(errors, &display_single_error(&1, config))
+      Mix.shell().error("")
+      Mix.shell().info("Hint: Run 'mix haxe.errors' for detailed error analysis")
+      Mix.shell().info("      Run 'mix haxe.errors --json' for LLM-friendly format")
+    end
   end
   
   defp display_single_error(error, config) do
