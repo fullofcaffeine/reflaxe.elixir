@@ -291,20 +291,41 @@ defmodule HaxeCompiler do
   
   defp parse_error_line(line) do
     cond do
+      # Warning embedded after file/line (e.g., "/path/File.hx:130 ... Warning : (W...) ...")
+      String.contains?(line, " Warning :") and String.match?(line, ~r/\.hx:\d+/) ->
+        parse_warning_with_file_prefix(line)
+
       # Haxe error format: "src/Main.hx:10: characters 5-12 : Type not found : UnknownType"
       String.match?(line, ~r/\.hx:\d+:/) ->
         parse_standard_error(line)
-      
-      # Stack trace lines: "    at Main.main (src/Main.hx line 10)"  
+
+      # Stack trace lines: "    at Main.main (src/Main.hx line 10)"
       String.match?(line, ~r/\s+at\s+.*\.hx\s+line\s+\d+/) ->
         parse_stacktrace_line(line)
-      
-      # Warning format: "Warning : ..."
+
+      # Plain warning format: "Warning : ..."
       String.starts_with?(line, "Warning :") ->
         parse_warning(line)
-        
+
       true ->
         nil
+    end
+  end
+
+  defp parse_warning_with_file_prefix(line) do
+    # Example: "/path/to/File.hx:130 lines 130-138: Warning : (WUnusedPattern) ..."
+    case Regex.run(~r/^(.+\.hx):\d+.*?Warning\s*:\s*(.*)$/u, line) do
+      [_, file_path, msg] ->
+        %{
+          type: :warning,
+          level: :haxe,
+          file: Path.relative_to_cwd(file_path),
+          message: String.trim(msg),
+          raw_line: line,
+          timestamp: DateTime.utc_now()
+        }
+      _ ->
+        parse_warning(line)
     end
   end
   
