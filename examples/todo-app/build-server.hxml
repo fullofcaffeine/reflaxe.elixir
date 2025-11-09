@@ -65,8 +65,9 @@
 --macro keep('phoenix.DateFormat')
 --macro keep('phoenix.Sorting')
 
-# Define library version and initialize compiler (via -lib reflaxe.elixir)
+# Define library version and initialize compiler
 -D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.macros.TraceAttach.attach()
 
 # (Keep debug flags off for app builds)
 # -D debug_success_unifier
