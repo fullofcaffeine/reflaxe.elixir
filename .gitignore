@@ -109,3 +109,6 @@ _GeneratedFiles.json
 _any/
 _enum_value/
 haxe/
+
+# Ignore example test-results artifacts
+examples/*/test-results/

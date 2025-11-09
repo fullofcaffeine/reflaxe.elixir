@@ -243,6 +243,35 @@ class ElixirASTPassRegistry {
 
         // HEEx/HXX prelude group (order preserved)
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
+
+        // Ensure a valid `cs` binder exists before any late changeset validations, even when
+        // ultra-late hygiene is gated off for faster dev builds.
+        #if disable_hygiene_final
+        passes.push({
+            name: "CsAliasBinderPromote",
+            description: "Promote temp alias thisN=thisM to cs=thisM before validations",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CsAliasBinderTransforms.pass
+        });
+        passes.push({
+            name: "CsValidateInitialRewrite",
+            description: "Rewrite initial cs=if validate_length(cs, ...) to use temp before cs exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CsValidateInitialRewriteTransforms.pass
+        });
+        passes.push({
+            name: "LateEnsureCsBinder",
+            description: "Ensure `cs = <changeset>` exists when validate_* calls reference cs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LateEnsureCsBinderTransforms.pass
+        });
+        passes.push({
+            name: "ChangesetChainCleanup",
+            description: "Normalize changeset alias chains to canonical `cs = ...`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.pass
+        });
+        #end
         
         // Normalize trivial IIFEs returning anonymous functions before further pipeline work
         passes.push({
@@ -3839,7 +3868,10 @@ class ElixirASTPassRegistry {
         // Ultra-final guard: ensure any lingering alias self-append inside two-arg anonymous functions
         // are rewritten to canonical acc = Enum.concat(acc, list)
         // Ultra-late hygiene/safety/sweep passes (modularized; order preserved)
+        // Gate behind define to allow faster app builds when desired
+        #if !disable_hygiene_final
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HygieneFinal.build());
+        #end
         passes.push({
             name: "HandleInfoDropUnusedAssign",
             description: "In handle_info/2, drop v = case ... when v is unused",
