@@ -138,12 +138,13 @@ defmodule HaxeCompiler do
   
   defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
     # First, try to use HaxeServer for incremental compilation if available
+    timeout = haxe_timeout_ms()
     compilation_result = case HaxeServer.running?() do
       true ->
         if verbose do
           Mix.shell().info("Using Haxe server for incremental compilation")
         end
-        HaxeServer.compile([hxml_file])
+        HaxeServer.compile([hxml_file], timeout: timeout)
         
       false ->
         if verbose do
@@ -192,19 +193,40 @@ defmodule HaxeCompiler do
     
     args = cmd_args ++ [final_hxml]
     
-    case System.cmd(haxe_cmd, args, cmd_opts) do
-      {output, 0} ->
+    # Run with a bounded timeout to avoid hanging Mix builds
+    task = Task.async(fn -> System.cmd(haxe_cmd, args, cmd_opts) end)
+    case Task.yield(task, haxe_timeout_ms()) || Task.shutdown(task, :brutal_kill) do
+      {:ok, {output, 0}} ->
         {:ok, output}
-      {output, exit_code} ->
-        # Parse structured error information from Haxe output
+      {:ok, {output, exit_code}} when is_integer(exit_code) ->
         structured_errors = parse_haxe_errors(output)
         store_compilation_errors(structured_errors)
-        
         {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
+      nil ->
+        {:error, "Haxe compilation timed out after #{div(haxe_timeout_ms(), 1000)}s"}
     end
   rescue
     error ->
       {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
+  end
+
+  # Determine Haxe compilation timeout in milliseconds.
+  # Reads HAXE_TIMEOUT_MS or HAXE_TIMEOUT_SECS; defaults to 180_000ms in dev, 300_000ms otherwise.
+  defp haxe_timeout_ms() do
+    cond do
+      val = System.get_env("HAXE_TIMEOUT_MS") ->
+        case Integer.parse(val) do
+          {ms, _} -> ms
+          :error -> 180_000
+        end
+      val = System.get_env("HAXE_TIMEOUT_SECS") ->
+        case Integer.parse(val) do
+          {secs, _} -> secs * 1000
+          :error -> 180_000
+        end
+      Mix.env() == :dev -> 180_000
+      true -> 300_000
+    end
   end
   
   defp find_generated_elixir_files(target_dir) do

@@ -282,6 +282,35 @@ class ElixirASTPassRegistry {
 
         // HEEx/HXX prelude group (order preserved)
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
+
+        // Ensure a valid `cs` binder exists before any late changeset validations, even when
+        // ultra-late hygiene is gated off for faster dev builds.
+        #if disable_hygiene_final
+        passes.push({
+            name: "CsAliasBinderPromote",
+            description: "Promote temp alias thisN=thisM to cs=thisM before validations",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CsAliasBinderTransforms.pass
+        });
+        passes.push({
+            name: "CsValidateInitialRewrite",
+            description: "Rewrite initial cs=if validate_length(cs, ...) to use temp before cs exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CsValidateInitialRewriteTransforms.pass
+        });
+        passes.push({
+            name: "LateEnsureCsBinder",
+            description: "Ensure `cs = <changeset>` exists when validate_* calls reference cs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LateEnsureCsBinderTransforms.pass
+        });
+        passes.push({
+            name: "ChangesetChainCleanup",
+            description: "Normalize changeset alias chains to canonical `cs = ...`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.pass
+        });
+        #end
         
         // Loop variable restoration pass (must run after string interpolation)
         passes.push({

@@ -16,7 +16,12 @@ optional_watchers = []
 optional_watchers =
   if npm_bin do
     # Use npm to invoke the Haxe client watcher (portable and PATH-friendly)
-    Keyword.put(optional_watchers, :haxe_client, [npm_bin, "--prefix", Path.expand("../assets", __DIR__), "run", "watch:haxe", cd: Path.expand("../", __DIR__)])
+    # Phoenix watcher expects either an MFA tuple or {cmd, args[, opts]}.
+    Keyword.put(optional_watchers, :haxe_client,
+      {npm_bin,
+       ["--prefix", Path.expand("../assets", __DIR__), "run", "watch:haxe"],
+       [cd: Path.expand("../", __DIR__)]}
+    )
   else
     optional_watchers
   end

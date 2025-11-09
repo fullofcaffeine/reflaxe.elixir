@@ -70,8 +70,7 @@
 
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
-# Speed up dev builds by skipping ultra-late hygiene sweep (no runtime change)
--D disable_hygiene_final
+# Keep full hygiene passes to ensure correct binder initialization
 
 # Main server classes to compile
 TodoApp

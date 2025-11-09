@@ -148,10 +148,8 @@ defmodule Mix.Tasks.Compile.Haxe do
   defp compile_haxe(config) do
     Mix.shell().info("Compiling Haxe files...")
     
-    # Start file watcher if enabled and in dev environment
-    if config[:watch] && Mix.env() == :dev && !config[:no_watch] do
-      start_file_watcher(config)
-    end
+    # Do NOT start file watchers during compile; Endpoint watchers handle dev watching.
+    # This keeps compile bounded and avoids side-effect processes here.
     
     # Perform compilation
     case HaxeCompiler.compile(config) do
