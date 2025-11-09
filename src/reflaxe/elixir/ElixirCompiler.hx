@@ -2322,9 +2322,13 @@ class ElixirCompiler extends GenericCompiler<
             generateCompanionModules(classType, moduleAST.metadata);
             // Generate minimal stubs for router-referenced modules (controllers/lives/routers)
             if (moduleAST.metadata.isRouter == true) {
-                // Derive router body via the same transform used later, so we can parse references
-                var transformed = reflaxe.elixir.ast.transformers.AnnotationTransforms.routerTransformPass(moduleAST);
-                generateRouterStubs(transformed);
+                // Collect references directly from the original @:router body without expanding it yet.
+                // Running the full routerTransformPass twice (here and again in the registry) caused
+                // excessive work and timeouts. We only need the references to emit stubs.
+                var refs = reflaxe.elixir.ast.transformers.AnnotationTransforms.collectRouterReferences(moduleAST);
+                if (moduleAST.metadata == null) moduleAST.metadata = metadata;
+                Reflect.setField(moduleAST.metadata, "routerRefs", refs);
+                generateRouterStubs(moduleAST);
             }
         }
         
