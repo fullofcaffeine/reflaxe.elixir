@@ -3684,7 +3684,10 @@ class ElixirASTPassRegistry {
         // Ultra-final guard: ensure any lingering alias self-append inside two-arg anonymous functions
         // are rewritten to canonical acc = Enum.concat(acc, list)
         // Ultra-late hygiene/safety/sweep passes (modularized; order preserved)
+        // Gate behind define to allow faster app builds when desired
+        #if !disable_hygiene_final
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HygieneFinal.build());
+        #end
         passes.push({
             name: "HandleInfoDropUnusedAssign",
             description: "In handle_info/2, drop v = case ... when v is unused",
