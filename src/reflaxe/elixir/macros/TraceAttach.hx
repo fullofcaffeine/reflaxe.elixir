@@ -1,73 +1,60 @@
 package reflaxe.elixir.macros;
 
-#if (macro || reflaxe_runtime)
-
+#if macro
 import haxe.macro.Context;
 import haxe.macro.Compiler;
-import haxe.macro.Type; // expose ModuleType and constructors
+#end
 
 /**
  * TraceAttach
  *
  * WHAT
- * - A minimal initialization macro that globally attaches the
- *   `@:build(reflaxe.elixir.macros.TracePreserve.build())` metadata so all
- *   subsequently loaded types run the TracePreserve build macro.
+ * - Globally attaches `@:build(TracePreserve.build)` before typing (Haxe 5+) so
+ *   short-form `trace(v)` calls can be rewritten to `Log.trace(v, infos)` in the
+ *   macro phase for the Elixir target only.
  *
  * WHY
- * - With `-D no_traces`, the Haxe typer removes short-form `trace(...)` calls.
- *   Presence snapshots (and other tests) expect trace calls to be preserved as
- *   `Log.trace(value, %{file_name, line_number, class_name, method_name})`.
- *   Attaching the build macro BEFORE typing ensures we rewrite `trace(...)`
- *   to the expected form pre-typing without touching app or generated files.
+ * - Presence and logging snapshots expect `Log.trace/2` with file/line metadata.
+ *   Haxe's `-D no_traces` strips `trace` too early in some configurations; attaching a
+ *   build macro pre-typing ensures we can preserve intent deterministically.
  *
  * HOW
- * - Elixir-target gated: only runs if `target.name == "elixir"` or
- *   `-D elixir_output` is defined.
- * - Calls `haxe.macro.Compiler.addGlobalMetadata("", "@:build(...)" , true)`
- *   so any module typed after this point receives the TracePreserve build macro.
- * - This class contains no other logic and has no runtime side effects.
- *
- * ORDERING
- * - Must be invoked as early as possible. The repository wires this via
- *   `haxe_libraries/reflaxe.hxml`:
- *   `--macro reflaxe.elixir.macros.TraceAttach.attach()`
- *   Ensure this line appears before other macros that might load user modules.
+ * - On Haxe 5+: register via `Context.onBeforeTyping` to guarantee timing.
+ * - On Haxe 4.x: attach immediately as a best-effort fallback.
+ * - Guarded by target check: only for Elixir (`target.name == "elixir"` or `-D elixir_output`).
  *
  * EXAMPLES
- * - hxml:
- *   ```
- *   --macro reflaxe.elixir.macros.TraceAttach.attach()
- *   ```
- * - Conceptual effect:
- *   ```haxe
- *   Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
- *   ```
- *
- * LIMITATIONS
- * - If a different macro loads a module before this attach executes, that module
- *   would not receive `@:build`. This is mitigated by placing the attach first in
- *   macro order.
- *
- * SEE ALSO
- * - `reflaxe.elixir.macros.TracePreserve` — build macro that performs the rewrite.
+ * Haxe:
+ *   trace(user)
+ * Elixir (after TracePreserve):
+ *   Log.trace(user, %{file_name: ..., line_number: ..., class_name: ..., method_name: ...})
  */
 class TraceAttach {
-  /**
-   * Entry point invoked from hxml to attach the TracePreserve build macro globally.
-   * Gated to Elixir builds; safe no-op for other targets.
-   */
-  public static function attach():Void {
-    var isElixir = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
-    if (!isElixir) return;
-    try {
-      Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-#if sys
-      try sys.io.File.append('/tmp/trace_attach.log', true).writeString('TraceAttach.attach applied\n') catch (_:Dynamic) {}
-#end
-      // Keep attach minimal to avoid module loading; rely on global metadata above.
-    } catch (_:Dynamic) {}
+  public static macro function attach() {
+    #if (macro)
+    final isElixir = Context.definedValue("target.name") == "elixir" || Context.defined("elixir_output");
+    if (!isElixir) return macro null;
+
+    #if (haxe >= version("5.0.0"))
+    Context.onBeforeTyping(function() {
+      addAttach();
+    });
+    #else
+    addAttach();
+    #end
+
+    return macro null;
+    #else
+    return null;
+    #end
   }
+
+  #if (macro)
+  static function addAttach() {
+    try {
+      Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build)");
+    } catch (e:Dynamic) {}
+  }
+  #end
 }
 
-#end

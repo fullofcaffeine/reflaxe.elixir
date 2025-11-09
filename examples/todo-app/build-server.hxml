@@ -74,6 +74,7 @@
 
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
+# Keep full hygiene passes to ensure correct binder initialization
 
 # Silence compiler debug traces for QA speed and signal clarity
 # Provide both hyphenated and underscored defines for preprocessor gating compatibility
