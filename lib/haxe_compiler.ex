@@ -204,9 +204,20 @@ defmodule HaxeCompiler do
       {:ok, {output, exit_code}} ->
         structured_errors = parse_haxe_errors(output)
         store_compilation_errors(structured_errors)
-        {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
+
+        # Treat warnings-only runs as success even if Haxe returned non-zero.
+        warnings_only =
+          structured_errors != [] and
+            Enum.all?(structured_errors, fn e -> Map.get(e, :type) == :warning end)
+
+        if warnings_only do
+          {:ok, output}
+        else
+          {:error, "Haxe compilation failed (exit #{exit_code}): #{output}"}
+        end
       nil ->
         {:error, "Haxe compilation timed out after #{div(timeout_ms, 1000)}s. Set HAXE_TIMEOUT_MS to adjust."}
+    end
     end
   rescue
     error ->
