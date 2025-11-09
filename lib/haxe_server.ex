@@ -287,13 +287,19 @@ defmodule HaxeServer do
     case System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true) do
       {output, 0} ->
         {:ok, output}
-      
       {output, exit_code} ->
-        # Parse and store structured error information from server compilation
         structured_errors = HaxeCompiler.parse_haxe_errors(output)
         HaxeCompiler.store_compilation_errors(structured_errors)
-        
-        {:error, "Compilation failed (exit #{exit_code}): #{output}"}
+
+        warnings_only =
+          structured_errors != [] and
+            Enum.all?(structured_errors, fn e -> Map.get(e, :type) == :warning end)
+
+        if warnings_only do
+          {:ok, output}
+        else
+          {:error, "Compilation failed (exit #{exit_code}): #{output}"}
+        end
     end
   rescue
     error ->
