@@ -559,7 +559,7 @@ class AnnotationTransforms {
      * HOW: Traverse the AST and capture EVar/EField module-like tokens from
      * arguments to those macros, including nested callback bodies.
      */
-    static function collectRouterReferences(existingBody: ElixirAST): Array<String> {
+    public static function collectRouterReferences(existingBody: ElixirAST): Array<String> {
         var macroNames = new Map<String,Bool>();
         for (n in ["get","post","put","patch","delete","resources","live","forward","match","scope","pipe_through","live_session"]) macroNames.set(n, true);
 
