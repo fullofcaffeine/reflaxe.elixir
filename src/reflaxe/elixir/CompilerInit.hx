@@ -31,16 +31,7 @@ class CompilerInit {
         // DEBUG ONLY: marker file to confirm CompilerInit.Start() invocation
         try sys.io.File.append('/tmp/compiler_init_called.log', true).writeString('Start() invoked\n') catch (_:Dynamic) {}
         #end
-        // Attach TracePreserve as early as possible to avoid losing race with type loading.
-        try {
-            var isElixirEarly = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
-            if (isElixirEarly) {
-                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                // Also register expression-level early rewrite so `trace(v)` is preserved under -D no_traces
-                // This runs pre-typing via ExpressionModifier and uses Elixir-only gating here.
-                try reflaxe.elixir.macros.TraceEarlyRewrite.register() catch (_:Dynamic) {}
-            }
-        } catch (_:Dynamic) {}
+        // TracePreserve attachment is handled by TraceAttach via haxe_libraries/reflaxe.hxml.
         // Platform check for Haxe 5.0+ only: ensures compiler only runs when
         // --custom-target elixir=output_dir is specified in compilation command.
         // This prevents Reflaxe targets from activating on every compilation.
@@ -101,8 +92,7 @@ class CompilerInit {
             stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
         } catch (_:Dynamic) {}
 
-        // Haxe 5+: Attach metadata at onBeforeTyping to guarantee timing.
-        // Haxe 4.x: onBeforeTyping is unavailable; attach immediately below.
+        // Haxe 5+: add staged std path at onBeforeTyping; TracePreserve handled by TraceAttach.
         #if (haxe >= version("5.0.0"))
         Context.onBeforeTyping(function() {
             var isElixir = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
@@ -110,62 +100,6 @@ class CompilerInit {
             if (stagedStd != null) {
                 try Compiler.addClassPath(stagedStd) catch (_:Dynamic) {}
             }
-            try {
-                #if debug_trace_preserve Sys.println('[CompilerInit] onBeforeTyping: Attaching TracePreserve globally'); #end
-                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-            } catch (_:Dynamic) {}
-        });
-        #end
-
-        // Attach TracePreserve immediately and also right after init macros, to cover all load timings.
-        try {
-            var isElixirNow = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
-            if (isElixirNow) {
-                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("*.*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("ExternalCaller", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("Main", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("TestPresence", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                // Force-include modules from the current working directory only (test module) so
-                // that metadata is applied before these modules are loaded/typed.
-                try Compiler.include("", true, null, ["."]) catch (_:Dynamic) {}
-            }
-        } catch (_:Dynamic) {}
-
-        // Attach TracePreserve right after init macros so it applies to all subsequently loaded types.
-        Context.onAfterInitMacros(function() {
-            var isElixir = (Context.definedValue("target.name") == "elixir") || Context.defined("elixir_output");
-            if (!isElixir) return;
-            try {
-                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("*.*", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                // Explicitly target common test classes used in snapshots
-                Compiler.addGlobalMetadata("ExternalCaller", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("Main", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-                Compiler.addGlobalMetadata("TestPresence", "@:build(reflaxe.elixir.macros.TracePreserve.build())", true);
-            } catch (_:Dynamic) {}
-        });
-
-        // DEBUG: Inspect metadata presence on key classes after typing
-        #if eval
-        Context.onAfterTyping(function(types) {
-            try {
-                var buf = new StringBuf();
-                for (t in types) switch (t) {
-                    case TClassDecl(c):
-                        var cc = c.get();
-                        var cn = cc.name;
-                        if (cn == 'ExternalCaller' || cn == 'Main' || cn == 'TestPresence') {
-                            var meta = cc.meta;
-                            buf.add('[' + cn + '] meta entries:\n');
-                            for (e in meta.get()) buf.add('  @' + e.name + '\n');
-                        }
-                    case _:
-                }
-                if (buf.length > 0) sys.io.File.append('/tmp/trace_meta_scan.log', true).writeString(buf.toString());
-            } catch (_:Dynamic) {}
         });
         #end
 
