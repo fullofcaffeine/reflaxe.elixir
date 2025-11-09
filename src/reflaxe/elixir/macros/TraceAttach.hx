@@ -35,7 +35,7 @@ class TraceAttach {
     final isElixir = Context.definedValue("target.name") == "elixir" || Context.defined("elixir_output");
     if (!isElixir) return macro null;
 
-    #if (haxe >= 5)
+    #if (haxe >= version("5.0.0"))
     Context.onBeforeTyping(function() {
       addAttach();
     });
@@ -57,4 +57,3 @@ class TraceAttach {
   }
   #end
 }
-
