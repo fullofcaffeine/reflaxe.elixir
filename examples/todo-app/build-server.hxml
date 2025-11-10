@@ -61,7 +61,6 @@
 
 # Define library version and initialize compiler
 -D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Debug flags are disabled by default to keep QA builds quiet and fast
 # -D debug_success_unifier
