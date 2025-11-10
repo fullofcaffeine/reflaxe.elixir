@@ -74,6 +74,7 @@
 # Provide both hyphenated and underscored defines for preprocessor gating compatibility
 -D no-traces
 -D no_traces
+-D disable_hygiene_final
 
 # Main server classes to compile
 TodoApp
