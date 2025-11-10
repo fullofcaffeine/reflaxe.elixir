@@ -25,15 +25,6 @@ enum abstract SortDirection(String) to String {
     var Desc = "desc"; // Descending order (compiles to :desc atom)
 }
 
-/**
- * Type-safe join types for Ecto queries
- */
-enum JoinType {
-    Inner;     // Inner join (compiles to :inner)
-    Left;      // Left outer join (compiles to :left)
-    Right;     // Right outer join (compiles to :right)
-    FullOuter; // Full outer join (compiles to :full)
-}
 
 /**
  * Opaque extern type representing Ecto.Query struct
@@ -242,6 +233,22 @@ enum abstract JoinType(String) {
  * 
  * @param T The schema type being queried (e.g., Todo, User)
  */
+/**
+ * @:using(reflaxe.elixir.macros.TypedQueryLambda)
+ *
+ * WHY: Haxe @:using attaches extension methods to a type. We use it to add
+ * a macro-powered `where(predicate)` method to TypedQuery<T> while keeping the
+ * runtime representation small. The extension method is defined in
+ * reflaxe.elixir.macros.TypedQueryLambda as a static macro and provides
+ * compile-time field validation + idiomatic Ecto DSL generation.
+ *
+ * WHAT: With this metadata, calls like `query.where(u -> u.name == value)` are
+ * resolved by the macro and turned into `Ecto.Query.where(query, [t], t.name == ^value)`.
+ *
+ * BENEFIT: Type-safe field checks at compile time, no stringly-typed fields.
+ */
+@:using(reflaxe.elixir.macros.TypedQueryLambda)
+@:using(ecto.TypedQueryInstanceMacros)
 abstract TypedQuery<T>(EctoQueryStruct) {
     /**
      * Internal query representation - ONLY for Ecto interop
@@ -293,9 +300,11 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * @param schemaClass The schema class to query
      * @return A new TypedQuery instance
      */
-    public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
-        // Regular function that calls the macro - no macro-in-macro issue!
-        return reflaxe.elixir.macros.EctoQueryMacros.from(schemaClass);
+    extern inline public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
+        // Build an Ecto query struct directly (no intermediate local variable)
+        return new TypedQuery<T>(
+            untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass)
+        );
     }
     
     
@@ -316,16 +325,8 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * // Generates: where: t.completed == false, where: t.user_id == ^current_user_id
      * ```
      */
-    extern inline public function where(predicate: T -> Bool): TypedQuery<T> {
-        // For now, we'll use a simplified version that doesn't validate fields at compile time
-        // The predicate function will be compiled to Elixir pattern matching
-        var newQuery = untyped __elixir__(
-            '(require Ecto.Query; Ecto.Query.where({0}, [t], {1}))',
-            this.query,
-            predicate
-        );
-        return new TypedQuery<T>(newQuery);
-    }
+    // where(predicate) provided via macro delegation for robust resolution
+    // instance macro provided by @:using(ecto.TypedQueryInstanceMacros)
     
     /**
      * Add order_by clause for sorting results
