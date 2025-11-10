@@ -37,6 +37,7 @@ extern class Repo {
     // These are extern declarations for the functions injected by Ecto.Repo
     
     @:overload(function<T>(query: EctoQuery<T>): Array<T> {})
+    @:overload(function<T>(query: ecto.TypedQuery.TypedQuery<T>): Array<T> {})
     public static function all<T>(queryable: Class<T>): Array<T>;
     
     public static function get<T>(queryable: Class<T>, id: Int): Null<T>;
