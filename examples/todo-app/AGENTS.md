@@ -1,3 +1,13 @@
+# Critical Timeout Directive (Non-Blocking Agent Runs)
+
+- Always run long or potentially blocking commands via `scripts/with-timeout.sh`.
+- Default caps: builds 240–480s, `mix compile` 420s, readiness ≤ 120 probes, full run watchdog ≤ 900s.
+- Never run unbounded `mix phx.server`; use the QA sentinel (which is bounded) or the timeout wrapper.
+- Example usage:
+  - `scripts/with-timeout.sh --secs 180 -- haxe -v build-server.hxml`
+  - `scripts/with-timeout.sh --secs 120 --grace 2 --cwd examples/todo-app -- env BASE_URL=http://localhost:4011 npx playwright test e2e/*.spec.ts`
+- If a step exceeds its cap, treat it as a failure: abort, surface the last logs, and rerun narrowly with diagnostics — never wait indefinitely.
+
 # AI Development Instructions for todo-app
 
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
