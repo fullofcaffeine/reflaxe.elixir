@@ -649,8 +649,9 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
     }
 	
     static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // Update presence to show user is editing (idiomatic Phoenix pattern)
-        return SafeAssigns.setEditingTodo(socket, findTodo(id, socket.assigns.todos));
+        // Update editing_todo and recompute precomputed rows so the edit form renders immediately
+        var s1 = SafeAssigns.setEditingTodo(socket, findTodo(id, socket.assigns.todos));
+        return recomputeVisible(s1);
     }
 	
 	// Bulk operations with type-safe socket handling
@@ -680,7 +681,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
                 pending_todos: 0,
                 online_users: socket.assigns.online_users
             });
-        return LiveView.putFlash(ls, FlashType.Info, "All todos marked as completed!");
+        var lsVis = recomputeVisible(ls);
+        return LiveView.putFlash(lsVis, FlashType.Info, "All todos marked as completed!");
     }
 	
     static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -706,7 +708,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
                 pending_todos: socket.assigns.todos.filter(function(t) return !t.completed).length,
                 online_users: socket.assigns.online_users
             });
-        return LiveView.putFlash(ls2, FlashType.Info, "Completed todos deleted!");
+        var ls2Vis = recomputeVisible(ls2);
+        return LiveView.putFlash(ls2Vis, FlashType.Info, "Completed todos deleted!");
     }
 	
 	// Additional helper functions with type-safe socket handling

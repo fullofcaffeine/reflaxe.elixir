@@ -1,0 +1,6 @@
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/c07bfa5c_case_binder_naming
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=/Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/c07bfa5c_case_binder_naming/out
