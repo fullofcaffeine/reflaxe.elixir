@@ -53,12 +53,13 @@ class PatternMatchingTransforms {
         trace("[PatternMatchingTransforms] Starting pattern matching pass");
         #end
         
+        if (ast == null || ast.def == null) return ast;
         return switch(ast.def) {
             case ECase(target, clauses):
                 optimizeCaseExpression(ast, target, clauses);
                 
             case EBlock(exprs):
-                var transformed = exprs.map(e -> patternMatchingPass(e));
+                var transformed = exprs != null ? exprs.map(e -> patternMatchingPass(e)) : [];
                 makeAST(EBlock(transformed));
                 
             case EModule(name, attributes, body):
@@ -66,23 +67,23 @@ class PatternMatchingTransforms {
                 makeAST(EModule(name, attributes, transformedBody));
                 
             case EDef(name, args, guard, body):
-                var transformedBody = patternMatchingPass(body);
+                var transformedBody = body != null ? patternMatchingPass(body) : null;
                 makeAST(EDef(name, args, guard, transformedBody));
                 
             case EDefp(name, args, guard, body):
-                var transformedBody = patternMatchingPass(body);
+                var transformedBody = body != null ? patternMatchingPass(body) : null;
                 makeAST(EDefp(name, args, guard, transformedBody));
                 
             case EIf(cond, thenBranch, elseBranch):
-                var transformedThen = patternMatchingPass(thenBranch);
+                var transformedThen = thenBranch != null ? patternMatchingPass(thenBranch) : null;
                 var transformedElse = elseBranch != null ? patternMatchingPass(elseBranch) : null;
                 makeAST(EIf(cond, transformedThen, transformedElse));
                 
             case EFn(clauses):
-                var transformedClauses = clauses.map(clause -> {
+                var transformedClauses = (clauses != null ? clauses : []).map(clause -> {
                     args: clause.args,
                     guard: clause.guard,
-                    body: patternMatchingPass(clause.body)
+                    body: clause.body != null ? patternMatchingPass(clause.body) : null
                 });
                 makeAST(EFn(transformedClauses));
                 
@@ -241,6 +242,7 @@ class PatternMatchingTransforms {
      */
     static function optimizeGuardClause(clause: ECaseClause): ECaseClause {
         // Look for if statements at the start of the body that can become guards
+        if (clause.body == null || clause.body.def == null) return clause;
         switch(clause.body.def) {
             case EIf(cond, thenBranch, elseBranch) if (elseBranch == null || isRaiseOrThrow(elseBranch)):
                 // This if can be converted to a guard
@@ -263,14 +265,15 @@ class PatternMatchingTransforms {
      * Check if an expression is a raise or throw
      */
     static function isRaiseOrThrow(expr: ElixirAST): Bool {
+        if (expr == null || expr.def == null) return false;
         return switch(expr.def) {
             case ECall(target, "throw", _): 
-                switch(target.def) {
+                switch(target != null ? target.def : null) {
                     case EVar("Kernel"): true;
                     default: false;
                 }
             case ECall(target, "raise", _):
-                switch(target.def) {
+                switch(target != null ? target.def : null) {
                     case EVar("Kernel"): true;
                     default: false;
                 }
@@ -356,22 +359,23 @@ class PatternMatchingTransforms {
      * Since ElixirAST doesn't have a generic map method, we need to handle each case
      */
     static function recursiveTransform(ast: ElixirAST, transform: ElixirAST -> ElixirAST): ElixirAST {
+        if (ast == null || ast.def == null) return ast;
         var newDef = switch(ast.def) {
             case EBlock(exprs):
-                EBlock(exprs.map(e -> transform(e)));
+                EBlock((exprs != null ? exprs : []).map(e -> transform(e)));
             case EModule(name, attrs, body):
-                EModule(name, attrs, body.map(b -> transform(b)));
+                EModule(name, attrs, (body != null ? body : []).map(b -> transform(b)));
             case EIf(cond, thenBranch, elseBranch):
-                EIf(transform(cond), transform(thenBranch), elseBranch != null ? transform(elseBranch) : null);
+                EIf(cond != null ? transform(cond) : null, thenBranch != null ? transform(thenBranch) : null, elseBranch != null ? transform(elseBranch) : null);
             case EDef(name, args, guard, body):
-                EDef(name, args, guard, transform(body));
+                EDef(name, args, guard, body != null ? transform(body) : null);
             case EDefp(name, args, guard, body):
-                EDefp(name, args, guard, transform(body));
+                EDefp(name, args, guard, body != null ? transform(body) : null);
             case EFn(clauses):
-                EFn(clauses.map(c -> {
+                EFn((clauses != null ? clauses : []).map(c -> {
                     args: c.args,
                     guard: c.guard,
-                    body: transform(c.body)
+                    body: c.body != null ? transform(c.body) : null
                 }));
             default:
                 // For other cases, return unchanged

@@ -350,6 +350,7 @@ class LoopTransforms {
         #end
         
         function detectAndTransformUnrolledLoops(node: ElixirAST): ElixirAST {
+            if (node == null || node.def == null) return node;
             // Don't trace every node as it's too verbose
             // trace('[XRay LoopTransforms] Checking node type: ${node.def}');
             
@@ -397,7 +398,13 @@ class LoopTransforms {
                     return makeAST(EDefp(name, args, guards, transformedBody));
                     
                 // CRITICAL: Check for EMatch with comprehension pattern BEFORE generic EBlock handling
-                case EMatch(pattern, rhsBlock) if (switch(rhsBlock.def) { case EBlock(_): true; default: false; }):
+                case EMatch(pattern, rhsBlock):
+                    // Guard safely: rhsBlock can be null
+                    var rhsIsBlock = (rhsBlock != null) && (switch(rhsBlock.def) { case EBlock(_): true; default: false; });
+                    if (!rhsIsBlock) {
+                        // Not a block RHS: descend normally
+                        return makeAST(EMatch(pattern, detectAndTransformUnrolledLoops(rhsBlock)));
+                    }
                     #if debug_loop_transforms
                     trace('[XRay LoopTransforms] ✅ MATCHED EMatch case with EBlock RHS!');
                     #end

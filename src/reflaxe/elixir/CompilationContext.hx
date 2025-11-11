@@ -13,6 +13,7 @@ import reflaxe.elixir.ast.builders.BuilderFacade;
 import reflaxe.elixir.ast.builders.IBuilder;
 import reflaxe.elixir.ast.ReentrancyGuard;
 import haxe.macro.Expr.Position;
+import haxe.ds.ObjectMap;
 
 /**
  * CompilationContext: Instance-based compilation state container
@@ -250,6 +251,18 @@ class CompilationContext implements BuildContext {
      */
     public var reentrancyGuard: ReentrancyGuard;
 
+    /**
+     * Builder result cache to avoid repeated conversions of identical TypedExpr nodes
+     * Scoped to this context to respect context-sensitive naming decisions.
+     */
+    public var builderCache: ObjectMap<TypedExpr, ElixirAST>;
+
+    /**
+     * Substitution cache for substituteIfNeeded to avoid reprocessing the same TypedExpr
+     * during nested transformations (prevents repeated unwrap/substitute cycles).
+     */
+    public var substitutionCache: ObjectMap<TypedExpr, TypedExpr>;
+
     // ========================================================================
     // Constructor and Initialization
     // ========================================================================
@@ -301,6 +314,10 @@ class CompilationContext implements BuildContext {
 
         // Initialize reentrancy guard
         reentrancyGuard = new ReentrancyGuard();
+
+        // Initialize builder cache
+        builderCache = new ObjectMap();
+        substitutionCache = new ObjectMap();
     }
 
     // ========================================================================
@@ -734,6 +751,9 @@ class CompilationContext implements BuildContext {
      * @return Original expr or substituted expr if found in map
      */
     public function substituteIfNeeded(expr: TypedExpr): TypedExpr {
+        // Fast cache to avoid repeated work on identical nodes
+        var cached = substitutionCache.get(expr);
+        if (cached != null) return cached;
         if (expr == null) {
             #if debug_preprocessor
             #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] expr is null, returning'); #end
@@ -792,7 +812,7 @@ class CompilationContext implements BuildContext {
             #end
         }
 
-        return switch(unwrapped.expr) {
+        var result:TypedExpr = switch(unwrapped.expr) {
             case TLocal(tvar):
                 #if debug_preprocessor
                     #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Found TLocal: ${tvar.name} (ID: ${tvar.id})'); #end
@@ -817,6 +837,8 @@ class CompilationContext implements BuildContext {
                 // Don't substitute - the expression is not an infrastructure variable reference
                 expr;
         };
+        substitutionCache.set(expr, result);
+        return result;
     }
 
     // ========================================================================

@@ -20,28 +20,37 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class VarRefSuffixParamNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+    #if debug_perf var __p0 = reflaxe.elixir.debug.Perf.now(); #end
+    var result = ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(functionName, parameters, guards, body):
+          #if debug_perf var __p = reflaxe.elixir.debug.Perf.now(); #end
           var suffixMap = collectUniqueSuffixParams(parameters);
           #if debug_varref_suffix {
             var keys = [for (k in suffixMap.keys()) k].join(",");
             if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] def ' + functionName + ' suffixes={' + keys + '}');
           } #end
           var newBody = rewriteRefsScoped(body, suffixMap);
-          makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
+          var ret = makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
+          #if debug_perf reflaxe.elixir.debug.Perf.add('VarRefSuffixParamNormalize.def', __p); #end
+          ret;
         case EDefp(functionName, parameters, guards, body):
+          #if debug_perf var __p2 = reflaxe.elixir.debug.Perf.now(); #end
           var suffixMap = collectUniqueSuffixParams(parameters);
           #if debug_varref_suffix {
             var keys = [for (k in suffixMap.keys()) k].join(",");
             if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] defp ' + functionName + ' suffixes={' + keys + '}');
           } #end
           var newBody = rewriteRefsScoped(body, suffixMap);
-          makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
+          var ret2 = makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
+          #if debug_perf reflaxe.elixir.debug.Perf.add('VarRefSuffixParamNormalize.defp', __p2); #end
+          ret2;
         default:
           n;
       }
     });
+    #if debug_perf reflaxe.elixir.debug.Perf.add('VarRefSuffixParamNormalize.pass', __p0); #end
+    return result;
   }
 
   static function collectUniqueSuffixParams(args:Array<EPattern>): haxe.ds.StringMap<String> {
@@ -79,6 +88,9 @@ class VarRefSuffixParamNormalizeTransforms {
       return d;
     }
 
+    // Precompute top-level declared names once for the function body
+    var topDeclaredCache:Map<String,Bool> = collectDeclared(body);
+
     // Enter a new scope at each anonymous fn and recompute declared-set locally
     function transformNodeScoped(n:ElixirAST):ElixirAST {
       return ElixirASTTransformer.transformNode(n, function(x:ElixirAST):ElixirAST {
@@ -102,9 +114,8 @@ class VarRefSuffixParamNormalizeTransforms {
             }
             makeASTWithMeta(EFn(newClauses), x.metadata, x.pos);
           case EVar(nm):
-            // Top-level within function scope
-            var topDeclared = collectDeclared(body);
-            if (suff.exists(nm) && !topDeclared.exists(nm)) {
+            // Top-level within function scope (use precomputed cache)
+            if (suff.exists(nm) && !topDeclaredCache.exists(nm)) {
               var fullTop = suff.get(nm);
               #if debug_varref_suffix Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
               #end

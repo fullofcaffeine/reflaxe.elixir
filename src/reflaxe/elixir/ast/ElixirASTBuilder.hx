@@ -447,6 +447,21 @@ class ElixirASTBuilder {
         }
         #end
 
+        // Check context-local builder cache to avoid re-converting identical subtrees
+        var cached: Null<ElixirAST> = null;
+        if (currentContext != null && currentContext.builderCache != null) {
+            cached = currentContext.builderCache.get(expr);
+            if (cached != null) {
+                #if debug_compilation_hang Sys.println('[HANG DEBUG] Cache hit for ' + Type.enumConstructor(expr.expr) + ' at ' + expr.pos); #end
+                currentContext = previousContext;
+                #if debug_compilation_hang exitNode(exprType); #end
+                return cached;
+            }
+        }
+
+        // Normalize trivial wrappers to avoid deep recursive walks on large trees
+        expr = flattenNoOpWrappers(expr);
+
         // Do the actual conversion
         var metadata = createMetadata(expr);
         var astDef = convertExpression(expr);
@@ -500,6 +515,9 @@ class ElixirASTBuilder {
         }
 
         var result = makeASTWithMeta(astDef, metadata, expr.pos);
+        if (currentContext != null && currentContext.builderCache != null) {
+            currentContext.builderCache.set(expr, result);
+        }
 
         #if debug_ast_builder
         trace('[XRay AST Builder] Generated AST: ${astDef}');
@@ -513,6 +531,38 @@ class ElixirASTBuilder {
         #end
 
         return result;
+    }
+
+    /**
+     * Fast-path flattener for non-semantic wrappers to reduce recursion depth
+     * - Removes TParenthesis
+     * - Removes TBlock with single expression
+     * - Keeps semantic TMeta (e.g., :heex, :untyped) but unwraps other metas
+     */
+    static function flattenNoOpWrappers(e: TypedExpr): TypedExpr {
+        var seen = 0;
+        var limit = 1000; // guard against pathological shapes
+        var cur = e;
+        while (seen < limit) {
+            switch (cur.expr) {
+                case TParenthesis(inner):
+                    cur = inner; seen++;
+                case TMeta(meta, inner):
+                    // Preserve metas with known semantic effect; unwrap others
+                    var name = meta.name;
+                    if (name == ":heex" || name == ":untyped") {
+                        // stop unwrapping at semantic meta
+                        return cur;
+                    } else {
+                        cur = inner; seen++;
+                    }
+                case TBlock(exprs) if (exprs != null && exprs.length == 1):
+                    cur = exprs[0]; seen++;
+                default:
+                    return cur;
+            }
+        }
+        return cur;
     }
     
     /**

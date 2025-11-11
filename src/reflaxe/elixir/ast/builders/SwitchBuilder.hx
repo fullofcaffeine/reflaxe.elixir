@@ -58,7 +58,8 @@ using StringTools;
  */
 @:nullSafety(Off)
 class SwitchBuilder {
-    static function cleanupTempBinderAliases(body: ElixirAST): ElixirAST {
+    static function cleanupTempBinderAliases(body: Null<ElixirAST>): Null<ElixirAST> {
+        if (body == null) return null;
         // Remove statements like `lhs = _g*` or `lhs = g*` inside blocks
         function isInfraTemp(name:String):Bool {
             if (name == null || name.length == 0) return false;
@@ -918,7 +919,7 @@ class SwitchBuilder {
       case TField(e2, FEnum(_, enumField2)):
         // Direct reference to enum constructor (no immediate call in AST)
         // Use body-aware idiomatic generator to pick binder names and usage
-        #if !no_traces trace('[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)'); #end
+        #if debug_switch_builder trace('[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)'); #end
         return generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context);
 
       case TLocal(v):
@@ -944,6 +945,7 @@ class SwitchBuilder {
      * CRITICAL: This solves the "empty case body" bug where unused parameters generate orphaned _g variables
      */
     static function generateIdiomaticEnumPatternWithBody(ef: EnumField, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): EPattern {
+        #if debug_perf var __p = reflaxe.elixir.debug.Perf.now(); #end
         var atomName = NameUtils.toSnakeCase(ef.name);
 
         // Extract parameter names from EnumField.type (fallback)
@@ -960,7 +962,9 @@ class SwitchBuilder {
         if (parameterNames.length == 0) {
             // Simple tagged tuple with single atom: {:none}
             #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}}'); #end
-            return PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+            var __ret = PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+            #if debug_perf reflaxe.elixir.debug.Perf.add('SwitchBuilder.generateIdiomaticEnumPatternWithBody', __p); #end
+            return __ret;
         } else {
             // Tuple pattern: {:some, value}
             var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
@@ -1042,8 +1046,17 @@ class SwitchBuilder {
 
             var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
             // Precompute usage to avoid repeated full-tree scans per parameter
-            var usedFlags = computeEnumParamUsage(caseBody, parameterNames.length);
-            var localUsage = collectLocalNameUsage(caseBody);
+            var usedFlags:Array<Bool>;
+            var localUsage:Map<String,Bool>;
+            var bodyIsLarge = isLargeCaseBody(caseBody);
+            if (bodyIsLarge) {
+                // For very large bodies, assume parameters are used to avoid expensive scans
+                usedFlags = [for (_ in 0...parameterNames.length) true];
+                localUsage = new Map<String,Bool>();
+            } else {
+                usedFlags = computeEnumParamUsage(caseBody, parameterNames.length);
+                localUsage = collectLocalNameUsage(caseBody);
+            }
             for (i in 0...parameterNames.length) {
                 // Select a safe base source name with strict filtering
                 var candidate:Null<String> = null;
@@ -1088,7 +1101,7 @@ class SwitchBuilder {
             var finalNames = [for (i in 0...parameterNames.length) {
                 var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var effectiveBase = (preferredLower != null) ? preferredLower : base;
-                var used = (i < usedFlags.length && usedFlags[i]) ||
+                var used = bodyIsLarge || (i < usedFlags.length && usedFlags[i]) ||
                     (effectiveBase != null && localUsage.exists(effectiveBase));
                 used ? base : "_" + base;
             }];
@@ -1104,7 +1117,9 @@ class SwitchBuilder {
                 #end
             }
 
-            return PTuple(patterns);
+            var __ret2 = PTuple(patterns);
+            #if debug_perf reflaxe.elixir.debug.Perf.add('SwitchBuilder.generateIdiomaticEnumPatternWithBody', __p); #end
+            return __ret2;
         }
     }
 
@@ -1158,6 +1173,19 @@ class SwitchBuilder {
         }
         if (caseBody != null) walk(caseBody);
         return used;
+    }
+
+    static inline function isLargeCaseBody(caseBody:TypedExpr):Bool {
+        // Fast heuristic: stop counting after a threshold to avoid full traversal
+        var count = 0;
+        var limit = 5000; // Safe cap to prevent pathological scans on giant bodies
+        function countNodes(te:TypedExpr):Void {
+            if (count >= limit || te == null) return;
+            count++;
+            haxe.macro.TypedExprTools.iter(te, countNodes);
+        }
+        countNodes(caseBody);
+        return count >= limit;
     }
 
     /**
