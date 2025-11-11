@@ -171,8 +171,18 @@ run_step_with_log() {
     trap 'if [[ -n "$__hb" ]] && kill -0 "$__hb" 2>/dev/null; then kill "$__hb" 2>/dev/null || true; wait "$__hb" 2>/dev/null || true; fi' RETURN
   fi
 
-  # Prefer GNU timeout; then gtimeout (macOS coreutils); else manual watchdog
-  if command -v timeout >/dev/null 2>&1; then
+  # Prefer our robust PGID/session killer first, then GNU timeout variants, else manual fallback
+  if [[ -x "$(pwd)/scripts/with-timeout.sh" ]]; then
+    # Extract numeric seconds (e.g., 300s -> 300) for our wrapper
+    local secs
+    secs=$(echo "$timeout_val" | sed -E 's/[^0-9]//g')
+    if [[ -z "$secs" ]]; then secs=300; fi
+    if [[ "$QUIET" -eq 1 ]]; then
+      ( scripts/with-timeout.sh --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
+    else
+      ( scripts/with-timeout.sh --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+    fi
+  elif command -v timeout >/dev/null 2>&1; then
     if [[ "$QUIET" -eq 1 ]]; then
       ( timeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
     else
@@ -318,6 +328,17 @@ elif command -v haxe >/dev/null 2>&1; then
   HAXE_CMD="haxe"
 else
   HAXE_CMD="npx -y haxe"
+fi
+
+# Optional: Haxe compilation server for faster repeated builds (warm cache)
+HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
+# Default off to avoid hangs on systems without a running server
+HAXE_USE_SERVER=${HAXE_USE_SERVER:-0}
+if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
+  # Best-effort start of the Haxe compilation server; do not rely on nc
+  ( nohup haxe --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
+  # Keep using plain HAXE_CMD unless caller explicitly set HAXE_USE_SERVER=1
+  HAXE_CMD="$HAXE_CMD --connect $HAXE_SERVER_PORT"
 fi
 
 # Generate .ex files (full server build to ensure all modules are regenerated)

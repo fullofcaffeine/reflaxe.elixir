@@ -66,9 +66,9 @@ class ConstructorBuilder {
         var className = classType.name;
         
         #if debug_ast_builder
-        trace('[ConstructorBuilder] Building constructor for class: $className');
-        trace('[ConstructorBuilder]   Arguments: ${el.length}');
-        trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has("schema")}');
+        #if debug_ast_builder trace('[ConstructorBuilder] Building constructor for class: $className'); #end
+        #if debug_ast_builder trace('[ConstructorBuilder]   Arguments: ${el.length}'); #end
+        #if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has("schema")}'); #end
         #end
 
         // CRITICAL FIX: Bypass compileExpressionImpl to preserve context
@@ -107,9 +107,9 @@ class ConstructorBuilder {
         var hasConstructor = classType.constructor != null;
         
         #if debug_ast_builder
-        trace('[ConstructorBuilder] Class analysis:');
-        trace('[ConstructorBuilder]   Has instance methods: $hasInstanceMethods');
-        trace('[ConstructorBuilder]   Has constructor: $hasConstructor');
+        #if debug_ast_builder trace('[ConstructorBuilder] Class analysis:'); #end
+        #if debug_ast_builder trace('[ConstructorBuilder]   Has instance methods: $hasInstanceMethods'); #end
+        #if debug_ast_builder trace('[ConstructorBuilder]   Has constructor: $hasConstructor'); #end
         #end
         
         if (hasInstanceMethods || hasConstructor) {

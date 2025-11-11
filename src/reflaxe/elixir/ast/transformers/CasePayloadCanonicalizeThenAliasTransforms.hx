@@ -116,6 +116,7 @@ class CasePayloadCanonicalizeThenAliasTransforms {
       prefix.push(makeAST(EBinary(Match, makeAST(EVar(u)), makeAST(EVar("_value")))));
     }
 
+    if (cl.body == null) return cl;
     var newBody = switch (cl.body.def) {
       case EBlock(sts): makeASTWithMeta(EBlock(prefix.concat(sts)), cl.body.metadata, cl.body.pos);
       case EDo(sts2): makeASTWithMeta(EDo(prefix.concat(sts2)), cl.body.metadata, cl.body.pos);

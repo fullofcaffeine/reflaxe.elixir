@@ -32,11 +32,15 @@ using StringTools;
  */
 @:nullSafety(Off)
 class RouterBuildMacro {
+    // Memoization caches for controller/action existence during a single compilation run
+    static var ctrlCache: Map<String,Bool> = new Map();
+    static var actionCache: Map<String,Bool> = new Map();
     
     /**
      * Main build macro entry point - generates route functions from @:routes annotation
      */
     public static function generateRoutes(): Array<Field> {
+        #if debug_perf var __p = reflaxe.elixir.debug.Perf.now(); #end
         #if debug_compilation_hang
         Sys.println('[HANG DEBUG] 🎯 RouterBuildMacro.generateRoutes START');
         var routerStartTime = haxe.Timer.stamp() * 1000;
@@ -80,6 +84,7 @@ class RouterBuildMacro {
         Sys.println('[HANG DEBUG] ✅ RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
         #end
 
+        #if debug_perf reflaxe.elixir.debug.Perf.add('RouterBuildMacro.generateRoutes', __p); #end
         return fields;
     }
     
@@ -354,20 +359,32 @@ class RouterBuildMacro {
      * Validate that a controller class exists
      */
     private static function validateControllerExists(controllerName: String, routeName: String, routePath: String, pos: Position): Void {
+        if (controllerName == null || controllerName == "") return;
+        if (ctrlCache.exists(controllerName)) {
+            if (!ctrlCache.get(controllerName)) {
+                Context.warning('Controller "${controllerName}" not found in route "${routeName}" (path: "${routePath}"). Ensure the class exists and is in the classpath.', pos);
+            }
+            return;
+        }
+        var ok = true;
         try {
-            // Try to resolve the controller as a type
-            var controllerType = Context.getType(controllerName);
+            // Try to resolve the controller as a type (costly; do once)
+            var _ = Context.getType(controllerName);
             #if debug_router_macro trace('RouterBuildMacro: Controller ${controllerName} exists and is valid'); #end
         } catch (e: Dynamic) {
-            // Controller doesn't exist or can't be resolved
+            ok = false;
             Context.warning('Controller "${controllerName}" not found in route "${routeName}" (path: "${routePath}"). Ensure the class exists and is in the classpath.', pos);
         }
+        ctrlCache.set(controllerName, ok);
     }
     
     /**
      * Validate that an action method exists on the controller
      */
     private static function validateActionExists(controllerName: String, actionName: String, routeName: String, pos: Position): Void {
+        if (controllerName == null || actionName == null || controllerName == "" || actionName == "") return;
+        var key = controllerName + "#" + actionName;
+        if (actionCache.exists(key)) return; // already validated
         try {
             // Get the controller type
             var controllerType = Context.getType(controllerName);
@@ -408,6 +425,7 @@ class RouterBuildMacro {
             // Controller doesn't exist, but we already warned about this in validateControllerExists
             // So just silently skip action validation
         }
+        actionCache.set(key, true);
     }
 }
 
