@@ -71,7 +71,7 @@ class MigrationRegistry {
      */
     public static function registerTable(name: String, pos: Position): Void {
         #if debug_migration_registry
-        trace('[MigrationRegistry] Registering table: $name');
+        #if debug_migration trace('[MigrationRegistry] Registering table: $name'); #end
         #end
         
         if (tables.exists(name)) {
@@ -97,7 +97,7 @@ class MigrationRegistry {
     public static function registerColumn(tableName: String, columnName: String, 
                                          columnType: String, nullable: Bool, pos: Position): Void {
         #if debug_migration_registry
-        trace('[MigrationRegistry] Registering column: $tableName.$columnName ($columnType)');
+        #if debug_migration trace('[MigrationRegistry] Registering column: $tableName.$columnName ($columnType)'); #end
         #end
         
         if (!tables.exists(tableName)) {

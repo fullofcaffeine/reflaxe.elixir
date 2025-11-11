@@ -736,23 +736,23 @@ class CompilationContext implements BuildContext {
     public function substituteIfNeeded(expr: TypedExpr): TypedExpr {
         if (expr == null) {
             #if debug_preprocessor
-            trace('[CompilationContext.substituteIfNeeded] expr is null, returning');
+            #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] expr is null, returning'); #end
             #end
             return expr;
         }
 
         if (infraVarSubstitutions == null) {
             #if debug_preprocessor
-            trace('[CompilationContext.substituteIfNeeded] infraVarSubstitutions map is null!');
+            #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] infraVarSubstitutions map is null!'); #end
             #end
             return expr;
         }
 
         #if debug_preprocessor
-        trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${Type.enumConstructor(expr.expr)}');
-        trace('[CompilationContext.substituteIfNeeded] Substitution map has ${Lambda.count(infraVarSubstitutions)} entries');
+        #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${Type.enumConstructor(expr.expr)}');
+        #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Substitution map has ${Lambda.count(infraVarSubstitutions)} entries'); #end
         for (id in infraVarSubstitutions.keys()) {
-            trace('[CompilationContext.substituteIfNeeded]   Map entry: ID=$id');
+            #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Map entry: ID=$id'); #end
         }
         #end
 
@@ -766,12 +766,12 @@ class CompilationContext implements BuildContext {
             var unwrappedNext: Null<TypedExpr> = switch(unwrapped.expr) {
                 case TParenthesis(e):
                     #if debug_preprocessor
-                    trace('[CompilationContext.substituteIfNeeded]   Unwrapping TParenthesis (level ${unwrapCount + 1})');
+                    #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Unwrapping TParenthesis (level ${unwrapCount + 1})'); #end
                     #end
                     e;
                 case TMeta(_, e):
                     #if debug_preprocessor
-                    trace('[CompilationContext.substituteIfNeeded]   Unwrapping TMeta (level ${unwrapCount + 1})');
+                    #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Unwrapping TMeta (level ${unwrapCount + 1})'); #end
                     #end
                     e;
                 default:
@@ -788,31 +788,31 @@ class CompilationContext implements BuildContext {
 
         if (unwrapCount >= maxUnwrap) {
             #if debug_preprocessor
-            trace('[CompilationContext.substituteIfNeeded]   WARNING: Hit unwrap limit ${maxUnwrap}, possible circular reference');
+            #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   WARNING: Hit unwrap limit ${maxUnwrap}, possible circular reference'); #end
             #end
         }
 
         return switch(unwrapped.expr) {
             case TLocal(tvar):
                 #if debug_preprocessor
-                trace('[CompilationContext.substituteIfNeeded]   Found TLocal: ${tvar.name} (ID: ${tvar.id})');
+                    #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Found TLocal: ${tvar.name} (ID: ${tvar.id})'); #end
                 #end
                 // Check if this TLocal references a substituted infrastructure variable
                 var substituted = infraVarSubstitutions.get(tvar.id);
                 if (substituted != null) {
                     #if debug_preprocessor
-                    trace('[CompilationContext.substituteIfNeeded]   ✓ SUBSTITUTION FOUND! Replacing ${tvar.name}');
+                    #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   ✓ SUBSTITUTION FOUND! Replacing ${tvar.name}'); #end
                     #end
                     substituted;
                 } else {
                     #if debug_preprocessor
-                    trace('[CompilationContext.substituteIfNeeded]   ✗ No substitution for ${tvar.name} (ID: ${tvar.id})');
+                    #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   ✗ No substitution for ${tvar.name} (ID: ${tvar.id})'); #end
                     #end
                     expr;
                 }
             default:
                 #if debug_preprocessor
-                trace('[CompilationContext.substituteIfNeeded]   After unwrapping: ${Type.enumConstructor(unwrapped.expr)} - not a TLocal');
+                #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   After unwrapping: ${Type.enumConstructor(unwrapped.expr)} - not a TLocal'); #end
                 #end
                 // Don't substitute - the expression is not an infrastructure variable reference
                 expr;
@@ -828,7 +828,7 @@ class CompilationContext implements BuildContext {
      * Dump the current context state for debugging
      */
     public function dumpState(): Void {
-        trace('[CompilationContext] State dump:');
+        #if debug_compilation_context trace('[CompilationContext] State dump:'); #end
         trace('  tempVarRenameMap entries: ${Lambda.count(tempVarRenameMap)}');
         trace('  underscorePrefixedVars entries: ${Lambda.count(underscorePrefixedVars)}');
         trace('  currentModule: $currentModule');
