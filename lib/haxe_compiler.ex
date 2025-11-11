@@ -138,18 +138,22 @@ defmodule HaxeCompiler do
   
   defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
     # First, try to use HaxeServer for incremental compilation if available
+    # Pass -D fast_boot in dev-like envs to minimize macro load during cold boots
+    fast_boot? = Mix.env() in [:dev, :test, :e2e]
+    common_args = (if fast_boot?, do: ["-D", "fast_boot"], else: [])
+    
     compilation_result = case HaxeServer.running?() do
       true ->
         if verbose do
           Mix.shell().info("Using Haxe server for incremental compilation")
         end
-        HaxeServer.compile([hxml_file])
+        HaxeServer.compile(common_args ++ [hxml_file])
         
       false ->
         if verbose do
           Mix.shell().info("Using direct Haxe compilation")
         end
-        compile_with_direct_haxe(hxml_file, verbose)
+        compile_with_direct_haxe(hxml_file, verbose, common_args)
     end
     
     case compilation_result do
@@ -166,9 +170,9 @@ defmodule HaxeCompiler do
       {:error, "Haxe compilation failed: #{Exception.message(error)}"}
   end
   
-  defp compile_with_direct_haxe(hxml_file, verbose) do
+  defp compile_with_direct_haxe(hxml_file, verbose, common_args \\ []) do
     {haxe_cmd, cmd_args} = get_haxe_command()
-    args = cmd_args ++ [hxml_file]
+    args = cmd_args ++ common_args ++ [hxml_file]
     
     if verbose do
       Mix.shell().info("Running: #{haxe_cmd} #{Enum.join(args, " ")}")
@@ -190,7 +194,7 @@ defmodule HaxeCompiler do
       hxml_file
     end
     
-    args = cmd_args ++ [final_hxml]
+    args = cmd_args ++ common_args ++ [final_hxml]
     
     case System.cmd(haxe_cmd, args, cmd_opts) do
       {output, 0} ->
