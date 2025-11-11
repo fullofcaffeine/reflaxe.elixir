@@ -1,0 +1,62 @@
+# Fast QA build: enables -D fast_boot to reduce macro-phase work
+# and adds @:keep via --macro keep(...) for Phoenix modules so DCE
+# does not drop runtime-invoked functions. No generated .ex edits.
+
+-lib reflaxe
+-lib reflaxe.elixir
+
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-dce full
+
+# Exclude non-server code
+--macro exclude('client')
+--macro exclude('test')
+--macro exclude('server.live.UserLive')
+--macro exclude('server.services.UserGenServer')
+
+# Keep critical Phoenix modules to avoid DCE loss of runtime‑invoked functions
+--macro keep('server.components.CoreComponents')
+--macro keep('server.live.TodoLive')
+--macro keep('server.infrastructure.Endpoint')
+--macro keep('server.infrastructure.Telemetry')
+--macro keep('server.infrastructure.TodoAppWeb')
+--macro keep('server.presence.TodoPresence')
+--macro keep('server.infrastructure.Repo')
+--macro keep('phoenix.DateFormat')
+--macro keep('phoenix.Sorting')
+
+# Compiler version + flags
+-D reflaxe.elixir=0.1.0
+-D hxx_string_to_sigil
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+
+# Fast macro profile
+-D fast_boot
+
+# Server modules
+TodoApp
+TodoAppRouter
+server.live.TodoLive
+server.schemas.Todo
+server.migrations.CreateTodos
+server.presence.TodoPresence
+server.layouts.Layouts
+server.infrastructure.Repo
+server.infrastructure.Telemetry
+server.infrastructure.Endpoint
+server.infrastructure.TodoAppWeb
+controllers.UserController
+server.components.CoreComponents
+server.i18n.Gettext
+server.infrastructure.GettextErrorMessages
+server.infrastructure.GettextUIMessages
+
