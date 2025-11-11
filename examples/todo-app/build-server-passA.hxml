@@ -1,11 +1,9 @@
-# Pass 1: Infrastructure/core modules for server build
+# Pass A — core infrastructure (fast_boot)
 -lib reflaxe
 -lib reflaxe.elixir
-
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
-
 -D elixir_output=lib
 -D reflaxe_runtime
 -D no-utf16
@@ -13,23 +11,17 @@
 -dce full
 --macro exclude('client')
 --macro exclude('test')
---macro keep('server.components.CoreComponents')
---macro keep('phoenix.DateFormat')
---macro keep('phoenix.Sorting')
 -D reflaxe.elixir=0.1.0
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces
 -D disable_hygiene_final
-
-# Core/infrastructure modules
+-D fast_boot
 server.infrastructure.Repo
-server.infrastructure.Telemetry
-server.infrastructure.Endpoint
 server.infrastructure.TodoAppWeb
-TodoAppRouter
-server.components.CoreComponents
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
-
+server.infrastructure.Telemetry
+server.infrastructure.Endpoint
+server.components.CoreComponents
