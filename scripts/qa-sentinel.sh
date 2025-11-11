@@ -374,7 +374,13 @@ if ls build-server-pass*.hxml >/dev/null 2>&1; then
   i=0
   for h in $(ls -1 build-server-pass*.hxml | sort); do
     i=$((i+1))
-    run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
+    # On the very first micro‑pass, prefer a direct compiler call to avoid any
+    # potential compile‑server handshake overhead on cold environments.
+    if [[ "$i" -eq 1 ]]; then
+      run_step_with_log "Step 1.${i}: Haxe build pass (direct haxe $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "haxe $h" || exit 1
+    else
+      run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
+    fi
   done
   # Consolidated tail for convenience
   : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
