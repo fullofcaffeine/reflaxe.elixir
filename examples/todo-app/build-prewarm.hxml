@@ -1,0 +1,18 @@
+# Minimal prewarm: prime Haxe std + compiler macros via compile-server cache
+-lib reflaxe
+-lib reflaxe.elixir
+-cp src_haxe
+-cp src_haxe/shared
+# Do not touch app lib; write to a temp dir
+-D elixir_output=/tmp/qa-prewarm
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-dce std
+-D hxx_string_to_sigil
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+
+PrewarmDummy
+

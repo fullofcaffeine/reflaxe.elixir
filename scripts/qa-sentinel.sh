@@ -350,7 +350,12 @@ fi
 # reliably fits under the BUILD_TIMEOUT cap on cold environments. This runs the
 # same build command but is strictly time-bounded; whatever compiles stays cached.
 if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
-  run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
+  # Prefer a minimal prewarm hxml if present to prime std + macros quickly
+  if [[ -f "build-prewarm.hxml" ]]; then
+    run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-prewarm.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml" || true
+  else
+    run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
+  fi
 fi
 
 # Generate .ex files. If pass files exist, run in two bounded passes to
