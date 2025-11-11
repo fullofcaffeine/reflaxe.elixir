@@ -353,8 +353,8 @@ fi
 # same build command but is strictly time-bounded; whatever compiles stays cached.
 if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
   # Multi-shot prewarm: several short runs to stay under caps while priming cache
-  PREWARM_SHOTS=${PREWARM_SHOTS:-3}
-  PREWARM_PER_SHOT=${PREWARM_PER_SHOT:-20s}
+  PREWARM_SHOTS=${PREWARM_SHOTS:-6}
+  PREWARM_PER_SHOT=${PREWARM_PER_SHOT:-10s}
   for i in $(seq 1 "$PREWARM_SHOTS"); do
     if [[ -f "build-prewarm-fast.hxml" ]]; then
       run_step_with_log "Step 0.${i}: Haxe prewarm (fast std js)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml" || true

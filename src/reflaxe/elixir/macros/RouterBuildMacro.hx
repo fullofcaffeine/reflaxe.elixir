@@ -32,6 +32,13 @@ using StringTools;
  */
 @:nullSafety(Off)
 class RouterBuildMacro {
+    static inline function isFastBoot(): Bool {
+        #if macro
+        return haxe.macro.Context.defined("fast_boot");
+        #else
+        return false;
+        #end
+    }
     // Memoization caches for controller/action existence during a single compilation run
     static var ctrlCache: Map<String,Bool> = new Map();
     static var actionCache: Map<String,Bool> = new Map();
@@ -63,7 +70,7 @@ class RouterBuildMacro {
         
         #if debug_router_macro trace('RouterBuildMacro: Found ${routeDefinitions.length} route definitions in ${classType.name}'); #end
         
-        // Validate route definitions
+        // Validate route definitions (lightweight under fast_boot)
         validateRouteDefinitions(routeDefinitions, classType.pos);
         
         // Generate functions for each route definition
@@ -231,6 +238,7 @@ class RouterBuildMacro {
     private static function validateRouteDefinitions(routes: Array<RouteDefinition>, pos: Position): Void {
         var usedNames = new Map<String, Bool>();
         var usedPaths = new Map<String, String>();
+        var fastBoot = isFastBoot();
         
         for (route in routes) {
             // Validate required fields
@@ -263,14 +271,14 @@ class RouterBuildMacro {
                 Context.warning('Unknown HTTP method: ${route.method}. Valid: ${validMethods.join(", ")}', pos);
             }
             
-            // Validate controller exists (if specified)
-            if (route.controller != null && route.controller != "") {
-                validateControllerExists(route.controller, route.name, route.path, pos);
-            }
-            
-            // Validate action method exists on controller (if both specified)
-            if (route.controller != null && route.action != null && route.controller != "" && route.action != "") {
-                validateActionExists(route.controller, route.action, route.name, pos);
+            // Skip expensive type checks under fast_boot; keep warnings lightweight
+            if (!fastBoot) {
+                if (route.controller != null && route.controller != "") {
+                    validateControllerExists(route.controller, route.name, route.path, pos);
+                }
+                if (route.controller != null && route.action != null && route.controller != "" && route.action != "") {
+                    validateActionExists(route.controller, route.action, route.name, pos);
+                }
             }
         }
     }
