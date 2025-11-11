@@ -348,13 +348,12 @@ if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
   HAXE_CMD="$HAXE_CMD --connect $HAXE_SERVER_PORT"
   # Quick readiness probe (bounded). If the server is not reachable quickly,
   # fall back to direct haxe to avoid spending the entire BUILD_TIMEOUT on a failed handshake.
-  if command -v timeout >/dev/null 2>&1; then
-    timeout 2s bash -lc "$HAXE_CMD -version" >/dev/null 2>&1 || HAXE_CMD="haxe"
-  elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout 2s bash -lc "$HAXE_CMD -version" >/dev/null 2>&1 || HAXE_CMD="haxe"
-  else
-    ( bash -lc "$HAXE_CMD -version" >/dev/null 2>&1 ) || HAXE_CMD="haxe"
-  fi
+  # Try for up to ~5s, short polls, then fall back to direct haxe
+  READY=0; for i in 1 2 3 4 5; do
+    if bash -lc "$HAXE_CMD -version" >/dev/null 2>&1; then READY=1; break; fi
+    sleep 0.2
+  done
+  if [[ "$READY" -ne 1 ]]; then HAXE_CMD="haxe"; fi
 fi
 
 # Optional: quick prewarm cycle to populate the server cache so the main build
