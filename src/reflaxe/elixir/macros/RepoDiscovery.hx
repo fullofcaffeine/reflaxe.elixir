@@ -61,15 +61,19 @@ class RepoDiscovery {
                 if (discovered.indexOf(webMod) == -1) discovered.push(webMod);
             }
         } catch (_:Dynamic) {}
-        // Repository-wide fallback: find all src_haxe directories under repo root and scan for @:repo/@:presence
+        // Fallback: restrict discovery to active compilation classpaths to avoid
+        // scanning the entire repository (which is expensive and unnecessary).
+        // This is target- and shape-based, not app-coupled.
         try {
-            var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-            var d0 = Path.directory(thisFile);
-            var d1 = Path.directory(d0);
-            var d2 = Path.directory(d1);
-            var repoRoot = Path.directory(d2);
-            var roots = findDirsNamed(repoRoot, "src_haxe", 4);
-            for (dir in roots) walkDir(dir);
+            var cps = Context.getClassPath();
+            for (cp in cps) {
+                if (cp == null) continue;
+                var p = cp.toLowerCase();
+                if (!isProjectPath(p)) continue;
+                // Focus on app source roots; most projects mount their code under src_haxe*
+                if (p.indexOf("src_haxe") == -1) continue;
+                try if (sys.FileSystem.isDirectory(cp)) walkDir(cp) else null catch (_:Dynamic) {}
+            }
         } catch (_:Dynamic) {}
     }
 
