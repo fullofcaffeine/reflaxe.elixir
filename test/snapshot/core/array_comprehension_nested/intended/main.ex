@@ -1,6 +1,5 @@
 defmodule Main do
   def simple_nested() do
-    _ = Log.trace("Simple nested grid: #{(fn -> inspect(grid) end).()}", %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "simpleNested"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ [0]
@@ -23,7 +22,6 @@ end).()]
     g
   end
   def constant_range_unrolled() do
-    _ = Log.trace("Constant range unrolled: #{(fn -> inspect(unrolled) end).()}", %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "constantRangeUnrolled"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ [0]
@@ -38,7 +36,6 @@ end).()]
     g
   end
   def nested_with_condition() do
-    _ = Log.trace("Filtered nested: #{(fn -> inspect(filtered) end).()}", %{:file_name => "Main.hx", :line_number => 36, :class_name => "Main", :method_name => "nestedWithCondition"})
     g = []
     _ = g ++ [(fn ->
   g ++ [0]
@@ -71,7 +68,6 @@ end).()]
     g
   end
   def deeply_nested() do
-    _ = Log.trace("3D cube: #{(fn -> inspect(cube) end).()}", %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "deeplyNested"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ [(fn ->
@@ -102,7 +98,6 @@ end).()]
     g
   end
   def four_level_nesting() do
-    _ = Log.trace("4D hypercube: #{(fn -> inspect(hypercube) end).()}", %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "fourLevelNesting"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ [(fn ->
@@ -165,7 +160,6 @@ end).()]
     g
   end
   def nested_with_expression() do
-    _ = Log.trace("String table: #{(fn -> inspect(table) end).()}", %{:file_name => "Main.hx", :line_number => 64, :class_name => "Main", :method_name => "nestedWithExpression"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(0)]
@@ -188,41 +182,48 @@ end).()]
     g
   end
   def nested_with_block() do
-    _ = Log.trace("Block computed: #{(fn -> inspect(computed) end).()}", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "nestedWithBlock"})
     g = []
     _ = g ++ [(fn ->
-  _ = g ++ [0]
-  _ = g ++ [1]
-  _ = g ++ [2]
+  temp = 0
+  _ = g ++ [temp]
+  temp = 0
+  _ = g ++ [temp + 1]
+  temp = 0
+  _ = g ++ [temp + 2]
   []
 end).()]
     _ = g ++ [(fn ->
-  _ = g ++ [1]
-  _ = g ++ [3]
-  _ = g ++ [5]
+  temp = 0
+  _ = g ++ [temp + 1]
+  temp = 1
+  _ = g ++ [temp + 2]
+  temp = 2
+  _ = g ++ [temp + 3]
   []
 end).()]
     _ = g ++ [(fn ->
-  _ = g ++ [2]
-  _ = g ++ [5]
-  _ = g ++ [8]
+  temp = 0
+  _ = g ++ [temp + 2]
+  temp = 2
+  _ = g ++ [temp + 3]
+  temp = 4
+  _ = g ++ [temp + 4]
   []
 end).()]
     g
   end
   def mixed_constant_variable() do
     n = 3
-    _ = Log.trace("Mixed ranges: #{(fn -> inspect(mixed) end).()}", %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "mixedConstantVariable"})
-    g = []
-    g = 0
+    _g = 0
+    _g = n
     _ = Enum.each(0..(_g2 - 1), (fn -> fn item ->
-  i = _g1 + 1
-  _g = Enum.concat(_g, [(fn -> g3 = []
+  i = item + 1
+  item = Enum.concat(item, [(fn -> g = []
 item = Enum.concat(item, [i])
 item = Enum.concat(item, [i + 1])
 item end).()])
 end end).())
-    n
+    []
   end
   def nested_in_expression() do
     sum = 0
@@ -262,11 +263,9 @@ end).()]
     {:halt, {sum, data}}
   end
 end end).())
-    _ = Log.trace("Sum of nested: #{(fn -> sum end).()}", %{:file_name => "Main.hx", :line_number => 97, :class_name => "Main", :method_name => "nestedInExpression"})
     sum
   end
   def with_meta_and_parens() do
-    _ = Log.trace("Wrapped comprehension: #{(fn -> inspect(wrapped) end).()}", %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "withMetaAndParens"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ [0]
@@ -281,7 +280,6 @@ end).()]
     g
   end
   def mixed_with_literals() do
-    _ = Log.trace("Mixed with literals: #{(fn -> inspect(mixed) end).()}", %{:file_name => "Main.hx", :line_number => 115, :class_name => "Main", :method_name => "mixedWithLiterals"})
     g = []
     _ = g ++ [0]
     _ = g ++ [2]
@@ -294,27 +292,25 @@ end).()]
   end
   def comprehension_from_iterable() do
     source = [1, 2, 3]
-    _ = Log.trace("From iterable: #{(fn -> inspect(from_array) end).()}", %{:file_name => "Main.hx", :line_number => 123, :class_name => "Main", :method_name => "comprehensionFromIterable"})
-    g = []
+    _g = 0
     _ = Enum.map(source, (fn -> fn item ->
   x = source[_g1]
   _g1 + 1
-  _g = Enum.concat(_g, [(fn -> g2 = []
-g3 = 0
+  _g = Enum.concat(_g, [(fn -> g = []
+g1 = 0
 Enum.map(source, (fn -> fn item ->
-  y = source[_g3]
-  _g3 + 1
-  _g2 = Enum.concat(_g2, [x * y])
+  y = source[_g1]
+  _g1 + 1
+  _g = Enum.concat(_g, [x * y])
 end end).())
-_g2 end).()])
+_g end).()])
 end end).())
+    []
   end
   def empty_comprehensions() do
-    _ = Log.trace("Empty comprehension: #{(fn -> inspect(empty) end).()}", %{:file_name => "Main.hx", :line_number => 130, :class_name => "Main", :method_name => "emptyComprehensions"})
     []
   end
   def single_element_nested() do
-    _ = Log.trace("Single element: #{(fn -> inspect(single) end).()}", %{:file_name => "Main.hx", :line_number => 137, :class_name => "Main", :method_name => "singleElementNested"})
     g = []
     _ = g ++ [(fn ->
   _ = g ++ [0]
@@ -323,7 +319,6 @@ end).()]
     g
   end
   def main() do
-    _ = Log.trace("=== Testing Nested Array Comprehensions ===", %{:file_name => "Main.hx", :line_number => 142, :class_name => "Main", :method_name => "main"})
     _ = simple_nested()
     _ = constant_range_unrolled()
     _ = nested_with_condition()
@@ -338,6 +333,6 @@ end).()]
     _ = comprehension_from_iterable()
     _ = empty_comprehensions()
     _ = single_element_nested()
-    _ = Log.trace("=== All nested comprehension tests complete ===", %{:file_name => "Main.hx", :line_number => 159, :class_name => "Main", :method_name => "main"})
+    nil
   end
 end

@@ -5,6 +5,6 @@ defmodule Point do
     :math.sqrt(dx * dx + dy * dy)
   end
   def to_string(struct) do
-    "Point(#{(fn -> struct.x end).()}, #{(fn -> struct.y end).()})"
+    "Point(#{(fn -> Kernel.to_string(struct.x) end).()}, #{(fn -> Kernel.to_string(struct.y) end).()})"
   end
 end

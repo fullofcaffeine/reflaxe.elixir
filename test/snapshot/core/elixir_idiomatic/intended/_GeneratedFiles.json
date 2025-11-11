@@ -6,7 +6,6 @@
   "std.ex",
   "plain_option.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "api_result.ex"
 ],
