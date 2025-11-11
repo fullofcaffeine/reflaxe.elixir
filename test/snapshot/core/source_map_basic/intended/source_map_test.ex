@@ -9,6 +9,6 @@ defmodule SourceMapTest do
     test = MyApp.SourceMapTest.new()
     result = test.simpleMethod()
     condition = test.conditionalMethod(42)
-    _ = Log.trace("Source mapping test: #{(fn -> result end).()} #{(fn -> inspect(condition) end).()}", %{:file_name => "SourceMapTest.hx", :line_number => 23, :class_name => "SourceMapTest", :method_name => "main"})
+    nil
   end
 end
