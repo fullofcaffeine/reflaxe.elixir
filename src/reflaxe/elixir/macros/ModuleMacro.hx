@@ -27,6 +27,13 @@ typedef ModuleData = {
  * Enables cleaner code generation and module-level organization
  */
 class ModuleMacro {
+    static inline function isFastBoot(): Bool {
+        #if macro
+        return haxe.macro.Context.defined("fast_boot");
+        #else
+        return false;
+        #end
+    }
     
     /**
      * Main build macro that processes @:module annotation
@@ -34,13 +41,13 @@ class ModuleMacro {
      */
     @:build
     public static macro function build(): Array<Field> {
-        var fields = Context.getBuildFields();
+        // Prefer cheap metadata checks before touching fields
         var classType = Context.getLocalClass().get();
-        
-        // Check if class has @:module annotation
         if (!hasModuleAnnotation(classType)) {
-            return fields;
+            return Context.getBuildFields();
         }
+        // Under fast_boot we still honor @:module, but keep work minimal
+        var fields = Context.getBuildFields();
         
         // Transform all functions to add public static automatically
         for (field in fields) {
@@ -66,7 +73,7 @@ class ModuleMacro {
                     // Non-function fields are not modified
             }
         }
-        
+
         return fields;
     }
     
