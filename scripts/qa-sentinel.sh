@@ -311,8 +311,10 @@ if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
 fi
 pushd "$APP_DIR" >/dev/null
 
-# Prefer system haxe when available (faster, avoids npx bootstrap); fallback to npx
-if command -v haxe >/dev/null 2>&1; then
+# Prefer explicit override, else system haxe, else npx
+if [[ -n "${HAXE_CMD:-}" ]]; then
+  HAXE_CMD="$HAXE_CMD"
+elif command -v haxe >/dev/null 2>&1; then
   HAXE_CMD="haxe"
 else
   HAXE_CMD="npx -y haxe"
