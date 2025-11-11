@@ -1041,6 +1041,9 @@ class SwitchBuilder {
             var preferredLower: Null<String> = bestUsedLowerName();
 
             var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
+            // Precompute usage to avoid repeated full-tree scans per parameter
+            var usedFlags = computeEnumParamUsage(caseBody, parameterNames.length);
+            var localUsage = collectLocalNameUsage(caseBody);
             for (i in 0...parameterNames.length) {
                 // Select a safe base source name with strict filtering
                 var candidate:Null<String> = null;
@@ -1056,11 +1059,11 @@ class SwitchBuilder {
                 // prefer the first safe lower-case local as binder (usage-driven, generic).
                 if (preferredLower != null) baseParamName = preferredLower;
 
-                // CRITICAL: Analyze case body to determine if this parameter is actually used
-                var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
+                // CRITICAL: Use precomputed usage from a single scan
+                var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
                 if (!isUsed) {
                     var rawParamName = candidate;
-                    if (rawParamName != null) isUsed = EnumHandler.isLocalNameUsed(rawParamName, caseBody);
+                    if (rawParamName != null) isUsed = (localUsage.exists(rawParamName));
                 }
                 // If a preferred lower-case local was selected, treat binder as used
                 if (!isUsed && preferredLower != null) isUsed = true;
@@ -1085,9 +1088,9 @@ class SwitchBuilder {
             var finalNames = [for (i in 0...parameterNames.length) {
                 var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var effectiveBase = (preferredLower != null) ? preferredLower : base;
-                var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) ||
-                    (effectiveBase != null && EnumHandler.isLocalNameUsed(effectiveBase, caseBody));
-                isUsed ? base : "_" + base;
+                var used = (i < usedFlags.length && usedFlags[i]) ||
+                    (effectiveBase != null && localUsage.exists(effectiveBase));
+                used ? base : "_" + base;
             }];
             #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}'); #end
 
@@ -1103,6 +1106,58 @@ class SwitchBuilder {
 
             return PTuple(patterns);
         }
+    }
+
+    // ----------------------------------------------------------------------
+    // Performance helpers (usage analysis caching per case)
+    // ----------------------------------------------------------------------
+    static function computeEnumParamUsage(caseBody: TypedExpr, paramCount:Int): Array<Bool> {
+        var used:Array<Bool> = [for (_ in 0...paramCount) false];
+        var assignedFromParam = new Map<String, Int>();
+
+        // First pass: mark direct TEnumParameter uses and capture TVar assignments
+        function pass1(te:TypedExpr):Void {
+            switch (te.expr) {
+                case TEnumParameter(_, _, idx):
+                    if (idx >= 0 && idx < paramCount) used[idx] = true;
+                case TVar(v, init) if (init != null):
+                    switch (init.expr) {
+                        case TEnumParameter(_, _, idx2):
+                            if (idx2 >= 0 && idx2 < paramCount) assignedFromParam.set(v.name, idx2);
+                        case _:
+                    }
+                default:
+                    haxe.macro.TypedExprTools.iter(te, pass1);
+            }
+        }
+        if (caseBody != null) pass1(caseBody);
+
+        // Second pass: if a variable assigned from parameter is later referenced, mark used
+        function pass2(te:TypedExpr):Void {
+            switch (te.expr) {
+                case TLocal(v):
+                    if (assignedFromParam.exists(v.name)) {
+                        var pi = assignedFromParam.get(v.name);
+                        if (pi >= 0 && pi < paramCount) used[pi] = true;
+                    }
+                default:
+                    haxe.macro.TypedExprTools.iter(te, pass2);
+            }
+        }
+        if (caseBody != null) pass2(caseBody);
+        return used;
+    }
+
+    static function collectLocalNameUsage(caseBody:TypedExpr):Map<String,Bool> {
+        var used = new Map<String,Bool>();
+        function walk(te:TypedExpr):Void {
+            switch (te.expr) {
+                case TLocal(v): used.set(v.name, true);
+                default: haxe.macro.TypedExprTools.iter(te, walk);
+            }
+        }
+        if (caseBody != null) walk(caseBody);
+        return used;
     }
 
     /**
