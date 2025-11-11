@@ -16,8 +16,15 @@
 # Staged .cross.hx files are injected conditionally by the bootstrap macro
 # to avoid leaking __elixir__() into macro/other targets.
 
-# Include the Elixir standard library definitions (generic externs)
--cp ${SCOPE_DIR}/std/
+# Include only required stdlib externs to minimize cold-compile typing
+-cp ${SCOPE_DIR}/std/elixir
+-cp ${SCOPE_DIR}/std/phoenix
+-cp ${SCOPE_DIR}/std/ecto
+-cp ${SCOPE_DIR}/std/exunit
+-cp ${SCOPE_DIR}/std/reflaxe
+# HXX top-level lives under std/, so add that file via explicit classpath root as a fallback
+# (keeps directory load small compared to full std/haxe inclusion)
+-cp ${SCOPE_DIR}/std
 
 # Depend on the base Reflaxe framework
 -lib reflaxe
