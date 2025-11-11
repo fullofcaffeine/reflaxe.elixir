@@ -1,13 +1,17 @@
 defmodule Main do
   def main() do
     fruits = ["apple", "banana", "orange"]
-    _ = Enum.each(fruits, (fn -> fn item ->
-    Log.trace("For: " <> item, %{:file_name => "Main.hx", :line_number => 10, :class_name => "Main", :method_name => "main"})
+    _ = Enum.each(fruits, (fn -> fn _ ->
+    nil
 end end).())
     i = 0
-    _ = Enum.each(0..(length(fruits) - 1), (fn -> fn i ->
-  Log.trace("While: " <> fruits[i], %{:file_name => "Main.hx", :line_number => 16, :class_name => "Main", :method_name => "main"})
-  i + 1
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, i}, (fn -> fn _, {fruits, i} ->
+  if (i < length(fruits)) do
+    i + 1
+    {:cont, {fruits, i}}
+  else
+    {:halt, {fruits, i}}
+  end
 end end).())
   end
 end
