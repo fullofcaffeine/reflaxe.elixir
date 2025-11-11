@@ -24,7 +24,7 @@ class VarRefSuffixParamNormalizeTransforms {
       return switch (n.def) {
         case EDef(functionName, parameters, guards, body):
           var suffixMap = collectUniqueSuffixParams(parameters);
-          #if (sys && !no_traces) {
+          #if debug_varref_suffix {
             var keys = [for (k in suffixMap.keys()) k].join(",");
             if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] def ' + functionName + ' suffixes={' + keys + '}');
           } #end
@@ -32,7 +32,7 @@ class VarRefSuffixParamNormalizeTransforms {
           makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
         case EDefp(functionName, parameters, guards, body):
           var suffixMap = collectUniqueSuffixParams(parameters);
-          #if (sys && !no_traces) {
+          #if debug_varref_suffix {
             var keys = [for (k in suffixMap.keys()) k].join(",");
             if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] defp ' + functionName + ' suffixes={' + keys + '}');
           } #end
@@ -92,7 +92,7 @@ class VarRefSuffixParamNormalizeTransforms {
                 return switch (y.def) {
                   case EVar(v) if (suff.exists(v) && !declared.exists(v)):
                     var full = suff.get(v);
-                    #if (sys && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
+                    #if debug_varref_suffix Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
                     #end
                     makeASTWithMeta(EVar(full), y.metadata, y.pos);
                   default: y;
@@ -106,7 +106,7 @@ class VarRefSuffixParamNormalizeTransforms {
             var topDeclared = collectDeclared(body);
             if (suff.exists(nm) && !topDeclared.exists(nm)) {
               var fullTop = suff.get(nm);
-              #if (sys && !no_traces) Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
+              #if debug_varref_suffix Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
               #end
               makeASTWithMeta(EVar(fullTop), x.metadata, x.pos);
             } else x;
