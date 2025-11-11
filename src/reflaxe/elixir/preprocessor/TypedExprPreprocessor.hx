@@ -163,13 +163,13 @@ class TypedExprPreprocessor {
 
         // Simplified debug output - just track what we're processing
         #if debug_preprocessor
-        trace('[Preprocessor] Processing expression');
+        #if debug_preprocessor trace('[Preprocessor] Processing expression'); #end
         #end
 
         // Check for Map iteration patterns first (special handling needed)
         if (isMapIterationPattern(expr)) {
             #if debug_preprocessor
-            trace('[TypedExprPreprocessor] DETECTED: Map iteration pattern');
+            #if debug_preprocessor trace('[TypedExprPreprocessor] DETECTED: Map iteration pattern'); #end
             #end
             return transformMapIteration(expr);
         }
@@ -177,7 +177,7 @@ class TypedExprPreprocessor {
         // Only process if expression contains infrastructure variable patterns
         // Don't try to filter TEnumParameter universally as it breaks pattern matching
         #if debug_preprocessor
-        trace('[TypedExprPreprocessor] Checking for infrastructure pattern...');
+        #if debug_preprocessor trace('[TypedExprPreprocessor] Checking for infrastructure pattern...'); #end
         #end
 
         // Always attempt a merge of TVar + TSwitch patterns to preserve switch-as-value
@@ -185,13 +185,13 @@ class TypedExprPreprocessor {
 
         if (!containsInfrastructurePattern(expr)) {
             #if debug_preprocessor
-            trace('[TypedExprPreprocessor] No pattern found, returning early');
+            #if debug_preprocessor trace('[TypedExprPreprocessor] No pattern found, returning early'); #end
             #end
             return expr; // No transformation needed
         }
 
         #if debug_preprocessor
-        trace('[TypedExprPreprocessor] Starting preprocessing - pattern detected');
+        #if debug_preprocessor trace('[TypedExprPreprocessor] Starting preprocessing - pattern detected'); #end
         #end
 
         // CRITICAL FIX: Use existing substitutions map instead of creating new one
@@ -205,8 +205,8 @@ class TypedExprPreprocessor {
         lastSubstitutions = substitutions;
 
         #if debug_preprocessor
-        trace('[TypedExprPreprocessor] Preprocessing complete');
-        trace('[TypedExprPreprocessor] Substitutions created: ${Lambda.count(substitutions)} entries');
+        #if debug_preprocessor trace('[TypedExprPreprocessor] Preprocessing complete'); #end
+        #if debug_preprocessor trace('[TypedExprPreprocessor] Substitutions created: ${Lambda.count(substitutions)} entries'); #end
         if (Lambda.count(substitutions) > 0) {
             trace('[TypedExprPreprocessor] ===== SUBSTITUTION MAP CONTENTS =====');
             for (id in substitutions.keys()) {

@@ -151,7 +151,7 @@ class MigrationBuilder {
             switch(args[0].expr) {
                 case EConst(CString(tableName)):
                     MigrationRegistry.registerTable(tableName, args[0].pos);
-                    trace('[Migration] Table "$tableName" registered in $migrationName');
+                    #if debug_migration trace('[Migration] Table "$tableName" registered in $migrationName'); #end
                 default:
             }
         }
@@ -165,7 +165,7 @@ class MigrationBuilder {
             switch(args[0].expr) {
                 case EConst(CString(tableName)):
                     MigrationRegistry.unregisterTable(tableName);
-                    trace('[Migration] Table "$tableName" marked for deletion in $migrationName');
+                    #if debug_migration trace('[Migration] Table "$tableName" marked for deletion in $migrationName'); #end
                 default:
             }
         }
