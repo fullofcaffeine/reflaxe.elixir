@@ -749,7 +749,7 @@ class CompilationContext implements BuildContext {
         }
 
         #if debug_preprocessor
-        #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${Type.enumConstructor(expr.expr)}');
+        #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${Type.enumConstructor(expr.expr)}'); #end
         #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Substitution map has ${Lambda.count(infraVarSubstitutions)} entries'); #end
         for (id in infraVarSubstitutions.keys()) {
             #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Map entry: ID=$id'); #end
