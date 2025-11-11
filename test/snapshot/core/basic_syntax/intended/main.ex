@@ -48,11 +48,6 @@ end end).())
   end
   def main() do
     instance = MyApp.Main.new(10)
-    _ = Log.trace(greet("World"), %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace(instance.calculate(5, 3), %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace(instance.checkValue(-5), %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace(instance.sumRange(1, 10), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace(instance.factorial(5), %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace(instance.dayName(3), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "main"})
+    nil
   end
 end

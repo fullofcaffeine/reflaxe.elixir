@@ -1,48 +1,46 @@
 defmodule Main do
   defp test_email_validation() do
-    _ = Log.trace("=== Email Validation Tests ===", %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "testEmailValidation"})
     email_result = (case MyApp.Email_Impl_.parse("user@example.com") do
       {:ok, value} ->
-        normalized = value
-        to_string = value
         fn_ = value
         email = value
-        _ = Log.trace("Valid email - Domain: #{(fn -> domain end).()}, Local: #{(fn -> localPart end).()}", %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testEmailValidation"})
-        _ = Log.trace("Is example.com domain: #{(fn -> inspect(isExampleDomain) end).()}", %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "testEmailValidation"})
-        _ = Log.trace("Normalized: #{(fn -> Email_Impl_.to_string(normalized) end).()}", %{:file_name => "Main.hx", :line_number => 61, :class_name => "Main", :method_name => "testEmailValidation"})
-      {:error, _value} ->
-        reason = _value
-        _ = Log.trace("Unexpected email validation failure: #{(fn -> reason end).()}", %{:file_name => "Main.hx", :line_number => 64, :class_name => "Main", :method_name => "testEmailValidation"})
+        domain = MyApp.Email_Impl_.get_domain(email)
+        local_part = MyApp.Email_Impl_.get_local_part(email)
+        is_example_domain = MyApp.Email_Impl_.has_domain(email, "example.com")
+        normalized = MyApp.Email_Impl_.normalize(email)
+        nil
+      {:error, value} ->
+        fn_ = value
+        reason = value
+        nil
     end)
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     _ = Enum.each(invalid_emails, (fn -> fn item ->
-    (case Email_Impl_.parse(invalid_email) do
-    {:ok, invalid_email} ->
-      Log.trace("ERROR: Invalid email \"" <> item <> "\" was accepted", %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "testEmailValidation"})
-    {:error, reason} ->
-      Log.trace("Correctly rejected \"" <> item <> "\": " <> reason, %{:file_name => "Main.hx", :line_number => 82, :class_name => "Main", :method_name => "testEmailValidation"})
+    (case Email_Impl_.parse(item) do
+    {:ok, value} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
     email1_result = MyApp.Email_Impl_.parse("Test@Example.Com")
     email2_result = MyApp.Email_Impl_.parse("test@example.com")
     if (MyApp.ResultTools.is_ok(email1_result) and MyApp.ResultTools.is_ok(email2_result)) do
-      _ = MyApp.ResultTools.unwrap(email1_result)
-      _ = MyApp.ResultTools.unwrap(email2_result)
+      email = MyApp.ResultTools.unwrap(email1_result)
+      email = MyApp.ResultTools.unwrap(email2_result)
       are_equal = MyApp.Email_Impl_.equals(email1, email2)
-      _ = Log.trace("Case-insensitive equality: #{(fn -> inspect(are_equal) end).()}", %{:file_name => "Main.hx", :line_number => 94, :class_name => "Main", :method_name => "testEmailValidation"})
+      nil
     end
   end
   defp test_user_id_validation() do
-    _ = Log.trace("=== UserId Validation Tests ===", %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "testUserIdValidation"})
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
     _ = Enum.each(valid_ids, (fn -> fn item ->
     (case UserId_Impl_.parse(item) do
     {:ok, value} ->
       user_id = value
-      Log.trace("Valid UserId \"" <> validId <> "\" - Length: " <> Kernel.to_string(length) <> ", Normalized: " <> UserId_Impl_.to_string(normalized), %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "testUserIdValidation"})
-      Log.trace("Starts with \"user\" (case-insensitive): " <> inspect(startsWithUser), %{:file_name => "Main.hx", :line_number => 116, :class_name => "Main", :method_name => "testUserIdValidation"})
-    {:error, reason} ->
-      Log.trace("Unexpected UserId validation failure for \"" <> validId <> "\": " <> reason, %{:file_name => "Main.hx", :line_number => 119, :class_name => "Main", :method_name => "testUserIdValidation"})
+      length = UserId_Impl_.length(user_id)
+      normalized = UserId_Impl_.normalize(user_id)
+      starts_with_user = UserId_Impl_.starts_with_ignore_case(user_id, "user")
+      nil
+    {:error, _g} -> nil
   end)
 end end).())
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join((fn ->
@@ -58,11 +56,9 @@ end end).())
   []
 end).(), "")]
     _ = Enum.each(invalid_ids, (fn -> fn item ->
-    (case UserId_Impl_.parse(invalid_id) do
-    {:ok, invalid_id} ->
-      Log.trace("ERROR: Invalid UserId \"" <> item <> "\" was accepted", %{:file_name => "Main.hx", :line_number => 136, :class_name => "Main", :method_name => "testUserIdValidation"})
-    {:error, reason} ->
-      Log.trace("Correctly rejected \"" <> item <> "\": " <> reason, %{:file_name => "Main.hx", :line_number => 138, :class_name => "Main", :method_name => "testUserIdValidation"})
+    (case UserId_Impl_.parse(item) do
+    {:ok, value} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
     id1_result = MyApp.UserId_Impl_.parse("User123")
@@ -72,195 +68,157 @@ end end).())
       _ = MyApp.ResultTools.unwrap(id2_result)
       exact_equal = MyApp.UserId_Impl_.equals(id1, id2)
       case_insensitive_equal = MyApp.UserId_Impl_.equals_ignore_case(id1, id2)
-      _ = Log.trace("Exact equality: #{(fn -> inspect(exact_equal) end).()}, Case-insensitive: #{(fn -> inspect(case_insensitive_equal) end).()}", %{:file_name => "Main.hx", :line_number => 151, :class_name => "Main", :method_name => "testUserIdValidation"})
+      nil
     end
   end
   defp test_positive_int_arithmetic() do
-    value = Log.trace("=== PositiveInt Arithmetic Tests ===", %{:file_name => "Main.hx", :line_number => 159, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     valid_numbers = [1, 5, 42, 100, 999]
     value = Enum.each(valid_numbers, (fn -> fn item ->
     (case PositiveInt_Impl_.parse(item) do
     {:ok, value} ->
       pos_int = value
-      Log.trace("Valid PositiveInt: " <> PositiveInt_Impl_.to_string(pos_int), %{:file_name => "Main.hx", :line_number => 167, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
       doubled = PositiveInt_Impl_.multiply(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(2)))
       added = PositiveInt_Impl_.add(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(10)))
-      Log.trace("Doubled: " <> PositiveInt_Impl_.to_string(doubled) <> ", Added 10: " <> PositiveInt_Impl_.to_string(added), %{:file_name => "Main.hx", :line_number => 172, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
       subtract_result = PositiveInt_Impl_.safe_sub(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
       (case item do
-        {:ok, value} ->
-          Log.trace("Safe subtraction result: " <> PositiveInt_Impl_.to_string(result), %{:file_name => "Main.hx", :line_number => 178, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-        {:error, reason} ->
-          Log.trace("Safe subtraction failed: " <> reason, %{:file_name => "Main.hx", :line_number => 180, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        {:ok, subtract_result} ->
+          result = item
+          nil
+        {:error, subtract_result} ->
+          reason = item
+          nil
       end)
       five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
       is_greater = PositiveInt_Impl_.greater_than(pos_int, five)
       min = PositiveInt_Impl_.min(pos_int, five)
       max = PositiveInt_Impl_.max(pos_int, five)
-      Log.trace("Greater than 5: " <> inspect(is_greater) <> ", Min with 5: " <> PositiveInt_Impl_.to_string(min) <> ", Max with 5: " <> PositiveInt_Impl_.to_string(max), %{:file_name => "Main.hx", :line_number => 188, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-    {:error, reason} ->
-      Log.trace("Unexpected PositiveInt validation failure for " <> Kernel.to_string(validNum) <> ": " <> reason, %{:file_name => "Main.hx", :line_number => 191, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+      nil
+    {:error, _g} -> nil
   end)
 end end).())
     invalid_numbers = [0, -1, -42, -100]
     value = Enum.each(invalid_numbers, (fn -> fn item ->
-    (case PositiveInt_Impl_.parse(invalid_num) do
-    {:ok, invalid_num} ->
-      Log.trace("ERROR: Invalid PositiveInt " <> Kernel.to_string(item) <> " was accepted", %{:file_name => "Main.hx", :line_number => 201, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-    {:error, reason} ->
-      Log.trace("Correctly rejected " <> Kernel.to_string(item) <> ": " <> reason, %{:file_name => "Main.hx", :line_number => 203, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+    (case PositiveInt_Impl_.parse(item) do
+    {:ok, value} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
     five = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(5))
     ten = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(10))
     (case MyApp.PositiveInt_Impl_.safe_sub(five, ten) do
-      {:ok, value} -> value = Log.trace("ERROR: Subtraction that should fail succeeded", %{:file_name => "Main.hx", :line_number => 214, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-      {:error, reason} -> value = Log.trace("Correctly prevented invalid subtraction: #{(fn -> reason end).()}", %{:file_name => "Main.hx", :line_number => 216, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+      {:ok, _value} -> nil
+      {:error, _value} -> nil
     end)
     twenty = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(20))
     four = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(4))
     three = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(3))
     (case MyApp.PositiveInt_Impl_.safe_div(twenty, four) do
-      {:ok, value} ->
-        result = value
-        to_string = value
-        value = Log.trace("20 / 4 = #{(fn -> PositiveInt_Impl_.to_string(result) end).()}", %{:file_name => "Main.hx", :line_number => 226, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-      {:error, reason} -> value = Log.trace("Division failed: #{(fn -> reason end).()}", %{:file_name => "Main.hx", :line_number => 228, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+      {:ok, _value} -> nil
+      {:error, _value} -> nil
     end)
     (case MyApp.PositiveInt_Impl_.safe_div(twenty, three) do
-      {:ok, value} ->
-        result = value
-        to_string = value
-        value = Log.trace("20 / 3 = #{(fn -> PositiveInt_Impl_.to_string(result) end).()} (unexpected success)", %{:file_name => "Main.hx", :line_number => 233, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-      {:error, reason} -> value = Log.trace("20 / 3 correctly failed (not exact): #{(fn -> reason end).()}", %{:file_name => "Main.hx", :line_number => 235, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+      {:ok, _value} -> nil
+      {:error, _value} -> nil
     end)
   end
   defp test_non_empty_string_operations() do
-    value = Log.trace("=== NonEmptyString Operations Tests ===", %{:file_name => "Main.hx", :line_number => 243, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     valid_strings = ["hello", "world", "test", "NonEmptyString"]
     value = Enum.each(valid_strings, (fn -> fn item ->
     (case NonEmptyString_Impl_.parse(item) do
     {:ok, value} ->
       non_empty_str = value
-      Log.trace("Valid NonEmptyString \"" <> validStr <> "\" - Length: " <> Kernel.to_string(length) <> ", Upper: " <> NonEmptyString_Impl_.to_string(upper) <> ", Lower: " <> NonEmptyString_Impl_.to_string(lower), %{:file_name => "Main.hx", :line_number => 254, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+      length = NonEmptyString_Impl_.length(non_empty_str)
+      upper = NonEmptyString_Impl_.to_upper_case(non_empty_str)
+      lower = NonEmptyString_Impl_.to_lower_case(non_empty_str)
       other = ResultTools.unwrap(NonEmptyString_Impl_.parse("!"))
-      Log.trace("Concatenated with \"!\": " <> NonEmptyString_Impl_.to_string(concatenated), %{:file_name => "Main.hx", :line_number => 259, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-      Log.trace("First char: " <> NonEmptyString_Impl_.to_string(firstChar) <> ", Last char: " <> NonEmptyString_Impl_.to_string(lastChar), %{:file_name => "Main.hx", :line_number => 264, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+      concatenated = NonEmptyString_Impl_.concat(non_empty_str, other)
+      first_char = NonEmptyString_Impl_.first_char(non_empty_str)
+      last_char = NonEmptyString_Impl_.last_char(non_empty_str)
       (case NonEmptyString_Impl_.safe_substring(non_empty_str, 1) do
-        {:ok, value} ->
-          Log.trace("Substring from index 1: " <> NonEmptyString_Impl_.to_string(substr), %{:file_name => "Main.hx", :line_number => 269, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-        {:error, reason} ->
-          Log.trace("Substring failed: " <> reason, %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+        {:ok, _g} -> nil
+        {:error, _g} -> nil
       end)
-    {:error, reason} ->
-      Log.trace("Unexpected NonEmptyString validation failure for \"" <> validStr <> "\": " <> reason, %{:file_name => "Main.hx", :line_number => 275, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+    {:error, _g} -> nil
   end)
 end end).())
     invalid_strings = ["", "   ", "\t\n"]
     value = Enum.each(invalid_strings, (fn -> fn item ->
-    (case NonEmptyString_Impl_.parse(invalid_str) do
-    {:ok, invalid_str} ->
-      Log.trace("ERROR: Invalid NonEmptyString \"" <> item <> "\" was accepted", %{:file_name => "Main.hx", :line_number => 285, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-    {:error, reason} ->
-      Log.trace("Correctly rejected \"" <> item <> "\": " <> reason, %{:file_name => "Main.hx", :line_number => 287, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+    (case NonEmptyString_Impl_.parse(item) do
+    {:ok, value} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
     value = Enum.each(whitespace_strings, (fn -> fn item ->
     (case NonEmptyString_Impl_.parse_and_trim(item) do
-    {:ok, value} ->
-      Log.trace("Trimmed \"" <> whitespaceStr <> "\" to \"" <> NonEmptyString_Impl_.to_string(trimmed) <> "\"", %{:file_name => "Main.hx", :line_number => 297, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-    {:error, reason} ->
-      Log.trace("Trim and parse failed for \"" <> whitespaceStr <> "\": " <> reason, %{:file_name => "Main.hx", :line_number => 299, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+    {:ok, _g} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
     test_str = MyApp.ResultTools.unwrap(NonEmptyString_Impl_.parse("Hello World"))
     starts_with_hello = MyApp.NonEmptyString_Impl_.starts_with(test_str, "Hello")
     ends_with_world = MyApp.NonEmptyString_Impl_.ends_with(test_str, "World")
     contains_space = MyApp.NonEmptyString_Impl_.contains(test_str, " ")
-    value = Log.trace("String operations - Starts with \"Hello\": #{(fn -> inspect(starts_with_hello) end).()}, Ends with \"World\": #{(fn -> inspect(ends_with_world) end).()}, Contains space: #{(fn -> inspect(contains_space) end).()}", %{:file_name => "Main.hx", :line_number => 308, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     (case MyApp.NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe") do
-      {:ok, value} ->
-        replaced = value
-        to_string = value
-        value = Log.trace("Replaced \"World\" with \"Universe\": #{(fn -> NonEmptyString_Impl_.to_string(replaced) end).()}", %{:file_name => "Main.hx", :line_number => 313, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-      {:error, reason} -> value = Log.trace("Replacement failed: #{(fn -> reason end).()}", %{:file_name => "Main.hx", :line_number => 315, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+      {:ok, _value} -> nil
+      {:error, _value} -> nil
     end)
     parts = MyApp.NonEmptyString_Impl_.split_non_empty(test_str, " ")
-    value = Log.trace("Split by space: #{(fn -> length(parts) end).()} parts", %{:file_name => "Main.hx", :line_number => 320, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-    value = Enum.each(parts, (fn -> fn item ->
-    Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(item), %{:file_name => "Main.hx", :line_number => 322, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+    value = Enum.each(parts, (fn -> fn _ ->
+    nil
 end end).())
     value
   end
   defp test_functional_composition() do
-    _ = Log.trace("=== Functional Composition Tests ===", %{:file_name => "Main.hx", :line_number => 330, :class_name => "Main", :method_name => "testFunctionalComposition"})
     email_chain = MyApp.ResultTools.unwrap_or(ResultTools.map(ResultTools.map(Email_Impl_.parse("USER@EXAMPLE.COM"), fn email -> Email_Impl_.normalize(email) end), fn email -> Email_Impl_.get_domain(email) end), "unknown")
-    _ = Log.trace("Email chain result: #{(fn -> email_chain end).()}", %{:file_name => "Main.hx", :line_number => 337, :class_name => "Main", :method_name => "testFunctionalComposition"})
     user_id_chain = MyApp.ResultTools.unwrap_or(ResultTools.filter(ResultTools.map(UserId_Impl_.parse("TestUser123"), fn user_id -> UserId_Impl_.normalize(user_id) end), fn user_id -> UserId_Impl_.starts_with(user_id, "test") end, "UserId does not start with 'test'"), ResultTools.unwrap(UserId_Impl_.parse("defaultuser")))
-    _ = Log.trace("UserId chain result: #{(fn -> UserId_Impl_.to_string(user_id_chain) end).()}", %{:file_name => "Main.hx", :line_number => 344, :class_name => "Main", :method_name => "testFunctionalComposition"})
     math_chain = MyApp.ResultTools.unwrap_or(ResultTools.map(ResultTools.flat_map(PositiveInt_Impl_.parse(10), fn n -> PositiveInt_Impl_.safe_sub(n, ResultTools.unwrap(PositiveInt_Impl_.parse(3))) end), fn n -> PositiveInt_Impl_.multiply(n, ResultTools.unwrap(PositiveInt_Impl_.parse(2))) end), ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
-    _ = Log.trace("Math chain result: #{(fn -> PositiveInt_Impl_.to_string(math_chain) end).()}", %{:file_name => "Main.hx", :line_number => 351, :class_name => "Main", :method_name => "testFunctionalComposition"})
     string_chain = MyApp.ResultTools.unwrap_or(ResultTools.flat_map(ResultTools.map(ResultTools.flat_map(NonEmptyString_Impl_.parse_and_trim("  hello world  "), fn s -> NonEmptyString_Impl_.safe_trim(s) end), fn s -> NonEmptyString_Impl_.to_upper_case(s) end), fn s -> NonEmptyString_Impl_.safe_replace(s, "WORLD", "UNIVERSE") end), ResultTools.unwrap(NonEmptyString_Impl_.parse("fallback")))
-    _ = Log.trace("String chain result: #{(fn -> NonEmptyString_Impl_.to_string(string_chain) end).()}", %{:file_name => "Main.hx", :line_number => 359, :class_name => "Main", :method_name => "testFunctionalComposition"})
     composition_result = (case build_user_profile("user123", "  alice@example.com  ", "5") do
-      {:ok, _} ->
-        to_string = _
-        user_id = _
-        _ = Log.trace("User profile created successfully:", %{:file_name => "Main.hx", :line_number => 365, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        _ = Log.trace("  UserId: #{(fn -> UserId_Impl_.to_string(profile.user_id) end).()}", %{:file_name => "Main.hx", :line_number => 366, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        _ = Log.trace("  Email: #{(fn -> Email_Impl_.to_string(profile.email) end).()}", %{:file_name => "Main.hx", :line_number => 367, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        _ = Log.trace("  Score: #{(fn -> PositiveInt_Impl_.to_string(profile.score) end).()}", %{:file_name => "Main.hx", :line_number => 368, :class_name => "Main", :method_name => "testFunctionalComposition"})
-      {:error, _value} ->
-        reason = _value
-        _ = Log.trace("User profile creation failed: #{(fn -> reason end).()}", %{:file_name => "Main.hx", :line_number => 370, :class_name => "Main", :method_name => "testFunctionalComposition"})
+      {:ok, _value} -> nil
+      {:error, _value} -> nil
     end)
   end
   defp test_error_handling() do
-    _ = Log.trace("=== Error Handling Tests ===", %{:file_name => "Main.hx", :line_number => 378, :class_name => "Main", :method_name => "testErrorHandling"})
     invalid_inputs = [%{:email => "invalid-email", :user_id => "ab", :score => "0"}, %{:email => "user@domain", :user_id => "user@123", :score => "-5"}, %{:email => "", :user_id => "", :score => "not-a-number"}]
     _ = Enum.each(invalid_inputs, (fn -> fn item ->
     (case build_user_profile(item.user_id, item.email, item.score) do
-    {:ok, value} ->
-      Log.trace("ERROR: Invalid input was accepted", %{:file_name => "Main.hx", :line_number => 390, :class_name => "Main", :method_name => "testErrorHandling"})
-    {:error, reason} ->
-      Log.trace("Correctly rejected invalid input: " <> reason, %{:file_name => "Main.hx", :line_number => 392, :class_name => "Main", :method_name => "testErrorHandling"})
+    {:ok, value} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
-    _ = Log.trace("Testing edge cases that should succeed:", %{:file_name => "Main.hx", :line_number => 397, :class_name => "Main", :method_name => "testErrorHandling"})
     edge_cases = [%{:email => "a@b.co", :user_id => "usr", :score => "1"}, %{:email => "very.long.email.address@very.long.domain.name.example.com", :user_id => "user123456789", :score => "999"}]
     _ = Enum.each(edge_cases, (fn -> fn item ->
     (case build_user_profile(item.user_id, item.email, item.score) do
-    {:ok, value} ->
-      Log.trace("Edge case succeeded: UserId " <> UserId_Impl_.to_string(profile.user_id) <> ", Email " <> Email_Impl_.get_domain(profile.email), %{:file_name => "Main.hx", :line_number => 407, :class_name => "Main", :method_name => "testErrorHandling"})
-    {:error, reason} ->
-      Log.trace("Edge case failed: " <> reason, %{:file_name => "Main.hx", :line_number => 409, :class_name => "Main", :method_name => "testErrorHandling"})
+    {:ok, _g} -> nil
+    {:error, _g} -> nil
   end)
 end end).())
   end
   defp test_real_world_scenarios() do
-    _ = Log.trace("=== Real-World Scenarios ===", %{:file_name => "Main.hx", :line_number => 418, :class_name => "Main", :method_name => "testRealWorldScenarios"})
     registration_data = [%{:user_id => "alice123", :email => "alice@example.com", :preferred_name => "Alice Smith"}, %{:user_id => "bob456", :email => "bob.jones@company.org", :preferred_name => "Bob"}, %{:user_id => "charlie", :email => "charlie@test.dev", :preferred_name => "Charlie Brown"}]
     valid_users = []
     _ = Enum.each(registration_data, (fn -> fn item ->
-    user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
+    user_result = create_user(item.user_id, item.email, item.preferred_name)
   (case item do
     {:ok, value} ->
       item = Enum.concat(item, [item])
-      Log.trace("User created: " <> NonEmptyString_Impl_.to_string(user.display_name) <> " (" <> Email_Impl_.to_string(user.email) <> ")", %{:file_name => "Main.hx", :line_number => 434, :class_name => "Main", :method_name => "testRealWorldScenarios"})
-    {:error, reason} ->
-      Log.trace("User creation failed: " <> reason, %{:file_name => "Main.hx", :line_number => 436, :class_name => "Main", :method_name => "testRealWorldScenarios"})
+      nil
+    {:error, user_result} ->
+      reason = item
+      nil
   end)
 end end).())
-    _ = Log.trace("Successfully created #{(fn -> length(valid_users) end).()} users", %{:file_name => "Main.hx", :line_number => 440, :class_name => "Main", :method_name => "testRealWorldScenarios"})
     config_data = [%{:timeout => "30", :retries => "3", :name => "production"}, %{:timeout => "0", :retries => "5", :name => ""}, %{:timeout => "60", :retries => "-1", :name => "test"}]
     _ = Enum.each(config_data, (fn -> fn item ->
-    config_result = validate_configuration(config.timeout, config.retries, config.name)
+    config_result = validate_configuration(item.timeout, item.retries, item.name)
   (case item do
-    {:ok, value} ->
-      Log.trace("Config valid: " <> NonEmptyString_Impl_.to_string(validConfig.name) <> ", timeout: " <> PositiveInt_Impl_.to_string(validConfig.timeout) <> "s, retries: " <> PositiveInt_Impl_.to_string(validConfig.retries), %{:file_name => "Main.hx", :line_number => 453, :class_name => "Main", :method_name => "testRealWorldScenarios"})
-    {:error, reason} ->
-      Log.trace("Config invalid: " <> reason, %{:file_name => "Main.hx", :line_number => 455, :class_name => "Main", :method_name => "testRealWorldScenarios"})
+    {:ok, config_result} ->
+      valid_config = item
+      nil
+    {:error, config_result} ->
+      reason = item
+      nil
   end)
 end end).())
   end

@@ -8,8 +8,8 @@ defmodule Shape do
   def move(struct, dx, dy) do
     fh = struct.position
     x = fh.x + dx
-    fh2 = struct.position
-    y = fh2.y + dy
+    fh = struct.position
+    y = fh.y + dy
     y
   end
 end
