@@ -5,7 +5,6 @@
   "string_buf.ex",
   "std.ex",
   "source_map_validation_test.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

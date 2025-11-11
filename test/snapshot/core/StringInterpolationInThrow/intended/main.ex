@@ -5,7 +5,7 @@ defmodule Main do
       throw("Error code: " <> Kernel.to_string(error_code))
     rescue
       e ->
-        Log.trace("Caught: " <> e, %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "testSimpleInterpolation"})
+        nil
     end
   end
   defp test_complex_conditional() do
@@ -15,7 +15,7 @@ defmodule Main do
       throw("Changeset has errors: " <> if (errors != nil), do: errors.to_string.(), else: "null")
     rescue
       e ->
-        Log.trace("Caught: " <> e, %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "testComplexConditional"})
+        nil
     end
   end
   defp test_nested_function_calls() do
@@ -24,7 +24,7 @@ defmodule Main do
       throw("Failed to process: " <> format_data(process_data(data)))
     rescue
       e ->
-        Log.trace("Caught: " <> e, %{:file_name => "Main.hx", :line_number => 49, :class_name => "Main", :method_name => "testNestedFunctionCalls"})
+        nil
     end
   end
   defp test_multiple_interpolations() do
@@ -35,7 +35,7 @@ defmodule Main do
       throw("User " <> user <> " cannot " <> action <> " resource " <> resource)
     rescue
       e ->
-        Log.trace("Caught: " <> e, %{:file_name => "Main.hx", :line_number => 61, :class_name => "Main", :method_name => "testMultipleInterpolations"})
+        nil
     end
   end
   defp test_nil_handling() do
@@ -44,7 +44,7 @@ defmodule Main do
       throw("Value is: " <> if (maybe_value == nil), do: "nil", else: maybe_value)
     rescue
       e ->
-        Log.trace("Caught: " <> e, %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "testNilHandling"})
+        nil
     end
   end
   defp test_in_raise() do
@@ -54,7 +54,7 @@ defmodule Main do
       throw(CustomError.new("Error in " <> module <> "." <> func))
     rescue
       e ->
-        Log.trace("Caught custom error: " <> e.message, %{:file_name => "Main.hx", :line_number => 83, :class_name => "Main", :method_name => "testInRaise"})
+        nil
     end
   end
 end
