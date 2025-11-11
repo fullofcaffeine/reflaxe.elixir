@@ -356,10 +356,12 @@ if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" !=
   PREWARM_SHOTS=${PREWARM_SHOTS:-6}
   PREWARM_PER_SHOT=${PREWARM_PER_SHOT:-10s}
   for i in $(seq 1 "$PREWARM_SHOTS"); do
-    if [[ -f "build-prewarm-fast.hxml" ]]; then
+    if [[ -f "build-prewarm-fast.hxml" && "$i" -eq 1 ]]; then
+      # First shot primes std as fast as possible (JS target)
       run_step_with_log "Step 0.${i}: Haxe prewarm (fast std js)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml" || true
     elif [[ -f "build-prewarm.hxml" ]]; then
-      run_step_with_log "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-prewarm.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml" || true
+      # Subsequent shots prime Elixir target macros/compiler cache
+      run_step_with_log "Step 0.${i}: Haxe prewarm (elixir target)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml" || true
     else
       run_step_with_log "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
     fi
