@@ -118,6 +118,8 @@ E2E_WORKERS=1
 E2E_SPEC="e2e/basic.spec.ts e2e/search.spec.ts e2e/create_todo.spec.ts"
 # Timeouts and probe counts (sane defaults; configurable via env)
 BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
+# Optional prewarm to reduce first-build times using the Haxe compilation server
+PREWARM_TIMEOUT=${PREWARM_TIMEOUT:-0}
 DEPS_TIMEOUT=${DEPS_TIMEOUT:-300s}
 COMPILE_TIMEOUT=${COMPILE_TIMEOUT:-300s}
 READY_PROBES=${READY_PROBES:-60}
@@ -342,6 +344,13 @@ if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
   ( nohup haxe --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
   # Keep using plain HAXE_CMD unless caller explicitly set HAXE_USE_SERVER=1
   HAXE_CMD="$HAXE_CMD --connect $HAXE_SERVER_PORT"
+fi
+
+# Optional: quick prewarm cycle to populate the server cache so the main build
+# reliably fits under the BUILD_TIMEOUT cap on cold environments. This runs the
+# same build command but is strictly time-bounded; whatever compiles stays cached.
+if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
+  run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
 fi
 
 # Generate .ex files (full server build to ensure all modules are regenerated)
