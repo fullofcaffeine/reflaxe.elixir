@@ -1,4 +1,4 @@
-# Pass A — core infrastructure (fast_boot)
+# Pass A3 — gettext and components (fast_boot)
 -lib reflaxe
 -lib reflaxe.elixir
 -cp src_haxe
@@ -17,11 +17,7 @@
 -D no_traces
 -D disable_hygiene_final
 -D fast_boot
-server.infrastructure.Repo
-server.infrastructure.TodoAppWeb
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
-server.infrastructure.Telemetry
-server.infrastructure.Endpoint
 server.components.CoreComponents
