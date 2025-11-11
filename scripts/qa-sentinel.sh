@@ -338,7 +338,9 @@ fi
 # Optional: Haxe compilation server for faster repeated builds (warm cache)
 HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
 # Default off to avoid hangs on systems without a running server
-HAXE_USE_SERVER=${HAXE_USE_SERVER:-0}
+# Default ON to leverage incremental cache between passes; falls back to direct
+# haxe if the server fails to start or connect.
+HAXE_USE_SERVER=${HAXE_USE_SERVER:-1}
 if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
   # Best-effort start of the Haxe compilation server; do not rely on nc
   ( nohup haxe --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
