@@ -7,7 +7,6 @@
   "shape.ex",
   "point.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "container.ex",
   "circle.ex"

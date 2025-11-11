@@ -32,7 +32,7 @@ defmodule Main do
     processed = Enum.map(Enum.filter(Enum.map(Enum.filter(users, fn u -> u.age > 20 end), fn u -> %{:name => u.name, :valid => true} end), fn u -> u.valid end), fn u -> u.name end)
   end
   defp process_number(n) do
-    "Processed: #{(fn -> n end).()}"
+    "Processed: #{(fn -> Kernel.to_string(n) end).()}"
   end
   defp generate_id(name) do
     length(name) * 100

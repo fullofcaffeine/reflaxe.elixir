@@ -11,7 +11,8 @@ defmodule EnumValueMap do
     s = %StringBuf{}
     _ = StringBuf.add(s, "[")
     it = struct.iterator()
-    _ = Enum.each(it, (fn -> fn item ->
+    i = it
+    _ = Enum.each(i, (fn -> fn item ->
   s.add(inspect(item))
   s.add(" => ")
   s.add(inspect(item.get(item)))

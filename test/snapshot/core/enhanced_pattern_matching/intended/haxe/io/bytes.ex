@@ -210,13 +210,13 @@ defmodule Bytes do
     Base.encode16(struct.b, case: :lower)
   end
   def alloc(length) do
-    b2 = :binary.copy(<<0>>, length)
-    _ = MyApp.Bytes.new(length, b2)
+    b = :binary.copy(<<0>>, length)
+    _ = MyApp.Bytes.new(length, b)
   end
   def of_string(s, encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
-    length2 = byte_size(binary)
-    encoding = MyApp.Bytes.new(length2, binary)
+    length = byte_size(binary)
+    encoding = MyApp.Bytes.new(length, binary)
     encoding
   end
   def fast_get(b, pos) do
@@ -224,11 +224,11 @@ defmodule Bytes do
   end
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
-    length2 = byte_size(binary)
-    _ = MyApp.Bytes.new(length2, binary)
+    length = byte_size(binary)
+    _ = MyApp.Bytes.new(length, binary)
   end
   def of_data(b) do
-    length2 = byte_size(b)
-    _ = MyApp.Bytes.new(length2, b)
+    length = byte_size(b)
+    _ = MyApp.Bytes.new(length, b)
   end
 end

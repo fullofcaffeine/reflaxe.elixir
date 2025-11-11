@@ -43,6 +43,8 @@ defmodule Main do
       {:ok, _} ->
         (case pos2 do
           {:ok, _} ->
+            b = _g1
+            a = _g
             sum = PositiveInt_Impl_.add(a, b)
             actual = PositiveInt_Impl_.to_int(sum)
             assert actual == 8
@@ -152,6 +154,10 @@ defmodule Main do
               {:ok, _} ->
                 (case user_name do
                   {:ok, _} ->
+                    name = _g3
+                    id = _g1
+                    email = _g
+                    age = _g2
                     profile_normalized_id = nil
                     profile_is_company_email = nil
                     profile_email = nil
