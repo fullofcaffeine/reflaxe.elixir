@@ -1,4 +1,4 @@
-# Pass C — UI (LiveView/layouts)
+# Pass D — controllers + router
 -lib reflaxe
 -lib reflaxe.elixir
 -cp src_haxe
@@ -17,5 +17,6 @@
 -D no_traces
 -D disable_hygiene_final
 -D fast_boot
-server.layouts.Layouts
-server.live.TodoLive
+controllers.UserController
+TodoAppRouter
+
