@@ -366,13 +366,16 @@ fi
 
 # Generate .ex files. Prefer a fast hxml if available; else, if pass files
 # exist, run in two bounded passes to respect strict per-step caps.
-if [[ -f "build-server-fast.hxml" ]]; then
+if ls build-server-pass*.hxml >/dev/null 2>&1; then
+  i=0
+  for h in $(ls -1 build-server-pass*.hxml | sort); do
+    i=$((i+1))
+    run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
+  done
+  # Consolidated tail for convenience
+  : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
+elif [[ -f "build-server-fast.hxml" ]]; then
   run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
-elif [[ -f "build-server-pass1.hxml" && -f "build-server-pass2.hxml" ]]; then
-  run_step_with_log "Step 1.1: Haxe build pass1 ($HAXE_CMD build-server-pass1.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe-pass1.log "$HAXE_CMD build-server-pass1.hxml" || exit 1
-  run_step_with_log "Step 1.2: Haxe build pass2 ($HAXE_CMD build-server-pass2.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe-pass2.log "$HAXE_CMD build-server-pass2.hxml" || exit 1
-  # Also create a consolidated tail for convenience
-  ( tail -n 60 /tmp/qa-haxe-pass1.log; echo; tail -n 60 /tmp/qa-haxe-pass2.log ) >/tmp/qa-haxe.log 2>&1 || true
 else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi
