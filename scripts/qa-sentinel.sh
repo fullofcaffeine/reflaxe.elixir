@@ -350,14 +350,18 @@ fi
 # reliably fits under the BUILD_TIMEOUT cap on cold environments. This runs the
 # same build command but is strictly time-bounded; whatever compiles stays cached.
 if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
-  # Prefer a minimal prewarm hxml if present to prime std + macros quickly
-  if [[ -f "build-prewarm-fast.hxml" ]]; then
-    run_step_with_log "Step 0: Haxe prewarm (fast std js)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml" || true
-  elif [[ -f "build-prewarm.hxml" ]]; then
-    run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-prewarm.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml" || true
-  else
-    run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
-  fi
+  # Multi-shot prewarm: several short runs to stay under caps while priming cache
+  PREWARM_SHOTS=${PREWARM_SHOTS:-3}
+  PREWARM_PER_SHOT=${PREWARM_PER_SHOT:-20s}
+  for i in $(seq 1 "$PREWARM_SHOTS"); do
+    if [[ -f "build-prewarm-fast.hxml" ]]; then
+      run_step_with_log "Step 0.${i}: Haxe prewarm (fast std js)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml" || true
+    elif [[ -f "build-prewarm.hxml" ]]; then
+      run_step_with_log "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-prewarm.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml" || true
+    else
+      run_step_with_log "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
+    fi
+  done
 fi
 
 # Generate .ex files. Prefer a fast hxml if available; else, if pass files
