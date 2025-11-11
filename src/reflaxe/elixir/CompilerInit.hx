@@ -92,6 +92,27 @@ class CompilerInit {
             // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
         }
 
+        // Choose preprocessor profile
+        var useFastPrepasses = !Context.defined("full_prepasses");
+        var prepasses: Array<ExpressionPreprocessor> = [];
+
+        // Always-on critical transforms (semantic correctness / Elixir idioms)
+        prepasses.push(Custom(new PreserveSwitchReturnsImpl()));
+        prepasses.push(Custom(new reflaxe.elixir.preprocessors.FixVariableUsageDetection()));
+        prepasses.push(Custom(new RemoveOrphanedEnumParametersImpl()));
+
+        if (!useFastPrepasses) {
+            // Full cleanup profile (slower). Enable with -D full_prepasses when desired.
+            prepasses.push(RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllTempVariables));
+            prepasses.push(PreventRepeatVariables({}));
+            prepasses.push(RemoveSingleExpressionBlocks);
+            prepasses.push(RemoveConstantBoolIfs);
+            prepasses.push(RemoveUnnecessaryBlocks);
+            prepasses.push(RemoveReassignedVariableDeclarations);
+            prepasses.push(RemoveLocalVariableAliases);
+            prepasses.push(MarkUnusedVariables);
+        }
+
         // Register the Elixir compiler with Reflaxe
         ReflectCompiler.AddCompiler(new ElixirCompiler(), {
             fileOutputExtension: ".ex",
@@ -105,29 +126,7 @@ class CompilerInit {
             
             // Configure Reflaxe 4.0 preprocessors for optimized code generation
             // These preprocessors clean up the AST before we compile it to Elixir
-            expressionPreprocessors: [
-                // CRITICAL: PreserveSwitchReturns MUST run FIRST before any other preprocessors
-                // This prevents Haxe's typer from simplifying switch-in-return expressions
-                // which would lose all pattern matching structure needed for Elixir
-                Custom(new PreserveSwitchReturnsImpl()),                 // Preserve switch expressions in return position
-
-                // DISABLED: EverythingIsExprSanitizer is for statement-oriented targets (C++, Java)
-                // Elixir is expression-oriented like Haxe - expressions can appear everywhere
-                // This sanitizer was causing bugs like losing switch bodies in return statements
-                // SanitizeEverythingIsExpression({}),  // NOT needed for Elixir
-
-                RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllTempVariables), // Remove only "temp" prefixed variables
-                PreventRepeatVariables({}),                              // Ensure unique variable names
-                RemoveSingleExpressionBlocks,                            // Simplify single-expression blocks
-                RemoveConstantBoolIfs,                                   // Remove constant conditional checks
-                RemoveUnnecessaryBlocks,                                 // Remove redundant blocks
-                RemoveReassignedVariableDeclarations,                    // Optimize variable declarations
-                RemoveLocalVariableAliases,                              // Remove unnecessary aliases
-                // IMPORTANT: Fix variable usage detection before marking unused variables
-                Custom(new reflaxe.elixir.preprocessors.FixVariableUsageDetection()),
-                MarkUnusedVariables,                                     // Mark unused variables for removal
-                Custom(new RemoveOrphanedEnumParametersImpl())          // Remove orphaned enum parameter extractions
-            ]
+            expressionPreprocessors: prepasses
         });
     }
 }
