@@ -81,11 +81,11 @@ class ElixirOutputIterator {
                    compiler.abstracts.length;
         
         #if debug_output_iterator
-        trace('[ElixirOutputIterator] Initialized with ${maxIndex} items to process');
-        trace('[ElixirOutputIterator] Classes: ${compiler.classes.length}');
-        trace('[ElixirOutputIterator] Enums: ${compiler.enums.length}');
-        trace('[ElixirOutputIterator] Typedefs: ${compiler.typedefs.length}');
-        trace('[ElixirOutputIterator] Abstracts: ${compiler.abstracts.length}');
+        #if debug_output_iterator trace('[ElixirOutputIterator] Initialized with ${maxIndex} items to process'); #end
+        #if debug_output_iterator trace('[ElixirOutputIterator] Classes: ${compiler.classes.length}'); #end
+        #if debug_output_iterator trace('[ElixirOutputIterator] Enums: ${compiler.enums.length}'); #end
+        #if debug_output_iterator trace('[ElixirOutputIterator] Typedefs: ${compiler.typedefs.length}'); #end
+        #if debug_output_iterator trace('[ElixirOutputIterator] Abstracts: ${compiler.abstracts.length}'); #end
         #end
 
         // Prepare external bootstrap files if strategy requires it
@@ -132,7 +132,7 @@ class ElixirOutputIterator {
         index++;
         
         #if debug_output_iterator
-        trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
+        #if debug_output_iterator trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}'); #end
         #end
         
         // Apply transformation passes to the AST

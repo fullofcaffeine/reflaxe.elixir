@@ -75,22 +75,20 @@ class ConstructorBuilder {
         // WHY: compileExpressionImpl creates a FRESH context, losing our flag
         // WHAT: Call ElixirASTBuilder directly with our context to preserve flags
         // HOW: Use buildFromTypedExpr with current context instead of compiler method
-        trace('[ConstructorBuilder] SETTING FLAG isInConstructorArgContext = true');
+        #if debug_ast_builder trace('[ConstructorBuilder] SETTING FLAG isInConstructorArgContext = true'); #end
         context.isInConstructorArgContext = true;
 
         // Compile arguments directly with our context (not through compiler which creates fresh context)
         var args = [for (e in el) reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context)];
 
         context.isInConstructorArgContext = false;
-        trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false');
+        #if debug_ast_builder trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false'); #end
 
         // ====================================================================
         // PATTERN 1: Ecto Schemas
         // ====================================================================
         if (classType.meta.has("schema")) {
-            #if debug_ast_builder
-            trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal');
-            #end
+            #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal'); #end
             return buildEctoSchema(classType, className);
         }
         
@@ -98,9 +96,7 @@ class ConstructorBuilder {
         // PATTERN 2: Map Types
         // ====================================================================
         if (isMapType(className)) {
-            #if debug_ast_builder
-            trace('[ConstructorBuilder] ✓ Detected Map type, generating empty map');
-            #end
+            #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Map type, generating empty map'); #end
             return EMap([]);
         }
         
@@ -118,17 +114,13 @@ class ConstructorBuilder {
         
         if (hasInstanceMethods || hasConstructor) {
             // Call the module's new function: ModuleName.new(args)
-            #if debug_ast_builder
-            trace('[ConstructorBuilder] Generating Module.new() call');
-            #end
+            #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call'); #end
             var moduleRef = makeAST(EVar(className));
             return ECall(moduleRef, "new", args);
         } else {
             // Simple data class (no methods/ctor) -> prefer Module.new() for non-schema classes
             // to avoid generating invalid struct literals for modules without defstruct.
-            #if debug_ast_builder
-            trace('[ConstructorBuilder] Generating Module.new() call for data class (non-schema)');
-            #end
+            #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call for data class (non-schema)'); #end
             var moduleRef2 = makeAST(EVar(className));
             return ECall(moduleRef2, "new", args);
         }
