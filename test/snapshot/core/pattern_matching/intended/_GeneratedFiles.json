@@ -5,7 +5,6 @@
   "std.ex",
   "pattern_matching_test.ex",
   "option.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "color.ex"
 ],

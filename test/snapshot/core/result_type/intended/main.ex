@@ -20,7 +20,8 @@ defmodule Main do
         end_ = value
         fn_ = value
         end_ = value
-        "Success: #{(fn -> value end).()}"
+        to_string = value
+        "Success: #{(fn -> Kernel.to_string(value) end).()}"
       {:error, value} ->
         message = value
         "Error: #{(fn -> message end).()}"
@@ -30,10 +31,10 @@ defmodule Main do
     MyApp.ResultTools.fold(result, fn value -> value end, fn _error -> -1 end)
   end
   def test_extension_methods() do
-    result = "hello"
+    result = {:ok, "hello"}
     upper_result = MyApp.ResultTools.map(result, fn s -> String.upcase(s) end)
     chained_result = MyApp.ResultTools.flat_map(result, (fn -> fn s ->
-      if (length(s) > 0), do: s <> "!", else: "empty"
+      if (length(s) > 0), do: {:ok, s <> "!"}, else: {:error, "empty"}
     end end).())
     is_valid = MyApp.ResultTools.is_ok(result)
     has_error = MyApp.ResultTools.is_error(result)
@@ -44,8 +45,8 @@ defmodule Main do
     MyApp.ResultTools.map(parse_number(user_data.age), fn parsed_age -> %{:name => user_data.name, :age => parsed_age} end)
   end
   def demonstrate_utilities() do
-    success = 42
-    failure = "Something went wrong"
+    success = {:ok, 42}
+    failure = {:error, "Something went wrong"}
     is_success_ok = MyApp.ResultTools.is_ok(success)
     is_failure_ok = MyApp.ResultTools.is_ok(failure)
     is_success_error = MyApp.ResultTools.is_error(success)
@@ -68,8 +69,8 @@ defmodule Main do
     div_result = divide_numbers("10", "2")
     div_error = divide_numbers("10", "0")
     doubled = double_if_valid("21")
-    message1 = handle_result(result1)
-    message2 = handle_result(result2)
+    _ = handle_result(result1)
+    _ = handle_result(result2)
     _ = get_value_or_default(result1)
     _ = get_value_or_default(result2)
     user = process_user(%{:name => "Alice", :age => "25"})
@@ -77,11 +78,6 @@ defmodule Main do
     numbers = process_multiple_numbers(["1", "2", "3"])
     numbers_error = process_multiple_numbers(["1", "x", "3"])
     doubled_numbers = validate_and_double(["5", "10", "15"])
-    _ = Log.trace("Parse \"123\": #{(fn -> message1 end).()}", %{:file_name => "Main.hx", :line_number => 191, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Parse \"abc\": #{(fn -> message2 end).()}", %{:file_name => "Main.hx", :line_number => 192, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Divide 10/2: #{(fn -> inspect(div_result) end).()}", %{:file_name => "Main.hx", :line_number => 193, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Double 21: #{(fn -> inspect(doubled) end).()}", %{:file_name => "Main.hx", :line_number => 194, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Numbers [1,2,3]: #{(fn -> inspect(numbers) end).()}", %{:file_name => "Main.hx", :line_number => 195, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Utilities test completed", %{:file_name => "Main.hx", :line_number => 196, :class_name => "Main", :method_name => "main"})
+    nil
   end
 end
