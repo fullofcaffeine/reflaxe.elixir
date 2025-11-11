@@ -555,13 +555,13 @@ class SwitchBuilder {
         var clauses: Array<ECaseClause> = [];
         var current = expr;
 
-        #if !no_traces trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
+                #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
 
         // Traverse the if-else chain
         while (true) {
             switch(current.expr) {
                 case TIf(econd, eif, eelse):
-                        #if !no_traces trace('[GuardChain] Found TIf - extracting guard'); #end
+                        #if debug_switch_builder trace('[GuardChain] Found TIf - extracting guard'); #end
                     // Extract guard condition
                     var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
 
@@ -586,21 +586,21 @@ class SwitchBuilder {
                         guard: guard,
                         body: body
                     });
-                    #if !no_traces trace('[GuardChain]   Created clause with guard'); #end
+                    #if debug_switch_builder trace('[GuardChain]   Created clause with guard'); #end
 
                     // Continue with else-branch (may be another TIf or final value)
                     if (eelse != null) {
-                        #if !no_traces trace('[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}'); #end
+                        #if debug_switch_builder trace('[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}'); #end
 
                         // Unwrap TBlock to find nested TIf
                         var nextExpr = eelse;
                         switch(eelse.expr) {
                             case TBlock(exprs):
-                                #if !no_traces trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions'); #end
+                                #if debug_switch_builder trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions'); #end
                                 // Search for TIf in the block
                                 for (expr in exprs) {
                                     if (Type.enumConstructor(expr.expr) == "TIf") {
-                                        #if !no_traces trace('[GuardChain]   Found TIf inside TBlock'); #end
+                                        #if debug_switch_builder trace('[GuardChain]   Found TIf inside TBlock'); #end
                                         nextExpr = expr;
                                         break;
                                     }
@@ -611,12 +611,12 @@ class SwitchBuilder {
 
                         current = nextExpr;
                     } else {
-                        #if !no_traces trace('[GuardChain]   No else-branch, stopping'); #end
+                        #if debug_switch_builder trace('[GuardChain]   No else-branch, stopping'); #end
                         break;
                     }
 
                 default:
-                    #if !no_traces trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause'); #end
+                    #if debug_switch_builder trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause'); #end
                     // Reached final else (not a TIf) - create clause without guard
                     var substitutedBody = context.substituteIfNeeded(current);
                     var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
@@ -693,7 +693,7 @@ class SwitchBuilder {
             clauses = annotated;
         }
 
-        #if !no_traces trace('[GuardChain] Extracted ${clauses.length} total clauses'); #end
+        #if debug_switch_builder trace('[GuardChain] Extracted ${clauses.length} total clauses'); #end
         context.popClauseContext();
         return clauses;
     }
@@ -871,7 +871,7 @@ class SwitchBuilder {
 
                             var constructor = getEnumConstructorByIndex(enumType, i);
                             if (constructor != null) {
-                                #if !no_traces trace('[SwitchBuilder]     *** Found constructor: ${constructor.name} ***'); #end
+                                #if debug_switch_builder trace('[SwitchBuilder]     *** Found constructor: ${constructor.name} ***'); #end
 
                                 // Use guard variables passed from buildCaseClause
                                 // When TEnumIndex optimization transforms case Ok(n) to case 0,
@@ -879,7 +879,7 @@ class SwitchBuilder {
                                 // CRITICAL FIX: Use new version that analyzes case body for parameter usage
                                 return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
                             } else {
-                                #if !no_traces trace('[SwitchBuilder]     WARNING: No constructor found for index $i'); #end
+                                #if debug_switch_builder trace('[SwitchBuilder]     WARNING: No constructor found for index $i'); #end
                             }
                         }
 
@@ -895,9 +895,9 @@ class SwitchBuilder {
 
       case TCall(e, args):
         // Enum constructor patterns
-        #if !no_traces trace('[SwitchBuilder]   Found TCall, checking if enum constructor'); #end
+        #if debug_switch_builder trace('[SwitchBuilder]   Found TCall, checking if enum constructor'); #end
         if (isEnumConstructor(e)) {
-                    #if !no_traces trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)'); #end
+                    #if debug_switch_builder trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern (with body usage analysis)'); #end
                     // Prefer body-aware variant so parameter names (todo/id/message) and underscore usage are correct
                     var ef: EnumField = null;
                     switch (e.expr) {
