@@ -1,4 +1,4 @@
-# Pass C — UI (layouts)
+# Pass F — LiveView main
 -lib reflaxe
 -lib reflaxe.elixir
 -cp src_haxe
@@ -17,5 +17,5 @@
 -D no_traces
 -D disable_hygiene_final
 -D fast_boot
-server.layouts.Layouts
-# LiveView moved to Pass F
+server.live.TodoLive
+
