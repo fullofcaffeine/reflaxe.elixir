@@ -1,0 +1,33 @@
+# Pass 2: Feature/application modules for server build
+-lib reflaxe
+-lib reflaxe.elixir
+
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-dce full
+--macro exclude('client')
+--macro exclude('test')
+--macro keep('server.components.CoreComponents')
+--macro keep('phoenix.DateFormat')
+--macro keep('phoenix.Sorting')
+-D reflaxe.elixir=0.1.0
+-D hxx_string_to_sigil
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+
+# Application/feature modules
+TodoApp
+server.live.TodoLive
+server.schemas.Todo
+server.migrations.CreateTodos
+server.presence.TodoPresence
+server.layouts.Layouts
+controllers.UserController
+

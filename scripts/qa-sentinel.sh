@@ -353,8 +353,16 @@ if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" !=
   run_step_with_log "Step 0: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_TIMEOUT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
 fi
 
-# Generate .ex files (full server build to ensure all modules are regenerated)
-run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
+# Generate .ex files. If pass files exist, run in two bounded passes to
+# respect strict per-step caps without blocking the terminal.
+if [[ -f "build-server-pass1.hxml" && -f "build-server-pass2.hxml" ]]; then
+  run_step_with_log "Step 1.1: Haxe build pass1 ($HAXE_CMD build-server-pass1.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe-pass1.log "$HAXE_CMD build-server-pass1.hxml" || exit 1
+  run_step_with_log "Step 1.2: Haxe build pass2 ($HAXE_CMD build-server-pass2.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe-pass2.log "$HAXE_CMD build-server-pass2.hxml" || exit 1
+  # Also create a consolidated tail for convenience
+  ( tail -n 60 /tmp/qa-haxe-pass1.log; echo; tail -n 60 /tmp/qa-haxe-pass2.log ) >/tmp/qa-haxe.log 2>&1 || true
+else
+  run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
+fi
 
 run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME mix deps.get" || exit 1
 
