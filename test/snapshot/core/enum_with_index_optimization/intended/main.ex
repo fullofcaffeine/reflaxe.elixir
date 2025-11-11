@@ -13,7 +13,7 @@ defmodule Main do
   item = items[i]
   item = Enum.concat(item, ["" <> Kernel.to_string(i) <> ": " <> item])
 end end).())
-    _ = Log.trace(results, %{:file_name => "Main.hx", :line_number => 20, :class_name => "Main", :method_name => "testBasicIndexedIteration"})
+    nil
   end
   defp test_indexed_map() do
     items = ["first", "second", "third"]

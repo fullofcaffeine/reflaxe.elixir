@@ -126,6 +126,6 @@ end end).())
     end
   end
   def main() do
-    Log.trace("StringUtils compiled successfully for Mix project!", %{:file_name => "./utils/StringUtils.hx", :line_number => 178, :class_name => "utils.StringUtils", :method_name => "main"})
+    nil
   end
 end

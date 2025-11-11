@@ -6,7 +6,6 @@
   "std.ex",
   "option.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "color.ex"
 ],

@@ -6,7 +6,7 @@ defmodule Users do
     %{:valid => true}
   end
   def main() do
-    Log.trace("Users context with User schema compiled successfully!", %{:file_name => "./contexts/Users.hx", :line_number => 66, :class_name => "contexts.Users", :method_name => "main"})
+    nil
   end
   def get_user(id) do
     nil

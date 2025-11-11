@@ -6,7 +6,6 @@
   "string_buf.ex",
   "std.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "e_reg.ex"
