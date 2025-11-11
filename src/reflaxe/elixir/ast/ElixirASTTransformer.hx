@@ -1022,8 +1022,8 @@ class ElixirASTTransformer {
                             body.metadata.parentHasBindingPlan = true;
                         }
 
-                        // Check if body contains redundant extraction
-                        var newBody = switch(body.def) {
+                        // Check if body contains redundant extraction (guard for null bodies)
+                        var newBody = if (body == null) null else switch(body.def) {
                             case EBlock(exprs):
                                 // M0 FIX: Track variable renames when removing redundant assignments
                                 var varRenames: Map<String, String> = new Map();
