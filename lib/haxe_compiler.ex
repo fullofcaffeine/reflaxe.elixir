@@ -28,6 +28,16 @@ defmodule HaxeCompiler do
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
     target_dir = Keyword.get(opts, :target_dir, "lib")
     verbose = Keyword.get(opts, :verbose, false)
+    # Ensure HaxeServer is running in dev-like envs unless explicitly disabled
+    if (Mix.env() in [:dev, :test, :e2e]) and System.get_env("HAXE_NO_SERVER") != "1" do
+      try do
+        unless HaxeServer.running?() do
+          {:ok, _} = HaxeServer.start_link([])
+        end
+      rescue
+        _ -> :ok
+      end
+    end
     
     cond do
       not File.exists?(hxml_file) ->
