@@ -50,7 +50,7 @@ defmodule Main do
     "#{(fn -> a end).()}, #{(fn -> b end).()}, #{(fn -> c end).()}"
   end
   defp process_mixed(a, b, c, d) do
-    "#{(fn -> a end).()}, #{(fn -> b end).()}, #{(fn -> c end).()}, #{(fn -> d end).()}"
+    "#{(fn -> a end).()}, #{(fn -> b end).()}, #{(fn -> Kernel.to_string(c) end).()}, #{(fn -> Kernel.to_string(d) end).()}"
   end
   defp wrap_string(s) do
     "[#{(fn -> s end).()}]"
