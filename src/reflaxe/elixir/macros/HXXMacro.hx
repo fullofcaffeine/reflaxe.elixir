@@ -14,6 +14,17 @@ using StringTools;
  * Enhanced with LiveView directive support and component type checking
  */
 class HXXMacro {
+    static inline function isFastBoot(): Bool {
+        #if macro
+        return haxe.macro.Context.defined("fast_boot");
+        #else
+        return false;
+        #end
+    }
+
+    // Lightweight memoization caches to avoid repeated heavy string transforms
+    static var heexCache: Map<String,String> = new Map();
+    static var validateCache: Map<String,Bool> = new Map();
     
     /**
      * Parse JSX string into element structure
@@ -79,7 +90,14 @@ class HXXMacro {
      * Transform JSX to HEEx template syntax with full LiveView support
      */
     public static function transformToHEEx(jsx: String): String {
-        // For now, use enhanced string-based transformation for better compatibility
+        // Use enhanced string-based transformation; memoize under fast_boot
+        if (isFastBoot()) {
+            var cached = heexCache.get(jsx);
+            if (cached != null) return cached;
+            var out = transformEnhanced(jsx);
+            heexCache.set(jsx, out);
+            return out;
+        }
         return transformEnhanced(jsx);
     }
     
@@ -408,7 +426,19 @@ class HXXMacro {
         var heex = transformAdvanced(jsxString);
         
         // Validate the generated HEEx
-        var validation = HEExGenerator.validateHEEx(heex);
+        var validation: { valid: Bool, errors: Array<String> };
+        if (isFastBoot()) {
+            var key = heex;
+            var ok = validateCache.get(key);
+            if (ok == null) {
+                validation = HEExGenerator.validateHEEx(heex);
+                validateCache.set(key, validation.valid);
+            } else {
+                validation = { valid: ok, errors: [] };
+            }
+        } else {
+            validation = HEExGenerator.validateHEEx(heex);
+        }
         if (!validation.valid) {
             throw 'Generated HEEx validation failed: ${validation.errors.join(", ")}';
         }
@@ -433,7 +463,19 @@ class HXXMacro {
         }
         
         var heex = transformAdvanced(jsxString, options);
-        var validation = HEExGenerator.validateHEEx(heex);
+        var validation: { valid: Bool, errors: Array<String> };
+        if (isFastBoot()) {
+            var key = heex;
+            var ok = validateCache.get(key);
+            if (ok == null) {
+                validation = HEExGenerator.validateHEEx(heex);
+                validateCache.set(key, validation.valid);
+            } else {
+                validation = { valid: ok, errors: [] };
+            }
+        } else {
+            validation = HEExGenerator.validateHEEx(heex);
+        }
         if (!validation.valid) {
             throw 'Generated HEEx validation failed: ${validation.errors.join(", ")}';
         }
