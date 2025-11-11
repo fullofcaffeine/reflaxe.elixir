@@ -411,14 +411,14 @@ class SwitchBuilder {
         // After TEnumIndex optimization: pattern=TConst(0), NO variable names!
         // The user's variable "action" is in the case BODY where it's used
         // This is the ONLY way to recover the correct variable name after TEnumIndex
-        #if !no_traces trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======'); #end
-        #if !no_traces trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}'); #end
 
         // NEW FIX: Extract variables from case body (where they're actually used)
         var patternVars = extractUsedVariablesFromCaseBody(switchCase.expr);
 
         #if debug_enum_extraction
-        #if !no_traces trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]'); #end
         #end
 
         // CRITICAL: Extract TLocal IDs from guard and register in ClauseContext.localToName
@@ -429,15 +429,15 @@ class SwitchBuilder {
 
         #if debug_guard_compilation
         var mappingCount = Lambda.count(tvarMapping);
-        #if !no_traces trace('[SwitchBuilder] Current ClauseContext: ${context.currentClauseContext != null ? "EXISTS" : "NULL"}'); #end
-        #if !no_traces trace('[SwitchBuilder] Registering $mappingCount TLocal mapping(s) in ClauseContext.localToName:'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Current ClauseContext: ${context.currentClauseContext != null ? "EXISTS" : "NULL"}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Registering $mappingCount TLocal mapping(s) in ClauseContext.localToName:'); #end
         #end
 
         if (context.currentClauseContext != null) {
             for (tvarId in tvarMapping.keys()) {
                 var name = tvarMapping.get(tvarId);
                 #if debug_guard_compilation
-                        #if !no_traces trace('[SwitchBuilder]   TLocal#${tvarId} → ${name}'); #end
+                        #if debug_switch_builder trace('[SwitchBuilder]   TLocal#${tvarId} → ${name}'); #end
                 #end
                 context.currentClauseContext.localToName.set(tvarId, name);
             }
