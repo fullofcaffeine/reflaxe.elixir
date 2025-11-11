@@ -1,14 +1,14 @@
 defmodule ResultTools do
   def map(result, transform) do
     (case result do
-      {:ok, ^transform} -> transform.(transform)
-      {:error, value} -> value
+      {:ok, ^transform} -> {:ok, transform.(transform)}
+      {:error, value} -> {:error, value}
     end)
   end
   def flat_map(result, transform) do
     (case result do
       {:ok, ^transform} -> value = transform.(transform)
-      {:error, value} -> value
+      {:error, value} -> {:error, value}
     end)
   end
   def bind(result, transform) do
@@ -60,25 +60,24 @@ defmodule ResultTools do
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} when predicate.(error_value) ->
-        error_value = value
-        error_value
       {:ok, value} ->
         error_value = value
-        error_value
-      {:error, value} -> error_value
+        if (error_value.(error_value)), do: {:ok, error_value}, else: {:error, error_value}
+      {:error, value} -> {:error, error_value}
     end)
   end
   def map_error(result, transform) do
     (case result do
-      {:ok, value} -> value
-      {:error, ^transform} -> transform.(value)
+      {:ok, value} ->
+        ok = value
+        {:ok, value}
+      {:error, ^transform} -> {:error, transform.(value)}
     end)
   end
   def bimap(result, on_success, on_error) do
     (case result do
-      {:ok, ^on_success} -> on_success.(on_success)
-      {:error, ^on_error} -> on_error.(value)
+      {:ok, ^on_success} -> {:ok, on_success.(on_success)}
+      {:error, ^on_error} -> {:error, on_error.(value)}
     end)
   end
   def ok(value) do
@@ -106,7 +105,9 @@ end end).())
   end
   def to_option(result) do
     (case result do
-      {:ok, value} -> value
+      {:ok, value} ->
+        some = value
+        {:some, value}
       {:error, _value} -> {:none}
     end)
   end

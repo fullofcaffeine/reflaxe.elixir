@@ -6,7 +6,7 @@ defmodule Main do
     _ = test_guard_patterns()
     _ = test_array_patterns()
     _ = test_object_patterns()
-    _ = Log.trace("Pattern matching tests complete", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "main"})
+    nil
   end
   defp test_simple_enum_pattern() do
     color = {:red}
@@ -16,7 +16,7 @@ defmodule Main do
   {:blue} -> "blue"
   {:rgb, r, g, b} -> "custom"
 end))
-    _ = Log.trace("Simple enum result: #{(fn -> result end).()}", %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testSimpleEnumPattern"})
+    nil
   end
   defp test_complex_enum_pattern() do
     color = {:rgb, 255, 128, 0}
@@ -24,11 +24,14 @@ end))
   {:red} -> "primary"
   {:green} -> "primary"
   {:blue} -> "primary"
-  {:rgb, r, g, b} when r + g + b > 500 -> "bright"
-  {:rgb, r, g, b} when r + g + b < 100 -> "dark"
-  {:rgb, r, g, b} -> "medium"
+  {:rgb, r, g, b} ->
+    cond do
+      r + g + b > 500 -> "bright"
+      r + g + b < 100 -> "dark"
+      true -> "medium"
+    end
 end))
-    _ = Log.trace("Complex enum result: #{(fn -> brightness end).()}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "testComplexEnumPattern"})
+    nil
   end
   defp test_result_pattern() do
     result = {:ok, "success"}
@@ -42,24 +45,24 @@ end))
     error = _value
     "Got error: #{(fn -> error end).()}"
 end))
-    _ = Log.trace("Result pattern: #{(fn -> message end).()}", %{:file_name => "Main.hx", :line_number => 85, :class_name => "Main", :method_name => "testResultPattern"})
+    nil
   end
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
     _ = Enum.each(numbers, (fn -> fn item ->
     category = n = item
-  if (n < 5) do
+  if (item < 5) do
     "small"
   else
-    n2 = item
-    if (n2 >= 5 and n2 < 15) do
+    n = item
+    if (item >= 5 and item < 15) do
       "medium"
     else
-      n3 = item
-      if (n3 >= 15), do: "large", else: "unknown"
+      n = item
+      if (item >= 15), do: "large", else: "unknown"
     end
   end
-  Log.trace("Number " <> Kernel.to_string(num) <> " is " <> category, %{:file_name => "Main.hx", :line_number => 98, :class_name => "Main", :method_name => "testGuardPatterns"})
+  nil
 end end).())
   end
   defp test_array_patterns() do
@@ -72,10 +75,12 @@ end end).())
     3 -> "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
     _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(item) > 0), do: inspect(arr[0]), else: "none")
   end)
-  Log.trace("Array pattern: " <> description, %{:file_name => "Main.hx", :line_number => 119, :class_name => "Main", :method_name => "testArrayPatterns"})
+  nil
 end end).())
   end
   defp test_object_patterns() do
+    point_y = nil
+    point_x = nil
     point_x = 10
     point_y = 20
     quadrant = _g = point_x
@@ -83,14 +88,14 @@ end end).())
     if (point_x > 0 and point_y > 0) do
       "first"
     else
-      if (x2 < 0 and y2 > 0) do
+      if (point_x < 0 and point_y > 0) do
         "second"
       else
-        if (x3 < 0 and y3 < 0) do
+        if (point_x < 0 and point_y < 0) do
           "third"
         else
           cond do
-            x4 > 0 and y4 < 0 -> "fourth"
+            x > 0 and y < 0 -> "fourth"
             _g == 0 -> "axis"
             _g1 == 0 -> "axis"
             :true -> "origin"
@@ -98,6 +103,6 @@ end end).())
         end
       end
     end
-    _ = Log.trace("Point #{(fn -> point_x end).()},#{(fn -> point_y end).()} is in #{(fn -> quadrant end).()} quadrant", %{:file_name => "Main.hx", :line_number => 135, :class_name => "Main", :method_name => "testObjectPatterns"})
+    nil
   end
 end

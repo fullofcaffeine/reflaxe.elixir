@@ -4,7 +4,7 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} -> "rgb(#{(fn -> r end).()},#{(fn -> g end).()},#{(fn -> b end).()})"
+      {:rgb, r, g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(g) end).()},#{(fn -> Kernel.to_string(b) end).()})"
     end)
   end
   def match_option(option) do
@@ -24,8 +24,8 @@ defmodule PatternMatchingTest do
         if (n < 0) do
           "negative"
         else
-          _ = value
-          if (value > 100), do: "large", else: "other"
+          n = value
+          if (n > 100), do: "large", else: "other"
         end
     end)
   end
@@ -41,9 +41,9 @@ defmodule PatternMatchingTest do
   def match_array(arr) do
     (case arr do
       [] -> "empty"
-      [_head | _tail] -> "single(#{(fn -> x end).()})"
-      2 -> "pair(#{(fn -> x end).()},#{(fn -> y end).()})"
-      3 -> "triple(#{(fn -> x end).()},#{(fn -> y end).()},#{(fn -> z end).()})"
+      [_head | _tail] -> "single(#{(fn -> Kernel.to_string(x) end).()})"
+      2 -> "pair(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()})"
+      3 -> "triple(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()})"
       _ -> "many"
     end)
   end
@@ -55,8 +55,14 @@ defmodule PatternMatchingTest do
           {:red} -> "red color"
           {:green} -> "green color"
           {:blue} -> "blue color"
-          {:rgb, r, _g, _b} when r > 128 -> "bright rgb"
-          {:rgb, _r, _g, _b} -> "dark rgb"
+          {:rgb, r, _g, _b} ->
+            b = r
+            if (r > 128) do
+              "bright rgb"
+            else
+              b = r
+              "dark rgb"
+            end
         end)
     end)
   end
@@ -76,6 +82,6 @@ defmodule PatternMatchingTest do
     end
   end
   def main() do
-    Log.trace("Pattern matching compilation test", %{:file_name => "Main.hx", :line_number => 110, :class_name => "PatternMatchingTest", :method_name => "main"})
+    nil
   end
 end
