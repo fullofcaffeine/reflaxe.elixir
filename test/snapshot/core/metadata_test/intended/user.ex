@@ -6,6 +6,6 @@ defmodule User do
     field(:balance, :float)
   end
   def main() do
-    Log.trace("Testing complex metadata syntax", %{:file_name => "MetadataTest.hx", :line_number => 14, :class_name => "User", :method_name => "main"})
+    nil
   end
 end

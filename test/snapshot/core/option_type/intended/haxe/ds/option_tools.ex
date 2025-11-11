@@ -1,8 +1,7 @@
 defmodule OptionTools do
   def map(option, transform) do
     (case option do
-      {:some, value} ->
-        value.(value)
+      {:some, value} -> {:some, value.(value)}
       {:none} -> {:none}
     end)
   end
@@ -24,8 +23,11 @@ defmodule OptionTools do
   end
   def filter(option, predicate) do
     (case option do
-      {:some, value} when predicate.(value) -> value
-      {:some, payload} -> {:none}
+      {:some, value} ->
+        cond do
+          value.(value) -> {:some, value}
+          true -> {:none}
+        end
       {:none} -> {:none}
     end)
   end
@@ -90,13 +92,15 @@ end end).())
   end
   def to_result(option, error) do
     (case option do
-      {:some, value} -> value
-      {:none} -> error
+      {:some, value} -> {:ok, value}
+      {:none} -> {:error, error}
     end)
   end
   def from_result(result) do
     (case result do
-      {:ok, value} -> value
+      {:ok, value} ->
+        some = value
+        {:some, value}
       {:error, _value} -> {:none}
     end)
   end
