@@ -18,7 +18,6 @@ end end).())
     MyApp.OptionTools.unwrap(OptionTools.map(get_user_email(name), fn email -> send_email(email, message) end), false)
   end
   defp send_email(email, message) do
-    _ = Log.trace("Sending email to #{(fn -> email end).()}: #{(fn -> message end).()}", %{:file_name => "Main.hx", :line_number => 226, :class_name => "UserService", :method_name => "sendEmail"})
     true
   end
 end
