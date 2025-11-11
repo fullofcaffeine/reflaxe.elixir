@@ -1069,7 +1069,7 @@ class SwitchBuilder {
                 // Apply underscore prefix for unused parameters
                 var paramName = isUsed ? baseParamName : "_" + baseParamName;
 
-                trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}');
+                #if debug_switch_builder trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}'); #end
 
                 patterns.push(PVar(paramName));
 
@@ -1089,12 +1089,12 @@ class SwitchBuilder {
                     (effectiveBase != null && EnumHandler.isLocalNameUsed(effectiveBase, caseBody));
                 isUsed ? base : "_" + base;
             }];
-            #if !no_traces trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}'); #end
+            #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}'); #end
 
             // CRITICAL FIX: Store enum field name so TEnumParameter knows this constructor was pattern-matched
             if (context.currentClauseContext != null) {
                 context.currentClauseContext.patternExtractedParams.push(ef.name);
-                #if sys
+                #if debug_switch_builder
                 var debugFile = sys.io.File.append("/tmp/enum_debug.log");
                 debugFile.writeString('[SwitchBuilder.generateIdiomaticEnumPatternWithBody] ✅ STORED "${ef.name}" in patternExtractedParams\n');
                 debugFile.close();
