@@ -96,6 +96,8 @@ set +m
 #   - Kill async:   kill -TERM $QA_SENTINEL_PID
 # ============================================================================
 
+# Resolve script dir to reference repo-root tools regardless of cwd
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="examples/todo-app"
 PORT=4001
 ENV_NAME="dev"
@@ -172,15 +174,16 @@ run_step_with_log() {
   fi
 
   # Prefer our robust PGID/session killer first, then GNU timeout variants, else manual fallback
-  if [[ -x "$(pwd)/scripts/with-timeout.sh" ]]; then
+  local WRAP_TIMEOUT="$SCRIPT_DIR/with-timeout.sh"
+  if [[ -x "$WRAP_TIMEOUT" ]]; then
     # Extract numeric seconds (e.g., 300s -> 300) for our wrapper
     local secs
     secs=$(echo "$timeout_val" | sed -E 's/[^0-9]//g')
     if [[ -z "$secs" ]]; then secs=300; fi
     if [[ "$QUIET" -eq 1 ]]; then
-      ( scripts/with-timeout.sh --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
+      ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
     else
-      ( scripts/with-timeout.sh --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+      ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
     fi
   elif command -v timeout >/dev/null 2>&1; then
     if [[ "$QUIET" -eq 1 ]]; then
