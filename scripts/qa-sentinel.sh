@@ -360,9 +360,11 @@ if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" !=
   fi
 fi
 
-# Generate .ex files. If pass files exist, run in two bounded passes to
-# respect strict per-step caps without blocking the terminal.
-if [[ -f "build-server-pass1.hxml" && -f "build-server-pass2.hxml" ]]; then
+# Generate .ex files. Prefer a fast hxml if available; else, if pass files
+# exist, run in two bounded passes to respect strict per-step caps.
+if [[ -f "build-server-fast.hxml" ]]; then
+  run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
+elif [[ -f "build-server-pass1.hxml" && -f "build-server-pass2.hxml" ]]; then
   run_step_with_log "Step 1.1: Haxe build pass1 ($HAXE_CMD build-server-pass1.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe-pass1.log "$HAXE_CMD build-server-pass1.hxml" || exit 1
   run_step_with_log "Step 1.2: Haxe build pass2 ($HAXE_CMD build-server-pass2.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe-pass2.log "$HAXE_CMD build-server-pass2.hxml" || exit 1
   # Also create a consolidated tail for convenience
