@@ -1,18 +1,18 @@
 defmodule Main do
   use ExUnit.Case
   setup_all context do
-    Log.trace("Initializing test suite", %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "initTestSuite"})
+    nil
   end
   setup context do
     test_data = test_data = testData = [1, 2, 3, 4, 5]
     test_string = test_string = testString = "Hello World"
-    Log.trace("Setting up test data", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "initTest"})
+    nil
   end
   setup context do
     on_exit((fn -> fn ->
         test_data = test_data = testData = nil
         test_string = test_string = testString = nil
-        Log.trace("Cleaning up test data", %{:file_name => "Main.hx", :line_number => 49, :class_name => "Main", :method_name => "cleanupTest"})
+        nil
       end end).())
     :ok
   end
@@ -20,9 +20,15 @@ defmodule Main do
     Assert.equals(4, 4, "Basic math should work")
     Assert.equals("Hello", "Hello", "String equality should work")
     Assert.equals(true, true, "Boolean equality should work")
+    arr1_2 = nil
+    arr1_1 = nil
+    arr1_0 = nil
     arr1_0 = 1
     arr1_1 = 2
     arr1_2 = 3
+    arr2_2 = nil
+    arr2_1 = nil
+    arr2_0 = nil
     arr2_0 = 1
     arr2_1 = 2
     arr2_2 = 3
@@ -99,6 +105,12 @@ String.at(_this, 0) || "" == "H" end).(), "First character should be 'H'")
     end)
   end
   test "complex scenarios" do
+    data_values_2 = nil
+    data_values_1 = nil
+    data_values_0 = nil
+    data_nested_flag = nil
+    data_nested_count = nil
+    data_name = nil
     data_name = "Test"
     data_values_0 = 10
     data_values_1 = 20
@@ -120,8 +132,8 @@ String.at(_this, 0) || "" == "H" end).(), "First character should be 'H'")
     k = map.keys()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, (fn -> fn _, {k} ->
       if (k.has_next.()) do
-        k2 = k.next.()
-        _g = Enum.concat(_g, [k2])
+        k = k.next.()
+        _g = Enum.concat(_g, [k])
         {:cont, {k}}
       else
         {:halt, {k}}
@@ -136,6 +148,7 @@ String.at(_this, 0) || "" == "H" end).(), "First character should be 'H'")
     empty_str = ""
     Assert.equals(length(empty_str), 0, "Empty string should have length 0")
     Assert.is_false((fn -> length(empty_str) > 0 end).(), "Empty string should not have positive length")
+    single_0 = nil
     single_0 = 42
     Assert.equals(1, 1, "Single element array should have length 1")
     Assert.equals(single_0, 42, "Single element should be 42")

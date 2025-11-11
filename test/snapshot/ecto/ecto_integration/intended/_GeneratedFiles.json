@@ -10,7 +10,6 @@
   "repo.ex",
   "post.ex",
   "organization.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "ecto_integration_simple.ex",
   "create_users_table.ex",

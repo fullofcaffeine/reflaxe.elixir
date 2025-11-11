@@ -6,7 +6,6 @@
   "reflect.ex",
   "main.ex",
   "haxe/test/assert.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/ds/tree_node.ex",
   "haxe/ds/enum_value_map.ex",
