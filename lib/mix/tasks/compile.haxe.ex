@@ -147,6 +147,17 @@ defmodule Mix.Tasks.Compile.Haxe do
   
   defp compile_haxe(config) do
     Mix.shell().info("Compiling Haxe files...")
+    # Opportunistically start the Haxe compilation server in dev-like envs
+    # when HAXE_AUTO_SERVER=1 is set, so subsequent compiles are faster.
+    if (Mix.env() in [:dev, :test, :e2e]) and System.get_env("HAXE_AUTO_SERVER") == "1" do
+      try do
+        unless HaxeServer.running?() do
+          {:ok, _} = HaxeServer.start_link([])
+        end
+      rescue
+        _ -> :ok
+      end
+    end
     
     # Start file watcher if enabled and in dev environment
     if config[:watch] && Mix.env() == :dev && !config[:no_watch] do

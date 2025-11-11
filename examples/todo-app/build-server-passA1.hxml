@@ -1,0 +1,20 @@
+# Pass A1 — minimal infra (fast_boot)
+-lib reflaxe
+-lib reflaxe.elixir
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-dce full
+--macro exclude('client')
+--macro exclude('test')
+-D reflaxe.elixir=0.1.0
+-D hxx_string_to_sigil
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+-D fast_boot
+server.infrastructure.Repo
