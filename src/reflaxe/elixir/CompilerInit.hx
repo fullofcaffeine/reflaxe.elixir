@@ -37,8 +37,11 @@ class CompilerInit {
         }
         #end
         
+        var fastBoot = Context.defined("fast_boot");
         // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
-        LiveViewPreserver.init();
+        if (!fastBoot) {
+            LiveViewPreserver.init();
+        }
 
         // Ensure @:repo externs are kept by DCE so they can be scheduled normally
         // for compilation via the AST pipeline (repoTransformPass).
@@ -62,14 +65,18 @@ class CompilerInit {
         // - The repoTransformPass (in AnnotationTransforms) then converts the extern into an
         //   idiomatic Elixir module that calls `use Ecto.Repo, otp_app: :<app>, adapter: ...` and
         //   writes it to `lib/<app_snake>/repo.ex`.
-        try {
-            Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.RepoEnumerator.ensureRepoKept())");
-        } catch (e:Dynamic) {}
+        if (!fastBoot) {
+            try {
+                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.RepoEnumerator.ensureRepoKept())");
+            } catch (e:Dynamic) {}
+        }
 
         // Macro-phase discovery: force-type @:repo externs so they join normal compilation
-        try {
-            reflaxe.elixir.macros.RepoDiscovery.run();
-        } catch (e:Dynamic) {}
+        if (!fastBoot) {
+            try {
+                reflaxe.elixir.macros.RepoDiscovery.run();
+            } catch (e:Dynamic) {}
+        }
 
         // Target-conditional classpath gating for staged overrides in std/_std
         // Only add Elixir-specific staged stdlib when compiling to Elixir target.
