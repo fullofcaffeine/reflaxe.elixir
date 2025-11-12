@@ -429,10 +429,12 @@ if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
   echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
 fi
 
-# Prepare database for non-dev environments automatically
+# Compile first so DB tasks do not incur compile cost repeatedly
+run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
+
+# Prepare database for non-dev environments after compile
 if [[ "$ENV_NAME" != "dev" ]]; then
   if [[ "$REUSE_DB" -eq 1 ]]; then
-    # Ensure DB exists (create is idempotent), then migrate
     run_step_with_log "DB ensure ($ENV_NAME)" 120s /tmp/qa-mix-db-ensure.log "MIX_ENV=$ENV_NAME mix ecto.create --quiet" || true
     run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "MIX_ENV=$ENV_NAME mix ecto.migrate" || exit 1
   else
@@ -440,13 +442,10 @@ if [[ "$ENV_NAME" != "dev" ]]; then
     run_step_with_log "DB create ($ENV_NAME)" 120s /tmp/qa-mix-db-create.log "MIX_ENV=$ENV_NAME mix ecto.create --quiet" || true
     run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "MIX_ENV=$ENV_NAME mix ecto.migrate" || exit 1
   fi
-  # Optional seeds
   if [[ -n "$SEEDS_FILE" ]]; then
     run_step_with_log "DB seeds ($ENV_NAME)" 180s /tmp/qa-mix-db-seeds.log "MIX_ENV=$ENV_NAME mix run '$SEEDS_FILE'" || exit 1
   fi
 fi
-
-run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
 
 # Build static assets (JS/CSS) so LiveView client and UI interactions are available
 run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || true
