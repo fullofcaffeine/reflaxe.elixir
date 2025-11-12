@@ -157,8 +157,20 @@ defmodule HaxeCompiler do
         if verbose do
           Mix.shell().info("Using Haxe server for incremental compilation")
         end
-        HaxeServer.compile(common_args ++ [hxml_file])
-        
+        case HaxeServer.compile(common_args ++ [hxml_file]) do
+          {:ok, _} = ok -> ok
+          {:error, reason} ->
+            # Fallback transparently to direct compile and refresh the server in background
+            if verbose do
+              Mix.shell().info("Haxe server compile failed; falling back to direct compile (#{reason})")
+            end
+            Task.start(fn ->
+              # best effort restart without impacting current compile
+              try do HaxeServer.stop() rescue _ -> :ok end
+              try do HaxeServer.start_link([]) rescue _ -> :ok end
+            end)
+            compile_with_direct_haxe(hxml_file, verbose, common_args)
+        end
       false ->
         if verbose do
           Mix.shell().info("Using direct Haxe compilation")

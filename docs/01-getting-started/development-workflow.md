@@ -330,3 +330,27 @@ mix compile --force          # Verify Elixir compilation
 ---
 
 **Ready to build?** Check out [Phoenix Integration](../02-user-guide/phoenix-integration.md) to start building applications.
+## Haxe Compile Server (Automatic & Transparent)
+
+Reflaxe.Elixir uses the Haxe compilation server (`haxe --wait`) to speed up
+incremental builds during `mix compile` and `mix phx.server`.
+
+Behavior (no configuration required):
+
+- Auto‑reuse: If a server is already running on the chosen port, Mix will reuse it.
+- Auto‑start: If none is running, Mix starts one in the background.
+- Auto‑relocate: If the port is busy, Mix transparently retries on a free port.
+- Fallback: If the server cannot be reached, Mix compiles directly (no server) and
+  refreshes the server in the background for the next compile.
+
+Defaults and environment variables:
+
+- Default server port: `6116` (aligned with the QA sentinel).
+- `HAXE_NO_SERVER=1` — disable the server for the current run (use direct Haxe).
+- `HAXE_SERVER_PORT=<port>` — force a specific port (e.g., `6116`).
+
+Notes:
+
+- The behavior is fully transparent; no flags are needed for normal use.
+- The QA sentinel also uses a compile server and falls back to direct compilation
+  under strict timeouts. Keeping the same default port (`6116`) avoids collisions.
