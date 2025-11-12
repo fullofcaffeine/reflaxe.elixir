@@ -395,6 +395,13 @@ if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" !=
   done
 fi
 
+# Optional: dependency prewarm to avoid first-time rebar/make latency for
+# heavy Erlang deps (best-effort, bounded). Useful on macOS where erlang.mk
+# projects like cowlib may trigger additional setup on the first run.
+if [[ -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
+  run_step_best_effort "Step 1.pre: deps prewarm (cowlib)" "$PREWARM_TIMEOUT" /tmp/qa-deps-prewarm.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowlib --force"
+fi
+
 # Generate .ex files. Prefer a fast hxml if available; else, if pass files
 # exist, run in two bounded passes to respect strict per-step caps.
 if ls build-server-pass*.hxml >/dev/null 2>&1; then
