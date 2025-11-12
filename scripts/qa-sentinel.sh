@@ -267,7 +267,8 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   RUN_ID=$(date +%s)
   LOG_MAIN="/tmp/qa-sentinel.${RUN_ID}.log"
   # Reconstruct flags (omit --async to avoid recursion)
-  CHILD_FLAGS=("--app" "$APP_DIR" "--port" "$PORT")
+  CHILD_FLAGS=("--app" "$APP_DIR" "--port" "$PORT" "--env" "$ENV_NAME")
+  if [[ "$REUSE_DB" -eq 1 ]]; then CHILD_FLAGS+=("--reuse-db"); fi
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
   if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then CHILD_FLAGS+=("--playwright"); fi
