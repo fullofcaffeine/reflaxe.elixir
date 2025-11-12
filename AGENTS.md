@@ -25,6 +25,19 @@ What these scripts do
 
 Always use these sentinels for runtime checks. Do not run `mix phx.server` in the foreground during agent work.
 
+### ⛔ Hard Rule: Commands Must Finish (No Indefinite Runs)
+
+- Every command you invoke MUST have a clear finish condition and return control.
+- Long‑running steps must be bounded by time or completion signals:
+  - Wrap commands with `scripts/with-timeout.sh --secs <N>`.
+  - When using the QA sentinel in `--async` mode, always provide a `--deadline <SECS>`.
+  - For log viewing, prefer bounded peeks or finish‑aware follow:
+    - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
+    - Bounded follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --follow 30`
+    - Finish‑aware follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60` (stops on `[QA] DONE status=` or after 60s)
+- Never run unbounded watchers, tails, or foreground servers during agent work.
+- If a step exceeds its cap, abort immediately, surface the last 200 lines, apply the fix in compiler/std/app Haxe (not generated .ex), then rerun under caps.
+
 ### 🔭 Optional: Playwright E2E Smoke (when server is up)
 
 Once the sentinel reports readiness, agents may run a lightweight Playwright check to exercise critical paths without blocking the terminal:
