@@ -251,6 +251,17 @@ run_step_with_log() {
   return 0
 }
 
+# Best-effort variant: never fails the pipeline; logs informative status
+run_step_best_effort() {
+  local desc="$1"; shift
+  local timeout_val="$1"; shift
+  local logfile="$1"; shift
+  local cmd="$*"
+  # Run the normal step but in a subshell to capture rc without exiting callers
+  run_step_with_log "$desc" "$timeout_val" "$logfile" "$cmd" || true
+  return 0
+}
+
 # Async launcher: re-invoke this script in background and return immediately
 if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   RUN_ID=$(date +%s)
@@ -373,13 +384,13 @@ if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" !=
   PREWARM_PER_SHOT=${PREWARM_PER_SHOT:-10s}
   for i in $(seq 1 "$PREWARM_SHOTS"); do
     if [[ -f "build-prewarm-fast.hxml" && "$i" -eq 1 ]]; then
-      # First shot primes std as fast as possible (JS target)
-      run_step_with_log "Step 0.${i}: Haxe prewarm (fast std js)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml" || true
+      # First shot primes std as fast as possible (JS target); best-effort
+      run_step_best_effort "Step 0.${i}: Haxe prewarm (fast std js)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml"
     elif [[ -f "build-prewarm.hxml" ]]; then
-      # Subsequent shots prime Elixir target macros/compiler cache
-      run_step_with_log "Step 0.${i}: Haxe prewarm (elixir target)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml" || true
+      # Subsequent shots prime Elixir target macros/compiler cache; best-effort
+      run_step_best_effort "Step 0.${i}: Haxe prewarm (elixir target)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml"
     else
-      run_step_with_log "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml" || true
+      run_step_best_effort "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml"
     fi
   done
 fi
@@ -450,14 +461,14 @@ export PORT="$PORT"
 # Prefer setsid; on macOS where `setsid` may not exist, fall back to perl POSIX::setsid;
 # if neither available, start normally but ensure cleanup never targets our own PGID.
 if command -v setsid >/dev/null 2>&1; then
-  setsid sh -c "MIX_ENV=$ENV_NAME mix phx.server" >/tmp/qa-phx.log 2>&1 &
+  setsid sh -c "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix phx.server" >/tmp/qa-phx.log 2>&1 &
 elif command -v perl >/dev/null 2>&1; then
   # Create a new session via perl; then exec a shell to run the server
   nohup perl -MPOSIX -e 'POSIX::setsid() or die "setsid failed: $!"; exec @ARGV' \
-    sh -c "MIX_ENV=$ENV_NAME mix phx.server" >/tmp/qa-phx.log 2>&1 &
+    sh -c "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix phx.server" >/tmp/qa-phx.log 2>&1 &
 else
   # Fallback: still background, but guard cleanup to avoid killing our own process group
-  nohup env MIX_ENV=$ENV_NAME mix phx.server >/tmp/qa-phx.log 2>&1 &
+  nohup env MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix phx.server >/tmp/qa-phx.log 2>&1 &
 fi
 PHX_PID=$!
 PGID=$(ps -o pgid= "$PHX_PID" 2>/dev/null | tr -d ' ' || true)
