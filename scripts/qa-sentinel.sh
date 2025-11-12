@@ -429,6 +429,9 @@ if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
   echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
 fi
 
+# Precompile critical Erlang deps to avoid include path races during main compile
+run_step_with_log "Step 2.1: deps precompile (cowlib+cowboy)" 180s /tmp/qa-deps-precompile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowlib cowboy --force" || exit 1
+
 # Compile first so DB tasks do not incur compile cost repeatedly
 run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
 
