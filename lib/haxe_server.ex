@@ -31,7 +31,8 @@ defmodule HaxeServer do
   use GenServer
   require Logger
 
-  @default_port 6000
+  # Align the default with QA sentinel and avoid clashes with common editor defaults
+  @default_port 6116
   @default_timeout 30_000
   
   # Don't set a default here, will determine at runtime
@@ -104,13 +105,19 @@ defmodule HaxeServer do
 
   @impl GenServer
   def init(opts) do
-    # In test environment, use a random port to avoid conflicts
-    # unless explicitly specified
-    port = if Mix.env() == :test and not Keyword.has_key?(opts, :port) do
-      find_available_port()
-    else
-      Keyword.get(opts, :port, @default_port)
-    end
+    # Determine port preference order:
+    # 1) explicit opts
+    # 2) HAXE_SERVER_PORT env
+    # 3) test env: find a free port to avoid conflicts
+    # 4) default (@default_port)
+    env_port = System.get_env("HAXE_SERVER_PORT")
+    port =
+      cond do
+        Keyword.has_key?(opts, :port) -> Keyword.fetch!(opts, :port)
+        env_port != nil -> String.to_integer(env_port)
+        Mix.env() == :test -> find_available_port()
+        true -> @default_port
+      end
     haxe_cmd = Keyword.get(opts, :haxe_cmd, default_haxe_cmd())
     
     # Parse the haxe command if it's a string
@@ -131,30 +138,50 @@ defmodule HaxeServer do
       last_compile: nil
     }
     
-    # Start server asynchronously
-    send(self(), :start_server)
-    
-    {:ok, state}
+    # If HAXE_NO_SERVER=1, do not attempt to start a server; callers will fall back to direct haxe
+    if System.get_env("HAXE_NO_SERVER") == "1" do
+      {:ok, state}
+    else
+      # Try to connect to an already-running server on the chosen port first
+      send(self(), :start_server)
+      {:ok, state}
+    end
   end
 
   @impl GenServer
   def handle_info(:start_server, state) do
+    # Preflight: if something already listens on the port and responds, reuse it
+    case preflight_connect(state) do
+      {:ok, :connected} ->
+        Logger.info("Haxe server detected on port #{state.port}; reusing existing server")
+        {:noreply, %{state | status: :running}}
+      :error ->
     case start_haxe_server(state) do
       {:ok, pid} -> 
-        Logger.info("Haxe server started on port #{state.port}")
+        Logger.debug("Haxe server started on port #{state.port}")
         {:noreply, %{state | server_pid: pid, status: :running}}
       
       {:error, reason} ->
-        Logger.error("Failed to start Haxe server: #{reason}")
-        # Retry in 5 seconds
-        Process.send_after(self(), :start_server, 5000)
-        {:noreply, %{state | status: :error}}
+        # Try an immediate relocation to a free port (transparent to the user)
+        Logger.debug("Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation")
+        new_port = find_available_port()
+        relocated = %{state | port: new_port}
+        case start_haxe_server(relocated) do
+          {:ok, pid2} ->
+            Logger.debug("Haxe server relocated and started on port #{new_port}")
+            {:noreply, %{relocated | server_pid: pid2, status: :running}}
+          {:error, reason2} ->
+            Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
+            Process.send_after(self(), :start_server, 2000)
+            {:noreply, %{relocated | status: :error}}
+        end
+    end
     end
   end
 
   @impl GenServer
   def handle_info({:DOWN, _ref, :process, pid, reason}, %{server_pid: pid} = state) do
-    Logger.warning("Haxe server process died: #{inspect(reason)}")
+    Logger.debug("Haxe server process died: #{inspect(reason)}; restarting")
     # Restart server automatically
     send(self(), :start_server)
     {:noreply, %{state | server_pid: nil, status: :restarting}}
@@ -175,7 +202,7 @@ defmodule HaxeServer do
 
   @impl GenServer
   def handle_info({port, {:exit_status, status}}, state) when is_port(port) do
-    Logger.warning("Haxe server exited with status: #{status}")
+    Logger.debug("Haxe server exited with status: #{status}; restarting")
     # Restart the server
     send(self(), :start_server)
     {:noreply, %{state | server_pid: nil, status: :restarting}}
@@ -298,6 +325,19 @@ defmodule HaxeServer do
   rescue
     error ->
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
+  end
+
+  # Try a lightweight connect probe to determine if a compatible server is already running
+  defp preflight_connect(state) do
+    args = state.haxe_args ++ ["--connect", to_string(state.port), "-version"]
+    try do
+      case System.cmd(state.haxe_cmd, args, stderr_to_stdout: true) do
+        {_out, 0} -> {:ok, :connected}
+        _ -> :error
+      end
+    rescue
+      _ -> :error
+    end
   end
   
   defp find_available_port() do
