@@ -270,13 +270,13 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   CHILD_FLAGS=("--app" "$APP_DIR" "--port" "$PORT")
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
-  if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then CHILD_FLAGS+=("--playwright" "--e2e-spec" "$E2E_SPEC"); fi
+  if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then CHILD_FLAGS+=("--playwright"); fi
   log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
   # Launch background child fully detached; prefer setsid, fallback to nohup
   if command -v setsid >/dev/null 2>&1; then
-    setsid env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
   else
-    nohup env ASYNC_CHILD=1 BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    nohup env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
   fi
   SENTINEL_PID=$!
   # Disown the child so shells never warn/wait on background jobs
@@ -420,6 +420,13 @@ else
 fi
 
 run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
+
+# Workaround for cowlib hex packaging without rebar.config on some systems:
+# if deps/cowlib/rebar.config is missing, create a minimal one that includes
+# the local include/ dir so rebar3 passes -I include to erlc.
+if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
+  echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
+fi
 
 # Prepare database for non-dev environments automatically
 if [[ "$ENV_NAME" != "dev" ]]; then
