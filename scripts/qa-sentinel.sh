@@ -165,6 +165,8 @@ run_step_with_log() {
   local cmd="$*"
   local start_ts=$(date +%s)
   log "[QA] ${desc} (timeout=${timeout_val})"
+  # Always start with a fresh logfile to avoid surfacing stale lines from prior runs
+  : > "$logfile"
   # Start a heartbeat so callers always see forward progress even if the command is quiet
   local heartbeat_pid=""
   if [[ "$NO_HEARTBEAT" -eq 0 ]]; then
@@ -185,19 +187,20 @@ run_step_with_log() {
     if [[ "$QUIET" -eq 1 ]]; then
       ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
     else
-      ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+      # tee will write fresh because we truncated above
+      ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" 2>&1 | tee -a "$logfile" ); rc=${PIPESTATUS[0]:-0}
     fi
   elif command -v timeout >/dev/null 2>&1; then
     if [[ "$QUIET" -eq 1 ]]; then
       ( timeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
     else
-      ( timeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+      ( timeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee -a "$logfile" ); rc=${PIPESTATUS[0]:-0}
     fi
   elif command -v gtimeout >/dev/null 2>&1; then
     if [[ "$QUIET" -eq 1 ]]; then
       ( gtimeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
     else
-      ( gtimeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee "$logfile" ); rc=${PIPESTATUS[0]:-0}
+      ( gtimeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee -a "$logfile" ); rc=${PIPESTATUS[0]:-0}
     fi
   else
     # Manual watchdog fallback (portable): background command and kill after timeout
@@ -326,6 +329,11 @@ if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
 fi
 pushd "$APP_DIR" >/dev/null
 
+# Use a unique build root to avoid lock contention with other shells/editors
+RUN_TAG=${RUN_TAG:-$(date +%s)}
+QA_BUILD_ROOT=/tmp/qa-build.${RUN_TAG}
+mkdir -p "$QA_BUILD_ROOT" >/dev/null 2>&1 || true
+
 # Prefer explicit override, else system haxe, else npx
 if [[ -n "${HAXE_CMD:-}" ]]; then
   HAXE_CMD="$HAXE_CMD"
@@ -393,7 +401,7 @@ else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi
 
-run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME mix deps.get" || exit 1
+run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
 
 # Prepare database for non-dev environments automatically
 if [[ "$ENV_NAME" != "dev" ]]; then
@@ -412,7 +420,7 @@ if [[ "$ENV_NAME" != "dev" ]]; then
   fi
 fi
 
-run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME mix compile" || exit 1
+run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
 
 # Build static assets (JS/CSS) so LiveView client and UI interactions are available
 run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || true
