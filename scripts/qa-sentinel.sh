@@ -345,6 +345,9 @@ pushd "$APP_DIR" >/dev/null
 RUN_TAG=${RUN_TAG:-$(date +%s)}
 QA_BUILD_ROOT=/tmp/qa-build.${RUN_TAG}
 mkdir -p "$QA_BUILD_ROOT" >/dev/null 2>&1 || true
+# Ensure these are visible to all nested shells invoked via bash -lc
+export QA_BUILD_ROOT
+export ENV_NAME
 
 # Prefer explicit override, else system haxe, else npx
 if [[ -n "${HAXE_CMD:-}" ]]; then
@@ -420,6 +423,36 @@ else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi
 
+# Optional: dependency prewarm to avoid first-time rebar/make latency for
+# heavy Erlang deps (best-effort, bounded). Useful on macOS where erlang.mk
+# projects like cowlib may trigger additional setup on the first run.
+if [[ -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
+  run_step_best_effort "Step 1.pre: deps prewarm (cowlib)" "$PREWARM_TIMEOUT" /tmp/qa-deps-prewarm.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowlib --force"
+fi
+
+# Generate .ex files. Prefer a fast hxml if available; else, if pass files
+# exist, run in two bounded passes to respect strict per-step caps.
+# Optionally skip Haxe generation entirely when sources are unchanged.
+if [[ -n "${QA_SKIP_HAXE:-}" ]]; then
+  log "[QA] Step 1: Skipping Haxe build (QA_SKIP_HAXE set)"
+  : > /tmp/qa-haxe.log
+elif [[ -n "${QA_FORCE_FAST_BUILD:-}" ]] && [[ -f "build-server-fast.hxml" ]]; then
+  run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
+elif ls build-server-pass*.hxml >/dev/null 2>&1; then
+  i=0
+  for h in $(ls -1 build-server-pass*.hxml | sort); do
+    i=$((i+1))
+    # Use the compilation server for all micro‑passes so later passes reuse cache
+    run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
+  done
+  # Consolidated tail for convenience
+  : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
+elif [[ -f "build-server-fast.hxml" ]]; then
+  run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
+else
+  run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
+fi
+
 run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
 
 # Workaround for cowlib hex packaging without rebar.config on some systems:
@@ -436,6 +469,18 @@ run_step_with_log "Step 2.1: deps precompile (cowboy)" 180s /tmp/qa-deps-precomp
 run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
 
 # Prepare database for non-dev environments after compile
+# Robust deps compile to avoid rebar include_lib issues under per-run MIX_BUILD_ROOT.
+# Always compile deps in the default root (unset MIX_BUILD_ROOT), then mirror to per-run root.
+run_step_with_log "Step 2.1: deps compile (default root)" 240s /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile --force'" || exit 1
+# Mirror artifacts with symlink dereference so priv/include are real files in MIX_BUILD_ROOT
+run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
+
+# Compile first so DB tasks do not incur compile cost repeatedly
+# Compile application only (skip deps recompile inside per-run root to avoid rebar include_lib issues)
+if ! run_step_with_log "Step 3: mix compile (no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --no-deps-check"; then
+  # As a bounded fallback, attempt normal compile once more
+  run_step_with_log "Step 3 (retry): mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
+fi
 if [[ "$ENV_NAME" != "dev" ]]; then
   if [[ "$REUSE_DB" -eq 1 ]]; then
     run_step_with_log "DB ensure ($ENV_NAME)" 120s /tmp/qa-mix-db-ensure.log "MIX_ENV=$ENV_NAME mix ecto.create --quiet" || true
