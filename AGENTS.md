@@ -25,6 +25,24 @@ What these scripts do
 
 Always use these sentinels for runtime checks. Do not run `mix phx.server` in the foreground during agent work.
 
+### ⛔ Hard Rule: No Sync Sentinel During Agent Work
+
+- Agents must never invoke `scripts/qa-sentinel.sh` in synchronous mode while working in the terminal.
+- Required invocation for agents: `--async` AND `--deadline <secs>` on every sentinel run.
+  - Example: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e --async --deadline 600 -v`
+- Log viewing must be bounded or finish‑aware only:
+  - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
+  - Bounded follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --follow 60`
+  - Finish‑aware follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60`
+- Prohibited during agent work:
+  - Running sentinel without `--deadline`.
+  - Running sentinel without `--async`.
+  - Any `tail -f`, watchers, or foreground servers that do not auto‑finish.
+- If a prior run may be active, terminate it first to ensure non‑blocking behavior:
+  - `kill -TERM $QA_SENTINEL_PID` (or `pgrep -f qa-sentinel | xargs kill -TERM` as a fallback)
+  - For Phoenix: `pgrep -f "mix phx.server" | xargs kill -TERM`
+
+Note: CI may use synchronous mode for readability, but MUST include `--deadline` and must not exceed per‑step caps. Agents in interactive sessions must always use async.
 ### ⛔ Hard Rule: Commands Must Finish (No Indefinite Runs)
 
 - Every command you invoke MUST have a clear finish condition and return control.
