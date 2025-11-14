@@ -39,7 +39,18 @@ class TypedQueryLambda {
         }
     }
     public static macro function where<T>(ethis: ExprOf<ecto.TypedQuery<T>>, predicate: ExprOf<T -> Bool>): Expr {
-        return buildWhereExpr(ethis, predicate);
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        #end
+        var __expr = buildWhereExpr(ethis, predicate);
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        haxe.macro.Context.warning(
+            '[MacroTiming] name=TypedQueryLambda.where elapsed_ms=' + Std.int(__elapsed),
+            predicate.pos
+        );
+        #end
+        return __expr;
     }
 
     // Represents a condition template and the pinned value expressions it references

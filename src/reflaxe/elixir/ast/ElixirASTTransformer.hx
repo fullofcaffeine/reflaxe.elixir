@@ -205,6 +205,9 @@ class ElixirASTTransformer {
         
         var passes = getEnabledPasses();
         var result = ast;
+        #if hxx_instrument_sys
+        var __pipelineStart = haxe.Timer.stamp();
+        #end
         
         for (passConfig in passes) {
             #if debug_ast_transformer
@@ -255,6 +258,9 @@ class ElixirASTTransformer {
             // - Contextual passes get access to tempVarRenameMap for consistency
             // - Non-contextual passes continue working unchanged
             // - No null pointer errors when context not provided
+            #if hxx_instrument_sys
+            var __t0 = haxe.Timer.stamp();
+            #end
             if (passConfig.contextualPass != null && context != null) {
                 #if debug_contextual_passes
                 trace('[XRay Contextual Pass] Using contextual variant for: ${passConfig.name}');
@@ -272,6 +278,14 @@ class ElixirASTTransformer {
 
                 result = passConfig.pass(result);
             }
+            #if hxx_instrument_sys
+            var __elapsedPass = (haxe.Timer.stamp() - __t0) * 1000.0;
+            #if sys
+            Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
+            #else
+            trace('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
+            #end
+            #end
 
             #if debug_ast_snapshots
             // Per‑pass function snapshot: when debug_ast_snapshots_func is set,
@@ -296,6 +310,15 @@ class ElixirASTTransformer {
             #end
         }
         
+        #if hxx_instrument_sys
+        var __pipelineElapsed = (haxe.Timer.stamp() - __pipelineStart) * 1000.0;
+        #if sys
+        Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
+        #else
+        trace('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
+        #end
+        #end
+
         #if debug_ast_transformer
         trace('[XRay AST Transformer] Transformation complete');
         #end

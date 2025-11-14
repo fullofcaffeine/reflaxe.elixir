@@ -72,6 +72,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[08-roadmap/](08-roadmap/)** - Project direction and future plans
 - [Vision](08-roadmap/vision.md) - Long-term project vision
 - [V1 Roadmap](08-roadmap/v1-roadmap.md) - Version 1.0 release goals
+- [Compiler + Todo-App 1.0 PRD](prds/HAXE_ELIXIR_1_0_COMPILER_TODOAPP_PRD.md) - Combined compiler and todo-app quality bar for 1.0
 - [Active PRD](08-roadmap/ACTIVE_PRD.md) - Current product requirements
 - [Product Requirements Document](08-roadmap/product-requirements-document.md) - Comprehensive PRD
 

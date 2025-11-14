@@ -700,15 +700,45 @@ class ChangesetTransforms {
     // Helper: detect presence of Ecto.Changeset calls within an expression subtree
     static function containsChangesetCallsDetect(e: ElixirAST): Bool {
         return switch (e.def) {
-            case ERemoteCall(mod, fn, _):
-                switch (mod.def) { case EVar(m) if (m == "Ecto.Changeset"): true; default: false; }
-            case ERaw(code): code != null && code.indexOf("Ecto.Changeset.") != -1;
+            case ERemoteCall(modExpr, _, args):
+                // Direct Ecto.Changeset.* call?
+                switch (modExpr.def) {
+                    case EVar(m) if (m == "Ecto.Changeset"):
+                        true;
+                    default:
+                        // Otherwise, recurse into module expression and arguments.
+                        if (containsChangesetCallsDetect(modExpr)) {
+                            true;
+                        } else {
+                            var found = false;
+                            if (args != null) {
+                                for (a in args) {
+                                    if (containsChangesetCallsDetect(a)) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            found;
+                        }
+                }
+            case ERaw(code):
+                code != null && code.indexOf("Ecto.Changeset.") != -1;
             case ECall(_, _, args):
-                var found = false; if (args != null) for (a in args) if (containsChangesetCallsDetect(a)) { found = true; break; } found;
-            case ERemoteCall(t, _, args2):
-                if (containsChangesetCallsDetect(t)) true else { var f=false; if (args2 != null) for (a in args2) if (containsChangesetCallsDetect(a)) { f=true; break; } f; }
-            case EParen(inner): containsChangesetCallsDetect(inner);
-            default: false;
+                var found = false;
+                if (args != null) {
+                    for (a in args) {
+                        if (containsChangesetCallsDetect(a)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                found;
+            case EParen(inner):
+                containsChangesetCallsDetect(inner);
+            default:
+                false;
         };
     }
 
