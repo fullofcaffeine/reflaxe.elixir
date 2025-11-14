@@ -105,43 +105,59 @@ class JoinArgListBuilderToMapJoinTransforms {
                 }
                 // 2) Enum.each(list, fn binder -> temp = Enum.concat(temp, [value]) end)
                 var eachIdx = -1;
-                for (i in 1...stmts.length - 1) switch (stmts[i].def) {
-                    case ERemoteCall({def: EVar("Enum")}, "each", eargs) if (eargs != null && eargs.length == 2):
-                        listExpr = eargs[0];
-                        switch (eargs[1].def) {
-                            case EFn(clauses) if (clauses.length == 1):
-                                var cl = clauses[0];
-                                switch (cl.args.length > 0 ? cl.args[0] : null) { case PVar(n): binder = n; default: }
+                for (i in 1...stmts.length - 1) {
+                    switch (stmts[i].def) {
+                        case ERemoteCall({def: EVar("Enum")}, "each", eargs) if (eargs != null && eargs.length == 2):
+                            listExpr = eargs[0];
+                            switch (eargs[1].def) {
+                                case EFn(clauses) if (clauses.length == 1):
+                                    var cl = clauses[0];
+                                    switch (cl.args.length > 0 ? cl.args[0] : null) { case PVar(n): binder = n; default: }
                                 var bodyStmts: Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
-                                for (bs in bodyStmts) switch (bs.def) {
-                                    // Detect inline temporary assignment like: i = binder + 1
-                                    case EBinary(Match, {def: EVar(lhsTmp)}, rhsTmp):
-                                        switch (rhsTmp.def) {
-                                            case EBinary(Add, {def: EVar(bv)}, incrRhs) if (bv == binder):
-                                                inlineVar = lhsTmp; inlineExpr = rhsTmp;
-                                            default:
-                                                // Also discover builderVar from concat(update) even when lhs != temp
-                                                switch (rhsTmp.def) {
-                                                    case ERemoteCall({def: EVar("Enum")}, "concat", cargs2) if (cargs2.length == 2):
-                                                        switch (cargs2[0].def) { case EVar(vacc) if (vacc == lhsTmp): builderVar = lhsTmp; default: }
-                                                    default:
-                                                }
-                                        }
-                                    case EBinary(Match, {def: EVar(lhs)}, rhs):
-                                        switch (rhs.def) {
-                                            case ERemoteCall({def: EVar("Enum")}, "concat", cargs) if (cargs.length == 2):
-                                                // Accept either temp or discovered builderVar as concat base
-                                                var baseOk = switch (cargs[0].def) { case EVar(v) if (v == (builderVar != null ? builderVar : temp)): true; default: false; };
-                                                if (baseOk) switch (cargs[1].def) { case EList(items) if (items.length == 1): valueExpr = items[0]; default: }
-                                                if (builderVar == null) switch (cargs[0].def) { case EVar(vb): builderVar = vb; default: }
-                                            default:
-                                        }
-                                    default:
+                                for (bs in bodyStmts) {
+                                    switch (bs.def) {
+                                        // Detect inline temporary assignment like: i = binder + 1
+                                        case EBinary(Match, {def: EVar(lhsTmp)}, rhsTmp):
+                                            switch (rhsTmp.def) {
+                                                case EBinary(Add, {def: EVar(bv)}, _incrRhs) if (bv == binder):
+                                                    inlineVar = lhsTmp; inlineExpr = rhsTmp;
+                                                case ERemoteCall({def: EVar("Enum")}, "concat", cargs2) if (cargs2.length == 2):
+                                                    // Also discover builderVar from concat(update) even when lhs != temp
+                                                    switch (cargs2[0].def) {
+                                                        case EVar(vacc) if (vacc == lhsTmp): builderVar = lhsTmp;
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                        case EBinary(Match, {def: EVar(lhs)}, rhs):
+                                            switch (rhs.def) {
+                                                case ERemoteCall({def: EVar("Enum")}, "concat", cargs) if (cargs.length == 2):
+                                                    // Accept either temp or discovered builderVar as concat base
+                                                    var baseOk = switch (cargs[0].def) {
+                                                        case EVar(v) if (v == (builderVar != null ? builderVar : temp)): true;
+                                                        default: false;
+                                                    };
+                                                    if (baseOk) {
+                                                        switch (cargs[1].def) {
+                                                            case EList(items) if (items.length == 1):
+                                                                valueExpr = items[0];
+                                                            default:
+                                                        }
+                                                        if (builderVar == null) switch (cargs[0].def) {
+                                                            case EVar(vb): builderVar = vb;
+                                                            default:
+                                                        }
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
                                 }
-                            default:
-                        }
-                        eachIdx = i;
-                    default:
+                                default:
+                            }
+                            eachIdx = i;
+                        default:
+                    }
                 }
                 if (listExpr == null || valueExpr == null || eachIdx == -1) return null;
                 // 3) If valueExpr references inlineVar, substitute it with inlineExpr

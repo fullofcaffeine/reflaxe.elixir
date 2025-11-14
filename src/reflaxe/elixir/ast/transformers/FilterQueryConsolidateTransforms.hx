@@ -281,10 +281,29 @@ class FilterQueryConsolidateTransforms {
                                     case EVar(nmX) if (nmX == "query"):
                                         // Broaden: any query reference in function body
                                         hasFilterQuery = true;
-                                    case ERemoteCall({def: EVar(m)}, "filter", a) if (m == "Enum" && a != null && a.length == 2):
-                                        switch (a[1].def) { case EFn(cs) if (cs.length == 1): if (fnBodyUsesQueryP(cs[0].body)) hasFilterQuery = true; default: }
-                                    case ECall(_, "filter", a2) if (a2 != null && a2.length == 2):
-                                        switch (a2[1].def) { case EFn(cs2) if (cs2.length == 1): if (fnBodyUsesQueryP(cs2[0].body)) hasFilterQuery = true; default: }
+                                    case ERemoteCall(mod, name, a) if (a != null && a.length == 2):
+                                        // Detect Enum.filter(query, fn -> ... end) and recurse into children.
+                                        switch (mod.def) {
+                                            case EVar(m) if (m == "Enum" && name == "filter"):
+                                                switch (a[1].def) {
+                                                    case EFn(cs) if (cs.length == 1):
+                                                        if (fnBodyUsesQueryP(cs[0].body)) hasFilterQuery = true;
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                        scanP(mod);
+                                        for (aa in a) scanP(aa);
+                                    case ECall(tgt, funcName, argsCall):
+                                        if (funcName == "filter" && argsCall != null && argsCall.length == 2) {
+                                            switch (argsCall[1].def) {
+                                                case EFn(cs2) if (cs2.length == 1):
+                                                    if (fnBodyUsesQueryP(cs2[0].body)) hasFilterQuery = true;
+                                                default:
+                                            }
+                                        }
+                                        if (tgt != null) scanP(tgt);
+                                        if (argsCall != null) for (aa2 in argsCall) scanP(aa2);
                                     case ERaw(code):
                                         if (code != null && code.indexOf('Enum.filter(') != -1 && rawContainsIdentLocalP(code, 'query')) hasFilterQuery = true;
                                     case EBlock(es): for (e in es) scanP(e);

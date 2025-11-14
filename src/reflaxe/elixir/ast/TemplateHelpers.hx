@@ -133,7 +133,10 @@ class TemplateHelpers {
      * handling embedded expressions and string interpolation.
      */
     public static function collectTemplateContent(ast: ElixirAST): String {
-        return switch(ast.def) {
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        #end
+        var __result = switch(ast.def) {
             case EString(s): 
                 // Simple string - process interpolations and HXX control tags into HEEx-safe content
                 var processed = rewriteInterpolations(s);
@@ -252,6 +255,15 @@ class TemplateHelpers {
                 if (StringTools.startsWith(exprAny, "assigns.")) exprAny = '@' + exprAny.substr("assigns.".length);
                 '<%= ' + exprAny + ' %>';
         };
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        #if sys
+        Sys.println('[HXX] collectTemplateContent elapsed_ms=' + Std.int(__elapsed));
+        #else
+        trace('[HXX] collectTemplateContent elapsed_ms=' + Std.int(__elapsed));
+        #end
+        #end
+        return __result;
     }
 
     /**
