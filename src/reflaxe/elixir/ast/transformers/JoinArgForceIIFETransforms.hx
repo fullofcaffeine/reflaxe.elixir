@@ -69,7 +69,6 @@ class JoinArgForceIIFETransforms {
                 case EParen(inner):
                     walk(inner);
                 case EIf(c,t,eopt): walk(c); walk(t); if (eopt != null) walk(eopt);
-                case EMatch(pattern, expr): walk(expr);
                 default:
             }
         }

@@ -40,12 +40,6 @@ class UpgradeWildcardMapGetToNamedTransforms {
             #if sys Sys.println('[UpgradeWildcardMapGet] _ <- Map.get(..., \'' + key2 + '\') → ' + key2 + ' = Map.get(...)'); #end
             makeASTWithMeta(EBinary(Match, makeAST(EVar(key2)), rhs2), n.metadata, n.pos);
           } else n;
-        case EBinary(Match, {def: EVar("_")}, {def: EParen(inner)}):
-          var k3 = extractMapGetKey(inner);
-          if (k3 != null) {
-            #if sys Sys.println('[UpgradeWildcardMapGet] (paren) _ = Map.get(..., \'' + k3 + '\') → ' + k3 + ' = Map.get(...)'); #end
-            makeASTWithMeta(EBinary(Match, makeAST(EVar(k3)), inner), n.metadata, n.pos);
-          } else n;
         default:
           n;
       }
@@ -62,6 +56,8 @@ class UpgradeWildcardMapGetToNamedTransforms {
         var isMapGet = (funcName == "get") && (target != null) && switch (target.def) { case EVar(m2): m2 == "Map"; default: false; };
         if (isMapGet && args2 != null && args2.length >= 2)
           switch (args2[1].def) { case EString(s2): s2; default: null; } else null;
+      case EParen(inner):
+        extractMapGetKey(inner);
       default: null;
     }
   }

@@ -158,10 +158,13 @@ class EctoMigrationNowarnAndStubTransforms {
                     var sn = deriveSnake(func);
                     var ar = 1 + (args != null ? args.length : 0);
                     names.set(sn, maxArity(names.get(sn), ar)); has = true;
-                case ERemoteCall(_, func2, args2):
+                case ERemoteCall(modExpr, func2, args2):
                     var sn2 = deriveSnake(func2);
                     var ar2 = 1 + (args2 != null ? args2.length : 0);
                     names.set(sn2, maxArity(names.get(sn2), ar2)); has = true;
+                    // Recurse into remote call target and arguments.
+                    scan(modExpr);
+                    if (args2 != null) for (a in args2) scan(a);
                 case EDef("up", args, _, upBody):
                     // scan function body for DSL calls
                     if (args != null && args.length >= 1) scan(upBody);
@@ -172,7 +175,6 @@ class EctoMigrationNowarnAndStubTransforms {
                 case ECase(e, cs): scan(e); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body);} 
                 case EFn(cs): for (cl in cs) scan(cl.body);
                 case ECall(t,_,as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
-                case ERemoteCall(m,_,as): scan(m); if (as != null) for (a in as) scan(a);
                 default:
             }
         }

@@ -189,11 +189,16 @@ class HXX {
      * ```
      */
     public static macro function hxx(templateStr: Expr): Expr {
-        #if macro
-        haxe.macro.Context.warning("[HXX] hxx() invoked", templateStr.pos);
-        #end
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
+                #if (macro && hxx_instrument_sys)
+                var __t0 = haxe.Timer.stamp();
+                var __bytes = s != null ? s.length : 0;
+                var __posInfo = haxe.macro.Context.getPosInfos(templateStr.pos);
+                #end
+                #if macro
+                haxe.macro.Context.warning("[HXX] hxx() invoked", templateStr.pos);
+                #end
                 // Fast-path: if author already provided EEx/HEEx markers, do not rewrite.
                 // This avoids unnecessary processing and prevents pathological regex scans.
                 // We still tag it so the builder emits a ~H sigil.
@@ -214,6 +219,15 @@ class HXX {
                     for (error in validation.errors) Context.warning(error, templateStr.pos);
                 }
                 var processed = processTemplateString(s, templateStr.pos);
+                #if (macro && hxx_instrument_sys)
+                var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+                var __file = (__posInfo != null) ? __posInfo.file : "<unknown>";
+                Sys.println(
+                    '[MacroTiming] name=HXX.hxx bytes=' + __bytes
+                    + ' elapsed_ms=' + Std.int(__elapsed)
+                    + ' file=' + __file
+                );
+                #end
                 #if macro
                 haxe.macro.Context.warning("[HXX] processed (length=" + processed.length + ")", templateStr.pos);
                 #end

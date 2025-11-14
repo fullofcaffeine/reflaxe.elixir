@@ -137,6 +137,56 @@ Elixir Source Code (.ex files)
 Running BEAM Application
 ```
 
+## fast_boot vs full_prepasses Profiles
+
+Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST transformers**:
+
+- `fast_boot` – default for example/dev builds (including the todo-app)  
+  - Minimal macro work:
+    - Macros like `RouterBuildMacro`, `HXXMacro`, `ModuleMacro` still run, but avoid expensive `Context.getType` / project‑wide scans where possible.
+    - Template processing uses memoization and cheap shape checks when enabled.
+  - Core semantic transforms only:
+    - Phoenix/Ecto/OTP shape‑driven transforms remain active.
+    - Ultra‑late cosmetic hygiene passes (naming, underscore promotion, unused assignment cleanup) are skipped when `fast_boot` and `disable_hygiene_final` are defined.
+  - Goal: keep cold todo‑app builds bounded and responsive during day‑to‑day work.
+
+- `full_prepasses` / full hygiene – used for compiler/snapshot/CI runs  
+  - All macros and transforms are enabled.
+  - Hygiene and final sweep passes run to enforce the strictest shape and naming invariants.
+  - Intended for full validation, not for tight dev loops.
+
+For the todo‑app, `build-server-fast.hxml` and `build-server-passA1..F.hxml` define `-D fast_boot` (and `-D disable_hygiene_final`) to select the fast profile. Snapshot and CI hxmls omit these flags to exercise the full pipeline.
+
+## Haxe Compilation Server Policy
+
+The Haxe compilation server (`haxe --wait`) is **opt-in**:
+
+- Default dev and CI workflows should act as if:
+
+  ```bash
+  export HAXE_NO_SERVER=1
+  ```
+
+  and should **not** auto‑start the server.
+
+- You may explicitly start and use the server when iterating on the compiler:
+
+  ```bash
+  # In a dev shell
+  iex -S mix
+  iex> {:ok, _} = HaxeServer.start_link([])
+  iex> HaxeServer.status()
+
+  # In another shell, reuse the server:
+  HAXE_USE_SERVER=1 haxe --connect 6116 examples/todo-app/build-server-passF.hxml
+
+  # When done:
+  iex> HaxeServer.stop()
+  ```
+
+- QA sentinel and CI use direct `haxe` invocations by default and only opt into the server via environment (`HAXE_USE_SERVER=1`) when explicitly configured. This avoids background high‑CPU processes and keeps build behavior predictable.
+
+
 ## Performance Targets
 
 All compilation features meet <15ms performance requirements:

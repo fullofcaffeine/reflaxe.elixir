@@ -63,11 +63,16 @@ class SafePubSubAliasInjectTransforms {
         function scan(e: ElixirAST): Void {
             if (found || e == null || e.def == null) return;
             switch (e.def) {
-                case ERemoteCall({def: EVar(m)}, _, _) if (m == "SafePubSub"): found = true;
                 case EVar(v) if (v == "SafePubSub"): found = true;
-                case ECall(tgt, _, _):
-                    if (tgt != null) switch (tgt.def) { case EVar(m) if (m == "SafePubSub"): found = true; default: }
                 case ERaw(code): if (code != null && code.indexOf("SafePubSub.") != -1) found = true;
+                case ECall(tgt, _, args):
+                    if (tgt != null) switch (tgt.def) { case EVar(m) if (m == "SafePubSub"): found = true; default: }
+                    if (tgt != null) scan(tgt);
+                    if (args != null) for (a in args) scan(a);
+                case ERemoteCall(remoteTarget, _, remoteArgs):
+                    switch (remoteTarget.def) { case EVar(m) if (m == "SafePubSub"): found = true; default: }
+                    scan(remoteTarget);
+                    if (remoteArgs != null) for (arg in remoteArgs) scan(arg);
                 case EDef(_, _, _, b): scan(b);
                 case EDefp(_, _, _, privateBody): scan(privateBody);
                 case EBlock(stmts): for (s in stmts) scan(s);
@@ -75,8 +80,6 @@ class SafePubSubAliasInjectTransforms {
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case EBinary(_, l, r): scan(l); scan(r);
                 case EMatch(_, rhs): scan(rhs);
-                case ECall(tgt, _, args): if (tgt != null) scan(tgt); for (a in args) scan(a);
-                case ERemoteCall(remoteTarget, _, remoteArgs): scan(remoteTarget); for (arg in remoteArgs) scan(arg);
                 default:
             }
         }
@@ -89,9 +92,14 @@ class SafePubSubAliasInjectTransforms {
         function scan(e: ElixirAST): Void {
             if (used || e == null || e.def == null) return;
             switch (e.def) {
-                case ERemoteCall(mod, _, _):
+                case ERemoteCall(mod, _, args):
                     switch (mod.def) { case EVar(m) if (m == moduleName): used = true; default: }
-                case ECall(tgt, _, _): if (tgt != null) switch (tgt.def) { case EVar(moduleVar) if (moduleVar == moduleName): used = true; default: }
+                    scan(mod);
+                    if (args != null) for (a in args) scan(a);
+                case ECall(tgt, _, argsList):
+                    if (tgt != null) switch (tgt.def) { case EVar(moduleVar) if (moduleVar == moduleName): used = true; default: }
+                    if (tgt != null) scan(tgt);
+                    if (argsList != null) for (a in argsList) scan(a);
                 case ERaw(code): if (code != null && code.indexOf(moduleName + ".") != -1) used = true;
                 case EDef(_, _, _, b): scan(b);
                 case EDefp(_, _, _, privateBody): scan(privateBody);
@@ -100,8 +108,6 @@ class SafePubSubAliasInjectTransforms {
                 case ECase(expr, cs): scan(expr); for (c in cs) { if (c.guard != null) scan(c.guard); scan(c.body); }
                 case EBinary(_, l, r): scan(l); scan(r);
                 case EMatch(_, rhs): scan(rhs);
-                case ERemoteCall(m,_,args): scan(m); if (args != null) for (a in args) scan(a);
-                case ECall(t,_,argsList): if (t != null) scan(t); if (argsList != null) for (a in argsList) scan(a);
                 default:
             }
         }

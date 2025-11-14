@@ -13,12 +13,23 @@ class EctoQueryMacros {
 #if macro
 
     public static macro function from<T>(schemaClass: ExprOf<Class<T>>): ExprOf<ecto.TypedQuery.TypedQuery<T>> { 
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        #end
         try {
             var classType = getClassType(schemaClass);
-            return macro {
+            var __result:ExprOf<ecto.TypedQuery.TypedQuery<T>> = macro {
                 var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', $v{classType.name});
                 new ecto.TypedQuery.TypedQuery(query);
             };
+            #if hxx_instrument_sys
+            var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+            Context.warning(
+                '[MacroTiming] name=EctoQueryMacros.from elapsed_ms=' + Std.int(__elapsed),
+                schemaClass.pos
+            );
+            #end
+            return __result;
         } catch (e: Dynamic) {
             Context.error('Failed to process from() macro: ' + Std.string(e), Context.currentPos());
             return macro null;
@@ -26,6 +37,9 @@ class EctoQueryMacros {
     }
 
     public static macro function where<T>(query: ExprOf<ecto.TypedQuery.TypedQuery<T>>, condition: ExprOf<T -> Bool>): ExprOf<ecto.TypedQuery.TypedQuery<T>> {
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        #end
         var conditionExpr = extractLambdaBody(condition);
         var fieldAccesses = extractFieldAccesses(conditionExpr);
         var classType = getQueryType(query);
@@ -35,10 +49,18 @@ class EctoQueryMacros {
             }
         }
         var elixirCondition = convertToElixirCondition(conditionExpr);
-        return macro {
+        var __macroResult:ExprOf<ecto.TypedQuery.TypedQuery<T>> = macro {
             var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, [t], {1}))', $query.query, $v{elixirCondition});
             new ecto.TypedQuery.TypedQuery(newQuery);
         };
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        Context.warning(
+            '[MacroTiming] name=EctoQueryMacros.where elapsed_ms=' + Std.int(__elapsed),
+            condition.pos
+        );
+        #end
+        return __macroResult;
     }
 
     static function getClassType(expr: Expr): ClassType {

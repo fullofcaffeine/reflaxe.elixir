@@ -513,7 +513,6 @@ class PatternBuilder {
             case PPin(_): "pin";
             case PAlias(_, _): "alias";
             case PBinary(_): "binary";
-            default: "unknown";
         };
     }
     

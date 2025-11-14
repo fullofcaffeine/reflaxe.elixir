@@ -120,15 +120,18 @@ class ChangesetParamUnderscoreTransforms {
         function walk(n: ElixirAST): Void {
             if (n == null || n.def == null || found) return;
             switch (n.def) {
-                case ERemoteCall(mod, _, _):
+                case ERemoteCall(mod, _, args):
                     switch (mod.def) { case EVar(m) if (m == "Ecto.Changeset"): found = true; default: }
+                    walk(mod);
+                    if (args != null) for (a in args) walk(a);
                 case ERaw(code):
                     if (code != null && code.indexOf("Ecto.Changeset.") != -1) found = true;
                 case EBlock(es): for (e in es) walk(e);
                 case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
                 case ECase(ex, cs): walk(ex); for (c in cs) { if (c.guard != null) walk(c.guard); walk(c.body);} 
-                case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
-                case ERemoteCall(m2,_,as2): walk(m2); if (as2 != null) for (a in as2) walk(a);
+                case ECall(t,_,as):
+                    if (t != null) walk(t);
+                    if (as != null) for (a in as) walk(a);
                 default:
             }
         }
