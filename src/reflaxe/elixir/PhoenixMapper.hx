@@ -12,12 +12,36 @@ using StringTools;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.TypeHelper;
 
+#if macro
+typedef PresenceBootstrap = {
+    var moduleName: String;
+    var otpAppAtom: String;
+    var pubsubModule: String;
+}
+#end
+
 /**
  * Phoenix-specific compilation features and transformations
  * Handles context annotations, Phoenix conventions, and framework integrations
  */
 @:nullSafety(Off)
 class PhoenixMapper {
+#if macro
+    /**
+     * Presence bootstrap registration captured during macro expansion.
+     *
+     * WHAT
+     * - Records the Elixir module name plus otp_app and pubsub server for each
+     *   Presence behavior so the backend can emit the tiny `use Phoenix.Presence`
+     *   module automatically (instead of hand-written .ex shims).
+     *
+     * WHY
+     * - PresenceBehavior assumes `use Phoenix.Presence` injected functions exist.
+     *   When the implementation is extern, we must still generate the module.
+     */
+    static var presenceBootstraps: Array<PresenceBootstrap> = [];
+    static var presenceEmitterRegistered: Bool = false;
+#end
     
     
     /**
@@ -151,11 +175,17 @@ class PhoenixMapper {
      * Configurable via -D app_name compiler flag, defaults to MyApp
      */
     public static function getAppModuleName(): String {
-        #if app_name
-        return haxe.macro.Compiler.getDefine("app_name");
-        #else
-        return "MyApp";
+        var v = Context.definedValue("app_name");
+        if (v == null || v == "") {
+            #if debug_presence
+            trace('[PhoenixMapper] getAppModuleName default=MyApp (define not set)');
+            #end
+            return "MyApp";
+        }
+        #if debug_presence
+        trace('[PhoenixMapper] getAppModuleName define=' + v);
         #end
+        return v;
     }
     
     /**
@@ -186,6 +216,55 @@ class PhoenixMapper {
             return singular + "s";
         }
     }
+
+    #if macro
+    /**
+     * Register a Presence module that needs a generated `use Phoenix.Presence` stub.
+     *
+     * Called from PresenceMacro.build(); safe to call multiple times (dedupes).
+     */
+    public static function registerPresenceModule(b: PresenceBootstrap): Void {
+        #if debug_presence
+        trace('[PhoenixMapper] registerPresenceModule ' + b.moduleName + ' otp=' + b.otpAppAtom + ' pubsub=' + b.pubsubModule);
+        #end
+        for (p in presenceBootstraps) {
+            if (p.moduleName == b.moduleName) return;
+        }
+        presenceBootstraps.push(b);
+
+        // Delay emission until codegen; only install once.
+        if (!presenceEmitterRegistered) {
+            presenceEmitterRegistered = true;
+            Context.onGenerate(function(_) {
+                emitPresenceModules();
+            });
+        }
+    }
+
+    static function emitPresenceModules(): Void {
+        // If compiler instance is unavailable (e.g., tests), skip quietly.
+        if (reflaxe.elixir.ElixirCompiler.instance == null) {
+            return;
+        }
+
+        for (p in presenceBootstraps) {
+            var parts = p.moduleName.split(".");
+            if (parts.length == 0) continue;
+            var fileName = NameUtils.toSnakeCase(parts.pop());
+            var dir = parts.map(NameUtils.toSnakeCase).join("/");
+            var outputPath = (dir.length > 0 ? dir + "/" : "") + fileName + ".ex";
+            #if debug_presence
+            trace('[PhoenixMapper] Emitting Presence bootstrap ' + p.moduleName + ' -> ' + outputPath);
+            #end
+            var code = 'defmodule ${p.moduleName} do\n' +
+                '  use Phoenix.Presence,\n' +
+                '    otp_app: ${p.otpAppAtom},\n' +
+                '    pubsub_server: ${p.pubsubModule}\n' +
+                'end\n';
+            reflaxe.elixir.ElixirCompiler.instance.setExtraFile(outputPath, code);
+        }
+    }
+    #end
 }
 
 #end

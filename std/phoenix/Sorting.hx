@@ -1,7 +1,7 @@
 package phoenix;
 
-@:native("TodoApp.Sorting")
-
+@:native("Phoenix.Sorting")
+@:keep
 class Sorting {
   public static function by(sortBy: String, todos: Array<server.schemas.Todo>): Array<server.schemas.Todo> {
     return switch (sortBy) {

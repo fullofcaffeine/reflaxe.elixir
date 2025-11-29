@@ -32,6 +32,7 @@
 --macro keep('server.infrastructure.Repo')
 --macro keep('phoenix.DateFormat')
 --macro keep('phoenix.Sorting')
+--macro keep('phoenix.SafePubSub')
 
 # Compiler version + flags
 -D reflaxe.elixir=0.1.0
@@ -54,8 +55,11 @@ server.infrastructure.Repo
 server.infrastructure.Telemetry
 server.infrastructure.Endpoint
 server.infrastructure.TodoAppWeb
+server.infrastructure.ErrorHTML
 controllers.UserController
 server.components.CoreComponents
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
+phoenix.SafePubSub
+phoenix.Sorting

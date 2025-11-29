@@ -35,6 +35,7 @@ typedef User = {
 /**
  * Todo priority levels
  */
+@:elixirIdiomatic
 enum TodoPriority {
     Low;
     Medium;
@@ -44,6 +45,7 @@ enum TodoPriority {
 /**
  * Filter options for todos
  */
+@:elixirIdiomatic
 enum TodoFilter {
     All;
     Active;
@@ -53,6 +55,7 @@ enum TodoFilter {
 /**
  * Sort options for todos
  */
+@:elixirIdiomatic
 enum TodoSort {
     Created;
     Priority;
