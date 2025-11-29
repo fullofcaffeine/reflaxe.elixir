@@ -1,6 +1,9 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
+#if (macro && hxx_instrument_sys)
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 import reflaxe.elixir.macros.HEExGenerator;
 import reflaxe.elixir.macros.LiveViewDirectives;
@@ -90,6 +93,14 @@ class HXXMacro {
      * Transform JSX to HEEx template syntax with full LiveView support
      */
     public static function transformToHEEx(jsx: String): String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HXXMacro.transformToHEEx", () -> transformToHEExInternal(jsx));
+        #else
+        return transformToHEExInternal(jsx);
+        #end
+    }
+
+    static function transformToHEExInternal(jsx: String): String {
         // Use enhanced string-based transformation; memoize under fast_boot
         if (isFastBoot()) {
             var cached = heexCache.get(jsx);
@@ -105,6 +116,14 @@ class HXXMacro {
      * Enhanced string-based transformation with LiveView directive support
      */
     public static function transformEnhanced(jsx: String): String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HXXMacro.transformEnhanced", () -> transformEnhancedInternal(jsx));
+        #else
+        return transformEnhancedInternal(jsx);
+        #end
+    }
+
+    static function transformEnhancedInternal(jsx: String): String {
         var result = jsx.trim();
         
         // Handle LiveView directives first
@@ -145,19 +164,27 @@ class HXXMacro {
      * Convert LiveView directives to HEEx syntax
      */
     public static function convertLiveViewDirectives(jsx: String): String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HXXMacro.convertLiveViewDirectives", () -> convertLiveViewDirectivesInternal(jsx));
+        #else
+        return convertLiveViewDirectivesInternal(jsx);
+        #end
+    }
+
+    static function convertLiveViewDirectivesInternal(jsx: String): String {
         var result = jsx;
-        
+
         // Convert LiveView directives with proper quote handling
-        // Pattern: lv:if="value" -> :if={@value}
-        result = convertDirectivePattern(result, 'lv:if="', ':if={', '}');
-        result = convertDirectivePattern(result, 'lv:unless="', ':unless={', '}');
-        result = convertDirectivePattern(result, 'lv:for="', ':for={', '}');
-        result = convertDirectivePattern(result, 'lv:stream="', ':stream={', '}');
-        
+        // Pattern: lv:if=\"value\" -> :if={@value}
+        result = convertDirectivePattern(result, 'lv:if=\"', ':if={', '}');
+        result = convertDirectivePattern(result, 'lv:unless=\"', ':unless={', '}');
+        result = convertDirectivePattern(result, 'lv:for=\"', ':for={', '}');
+        result = convertDirectivePattern(result, 'lv:stream=\"', ':stream={', '}');
+
         // Navigation directives don't need @ prefix
-        result = StringTools.replace(result, 'lv:patch="', ':patch="');
-        result = StringTools.replace(result, 'lv:navigate="', ':navigate="');
-        
+        result = StringTools.replace(result, 'lv:patch=\"', ':patch=\"');
+        result = StringTools.replace(result, 'lv:navigate=\"', ':navigate=\"');
+
         return result;
     }
     

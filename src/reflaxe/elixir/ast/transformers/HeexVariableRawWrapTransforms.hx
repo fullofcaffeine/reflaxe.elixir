@@ -101,30 +101,30 @@ class HeexVariableRawWrapTransforms {
 
     static function rewriteInterpolations(content:String, vars:haxe.ds.StringMap<Bool>):String {
         if (content == null || content.indexOf("<%=") == -1) return content;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < content.length) {
             var start = content.indexOf("<%=", i);
-            if (start == -1) { out.add(content.substr(i)); break; }
-            out.add(content.substr(i, start - i));
+            if (start == -1) { parts.push(content.substr(i)); break; }
+            parts.push(content.substr(i, start - i));
             var endTag = content.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(content.substr(start)); break; }
+            if (endTag == -1) { parts.push(content.substr(start)); break; }
             var inner = StringTools.trim(content.substr(start + 3, endTag - (start + 3)));
             // Simple var name only
             var m = ~/^[A-Za-z_][A-Za-z0-9_]*$/;
             if (m.match(inner)) {
                 var name = inner;
                 if (vars.exists(name)) {
-                    out.add('<%= Phoenix.HTML.raw(' + name + ') %>');
+                    parts.push('<%= Phoenix.HTML.raw(' + name + ') %>');
                 } else {
-                    out.add(content.substr(start, (endTag + 2) - start));
+                    parts.push(content.substr(start, (endTag + 2) - start));
                 }
             } else {
-                out.add(content.substr(start, (endTag + 2) - start));
+                parts.push(content.substr(start, (endTag + 2) - start));
             }
             i = endTag + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 }
 

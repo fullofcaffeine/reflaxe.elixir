@@ -3,6 +3,9 @@ package reflaxe.elixir.macros;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
+#if (macro && hxx_instrument_sys)
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 // Heavy registry import is gated behind `-D hxx_validate` to avoid compile-time overhead
 #if hxx_validate
 import phoenix.types.HXXComponentRegistry;
@@ -189,13 +192,16 @@ class HXX {
      * ```
      */
     public static macro function hxx(templateStr: Expr): Expr {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HXX.hxx", () -> hxxInternal(templateStr));
+        #else
+        return hxxInternal(templateStr);
+        #end
+    }
+
+    static function hxxInternal(templateStr: Expr): Expr {
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
-                #if (macro && hxx_instrument_sys)
-                var __t0 = haxe.Timer.stamp();
-                var __bytes = s != null ? s.length : 0;
-                var __posInfo = haxe.macro.Context.getPosInfos(templateStr.pos);
-                #end
                 #if macro
                 haxe.macro.Context.warning("[HXX] hxx() invoked", templateStr.pos);
                 #end
@@ -219,15 +225,6 @@ class HXX {
                     for (error in validation.errors) Context.warning(error, templateStr.pos);
                 }
                 var processed = processTemplateString(s, templateStr.pos);
-                #if (macro && hxx_instrument_sys)
-                var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-                var __file = (__posInfo != null) ? __posInfo.file : "<unknown>";
-                Sys.println(
-                    '[MacroTiming] name=HXX.hxx bytes=' + __bytes
-                    + ' elapsed_ms=' + Std.int(__elapsed)
-                    + ' file=' + __file
-                );
-                #end
                 #if macro
                 haxe.macro.Context.warning("[HXX] processed (length=" + processed.length + ")", templateStr.pos);
                 #end
@@ -272,14 +269,20 @@ class HXX {
      * @return Processed HEEx-compatible template string
      */
     static function processTemplateString(template: String, ?pos: haxe.macro.Expr.Position): String {
+        #if (macro && hxx_instrument_sys)
+        var labelParts = [
+            "HXX.processTemplateString bytes=",
+            Std.string(template != null ? template.length : 0)
+        ];
+        return MacroTimingHelper.time(labelParts.join(""), () -> processTemplateStringInternal(template, pos));
+        #else
+        return processTemplateStringInternal(template, pos);
+        #end
+    }
+
+    static function processTemplateStringInternal(template: String, ?pos: haxe.macro.Expr.Position): String {
         // Convert Haxe ${} interpolation to Elixir #{} interpolation
         var processed = template;
-
-        #if hxx_instrument_sys
-        var __t0 = haxe.Timer.stamp();
-        var __bytes = template != null ? template.length : 0;
-        var __posInfo = (pos != null) ? haxe.macro.Context.getPosInfos(pos) : null;
-        #end
 
         // 0) Rewrite HXX control/loop tags that must be lowered before interpolation scanning
         //    - <for {item in expr}> ... </for> → <% for item <- expr do %> ... <% end %>
@@ -299,13 +302,13 @@ class HXX {
             // Guard: disallow injecting HTML as string via ${"<div ..."}
             if (expr.length >= 2) {
                 var first = expr.charAt(0);
-                if ((first == '"' || first == '\'') && expr.length >= 2) {
+                if ((first == "\"" || first == "'") && expr.length >= 2) {
                     // find first non-space after quote
                     var idx = 1;
                     while (idx < expr.length && ~/^\s$/.match(expr.charAt(idx))) idx++;
                     if (idx < expr.length && expr.charAt(idx) == '<') {
                         #if macro
-                        haxe.macro.Context.error('HXX: injecting HTML via string inside ${...} is not allowed. Use inline markup or HXX.block(\'...\') as a deliberate escape hatch.', pos != null ? pos : haxe.macro.Context.currentPos());
+                        haxe.macro.Context.error("HXX: injecting HTML via string inside ${...} is not allowed. Use inline markup or HXX.block('...') as a deliberate escape hatch.", pos != null ? pos : haxe.macro.Context.currentPos());
                         #end
                     }
                 }
@@ -334,8 +337,8 @@ class HXX {
             var th = StringTools.trim(re.matched(2));
             var el = StringTools.trim(re.matched(3));
             // Quote then/else if not already quoted
-            if (!(StringTools.startsWith(th, '"') && StringTools.endsWith(th, '"')) && !(StringTools.startsWith(th, "'") && StringTools.endsWith(th, "'"))) th = '"' + th + '"';
-            if (!(StringTools.startsWith(el, '"') && StringTools.endsWith(el, '"')) && !(StringTools.startsWith(el, "'") && StringTools.endsWith(el, "'"))) el = '"' + el + '"';
+            if (!(StringTools.startsWith(th, "\"") && StringTools.endsWith(th, "\"")) && !(StringTools.startsWith(th, "'") && StringTools.endsWith(th, "'"))) th = "\"" + th + "\"";
+            if (!(StringTools.startsWith(el, "\"") && StringTools.endsWith(el, "\"")) && !(StringTools.startsWith(el, "'") && StringTools.endsWith(el, "'"))) el = "\"" + el + "\"";
             return '={if ' + cond + ', do: ' + th + ', else: ' + el + '}';
         });
 
@@ -351,16 +354,6 @@ class HXX {
         processed = processComponents(processed);
         processed = processLiveViewEvents(processed);
 
-        #if hxx_instrument_sys
-        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-        var __file = (__posInfo != null) ? __posInfo.file : "<unknown>";
-        // One-line, grep-friendly summary (bounded; prints only when -D hxx_instrument_sys)
-        #if macro
-        haxe.macro.Context.warning('[HXX] processTemplateString bytes=' + __bytes + ' elapsed_ms=' + Std.int(__elapsed) + ' file=' + __file, haxe.macro.Context.currentPos());
-        #elseif sys
-        Sys.println('[HXX] processTemplateString bytes=' + __bytes + ' elapsed_ms=' + Std.int(__elapsed) + ' file=' + __file);
-        #end
-        #end
         return processed;
     }
 
@@ -370,37 +363,42 @@ class HXX {
      * Runs early, before generic interpolation handling.
      */
     static function rewriteForBlocks(src:String):String {
-        if (src == null || src.indexOf('<for {') == -1) return src;
-        var out = new StringBuf();
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HXX.rewriteForBlocks", () -> rewriteForBlocksInternal(src));
+        #else
+        return rewriteForBlocksInternal(src);
+        #end
+    }
+
+    static function rewriteForBlocksInternal(src:String):String {
+        if (src == null || src.indexOf("<for {") == -1) return src;
+        var parts:Array<String> = [];
         var i = 0;
         while (i < src.length) {
-            var start = src.indexOf('<for {', i);
-            if (start == -1) { out.add(src.substr(i)); break; }
-            out.add(src.substr(i, start - i));
-            var headEnd = src.indexOf('}>', start);
-            if (headEnd == -1) { out.add(src.substr(start)); break; }
+            var start = src.indexOf("<for {", i);
+            if (start == -1) { parts.push(src.substr(i)); break; }
+            parts.push(src.substr(i, start - i));
+            var headEnd = src.indexOf("}>", start);
+            if (headEnd == -1) { parts.push(src.substr(start)); break; }
             var headInner = src.substr(start + 6, headEnd - (start + 6)); // between { and }
-            var closeTag = src.indexOf('</for>', headEnd + 2);
-            if (closeTag == -1) { out.add(src.substr(start)); break; }
+            var closeTag = src.indexOf("</for>", headEnd + 2);
+            if (closeTag == -1) { parts.push(src.substr(start)); break; }
             var body = src.substr(headEnd + 2, closeTag - (headEnd + 2));
-            var parts = headInner.split(' in ');
-            if (parts.length != 2) {
-                // Fallback: keep original; do not break template
-                out.add(src.substr(start, (closeTag + 6) - start));
+            var binding = headInner.split(" in ");
+            if (binding.length != 2) {
+                parts.push(src.substr(start, (closeTag + 6) - start));
                 i = closeTag + 6;
                 continue;
             }
-            var pat = StringTools.trim(parts[0]);
-            var iter = StringTools.trim(parts[1]);
-            // Map assigns.* to @* in iterator expression
-            iter = StringTools.replace(iter, 'assigns.', '@');
-            out.add('<% for ' + pat + ' <- ' + iter + ' do %>');
-            // Recursively allow nested for/if inside body
-            out.add(rewriteForBlocks(body));
-            out.add('<% end %>');
+            var pattern = StringTools.trim(binding[0]);
+            var iterator = StringTools.trim(binding[1]);
+            iterator = StringTools.replace(iterator, "assigns.", "@");
+            parts.push("<% for " + pattern + " <- " + iterator + " do %>");
+            parts.push(rewriteForBlocksInternal(body));
+            parts.push("<% end %>");
             i = closeTag + 6;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     /**
@@ -410,25 +408,33 @@ class HXX {
      * - For top-level ternary cond ? a : b → {if cond, do: a, else: b}
      */
     static function rewriteAttributeInterpolations(s: String): String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HXX.rewriteAttributeInterpolations", () -> rewriteAttributeInterpolationsInternal(s));
+        #else
+        return rewriteAttributeInterpolationsInternal(s);
+        #end
+    }
+
+    static function rewriteAttributeInterpolationsInternal(s: String): String {
         if (s == null || s.length == 0) return s;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var j = s.indexOf("${", i);
-            if (j == -1) { out.add(s.substr(i)); break; }
+            if (j == -1) { parts.push(s.substr(i)); break; }
             // Find preceding '=' within tag, without crossing a '>'
             var k = j - 1;
             var seenGt = false;
             while (k >= i) {
                 var ch = s.charAt(k);
-                if (ch == '>') { seenGt = true; break; }
-                if (ch == '=') break;
+                if (ch == ">") { seenGt = true; break; }
+                if (ch == "=") break;
                 k--;
             }
-            if (k < i || seenGt || s.charAt(k) != '=') {
+            if (k < i || seenGt || s.charAt(k) != "=".charAt(0)) {
                 // Not an attribute context, copy through '${' and continue
-                out.add(s.substr(i, j - i));
-                out.add("${");
+                parts.push(s.substr(i, j - i));
+                parts.push("${");
                 i = j + 2;
                 continue;
             }
@@ -439,32 +445,35 @@ class HXX {
             while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--;
             nameStart++;
             if (nameStart > nameEnd) {
-                out.add(s.substr(i, j - i));
-                out.add("${");
+                parts.push(s.substr(i, j - i));
+                parts.push("${");
                 i = j + 2;
                 continue;
             }
             var attrName = s.substr(nameStart, (nameEnd - nameStart + 1));
             // Copy prefix up to attribute name start and '='
-            out.add(s.substr(i, (nameStart - i)));
-            out.add(attrName);
-            out.add("=");
+            parts.push(s.substr(i, (nameStart - i)));
+            parts.push(attrName);
+            parts.push("=");
             // Optional opening quote after '='
             var vpos = k + 1;
             while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
             var quote: Null<String> = null;
-            if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) { quote = s.charAt(vpos); vpos++; }
+            if (vpos < s.length && (s.charAt(vpos) == "\"" || s.charAt(vpos) == "'")) {
+                quote = s.charAt(vpos);
+                vpos++;
+            }
             if (vpos != j) {
                 // Not plain attr=${...}
-                out.add(s.substr(k + 1, (j - (k + 1))));
-                out.add("${");
+                parts.push(s.substr(k + 1, (j - (k + 1))));
+                parts.push("${");
                 i = j + 2; continue;
             }
             // Parse balanced braces for ${...}
             var p = j + 2; var depth = 1;
             while (p < s.length && depth > 0) {
                 var c = s.charAt(p);
-                if (c == '{') depth++; else if (c == '}') depth--; p++;
+                if (c == "{") depth++; else if (c == "}") depth--; p++;
             }
             var inner = s.substr(j + 2, (p - 1) - (j + 2));
             var expr = StringTools.trim(inner);
@@ -476,16 +485,16 @@ class HXX {
                 var cond = StringTools.trim(tern.matched(1));
                 var th = StringTools.trim(tern.matched(2));
                 var el = StringTools.trim(tern.matched(3));
-                expr = 'if ' + cond + ', do: ' + th + ', else: ' + el;
+                expr = "if " + cond + ", do: " + th + ", else: " + el;
             }
-            out.add('{'); out.add(expr); out.add('}');
+            parts.push("{"); parts.push(expr); parts.push("}");
             // Skip closing quote if present
             if (quote != null) {
                 var qpos = p; if (qpos < s.length && s.charAt(qpos) == quote) p = qpos + 1;
             }
             i = p;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     /**

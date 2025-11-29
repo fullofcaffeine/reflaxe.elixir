@@ -20,11 +20,7 @@ class Gettext {
      * @param msgid The message ID to translate
      * @return Translated string
      */
-    @:extern
-    public static function gettext(msgid: String): String {
-        // Compiler will generate proper Gettext call
-        return msgid;
-    }
+    public static extern function gettext(msgid: String): String;
     
     /**
      * Translate a message with pluralization
@@ -34,11 +30,7 @@ class Gettext {
      * @param count Count for pluralization
      * @return Translated string
      */
-    @:extern
-    public static function ngettext(msgid: String, msgid_plural: String, count: Int): String {
-        // Compiler will generate proper ngettext call
-        return count == 1 ? msgid : msgid_plural;
-    }
+    public static extern function ngettext(msgid: String, msgid_plural: String, count: Int): String;
     
     /**
      * Translate within a specific domain
@@ -47,11 +39,7 @@ class Gettext {
      * @param msgid Message ID
      * @return Translated string
      */
-    @:extern
-    public static function dgettext(domain: String, msgid: String): String {
-        // Compiler will generate proper dgettext call
-        return msgid;
-    }
+    public static extern function dgettext(domain: String, msgid: String): String;
     
     /**
      * Translate with domain and pluralization
@@ -62,31 +50,21 @@ class Gettext {
      * @param count Count for pluralization
      * @return Translated string
      */
-    @:extern
-    public static function dngettext(domain: String, msgid: String, msgid_plural: String, count: Int): String {
-        // Compiler will generate proper dngettext call
-        return count == 1 ? msgid : msgid_plural;
-    }
+    public static extern function dngettext(domain: String, msgid: String, msgid_plural: String, count: Int): String;
     
     /**
      * Get the current locale
      * 
      * @return Current locale string
      */
-    @:extern
-    public static function getLocale(): String {
-        return "en";
-    }
+    public static extern function getLocale(): String;
     
     /**
      * Set the current locale
      * 
      * @param locale Locale to set
      */
-    @:extern
-    public static function putLocale(locale: String): Void {
-        // Compiler will generate proper put_locale call
-    }
+    public static extern function putLocale(locale: String): Void;
     
     /**
      * Helper function for error messages

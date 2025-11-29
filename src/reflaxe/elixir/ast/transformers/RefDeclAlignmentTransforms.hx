@@ -51,26 +51,38 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *        choose plain `name` as canonical.
  *   4) Rewrite both declarations (patterns and LHS) and references (EVar) to
  *      the canonical spelling.
- */
+    */
 class RefDeclAlignmentTransforms {
     public static function alignLocalsPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+        #if hxx_hygiene_trace
+        var alignmentStart = haxe.Timer.stamp();
+        #end
+        var result = ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, params, guards, body):
-                    var newBody = align(body, params);
+                    var newBody = align(body, params, name);
                     makeASTWithMeta(EDef(name, params, guards, newBody), node.metadata, node.pos);
                 case EDefp(name, params, guards, body):
-                    var newBody = align(body, params);
+                    var newBody = align(body, params, name);
                     makeASTWithMeta(EDefp(name, params, guards, newBody), node.metadata, node.pos);
                 default:
                     node;
             }
         });
+        #if hxx_hygiene_trace
+        var elapsedMs = Std.int((haxe.Timer.stamp() - alignmentStart) * 1000.0);
+        #if sys Sys.println('[HygieneTrace] RefDeclAlignment elapsed_ms=' + elapsedMs); #else trace('[HygieneTrace] RefDeclAlignment elapsed_ms=' + elapsedMs); #end
+        #end
+        return result;
     }
 
-    static function align(body: ElixirAST, ?params:Array<EPattern>): ElixirAST {
+    static function align(body: ElixirAST, ?params:Array<EPattern>, ?functionName:String): ElixirAST {
         var declared = new Map<String, Bool>();
         var referenced = new Map<String, Bool>();
+
+        #if hxx_hygiene_trace
+        var alignStart = haxe.Timer.stamp();
+        #end
 
         // Collect declared from function parameters as well
         if (params != null) {
@@ -159,7 +171,13 @@ class RefDeclAlignmentTransforms {
             if (pick != null) canonical.set(base, pick);
         }
 
-        if (Lambda.count(canonical) == 0) return body;
+        if (Lambda.count(canonical) == 0) {
+            #if hxx_hygiene_trace
+            var elapsedNoop = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
+            #if sys Sys.println('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=0 elapsed_ms=' + elapsedNoop); #else trace('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=0 elapsed_ms=' + elapsedNoop); #end
+            #end
+            return body;
+        }
 
         // Apply canonicalization to declarations and references
         function tx(n: ElixirAST): ElixirAST {
@@ -180,7 +198,14 @@ class RefDeclAlignmentTransforms {
             }
         }
 
-        return ElixirASTTransformer.transformNode(body, tx);
+        var aligned = ElixirASTTransformer.transformNode(body, tx);
+
+        #if hxx_hygiene_trace
+        var elapsedMs = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
+        #if sys Sys.println('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=' + Lambda.count(canonical) + ' elapsed_ms=' + elapsedMs); #else trace('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=' + Lambda.count(canonical) + ' elapsed_ms=' + elapsedMs); #end
+        #end
+
+        return aligned;
     }
 
     static function splitBase(name: String): { base: String, kind: String } {

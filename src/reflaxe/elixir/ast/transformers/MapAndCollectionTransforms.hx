@@ -782,161 +782,18 @@ class MapAndCollectionTransforms {
     }
 
     /**
-     * Map+Join Rewrite Pass
+     * Map+Join Rewrite Pass (currently a no-op).
      *
-     * WHAT
-     * - Collapses accumulator-style building of a list via Enum.each + Enum.concat followed
-     *   by Enum.join(temp, sep) into a single Enum.map(list, fn -> item end) |> Enum.join(sep).
+     * NOTE
+     * - The previous implementation attempted to collapse accumulator-style Enum.each/Enum.concat
+     *   followed by Enum.join into Enum.map + Enum.join, but the pattern matcher was brittle and
+     *   introduced maintenance and stability issues.
+     * - For 1.0, we rely on more targeted join/arg transforms (JoinArgListBuilderToMapJoin and
+     *   related passes). This pass is intentionally left as a no-op to preserve behavior
+     *   while avoiding fragile pattern rewrites.
      */
     public static function mapJoinRewritePass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            return switch (node.def) {
-                case EBlock(stmts) if (stmts.length >= 3):
-                    var tempVar: Null<String> = null;
-                    var initIdx = -1;
-                    var listExpr: Null<ElixirAST> = null;
-                    var binderName: String = "_elem";
-                    var mapExpr: Null<ElixirAST> = null;
-                    var aliasLocal: Null<String> = null;
-                    var sep: Null<ElixirAST> = null;
-                    // Find any `temp = []` initialization in the block
-                    for (idx in 0...stmts.length) switch (stmts[idx].def) {
-                        case EBinary(Match, leftInit, rhs):
-                            switch (leftInit.def) {
-                                case EVar(name):
-                                    switch (rhs.def) { case EList(_): tempVar = name; initIdx = idx; default: }
-                                default:
-                            }
-                        case EMatch(patInit, rhsInit):
-                            switch (patInit) {
-                                case PVar(name2):
-                                    switch (rhsInit.def) { case EList(_): tempVar = name2; initIdx = idx; default: }
-                                default:
-                            }
-                        default:
-                    }
-                    if (tempVar == null || initIdx == -1) return node;
-                    // Enum.each with temp = Enum.concat(temp, [expr])
-                    for (i in (initIdx+1)...stmts.length) {
-                        var eachStmt: Null<ElixirAST> = null;
-                        switch (stmts[i].def) {
-                            case ERemoteCall(mod, func, args) if (isEnumEach(mod, func, args)):
-                                eachStmt = stmts[i];
-                            case EMatch(_, rhs):
-                                switch (rhs.def) { case ERemoteCall(mod, func, args) if (isEnumEach(mod, func, args)): eachStmt = rhs; default: }
-                            case EBinary(Match, _, rhs2):
-                                switch (rhs2.def) { case ERemoteCall(mod, func, args) if (isEnumEach(mod, func, args)): eachStmt = rhs2; default: }
-                            default:
-                        }
-                        if (eachStmt != null) {
-                            switch (eachStmt.def) {
-                                case ERemoteCall(mod, func, args):
-                                    listExpr = args[0];
-                                    switch (args[1].def) {
-                                        case EFn(clauses) if (clauses.length == 1):
-                                            var cl = clauses[0];
-                                            switch (cl.args.length > 0 ? cl.args[0] : null) { case PVar(n): binderName = n; default: }
-                                    var bodyStmts: Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
-                                    for (bs in bodyStmts) {
-                                        switch (bs.def) {
-                                            case EBinary(Match, leftAlias, rightAlias):
-                                                switch (leftAlias.def) {
-                                                    case EVar(an) if (isHeadAccessOf(rightAlias, listExpr)):
-                                                        aliasLocal = an;
-                                                    default:
-                                                }
-                                            case EMatch(patAlias, rightAlias2):
-                                                switch (patAlias) {
-                                                    case PVar(an2) if (isHeadAccessOf(rightAlias2, listExpr)):
-                                                        aliasLocal = an2;
-                                                    default:
-                                                }
-                                            case EBinary(Match, leftX, rhs):
-                                                var lhsTemp: Null<String> = switch (leftX.def) { case EVar(nx): nx; default: null; };
-                                                if (lhsTemp != tempVar) {
-                                                    // not our accumulator assignment
-                                                } else {
-                                                    switch (rhs.def) {
-                                                        case ERemoteCall(mod2, "concat", concatArgs) if (concatArgs.length == 2):
-                                                            // Ensure module is Enum
-                                                            switch (mod2.def) {
-                                                                case EVar(mn) if (mn == "Enum"):
-                                                                    var isSelf = switch (concatArgs[0].def) {
-                                                                        case EVar(n2) if (n2 == tempVar): true;
-                                                                        default: false;
-                                                                    };
-                                                                    var exprInside: Null<ElixirAST> = null;
-                                                                    switch (concatArgs[1].def) {
-                                                                        case EList(items) if (items.length == 1): exprInside = items[0];
-                                                                        default:
-                                                                    }
-                                                                    if (isSelf && exprInside != null) {
-                                                                        mapExpr = exprInside;
-                                                                        if (aliasLocal != null) {
-                                                                            mapExpr = replaceVarInExpr(mapExpr, aliasLocal, binderName);
-                                                                        }
-                                                                    }
-                                                                default:
-                                                            }
-                                                        default:
-                                                    }
-                                                }
-                                            case EMatch(patX, rhsP):
-                                                // Pattern match variant: tempVar = Enum.concat(...)
-                                                var lhsTemp2: Null<String> = switch (patX) { case PVar(nx2): nx2; default: null; };
-                                                if (lhsTemp2 == tempVar) {
-                                                    switch (rhsP.def) {
-                                                        case ERemoteCall(mod2b, "concat", concatArgs2) if (concatArgs2.length == 2):
-                                                            switch (mod2b.def) {
-                                                                case EVar(mnb) if (mnb == "Enum"):
-                                                                    var isSelf2 = switch (concatArgs2[0].def) {
-                                                                        case EVar(n2b) if (n2b == tempVar): true;
-                                                                        default: false;
-                                                                    };
-                                                                    var exprInside2: Null<ElixirAST> = null;
-                                                                    switch (concatArgs2[1].def) {
-                                                                        case EList(items2) if (items2.length == 1): exprInside2 = items2[0];
-                                                                        default:
-                                                                    }
-                                                                    if (isSelf2 && exprInside2 != null) {
-                                                                        mapExpr = exprInside2;
-                                                                    }
-                                                                default:
-                                                            }
-                                                        default:
-                                                    }
-                                                }
-                                            default:
-                                        }
-                                    }
-                                default:
-                            }
-                        }
-                    }
-                    if (listExpr == null || mapExpr == null) return node;
-                    // Enum.join(temp, sep)
-                    var finalExpr = stmts[stmts.length - 1];
-                    switch (finalExpr.def) {
-                        case ERemoteCall(mod3, "join", jArgs) if (jArgs.length == 2):
-                            switch (mod3.def) {
-                                case EVar(mn3) if (mn3 == "Enum"):
-                                    switch (jArgs[0].def) { case EVar(n3) if (n3 == tempVar): sep = jArgs[1]; default: }
-                                default:
-                            }
-                        default:
-                    }
-                    if (sep == null) return node;
-                    var adjustedBinder3 = safeBinder(binderName);
-                    mapExpr = replaceVarInExpr(mapExpr, binderName, adjustedBinder3);
-                    mapExpr = replaceVarInExpr(mapExpr, "_" + adjustedBinder3, adjustedBinder3);
-                    var fnNode = makeAST(EFn([{ args: [PVar(adjustedBinder3)], guard: null, body: mapExpr }]));
-                    var mapCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [listExpr, fnNode]));
-                    var joinCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [mapCall, sep]));
-                    makeASTWithMeta(joinCall.def, node.metadata, node.pos);
-                default:
-                    node;
-            }
-        });
+        return ast;
     }
 
     /**

@@ -35,25 +35,24 @@ class HeexStripToStringInSigilsTransforms {
 
     static function stripToString(s:String):String {
         // Replace patterns like: <%= expr.to_string() %> → <%= expr %>
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var start = s.indexOf("<%=", i);
-            if (start == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, start - i));
+            if (start == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, start - i));
             var endTag = s.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(s.substr(start)); break; }
+            if (endTag == -1) { parts.push(s.substr(start)); break; }
             var inner = s.substr(start + 3, endTag - (start + 3));
             var trimmed = StringTools.trim(inner);
             if (StringTools.endsWith(trimmed, ".to_string()")) {
                 trimmed = StringTools.trim(trimmed.substr(0, trimmed.length - ".to_string()".length));
             }
-            out.add("<%= " + trimmed + " %>");
+            parts.push("<%= " + trimmed + " %>");
             i = endTag + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 }
 
 #end
-

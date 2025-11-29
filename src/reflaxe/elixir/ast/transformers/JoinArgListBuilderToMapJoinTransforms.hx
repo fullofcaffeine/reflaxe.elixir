@@ -117,22 +117,20 @@ class JoinArgListBuilderToMapJoinTransforms {
                                 for (bs in bodyStmts) {
                                     switch (bs.def) {
                                         // Detect inline temporary assignment like: i = binder + 1
-                                        case EBinary(Match, {def: EVar(lhsTmp)}, rhsTmp):
-                                            switch (rhsTmp.def) {
+                                        case EBinary(Match, {def: EVar(lhsName)}, rhsExpr):
+                                            switch (rhsExpr.def) {
                                                 case EBinary(Add, {def: EVar(bv)}, _incrRhs) if (bv == binder):
-                                                    inlineVar = lhsTmp; inlineExpr = rhsTmp;
-                                                case ERemoteCall({def: EVar("Enum")}, "concat", cargs2) if (cargs2.length == 2):
-                                                    // Also discover builderVar from concat(update) even when lhs != temp
-                                                    switch (cargs2[0].def) {
-                                                        case EVar(vacc) if (vacc == lhsTmp): builderVar = lhsTmp;
-                                                        default:
-                                                    }
-                                                default:
-                                            }
-                                        case EBinary(Match, {def: EVar(lhs)}, rhs):
-                                            switch (rhs.def) {
+                                                    inlineVar = lhsName;
+                                                    inlineExpr = rhsExpr;
                                                 case ERemoteCall({def: EVar("Enum")}, "concat", cargs) if (cargs.length == 2):
-                                                    // Accept either temp or discovered builderVar as concat base
+                                                    // Either discover builderVar from concat(update) or extract valueExpr when base matches
+                                                    var baseIsLhs = switch (cargs[0].def) {
+                                                        case EVar(v0) if (v0 == lhsName): true;
+                                                        default: false;
+                                                    };
+                                                    if (baseIsLhs && builderVar == null) {
+                                                        builderVar = lhsName;
+                                                    }
                                                     var baseOk = switch (cargs[0].def) {
                                                         case EVar(v) if (v == (builderVar != null ? builderVar : temp)): true;
                                                         default: false;

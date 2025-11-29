@@ -31,50 +31,50 @@ class HeexInlineIfQuoteNormalizeTransforms {
     }
 
     static function normalize(s:String):String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var open = s.indexOf("<%=", i);
-            if (open == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, open - i));
+            if (open == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, open - i));
             var close = s.indexOf("%>", open + 3);
-            if (close == -1) { out.add(s.substr(open)); break; }
+            if (close == -1) { parts.push(s.substr(open)); break; }
             var inner = s.substr(open + 3, close - (open + 3));
             var trimmed = StringTools.trim(inner);
             if (StringTools.startsWith(trimmed, "if ") && trimmed.indexOf(", do:") != -1) {
                 // Find quoted segments and collapse over-escaped quotes (\\\") -> (\") inside them only
                 var rebuilt = rebuildInlineIf(trimmed);
-                out.add("<%= " + rebuilt + " %>");
+                parts.push("<%= " + rebuilt + " %>");
             } else {
-                out.add(s.substr(open, (close + 2) - open));
+                parts.push(s.substr(open, (close + 2) - open));
             }
             i = close + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     static function rebuildInlineIf(inner:String):String {
-        var buf = new StringBuf();
+        var rebuilt:Array<String> = [];
         var i = 0;
         var inD = false; var inS = false;
         while (i < inner.length) {
             var ch = inner.charAt(i);
-            if (!inS && ch == '"' && !inD) { inD = true; buf.add(ch); i++; continue; }
-            if (inD && ch == '"') { inD = false; buf.add(ch); i++; continue; }
-            if (!inD && ch == '\'' && !inS) { inS = true; buf.add(ch); i++; continue; }
-            if (inS && ch == '\'') { inS = false; buf.add(ch); i++; continue; }
+            if (!inS && ch == '"' && !inD) { inD = true; rebuilt.push(ch); i++; continue; }
+            if (inD && ch == '"') { inD = false; rebuilt.push(ch); i++; continue; }
+            if (!inD && ch == '\'' && !inS) { inS = true; rebuilt.push(ch); i++; continue; }
+            if (inS && ch == '\'') { inS = false; rebuilt.push(ch); i++; continue; }
             if (inD || inS) {
                 // Inside quoted string: collapse \\" -> \"
                 if (i + 2 < inner.length && inner.charAt(i) == '\\' && inner.charAt(i + 1) == '\\' && inner.charAt(i + 2) == '"') {
-                    buf.add('\\"');
+                    rebuilt.push('\\"');
                     i += 3;
                     continue;
                 }
             }
-            buf.add(ch);
+            rebuilt.push(ch);
             i++;
         }
-        return buf.toString();
+        return rebuilt.join("");
     }
 }
 

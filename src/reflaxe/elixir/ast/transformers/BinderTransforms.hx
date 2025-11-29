@@ -1284,6 +1284,8 @@ class BinderTransforms {
 
         // Process a block with a flowing non-nil set
         function processBlock(block: ElixirAST, incoming: Map<String, Bool>): ElixirAST {
+            // Defensive: some defs may not carry a body (e.g. stubbed functions); skip safely.
+            if (block == null) return block;
             return switch (block.def) {
                 case EBlock(stmts):
                     var nonNil = new Map<String, Bool>();

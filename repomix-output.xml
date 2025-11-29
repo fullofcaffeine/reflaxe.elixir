@@ -1,3 +1,234 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: std/_std/haxe/ds/BalancedTree.hx, std/_std/haxe/ds/EnumValueMap.hx, std/elixir/types/TaskResult.hx, scripts/qa-sentinel.sh, examples/todo-app/build-server-passA1.hxml, examples/todo-app/build-server-passF.hxml, examples/todo-app/build-server.hxml, src/reflaxe/elixir/CompilerInit.hx, haxe_libraries/reflaxe.elixir.hxml
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+examples/
+  todo-app/
+    build-server-passA1.hxml
+    build-server-passF.hxml
+    build-server.hxml
+scripts/
+  qa-sentinel.sh
+src/
+  reflaxe/
+    elixir/
+      CompilerInit.hx
+std/
+  elixir/
+    types/
+      TaskResult.hx
+
+================================================================
+Files
+================================================================
+
+================
+File: examples/todo-app/build-server-passA1.hxml
+================
+# Pass A1 — minimal infra (fast_boot)
+-lib reflaxe
+-lib reflaxe.elixir
+-cp ../../std/_std
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-dce full
+--macro exclude('client')
+--macro exclude('test')
+-D reflaxe.elixir=0.1.0
+-D hxx_string_to_sigil
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+-D fast_boot
+server.infrastructure.Repo
+
+================
+File: examples/todo-app/build-server-passF.hxml
+================
+# Pass F — LiveView main
+-lib reflaxe
+-lib reflaxe.elixir
+-cp ../../std/_std
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-dce std
+--no-inline
+--macro exclude('client')
+--macro exclude('test')
+-D reflaxe.elixir=0.1.0
+-D disable_comprehension_conversion
+-D hxx_string_to_sigil
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+-D fast_boot
+-D hxx_pass_timing
+server.live.TodoLive
+
+================
+File: examples/todo-app/build-server.hxml
+================
+# Haxe→Elixir compilation for Phoenix LiveView server-side code
+# Generates idiomatic Elixir code for the BEAM VM
+
+# Use packaged libraries to avoid repo-level classpaths (faster, no shadowing)
+-lib reflaxe
+-lib reflaxe.elixir
+-cp ../../std/_std
+
+# Source directories
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+
+# Output directory for generated .ex files
+-D elixir_output=lib
+
+# Required for Reflaxe targets
+-D reflaxe_runtime
+
+# Elixir is not a UTF-16 platform
+-D no-utf16
+
+# Application-specific configuration
+-D app_name=TodoApp
+
+# Enable dead code elimination to remove unused functions
+# 
+# DCE (Dead Code Elimination) is CRITICAL for abstract types with operator overloads.
+# Without DCE, ALL @:op annotated methods in abstracts (like Date's comparison operators)
+# are compiled to helper functions in the _Impl_ module, even if never used.
+# 
+# Example: Date abstract defines lt, lte, gt, gte, eq, neq operators
+# - Without DCE: All 6 functions generated in Date_Impl_, causing "unused function" warnings
+# - With DCE full: Only used functions are kept, eliminating warnings
+#
+# DCE levels:
+# - no: Disable DCE (causes unused function warnings)
+# - std: Remove unused std library classes only
+# - full: Remove all unreachable code (RECOMMENDED for production)
+#
+# Note: Reflaxe.Elixir correctly respects DCE - eliminated code is removed before
+# transpilation, resulting in cleaner and smaller Elixir output.
+-dce full
+
+# (Optional) Debug traces for dynamic assignment fix
+# Disabled by default to avoid noisy generation in some modules
+# -D debug_dynamic_assignment
+
+# Exclude client code from server compilation
+--macro exclude('client')
+--macro exclude('test')
+--macro exclude('server.live.UserLive')
+--macro exclude('server.services.UserGenServer')
+## Include controllers and contexts in server build (needed for test WAE)
+## (Removed earlier excludes for server.controllers.UserController and contexts.*)
+
+# Keep Phoenix CoreComponents even if not referenced directly in Haxe
+# WHY: Phoenix imports TodoAppWeb.CoreComponents via `use TodoAppWeb, :html`
+# which Haxe DCE cannot see. Force-keep to ensure the module is emitted.
+--macro keep('server.components.CoreComponents')
+--macro keep('phoenix.DateFormat')
+--macro keep('phoenix.Sorting')
+# Skip problematic stdlib structures we don't use in the todo app
+
+# Define library version and initialize compiler
+-D reflaxe.elixir=0.1.0
+
+# Debug flags are disabled by default to keep QA builds quiet and fast
+# -D debug_success_unifier
+# -D debug_presence
+
+# Enable deterministic render string → ~H conversion
+-D hxx_string_to_sigil
+
+# Silence compiler debug traces for QA speed and signal clarity
+# Provide both hyphenated and underscored defines for preprocessor gating compatibility
+-D no-traces
+-D no_traces
+-D disable_hygiene_final
+
+# Main server classes to compile
+TodoApp
+TodoAppRouter
+server.live.TodoLive
+server.schemas.Todo
+server.migrations.CreateTodos
+server.presence.TodoPresence
+server.layouts.Layouts
+server.infrastructure.Repo
+server.infrastructure.Telemetry
+server.infrastructure.Endpoint
+server.infrastructure.TodoAppWeb
+controllers.UserController
+server.components.CoreComponents
+server.i18n.Gettext
+server.infrastructure.GettextErrorMessages
+server.infrastructure.GettextUIMessages
+# PostgrexTypes is now auto-generated from Repo, not a separate class
+# Temporarily exclude problematic stdlib modules
+# -D exclude-bytes  # Removed to test assignment extraction fix
+-D exclude-balanced-tree
+
+# Force-keep controllers and contexts so WAE passes apply to their outputs
+
+================
+File: scripts/qa-sentinel.sh
+================
 #!/usr/bin/env bash
 set -euo pipefail
 # Disable job control notifications to avoid background job status lines like "Killed: 9"
@@ -454,7 +685,7 @@ else
 fi
 
 # Remove unused std artifacts that are not needed for the app and may generate invalid code
-run_step_with_log "Step 1.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
+run_step_with_log "Step 1.cleanup: prune unused std outputs" 30s /tmp/qa-haxe-prune.log "bash -lc 'rm -rf lib/haxe lib/elixir/types'" || exit 1
 
 run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
 
@@ -477,7 +708,7 @@ run_step_with_log "Step 2.1: deps compile (default root)" 240s /tmp/qa-deps-comp
 run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
 
 # Second prune in case codegen emitted unused std helpers during the build loop
-run_step_with_log "Step 2.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune2.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
+run_step_with_log "Step 2.cleanup: prune unused std outputs" 30s /tmp/qa-haxe-prune2.log "bash -lc 'rm -rf lib/haxe lib/elixir/types'" || exit 1
 
 # Compile first so DB tasks do not incur compile cost repeatedly
 # Compile application only (skip deps recompile inside per-run root to avoid rebar include_lib issues)
@@ -647,3 +878,217 @@ if [[ "$KEEP_ALIVE" -eq 1 ]]; then
   echo "PORT=$PORT"
 fi
 popd >/dev/null
+
+================
+File: src/reflaxe/elixir/CompilerInit.hx
+================
+package reflaxe.elixir;
+
+#if (macro || reflaxe_runtime)
+
+import reflaxe.ReflectCompiler;
+import haxe.macro.Context;
+import haxe.macro.Compiler;
+import haxe.io.Path;
+import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.macros.LiveViewPreserver;
+
+// Import preprocessor types
+import reflaxe.preprocessors.ExpressionPreprocessor;
+import reflaxe.preprocessors.ExpressionPreprocessor.*;
+import reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.RemoveTemporaryVariablesMode;
+import reflaxe.elixir.preprocessors.PreserveSwitchReturnsImpl;
+import reflaxe.elixir.preprocessors.RemoveOrphanedEnumParametersImpl;
+
+/**
+ * Initialization and registration of the Elixir compiler
+ */
+class CompilerInit {
+    /**
+     * Initialize the Elixir compiler
+     * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
+     */
+    public static function Start() {
+        // Platform check for Haxe 5.0+ only: ensures compiler only runs when
+        // --custom-target elixir=output_dir is specified in compilation command.
+        // This prevents Reflaxe targets from activating on every compilation.
+        // For Haxe 4.x, we skip this check and rely on macro registration only.
+        #if (haxe >= version("5.0.0"))
+        switch(haxe.macro.Compiler.getConfiguration().platform) {
+            case CustomTarget("elixir"):
+            case _: 
+                return;
+        }
+        #end
+        
+        var fastBoot = Context.defined("fast_boot");
+        // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
+        if (!fastBoot) {
+            LiveViewPreserver.init();
+        }
+
+        // Ensure @:repo externs are kept by DCE so they can be scheduled normally
+        // for compilation via the AST pipeline (repoTransformPass).
+        //
+        // WHAT are @:repo externs?
+        // - They are Haxe extern classes (no Haxe implementation/body) annotated with @:repo
+        //   that describe your Phoenix/Ecto repository module (e.g., TodoApp.Repo).
+        // - Example (project code):
+        //     @:native("TodoApp.Repo")
+        //     @:repo({ adapter: Postgres, json: Jason, extensions: [], poolSize: 10 })
+        //     extern class Repo {}
+        //
+        // WHY must we keep them?
+        // - Because externs don’t necessarily create typed references at usage sites, Haxe DCE
+        //   may drop them if they appear “unused”, even though the Repo module must exist at runtime
+        //   (e.g., in the supervision tree).
+        // - Marking them @:keep (and @:used) guarantees they survive DCE and reach our compiler.
+        //
+        // HOW does compilation proceed?
+        // - Our filterTypes() schedules these externs for normal compilation.
+        // - The repoTransformPass (in AnnotationTransforms) then converts the extern into an
+        //   idiomatic Elixir module that calls `use Ecto.Repo, otp_app: :<app>, adapter: ...` and
+        //   writes it to `lib/<app_snake>/repo.ex`.
+        if (!fastBoot) {
+            try {
+                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.RepoEnumerator.ensureRepoKept())");
+            } catch (e:Dynamic) {}
+        }
+
+        // Macro-phase discovery: force-type @:repo externs so they join normal compilation
+        if (!fastBoot) {
+            try {
+                reflaxe.elixir.macros.RepoDiscovery.run();
+            } catch (e:Dynamic) {}
+        }
+
+        // Target-conditional classpath gating for staged overrides in std/_std
+        // Only add Elixir-specific staged stdlib when compiling to Elixir target.
+        // This prevents __elixir__ usage from leaking into macro/other targets.
+        var targetName = Context.definedValue("target.name");
+        // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
+        try {
+            var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
+            var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
+            var d1 = Path.directory(d0);                 // .../src/reflaxe
+            var d2 = Path.directory(d1);                 // .../src
+            var repoRoot = Path.directory(d2);           // .../
+            var stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
+            // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
+            // target.name may be unset: rely on presence of -D elixir_output define used by this target.
+            if (targetName == "elixir" || Context.defined("elixir_output")) {
+                Compiler.addClassPath(stagedStd);
+            }
+        } catch (e:Dynamic) {
+            // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
+        }
+
+        // Choose preprocessor profile
+        var useFastPrepasses = !Context.defined("full_prepasses");
+        var prepasses: Array<ExpressionPreprocessor> = [];
+
+        // Always-on critical transforms (semantic correctness / Elixir idioms)
+        prepasses.push(Custom(new PreserveSwitchReturnsImpl()));
+        prepasses.push(Custom(new reflaxe.elixir.preprocessors.FixVariableUsageDetection()));
+        prepasses.push(Custom(new RemoveOrphanedEnumParametersImpl()));
+
+        if (!useFastPrepasses) {
+            // Full cleanup profile (slower). Enable with -D full_prepasses when desired.
+            prepasses.push(RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllTempVariables));
+            prepasses.push(PreventRepeatVariables({}));
+            prepasses.push(RemoveSingleExpressionBlocks);
+            prepasses.push(RemoveConstantBoolIfs);
+            prepasses.push(RemoveUnnecessaryBlocks);
+            prepasses.push(RemoveReassignedVariableDeclarations);
+            prepasses.push(RemoveLocalVariableAliases);
+            prepasses.push(MarkUnusedVariables);
+        }
+
+        // Register the Elixir compiler with Reflaxe
+        ReflectCompiler.AddCompiler(new ElixirCompiler(), {
+            fileOutputExtension: ".ex",
+            outputDirDefineName: "elixir_output",
+            fileOutputType: FilePerModule,
+            ignoreTypes: [],
+            targetCodeInjectionName: "__elixir__",
+            ignoreBodilessFunctions: false,
+            // Keep ignoring externs by default; @:repo externs are scheduled via RepoEnumerator + filterTypes
+            ignoreExterns: true,
+            
+            // Configure Reflaxe 4.0 preprocessors for optimized code generation
+            // These preprocessors clean up the AST before we compile it to Elixir
+            expressionPreprocessors: prepasses
+        });
+    }
+}
+
+#end
+
+================
+File: std/elixir/types/TaskResult.hx
+================
+package elixir.types;
+
+/**
+ * Type-safe result types for Task operations
+ * 
+ * These enums provide compile-time safety for Task.yield and Task.shutdown results,
+ * ensuring proper handling of async operation outcomes.
+ */
+
+/**
+ * Result from Task.yield operations
+ * 
+ * @param T The type of the successful task result
+ */
+enum TaskYieldResult<T> {
+    /**
+     * Task completed successfully with a value
+     * Compiles to: {:ok, value}
+     */
+    Ok(value: T);
+    
+    /**
+     * Task exited with a reason
+     * Compiles to: {:exit, reason}
+     */
+    Exit(reason: Dynamic);
+}
+
+/**
+ * Optional wrapper for yield results (can be null if timeout)
+ * 
+ * @param T The type of the successful task result
+ */
+typedef TaskYieldOption<T> = Null<TaskYieldResult<T>>;
+
+/**
+ * Result from Task.async_stream operations
+ * 
+ * @param T The type of the successful stream element
+ */
+enum TaskStreamResult<T> {
+    /**
+     * Stream element processed successfully
+     * Compiles to: {:ok, value}
+     */
+    Ok(value: T);
+    
+    /**
+     * Stream element failed with exit
+     * Compiles to: {:exit, reason}
+     */
+    Exit(reason: Dynamic);
+}
+
+@:nativeGen extern class TaskResultHelper {
+    public static function isOk<T>(result: TaskYieldOption<T>): Bool;
+    public static function getValue<T>(result: TaskYieldOption<T>): Null<T>;
+    public static function getExitReason<T>(result: TaskYieldOption<T>): Null<Dynamic>;
+}
+
+
+
+================================================================
+End of Codebase
+================================================================

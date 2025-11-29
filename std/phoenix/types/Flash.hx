@@ -346,22 +346,15 @@ class FlashMapTools {
      * @return Array<FlashMessage> Array of structured flash messages
      */
     public static function getAll(flashMap: FlashMap): Array<FlashMessage> {
-        var messages: Array<FlashMessage> = [];
-        
-        if (flashMap.info != null) {
-            messages.push(Flash.info(flashMap.info, null));
-        }
-        if (flashMap.success != null) {
-            messages.push(Flash.success(flashMap.success, null));
-        }
-        if (flashMap.warning != null) {
-            messages.push(Flash.warning(flashMap.warning, null));
-        }
-        if (flashMap.error != null) {
-            messages.push(Flash.error(flashMap.error, null, null));
-        }
-        
-        return messages;
+        final infoMessages = flashMap.info != null ? [Flash.info(flashMap.info, null)] : [];
+        final successMessages = flashMap.success != null ? [Flash.success(flashMap.success, null)] : [];
+        final warningMessages = flashMap.warning != null ? [Flash.warning(flashMap.warning, null)] : [];
+        final errorMessages = flashMap.error != null ? [Flash.error(flashMap.error, null, null)] : [];
+
+        return infoMessages
+            .concat(successMessages)
+            .concat(warningMessages)
+            .concat(errorMessages);
     }
     
     /**

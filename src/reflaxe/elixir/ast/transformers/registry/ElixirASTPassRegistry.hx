@@ -478,7 +478,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ReduceWhileAccumulator",
             description: "Fix variable shadowing in reduce_while loops by proper accumulator threading",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass
         });
 
@@ -486,7 +486,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ReduceWhileResultBinding",
             description: "Bind Enum.reduce_while result to original accumulator locals",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass
         });
         // Early chain assign normalization group (order preserved)
@@ -1605,7 +1605,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "UnderscoreVariableCleanup",
             description: "Remove underscore prefix from used temporary variables",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_underscoreVariableCleanupPass
         });
         #end
@@ -1644,7 +1644,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PrefixUnusedParameters", 
             description: "Prefix unused function parameters with underscore to follow Elixir conventions",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_prefixUnusedParametersPass
         });
         
@@ -1666,7 +1666,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "UsageAnalysis",
             description: "Detect and mark unused variables with underscore prefix (context-aware)",
-            enabled: true, // RE-ENABLED: Now using contextual pass for consistency
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end, // disable in fast_boot/hygiene-off
             pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass,
             contextualPass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPassWithContext
         });
@@ -1742,7 +1742,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HygieneConsolidated",
             description: "Consolidated pass: params underscore, underscore fallback, used underscore promotion, ref/decl alignment, case binder hygiene",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.HygieneConsolidatedTransforms.pass
         });
         // Late binder repair again after hygiene may rewrite locals
@@ -1763,7 +1763,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RefDeclAlignment",
             description: "Align declaration/reference spellings (underscore/numeric) to canonical name",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
         passes.push({
@@ -1808,7 +1808,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RefDeclAlignment",
             description: "Final alignment of declarations and references to canonical names",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
 
@@ -2497,26 +2497,26 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ArithmeticIncrementCleanup",
             description: "Final sweep: drop bare numeric literals and normalize increments",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.transformPass
         });
         passes.push({
             name: "ReduceWhileSentinelCleanup",
             description: "Final sweep: drop numeric sentinels inside reduce_while bodies",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
         });
         passes.push({
             name: "UnderscoreLocalPromotion",
             description: "Promote `_name` local binders to `name` when referenced and safe",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.pass
         });
         // Ultra-final: underscore unused local assignments (same-block conservative)
         passes.push({
             name: "UnusedLocalAssignUnderscoreFinal",
             description: "Rename unused local assignment binders `name = expr` to `_name` (same-block only)",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.pass
         });
         // Split chained assignments a = b = expr into two statements (late readability/shape cleanup)
@@ -2537,7 +2537,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DropStandaloneLiteralOne",
             description: "Ultra-final sweep to remove any bare numeric sentinels left by late injections",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
 
@@ -2606,7 +2606,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HeexRawUsageValidator",
             description: "Warn on residual Phoenix.HTML.raw(content|@content) inside ~H",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.pass,
             contextualPass: reflaxe.elixir.ast.transformers.HeexRawUsageValidatorTransforms.contextualPass
         });
@@ -2639,13 +2639,13 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HeexBlockIfToInline",
             description: "(late) Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.transformPass
         });
         passes.push({
             name: "HeexStripDanglingQuoteLines",
             description: "(late) Drop lines that are solely a quote in ~H",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
         });
 
@@ -2890,7 +2890,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EnumEachSentinelCleanup",
             description: "Absolute sweep: drop bare numeric sentinels in Enum.each fn bodies",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
         });
         // Ultra-final: promote underscored case binders to base name when body uses base name
@@ -3071,14 +3071,14 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "NumericNoOpCleanup",
             description: "Remove standalone numeric ops like 0 + 1 and convert bare count + 1 to assignments",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_numericNoOpCleanupPass
         });
         // Late sweep: drop sentinels inside Enum.each bodies
         passes.push({
             name: "EnumEachSentinelCleanup",
             description: "Drop bare numeric sentinels in Enum.each anonymous function bodies (final)",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
         });
         passes.push({
@@ -3090,7 +3090,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ReduceWhileSentinelCleanup",
             description: "Drop numeric sentinel literals inside Enum.reduce_while function bodies",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
         });
         passes.push({
@@ -3171,7 +3171,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceConcatAccumulatorInit",
             description: "Insert acc=[] when Enum.concat(acc, [...]) appears without prior definition (Presence only)",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.PresenceConcatAccumulatorInitTransforms.pass,
             runAfter: [
                 "HeexTrimTrailingBlankLines_Final",
@@ -3184,7 +3184,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PresenceReduceWhileAccumulatorRepair",
             description: "Inject acc=[] and return acc for reduce_while loops missing initialization (Presence only)",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.PresenceReduceWhileAccumulatorRepairTransforms.pass,
             runAfter: [
                 "PresenceConcatAccumulatorInit",
@@ -4469,7 +4469,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DropStandaloneLiteralOne",
             description: "Drop any last bare numeric literals (1/0/0.0) in blocks, do, EFn, if/case bodies",
-            enabled: true,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
 
@@ -4674,7 +4674,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DebugDumpQueryFunctionBodies",
             description: "Debug-only: dump bodies of *_query functions to verify final shapes",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.DebugDumpQueryFunctionBodiesTransforms.pass
         });
         passes.push({

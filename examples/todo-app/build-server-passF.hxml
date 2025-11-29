@@ -1,6 +1,7 @@
 # Pass F — LiveView main
 -lib reflaxe
 -lib reflaxe.elixir
+-cp ../../std/_std
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -8,14 +9,16 @@
 -D reflaxe_runtime
 -D no-utf16
 -D app_name=TodoApp
--dce full
+-dce std
+--no-inline
 --macro exclude('client')
 --macro exclude('test')
 -D reflaxe.elixir=0.1.0
+-D disable_comprehension_conversion
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces
 -D disable_hygiene_final
 -D fast_boot
+-D hxx_pass_timing
 server.live.TodoLive
-

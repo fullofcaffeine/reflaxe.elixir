@@ -3,6 +3,7 @@ package server.pubsub;
 import phoenix.SafePubSub;
 import haxe.ds.Option;
 import haxe.functional.Result;
+import Type;
 import server.types.Types.TodoPriority;
 import server.types.Types.BulkOperationType;
 import server.types.Types.AlertLevel;
@@ -140,7 +141,6 @@ class TodoPubSub {
      * Note: Must be public to be passed as function reference in Elixir
      */
     public static function messageToElixir(message: TodoPubSubMessage): Dynamic {
-        // Avoid ephemeral locals: build payload inline and add timestamp
         return SafePubSub.addTimestamp(switch (message) {
             case TodoCreated(todo):
                 { type: "todo_created", todo: todo };
@@ -150,13 +150,18 @@ class TodoPubSub {
                 cast { type: "todo_deleted", todo_id: id };
             case BulkUpdate(action):
                 cast { type: "bulk_update", action: bulkActionToString(action) };
-            case UserOnline(user_id):
-                cast { type: "user_online", user_id: user_id };
-            case UserOffline(user_id):
-                cast { type: "user_offline", user_id: user_id };
-            case SystemAlert(message, level):
-                cast { type: "system_alert", message: message, level: alertLevelToString(level) };
+            case UserOnline(userId):
+                cast { type: "user_online", user_id: userId };
+            case UserOffline(userId):
+                cast { type: "user_offline", user_id: userId };
+            case SystemAlert(alert_message, alert_level):
+                buildSystemAlert(alert_message, alert_level);
         });
+    }
+
+    private static inline function buildSystemAlert(alert_message:String, alert_level:AlertLevel):Dynamic {
+        final level_string = alertLevelToString(alert_level);
+        return cast { type: "system_alert", message: alert_message, level: level_string };
     }
     
     /**

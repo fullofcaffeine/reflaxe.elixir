@@ -33,35 +33,35 @@ class HeexPrelude {
     passes.push({
       name: "HeexBlockIfToInline",
       description: "Rewrite <%= if ... do %>HTML<% else %>HTML<% end %> to inline-if",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexBlockIfToInlineTransforms.transformPass
     });
 
     passes.push({
       name: "HeexInlineIfQuoteNormalize",
       description: "Reduce \\\" to \" inside quoted do/else branches of inline-if",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexInlineIfQuoteNormalizeTransforms.transformPass
     });
 
     passes.push({
       name: "HeexCollapseOverEscapedQuotes",
       description: "Normalize double-escaped quotes inside ~H inline strings",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
     });
 
     passes.push({
       name: "HeexTrimTrailingBlankLines",
       description: "Collapse multiple trailing blank lines in ~H content to a single line",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
     });
 
     passes.push({
       name: "HeexStripDanglingQuoteLines",
       description: "Drop lines that are solely a quote (' or \" ) inside ~H",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
     });
 
@@ -75,7 +75,7 @@ class HeexPrelude {
     passes.push({
       name: "HeexSigilFragmentAnnotator",
       description: "Parse ~H content into lightweight fragment metadata (analysis only)",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexSigilFragmentAnnotatorTransforms.transformPass
     });
 
@@ -83,4 +83,3 @@ class HeexPrelude {
   }
 }
 #end
-

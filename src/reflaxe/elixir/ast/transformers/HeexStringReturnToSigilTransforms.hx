@@ -45,15 +45,15 @@ class HeexStringReturnToSigilTransforms {
         var t0 = haxe.Timer.stamp();
         var loops = 0;
         #end
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             #if hxx_instrument loops++; #end
             var j1 = s.indexOf("#{", i);
             var j2 = s.indexOf("${", i);
             var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
-            if (j == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, j - i));
+            if (j == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, j - i));
             var k = j + 2;
             var depth = 1;
             while (k < s.length && depth > 0) {
@@ -74,23 +74,23 @@ class HeexStringReturnToSigilTransforms {
                 var elseHtml = extractBlockHtml(elsePart);
                 // Fallback: if extraction failed, treat as expression
                 if (thenHtml == null && elseHtml == null) {
-                    out.add('<%= ' + mapAssigns(expr) + ' %>');
+                    parts.push('<%= ' + mapAssigns(expr) + ' %>');
                 } else {
                     // Emit block HEEx to avoid quoting/attribute breakage
-                    out.add('<%= if ' + cond + ' do %>');
-                    if (thenHtml != null) out.add(thenHtml);
+                    parts.push('<%= if ' + cond + ' do %>');
+                    if (thenHtml != null) parts.push(thenHtml);
                     if (elseHtml != null && elseHtml != "") {
-                        out.add('<% else %>');
-                        out.add(elseHtml);
+                        parts.push('<% else %>');
+                        parts.push(elseHtml);
                     }
-                    out.add('<% end %>');
+                    parts.push('<% end %>');
                 }
             } else {
-                out.add('<%= ' + mapAssigns(expr) + ' %>');
+                parts.push('<%= ' + mapAssigns(expr) + ' %>');
             }
             i = k;
         }
-        var res = out.toString();
+        var res = parts.join("");
         // Post-process any fallback inline ternary
         res = rewriteInlineTernaryToBlock(res);
         // Keep other inline cases as-is for readability
@@ -117,7 +117,7 @@ class HeexStringReturnToSigilTransforms {
         // now expect a quoted string
         if (t.length < 2 || t.charAt(0) != '"' || t.charAt(t.length - 1) != '"') return null;
         // unescape a subset of common escapes inside the string literal
-        var out = new StringBuf();
+        var decoded:Array<String> = [];
         var i = 1;
         var end = t.length - 1;
         while (i < end) {
@@ -125,21 +125,21 @@ class HeexStringReturnToSigilTransforms {
             if (ch == '\\' && i + 1 < end) {
                 var nxt = t.charAt(i + 1);
                 switch (nxt) {
-                    case 'n': out.add("\n"); i += 2; continue;
-                    case 'r': out.add("\r"); i += 2; continue;
-                    case 't': out.add("\t"); i += 2; continue;
-                    case '"': out.add('"'); i += 2; continue;
-                    case '\\': out.add('\\'); i += 2; continue;
+                    case 'n': decoded.push("\n"); i += 2; continue;
+                    case 'r': decoded.push("\r"); i += 2; continue;
+                    case 't': decoded.push("\t"); i += 2; continue;
+                    case '"': decoded.push('"'); i += 2; continue;
+                    case '\\': decoded.push('\\'); i += 2; continue;
                     default:
-                        out.add(nxt);
+                        decoded.push(nxt);
                         i += 2; continue;
                 }
             } else {
-                out.add(ch);
+                decoded.push(ch);
                 i++;
             }
         }
-        return out.toString();
+        return decoded.join("");
     }
 
     // Map assigns.* to @* for HEEx idioms in expressions
@@ -206,14 +206,14 @@ class HeexStringReturnToSigilTransforms {
 
     // Rewrite occurrences of <%= cond ? then : else %> into block HEEx, supporting HXX.block('...') and quoted strings
     static function rewriteInlineTernaryToBlock(s:String):String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var start = s.indexOf("<%=", i);
-            if (start == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, start - i));
+            if (start == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, start - i));
             var endTag = s.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(s.substr(start)); break; }
+            if (endTag == -1) { parts.push(s.substr(start)); break; }
             var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
             var t = splitTopLevelTernary(inner);
             if (t != null) {
@@ -221,22 +221,22 @@ class HeexStringReturnToSigilTransforms {
                 var th = extractBlockHtml(StringTools.trim(t.thenPart));
                 var el = extractBlockHtml(StringTools.trim(t.elsePart));
                 if (th != null || el != null) {
-                    out.add('<%= if ' + cond + ' do %>');
-                    if (th != null) out.add(th);
+                    parts.push('<%= if ' + cond + ' do %>');
+                    if (th != null) parts.push(th);
                     if (el != null && el != "") {
-                        out.add('<% else %>');
-                        out.add(el);
+                        parts.push('<% else %>');
+                        parts.push(el);
                     }
-                    out.add('<% end %>');
+                    parts.push('<% end %>');
                 } else {
-                    out.add(s.substr(start, (endTag + 2) - start));
+                    parts.push(s.substr(start, (endTag + 2) - start));
                 }
             } else {
-                out.add(s.substr(start, (endTag + 2) - start));
+                parts.push(s.substr(start, (endTag + 2) - start));
             }
             i = endTag + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     // Rewrite occurrences of <%= if cond, do: "...", else: "..." %> into a block if
@@ -441,16 +441,16 @@ class HeexStringReturnToSigilTransforms {
                 var thenStr:Null<String> = extractString(thenB);
                 var elseStr:Null<String> = elseB != null ? extractString(elseB) : "";
                 if (thenStr != null && (elseB == null || elseStr != null)) {
-                    var out = new StringBuf();
+                    var parts:Array<String> = [];
                     // Use same mapping utility as in convertInterpolations()
-                    out.add('<%= if ' + mapAssigns(reflaxe.elixir.ast.ElixirASTPrinter.printAST(cond)) + ' do %>');
-                    out.add(reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(convertInterpolations(thenStr)));
+                    parts.push('<%= if ' + mapAssigns(reflaxe.elixir.ast.ElixirASTPrinter.printAST(cond)) + ' do %>');
+                    parts.push(reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(convertInterpolations(thenStr)));
                     if (elseB != null && elseStr != null && elseStr != "") {
-                        out.add('<% else %>');
-                        out.add(reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(convertInterpolations(elseStr)));
+                        parts.push('<% else %>');
+                        parts.push(reflaxe.elixir.ast.TemplateHelpers.rewriteControlTags(convertInterpolations(elseStr)));
                     }
-                    out.add('<% end %>');
-                    return makeAST(ESigil("H", out.toString(), ""));
+                    parts.push('<% end %>');
+                    return makeAST(ESigil("H", parts.join(""), ""));
                 }
             default:
         }
@@ -459,14 +459,14 @@ class HeexStringReturnToSigilTransforms {
 
     // Replace `<%= ~H""" ... """ %>` with the inner body to avoid nested ~H inside ~H
     static function flattenNestedHeexSigil(s:String):String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var open = s.indexOf("<%=", i);
-            if (open == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, open - i));
+            if (open == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, open - i));
             var close = s.indexOf("%>", open + 3);
-            if (close == -1) { out.add(s.substr(open)); break; }
+            if (close == -1) { parts.push(s.substr(open)); break; }
             var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
             if (StringTools.startsWith(inner, "~H\"\"\"")) {
                 var start = inner.indexOf("\"\"\"");
@@ -475,18 +475,18 @@ class HeexStringReturnToSigilTransforms {
                     var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
                     if (bodyEnd != -1) {
                         var body = inner.substr(bodyStart, bodyEnd - bodyStart);
-                        out.add(body);
+                        parts.push(body);
                         i = close + 2;
                         continue;
                     }
                 }
             }
-            out.add(s.substr(open, (close + 2) - open));
+            parts.push(s.substr(open, (close + 2) - open));
             i = close + 2;
         }
         // Keep inline-if forms intact to match idiomatic HEEx and snapshot intent.
         // Only flatten nested ~H sigils here; do not rewrite inline-if/ternary.
-        return out.toString();
+        return parts.join("");
     }
 
     static function extractString(n: ElixirAST): Null<String> {
