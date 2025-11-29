@@ -132,21 +132,21 @@ class UserController {
         var result = Users.createUser(params);
         
         return switch(result) {
-            case Ok(value):
+            case Ok(user):
                 conn
                     .putStatus(201)
                     .json({
-                        user: value,
+                        user: user,
                         created: true,
                         message: "User created successfully"
                     });
                     
-            case Error(reason):
+            case Error(changeset):
                 conn
                     .putStatus(422)
                     .json({
                         error: "Failed to create user",
-                        changeset: reason
+                        changeset: changeset
                     });
         }
     }
@@ -179,21 +179,21 @@ class UserController {
         var result = Users.updateUser(user, updateAttrs);
         
         return switch(result) {
-            case Ok(value):
+            case Ok(updatedUser):
                 // Use a named local to avoid any intermediate aliasing of the json/2 payload
                 final payload = {
-                    user: value,
+                    user: updatedUser,
                     updated: true,
                     message: 'User ${params.id} updated successfully'
                 };
                 conn.json(payload);
                 
-            case Error(reason):
+            case Error(changeset):
                 conn
                     .putStatus(422)
                     .json({
                         error: "Failed to update user",
-                        changeset: reason
+                        changeset: changeset
                     });
         }
     }

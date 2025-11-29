@@ -3917,6 +3917,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseErrorVarUnifyTransforms.transformPass
         });
+        // Realign underscored binders when the body still references the bare name
+        passes.push({
+            name: "CaseBinderUnderscoreAlign_Final",
+            description: "Rename {:ok, _value} back to {:ok, value} when body uses `value` and no other binder exists",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms.pass
+        });
         // Align case binder names in {:ok, binder}/{:error, binder} to the single undefined
         // lower-case name used within the clause body (usage-driven, no app coupling)
         passes.push({

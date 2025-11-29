@@ -64,17 +64,24 @@ class Users {
      */
     public static function listUsers(?filter: UserFilter): Array<User> {
         // Build a single query variable and refine it conditionally; return at the end.
-        var query = TypedQuery.from(contexts.User);
-        if (filter != null && filter.name != null) {
-            query = query.where(u -> u.name == '%${filter.name}%');
+        var query: TypedQuery<User> = if (filter != null) {
+            var q = TypedQuery.from(contexts.User);
+            if (filter.name != null) {
+                q = q.where(u -> u.name == '%${filter.name}%');
+            }
+            if (filter.email != null) {
+                q = q.where(u -> u.email == '%${filter.email}%');
+            }
+            if (filter.isActive != null) {
+                q = q.where(u -> u.active == filter.isActive);
+            }
+            q;
+        } else {
+            TypedQuery.from(contexts.User);
         }
-        if (filter != null && filter.email != null) {
-            query = query.where(u -> u.email == '%${filter.email}%');
-        }
-        if (filter != null && filter.isActive != null) {
-            query = query.where(u -> u.active == filter.isActive);
-        }
-        return Repo.all(query);
+
+        var users = Repo.all(query);
+        return users;
     }
     
     /**

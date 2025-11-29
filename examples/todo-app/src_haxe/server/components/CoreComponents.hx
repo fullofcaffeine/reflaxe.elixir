@@ -114,6 +114,7 @@ typedef LabelAssigns = {
  */
 @:native("TodoAppWeb.CoreComponents")
 @:component
+@:keep
 class CoreComponents {
     
     /**

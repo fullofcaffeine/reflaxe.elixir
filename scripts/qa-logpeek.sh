@@ -51,9 +51,9 @@ if [[ "$UNTIL_DONE" -eq 1 ]]; then
   PAT='\[QA\] DONE status='
   if command -v timeout >/dev/null 2>&1; then
     # Use timeout with a small awk filter that exits when the DONE line appears
-    timeout "${UNTIL_SECS}s" bash -lc "tail -f '$LOGFILE' | awk '{print; fflush(); if (index(\$0,"[QA] DONE status=")>0) exit 0 }'" || true
+    timeout "${UNTIL_SECS}s" bash -lc "tail -f '$LOGFILE' | awk '{print; fflush(); if (index(\$0,\"[QA] DONE status=\")>0) exit 0 }'" || true
   elif command -v gtimeout >/dev/null 2>&1; then
-    gtimeout "${UNTIL_SECS}s" bash -lc "tail -f '$LOGFILE' | awk '{print; fflush(); if (index(\$0,"[QA] DONE status=")>0) exit 0 }'" || true
+    gtimeout "${UNTIL_SECS}s" bash -lc "tail -f '$LOGFILE' | awk '{print; fflush(); if (index(\$0,\"[QA] DONE status=\")>0) exit 0 }'" || true
   else
     # Portable fallback using a FIFO and a watchdog timer
     pipe=$(mktemp -u)

@@ -1104,60 +1104,60 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 					
 					<!-- Todo List -->
                     <div id="todo-list" class="space-y-4">
-                        <for {v in assigns.visible_todos}>
-                            <if {v.is_editing}>
+                        <%= for v <- @visible_todos do %>
+                            <%= if v.is_editing do %>
                                 <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
                                     class={v.container_class}>
                                     <form phx-submit="save_todo" class="space-y-4">
                                         <input type="text" name="title" value={v.title} required data-testid="input-title"
                                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
                                         <textarea name="description" rows="2"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{v.description}</textarea>
+                                            class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"><%= v.description %></textarea>
                                         <div class="flex space-x-2">
                                             <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Save</button>
                                             <button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
                                         </div>
                                     </form>
                                 </div>
-                            <else>
+                            <% else %>
                                 <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
                                     class={v.container_class}>
                                     <div class="flex items-start space-x-4">
                                         <!-- Checkbox -->
                                         <button type="button" phx-click="toggle_todo" phx-value-id={v.id} data-testid="btn-toggle-todo"
                                             class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
-                                            <if {v.completed_for_view}>
+                                            <%= if v.completed_for_view do %>
                                                 <span class="text-green-500">✓</span>
-                                            </if>
+                                            <% end %>
                                         </button>
 
                                         <!-- Content -->
                                         <div class="flex-1">
                                             <h3 class={v.title_class}>
-                                                #{v.title}
+                                                <%= v.title %>
                                             </h3>
-                                            <if {v.has_description}>
+                                            <%= if v.has_description do %>
                                                 <p class={v.desc_class}>
-                                                    #{v.description}
+                                                    <%= v.description %>
                                                 </p>
-                                            </if>
+                                            <% end %>
 
                                             <!-- Meta info -->
                                             <div class="flex flex-wrap gap-2 mt-3">
                                                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                    Priority: #{v.priority}
+                                                    Priority: <%= v.priority %>
                                                 </span>
-                                                <if {v.has_due}>
+                                                <%= if v.has_due do %>
                                                     <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                        Due: #{v.due_display}
+                                                        Due: <%= v.due_display %>
                                                     </span>
-                                                </if>
-                                                <if {v.has_tags}>
-                                                    <for {tag in v.tags}>
+                                                <% end %>
+                                                <%= if v.has_tags do %>
+                                                    <%= for tag <- v.tags do %>
                                                         <button phx-click="search_todos" phx-value-query={tag}
-                                                            class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#{tag}</button>
-                                                    </for>
-                                                </if>
+                                                            class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200"><%= tag %></button>
+                                                    <% end %>
+                                                <% end %>
                                             </div>
                                         </div>
 
@@ -1170,8 +1170,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
                                         </div>
                                     </div>
                                 </div>
-                            </if>
-                        </for>
+                            <% end %>
+                        <% end %>
                     </div>
                 </div>
             </div>

@@ -16,9 +16,9 @@
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces
--D disable_hygiene_final
 -D fast_boot
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
+server.infrastructure.TodoAppWeb
 server.components.CoreComponents

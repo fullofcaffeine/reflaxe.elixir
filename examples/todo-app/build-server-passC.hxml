@@ -16,7 +16,6 @@
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces
--D disable_hygiene_final
 -D fast_boot
 server.layouts.Layouts
 # LiveView moved to Pass F
