@@ -19,7 +19,7 @@ class TodoApp {
      * Start the application
      */
     @:keep
-    public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
+    public static function start(_type: ApplicationStartType, _args: ApplicationArgs): ApplicationResult {
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
             // Database repository - Ecto.Repo handles Postgrex.TypeManager internally
@@ -39,8 +39,13 @@ class TodoApp {
             TypeSafeChildSpec.endpoint("TodoAppWeb.Endpoint")
         ];
 
-        // Start supervisor with children using type-safe SupervisorExtern + options builder
-        return SupervisorExtern.startLink(children, elixir.otp.Supervisor.SupervisorOptionsBuilder.defaults());
+        final options: SupervisorOptions = {
+            strategy: SupervisorStrategy.OneForOne,
+            max_restarts: 3,
+            max_seconds: 5
+        };
+        // Start supervisor with children using type-safe SupervisorExtern
+        return SupervisorExtern.startLink(children, options);
     }
 
     /**

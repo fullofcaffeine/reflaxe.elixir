@@ -38,10 +38,10 @@ class CompilerInit {
         #end
         
         var fastBoot = Context.defined("fast_boot");
-        // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
-        if (!fastBoot) {
-            LiveViewPreserver.init();
-        }
+        // Initialize LiveView preservation to prevent DCE from removing Phoenix methods.
+        // Even in fast_boot mode we must keep LiveView callbacks (mount/handle_event/etc.)
+        // or DCE will drop them and Phoenix will raise at runtime.
+        LiveViewPreserver.init();
 
         // Ensure @:repo externs are kept by DCE so they can be scheduled normally
         // for compilation via the AST pipeline (repoTransformPass).
