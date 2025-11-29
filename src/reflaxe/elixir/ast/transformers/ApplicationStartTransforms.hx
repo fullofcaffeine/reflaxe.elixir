@@ -153,7 +153,13 @@ class ApplicationStartTransforms {
                     var finalBody: ElixirAST = null;
                     switch (transformedBody.def) {
                         case EBlock(stmts):
-                            for (s in stmts) switch (s.def) { case ERemoteCall(mod, fn, _) if (fn == "start_link"): hasStartLink = true; default: }
+                            for (s in stmts) switch (s.def) {
+                                case ERemoteCall(_, fn, _) if (fn == "start_link"):
+                                    hasStartLink = true;
+                                case EBinary(Match, _, rhs):
+                                    switch (rhs.def) { case ERemoteCall(_, fn2, _) if (fn2 == "start_link"): hasStartLink = true; default: }
+                                default:
+                            }
                             if (!hasStartLink && declaredChildren != null) {
                                 var appended = stmts.copy();
                                 var defaultOpts = makeAST(EKeywordList([

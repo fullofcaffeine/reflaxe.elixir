@@ -225,7 +225,16 @@ class TodoLive {
                 recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy));
 			
             case SearchTodos(query):
-                recomputeVisible(SafeAssigns.setSearchQuery(socket, query));
+                // Refresh from DB to ensure search operates on latest data
+                var refreshedTodos = loadTodos(socket.assigns.current_user.id);
+                var searchSocket: LiveSocket<TodoLiveAssigns> = LiveView.assignMultiple(socket, {
+                    search_query: query,
+                    todos: refreshedTodos,
+                    total_todos: refreshedTodos.length,
+                    completed_todos: countCompleted(refreshedTodos),
+                    pending_todos: countPending(refreshedTodos)
+                });
+                recomputeVisible(searchSocket);
 			
             case ToggleTag(tag):
                 // Inline toggleTagFilter to avoid relying on helper emission ordering
@@ -388,17 +397,18 @@ class TodoLive {
         var cs = ecto.ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
         switch (Repo.insert(cs)) {
             case Ok(value):
+                var inserted = value;
                 // Best-effort broadcast; ignore result
-                TodoPubSub.broadcast(TodoUpdates, TodoCreated(value));
-                var todos = [value].concat(socket.assigns.todos);
-                var updated = LiveView.assignMultiple(socket, {
+                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(inserted));
+                var todos = [inserted].concat(socket.assigns.todos);
+                var updatedSocket: LiveSocket<TodoLiveAssigns> = untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, {
                     todos: todos,
                     show_form: false,
                     total_todos: socket.assigns.total_todos + 1,
-                    pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
-                    completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
+                    pending_todos: socket.assigns.pending_todos + (inserted.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (inserted.completed ? 1 : 0)
                 });
-                var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updated);
+                var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
                 return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
             case Error(_reason):
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
@@ -942,7 +952,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	 * Render function for the LiveView component
 	 * This generates the HTML template that gets sent to the browser
 	 */
-    public static function render(assigns: TodoLiveAssigns): Dynamic {
+    @:keep public static function render(assigns: TodoLiveAssigns): Dynamic {
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
@@ -1370,13 +1380,13 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
             });
     }
 	
-	/**
-	 * Helper to filter and sort todos
-	 */
+    /**
+     * Helper to filter and sort todos
+     */
     public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String, selectedTags: Array<String>): Array<server.schemas.Todo> {
         final sortKey = encodeSort(sortBy);
         return untyped __elixir__('
-          filtered = TodoAppWeb.TodoLive.filter_todos({0}, {1}, {2})
+          filtered = filter_todos({0}, {1}, {2})
           filtered =
             if {3} != nil and length({3}) > 0 do
               Enum.filter(filtered, fn t ->
@@ -1388,7 +1398,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
             else
               filtered
             end
-          TodoApp.Sorting.by({4}, filtered)
+          Phoenix.Sorting.by({4}, filtered)
         ', todos, filter, searchQuery, selectedTags, sortKey);
     }
 }

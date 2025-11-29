@@ -64,7 +64,9 @@ class FlashTypeTools {
      */
     public static function toPhoenixKey(type: FlashType): String {
         return switch (type) {
-            case Info | Success | Warning: "info";
+            case Info: "info";
+            case Success: "info";
+            case Warning: "info";
             case Error: "error";
         };
     }

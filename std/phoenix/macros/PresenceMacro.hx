@@ -5,6 +5,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 using haxe.macro.Tools;
+import reflaxe.elixir.PhoenixMapper;
 #end
 
 /**
@@ -219,6 +220,56 @@ using haxe.macro.Tools;
 @:nullSafety(Off)
 class PresenceMacro {
 	#if macro
+	static function camelToSnake(name:String):String {
+		if (name == null) return "";
+		var buf = new StringBuf();
+		for (i in 0...name.length) {
+			var c = name.charAt(i);
+			var lower = c.toLowerCase();
+			var isUpper = (c != lower);
+			if (i > 0 && isUpper) buf.add("_");
+			buf.add(lower);
+		}
+		return buf.toString();
+	}
+
+	static function deriveBootstrap(ct:ClassType, fqModule:String):reflaxe.elixir.PhoenixMapper.PresenceBootstrap {
+		var otpAppAtom:Null<String> = null;
+		var pubsubModule:Null<String> = null;
+
+		if (ct.meta.has(":presenceOtpApp")) {
+			var m = ct.meta.extract(":presenceOtpApp");
+			if (m.length > 0 && m[0].params != null && m[0].params.length > 0) {
+				switch (m[0].params[0].expr) {
+					case EConst(CString(s, _)):
+						otpAppAtom = s.charAt(0) == ":" ? s : (":" + s);
+					default:
+				}
+			}
+		}
+
+		if (ct.meta.has(":presencePubSub")) {
+			var m2 = ct.meta.extract(":presencePubSub");
+			if (m2.length > 0 && m2[0].params != null && m2[0].params.length > 0) {
+				switch (m2[0].params[0].expr) {
+					case EConst(CString(s, _)):
+						pubsubModule = s;
+					default:
+				}
+			}
+		}
+
+		var appMod = try PhoenixMapper.getAppModuleName() catch (_:Dynamic) "MyApp";
+		if (appMod == null || appMod == "") appMod = "MyApp";
+		if (otpAppAtom == null) otpAppAtom = ":" + camelToSnake(appMod);
+		if (pubsubModule == null) pubsubModule = appMod + ".PubSub";
+
+		return {
+			moduleName: fqModule,
+			otpAppAtom: otpAppAtom,
+			pubsubModule: pubsubModule
+		};
+	}
 	
 	/**
 	 * Build function called by @:autoBuild on PresenceBehavior.
@@ -227,6 +278,9 @@ class PresenceMacro {
 	 * @return Array of generated fields to add to the implementing class
 	 */
 	public static function build(): Array<Field> {
+        #if debug_presence
+        Context.warning("PresenceMacro.build() invoked", Context.currentPos());
+        #end
 		var fields = Context.getBuildFields();
 		var newFields: Array<Field> = [];
 		
@@ -266,6 +320,18 @@ class PresenceMacro {
             }
             return "__MODULE__";
         })();
+
+        // Register a minimal Presence bootstrap so the backend emits the module.
+        if (localClass != null) {
+            var ct = localClass.get();
+            #if debug_presence
+            reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
+            #else
+            try {
+                reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
+            } catch (_:Dynamic) {}
+            #end
+        }
 
         // Generate internal methods (with self())
 		newFields.push(generateInternalTrack());

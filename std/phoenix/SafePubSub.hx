@@ -90,6 +90,7 @@ interface PubSubMessageProvider<M> {
  * topic and message type definitions.
  */
 @:native("Phoenix.SafePubSub")
+@:keep
 class SafePubSub {
     
     /**
@@ -99,6 +100,7 @@ class SafePubSub {
      * @param topicConverter Function to convert topic to string
      * @return Result indicating success or failure
      */
+    @:keep
     public static function subscribeTopic(topicString: String): Result<Void, String> {
         return untyped __elixir__('
           case Phoenix.PubSub.subscribe(
@@ -128,6 +130,7 @@ class SafePubSub {
      * @param messageConverter Function to convert message to Dynamic
      * @return Result indicating success or failure
      */
+    @:keep
     public static function broadcastTopicPayload(topicString: String, payload: Dynamic): Result<Void, String> {
         return untyped __elixir__('
           # Normalize top-level atom keys to also have string equivalents,
@@ -176,6 +179,7 @@ class SafePubSub {
      * @param messageParser Application-specific message parser
      * @return Parsed message or None if parsing failed
      */
+    @:keep
     public static function parseWithConverter<M>(
         msg: Dynamic,
         messageParser: Dynamic -> Option<M>
@@ -221,6 +225,7 @@ class SafePubSub {
     /**
      * Utility function to add timestamp to message payload
      */
+    @:keep
     public static function addTimestamp(payload: Dynamic): Dynamic {
         // Avoid shadowing/rewrites by computing a base value once
         var basePayload: Dynamic = (payload == null) ? {} : payload;
@@ -237,6 +242,7 @@ class SafePubSub {
      * @param msg Message to validate
      * @return true if message has required fields
      */
+    @:keep
     public static function isValidMessage(msg: Dynamic): Bool {
         return msg != null && 
                Reflect.hasField(msg, "type") && 

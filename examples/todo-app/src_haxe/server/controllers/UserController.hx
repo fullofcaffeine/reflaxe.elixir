@@ -130,24 +130,22 @@ class UserController {
     public static function create(conn: Conn<CreateParams>, params: CreateParams): Conn<CreateParams> {
         // Create user through Users context with database persistence
         var result = Users.createUser(params);
-        
-        return switch(result) {
-            case Ok(user):
-                conn
-                    .putStatus(201)
-                    .json({
-                        user: user,
-                        created: true,
-                        message: "User created successfully"
-                    });
-                    
-            case Error(changeset):
-                conn
-                    .putStatus(422)
-                    .json({
-                        error: "Failed to create user",
-                        changeset: changeset
-                    });
+
+        switch (result) {
+            case Ok(value):
+                var okConn = conn.putStatus(201);
+                return okConn.json({
+                    user: value,
+                    created: true,
+                    message: "User created successfully"
+                });
+
+            case Error(reason):
+                var errConn = conn.putStatus(422);
+                return errConn.json({
+                    error: "Failed to create user",
+                    changeset: reason
+                });
         }
     }
     
@@ -177,24 +175,23 @@ class UserController {
         };
         
         var result = Users.updateUser(user, updateAttrs);
-        
-        return switch(result) {
-            case Ok(updatedUser):
+
+        switch (result) {
+            case Ok(value):
                 // Use a named local to avoid any intermediate aliasing of the json/2 payload
                 final payload = {
-                    user: updatedUser,
+                    user: value,
                     updated: true,
                     message: 'User ${params.id} updated successfully'
                 };
-                conn.json(payload);
-                
-            case Error(changeset):
-                conn
-                    .putStatus(422)
-                    .json({
-                        error: "Failed to update user",
-                        changeset: changeset
-                    });
+                return conn.json(payload);
+
+            case Error(reason):
+                var errConn = conn.putStatus(422);
+                return errConn.json({
+                    error: "Failed to update user",
+                    changeset: reason
+                });
         }
     }
     

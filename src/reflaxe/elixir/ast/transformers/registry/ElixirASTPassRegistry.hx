@@ -539,6 +539,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_idiomaticEnumPatternMatchingPass
         });
+        // Replay idiomatic enum conversion to catch any tagged tuples that
+        // slipped through (critical for OTP child specs like ModuleRef/ModuleWithConfig).
+        passes.push({
+            name: "IdiomaticEnumReplay",
+            description: "Reapply idiomatic enum conversion on residual tagged tuples",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.IdiomaticEnumReplayTransforms.pass
+        });
         
         // Pattern matching transformation pass (comprehensive switch→case conversion)
         passes.push({

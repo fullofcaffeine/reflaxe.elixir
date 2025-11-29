@@ -21,4 +21,7 @@ server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 server.infrastructure.TodoAppWeb
+server.infrastructure.ErrorHTML
 server.components.CoreComponents
+phoenix.SafePubSub
+phoenix.Sorting
