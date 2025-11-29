@@ -2,6 +2,10 @@ package reflaxe.elixir.ast;
 
 #if (macro || reflaxe_runtime)
 
+#if macro
+import haxe.macro.Context;
+#end
+
 import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
@@ -202,11 +206,41 @@ class ElixirASTTransformer {
                 trace('[XRay AST Structure] Root: ${ast.def}');
         }
         #end
+
+        #if hxx_ast_progress
+        transformInvocationCounter++;
+
+        var rootName = switch (ast.def) {
+            case EModule(name, _, _) | EDefmodule(name, _):
+                name;
+            default:
+                "<root>";
+        };
+
+        #if sys
+        Sys.println('[ASTProgress] #' + transformInvocationCounter + ' ' + rootName);
+        #else
+        trace('[ASTProgress] #' + transformInvocationCounter + ' ' + rootName);
+        #end
+        #end
+
+        #if hxx_pass_trace
+        var passTraceEnabled = false;
+        var passTraceFilter = getDefineString("hxx_pass_trace_filter");
+        if (passTraceFilter == null || (rootName != null && rootName.indexOf(passTraceFilter) != -1)) {
+            passTraceEnabled = true;
+        }
+        #end
         
         var passes = getEnabledPasses();
         var result = ast;
-        #if hxx_instrument_sys
+
+        #if (hxx_pass_timing && !hxx_disable_timing)
         var __pipelineStart = haxe.Timer.stamp();
+        // Optional substring filter to reduce timing noise:
+        //   -D hxx_pass_timing_filter=Reduce
+        var __passTimingFilter = getDefineString("hxx_pass_timing_filter");
+        if (__passTimingFilter != null && __passTimingFilter == "") __passTimingFilter = null;
         #end
         
         for (passConfig in passes) {
@@ -216,6 +250,16 @@ class ElixirASTTransformer {
             #else
             trace('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #end
+            #end
+
+            #if hxx_pass_trace
+            if (passTraceEnabled) {
+                #if sys
+                Sys.println('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' start');
+                #else
+                trace('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' start');
+                #end
+            }
             #end
 
             /**
@@ -258,8 +302,14 @@ class ElixirASTTransformer {
             // - Contextual passes get access to tempVarRenameMap for consistency
             // - Non-contextual passes continue working unchanged
             // - No null pointer errors when context not provided
-            #if hxx_instrument_sys
+            #if (hxx_pass_timing && !hxx_disable_timing)
             var __t0 = haxe.Timer.stamp();
+            #end
+            #if debug_transformer_hang
+            // Reset cycle detector per pass so visit counts reflect only the current pass.
+            visitedNodes = new Map();
+            nodeVisitCounter = 0;
+            currentPassName = passConfig.name;
             #end
             if (passConfig.contextualPass != null && context != null) {
                 #if debug_contextual_passes
@@ -278,13 +328,30 @@ class ElixirASTTransformer {
 
                 result = passConfig.pass(result);
             }
-            #if hxx_instrument_sys
+            #if (hxx_pass_timing && !hxx_disable_timing)
             var __elapsedPass = (haxe.Timer.stamp() - __t0) * 1000.0;
-            #if sys
-            Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
-            #else
-            trace('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
-            #end
+
+            // Apply optional substring filter when present.
+            var __shouldLogPass = true;
+            if (__passTimingFilter != null) {
+                __shouldLogPass = (passConfig.name.indexOf(__passTimingFilter) != -1);
+            }
+
+            if (__shouldLogPass) {
+                #if sys
+                // Append timing to a deterministic file so partial logs survive.
+                try {
+                    var __log = sys.io.File.append("/tmp/passF-macro.log", false);
+                    __log.writeString("[PassTiming] name=" + passConfig.name + " ms=" + Std.int(__elapsedPass) + "\n");
+                    __log.close();
+                } catch (e: Dynamic) {
+                    // Fallback to stdout if append fails.
+                    Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
+                }
+                #else
+                trace('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
+                #end
+            }
             #end
 
             #if debug_ast_snapshots
@@ -308,12 +375,28 @@ class ElixirASTTransformer {
                 #if sys Sys.println('#[PassMetrics] Changed by: ' + passConfig.name); #else trace('#[PassMetrics] Changed by: ' + passConfig.name); #end
             }
             #end
+
+            #if hxx_pass_trace
+            if (passTraceEnabled) {
+                #if sys
+                Sys.println('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' end');
+                #else
+                trace('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' end');
+                #end
+            }
+            #end
         }
         
-        #if hxx_instrument_sys
+        #if (hxx_pass_timing && !hxx_disable_timing)
         var __pipelineElapsed = (haxe.Timer.stamp() - __pipelineStart) * 1000.0;
         #if sys
-        Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
+        try {
+            var __totalLog = sys.io.File.append("/tmp/passF-macro.log", false);
+            __totalLog.writeString("[PassTiming] name=ElixirASTTransformer.total ms=" + Std.int(__pipelineElapsed) + "\n");
+            __totalLog.close();
+        } catch (e: Dynamic) {
+            Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
+        }
         #else
         trace('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
         #end
@@ -379,7 +462,56 @@ class ElixirASTTransformer {
      * Get list of enabled transformation passes
      */
     static function getEnabledPasses(): Array<PassConfig> {
-        return reflaxe.elixir.ast.transformers.registry.ElixirASTPassRegistry.getEnabledPasses();
+        var passes = reflaxe.elixir.ast.transformers.registry.ElixirASTPassRegistry.getEnabledPasses();
+
+        #if macro
+        var disableSpec = getDefineString("hxx_disable_passes");
+        if (disableSpec != null && disableSpec != "") {
+            var tokens = disableSpec.split(",");
+            var disabled = new Array<String>();
+            for (tok in tokens) {
+                var trimmed = tok.trim();
+                if (trimmed != "") disabled.push(trimmed);
+            }
+
+            if (disabled.length > 0) {
+                #if sys
+                Sys.println('[AST PassFilter] hxx_disable_passes=' + disabled.join(","));
+                #else
+                trace('[AST PassFilter] hxx_disable_passes=' + disabled.join(","));
+                #end
+
+                passes = [
+                    for (p in passes)
+                    if (!isPassDisabled(p.name, disabled)) p
+                ];
+            }
+        }
+        #end
+
+        return passes;
+    }
+
+    /**
+     * Helper: read a string define in macro context; returns null when absent.
+     */
+    static inline function getDefineString(name: String): Null<String> {
+        #if macro
+        try {
+            return Context.definedValue(name);
+        } catch (_: Dynamic) {
+            return null;
+        }
+        #else
+        return null;
+        #end
+    }
+
+    static function isPassDisabled(passName: String, disabled: Array<String>): Bool {
+        for (token in disabled) {
+            if (passName == token) return true;
+        }
+        return false;
     }
 
     // (debug_ast_snapshots helper moved to a top-level private class below)
@@ -4460,7 +4592,14 @@ class ElixirASTTransformer {
     // Track visited nodes to detect cycles (for debugging)
     private static var visitedNodes: Map<String, Int> = new Map();
     private static var nodeVisitCounter: Int = 0;
-    private static var maxNodeVisits: Int = 10000;
+    // Large budget so normal multi-pass pipelines don't false-positive.
+    private static var maxNodeVisits: Int = 500000;
+    #if hxx_ast_progress
+    private static var transformInvocationCounter: Int = 0;
+    #end
+    #if debug_transformer_hang
+    private static var currentPassName: String = "";
+    #end
 
     // Helper to transform an array only if elements change
     private static function transformArray(arr: Array<ElixirAST>, transformer: (ElixirAST) -> ElixirAST): {array: Array<ElixirAST>, changed: Bool} {
@@ -4533,9 +4672,12 @@ class ElixirASTTransformer {
         }
 
         // Detect excessive visits to same node (cycle)
-        if (visits > 100) {
+        if (visits > 1000) {
             trace('[CYCLE DETECTED] Node ${nodeId} visited ${visits} times!');
             trace('[CYCLE DETECTED] AST def: ${ast.def}');
+            #if debug_transformer_hang
+            trace('[CYCLE DETECTED] Current pass: ' + currentPassName);
+            #end
             throw 'Infinite recursion detected in transformer: ${nodeId}';
         }
 

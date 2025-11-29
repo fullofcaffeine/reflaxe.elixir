@@ -527,8 +527,13 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
     }
 	
     static function parseTags(tagsString: String): Array<String> {
-		if (tagsString == null || tagsString == "") return [];
-            return tagsString.split(",").map(function(t) return StringTools.trim(t));
+        return untyped __elixir__('
+          case {0} do
+            nil -> []
+            "" -> []
+            bin when is_binary(bin) -> Enum.map(String.split(bin, ","), &String.trim/1)
+          end
+        ', tagsString);
     }
 	
     static function getUserFromSession(session: Dynamic): User {
@@ -565,12 +570,13 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
     static function updateTodoInList(todo: server.schemas.Todo, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
         var newTodos = socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t);
-        return socket.merge({
+        var updated = socket.merge({
             todos: newTodos,
             total_todos: newTodos.length,
             completed_todos: countCompleted(newTodos),
             pending_todos: countPending(newTodos)
         });
+        return updated;
     }
 
     /**
@@ -580,7 +586,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         // Build from already-filtered/sorted list to keep map body purely a row constructor
         var base = filterAndSortTodos(a.todos, a.filter, a.sort_by, a.search_query, a.selected_tags);
         var optimistic = (a.optimistic_toggle_ids != null) ? a.optimistic_toggle_ids : [];
-        return base.map(function(todoItem) return makeViewRow(a, optimistic, todoItem));
+        var rows = base.map(function(todoItem) return makeViewRow(a, optimistic, todoItem));
+        return rows;
     }
 
     // Small, pure helper to keep Enum.map body simple and unambiguous for transforms
@@ -626,7 +633,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         // Precompute UI helpers
         var selected = ls.assigns.sort_by;
         var filter = ls.assigns.filter;
-        return ls.merge({
+        var merged = ls.merge({
             visible_todos: rows,
             visible_count: rows.length,
             filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
@@ -636,6 +643,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
             sort_selected_priority: sortSelected(selected, shared.TodoTypes.TodoSort.Priority),
             sort_selected_due_date: sortSelected(selected, shared.TodoTypes.TodoSort.DueDate)
         });
+        return merged;
     }
 	
     static function removeTodoFromList(id: Int, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
@@ -1237,7 +1245,12 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         var todoItems:Array<String> = filteredTodos.map(function(todo) {
             return renderTodoItem(todo, assigns.editing_todo);
         });
-        return todoItems.join("\n");
+        var buf = new StringBuf();
+        for (i in 0...todoItems.length) {
+            if (i > 0) buf.add("\n");
+            buf.add(todoItems[i]);
+        }
+        return buf.toString();
 	}
 	
 	/**
@@ -1331,7 +1344,11 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         var tagElements:Array<String> = tagsNorm.map(function(tag) {
             return '<button phx-click="search_todos" phx-value-query="${tag}" class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#${tag}</button>';
         });
-        return tagElements.join("");
+        var buf = new StringBuf();
+        for (el in tagElements) {
+            buf.add(el);
+        }
+        return buf.toString();
 	}
 	
 	/**
@@ -1357,17 +1374,21 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	 * Helper to filter and sort todos
 	 */
     public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String, selectedTags: Array<String>): Array<server.schemas.Todo> {
-        var filtered = filterTodos(todos, filter, searchQuery);
-        if (selectedTags != null && selectedTags.length > 0) {
-            filtered = filtered.filter(function(t) {
-                var tags = (t.tags != null) ? t.tags : [];
-                for (sel in selectedTags) {
-                    if (tags.indexOf(sel) != -1) return true;
-                }
-                return false;
-            });
-        }
-        // Delegate sorting to std helper (emitted under app namespace), avoid app __elixir__
-        return phoenix.Sorting.by(encodeSort(sortBy), filtered);
+        final sortKey = encodeSort(sortBy);
+        return untyped __elixir__('
+          filtered = TodoAppWeb.TodoLive.filter_todos({0}, {1}, {2})
+          filtered =
+            if {3} != nil and length({3}) > 0 do
+              Enum.filter(filtered, fn t ->
+                tags = if is_nil(t.tags), do: [], else: t.tags
+                Enum.any?({3}, fn sel ->
+                  Enum.find_index(tags, fn item -> item == sel end) != nil
+                end)
+              end)
+            else
+              filtered
+            end
+          TodoApp.Sorting.by({4}, filtered)
+        ', todos, filter, searchQuery, selectedTags, sortKey);
     }
 }

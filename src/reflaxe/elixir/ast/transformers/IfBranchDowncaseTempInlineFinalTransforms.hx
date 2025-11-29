@@ -32,6 +32,7 @@ class IfBranchDowncaseTempInlineFinalTransforms {
   }
 
   static function inlineDowncaseBlock(branch: ElixirAST): ElixirAST {
+    if (branch == null) return branch;
     return switch (branch.def) {
       case EBlock(stmts):
         var arr = stmts;

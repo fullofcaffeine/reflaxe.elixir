@@ -1,0 +1,21 @@
+-cp ../../std/_std
+# Aggregated server build using micro-passes A..F
+#
+# This file exists to let tools like Mix.Tasks.Compile.Haxe run the same
+# micro-pass partitioning strategy that QA sentinel uses, without hard-coding
+# pass names in the compiler. It simply chains the existing pass hxml files.
+#
+# Passes:
+#   - A1..A3: Repo and core infrastructure
+#   - B..E:   additional server modules and infrastructure
+#   - F:      LiveView main (TodoLive)
+
+--next build-server-passA1.hxml
+--next build-server-passA2.hxml
+--next build-server-passA3.hxml
+--next build-server-passB.hxml
+--next build-server-passC.hxml
+--next build-server-passD.hxml
+--next build-server-passE.hxml
+--next build-server-passF.hxml
+

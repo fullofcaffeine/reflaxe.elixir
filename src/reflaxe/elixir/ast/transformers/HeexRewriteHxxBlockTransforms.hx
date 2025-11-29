@@ -55,13 +55,13 @@ class HeexRewriteHxxBlockTransforms {
 
     static function replaceBlock(s:String, callee:String):String {
         var i = 0;
-        var res = new StringBuf();
+        var parts:Array<String> = [];
         while (i < s.length) {
             var open = s.indexOf("<%=", i);
-            if (open == -1) { res.add(s.substr(i)); break; }
-            res.add(s.substr(i, open - i));
+            if (open == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, open - i));
             var close = s.indexOf("%>", open + 3);
-            if (close == -1) { res.add(s.substr(open)); break; }
+            if (close == -1) { parts.push(s.substr(open)); break; }
             var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
             // Expect callee("...")
             if (StringTools.startsWith(inner, callee + "(")) {
@@ -70,16 +70,16 @@ class HeexRewriteHxxBlockTransforms {
                 if (StringTools.endsWith(arg, ")")) arg = arg.substr(0, arg.length - 1);
                 var un = unquote(arg);
                 if (un != null) {
-                    res.add(un);
+                    parts.push(un);
                     i = close + 2;
                     continue;
                 }
             }
             // Not a match; copy original segment
-            res.add(s.substr(open, (close + 2) - open));
+            parts.push(s.substr(open, (close + 2) - open));
             i = close + 2;
         }
-        return res.toString();
+        return parts.join("");
     }
 
     static function unquote(x:String):Null<String> {
@@ -97,13 +97,13 @@ class HeexRewriteHxxBlockTransforms {
     // Replace `<%= ~H""" ... """ %>` with just the inner `...` body to avoid nested ~H
     static function replaceNestedHeexSigil(s:String):String {
         var i = 0;
-        var res = new StringBuf();
+        var parts:Array<String> = [];
         while (i < s.length) {
             var open = s.indexOf("<%=", i);
-            if (open == -1) { res.add(s.substr(i)); break; }
-            res.add(s.substr(i, open - i));
+            if (open == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, open - i));
             var close = s.indexOf("%>", open + 3);
-            if (close == -1) { res.add(s.substr(open)); break; }
+            if (close == -1) { parts.push(s.substr(open)); break; }
             var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
             if (StringTools.startsWith(inner, "~H\"\"\"")) {
                 // Find body between the first and second triple quotes
@@ -113,17 +113,17 @@ class HeexRewriteHxxBlockTransforms {
                     var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
                     if (bodyEnd != -1) {
                         var body = inner.substr(bodyStart, bodyEnd - bodyStart);
-                        res.add(body);
+                        parts.push(body);
                         i = close + 2;
                         continue;
                     }
                 }
             }
             // Not a nested ~H; copy original segment
-            res.add(s.substr(open, (close + 2) - open));
+            parts.push(s.substr(open, (close + 2) - open));
             i = close + 2;
         }
-        return res.toString();
+        return parts.join("");
     }
 
     // Note: Do not rewrite inline-if forms inside ~H here; canonical snapshots

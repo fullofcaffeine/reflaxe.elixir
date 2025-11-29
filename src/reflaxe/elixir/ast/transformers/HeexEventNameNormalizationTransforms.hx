@@ -170,16 +170,16 @@ class HeexEventNameNormalizationTransforms {
     static function rewriteHeexString(s: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): String {
         // Pattern: (phx-<name>)\s*=\s*"([^"]*)"
         // We will validate <name> with isEventAttr and then normalize the captured value.
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var idx = s.indexOf("phx-", i);
             if (idx == -1) {
-                out.add(s.substr(i));
+                parts.push(s.substr(i));
                 break;
             }
             // copy up to idx
-            out.add(s.substr(i, idx - i));
+            parts.push(s.substr(i, idx - i));
             // read attribute name
             var j = idx;
             while (j < s.length) {
@@ -193,18 +193,18 @@ class HeexEventNameNormalizationTransforms {
             // copy the attribute name verbatim and continue scanning from the same
             // position so that any following whitespace/equals/value is preserved.
             if (!isEventAttr(attrName)) {
-                out.add(attrName);
+                parts.push(attrName);
                 i = j;
                 continue;
             }
-            out.add(attrName);
+            parts.push(attrName);
             // Skip whitespace
             while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
             if (j >= s.length || s.charAt(j) != '=') {
                 i = j;
                 continue;
             }
-            out.add("="); j++;
+            parts.push("="); j++;
             while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
             if (j >= s.length || s.charAt(j) != '"') {
                 // Not a quoted value – leave as-is
@@ -212,9 +212,9 @@ class HeexEventNameNormalizationTransforms {
                 continue;
             }
             // Quoted string start
-            out.add('"'); j++;
+            parts.push('"'); j++;
             var valStart = j;
-            var valBuf = new StringBuf();
+            var valueParts:Array<String> = [];
             var closed = false;
             while (j < s.length) {
                 var ch2 = s.charAt(j);
@@ -222,35 +222,35 @@ class HeexEventNameNormalizationTransforms {
                 // Do not rewrite dynamic expressions like { ... } or <%= ... %>
                 if (ch2 == '{' || (ch2 == '<' && j + 2 < s.length && s.substr(j, 3) == "<%=")) {
                     // Copy the rest unchanged until we hit the closing quote
-                    valBuf = new StringBuf();
-                    valBuf.add(s.substr(valStart, j - valStart));
+                    valueParts = [];
+                    valueParts.push(s.substr(valStart, j - valStart));
                     // fast-forward to closing quote
                     var k = j;
                     while (k < s.length && s.charAt(k) != '"') k++;
-                    valBuf.add(s.substr(j, k - j));
+                    valueParts.push(s.substr(j, k - j));
                     j = k; // j now at closing quote or end
                     break;
                 }
-                valBuf.add(ch2);
+                valueParts.push(ch2);
                 j++;
             }
-            var rawVal = valBuf.toString();
+            var rawVal = valueParts.join("");
             if (closed) {
                 var snake = toEventSnakeCase(rawVal);
                 if (!isValidEventName(snake)) {
                     warn(ctx, 'Invalid LiveView event name "${rawVal}" in ${attrName}; normalized to "${snake}"', pos);
                 }
-                out.add(snake);
-                out.add('"');
+                parts.push(snake);
+                parts.push('"');
                 j++; // skip closing quote
                 i = j;
             } else {
                 // Unterminated quote; copy remainder as-is
-                out.add(rawVal);
+                parts.push(rawVal);
                 i = j;
             }
         }
-        return out.toString();
+        return parts.join("");
     }
 }
 

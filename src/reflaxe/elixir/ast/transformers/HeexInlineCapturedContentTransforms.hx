@@ -43,14 +43,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class HeexInlineCapturedContentTransforms {
     static function flattenNestedHeexInContent(s:String):String {
         if (s == null || s.indexOf("<%=") == -1) return s;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var open = s.indexOf("<%=", i);
-            if (open == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, open - i));
+            if (open == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, open - i));
             var close = s.indexOf("%>", open + 3);
-            if (close == -1) { out.add(s.substr(open)); break; }
+            if (close == -1) { parts.push(s.substr(open)); break; }
             var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
             if (StringTools.startsWith(inner, "~H\"\"\"")) {
                 var start = inner.indexOf("\"\"\"");
@@ -59,16 +59,16 @@ class HeexInlineCapturedContentTransforms {
                     var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
                     if (bodyEnd != -1) {
                         var body = inner.substr(bodyStart, bodyEnd - bodyStart);
-                        out.add(body);
+                        parts.push(body);
                         i = close + 2;
                         continue;
                     }
                 }
             }
-            out.add(s.substr(open, (close + 2) - open));
+            parts.push(s.substr(open, (close + 2) - open));
             i = close + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
     static function extractStringLiteral(e: ElixirAST): Null<String> {
         var cur = e;
@@ -98,33 +98,33 @@ class HeexInlineCapturedContentTransforms {
                     if (s.length >= 2 && s.charAt(0) == '(' && s.charAt(s.length - 1) == ')') {
                         s = StringTools.trim(s.substr(1, s.length - 2));
                     }
-                    if (s.length < 2 || s.charAt(0) != '"' || s.charAt(s.length - 1) != '"') return null;
-                    // decode common escapes inside the string literal
-                    var out = new StringBuf();
-                    var i = 1;
-                    var end = s.length - 1;
-                    while (i < end) {
-                        var ch = s.charAt(i);
-                        if (ch == '\\' && i + 1 < end) {
-                            var nxt = s.charAt(i + 1);
-                            switch (nxt) {
-                                case 'n': out.add("\n"); i += 2; continue;
-                                case 'r': out.add("\r"); i += 2; continue;
-                                case 't': out.add("\t"); i += 2; continue;
-                                case '"': out.add('"'); i += 2; continue;
-                                case '\\': out.add('\\'); i += 2; continue;
-                                default:
-                                    // keep unknown escape as-is (drop backslash)
-                                    out.add(nxt);
-                                    i += 2; continue;
-                            }
-                        } else {
-                            out.add(ch);
-                            i++;
+                if (s.length < 2 || s.charAt(0) != '"' || s.charAt(s.length - 1) != '"') return null;
+                // decode common escapes inside the string literal
+                var decoded:Array<String> = [];
+                var i = 1;
+                var end = s.length - 1;
+                while (i < end) {
+                    var ch = s.charAt(i);
+                    if (ch == '\\' && i + 1 < end) {
+                        var nxt = s.charAt(i + 1);
+                        switch (nxt) {
+                            case 'n': decoded.push("\n"); i += 2; continue;
+                            case 'r': decoded.push("\r"); i += 2; continue;
+                            case 't': decoded.push("\t"); i += 2; continue;
+                            case '"': decoded.push('"'); i += 2; continue;
+                            case '\\': decoded.push('\\'); i += 2; continue;
+                            default:
+                                // keep unknown escape as-is (drop backslash)
+                                decoded.push(nxt);
+                                i += 2; continue;
                         }
+                    } else {
+                        decoded.push(ch);
+                        i++;
                     }
-                    return out.toString();
-                default: return null;
+                }
+                return decoded.join("");
+            default: return null;
             }
         }
         return null;
@@ -250,14 +250,14 @@ class HeexInlineCapturedContentTransforms {
 
     // Rewrite inline if-do/else inside <%= ... %> to block HEEx to avoid quoted HTML issues
     static function rewriteInlineIfDoToBlock(s:String):String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var start = s.indexOf("<%=", i);
-            if (start == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, start - i));
+            if (start == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, start - i));
             var endTag = s.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(s.substr(start)); break; }
+            if (endTag == -1) { parts.push(s.substr(start)); break; }
             var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
             if (StringTools.startsWith(inner, "if ")) {
                 var rest = StringTools.trim(inner.substr(3));
@@ -276,22 +276,22 @@ class HeexInlineCapturedContentTransforms {
                             var qv2 = extractQuoted(afterElse);
                             if (qv2 != null) elseHtml = qv2.value;
                         }
-                        out.add('<%= if ' + cond + ' do %>');
-                        out.add(doHtml);
+                        parts.push('<%= if ' + cond + ' do %>');
+                        parts.push(doHtml);
                         if (elseHtml != null && elseHtml != "") {
-                            out.add('<% else %>');
-                            out.add(elseHtml);
+                            parts.push('<% else %>');
+                            parts.push(elseHtml);
                         }
-                        out.add('<% end %>');
+                        parts.push('<% end %>');
                         i = endTag + 2; 
                         continue;
                     }
                 }
             }
-            out.add(s.substr(start, (endTag + 2) - start));
+            parts.push(s.substr(start, (endTag + 2) - start));
             i = endTag + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     static function extractQuoted(s:String):Null<{value:String, length:Int}> {

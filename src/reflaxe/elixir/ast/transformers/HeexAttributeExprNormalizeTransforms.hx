@@ -56,11 +56,11 @@ class HeexAttributeExprNormalizeTransforms {
     }
 
     static function rewriteHeexAttributes(s: String): String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var j = s.indexOf("<%", i);
-            if (j == -1) { out.add(s.substr(i)); break; }
+            if (j == -1) { parts.push(s.substr(i)); break; }
 
             // Determine if this <% ... %> is directly after an '=' in an attribute context,
             // without crossing a tag close '>'.
@@ -73,14 +73,14 @@ class HeexAttributeExprNormalizeTransforms {
             }
             if (k < i || seenGt || s.charAt(k) != '=') {
                 // Not an attribute context; copy and continue past this EEx opener
-                out.add(s.substr(i, j - i));
-                out.add("<%");
+                parts.push(s.substr(i, j - i));
+                parts.push("<%");
                 i = j + 2;
                 continue;
             }
 
             // We're in an attribute value context. Copy prefix up to '='
-            out.add(s.substr(i, (k - i) + 1));
+            parts.push(s.substr(i, (k - i) + 1));
             // Optional opening quote after '='
             var vpos = k + 1;
             while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
@@ -89,15 +89,15 @@ class HeexAttributeExprNormalizeTransforms {
             // Expect vpos == j
             if (vpos != j) {
                 // Unexpected; emit as-is
-                out.add(s.substr(k + 1, j - (k + 1)));
-                out.add("<%");
+                parts.push(s.substr(k + 1, j - (k + 1)));
+                parts.push("<%");
                 i = j + 2; continue;
             }
 
             // Case A: <%= expr %>
             if (j + 3 <= s.length && s.charAt(j + 2) == '=') {
                 var end = s.indexOf("%>", j + 3);
-                if (end == -1) { out.add(s.substr(i)); break; }
+                if (end == -1) { parts.push(s.substr(i)); break; }
                 var expr = StringTools.trim(s.substr(j + 3, end - (j + 3)));
                 // Special handling: <%= if cond do %>then<% else %>else<% end %>
                 if (StringTools.startsWith(expr, "if ") && StringTools.endsWith(expr, " do")) {
@@ -105,13 +105,13 @@ class HeexAttributeExprNormalizeTransforms {
                     var thenStartPos = end + 2;
                     var elseMarkerPos = s.indexOf("<% else %>", thenStartPos);
                     var endMarkerPos = s.indexOf("<% end %>", thenStartPos);
-                    if (endMarkerPos == -1) { out.add(s.substr(i)); break; }
+                    if (endMarkerPos == -1) { parts.push(s.substr(i)); break; }
                     var thenEndPos = (elseMarkerPos != -1 && elseMarkerPos < endMarkerPos) ? elseMarkerPos : endMarkerPos;
                     var thenContent = StringTools.trim(s.substr(thenStartPos, thenEndPos - thenStartPos));
                     var elseContent: Null<String> = (elseMarkerPos != -1 && elseMarkerPos < endMarkerPos) ? StringTools.trim(s.substr(elseMarkerPos + 10, endMarkerPos - (elseMarkerPos + 10))) : null;
                     if (!isQuoted(thenContent)) thenContent = quoteWrap(thenContent);
                     if (elseContent != null && !isQuoted(elseContent)) elseContent = quoteWrap(elseContent);
-                    out.add('{'); out.add('if ' + condStr + ', do: ' + thenContent + (elseContent != null ? ', else: ' + elseContent : '')); out.add('}');
+                    parts.push('{'); parts.push('if ' + condStr + ', do: ' + thenContent + (elseContent != null ? ', else: ' + elseContent : '')); parts.push('}');
                     var postEndPos = endMarkerPos + 9; if (quote != null && postEndPos < s.length && s.charAt(postEndPos) == quote) postEndPos++;
                     i = postEndPos;
                     continue;
@@ -119,7 +119,7 @@ class HeexAttributeExprNormalizeTransforms {
                     // unwrap inspect((...))
                     var rx = ~/^inspect\((.*)\)$/;
                     if (rx.match(expr)) expr = StringTools.trim(rx.matched(1));
-                    out.add('{'); out.add(expr); out.add('}');
+                    parts.push('{'); parts.push(expr); parts.push('}');
                     var p = end + 2;
                     // Skip closing quote if present
                     if (quote != null && p < s.length && s.charAt(p) == quote) p++;
@@ -136,25 +136,25 @@ class HeexAttributeExprNormalizeTransforms {
                 var thenStart = doPos + 5;
                 var elseOpen = s.indexOf("<% else %>", thenStart);
                 var endOpen = s.indexOf("<% end %>", thenStart);
-                if (endOpen == -1) { out.add(s.substr(i)); break; }
+                if (endOpen == -1) { parts.push(s.substr(i)); break; }
                 var thenEnd = (elseOpen != -1 && elseOpen < endOpen) ? elseOpen : endOpen;
                 var thenHtml = StringTools.trim(s.substr(thenStart, thenEnd - thenStart));
                 var elseHtml = (elseOpen != -1 && elseOpen < endOpen) ? StringTools.trim(s.substr(elseOpen + 10, endOpen - (elseOpen + 10))) : null;
                 // Quote then/else if not already quoted
                 if (!isQuoted(thenHtml)) thenHtml = quoteWrap(thenHtml);
                 if (elseHtml != null && !isQuoted(elseHtml)) elseHtml = quoteWrap(elseHtml);
-                out.add('{'); out.add('if ' + condStr + ', do: ' + thenHtml + (elseHtml != null ? ', else: ' + elseHtml : '')); out.add('}');
+                parts.push('{'); parts.push('if ' + condStr + ', do: ' + thenHtml + (elseHtml != null ? ', else: ' + elseHtml : '')); parts.push('}');
                 var p2 = endOpen + 9; if (quote != null && p2 < s.length && s.charAt(p2) == quote) p2++;
                 i = p2;
                 continue;
             }
 
             // Fallback: not a recognized block; emit as-is
-            out.add(s.substr(k + 1, j - (k + 1)));
-            out.add("<%");
+            parts.push(s.substr(k + 1, j - (k + 1)));
+            parts.push("<%");
             i = j + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     static inline function isQuoted(s: String): Bool {

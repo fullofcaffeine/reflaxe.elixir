@@ -1,6 +1,9 @@
 package reflaxe.elixir.ast;
 
 #if (macro || reflaxe_runtime)
+#if (macro && hxx_instrument_sys)
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
@@ -133,9 +136,14 @@ class TemplateHelpers {
      * handling embedded expressions and string interpolation.
      */
     public static function collectTemplateContent(ast: ElixirAST): String {
-        #if hxx_instrument_sys
-        var __t0 = haxe.Timer.stamp();
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("TemplateHelpers.collectTemplateContent", () -> collectTemplateContentInternal(ast));
+        #else
+        return collectTemplateContentInternal(ast);
         #end
+    }
+
+    static function collectTemplateContentInternal(ast: ElixirAST): String {
         var __result = switch(ast.def) {
             case EString(s): 
                 // Simple string - process interpolations and HXX control tags into HEEx-safe content
@@ -163,15 +171,15 @@ class TemplateHelpers {
                     // Fallback to block-if
                     var thenStr = collectTemplateContent(thenBranch);
                     var elseStr = elseBranch != null ? collectTemplateContent(elseBranch) : "";
-                    var out = new StringBuf();
-                    out.add('<%= if ' + condStr + ' do %>');
-                    out.add(thenStr);
+                    var parts = [];
+                    parts.push('<%= if ' + condStr + ' do %>');
+                    parts.push(thenStr);
                     if (elseStr != null && elseStr != "") {
-                        out.add('<% else %>');
-                        out.add(elseStr);
+                        parts.push('<% else %>');
+                        parts.push(elseStr);
                     }
-                    out.add('<% end %>');
-                    out.toString();
+                    parts.push('<% end %>');
+                    parts.join("");
                 }
 
             case ECall(module, func, args):
@@ -255,14 +263,6 @@ class TemplateHelpers {
                 if (StringTools.startsWith(exprAny, "assigns.")) exprAny = '@' + exprAny.substr("assigns.".length);
                 '<%= ' + exprAny + ' %>';
         };
-        #if hxx_instrument_sys
-        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-        #if sys
-        Sys.println('[HXX] collectTemplateContent elapsed_ms=' + Std.int(__elapsed));
-        #else
-        trace('[HXX] collectTemplateContent elapsed_ms=' + Std.int(__elapsed));
-        #end
-        #end
         return __result;
     }
 
@@ -271,79 +271,63 @@ class TemplateHelpers {
      * Also rewrites inline ternary to block HEEx when then/else are string or HXX.block.
      */
     public static function rewriteInterpolations(s:String):String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("TemplateHelpers.rewriteInterpolations", () -> rewriteInterpolationsInternal(s));
+        #else
+        return rewriteInterpolationsInternal(s);
+        #end
+    }
+
+    static function rewriteInterpolationsInternal(s:String):String {
         if (s == null) return s;
-        // Fast-path: if there are no interpolation/control markers, return as-is
-        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf('<for {') == -1) {
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<for {") == -1) {
             return s;
         }
-        #if hxx_instrument_sys
-        var __t0 = haxe.Timer.stamp();
-        var __bytes = s.length;
-        var __iters = 0;
-        #end
-        // First, convert attribute-level ${...} into HEEx attribute expressions: attr={...}
         s = rewriteAttributeInterpolations(s);
-        // Then, convert attribute-level <%= ... %> into HEEx attribute expressions: attr={...}
         s = rewriteAttributeEexInterpolations(s);
-        // Normalize custom control tags first (so inner text gets rewritten next)
         s = rewriteForBlocks(s);
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
-            #if hxx_instrument_sys __iters++; #end
             var j1 = s.indexOf("#{", i);
             var j2 = s.indexOf("${", i);
             var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
-            if (j == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, j - i));
+            if (j == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, j - i));
             var k = j + 2;
             var depth = 1;
             while (k < s.length && depth > 0) {
                 var ch = s.charAt(k);
-                if (ch == '{') depth++;
-                else if (ch == '}') depth--;
+                if (ch == "{") depth++; else if (ch == "}") depth--;
                 k++;
             }
             var inner = s.substr(j + 2, (k - 1) - (j + 2));
             var expr = StringTools.trim(inner);
-            // Guard: disallow injecting HTML as string via interpolation of a string literal starting with '<'
             if (expr.length >= 2 && expr.charAt(0) == '"' && expr.charAt(1) == '<') {
                 #if macro
-                haxe.macro.Context.error('HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block(\'...\') or inline markup.', haxe.macro.Context.currentPos());
+                haxe.macro.Context.error("HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block('...') or inline markup.", haxe.macro.Context.currentPos());
                 #else
-                throw 'HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block(\'...\') or inline markup.';
+                throw "HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block('...') or inline markup.";
                 #end
             }
-            // Try to split top-level ternary
             var tern = splitTopLevelTernary(expr);
             if (tern != null) {
                 var cond = StringTools.replace(tern.cond, "assigns.", "@");
                 var th = extractBlockHtml(StringTools.trim(tern.thenPart));
                 var el = extractBlockHtml(StringTools.trim(tern.elsePart));
                 if (th != null || el != null) {
-                    // Prefer inline-if in body when both branches are HTML strings
                     var thenQ = (th != null) ? toQuoted(th) : '""';
                     var elseQ = (el != null && el != "") ? toQuoted(el) : '""';
-                    out.add('<%= if ' + cond + ', do: ' + thenQ + ', else: ' + elseQ + ' %>');
+                    parts.push('<%= if ' + cond + ', do: ' + thenQ + ', else: ' + elseQ + ' %>');
                 } else {
-                    out.add('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
+                    parts.push('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
                 }
             } else {
-                out.add('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
+                parts.push('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
             }
             i = k;
         }
-        // Return as-is; attribute contexts are normalized elsewhere.
-        var __res = out.toString();
-        #if hxx_instrument_sys
-        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-        #if macro
-        haxe.macro.Context.warning('[HXX] rewriteInterpolations bytes=' + __bytes + ' iters=' + __iters + ' elapsed_ms=' + Std.int(__elapsed), haxe.macro.Context.currentPos());
-        #elseif sys
-        Sys.println('[HXX] rewriteInterpolations bytes=' + __bytes + ' iters=' + __iters + ' elapsed_ms=' + Std.int(__elapsed));
-        #end
-        #end
-        return __res;
+        return parts.join("");
     }
 
     /**
@@ -351,55 +335,42 @@ class TemplateHelpers {
      * Supports simple patterns like `todo in list` or `item in some_call()`.
      */
     public static function rewriteForBlocks(src:String):String {
-        var out = new StringBuf();
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("TemplateHelpers.rewriteForBlocks", () -> rewriteForBlocksInternal(src));
+        #else
+        return rewriteForBlocksInternal(src);
+        #end
+    }
+
+    static function rewriteForBlocksInternal(src:String):String {
+        if (src == null || src.indexOf("<for {") == -1) return src;
+        var chunks:Array<String> = [];
         var i = 0;
-        #if hxx_instrument_sys
-        var __t0 = haxe.Timer.stamp();
-        #end
-        #if hxx_instrument
-        var localIters = 0;
-        #end
         while (i < src.length) {
-            #if hxx_instrument localIters++; #end
-            var start = src.indexOf('<for {', i);
-            if (start == -1) { out.add(src.substr(i)); break; }
-            out.add(src.substr(i, start - i));
-            var headEnd = src.indexOf('}>', start);
-            if (headEnd == -1) { out.add(src.substr(start)); break; }
-            var headInner = src.substr(start + 6, headEnd - (start + 6)); // between { and }
-            var closeTag = src.indexOf('</for>', headEnd + 2);
-            if (closeTag == -1) { out.add(src.substr(start)); break; }
+            var start = src.indexOf("<for {", i);
+            if (start == -1) { chunks.push(src.substr(i)); break; }
+            chunks.push(src.substr(i, start - i));
+            var headEnd = src.indexOf("}>", start);
+            if (headEnd == -1) { chunks.push(src.substr(start)); break; }
+            var headInner = src.substr(start + 6, headEnd - (start + 6));
+            var closeTag = src.indexOf("</for>", headEnd + 2);
+            if (closeTag == -1) { chunks.push(src.substr(start)); break; }
             var body = src.substr(headEnd + 2, closeTag - (headEnd + 2));
-            var parts = headInner.split(' in ');
-            if (parts.length != 2) {
-                // Fallback: keep original; do not break template
-                out.add(src.substr(start, (closeTag + 6) - start));
+            var binding = headInner.split(" in ");
+            if (binding.length != 2) {
+                chunks.push(src.substr(start, (closeTag + 6) - start));
                 i = closeTag + 6;
                 continue;
             }
-            var pat = StringTools.trim(parts[0]);
-            var iter = StringTools.trim(parts[1]);
-            // Map assigns.* to @* in iterator expression
-            iter = StringTools.replace(iter, 'assigns.', '@');
-            out.add('<%= for ' + pat + ' <- ' + iter + ' do %>');
-            // Recursively allow nested for/if inside body
-            out.add(rewriteForBlocks(body));
-            out.add('<% end %>');
+            var pattern = StringTools.trim(binding[0]);
+            var iterator = StringTools.trim(binding[1]);
+            iterator = StringTools.replace(iterator, "assigns.", "@");
+            chunks.push("<% for " + pattern + " <- " + iterator + " do %>");
+            chunks.push(rewriteForBlocksInternal(body));
+            chunks.push("<% end %>");
             i = closeTag + 6;
         }
-        #if hxx_instrument
-        trace('[HXX-INSTR] forBlocks: iters=' + localIters + ' len=' + (src != null ? src.length : 0));
-        #end
-        var __s = out.toString();
-        #if hxx_instrument_sys
-        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-        #if macro
-        haxe.macro.Context.warning('[HXX] rewriteForBlocks bytes=' + (src != null ? src.length : 0) + ' iters=' + ( #if hxx_instrument localIters #else 0 #end ) + ' elapsed_ms=' + Std.int(__elapsed), haxe.macro.Context.currentPos());
-        #elseif sys
-        Sys.println('[HXX] rewriteForBlocks bytes=' + (src != null ? src.length : 0) + ' iters=' + ( #if hxx_instrument localIters #else 0 #end ) + ' elapsed_ms=' + Std.int(__elapsed));
-        #end
-        #end
-        return __s;
+        return chunks.join("");
     }
 
     // Convert attribute values written as <%= ... %> (and conditional blocks) into HEEx { ... }
@@ -438,14 +409,12 @@ class TemplateHelpers {
      * - For top-level ternary cond ? a : b → {if cond, do: a, else: b}
      */
     static function rewriteAttributeInterpolations(s:String):String {
-        var out = new StringBuf();
+        if (s == null) return s;
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
-            var prev = i;
             var j = s.indexOf("${", i);
-            if (j == -1) { out.add(s.substr(i)); break; }
-            // Attempt to detect an attribute assignment immediately preceding ${
-            // Find the nearest '=' before j without encountering '>'
+            if (j == -1) { parts.push(s.substr(i)); break; }
             var k = j - 1;
             var seenGt = false;
             while (k >= i) {
@@ -454,49 +423,40 @@ class TemplateHelpers {
                 if (ch == '=') break;
                 k--;
             }
-            if (k < i || seenGt || s.charAt(k) != '=') {
-                // Not an attr context; copy chunk up to j and continue generic handling later
-                out.add(s.substr(i, (j - i)));
-                // Copy marker to let generic pass handle it
-                out.add("${");
+            if (k < i || seenGt || s.charAt(k) != '='.charAt(0)) {
+                parts.push(s.substr(i, (j - i)));
+                parts.push("${");
                 i = j + 2;
                 continue;
             }
-            // Find attribute name by scanning backwards from k-1
             var nameEnd = k - 1;
             while (nameEnd >= i && ~/^\s$/.match(s.charAt(nameEnd))) nameEnd--;
             var nameStart = nameEnd;
             while (nameStart >= i && ~/^[A-Za-z0-9_:\-]$/.match(s.charAt(nameStart))) nameStart--;
             nameStart++;
             if (nameStart > nameEnd) {
-                // Fallback: not a valid attribute name, treat as generic
-                out.add(s.substr(i, (j - i)));
-                out.add("${");
+                parts.push(s.substr(i, (j - i)));
+                parts.push("${");
                 i = j + 2;
                 continue;
             }
             var attrName = s.substr(nameStart, (nameEnd - nameStart + 1));
-            // Copy prefix up to attribute name start
-            out.add(s.substr(i, (nameStart - i)));
-            out.add(attrName);
-            out.add("=");
-            // Skip whitespace and optional opening quote after '='
+            parts.push(s.substr(i, (nameStart - i)));
+            parts.push(attrName);
+            parts.push("=");
             var vpos = k + 1;
             while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
             var quote: Null<String> = null;
-            if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) {
+            if (vpos < s.length && (s.charAt(vpos) == "\"" || s.charAt(vpos) == "'")) {
                 quote = s.charAt(vpos);
                 vpos++;
             }
-            // We expect vpos == j (start of ${); otherwise, treat as generic
             if (vpos != j) {
-                // Not a plain attr=${...}; emit original sequence and continue
-                out.add(s.substr(k + 1, (j - (k + 1))));
-                out.add("${");
+                parts.push(s.substr(k + 1, (j - (k + 1))));
+                parts.push("${");
                 i = j + 2;
                 continue;
             }
-            // Parse balanced braces for ${...}
             var p = j + 2;
             var depth = 1;
             while (p < s.length && depth > 0) {
@@ -505,9 +465,7 @@ class TemplateHelpers {
             }
             var inner = s.substr(j + 2, (p - 1) - (j + 2));
             var expr = StringTools.trim(inner);
-            // Map assigns.* → @*
             expr = StringTools.replace(expr, "assigns.", "@");
-            // Ternary to inline-if for attribute context
             var tern = splitTopLevelTernary(expr);
             if (tern != null) {
                 var cond = StringTools.replace(StringTools.trim(tern.cond), "assigns.", "@");
@@ -515,22 +473,18 @@ class TemplateHelpers {
                 var el = StringTools.trim(tern.elsePart);
                 expr = 'if ' + cond + ', do: ' + th + ', else: ' + el;
             }
-            out.add('{');
-            out.add(expr);
-            out.add('}');
-            // Skip closing quote if present
+            parts.push("{");
+            parts.push(expr);
+            parts.push("}");
             if (quote != null) {
                 var qpos = p;
-                // Advance until we see the matching quote or tag end; be conservative
                 if (qpos < s.length && s.charAt(qpos) == quote) {
                     p = qpos + 1;
                 }
             }
-            // Advance index
             i = p;
-            if (i <= prev) i = prev + 1;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     static function extractBlockHtml(part:String):Null<String> {
@@ -608,14 +562,14 @@ class TemplateHelpers {
     }
 
     static function rewriteInlineIfDoToBlock(s:String):String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var start = s.indexOf("<%=", i);
-            if (start == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, start - i));
+            if (start == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, start - i));
             var endTag = s.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(s.substr(start)); break; }
+            if (endTag == -1) { parts.push(s.substr(start)); break; }
             var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
             if (StringTools.startsWith(inner, "if ")) {
                 var rest = StringTools.trim(inner.substr(3));
@@ -639,19 +593,19 @@ class TemplateHelpers {
                     }
                 }
                 if (cond != null && doPart != null) {
-                    out.add('<%= if ' + StringTools.replace(cond, "assigns.", "@") + ' do %>');
-                    out.add(doPart);
-                    if (elsePart != null && elsePart != "") { out.add('<% else %>'); out.add(elsePart); }
-                    out.add('<% end %>');
+                    parts.push('<%= if ' + StringTools.replace(cond, "assigns.", "@") + ' do %>');
+                    parts.push(doPart);
+                    if (elsePart != null && elsePart != "") { parts.push('<% else %>'); parts.push(elsePart); }
+                    parts.push('<% end %>');
                 } else {
-                    out.add(s.substr(start, (endTag + 2) - start));
+                    parts.push(s.substr(start, (endTag + 2) - start));
                 }
             } else {
-                out.add(s.substr(start, (endTag + 2) - start));
+                parts.push(s.substr(start, (endTag + 2) - start));
             }
             i = endTag + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     static function extractQuoted(s:String):Null<{value:String, length:Int}> {
@@ -676,29 +630,28 @@ class TemplateHelpers {
      */
     public static function rewriteControlTags(s:String):String {
         if (s == null || s.indexOf("<if") == -1) return s;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var idx = s.indexOf("<if", i);
-            if (idx == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, idx - i));
+            if (idx == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, idx - i));
             var j = idx + 3; // after '<if'
-            while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
-            if (j >= s.length || s.charAt(j) != '{') { out.add("<if"); i = idx + 3; continue; }
+            while (j < s.length && ~/^\\s$/.match(s.charAt(j))) j++;
+            if (j >= s.length || s.charAt(j) != '{') { parts.push("<if"); i = idx + 3; continue; }
             var braceStart = j; j++;
             var braceDepth = 1;
             while (j < s.length && braceDepth > 0) {
                 var ch = s.charAt(j);
                 if (ch == '{') braceDepth++; else if (ch == '}') braceDepth--; j++;
             }
-            if (braceDepth != 0) { out.add(s.substr(idx)); break; }
+            if (braceDepth != 0) { parts.push(s.substr(idx)); break; }
             var braceEnd = j - 1;
-            while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
-            if (j >= s.length || s.charAt(j) != '>') { out.add(s.substr(idx, j - idx)); i = j; continue; }
+            while (j < s.length && ~/^\\s$/.match(s.charAt(j))) j++;
+            if (j >= s.length || s.charAt(j) != '>') { parts.push(s.substr(idx, j - idx)); i = j; continue; }
             var openEnd = j + 1;
             var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
             cond = StringTools.replace(cond, "assigns.", "@");
-            // find matching </if>
             var k = openEnd;
             var depth = 1;
             var elsePos = -1;
@@ -717,7 +670,7 @@ class TemplateHelpers {
                 else if (tag == 3) { depth--; k = next + 5; }
                 else k = next + 1;
             }
-            if (depth != 0) { out.add(s.substr(idx)); break; }
+            if (depth != 0) { parts.push(s.substr(idx)); break; }
             var closeIdx = k - 5;
             var thenStart = openEnd;
             var thenEnd = elsePos != -1 ? elsePos : closeIdx;
@@ -725,14 +678,14 @@ class TemplateHelpers {
             var elseEnd = closeIdx;
             var thenHtml = s.substr(thenStart, thenEnd - thenStart);
             var elseHtml = elseStart != -1 ? s.substr(elseStart, elseEnd - elseStart) : null;
-            out.add('<%= if ' + cond + ' do %>');
-            out.add(thenHtml);
-            if (elseHtml != null && StringTools.trim(elseHtml) != "") { out.add('<% else %>'); out.add(elseHtml); }
-            out.add('<% end %>');
+            parts.push('<%= if ' + cond + ' do %>');
+            parts.push(thenHtml);
+            if (elseHtml != null && StringTools.trim(elseHtml) != "") { parts.push('<% else %>'); parts.push(elseHtml); }
+            parts.push('<% end %>');
             var afterClose = s.indexOf('>', closeIdx + 1);
             i = (afterClose == -1) ? s.length : afterClose + 1;
         }
-        return out.toString();
+        return parts.join("\n");
     }
 
     static function indexOfTopLevel(s:String, token:String):Int {

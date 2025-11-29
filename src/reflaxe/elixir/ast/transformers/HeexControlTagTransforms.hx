@@ -142,7 +142,7 @@ class HeexControlTagTransforms {
 
     public static function rewriteControlTags(s:String):String {
         if (s == null || s.indexOf("<if") == -1) return s;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         #if hxx_instrument
         var iters = 0;
@@ -150,14 +150,14 @@ class HeexControlTagTransforms {
         while (i < s.length) {
             #if hxx_instrument iters++; #end
             var idx = s.indexOf("<if", i);
-            if (idx == -1) { out.add(s.substr(i)); break; }
+            if (idx == -1) { parts.push(s.substr(i)); break; }
             // copy prefix
-            out.add(s.substr(i, idx - i));
+            parts.push(s.substr(i, idx - i));
             var j = idx + 3; // after '<if'
             // skip whitespace
             while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
             // expect '{'
-            if (j >= s.length || s.charAt(j) != '{') { out.add("<if"); i = idx + 3; continue; }
+            if (j >= s.length || s.charAt(j) != '{') { parts.push("<if"); i = idx + 3; continue; }
             // parse balanced braces
             var braceStart = j; j++;
             var braceDepth = 1;
@@ -165,11 +165,11 @@ class HeexControlTagTransforms {
                 var ch = s.charAt(j);
                 if (ch == '{') braceDepth++; else if (ch == '}') braceDepth--; j++;
             }
-            if (braceDepth != 0) { out.add(s.substr(idx)); break; }
+            if (braceDepth != 0) { parts.push(s.substr(idx)); break; }
             var braceEnd = j - 1;
             // skip whitespace to '>'
             while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
-            if (j >= s.length || s.charAt(j) != '>') { out.add(s.substr(idx, j - idx)); i = j + 1; continue; }
+            if (j >= s.length || s.charAt(j) != '>') { parts.push(s.substr(idx, j - idx)); i = j + 1; continue; }
             var openEnd = j + 1;
             var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
             cond = StringTools.replace(cond, "assigns.", "@");
@@ -193,7 +193,7 @@ class HeexControlTagTransforms {
                 else if (tag == 3) { depth--; k = next + 5; }
                 else k = next + 1;
             }
-            if (depth != 0) { out.add(s.substr(idx)); break; }
+            if (depth != 0) { parts.push(s.substr(idx)); break; }
             var closeIdx = k - 5; // position of '<' in </if>
             var thenStart = openEnd;
             var thenEnd = elsePos != -1 ? elsePos : closeIdx;
@@ -201,13 +201,13 @@ class HeexControlTagTransforms {
             var elseEnd = closeIdx;
             var thenHtml = s.substr(thenStart, thenEnd - thenStart);
             var elseHtml = elseStart != -1 ? s.substr(elseStart, elseEnd - elseStart) : null;
-            out.add('<%= if ' + cond + ' do %>');
-            out.add(thenHtml);
+            parts.push('<%= if ' + cond + ' do %>');
+            parts.push(thenHtml);
             if (elseHtml != null && StringTools.trim(elseHtml) != "") {
-                out.add('<% else %>');
-                out.add(elseHtml);
+                parts.push('<% else %>');
+                parts.push(elseHtml);
             }
-            out.add('<% end %>');
+            parts.push('<% end %>');
             // advance i to after closing tag
             var afterClose = s.indexOf('>', closeIdx + 1);
             i = (afterClose == -1) ? s.length : afterClose + 1;
@@ -215,7 +215,7 @@ class HeexControlTagTransforms {
         #if hxx_instrument
         trace('[HXX-INSTR] controlTags.loopIters=' + iters + ' len=' + (s != null ? s.length : 0));
         #end
-        return out.toString();
+        return parts.join("");
     }
 }
 

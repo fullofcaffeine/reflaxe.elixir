@@ -15,17 +15,16 @@ class HeexFinal {
     passes.push({
       name: "HeexCollapseOverEscapedQuotes_Final",
       description: "Final normalization of escaped quotes inside ~H inline strings",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexCollapseOverEscapedQuotesTransforms.transformPass
     });
     passes.push({
       name: "HeexTrimTrailingBlankLines_Final",
       description: "Final collapse of trailing blank lines in ~H content to match snapshot style",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexTrimTrailingBlankLinesTransforms.transformPass
     });
     return passes;
   }
 }
 #end
-

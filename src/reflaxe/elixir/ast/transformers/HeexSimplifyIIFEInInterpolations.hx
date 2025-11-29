@@ -37,29 +37,29 @@ class HeexSimplifyIIFEInInterpolations {
     static function simplify(s:String):String {
         // Fast path: do nothing if no obvious IIFE markers
         if (s.indexOf("(fn ->") == -1 || s.indexOf("end).()") == -1) return s;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var start = s.indexOf("<%=", i);
-            if (start == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, start - i));
+            if (start == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, start - i));
             var endTag = s.indexOf("%>", start + 3);
-            if (endTag == -1) { out.add(s.substr(start)); break; }
+            if (endTag == -1) { parts.push(s.substr(start)); break; }
             var inner = StringTools.trim(s.substr(start + 3, endTag - (start + 3)));
             // Recognize pattern: (fn -> <expr> end).()
             if (StringTools.startsWith(inner, "(fn ->") && StringTools.endsWith(inner, " end).()")) {
                 // Exact pattern: (fn -> <expr> end).()
                 var mid = StringTools.trim(inner.substr(6, inner.length - 6 - " end).()".length));
                 // Write simplified interpolation
-                out.add("<%= ");
-                out.add(mid);
-                out.add(" %>");
+                parts.push("<%= ");
+                parts.push(mid);
+                parts.push(" %>");
             } else {
-                out.add(s.substr(start, (endTag + 2) - start));
+                parts.push(s.substr(start, (endTag + 2) - start));
             }
             i = endTag + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 }
 

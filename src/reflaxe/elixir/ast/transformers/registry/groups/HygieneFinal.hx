@@ -179,7 +179,7 @@ class HygieneFinal {
     passes.push({
       name: "DebugCaseBinderUndefScan",
       description: "Debug-only: log binder and undefined locals in case clauses",
-      enabled: true,
+      enabled: #if debug_case_binder_undef_scan true #else false #end,
       pass: reflaxe.elixir.ast.transformers.DebugCaseBinderUndefScanTransforms.pass
     });
 

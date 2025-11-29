@@ -49,6 +49,7 @@ class EctoQueryBranchSelfAssignUnderscoreTransforms {
   }
 
   static function rewriteIfSelfAssign(stmt: ElixirAST): Null<ElixirAST> {
+    if (stmt == null) return null;
     return switch (stmt.def) {
       case EMatch(PVar(name), rhs) if (isWhereOnVar(rhs, name)):
         makeAST(EBinary(Match, makeAST(EVar('_' + name)), rhs));

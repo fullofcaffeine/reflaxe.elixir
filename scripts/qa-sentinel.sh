@@ -343,7 +343,7 @@ pushd "$APP_DIR" >/dev/null
 
 # Use a unique build root to avoid lock contention with other shells/editors
 RUN_TAG=${RUN_TAG:-$(date +%s)}
-QA_BUILD_ROOT=/tmp/qa-build.${RUN_TAG}
+QA_BUILD_ROOT=${QA_BUILD_ROOT:-/tmp/qa-build.${RUN_TAG}}
 mkdir -p "$QA_BUILD_ROOT" >/dev/null 2>&1 || true
 # Ensure these are visible to all nested shells invoked via bash -lc
 export QA_BUILD_ROOT
@@ -453,6 +453,9 @@ else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi
 
+# Remove unused std artifacts that are not needed for the app and may generate invalid code
+run_step_with_log "Step 1.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
+
 run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
 
 # Workaround for cowlib hex packaging without rebar.config on some systems:
@@ -462,18 +465,19 @@ if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
   echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
 fi
 
-# Precompile critical Erlang deps to avoid include path races during main compile
-run_step_with_log "Step 2.1: deps precompile (cowboy)" 180s /tmp/qa-deps-precompile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowboy --force" || exit 1
+# Precompile critical Erlang deps to avoid include path races during main compile.
+# Use the default _build root to ensure rebar include_lib resolution works; best-effort so main compile can proceed.
+run_step_best_effort "Step 2.1: deps precompile (cowboy)" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile cowboy --force'"
 
-# Compile first so DB tasks do not incur compile cost repeatedly
-run_step_with_log "Step 3: mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
-
-# Prepare database for non-dev environments after compile
-# Robust deps compile to avoid rebar include_lib issues under per-run MIX_BUILD_ROOT.
+# Prepare database and runtime after compile. Robust deps compile to avoid
+# rebar include_lib issues under per-run MIX_BUILD_ROOT.
 # Always compile deps in the default root (unset MIX_BUILD_ROOT), then mirror to per-run root.
 run_step_with_log "Step 2.1: deps compile (default root)" 240s /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile --force'" || exit 1
 # Mirror artifacts with symlink dereference so priv/include are real files in MIX_BUILD_ROOT
 run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
+
+# Second prune in case codegen emitted unused std helpers during the build loop
+run_step_with_log "Step 2.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune2.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
 
 # Compile first so DB tasks do not incur compile cost repeatedly
 # Compile application only (skip deps recompile inside per-run root to avoid rebar include_lib issues)

@@ -57,6 +57,8 @@ class EctoWhereWildcardAssignCleanupTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EIf(cond, thenBr, elseBr):
+                    // Some synthetic/partial ifs may not carry a then-branch yet; skip safely.
+                    if (thenBr == null) return n;
                     var newThen = switch (thenBr.def) {
                         case EMatch(_, rhs) if (isEctoWhereCall(rhs)): rhs;
                         case EBinary(Match, left, rhs2):

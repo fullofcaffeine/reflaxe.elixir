@@ -24,14 +24,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class HeexNestedSigilFlattenFinalTransforms {
   static function flattenNestedHeex(s:String):String {
     if (s == null || s.indexOf("<%=") == -1) return s;
-    var out = new StringBuf();
+    var parts:Array<String> = [];
     var i = 0;
     while (i < s.length) {
       var open = s.indexOf("<%=", i);
-      if (open == -1) { out.add(s.substr(i)); break; }
-      out.add(s.substr(i, open - i));
+      if (open == -1) { parts.push(s.substr(i)); break; }
+      parts.push(s.substr(i, open - i));
       var close = s.indexOf("%>", open + 3);
-      if (close == -1) { out.add(s.substr(open)); break; }
+      if (close == -1) { parts.push(s.substr(open)); break; }
       var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
       if (StringTools.startsWith(inner, "~H\"\"\"")) {
         var start = inner.indexOf("\"\"\"");
@@ -40,16 +40,16 @@ class HeexNestedSigilFlattenFinalTransforms {
           var bodyEnd = inner.indexOf("\"\"\"", bodyStart);
           if (bodyEnd != -1) {
             var body = inner.substr(bodyStart, bodyEnd - bodyStart);
-            out.add(body);
+            parts.push(body);
             i = close + 2; // continue after %>
             continue;
           }
         }
       }
-      out.add(s.substr(open, (close + 2) - open));
+      parts.push(s.substr(open, (close + 2) - open));
       i = close + 2;
     }
-    return out.toString();
+    return parts.join("");
   }
 
   public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -66,4 +66,3 @@ class HeexNestedSigilFlattenFinalTransforms {
 }
 
 #end
-

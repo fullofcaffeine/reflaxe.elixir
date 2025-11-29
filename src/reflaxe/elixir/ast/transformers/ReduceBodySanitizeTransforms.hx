@@ -102,6 +102,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   allowing purely structural clean-up without interfering with other transforms.
  */
 class ReduceBodySanitizeTransforms {
+    #if debug_reduce_body_sanitize
+    static var reducerCount:Int = 0;
+    static inline var REDUCER_WARN_THRESHOLD:Int = 2000;
+    #end
+
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -112,16 +117,25 @@ class ReduceBodySanitizeTransforms {
                     switch (fnNode.def) {
                         case EFn(clauses) if (clauses.length == 1):
                             var cl = clauses[0];
-                            Sys.println('[ReduceBodySanitize] reducer clauses=' + clauses.length);
                             // Expect two-arg reducer: fn binder, acc -> ... end
                             var binderName:Null<String> = null;
                             var accName:Null<String> = null;
                             if (cl.args.length >= 1) switch (cl.args[0]) { case PVar(n): binderName = n; default: }
                             if (cl.args.length >= 2) switch (cl.args[1]) { case PVar(n2): accName = n2; default: }
-                            Sys.println('[ReduceBodySanitize] binder=' + binderName + ', acc=' + accName);
                             if (binderName == null || accName == null) return n;
 
                             var bodyStmts:Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
+                            #if debug_reduce_body_sanitize
+                            reducerCount++;
+                            if (reducerCount % 50 == 0) {
+                                Sys.println('[ReduceBodySanitize] processed ' + reducerCount + ' reducer bodies so far');
+                            }
+                            Sys.println('[ReduceBodySanitize] reducer clauses=' + clauses.length + ', binder=' + binderName + ', acc=' + accName);
+                            if (reducerCount > REDUCER_WARN_THRESHOLD) {
+                                Sys.println('[ReduceBodySanitize] WARNING: reducerCount exceeded ' + REDUCER_WARN_THRESHOLD + ' – possible transform loop.');
+                            }
+                            #end
+
                             var newBody:Array<ElixirAST> = [];
 
                             for (stmt in bodyStmts) {
@@ -143,7 +157,9 @@ class ReduceBodySanitizeTransforms {
                                                 // temp = Enum.concat(temp, [expr])  → acc = Enum.concat(acc, [expr])
                                                 var lhs:Null<String> = switch (left.def) { case EVar(nm): nm; default: null; };
                                                 var isSelf = switch (cargs[0].def) { case EVar(nm2): (lhs != null && nm2 == lhs); default: false; };
+                                                #if debug_reduce_body_sanitize
                                                 Sys.println('[ReduceBodySanitize] concat lhs=' + (lhs == null ? 'null' : lhs) + ', arg0=' + (switch (cargs[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelf);
+                                                #end
                                                 if (isSelf) {
                                                     var replLeft = makeAST(EVar(accName));
                                                     var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
@@ -162,7 +178,9 @@ class ReduceBodySanitizeTransforms {
                                                 // tmp = Enum.concat(tmp, [expr]) → acc = Enum.concat(acc, [expr])
                                                 var lhsNameM:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
                                                 var isSelfM = switch (cargsM[0].def) { case EVar(nm2): (lhsNameM != null && nm2 == lhsNameM); default: false; };
+                                                #if debug_reduce_body_sanitize
                                                 Sys.println('[ReduceBodySanitize] ematch concat lhs=' + (lhsNameM == null ? 'null' : lhsNameM) + ', arg0=' + (switch (cargsM[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelfM);
+                                                #end
                                                 if (isSelfM) {
                                                     var newLeft = makeAST(EVar(accName));
                                                     var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargsM[1]]));
@@ -187,6 +205,18 @@ class ReduceBodySanitizeTransforms {
                                         newBody.push(rewritten);
                                 }
                             }
+
+                            // Fast path: if nothing changed, return original node to avoid churn.
+                            var changed = (newBody.length != bodyStmts.length);
+                            if (!changed) {
+                                for (i in 0...newBody.length) {
+                                    if (newBody[i] != bodyStmts[i]) {
+                                        changed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!changed) return n;
 
                             var finalBody:ElixirAST = makeAST(EBlock(newBody));
                             var newFn = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: finalBody }]) );

@@ -1,6 +1,7 @@
 # Pass E — application entrypoint
 -lib reflaxe
 -lib reflaxe.elixir
+-cp ../../std/_std
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -18,4 +19,3 @@
 -D disable_hygiene_final
 -D fast_boot
 TodoApp
-

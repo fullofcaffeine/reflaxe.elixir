@@ -26,7 +26,7 @@ class IfThenDoToBlockTransforms {
     public static function normalizePass(ast: ElixirAST): ElixirAST {
         return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EIf(cond, thenBr, elseBr):
+                case EIf(cond, thenBr, elseBr) if (thenBr != null && thenBr.def != null):
                     switch (thenBr.def) {
                         case EDo(inner) if (inner != null):
                             makeASTWithMeta(EIf(cond, makeASTWithMeta(EBlock(inner), thenBr.metadata, thenBr.pos), elseBr), n.metadata, n.pos);
@@ -41,4 +41,3 @@ class IfThenDoToBlockTransforms {
 }
 
 #end
-

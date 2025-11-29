@@ -4,6 +4,7 @@
 
 -lib reflaxe
 -lib reflaxe.elixir
+-cp ../../std/_std
 
 -cp src_haxe
 -cp src_haxe/server
@@ -59,4 +60,3 @@ server.components.CoreComponents
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
-

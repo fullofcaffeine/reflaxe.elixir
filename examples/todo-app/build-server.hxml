@@ -4,6 +4,7 @@
 # Use packaged libraries to avoid repo-level classpaths (faster, no shadowing)
 -lib reflaxe
 -lib reflaxe.elixir
+-cp ../../std/_std
 
 # Source directories
 -cp src_haxe
@@ -59,6 +60,7 @@
 --macro keep('server.components.CoreComponents')
 --macro keep('phoenix.DateFormat')
 --macro keep('phoenix.Sorting')
+# Skip problematic stdlib structures we don't use in the todo app
 
 # Define library version and initialize compiler
 -D reflaxe.elixir=0.1.0
@@ -96,6 +98,5 @@ server.infrastructure.GettextUIMessages
 # PostgrexTypes is now auto-generated from Repo, not a separate class
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix
--D exclude-balanced-tree
 
 # Force-keep controllers and contexts so WAE passes apply to their outputs

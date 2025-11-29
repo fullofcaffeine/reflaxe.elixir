@@ -1,6 +1,9 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
+#if (macro && hxx_instrument_sys)
+import reflaxe.elixir.macros.MacroTimingHelper;
+#end
 
 using StringTools;
 
@@ -14,24 +17,31 @@ class HEExGenerator {
      * Generate HEEx code from JSX element structure
      */
     public static function generateHEEx(element: Dynamic): String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HEExGenerator.generateHEEx", () -> generateHEExInternal(element));
+        #else
+        return generateHEExInternal(element);
+        #end
+    }
+
+    static function generateHEExInternal(element: Dynamic): String {
         if (element == null || !element.valid) {
             throw "Invalid JSX element provided to HEExGenerator";
         }
-        
-        var result = "";
-        
-        // Handle self-closing elements
+
+        var parts:Array<String> = [];
         if (element.selfClosing) {
-            result = '<${element.tag}${generateAttributes(element.attributes)} />';
+            parts.push('<${element.tag}');
+            parts.push(generateAttributes(element.attributes));
+            parts.push(" />");
         } else {
-            var openTag = '<${element.tag}${generateAttributes(element.attributes)}>';
-            var closeTag = '</${element.tag}>';
-            var content = generateContent(element.content);
-            
-            result = '${openTag}${content}${closeTag}';
+            parts.push('<${element.tag}');
+            parts.push(generateAttributes(element.attributes));
+            parts.push(">");
+            parts.push(generateContent(element.content));
+            parts.push('</${element.tag}>');
         }
-        
-        return result;
+        return parts.join("");
     }
     
     /**
@@ -41,16 +51,15 @@ class HEExGenerator {
         if (attributes == null) {
             return "";
         }
-        
-        var result = "";
-        var hasAttributes = false;
+
+        var parts:Array<String> = [];
         for (key in attributes.keys()) {
-            hasAttributes = true;
             var value = attributes.get(key);
-            result += ' ${convertAttribute(key, value)}';
+            parts.push(" ");
+            parts.push(convertAttribute(key, value));
         }
-        
-        return hasAttributes ? result : "";
+
+        return parts.join("");
     }
     
     /**
@@ -104,25 +113,33 @@ class HEExGenerator {
      * Generate content with proper binding syntax
      */
     public static function generateContent(content: String): String {
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HEExGenerator.generateContent", () -> generateContentInternal(content));
+        #else
+        return generateContentInternal(content);
+        #end
+    }
+
+    static function generateContentInternal(content: String): String {
         if (content == null || content.trim().length == 0) {
             return "";
         }
-        
+
         var result = content;
-        
+
         // Handle template bindings: {variable} -> <%= @variable %>
         // Use a simple string replacement approach for Haxe compatibility
         var i = 0;
         while (i < result.length) {
             var start = result.indexOf("{", i);
             if (start == -1) break;
-            
+
             var end = result.indexOf("}", start);
             if (end == -1) break;
-            
+
             var binding = result.substring(start + 1, end).trim();
             var replacement = "";
-            
+
             // Check for conditional rendering: condition && element
             if (binding.contains(" && ")) {
                 replacement = generateConditionalBinding(binding);
@@ -135,11 +152,11 @@ class HEExGenerator {
             else {
                 replacement = '<%= @${binding} %>';
             }
-            
+
             result = result.substring(0, start) + replacement + result.substring(end + 1);
             i = start + replacement.length;
         }
-        
+
         return result;
     }
     
@@ -186,26 +203,33 @@ class HEExGenerator {
      * Generate component with proper slot handling
      */
     public static function generateComponent(componentName: String, props: Map<String, String>, slots: Array<Dynamic>): String {
-        var result = '<.${componentName}';
-        
-        // Add props
+        #if (macro && hxx_instrument_sys)
+        return MacroTimingHelper.time("HEExGenerator.generateComponent", () -> generateComponentInternal(componentName, props, slots));
+        #else
+        return generateComponentInternal(componentName, props, slots);
+        #end
+    }
+
+    static function generateComponentInternal(componentName: String, props: Map<String, String>, slots: Array<Dynamic>): String {
+        var parts:Array<String> = [];
+        parts.push('<.${componentName}');
+
         for (key in props.keys()) {
             var value = props.get(key);
-            result += ' ${key}={@${value}}';
+            parts.push(' ${key}={@${value}}');
         }
-        
-        // Handle slots
+
         if (slots.length == 0) {
-            result += " />";
+            parts.push(" />");
         } else {
-            result += ">\n";
+            parts.push(">\n");
             for (slot in slots) {
-                result += generateSlot(slot.name, slot.content);
+                parts.push(generateSlot(slot.name, slot.content));
             }
-            result += '</.${componentName}>';
+            parts.push('</.${componentName}>');
         }
-        
-        return result;
+
+        return parts.join("");
     }
     
     /**

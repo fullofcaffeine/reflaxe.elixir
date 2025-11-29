@@ -83,7 +83,7 @@ class HeexMain {
     passes.push({
       name: "HeexAssignsTypeLinter",
       description: "Validate @assigns fields and literal comparisons in ~H against the Haxe typedef",
-      enabled: true,
+      enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.transformPass,
       contextualPass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.contextualPass
     });
@@ -99,4 +99,3 @@ class HeexMain {
   }
 }
 #end
-

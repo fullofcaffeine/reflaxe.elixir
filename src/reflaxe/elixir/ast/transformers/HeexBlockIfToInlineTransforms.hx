@@ -36,14 +36,14 @@ class HeexBlockIfToInlineTransforms {
     }
 
     static function rewrite(s:String):String {
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             var open = s.indexOf("<%=", i);
-            if (open == -1) { out.add(s.substr(i)); break; }
-            out.add(s.substr(i, open - i));
+            if (open == -1) { parts.push(s.substr(i)); break; }
+            parts.push(s.substr(i, open - i));
             var close = s.indexOf("%>", open + 3);
-            if (close == -1) { out.add(s.substr(open)); break; }
+            if (close == -1) { parts.push(s.substr(open)); break; }
             var inner = StringTools.trim(s.substr(open + 3, close - (open + 3)));
             if (StringTools.startsWith(inner, "if ") && inner.indexOf(" do") != -1) {
                 var cond = StringTools.trim(inner.substr(3, inner.indexOf(" do") - 3));
@@ -51,7 +51,7 @@ class HeexBlockIfToInlineTransforms {
                 var thenStart = close + 2;
                 var elseTag = s.indexOf("<% else %>", thenStart);
                 var endTag = s.indexOf("<% end %>", thenStart);
-                if (endTag == -1) { out.add(s.substr(open, (close+2)-open)); i = close+2; continue; }
+                if (endTag == -1) { parts.push(s.substr(open, (close+2)-open)); i = close+2; continue; }
                 var thenEnd = (elseTag != -1 && elseTag < endTag) ? elseTag : endTag;
                 var thenHtml = s.substr(thenStart, thenEnd - thenStart);
                 var elseHtml: Null<String> = (elseTag != -1 && elseTag < endTag)
@@ -59,16 +59,16 @@ class HeexBlockIfToInlineTransforms {
                 // Ensure no nested EEx AND branches are not HTML tags (avoid attribute/quote pitfalls)
                 var branchesArePlainText = (thenHtml.indexOf('<') == -1 && (elseHtml == null || elseHtml.indexOf('<') == -1));
                 if (thenHtml.indexOf("<%") == -1 && (elseHtml == null || elseHtml.indexOf("<%") == -1) && branchesArePlainText) {
-                    out.add('<%= if ' + cond + ', do: ' + toQuoted(thenHtml) + ', else: ' + toQuoted(elseHtml) + ' %>');
+                    parts.push('<%= if ' + cond + ', do: ' + toQuoted(thenHtml) + ', else: ' + toQuoted(elseHtml) + ' %>');
                     i = endTag + 9;
                     continue;
                 }
             }
             // Not a block-if to inline; copy segment
-            out.add(s.substr(open, (close + 2) - open));
+            parts.push(s.substr(open, (close + 2) - open));
             i = close + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     static function toQuoted(s:String):String {

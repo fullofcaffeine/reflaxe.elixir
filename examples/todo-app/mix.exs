@@ -13,7 +13,9 @@ defmodule TodoApp.MixProject do
       aliases: aliases(),
       deps: deps(),
       haxe: [
-        hxml_file: "build.hxml",
+        # Use the micro-pass server build so Mix.compilers align with QA sentinel
+        # and keep Haxe server builds bounded and incremental.
+        hxml_file: "build-server-multipass.hxml",
         source_dir: "src_haxe",
         target_dir: "lib",
         # Keep watcher disabled here; we start a watcher via Endpoint watchers (dev.exs)
@@ -57,7 +59,11 @@ defmodule TodoApp.MixProject do
       {:telemetry_metrics_prometheus_core, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"},
+      # Webserver stack pinned for OTP 27 compatibility (see TODOAPP_COWBOY_TOOLCHAIN_ISSUE_REPORT.md)
+      {:plug_cowboy, "~> 2.7.5", override: true},
+      {:cowboy, "~> 2.14.2", override: true},
+      {:cowlib, "~> 2.16.0", override: true},
+      {:ranch, "~> 2.2", override: true},
       {:file_system, "~> 1.1", only: [:dev, :test]}
     ]
   end
