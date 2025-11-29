@@ -50,25 +50,26 @@ defmodule Mix.Tasks.Compile.Haxe do
     if System.get_env("HAXE_NO_COMPILE") == "1" do
       Mix.shell().info("Haxe compile skipped (HAXE_NO_COMPILE=1)")
       {:ok, []}
-    end
-    {opts, _, _} = OptionParser.parse(args, 
-      switches: [force: :boolean, verbose: :boolean, no_watch: :boolean]
-    )
-    
-    config = get_haxe_config()
-    config = Keyword.merge(config, opts)
-    
-    # Ensure required directories exist
-    ensure_directories(config)
-    
-    # Check if compilation is needed
-    if should_compile?(config) do
-      compile_haxe(config)
     else
-      if config[:verbose] do
-        Mix.shell().info("Haxe files are up to date")
+      {opts, _, _} = OptionParser.parse(args, 
+        switches: [force: :boolean, verbose: :boolean, no_watch: :boolean]
+      )
+      
+      config = get_haxe_config()
+      config = Keyword.merge(config, opts)
+      
+      # Ensure required directories exist
+      ensure_directories(config)
+      
+      # Check if compilation is needed
+      if should_compile?(config) do
+        compile_haxe(config)
+      else
+        if config[:verbose] do
+          Mix.shell().info("Haxe files are up to date")
+        end
+        {:ok, []}
       end
-      {:ok, []}
     end
   end
   
