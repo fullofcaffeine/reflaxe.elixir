@@ -156,71 +156,74 @@ ts() { date "+%Y-%m-%d %H:%M:%S"; }
 log() { if [[ "${QUIET:-0}" -eq 0 ]]; then echo "[$(ts)] $*"; fi }
 run() { if [[ "$VERBOSE" -eq 1 ]]; then set -x; fi; "$@"; local rc=$?; if [[ "$VERBOSE" -eq 1 ]]; then set +x; fi; return $rc; }
 
-# Wrapper to run a command with optional timeout and tee to logfile.
-# Usage: run_step "Desc" timeout_secs cmd...  logfile
+# Wrapper to run a command with optional timeout and logging to a file.
+# Usage: run_step_with_log "Desc" timeout_spec logfile "cmd …"
 run_step_with_log() {
   local desc="$1"; shift
   local timeout_val="$1"; shift
   local logfile="$1"; shift
   local cmd="$*"
-  local start_ts=$(date +%s)
+
+  local start_ts
+  start_ts=$(date +%s)
+
   log "[QA] ${desc} (timeout=${timeout_val})"
-  # Always start with a fresh logfile to avoid surfacing stale lines from prior runs
+
+  # Fresh logfile for this run
   : > "$logfile"
-  # Start a heartbeat so callers always see forward progress even if the command is quiet
+
+  # Heartbeat so callers see progress even for quiet commands
   local heartbeat_pid=""
-  if [[ "$NO_HEARTBEAT" -eq 0 ]]; then
-    ( while true; do sleep "$PROGRESS_INTERVAL"; log "[QA] .. ${desc} still running"; done ) >/dev/null 2>&1 &
+  if [[ "${NO_HEARTBEAT:-0}" -eq 0 ]]; then
+    (
+      while true; do
+        sleep "${PROGRESS_INTERVAL:-10}"
+        log "[QA] .. ${desc} still running"
+      done
+    ) >/dev/null 2>&1 &
     heartbeat_pid=$!
-    # Ensure the heartbeat is always stopped when this function returns without noisy job messages
+    # Ensure heartbeat is always stopped when this function returns
     local __hb="$heartbeat_pid"
     trap 'if [[ -n "$__hb" ]] && kill -0 "$__hb" 2>/dev/null; then kill "$__hb" 2>/dev/null || true; wait "$__hb" 2>/dev/null || true; fi' RETURN
   fi
 
-  # Prefer our robust PGID/session killer first, then GNU timeout variants, else manual fallback
+  local rc=0
   local WRAP_TIMEOUT="$SCRIPT_DIR/with-timeout.sh"
+
+  # Normalise "300s" -> "300" for the wrapper/manual fallback
+  local secs
+  secs=$(echo "$timeout_val" | sed -E 's/[^0-9]//g')
+  if [[ -z "$secs" ]]; then secs=300; fi
+
   if [[ -x "$WRAP_TIMEOUT" ]]; then
-    # Extract numeric seconds (e.g., 300s -> 300) for our wrapper
-    local secs
-    secs=$(echo "$timeout_val" | sed -E 's/[^0-9]//g')
-    if [[ -z "$secs" ]]; then secs=300; fi
-    if [[ "$QUIET" -eq 1 ]]; then
-      ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
-    else
-      # tee will write fresh because we truncated above
-      ( "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" 2>&1 | tee -a "$logfile" ); rc=${PIPESTATUS[0]:-0}
-    fi
+    # Preferred path: our PGID/session‑killer wrapper
+    "$WRAP_TIMEOUT" --secs "$secs" --cwd "$(pwd)" -- bash -lc "$cmd" >>"$logfile" 2>&1
+    rc=$?
   elif command -v timeout >/dev/null 2>&1; then
-    if [[ "$QUIET" -eq 1 ]]; then
-      ( timeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
-    else
-      ( timeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee -a "$logfile" ); rc=${PIPESTATUS[0]:-0}
-    fi
+    timeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1
+    rc=$?
   elif command -v gtimeout >/dev/null 2>&1; then
-    if [[ "$QUIET" -eq 1 ]]; then
-      ( gtimeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1 ); rc=$?
-    else
-      ( gtimeout "$timeout_val" bash -lc "$cmd" 2>&1 | tee -a "$logfile" ); rc=${PIPESTATUS[0]:-0}
-    fi
+    gtimeout "$timeout_val" bash -lc "$cmd" >>"$logfile" 2>&1
+    rc=$?
   else
-    # Manual watchdog fallback (portable): background command and kill after timeout
-    # Parse numeric seconds from timeout_val (e.g., 300s -> 300)
-    local secs
-    secs=$(echo "$timeout_val" | sed -E 's/[^0-9]//g')
-    if [[ -z "$secs" ]]; then secs=300; fi
-    : > "$logfile"
-    # Run command in background; capture PID of the shell, not tee
-    # Stream output to logfile; print progress lines if VERBOSE
+    # Last‑resort manual timeout: background + watchdog loop
     set +e
-    bash -lc "$cmd" >> "$logfile" 2>&1 &
+    bash -lc "$cmd" >>"$logfile" 2>&1 &
     local cmd_pid=$!
-    local elapsed=0
-    while kill -0 "$cmd_pid" >/dev/null 2>&1; do
-      sleep 1
-      elapsed=$((elapsed+1))
-      if (( elapsed % 10 == 0 )); then log "[QA] .. ${desc} running (${elapsed}s/${secs}s)"; fi
-      if [[ "$elapsed" -ge "$secs" ]]; then
-        log "[QA] ⏳ Timeout reached for '${desc}' (${secs}s). Terminating PID $cmd_pid"
+    local start
+    start=$(date +%s)
+
+    while true; do
+      if ! kill -0 "$cmd_pid" 2>/dev/null; then
+        wait "$cmd_pid"
+        rc=$?
+        break
+      fi
+      local now elapsed
+      now=$(date +%s)
+      elapsed=$(( now - start ))
+      if (( elapsed > secs )); then
+        echo "[$(ts)] [QA] ⏳ Timeout (${secs}s) reached for ${desc}. Terminating PID ${cmd_pid}" >>"$logfile"
         kill -TERM "$cmd_pid" >/dev/null 2>&1 || true
         sleep 1
         kill -KILL "$cmd_pid" >/dev/null 2>&1 || true
@@ -228,25 +231,32 @@ run_step_with_log() {
         break
       fi
     done
-    if [[ "${rc:-0}" -eq 0 ]]; then
-      wait "$cmd_pid"; rc=$?
-    fi
     set -e
-    # Mirror output to console on failure or verbose
-    if [[ "$VERBOSE" -eq 1 || ( "$QUIET" -eq 0 && "$rc" -ne 0 ) ]]; then tail -n +1 "$logfile" | tail -n 200; fi
   fi
 
-  local end_ts=$(date +%s)
+  local end_ts
+  end_ts=$(date +%s)
   local dur=$(( end_ts - start_ts ))
+
   # Stop heartbeat once step finishes (in addition to RETURN trap)
-  if kill -0 "$heartbeat_pid" 2>/dev/null; then kill "$heartbeat_pid" >/dev/null 2>&1 || true; wait "$heartbeat_pid" 2>/dev/null || true; fi
+  if [[ -n "$heartbeat_pid" ]] && kill -0 "$heartbeat_pid" 2>/dev/null; then
+    kill "$heartbeat_pid" >/dev/null 2>&1 || true
+    wait "$heartbeat_pid" 2>/dev/null || true
+  fi
   # Clear the RETURN trap for subsequent calls
-  trap - RETURN
+  trap - RETURN || true
+
+  # Mirror output to console on failure or when verbose
+  if [[ "$VERBOSE" -eq 1 || ( "${QUIET:-0}" -eq 0 && "$rc" -ne 0 ) ]]; then
+    tail -n +1 "$logfile" | tail -n 200 || true
+  fi
+
   if [[ "$rc" -ne 0 ]]; then
     log "[QA] ❌ ${desc} failed (rc=$rc, ${dur}s). Last 100 lines:"
     tail -n 100 "$logfile" || true
     return "$rc"
   fi
+
   log "[QA] ✅ ${desc} OK (${dur}s)"
   return 0
 }
@@ -271,13 +281,20 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   if [[ "$REUSE_DB" -eq 1 ]]; then CHILD_FLAGS+=("--reuse-db"); fi
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
-  if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then CHILD_FLAGS+=("--playwright"); fi
+  if [[ "$QUIET" -eq 1 ]]; then CHILD_FLAGS+=("--quiet"); fi
+  if [[ "$NO_HEARTBEAT" -eq 1 ]]; then CHILD_FLAGS+=("--no-heartbeat"); fi
+  if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
+    CHILD_FLAGS+=("--playwright" "--e2e-spec" "$E2E_SPEC" "--e2e-workers" "$E2E_WORKERS")
+  fi
   log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
-  # Launch background child fully detached; prefer setsid, fallback to nohup
+  # Launch background child fully detached; prefer setsid, fallback to nohup.
+  # Avoid nested bash -lc quoting that previously caused "unexpected EOF" when
+  # E2E_SPEC contained spaces. Invoke the script directly with an argv array.
+  CHILD_CMD=( "$0" "${CHILD_FLAGS[@]}" )
   if command -v setsid >/dev/null 2>&1; then
-    setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" QA_FORCE_FAST_BUILD="${QA_FORCE_FAST_BUILD:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
   else
-    nohup env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" bash -lc "'$0' ${CHILD_FLAGS[*]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    nohup env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" QA_FORCE_FAST_BUILD="${QA_FORCE_FAST_BUILD:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
   fi
   SENTINEL_PID=$!
   # Disown the child so shells never warn/wait on background jobs
@@ -379,50 +396,6 @@ if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
   if [[ "$READY" -ne 1 ]]; then HAXE_CMD="haxe"; fi
 fi
 
-# Optional: quick prewarm cycle to populate the server cache so the main build
-# reliably fits under the BUILD_TIMEOUT cap on cold environments. This runs the
-# same build command but is strictly time-bounded; whatever compiles stays cached.
-if [[ "$HAXE_USE_SERVER" -eq 1 && -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
-  # Multi-shot prewarm: several short runs to stay under caps while priming cache
-  PREWARM_SHOTS=${PREWARM_SHOTS:-6}
-  PREWARM_PER_SHOT=${PREWARM_PER_SHOT:-10s}
-  for i in $(seq 1 "$PREWARM_SHOTS"); do
-    if [[ -f "build-prewarm-fast.hxml" && "$i" -eq 1 ]]; then
-      # First shot primes std as fast as possible (JS target); best-effort
-      run_step_best_effort "Step 0.${i}: Haxe prewarm (fast std js)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm-fast.hxml"
-    elif [[ -f "build-prewarm.hxml" ]]; then
-      # Subsequent shots prime Elixir target macros/compiler cache; best-effort
-      run_step_best_effort "Step 0.${i}: Haxe prewarm (elixir target)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-prewarm.hxml"
-    else
-      run_step_best_effort "Step 0.${i}: Haxe prewarm ($HAXE_CMD build-server.hxml)" "$PREWARM_PER_SHOT" /tmp/qa-haxe-prewarm.log "$HAXE_CMD build-server.hxml"
-    fi
-  done
-fi
-
-# Optional: dependency prewarm to avoid first-time rebar/make latency for
-# heavy Erlang deps (best-effort, bounded). Useful on macOS where erlang.mk
-# projects like cowlib may trigger additional setup on the first run.
-if [[ -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
-  run_step_best_effort "Step 1.pre: deps prewarm (cowlib)" "$PREWARM_TIMEOUT" /tmp/qa-deps-prewarm.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowlib --force"
-fi
-
-# Generate .ex files. Prefer a fast hxml if available; else, if pass files
-# exist, run in two bounded passes to respect strict per-step caps.
-if ls build-server-pass*.hxml >/dev/null 2>&1; then
-  i=0
-  for h in $(ls -1 build-server-pass*.hxml | sort); do
-    i=$((i+1))
-    # Use the compilation server for all micro‑passes so later passes reuse cache
-    run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
-  done
-  # Consolidated tail for convenience
-  : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
-elif [[ -f "build-server-fast.hxml" ]]; then
-  run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
-else
-  run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
-fi
-
 # Optional: dependency prewarm to avoid first-time rebar/make latency for
 # heavy Erlang deps (best-effort, bounded). Useful on macOS where erlang.mk
 # projects like cowlib may trigger additional setup on the first run.
@@ -456,25 +429,29 @@ fi
 # Remove unused std artifacts that are not needed for the app and may generate invalid code
 run_step_with_log "Step 1.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
 
-run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
+if [[ -n "${QA_SKIP_DEPS:-}" ]]; then
+  log "[QA] Step 2: Skipping deps (QA_SKIP_DEPS set)"
+else
+  run_step_with_log "Step 2: mix deps.get" "$DEPS_TIMEOUT" /tmp/qa-mix-deps.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.get" || exit 1
 
-# Workaround for cowlib hex packaging without rebar.config on some systems:
-# if deps/cowlib/rebar.config is missing, create a minimal one that includes
-# the local include/ dir so rebar3 passes -I include to erlc.
-if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
-  echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
+  # Workaround for cowlib hex packaging without rebar.config on some systems:
+  # if deps/cowlib/rebar.config is missing, create a minimal one that includes
+  # the local include/ dir so rebar3 passes -I include to erlc.
+  if [[ -d "deps/cowlib" && ! -f "deps/cowlib/rebar.config" ]]; then
+    echo "{erl_opts, [{i, \"include\"}]}."> "deps/cowlib/rebar.config"
+  fi
+
+  # Precompile critical Erlang deps to avoid include path races during main compile.
+  # Use the default _build root to ensure rebar include_lib resolution works; best-effort so main compile can proceed.
+  run_step_best_effort "Step 2.1: deps precompile (cowboy)" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile cowboy --force'"
+
+  # Prepare database and runtime after compile. Robust deps compile to avoid
+  # rebar include_lib issues under per-run MIX_BUILD_ROOT.
+  # Always compile deps in the default root (unset MIX_BUILD_ROOT), then mirror to per-run root.
+  run_step_with_log "Step 2.1: deps compile (default root)" 240s /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile --force'" || exit 1
+  # Mirror artifacts with symlink dereference so priv/include are real files in MIX_BUILD_ROOT
+  run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
 fi
-
-# Precompile critical Erlang deps to avoid include path races during main compile.
-# Use the default _build root to ensure rebar include_lib resolution works; best-effort so main compile can proceed.
-run_step_best_effort "Step 2.1: deps precompile (cowboy)" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile cowboy --force'"
-
-# Prepare database and runtime after compile. Robust deps compile to avoid
-# rebar include_lib issues under per-run MIX_BUILD_ROOT.
-# Always compile deps in the default root (unset MIX_BUILD_ROOT), then mirror to per-run root.
-run_step_with_log "Step 2.1: deps compile (default root)" 240s /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile --force'" || exit 1
-# Mirror artifacts with symlink dereference so priv/include are real files in MIX_BUILD_ROOT
-run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
 
 # Second prune in case codegen emitted unused std helpers during the build loop
 run_step_with_log "Step 2.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune2.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
@@ -500,7 +477,11 @@ if [[ "$ENV_NAME" != "dev" ]]; then
 fi
 
 # Build static assets (JS/CSS) so LiveView client and UI interactions are available
-run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || true
+if [[ -n "${QA_SKIP_ASSETS:-}" ]]; then
+  log "[QA] Assets build: skipped (QA_SKIP_ASSETS set)"
+else
+  run_step_with_log "Assets build ($ENV_NAME)" 300s /tmp/qa-assets-build.log "MIX_ENV=$ENV_NAME mix assets.build" || true
+fi
 
 # Ensure no stale Phoenix server is occupying the target port (or default :4000)
 for P in "$PORT" 4000; do
