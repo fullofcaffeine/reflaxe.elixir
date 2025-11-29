@@ -28,32 +28,32 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class HeexRenderHelperCallWrapTransforms {
     static function wrap(content:String):String {
         if (content == null) return content;
-        var out = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < content.length) {
             var idx = content.indexOf("<%=", i);
-            if (idx == -1) { out.add(content.substr(i)); break; }
-            out.add(content.substr(i, idx - i));
+            if (idx == -1) { parts.push(content.substr(i)); break; }
+            parts.push(content.substr(i, idx - i));
             var j = idx + 3; // after <%= 
             // copy whitespace
             while (j < content.length && ~/^\s$/.match(content.charAt(j))) j++;
             var startExpr = j;
             // find closing %>
             var end = content.indexOf("%>", j);
-            if (end == -1) { out.add(content.substr(idx)); break; }
+            if (end == -1) { parts.push(content.substr(idx)); break; }
             var expr = content.substr(startExpr, end - startExpr);
             var trimmed = StringTools.trim(expr);
             var alreadyRaw = StringTools.startsWith(trimmed, "Phoenix.HTML.raw(");
             var isRenderHelper = ~/^render_[a-z0-9_]+\s*\(/.match(trimmed);
             if (!alreadyRaw && isRenderHelper) {
-                out.add("<%= Phoenix.HTML.raw(" + expr + ") %>");
+                parts.push("<%= Phoenix.HTML.raw(" + expr + ") %>");
             } else {
                 // Copy original segment unchanged
-                out.add(content.substr(idx, (end + 2) - idx));
+                parts.push(content.substr(idx, (end + 2) - idx));
             }
             i = end + 2;
         }
-        return out.toString();
+        return parts.join("");
     }
 
     public static function transformPass(ast: ElixirAST): ElixirAST {

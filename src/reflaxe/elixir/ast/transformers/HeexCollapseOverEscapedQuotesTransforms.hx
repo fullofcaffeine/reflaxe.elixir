@@ -34,25 +34,25 @@ class HeexCollapseOverEscapedQuotesTransforms {
 
     static function collapse(s:String):String {
         // Replace occurrences of \\" (two backslashes before a quote) with \"
-        var buf = new StringBuf();
+        var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
             if (i + 2 < s.length && s.charAt(i) == '\\' && s.charAt(i + 1) == '\\' && s.charAt(i + 2) == '"') {
                 // \\" -> \"
-                buf.add('\\"');
+                parts.push('\\"');
                 i += 3;
                 continue;
             }
             if (i + 1 < s.length && s.charAt(i) == '\\' && s.charAt(i + 1) == '"') {
                 // \" -> "
-                buf.add('"');
+                parts.push('"');
                 i += 2;
                 continue;
             }
-            buf.add(s.charAt(i));
+            parts.push(s.charAt(i));
             i++;
         }
-        return buf.toString();
+        return parts.join("");
     }
 }
 

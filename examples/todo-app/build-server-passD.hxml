@@ -1,6 +1,7 @@
 # Pass D — controllers + router
 -lib reflaxe
 -lib reflaxe.elixir
+-cp ../../std/_std
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -19,4 +20,3 @@
 -D fast_boot
 controllers.UserController
 TodoAppRouter
-

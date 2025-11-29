@@ -52,40 +52,8 @@ enum TaskStreamResult<T> {
     Exit(reason: Dynamic);
 }
 
-/**
- * Helper class for working with task results
- */
-class TaskResultHelper {
-    /**
-     * Check if a yield result is successful
-     */
-    public static inline function isOk<T>(result: TaskYieldOption<T>): Bool {
-        return switch(result) {
-            case null: false;
-            case Ok(_): true;
-            case Exit(_): false;
-        };
-    }
-    
-    /**
-     * Extract value from successful yield result
-     */
-    public static inline function getValue<T>(result: TaskYieldOption<T>): Null<T> {
-        return switch(result) {
-            case null: null;
-            case Ok(value): value;
-            case Exit(_): null;
-        };
-    }
-    
-    /**
-     * Extract exit reason from failed yield result
-     */
-    public static inline function getExitReason<T>(result: TaskYieldOption<T>): Null<Dynamic> {
-        return switch(result) {
-            case null: null;
-            case Ok(_): null;
-            case Exit(reason): reason;
-        };
-    }
+@:nativeGen extern class TaskResultHelper {
+    public static function isOk<T>(result: TaskYieldOption<T>): Bool;
+    public static function getValue<T>(result: TaskYieldOption<T>): Null<T>;
+    public static function getExitReason<T>(result: TaskYieldOption<T>): Null<Dynamic>;
 }

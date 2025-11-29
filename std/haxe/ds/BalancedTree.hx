@@ -15,6 +15,70 @@
  */
 package haxe.ds;
 
+#if elixir
+
+/**
+ * Elixir-specific BalancedTree
+ *
+ * WHAT: Minimal, deterministic map-backed implementation that satisfies the
+ * BalancedTree API surface for the Elixir target without relying on the
+ * mutable tree structure used by other targets.
+ *
+ * WHY: The tree-based implementation generated invalid Elixir code (missing
+ * struct fields and underscore placeholders) and is unnecessary for the
+ * todo-app/runtime scenarios where a plain map is sufficient.
+ *
+ * HOW: Wraps a Haxe `Map<K,V>` (compiled to Elixir maps) and forwards all
+ * operations. Ordering semantics are not guaranteed, but the API contract for
+ * lookups and updates is preserved.
+ */
+class BalancedTree<K, V> implements haxe.Constraints.IMap<K, V> {
+    var store: Map<K, V>;
+
+    public function new() {
+        store = new Map();
+    }
+
+    public function set(key: K, value: V): Void {
+        store.set(key, value);
+    }
+
+    public function get(key: K): Null<V> {
+        return store.get(key);
+    }
+
+    public function remove(key: K): Bool {
+        return store.remove(key);
+    }
+
+    public function exists(key: K): Bool {
+        return store.exists(key);
+    }
+
+    public function iterator(): Iterator<V> {
+        return store.iterator();
+    }
+
+    @:runtime public inline function keyValueIterator(): KeyValueIterator<K, V> {
+        return new haxe.iterators.MapKeyValueIterator(this);
+    }
+
+    public function keys(): Iterator<K> {
+        return store.keys();
+    }
+
+    public function copy(): BalancedTree<K, V> {
+        var cloned = new BalancedTree<K, V>();
+        for (k in store.keys()) {
+            // store.get never returns null for existing keys, but keep Null<V> for safety
+            cloned.set(k, store.get(k));
+        }
+        return cloned;
+    }
+}
+
+#else
+
 class BalancedTree<K, V> implements haxe.Constraints.IMap<K, V> {
     var root: TreeNode<K, V>;
     
@@ -248,3 +312,5 @@ class TreeNode<K, V> {
         return (left == null ? "" : left.toString() + ", ") + '$key => $value' + (right == null ? "" : ", " + right.toString());
     }
 }
+
+#end

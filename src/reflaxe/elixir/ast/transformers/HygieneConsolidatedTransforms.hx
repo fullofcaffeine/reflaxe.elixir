@@ -33,19 +33,61 @@ class HygieneConsolidatedTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         var r = ast;
         // 1) def/defp params underscore for unused
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] DefParamUnusedUnderscoreSafe start'); #else trace('[HygieneTrace] DefParamUnusedUnderscoreSafe start'); #end
+        #end
         r = DefParamUnusedUnderscoreSafeTransforms.pass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] DefParamUnusedUnderscoreSafe end'); #else trace('[HygieneTrace] DefParamUnusedUnderscoreSafe end'); #end
+        #end
         // 1.1) def/defp params: promote underscored binders when the trimmed
         // name is actually referenced in the body (prevents _id-after-use warnings)
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] DefParamUnderscorePromote start'); #else trace('[HygieneTrace] DefParamUnderscorePromote start'); #end
+        #end
         r = DefParamUnderscorePromoteTransforms.promotePass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] DefParamUnderscorePromote end'); #else trace('[HygieneTrace] DefParamUnderscorePromote end'); #end
+        #end
         // 2) fallback rename refs name -> _name when only underscored variant declared
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] LocalUnderscoreReferenceFallback start'); #else trace('[HygieneTrace] LocalUnderscoreReferenceFallback start'); #end
+        #end
         r = LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] LocalUnderscoreReferenceFallback end'); #else trace('[HygieneTrace] LocalUnderscoreReferenceFallback end'); #end
+        #end
         // 3) remove underscore from used locals
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] UnderscoreVarRemove start'); #else trace('[HygieneTrace] UnderscoreVarRemove start'); #end
+        #end
         r = UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] UnderscoreVarRemove end'); #else trace('[HygieneTrace] UnderscoreVarRemove end'); #end
+        #end
         // 4) align declarations and references to canonical names
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] RefDeclAlignment start'); #else trace('[HygieneTrace] RefDeclAlignment start'); #end
+        #end
         r = RefDeclAlignmentTransforms.alignLocalsPass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] RefDeclAlignment end'); #else trace('[HygieneTrace] RefDeclAlignment end'); #end
+        #end
         // 5) case arm hygiene
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] ClauseUnusedBinderUnderscore start'); #else trace('[HygieneTrace] ClauseUnusedBinderUnderscore start'); #end
+        #end
         r = ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] ClauseUnusedBinderUnderscore end'); #else trace('[HygieneTrace] ClauseUnusedBinderUnderscore end'); #end
+        #end
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] CaseUnderscoreBinderPromoteByUse start'); #else trace('[HygieneTrace] CaseUnderscoreBinderPromoteByUse start'); #end
+        #end
         r = CaseUnderscoreBinderPromoteByUseTransforms.transformPass(r);
+        #if hxx_hygiene_trace
+        #if sys Sys.println('[HygieneTrace] CaseUnderscoreBinderPromoteByUse end'); #else trace('[HygieneTrace] CaseUnderscoreBinderPromoteByUse end'); #end
+        #end
         return r;
     }
 }

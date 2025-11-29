@@ -304,7 +304,9 @@ class ReduceWhileAccumulatorTransform {
 
                             // ⚠️ FIX: If we're preserving assignments (inside main control flow), keep them
                             if (preserveAssignments) {
+                                #if debug_reduce_while_transform
                                 trace('[XRay ReduceWhile] Preserving assignment: $varName = ...');
+                                #end
                                 transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
                             }
                             // Otherwise, don't add the assignment to the output (will be merged into return tuple)

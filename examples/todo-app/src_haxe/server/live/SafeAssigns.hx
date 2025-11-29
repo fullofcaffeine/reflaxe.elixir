@@ -149,14 +149,16 @@ class SafeAssigns {
     public static function updateTodosAndStats(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
         var completed = countCompleted(todos);
         var pending = countPending(todos);
-        
+
         // Use LiveSocket's type-safe merge for bulk updates
-        return (cast socket: LiveSocket<TodoLiveAssigns>).merge({
+        final updatedSocket = (cast socket: LiveSocket<TodoLiveAssigns>).merge({
             todos: todos,
             total_todos: todos.length,
             completed_todos: completed,
             pending_todos: pending
         });
+
+        return updatedSocket;
     }
     
     /**

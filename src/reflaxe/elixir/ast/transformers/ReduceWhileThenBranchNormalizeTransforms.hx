@@ -37,6 +37,7 @@ class ReduceWhileThenBranchNormalizeTransforms {
   }
 
   static function normalizeBlock(block: ElixirAST): ElixirAST {
+    if (block == null) return block;
     return switch (block.def) {
       case EBlock(stmts):
         // debug removed

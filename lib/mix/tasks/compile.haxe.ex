@@ -49,7 +49,7 @@ defmodule Mix.Tasks.Compile.Haxe do
     # Allow CI/sentinels to skip Haxe compilation explicitly
     if System.get_env("HAXE_NO_COMPILE") == "1" do
       Mix.shell().info("Haxe compile skipped (HAXE_NO_COMPILE=1)")
-      return {:ok, []}
+      {:ok, []}
     end
     {opts, _, _} = OptionParser.parse(args, 
       switches: [force: :boolean, verbose: :boolean, no_watch: :boolean]

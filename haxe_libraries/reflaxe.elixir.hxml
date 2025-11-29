@@ -18,6 +18,8 @@
 
 # Include the Elixir standard library definitions (generic externs)
 -cp ${SCOPE_DIR}/std/
+# Target-specific overrides (only activated when the compiler gates std/_std in CompilerInit)
+-cp ${SCOPE_DIR}/std/_std/
 
 # Depend on the base Reflaxe framework
 -lib reflaxe
