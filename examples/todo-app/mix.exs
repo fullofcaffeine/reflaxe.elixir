@@ -13,9 +13,9 @@ defmodule TodoApp.MixProject do
       aliases: aliases(),
       deps: deps(),
       haxe: [
-        # Use the micro-pass server build so Mix.compilers align with QA sentinel
-        # and keep Haxe server builds bounded and incremental.
-        hxml_file: "build-server-multipass.hxml",
+        # Use the full server build to ensure all modules are generated together.
+        # The multipass approach deletes files from previous passes.
+        hxml_file: "build-server.hxml",
         source_dir: "src_haxe",
         target_dir: "lib",
         # Keep watcher disabled here; we start a watcher via Endpoint watchers (dev.exs)
