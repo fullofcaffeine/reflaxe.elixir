@@ -214,7 +214,6 @@ end).()]
   end
   def mixed_constant_variable() do
     n = 3
-    _g = 0
     _g = n
     _ = Enum.each(0..(_g2 - 1), (fn -> fn item ->
   i = item + 1
@@ -280,15 +279,17 @@ end).()]
     g
   end
   def mixed_with_literals() do
-    g = []
-    _ = g ++ [0]
-    _ = g ++ [2]
-    _ = g ++ [4]
-    g = []
-    _ = g ++ [100]
-    _ = g ++ [101]
-    _ = g ++ [102]
-    [g, [10, 20, 30], g]
+    [(fn ->
+  _ = g ++ [0]
+  _ = g ++ [2]
+  _ = g ++ [4]
+  []
+end).(), [10, 20, 30], (fn ->
+  _ = g ++ [100]
+  _ = g ++ [101]
+  _ = g ++ [102]
+  []
+end).()]
   end
   def comprehension_from_iterable() do
     source = [1, 2, 3]
