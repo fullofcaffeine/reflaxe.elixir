@@ -1,2 +1,0 @@
-defmodule ProductController do
-end

@@ -1,5 +1,7 @@
 # Test Support Infrastructure - DO NOT DELETE
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+
 ## ⚠️ CRITICAL: These Are Essential Test Support Files
 
 **IMPORTANT**: The files in this `test/support/` directory are **essential test infrastructure**, NOT generated files. They provide critical test helpers and configuration for the Reflaxe.Elixir test suite.

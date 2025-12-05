@@ -106,19 +106,19 @@ end end).())
     five = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(5))
     ten = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(10))
     (case MyApp.PositiveInt_Impl_.safe_sub(five, ten) do
-      {:ok, _value} -> nil
-      {:error, _value} -> nil
+      {:ok, __value} -> nil
+      {:error, __value} -> nil
     end)
     twenty = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(20))
     four = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(4))
     three = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(3))
     (case MyApp.PositiveInt_Impl_.safe_div(twenty, four) do
-      {:ok, _value} -> nil
-      {:error, _value} -> nil
+      {:ok, __value} -> nil
+      {:error, __value} -> nil
     end)
     (case MyApp.PositiveInt_Impl_.safe_div(twenty, three) do
-      {:ok, _value} -> nil
-      {:error, _value} -> nil
+      {:ok, __value} -> nil
+      {:error, __value} -> nil
     end)
   end
   defp test_non_empty_string_operations() do
@@ -160,8 +160,8 @@ end end).())
     ends_with_world = MyApp.NonEmptyString_Impl_.ends_with(test_str, "World")
     contains_space = MyApp.NonEmptyString_Impl_.contains(test_str, " ")
     (case MyApp.NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe") do
-      {:ok, _value} -> nil
-      {:error, _value} -> nil
+      {:ok, __value} -> nil
+      {:error, __value} -> nil
     end)
     parts = MyApp.NonEmptyString_Impl_.split_non_empty(test_str, " ")
     value = Enum.each(parts, (fn -> fn _ ->
@@ -175,8 +175,8 @@ end end).())
     math_chain = MyApp.ResultTools.unwrap_or(ResultTools.map(ResultTools.flat_map(PositiveInt_Impl_.parse(10), fn n -> PositiveInt_Impl_.safe_sub(n, ResultTools.unwrap(PositiveInt_Impl_.parse(3))) end), fn n -> PositiveInt_Impl_.multiply(n, ResultTools.unwrap(PositiveInt_Impl_.parse(2))) end), ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
     string_chain = MyApp.ResultTools.unwrap_or(ResultTools.flat_map(ResultTools.map(ResultTools.flat_map(NonEmptyString_Impl_.parse_and_trim("  hello world  "), fn s -> NonEmptyString_Impl_.safe_trim(s) end), fn s -> NonEmptyString_Impl_.to_upper_case(s) end), fn s -> NonEmptyString_Impl_.safe_replace(s, "WORLD", "UNIVERSE") end), ResultTools.unwrap(NonEmptyString_Impl_.parse("fallback")))
     composition_result = (case build_user_profile("user123", "  alice@example.com  ", "5") do
-      {:ok, _value} -> nil
-      {:error, _value} -> nil
+      {:ok, __value} -> nil
+      {:error, __value} -> nil
     end)
   end
   defp test_error_handling() do

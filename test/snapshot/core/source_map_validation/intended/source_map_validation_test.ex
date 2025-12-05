@@ -18,10 +18,10 @@ end end).())
     _ = instance.doSomething()
     nil
   end
-  defp test_function(str, num) do
+  defp test_function(_str, _num) do
     nil
   end
-  defp process_item(item) do
+  defp process_item(_item) do
     nil
   end
 end

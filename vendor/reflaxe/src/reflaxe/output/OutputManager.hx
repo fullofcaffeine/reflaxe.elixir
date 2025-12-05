@@ -221,6 +221,18 @@ class OutputManager {
 		for(c in compiler.generateOutputIterator()) {
 			final mid = c.baseType.moduleId();
 			final filename = overrideFileName(mid, c);
+			#if debug_output_manager
+			trace('[OutputManager] Processing class for module output:');
+			trace('[OutputManager]   moduleId: ${mid}');
+			trace('[OutputManager]   overrideFileName: ${c.overrideFileName}');
+			trace('[OutputManager]   overrideDirectory: ${c.overrideDirectory}');
+			trace('[OutputManager]   computed filename: ${filename}');
+			var dataLen = switch(c.data.data()) {
+				case String(s): s.length;
+				case Bytes(b): b.length;
+			};
+			trace('[OutputManager]   data length: ${dataLen}');
+			#end
 			if(!files.exists(filename)) {
 				files[filename] = [];
 			}
@@ -230,7 +242,17 @@ class OutputManager {
 			}
 		}
 
+		#if debug_output_manager
+		trace('[OutputManager] Files map ready. Checking entries...');
+		for(k => v in files) {
+			trace('[OutputManager] MAP KEY: ${k} (entries: ${v.length})');
+		}
+		trace('[OutputManager] Writing files...');
+		#end
 		for(moduleId => outputList in files) {
+			#if debug_output_manager
+			trace('[OutputManager] WRITE: ${getFileName(moduleId)}');
+			#end
 			saveFile(getFileName(moduleId), joinStringOrBytes(outputList));
 		}
 	}
@@ -264,6 +286,13 @@ class OutputManager {
 		ensureOutputDirExists();
 		for(c in compiler.generateOutputIterator()) {
 			final filename = overrideFileName(c.baseType.globalName(), c);
+			#if debug_output_manager
+			trace('[OutputManager] Writing file: ${getFileName(filename)}');
+			trace('[OutputManager]   baseType.globalName: ${c.baseType.globalName()}');
+			trace('[OutputManager]   overrideFileName: ${c.overrideFileName}');
+			trace('[OutputManager]   overrideDirectory: ${c.overrideDirectory}');
+			trace('[OutputManager]   final filename: ${filename}');
+			#end
 			saveFile(getFileName(filename), c.data);
 		}
 	}

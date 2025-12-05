@@ -1,8 +1,8 @@
 defmodule Std do
-  def string(value) do
+  def string(_value) do
     inspect(value)
   end
-  def parse_int(str) do
+  def parse_int(_str) do
     
             case Integer.parse(str) do
                 {num, _} -> num
@@ -10,7 +10,7 @@ defmodule Std do
             end
         
   end
-  def parse_float(str) do
+  def parse_float(_str) do
     
             case Float.parse(str) do
                 {num, _} -> num
@@ -18,9 +18,8 @@ defmodule Std do
             end
         
   end
-  def is(value, type) do
-    (
-
+  def is(_value, _type) do
+    
             # Convert type to string for comparison
             type_str = to_string(type)
             
@@ -43,7 +42,6 @@ defmodule Std do
                     end
             end
         
-)
   end
   def is_of_type(value, type) do
     is(value, type)
@@ -51,7 +49,7 @@ defmodule Std do
   def random() do
     :rand.uniform()
   end
-  def int(value) do
+  def int(_value) do
     trunc(value)
   end
 end

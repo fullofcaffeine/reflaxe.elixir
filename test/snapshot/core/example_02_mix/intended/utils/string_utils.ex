@@ -1,11 +1,10 @@
 defmodule StringUtils do
-  def process_string(input) do
+  def process_string(_input) do
     processed = processed |> remove_excess_whitespace() |> normalize_case()
   end
   def format_display_name(name) do
     if (Kernel.is_nil(name) or length(StringTools.ltrim(StringTools.rtrim(name))) == 0), do: "Anonymous User"
-    parts = _this = StringTools.ltrim(StringTools.rtrim(name))
-    String.split(_this, " ")
+    parts = String.split(_this, " ")
     formatted = []
     _ = Enum.each(parts, (fn -> fn item ->
     if (length(item) > 0) do
@@ -29,7 +28,7 @@ end end).())
     if (not is_valid_email_format(trimmed)), do: %{:valid => false, :error => "Invalid email format"}
     %{:valid => true, :email => String.downcase(trimmed), :domain => extract_domain(trimmed), :username => extract_username(trimmed)}
   end
-  def create_slug(text) do
+  def create_slug(_text) do
     slug = slug |> EReg.new("[^a-z0-9\\s-]", "g").replace("") |> EReg.new("\\s+", "g").replace("-") |> EReg.new("-+", "g").replace("-")
   end
   def truncate(text, max_length) do

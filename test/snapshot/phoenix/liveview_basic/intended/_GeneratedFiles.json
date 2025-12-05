@@ -32,7 +32,6 @@
   "phoenix/comparison_operator.ex",
   "phoenix/changeset_value.ex",
   "phoenix/changeset_action.ex",
-  "hxx.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/ds/tree_node.ex",

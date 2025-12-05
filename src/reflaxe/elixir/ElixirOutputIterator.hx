@@ -130,9 +130,18 @@ class ElixirOutputIterator {
         }
 
         index++;
-        
+
         #if debug_output_iterator
-        #if debug_output_iterator trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}'); #end
+        trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
+        // Debug the DataAndFileInfo overrides for this item
+        var moduleName = switch(astData.data.def) {
+            case EModule(name, _, _): name;
+            case EDefmodule(name, _): name;
+            default: "(unknown)";
+        };
+        trace('[ElixirOutputIterator] Module: ${moduleName}');
+        trace('[ElixirOutputIterator] overrideFileName: ${astData.overrideFileName}');
+        trace('[ElixirOutputIterator] overrideDirectory: ${astData.overrideDirectory}');
         #end
         
         // Apply transformation passes to the AST
@@ -148,6 +157,15 @@ class ElixirOutputIterator {
         // WHY: Macro-only helpers (e.g., std/ecto/*Macros, std/HXX) previously emitted empty stubs
         // HOW: Detect EDefmodule/EModule nodes with empty bodies and skip yielding output
         if (shouldSuppressEmission(transformedAST)) {
+            #if debug_output_iterator
+            // Get module name from AST for debug
+            var moduleName = switch(transformedAST.def) {
+                case EModule(name, _, _): name;
+                case EDefmodule(name, _): name;
+                default: "(unknown)";
+            };
+            trace('[ElixirOutputIterator] SUPPRESSING emission of: ${moduleName}');
+            #end
             // Recursively advance to the next item; hasNext() already reflects remaining items
             return next();
         }

@@ -1,2 +1,0 @@
-defmodule PresenceBehavior do
-end

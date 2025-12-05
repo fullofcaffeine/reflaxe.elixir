@@ -1,8 +1,8 @@
 defmodule Input do
-  def read_byte(struct) do
+  def read_byte(_struct) do
     -1
   end
-  def read_bytes(struct, b, pos, len) do
+  def read_bytes(_struct, b, pos, len) do
     if (pos < 0 or len < 0 or pos + len > length(b)) do
       throw("Invalid parameters")
     end
@@ -18,7 +18,7 @@ defmodule Input do
 end end).())
     (len - k)
   end
-  def read_all(struct, bufsize) do
+  def read_all(_struct, _bufsize) do
     if (Kernel.is_nil(bufsize)) do
       bufsize = 4096
     end
@@ -52,7 +52,7 @@ end end).())
     end
     _ = StringBuf.to_string(b)
   end
-  def read_line(struct) do
+  def read_line(_struct) do
     buf = %StringBuf{}
     _ = nil
     _ = Enum.each(last, (fn -> fn item ->
@@ -63,7 +63,7 @@ end end).())
 end end).())
     _ = StringBuf.to_string(buf)
   end
-  def close(struct) do
+  def close(_struct) do
     
   end
 end

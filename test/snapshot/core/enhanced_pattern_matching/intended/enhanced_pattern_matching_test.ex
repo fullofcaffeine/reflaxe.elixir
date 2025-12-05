@@ -2,15 +2,15 @@ defmodule EnhancedPatternMatchingTest do
   def match_status(status) do
     (case status do
       {:idle} -> "Currently idle"
-      {:working, task} -> "Working on: #{(fn -> task end).()}"
-      {:completed, result, duration} -> "Completed \"#{(fn -> result end).()}\" in #{(fn -> Kernel.to_string(duration) end).()}ms"
-      {:failed, error, retries} -> "Failed with \"#{(fn -> error end).()}\" after #{(fn -> Kernel.to_string(retries) end).()} retries"
+      {:working, _task} -> "Working on: #{(fn -> task end).()}"
+      {:completed, _result, _duration} -> "Completed \"#{(fn -> result end).()}\" in #{(fn -> Kernel.to_string(duration) end).()}ms"
+      {:failed, _error, _retries} -> "Failed with \"#{(fn -> error end).()}\" after #{(fn -> Kernel.to_string(retries) end).()} retries"
     end)
   end
   def incomplete_match(status) do
     (case status do
       {:idle} -> "idle"
-      {:working, task} -> "working: #{(fn -> task end).()}"
+      {:working, _task} -> "working: #{(fn -> task end).()}"
       _ -> "unknown"
     end)
   end
@@ -20,16 +20,16 @@ defmodule EnhancedPatternMatchingTest do
         inner_context = g
         g = g
         (case g do
-          {:success, _g} ->
+          {:success, __g} ->
             inspect = g
             value = g
             "Double success: #{(fn -> inspect(value) end).()}"
-          {:error, _inner_error, inner_context} -> "Outer success, inner error: #{(fn -> innerError end).()} (context: #{(fn -> inner_context end).()})"
+          {:error, __inner_error, _inner_context} -> "Outer success, inner error: #{(fn -> innerError end).()} (context: #{(fn -> inner_context end).()})"
         end)
-      {:error, _outer_error, outer_context} -> "Outer error: #{(fn -> outerError end).()} (context: #{(fn -> outer_context end).()})"
+      {:error, __outer_error, _outer_context} -> "Outer error: #{(fn -> outerError end).()} (context: #{(fn -> outer_context end).()})"
     end)
   end
-  def match_with_complex_guards(status, priority, is_urgent) do
+  def match_with_complex_guards(status, priority, _is_urgent) do
     (case status do
       {:idle} -> "idle"
       {:working, payload} ->
@@ -47,13 +47,13 @@ defmodule EnhancedPatternMatchingTest do
             end
           end
         end
-      {:completed, _duration, _result} ->
+      {:completed, __duration, __result} ->
         cond do
           duration < 1000 -> "Fast completion: " <> result
           duration >= 1000 and duration < 5000 -> "Normal completion: " <> result
           true -> "Slow completion: " <> result
         end
-      {:failed, _retries, _error} ->
+      {:failed, __retries, __error} ->
         cond do
           retries < 3 -> "Recoverable failure: " <> error
           true -> "Permanent failure: " <> error
@@ -92,7 +92,7 @@ defmodule EnhancedPatternMatchingTest do
 end)) do
       {:success, processed} ->
         format_output(processed)
-      {:error, reason, context} ->
+      {:error, reason, _context} ->
         error = reason
         if (Kernel.is_nil(context)) do
           context = ""
@@ -102,7 +102,7 @@ end)) do
   def match_array_patterns(arr) do
     (case arr do
       [] -> "empty array"
-      [_head | _tail] -> "single element: #{(fn -> Kernel.to_string(x) end).()}"
+      [__head | __tail] -> "single element: #{(fn -> Kernel.to_string(x) end).()}"
       2 -> "pair: [#{(fn -> Kernel.to_string(x) end).()}, #{(fn -> Kernel.to_string(y) end).()}]"
       3 -> "triple: [#{(fn -> Kernel.to_string(x) end).()}, #{(fn -> Kernel.to_string(y) end).()}, #{(fn -> Kernel.to_string(z) end).()}]"
       _ ->
@@ -170,19 +170,19 @@ end).() == "_suffix") do
   def match_validation_state(state) do
     (case state do
       {:valid} -> "Data is valid"
-      {:invalid, _errors} ->
+      {:invalid, __errors} ->
         cond do
           length(errors) == 1 -> "Single error: " <> errors[0]
           length(errors) > 1 -> "Multiple errors: " <> Kernel.to_string(length(errors)) <> " issues"
           true -> "No specific errors"
         end
-      {:pending, validator} -> "Validation pending by: #{(fn -> validator end).()}"
+      {:pending, _validator} -> "Validation pending by: #{(fn -> validator end).()}"
     end)
   end
   def match_binary_pattern(data) do
     (case MyApp.Bytes.of_string(data) do
       [] -> "empty"
-      [_head | _tail] -> "single byte: #{(fn -> Kernel.to_string(bytes.get(0)) end).()}"
+      [__head | __tail] -> "single byte: #{(fn -> Kernel.to_string(bytes.get(0)) end).()}"
       _ ->
         if (n <= 4) do
           "small data: #{(fn -> Kernel.to_string(n) end).()} bytes"

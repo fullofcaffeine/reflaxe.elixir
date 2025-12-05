@@ -5,7 +5,7 @@ defmodule Circle do
   def update(struct, dt) do
     struct.move(struct.velocity.x * dt, struct.velocity.y * dt)
   end
-  def set_velocity(struct, vx, vy) do
+  def set_velocity(_struct, vx, vy) do
     x = vx
     y = vy
     y

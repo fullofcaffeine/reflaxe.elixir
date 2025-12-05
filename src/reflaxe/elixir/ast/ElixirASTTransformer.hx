@@ -244,6 +244,14 @@ class ElixirASTTransformer {
         #end
         
         for (passConfig in passes) {
+            // Skip disabled passes - the enabled flag MUST be respected
+            if (!passConfig.enabled) {
+                #if debug_ast_transformer
+                trace('[XRay AST Transformer] Skipping disabled pass: ${passConfig.name}');
+                #end
+                continue;
+            }
+
             #if debug_ast_transformer
             #if sys
             Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');

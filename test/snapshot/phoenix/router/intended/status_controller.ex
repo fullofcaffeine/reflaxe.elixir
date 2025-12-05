@@ -1,2 +1,0 @@
-defmodule StatusController do
-end

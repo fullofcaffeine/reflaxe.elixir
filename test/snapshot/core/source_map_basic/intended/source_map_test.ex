@@ -1,8 +1,8 @@
 defmodule SourceMapTest do
-  def simple_method(struct) do
+  def simple_method(_struct) do
     "test"
   end
-  def conditional_method(struct, value) do
+  def conditional_method(_struct, value) do
     if (value > 0), do: true, else: false
   end
   def main() do

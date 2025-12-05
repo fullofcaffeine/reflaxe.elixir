@@ -4,7 +4,7 @@ defmodule Main do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()}, #{(fn -> Kernel.to_string(g) end).()}, #{(fn -> Kernel.to_string(b) end).()})"
+      {:rgb, _r, _g, _b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()}, #{(fn -> Kernel.to_string(g) end).()}, #{(fn -> Kernel.to_string(b) end).()})"
     end)
   end
   def get_value(opt, default_value) do
@@ -37,7 +37,7 @@ defmodule Main do
   def compare_trees(t1, t2) do
     (case t1 do
       {:leaf, v2} when t2 == 0 -> v2 == v2
-      {:leaf, v1} -> false
+      {:leaf, _v1} -> false
       {:node, l1, l2} when t2 == 1 ->
         l2 = l1
         r2 = l1

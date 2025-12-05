@@ -1,2 +1,0 @@
-defmodule AdminRouter do
-end

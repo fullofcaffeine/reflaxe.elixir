@@ -1,14 +1,12 @@
 {
   "filesGenerated": [
-  "valid_router_test.ex",
   "user_controller.ex",
   "type.ex",
   "string_buf.ex",
   "std.ex",
   "reflaxe/elixir/macros/http_method.ex",
+  "my_app_web/router.ex",
   "main.ex",
-  "int_iterator.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

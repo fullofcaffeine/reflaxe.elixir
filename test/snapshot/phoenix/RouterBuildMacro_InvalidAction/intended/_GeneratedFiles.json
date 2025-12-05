@@ -4,11 +4,9 @@
   "string_buf.ex",
   "std.ex",
   "reflaxe/elixir/macros/http_method.ex",
+  "my_app_web/router.ex",
   "main.ex",
   "limited_controller.ex",
-  "invalid_action_router_test.ex",
-  "int_iterator.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

@@ -7,7 +7,6 @@
   "result.ex",
   "message.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "event.ex",
   "content.ex",

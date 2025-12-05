@@ -35,10 +35,10 @@ defmodule Type do
   def create_empty_instance(_cl) do
     nil
   end
-  def create_enum(_e, _constr, _params) do
+  def create_enum(_e, _constr, _value) do
     nil
   end
-  def create_enum_index(_e, _index, _params) do
+  def create_enum_index(_e, _index, _value) do
     throw("Type.createEnumIndex not fully implemented for Elixir target")
   end
   def get_enum_constructs(_e) do

@@ -1,2 +1,0 @@
-defmodule UserController do
-end

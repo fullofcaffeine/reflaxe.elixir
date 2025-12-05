@@ -1,2 +1,0 @@
-defmodule SettingsController do
-end

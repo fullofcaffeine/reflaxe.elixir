@@ -4,7 +4,6 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/ds/tree_node.ex",
   "haxe/ds/enum_value_map.ex",

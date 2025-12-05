@@ -1,5 +1,7 @@
 # Elixir Infrastructure Files - DO NOT DELETE
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+
 ## ⚠️ CRITICAL: These Are NOT Generated Files
 
 **IMPORTANT**: The files in this `lib/` directory are **hand-written Elixir infrastructure code**, NOT generated output from the Haxe compiler. They provide essential tooling and Mix tasks for the Reflaxe.Elixir development workflow.

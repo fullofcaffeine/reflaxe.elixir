@@ -1,5 +1,7 @@
 # AI Compiler Development Instructions
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for complete project context and [/docs/AGENTS.md](/docs/AGENTS.md) for documentation navigation
 
 ## 🤖 Expert Compiler Developer Identity
