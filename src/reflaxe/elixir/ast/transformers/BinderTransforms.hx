@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 import StringTools;
 
 /**
@@ -67,7 +68,17 @@ class BinderTransforms {
                 case EModule(name, attrs, body) if (looksLikeLiveModule(name)):
                     var app = deriveAppPrefix(name);
                     if (app != null && !hasLiveUse(body, app)) {
-                        var useStmt = makeAST(EUse(app + "Web", [ makeAST(EAtom("live_view")) ]));
+                        var appWebModule = app + "Web";
+                        var liveViewOptions = makeAST(EKeywordList([
+                            {
+                                key: "layout",
+                                value: makeAST(ETuple([
+                                    makeAST(EVar(appWebModule + ".Layouts")),
+                                    makeAST(EAtom(ElixirAtom.raw("app")))
+                                ]))
+                            }
+                        ]));
+                        var useStmt = makeAST(EUse("Phoenix.LiveView", [liveViewOptions]));
                         var newBody = [useStmt];
                         for (b in body) newBody.push(b);
                         makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
@@ -76,7 +87,17 @@ class BinderTransforms {
                     var app2 = deriveAppPrefix(name);
                     switch (doBlock.def) {
                         case EBlock(stmts) if (app2 != null && !hasLiveUse(stmts, app2)):
-                            var useStmt = makeAST(EUse(app2 + "Web", [ makeAST(EAtom("live_view")) ]));
+                            var appWebModule2 = app2 + "Web";
+                            var liveViewOptions2 = makeAST(EKeywordList([
+                                {
+                                    key: "layout",
+                                    value: makeAST(ETuple([
+                                        makeAST(EVar(appWebModule2 + ".Layouts")),
+                                        makeAST(EAtom(ElixirAtom.raw("app")))
+                                    ]))
+                                }
+                            ]));
+                            var useStmt = makeAST(EUse("Phoenix.LiveView", [liveViewOptions2]));
                             var newDo = makeAST(EBlock([useStmt].concat(stmts)));
                             makeASTWithMeta(EDefmodule(name, newDo), node.metadata, node.pos);
                         default: node;

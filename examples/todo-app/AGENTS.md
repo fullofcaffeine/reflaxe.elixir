@@ -1,5 +1,7 @@
 # Critical Timeout Directive (Non-Blocking Agent Runs)
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+
 - Always run long or potentially blocking commands via `scripts/with-timeout.sh`.
 - Default caps: builds 240–480s, `mix compile` 420s, readiness ≤ 120 probes, full run watchdog ≤ 900s.
 - Never run unbounded `mix phx.server`; use the QA sentinel (which is bounded) or the timeout wrapper.

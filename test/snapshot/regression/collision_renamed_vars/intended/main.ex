@@ -1,5 +1,7 @@
 defmodule Main do
   defp compare_params(p1, p2) do
+    p = p1
+    p = p2
     if (length(p1) == 0 and length(p2) == 0), do: 0
     _ = compare_arrays(p1, p2)
   end

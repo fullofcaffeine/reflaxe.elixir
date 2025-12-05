@@ -1,2 +1,0 @@
-defmodule PageController do
-end

@@ -1,8 +1,8 @@
 defmodule Sys do
-  def println(v) do
+  def println(_v) do
     IO.puts(v)
   end
-  def print(v) do
+  def print(_v) do
     IO.write(v)
   end
   def stdin() do
@@ -14,7 +14,7 @@ defmodule Sys do
   def stderr() do
     :standard_error
   end
-  def get_char(echo) do
+  def get_char(_echo) do
     
             # Save current terminal settings
             {:ok, old_settings} = :io.getopts(:standard_io)
@@ -46,25 +46,25 @@ defmodule Sys do
             end)
     %{}
   end
-  def get_env(s) do
+  def get_env(_s) do
     System.get_env(s)
   end
-  def put_env(s, v) do
+  def put_env(_s, _v) do
     System.put_env(s, v)
   end
   def get_cwd() do
     File.cwd!()
   end
-  def set_cwd(s) do
+  def set_cwd(_s) do
     File.cd!(s)
   end
   def args() do
     System.argv()
   end
-  def exit(code) do
+  def exit(_code) do
     System.halt(code)
   end
-  def command(cmd, args) do
+  def command(_cmd, args) do
     if (Kernel.is_nil(args) or length(args) == 0) do
       
                 case System.cmd("sh", ["-c", cmd]) do
@@ -114,7 +114,7 @@ defmodule Sys do
   def program_path() do
     executable_path()
   end
-  def set_time_locale(loc) do
+  def set_time_locale(_loc) do
     
             Application.put_env(:elixir, :locale, loc)
         

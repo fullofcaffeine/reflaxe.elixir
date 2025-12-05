@@ -34,7 +34,7 @@ end))
   end
   defp process_user(user) do
     (case user do
-      {:some, v} -> nil
+      {:some, _v} -> nil
       {:none} -> nil
     end)
   end

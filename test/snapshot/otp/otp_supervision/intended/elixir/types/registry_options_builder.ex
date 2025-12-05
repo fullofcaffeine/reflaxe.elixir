@@ -1,11 +1,11 @@
 defmodule RegistryOptionsBuilder do
-  def unique(name) do
+  def unique(_name) do
     %{:keys => {:unique}, :name => String.to_atom(name)}
   end
-  def duplicate(name) do
+  def duplicate(_name) do
     %{:keys => {:duplicate}, :name => String.to_atom(name)}
   end
-  def with_partitions(options, partitions) do
+  def with_partitions(options, _partitions) do
     options = Map.put(options, "partitions", partitions)
     options
   end

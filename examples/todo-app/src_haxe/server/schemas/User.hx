@@ -8,7 +8,8 @@ import phoenix.Ecto;
  * Provides a simple user model with basic authentication fields
  * and relationship to todos for user-specific task management.
  */
-@:schema
+@:native("TodoApp.User")
+@:schema("users")
 @:timestamps
 @:keep
 class User {
@@ -32,97 +33,64 @@ class User {
      * Registration changeset for new user creation
      * Includes password validation and hashing
      */
-    @:changeset
     @:keep
     public static function registrationChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.castChangeset(user, params, [
-            "name", "email", "password", "passwordConfirmation"
-        ]);
-        
-        // Basic validations
-        changeset = phoenix.Ecto.EctoChangeset.validate_required(changeset, ["name", "email", "password"]);
-        changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "name", {min: 2, max: 100});
-        var emailPattern = ~/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        changeset = phoenix.Ecto.EctoChangeset.validate_format(changeset, "email", emailPattern);
-        changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "password", {min: 8, max: 128});
-        changeset = phoenix.Ecto.EctoChangeset.validate_confirmation(changeset, "password");
-        changeset = phoenix.Ecto.EctoChangeset.unique_constraint(changeset, "email");
-        
-        // Hash password if valid
-        if (phoenix.Ecto.EctoChangeset.get_change(changeset, "password") != null) {
-            changeset = putPasswordHash(changeset);
-        }
-        
-        return changeset;
+        return untyped __elixir__('
+            {0}
+            |> Ecto.Changeset.cast({1}, [:name, :email, :password, :password_confirmation])
+            |> Ecto.Changeset.validate_required([:name, :email, :password])
+            |> Ecto.Changeset.validate_length(:name, min: 2, max: 100)
+            |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
+            |> Ecto.Changeset.validate_length(:password, min: 8, max: 128)
+            |> Ecto.Changeset.validate_confirmation(:password)
+            |> Ecto.Changeset.unique_constraint(:email)
+        ', user, params);
     }
     
     /**
      * Update changeset for existing user modifications
      * Allows updating name and email without password changes
      */
-    @:changeset
     @:keep
     public static function changeset(user: Dynamic, params: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.castChangeset(user, params, [
-            "name", "email", "active"
-        ]);
-        
-        changeset = phoenix.Ecto.EctoChangeset.validate_required(changeset, ["name", "email"]);
-        changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "name", {min: 2, max: 100});
-        changeset = phoenix.Ecto.EctoChangeset.validate_format(changeset, "email", {pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"});
-        changeset = phoenix.Ecto.EctoChangeset.unique_constraint(changeset, "email");
-        
-        return changeset;
+        return untyped __elixir__('
+            {0}
+            |> Ecto.Changeset.cast({1}, [:name, :email, :active])
+            |> Ecto.Changeset.validate_required([:name, :email])
+            |> Ecto.Changeset.validate_length(:name, min: 2, max: 100)
+            |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
+            |> Ecto.Changeset.unique_constraint(:email)
+        ', user, params);
     }
     
     /**
      * Password change changeset for updating user passwords
      */
-    @:changeset
+    @:keep
     public static function passwordChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.castChangeset(user, params, [
-            "password", "passwordConfirmation"
-        ]);
-        
-        changeset = phoenix.Ecto.EctoChangeset.validate_required(changeset, ["password"]);
-        changeset = phoenix.Ecto.EctoChangeset.validate_length(changeset, "password", {min: 8, max: 128});
-        changeset = phoenix.Ecto.EctoChangeset.validate_confirmation(changeset, "password");
-        
-        if (phoenix.Ecto.EctoChangeset.get_change(changeset, "password") != null) {
-            changeset = putPasswordHash(changeset);
-        }
-        
-        return changeset;
+        return untyped __elixir__('
+            {0}
+            |> Ecto.Changeset.cast({1}, [:password, :password_confirmation])
+            |> Ecto.Changeset.validate_required([:password])
+            |> Ecto.Changeset.validate_length(:password, min: 8, max: 128)
+            |> Ecto.Changeset.validate_confirmation(:password)
+        ', user, params);
     }
-    
+
     /**
      * Email confirmation changeset
      */
+    @:keep
     public static function confirmChangeset(user: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.change(user, {confirmedAt: now()});
-        return changeset;
+        return untyped __elixir__('Ecto.Changeset.change({0}, %{confirmed_at: DateTime.utc_now()})', user);
     }
-    
+
     /**
      * Login tracking changeset
      */
+    @:keep
     public static function loginChangeset(user: Dynamic): Dynamic {
-        var changeset = phoenix.Ecto.EctoChangeset.change(user, {lastLoginAt: now()});
-        return changeset;
-    }
-    
-    // Helper functions for authentication
-    
-    /**
-     * Hash password and put in changeset
-     */
-    static function putPasswordHash(changeset: Dynamic): Dynamic {
-        var password = phoenix.Ecto.EctoChangeset.get_change(changeset, "password");
-        if (password != null) {
-            var hashed = hashPassword(password);
-            return phoenix.Ecto.EctoChangeset.put_change(changeset, "passwordHash", hashed);
-        }
-        return changeset;
+        return untyped __elixir__('Ecto.Changeset.change({0}, %{last_login_at: DateTime.utc_now()})', user);
     }
     
     /**
@@ -154,7 +122,7 @@ class User {
     /**
      * Check if user is active
      */
-    public static function active(user: Dynamic): Bool {
+    public static function isActive(user: Dynamic): Bool {
         return user.active == true;
     }
     
@@ -189,14 +157,17 @@ class User {
     }
     
     /**
-     * User initials for avatars
+     * User initials for avatars (uses __elixir__ for clean generation)
      */
     public static function initials(user: Dynamic): String {
-        var name = displayName(user);
-        var parts = name.split(" ");
-        if (parts.length >= 2) {
-            return parts[0].charAt(0).toUpperCase() + parts[1].charAt(0).toUpperCase();
-        }
-        return name.charAt(0).toUpperCase();
+        return untyped __elixir__('
+            name = TodoApp.User.display_name({0})
+            parts = String.split(name, " ")
+            if length(parts) >= 2 do
+                String.upcase(String.at(Enum.at(parts, 0), 0) || "") <> String.upcase(String.at(Enum.at(parts, 1), 0) || "")
+            else
+                String.upcase(String.at(name, 0) || "")
+            end
+        ', user);
     }
 }

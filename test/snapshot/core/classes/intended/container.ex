@@ -1,5 +1,5 @@
 defmodule Container do
-  def add(struct, item) do
+  def add(_struct, item) do
     items = items ++ [item]
   end
   def get(struct, index) do

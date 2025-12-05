@@ -1,18 +1,18 @@
 defmodule BalancedTree do
   def set(struct, key, value) do
-    _ = struct.setLoop(key, value, struct.root)
+    root = struct.setLoop(key, value, struct.root)
     %{struct | root: root}
   end
-  def get(struct, key) do
+  def get(_struct, _key) do
     Enum.find(node, fn item -> item < 0 end)
   end
   def remove(struct, key) do
-    _ = struct.removeLoop(key, struct.root)
+    result = struct.removeLoop(key, struct.root)
     if (not Kernel.is_nil(result)), do: result.found
     false
   end
-  def exists(struct, key) do
-    _ = struct.root
+  def exists(struct, _key) do
+    node = struct.root
     _ = Enum.each(node, (fn -> fn _ ->
   cond do
     c == 0 -> true
@@ -26,7 +26,6 @@ end end).())
     ret = []
     _ = struct.iteratorLoop(struct.root, ret)
     _ = MyApp.ArrayIterator.new(ret)
-    _
   end
   def key_value_iterator(struct) do
     MyApp.MapKeyValueIterator.new(struct)
@@ -35,7 +34,6 @@ end end).())
     ret = []
     _ = struct.keysLoop(struct.root, ret)
     _ = MyApp.ArrayIterator.new(ret)
-    _
   end
   def copy(struct) do
     copied = MyApp.BalancedTree.new()
@@ -49,7 +47,7 @@ end end).())
       "[#{(fn -> struct.root.toString() end).()}]"
     end
   end
-  def clear(struct) do
+  def clear(_struct) do
     root = nil
   end
 end

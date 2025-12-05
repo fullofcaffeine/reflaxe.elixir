@@ -6,7 +6,6 @@
   "pub_sub_topic.ex",
   "pub_sub_message.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "complex_naming.ex"
 ],

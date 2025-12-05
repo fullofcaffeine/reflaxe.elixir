@@ -1,7 +1,6 @@
 defmodule TestString do
   def cca(struct, index) do
     if (index < length(struct.str)) do
-      _this = struct.str
       result = :binary.at(_this, index)
       if result == nil, do: nil, else: result
     else

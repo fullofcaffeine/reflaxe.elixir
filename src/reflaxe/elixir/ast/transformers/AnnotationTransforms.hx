@@ -286,14 +286,20 @@ class AnnotationTransforms {
                     ast.pos
                 );
             case EModule(name, attrs, body) if (ast.metadata?.isLiveView == true):
-                // Inject `use <App>Web, :live_view` into regular module body
+                // Shape-matched LiveView module using direct Phoenix.LiveView use
                 var webIndex = name.indexOf("Web");
-                var appNamePart = if (webIndex > 0) name.substring(0, webIndex) else name;
-                var useStmt = makeAST(EUse(appNamePart + "Web", [
-                    makeAST(EAtom(ElixirAtom.raw("live_view")))
+                var appWebModule = if (webIndex > 0) name.substring(0, webIndex + "Web".length) else name;
+                var liveViewOptions = makeAST(EKeywordList([
+                    {
+                        key: "layout",
+                        value: makeAST(ETuple([
+                            makeAST(EVar(appWebModule + ".Layouts")),
+                            makeAST(EAtom(ElixirAtom.raw("app")))
+                        ]))
+                    }
                 ]));
                 var newBody: Array<ElixirAST> = [];
-                newBody.push(useStmt);
+                newBody.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
                 // Ensure Ecto.Query macros are available for LiveViews
                 newBody.push(makeAST(ERequire("Ecto.Query", null)));
                 for (stmt in body) newBody.push(stmt);
@@ -343,23 +349,72 @@ class AnnotationTransforms {
     }
     
     /**
-     * Build LiveView module body with proper use statement
+     * Build LiveView module body
+     *
+     * WHAT
+     * - Emits idiomatic LiveView modules that depend only on `Phoenix.LiveView`
+     *   rather than `AppWeb` macros for core behavior.
+     *
+     * WHY
+     * - `use AppWeb, :live_view` is the Phoenix generator default, but it
+     *   introduces a compile‑time dependency on the web hub module being
+     *   compiled and loaded first. In isolated build roots (e.g. QA sentinel
+     *   using per‑run MIX_BUILD_ROOT), this can surface as
+     *   “module <App>Web is not loaded and could not be found” even though the
+     *   generated AppWeb module exists as a normal .ex file.
+     *
+     * - Using `Phoenix.LiveView` directly keeps the generated code fully
+     *   idiomatic while avoiding fragile compile ordering between the web hub
+     *   and individual LiveViews. The hub module (`<App>Web`) is still
+     *   generated for controllers, HTML helpers, etc., but LiveViews no longer
+     *   require it during compilation.
+     *
+     * HOW
+     * - Derives the `<App>Web` prefix from the LiveView module name
+     *   (e.g. `TodoAppWeb.TodoLive` → `TodoAppWeb`) and uses it only to build
+     *   the layout module name for options.
+     * - Emits:
+     *
+     *   use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
+     *
+     * - Then appends the existing function body so that HXX/HXX‑generated
+     *   render functions are preserved unchanged.
+     *
+     * EXAMPLES
+     * Haxe:
+     *   @:liveview @:native("TodoAppWeb.TodoLive")
+     *   class TodoLive { ... }
+     *
+     * Elixir (before):
+     *   defmodule TodoAppWeb.TodoLive do
+     *     use TodoAppWeb, :live_view
+     *     ...
+     *   end
+     *
+     * Elixir (after):
+     *   defmodule TodoAppWeb.TodoLive do
+     *     use Phoenix.LiveView, layout: {TodoAppWeb.Layouts, :app}
+     *     ...
+     *   end
      */
     static function buildLiveViewBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
-        
-        // Extract app name from module name (e.g., TodoAppWeb.TodoLive -> todo_app)
+
+        // Extract AppWeb module name from module name (e.g., TodoAppWeb.TodoLive -> TodoAppWeb)
         var webIndex = moduleName.indexOf("Web");
-        var appNamePart = if (webIndex > 0) {
-            moduleName.substring(0, webIndex);
-        } else {
-            moduleName;
-        };
-        
-        // use TodoAppWeb, :live_view
-        statements.push(makeAST(EUse(appNamePart + "Web", [
-            makeAST(EAtom(ElixirAtom.raw("live_view")))
-        ])));
+        var appWebModule = if (webIndex > 0) moduleName.substring(0, webIndex + "Web".length) else moduleName;
+
+        // use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
+        var liveViewOptions = makeAST(EKeywordList([
+            {
+                key: "layout",
+                value: makeAST(ETuple([
+                    makeAST(EVar(appWebModule + ".Layouts")),
+                    makeAST(EAtom(ElixirAtom.raw("app")))
+                ]))
+            }
+        ]));
+        statements.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
 
         // Ensure Ecto.Query macros are available for LiveViews that use queries
         // Safe to include even if not used; avoids macro require errors

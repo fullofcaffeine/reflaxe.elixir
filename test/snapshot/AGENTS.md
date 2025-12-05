@@ -1,5 +1,7 @@
 # Snapshot Test Idiomatic Patterns Guide
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+
 > **Parent Context**: See [/test/AGENTS.md](/test/AGENTS.md) for overall testing infrastructure
 
 ## 📋 Phase 0A: Test-Driven Idiomatic Pattern Documentation

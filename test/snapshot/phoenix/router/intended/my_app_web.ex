@@ -49,7 +49,7 @@ defmodule MyAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, endpoint: :"my_app_web.endpoint", router: :"my_app_web.router", statics: MyAppWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: MyAppWeb.Endpoint, router: MyAppWeb.Router, statics: MyAppWeb.static_paths()
     end
   end
   def channel() do

@@ -24,8 +24,11 @@ defmodule Reflect do
     apply(func, args)
   end
   def compare(a, b) do
-    if inspect(a) < inspect(b), do: -1
-    if inspect(a) > inspect(b), do: 1
+    if (inspect(a) < inspect(b)) do
+      -1
+    else
+      if (inspect(a) > inspect(b)), do: 1, else: 0
+    end
   end
   def is_enum_value(v) do
     is_tuple(v) and tuple_size(v) >= 1 and is_atom(elem(v, 0))
@@ -42,7 +45,7 @@ defmodule Reflect do
   def set_property(o, field, value) do
     Map.put(o, field, value)
   end
-  def make_var_args(f) do
+  def make_var_args(_f) do
     fn args -> f.(args) end
   end
 end

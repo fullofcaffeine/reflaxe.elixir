@@ -69,6 +69,11 @@
 # -D debug_success_unifier
 # -D debug_presence
 
+# TEMPORARY: Enable fast_boot mode to skip problematic HEEx passes that cause hangs
+# TODO: Fix the root cause in HeexPrelude passes (see HeexBlockIfToInline, etc.)
+# One of these disabled passes has O(n²) complexity issues on large templates
+-D fast_boot
+
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
 
@@ -82,6 +87,7 @@ TodoApp
 TodoAppRouter
 server.live.TodoLive
 server.schemas.Todo
+server.schemas.User
 server.migrations.CreateTodos
 server.presence.TodoPresence
 server.layouts.Layouts

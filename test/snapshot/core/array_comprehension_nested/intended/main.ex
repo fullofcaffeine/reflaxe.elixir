@@ -292,7 +292,7 @@ end).()]
   end
   def comprehension_from_iterable() do
     source = [1, 2, 3]
-    _g = 0
+    g = 0
     _ = Enum.map(source, (fn -> fn item ->
   x = source[_g1]
   _g1 + 1

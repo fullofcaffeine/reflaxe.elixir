@@ -1,2 +1,0 @@
-defmodule CommentController do
-end

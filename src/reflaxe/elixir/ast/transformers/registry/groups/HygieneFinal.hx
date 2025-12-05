@@ -385,6 +385,9 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.NestedAssignCollapseGlobalTransforms.pass
     });
 
+    // NOTE: FinalUnderscoreRepair is registered in ElixirASTPassRegistry.hx (outside fast_boot guard)
+    // to ensure it runs even in fast_boot mode since it's a critical Phase 1.3 fix
+
     return passes;
   }
 }

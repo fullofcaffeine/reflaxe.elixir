@@ -25,7 +25,7 @@ defmodule ResultTools do
       {:ok, _value} ->
         true = _value
         true
-      {:error, _value} -> false
+      {:error, __value} -> false
     end)
   end
   def is_error(result) do
@@ -33,13 +33,13 @@ defmodule ResultTools do
       {:ok, _value} ->
         false = _value
         false
-      {:error, _value} -> true
+      {:error, __value} -> true
     end)
   end
   def unwrap(result) do
     (case result do
       {:ok, value} -> value
-      {:error, _value} -> throw("Attempted to unwrap Error result: " <> inspect(error))
+      {:error, __value} -> throw("Attempted to unwrap Error result: " <> inspect(error))
     end)
   end
   def unwrap_or(result, default_value) do
@@ -58,12 +58,12 @@ defmodule ResultTools do
       {:error, ^error_handler} -> value = error_handler.(value)
     end)
   end
-  def filter(result, predicate, error_value) do
+  def filter(result, _predicate, error_value) do
     (case result do
       {:ok, value} ->
         error_value = value
         if (error_value.(error_value)), do: {:ok, error_value}, else: {:error, error_value}
-      {:error, value} -> {:error, error_value}
+      {:error, _value} -> {:error, error_value}
     end)
   end
   def map_error(result, transform) do
@@ -108,7 +108,7 @@ end end).())
       {:ok, value} ->
         some = value
         {:some, value}
-      {:error, _value} -> {:none}
+      {:error, __value} -> {:none}
     end)
   end
 end

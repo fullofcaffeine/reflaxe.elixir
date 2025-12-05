@@ -6,6 +6,9 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+#if debug_inline_underscore
+import Type;
+#end
 
 /**
  * InlineUnderscoreTempUsedOnceTransforms
@@ -22,22 +25,52 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class InlineUnderscoreTempUsedOnceTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
+    #if debug_inline_underscore
+    trace('[InlineUnderscore] === PASS INVOKED ===');
+    #end
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
         case EBlock(stmts) if (stmts.length >= 2):
+          #if debug_inline_underscore
+          trace('[InlineUnderscore] Found EBlock with ${stmts.length} statements');
+          for (si in 0...stmts.length) {
+            var st = stmts[si];
+            if (st != null && st.def != null) {
+              trace('[InlineUnderscore]   stmt[$si]: ${Type.enumConstructor(st.def)}');
+              switch (st.def) {
+                case EMatch(pattern, _):
+                  trace('[InlineUnderscore]     pattern: ${Type.enumConstructor(pattern)}');
+                  switch (pattern) {
+                    case PVar(vn): trace('[InlineUnderscore]       PVar name: "$vn", isUnderscore: ${isUnderscore(vn)}');
+                    default:
+                  }
+                default:
+              }
+            }
+          }
+          #end
           var out:Array<ElixirAST> = [];
           var i = 0;
           while (i < stmts.length) {
             var s = stmts[i];
             switch (s.def) {
               case EMatch(PVar(tmp), rhs) if (isUnderscore(tmp) && i + 1 < stmts.length):
+                #if debug_inline_underscore
+                trace('[InlineUnderscore] Found underscore EMatch: $tmp');
+                #end
                 var next = stmts[i+1];
                 if (usedExactlyOnceAsVar(next, tmp)) {
+                  #if debug_inline_underscore
+                  trace('[InlineUnderscore] ✅ INLINING $tmp - used exactly once');
+                  #end
                   var inlined = substituteVar(next, tmp, rhs);
                   out.push(inlined);
                   i += 2; // skip both
                   continue;
                 } else {
+                  #if debug_inline_underscore
+                  trace('[InlineUnderscore] ❌ NOT inlining $tmp - NOT used exactly once');
+                  #end
                   out.push(s); i++;
                 }
               case EBinary(Match, {def: EVar(tmpVar)}, rhsExpr) if (isUnderscore(tmpVar) && i + 1 < stmts.length):
@@ -88,10 +121,38 @@ class InlineUnderscoreTempUsedOnceTransforms {
 
   static function usedExactlyOnceAsVar(node:ElixirAST, name:String):Bool {
     var count = 0;
+
+    // Helper to check if character is an identifier character
+    inline function isIdentChar(c:String):Bool {
+      if (c == null || c.length == 0) return false;
+      var ch = c.charCodeAt(0);
+      return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+    }
+
+    // Count occurrences in raw code strings using token boundary detection
+    function countInRaw(code:String):Int {
+      if (code == null || name == null) return 0;
+      var rawCount = 0;
+      var i = 0;
+      while (i < code.length) {
+        var idx = code.indexOf(name, i);
+        if (idx == -1) break;
+        var before = idx > 0 ? code.charAt(idx - 1) : "";
+        var afterIdx = idx + name.length;
+        var after = afterIdx < code.length ? code.charAt(afterIdx) : "";
+        if (!isIdentChar(before) && !isIdentChar(after)) {
+          rawCount++;
+        }
+        i = idx + 1;
+      }
+      return rawCount;
+    }
+
     function walk(n:ElixirAST) {
       if (n == null || n.def == null) return;
       switch (n.def) {
         case EVar(v) if (v == name): count++;
+        case ERaw(code): count += countInRaw(code);  // Also check inside raw code!
         case EBinary(_, l, r): walk(l); walk(r);
         case EMatch(_, rhs): walk(rhs);
         case EBlock(ss): for (s in ss) walk(s);
@@ -110,12 +171,95 @@ class InlineUnderscoreTempUsedOnceTransforms {
   }
 
   static function substituteVar(node:ElixirAST, from:String, replacement:ElixirAST):ElixirAST {
+    // Convert simple replacement AST to string for ERaw substitution
+    var replacementStr:Null<String> = simpleASTToString(replacement);
+
+    #if debug_inline_underscore
+    trace('[InlineUnderscore] substituteVar: from="$from", replacementStr=$replacementStr');
+    #end
+
     return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
         case EVar(v) if (v == from): replacement;
+        case ERaw(code) if (replacementStr != null):
+          // Substitute variable name in raw code string
+          #if debug_inline_underscore
+          trace('[InlineUnderscore] Found ERaw: "$code"');
+          #end
+          var newCode = substituteInRawCode(code, from, replacementStr);
+          #if debug_inline_underscore
+          trace('[InlineUnderscore] After substitution: "$newCode"');
+          #end
+          if (newCode != code) {
+            makeAST(ERaw(newCode));
+          } else {
+            n;
+          }
         default: n;
       }
     });
+  }
+
+  /**
+   * Convert simple AST expressions to string for ERaw substitution.
+   * Returns null for complex expressions that can't be safely stringified.
+   */
+  static function simpleASTToString(ast:ElixirAST):Null<String> {
+    if (ast == null || ast.def == null) return null;
+    return switch (ast.def) {
+      case EVar(name): name;
+      case EField(obj, field):
+        var objStr = simpleASTToString(obj);
+        if (objStr != null) '${objStr}.${field}' else null;
+      case EAtom(name): ':${name}';
+      case EInteger(val): Std.string(val);
+      case EFloat(val): Std.string(val);
+      case EString(val): '"${val}"';
+      case EBoolean(val): val ? "true" : "false";
+      case ENil: "nil";
+      default: null;  // Complex expressions - don't substitute in ERaw
+    };
+  }
+
+  /**
+   * Substitute a variable name in raw code using token boundary detection.
+   * Avoids false positives from substring matches.
+   */
+  static function substituteInRawCode(code:String, from:String, to:String):String {
+    inline function isIdentChar(c:String):Bool {
+      if (c == null || c.length == 0) return false;
+      var ch = c.charCodeAt(0);
+      return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+    }
+
+    var result = new StringBuf();
+    var i = 0;
+    var lastEnd = 0;
+
+    while (i < code.length) {
+      var idx = code.indexOf(from, i);
+      if (idx == -1) break;
+
+      var before = idx > 0 ? code.charAt(idx - 1) : "";
+      var afterIdx = idx + from.length;
+      var after = afterIdx < code.length ? code.charAt(afterIdx) : "";
+
+      if (!isIdentChar(before) && !isIdentChar(after)) {
+        // Valid token boundary - replace
+        result.add(code.substring(lastEnd, idx));
+        result.add(to);
+        lastEnd = afterIdx;
+        i = afterIdx;
+      } else {
+        i = idx + 1;
+      }
+    }
+
+    if (lastEnd > 0) {
+      result.add(code.substring(lastEnd));
+      return result.toString();
+    }
+    return code;
   }
 
   // Conservative fallback: allow inlining underscore temps even if referenced

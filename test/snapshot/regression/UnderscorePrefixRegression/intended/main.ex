@@ -1,5 +1,5 @@
 defmodule Main do
-  defp test_simple_while_loop(key, limit) do
+  defp test_simple_while_loop(_key, limit) do
     count = 0
     _ = Enum.each(0..(limit - 1), (fn -> fn count ->
   if (count == "test"), do: "Found: " <> count
@@ -31,9 +31,7 @@ end end).())
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items, max_count, processed, index}, (fn -> fn _, {items, max_count, processed, index} ->
   if (index < length(items) and processed < max_count) do
     item = items[index]
-    if (verbose) do
-      Log.trace("Processing: " <> item, %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "processItems"})
-    end
+    if (verbose), do: nil
     processed + 1
     index + 1
     {:cont, {items, max_count, processed, index}}
@@ -41,6 +39,6 @@ end end).())
     {:halt, {items, max_count, processed, index}}
   end
 end end).())
-    _ = Log.trace("Processed #{(fn -> processed end).()} items out of max #{(fn -> max_count end).()}", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "processItems"})
+    nil
   end
 end

@@ -1,20 +1,20 @@
 defmodule FileStorage do
-  def init(struct, config) do
+  def init(struct, _config) do
     if (not Kernel.is_nil(Map.get(config, :path))) do
-      base_path = base_path = basePath = Map.get(config, :path)
+      base_path = Map.get(config, :path)
     end
     %{:ok => struct}
   end
-  def get(struct, key) do
+  def get(_struct, _key) do
     nil
   end
-  def put(struct, key, value) do
+  def put(_struct, _key, _value) do
     true
   end
-  def delete(struct, key) do
+  def delete(_struct, _key) do
     true
   end
-  def list(struct) do
+  def list(_struct) do
     []
   end
 end
