@@ -1,5 +1,7 @@
 # AST Development Context for Reflaxe.Elixir
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) and [/src/reflaxe/elixir/AGENTS.md](/src/reflaxe/elixir/AGENTS.md) for project-wide conventions
 
 This file contains AST-specific development guidance for agents working on the Reflaxe.Elixir AST transformation pipeline.

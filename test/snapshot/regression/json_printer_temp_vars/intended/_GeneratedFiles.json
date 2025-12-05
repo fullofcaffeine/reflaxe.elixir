@@ -1,11 +1,13 @@
 {
   "filesGenerated": [
   "type.ex",
+  "string_tools.ex",
   "string_buf.ex",
   "std.ex",
+  "reflect.ex",
   "main.ex",
-  "haxe/log.ex",
-  "haxe/iterators/array_iterator.ex"
+  "haxe/iterators/array_iterator.ex",
+  "haxe/format/json_printer.ex"
 ],
   "id": 0,
   "wasCached": false,

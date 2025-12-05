@@ -6,7 +6,6 @@
   "std.ex",
   "pub_sub_result.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

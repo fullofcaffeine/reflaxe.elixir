@@ -15,7 +15,7 @@ defmodule TableBuilder do
     _ = struct.addColumn("updated_at", {:date_time}, %{:nullable => false})
     struct
   end
-  def add_reference(struct, column_name, referenced_table, options) do
+  def add_reference(struct, column_name, referenced_table, _options) do
     column_options = nil
     if (not Kernel.is_nil(options)) do
       column_options = %{:nullable => false, :on_delete => options.on_delete, :on_update => options.on_update}

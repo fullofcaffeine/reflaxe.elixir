@@ -8,20 +8,20 @@ defmodule Main do
   {:http_server_start} -> "http:server:start"
   {:io_manager_ready} -> "io:manager:ready"
 end))
-    _ = Log.trace("Topic string: #{(fn -> topic_string end).()}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testTopicConversion"})
+    nil
   end
   defp test_message_patterns() do
     message = {:todo_created, %{:id => 1, :title => "Test"}}
     result = ((case message do
   {:todo_created, todo} -> "Created todo: #{(fn -> inspect(todo) end).()}"
   {:todo_updated, todo} -> "Updated todo: #{(fn -> inspect(todo) end).()}"
-  {:todo_deleted, id} -> "Deleted todo: #{(fn -> id end).()}"
+  {:todo_deleted, id} -> "Deleted todo: #{(fn -> Kernel.to_string(id) end).()}"
   {:bulk_update, action} -> "Bulk action: #{(fn -> action end).()}"
-  {:user_online, user_id} -> "User #{(fn -> userId end).()} is online"
-  {:user_offline, user_id} -> "User #{(fn -> userId end).()} is offline"
+  {:user_online, user_id} -> "User #{(fn -> Kernel.to_string(userId) end).()} is online"
+  {:user_offline, user_id} -> "User #{(fn -> Kernel.to_string(userId) end).()} is offline"
   {:system_alert, level, msg} -> "Alert [#{(fn -> level end).()}]: #{(fn -> msg end).()}"
 end))
-    _ = Log.trace(result, %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testMessagePatterns"})
+    nil
   end
   defp test_complex_names() do
     request = {:xml_http_request}
@@ -32,6 +32,6 @@ end))
   {:https_connection} -> "HTTPS Connection"
   {:web_socket_io_manager} -> "WebSocket IO Manager"
 end))
-    _ = Log.trace(description, %{:file_name => "Main.hx", :line_number => 108, :class_name => "Main", :method_name => "testComplexNames"})
+    nil
   end
 end

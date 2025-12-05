@@ -13,6 +13,7 @@ import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 import phoenix.Presence; // Import Presence module for PresenceEntry typedef
+import phoenix.Sorting; // Type-safe sorting API using extern inline pattern
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
 import server.live.SafeAssigns;
 import server.presence.TodoPresence;
@@ -373,16 +374,7 @@ class TodoLive {
         var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
         var tagsArr: Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
 
-        // Build a params object with camelCase keys; normalize to snake_case + proper types via std helper
-        var rawParams: Dynamic = {
-            title: title,
-            description: description,
-            completed: false,
-            priority: priority,
-            dueDate: (rawDue != null && rawDue != "") ? rawDue : null,
-            tags: tagsArr,
-            userId: socket.assigns.current_user.id
-        };
+        // Build the todo struct for changeset
         var todoStruct = new server.schemas.Todo();
         var permitted = ["title","description","completed","priority","due_date","tags","user_id"];
         var castParams: Dynamic = {
@@ -1363,42 +1355,53 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
 	/**
 	 * Helper to filter todos based on filter and search query
+	 * Uses __elixir__ to avoid compiler scope bug with ternary expressions in closures
 	 */
     static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
-        var base = switch (filter) {
-            case Active: todos.filter(function(t) return !t.completed);
-            case Completed: todos.filter(function(t) return t.completed);
-            case All: todos;
-        };
-        var qlOpt: Null<String> = (searchQuery != null && searchQuery != "") ? searchQuery.toLowerCase() : null;
-        return (qlOpt == null)
-            ? base
-            : base.filter(function(t) {
-                var title = t.title != null ? t.title.toLowerCase() : "";
-                var desc = t.description != null ? t.description.toLowerCase() : "";
-                return title.indexOf(qlOpt) >= 0 || desc.indexOf(qlOpt) >= 0;
-            });
+        return untyped __elixir__('
+            base = case {1} do
+                {:active} -> Enum.filter({0}, fn t -> not t.completed end)
+                {:completed} -> Enum.filter({0}, fn t -> t.completed end)
+                {:all} -> {0}
+            end
+            ql_opt = if {2} != nil and {2} != "", do: String.downcase({2}), else: nil
+            if ql_opt == nil do
+                base
+            else
+                Enum.filter(base, fn t ->
+                    title = if t.title != nil, do: String.downcase(t.title), else: ""
+                    desc = if t.description != nil, do: String.downcase(t.description), else: ""
+                    String.contains?(title, ql_opt) or String.contains?(desc, ql_opt)
+                end)
+            end
+        ', todos, filter, searchQuery);
     }
 	
     /**
      * Helper to filter and sort todos
+     *
+     * REFACTORED: Now uses typed Sorting API instead of raw __elixir__() string.
+     * The Sorting.by() call is a proper Haxe function call that uses extern inline
+     * to inject idiomatic Elixir sorting code at compile time.
      */
     public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String, selectedTags: Array<String>): Array<server.schemas.Todo> {
         final sortKey = encodeSort(sortBy);
-        return untyped __elixir__('
+        // First, filter the todos using raw Elixir (filtering logic is complex)
+        final filtered: Array<Dynamic> = untyped __elixir__('
           filtered = filter_todos({0}, {1}, {2})
-          filtered =
-            if {3} != nil and length({3}) > 0 do
-              Enum.filter(filtered, fn t ->
-                tags = if is_nil(t.tags), do: [], else: t.tags
-                Enum.any?({3}, fn sel ->
-                  Enum.find_index(tags, fn item -> item == sel end) != nil
-                end)
+          if {3} != nil and length({3}) > 0 do
+            Enum.filter(filtered, fn t ->
+              tags = if is_nil(t.tags), do: [], else: t.tags
+              Enum.any?({3}, fn sel ->
+                Enum.find_index(tags, fn item -> item == sel end) != nil
               end)
-            else
-              filtered
-            end
-          Phoenix.Sorting.by({4}, filtered)
-        ', todos, filter, searchQuery, selectedTags, sortKey);
+            end)
+          else
+            filtered
+          end
+        ', todos, filter, searchQuery, selectedTags);
+        // Then sort using the typed Sorting API - this is a REAL Haxe function call
+        // that uses extern inline to inject proper Elixir sorting code
+        return cast Sorting.by(sortKey, filtered);
     }
 }

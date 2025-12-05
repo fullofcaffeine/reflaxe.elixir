@@ -5,14 +5,9 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
-  "phoenix/presence_helpers.ex",
-  "phoenix/presence_behavior.ex",
-  "main.ex",
-  "int_iterator.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/i_map.ex",
-  "external_caller.ex"
+  "external_caller.ex",
+  "test_app/presence.ex"
 ],
   "id": 0,
   "wasCached": false,

@@ -94,7 +94,9 @@ class VarUseAnalyzer {
                     // Pin operator holds an expression; traverse to detect variable usage
                     walk(inner, false);
                 case ERaw(code):
-                    if (name != null && name.length > 0 && name.charAt(0) != '_' && code != null) {
+                    // NOTE: We MUST check underscore-prefixed variables too!
+                    // FinalUnderscoreRepairTransforms needs to detect _this usage in ERaw like String.downcase(_this)
+                    if (name != null && name.length > 0 && code != null) {
                         var start = 0;
                         while (!found) {
                             var chosen:String = null;
@@ -160,6 +162,40 @@ class VarUseAnalyzer {
                     for (e in elems) walk(e, false);
                 case EFn(clauses):
                     for (cl in clauses) walk(cl.body, false);
+                case ECond(condClauses):
+                    // Walk through cond clauses - both condition and body can use variables
+                    for (cl in condClauses) {
+                        walk(cl.condition, false);
+                        walk(cl.body, false);
+                    }
+                case ERange(startExpr, endExpr, _):
+                    // Range expressions can use variables
+                    walk(startExpr, false);
+                    walk(endExpr, false);
+                case EUnary(_, innerExpr):
+                    // Unary operators wrap expressions
+                    walk(innerExpr, false);
+                case EPipe(pipeLeft, pipeRight):
+                    // Pipeline operator - both sides can use variables
+                    walk(pipeLeft, false);
+                    walk(pipeRight, false);
+                case EUnless(unlessCond, unlessBody, unlessElse):
+                    // Unless is like if - condition and both branches
+                    walk(unlessCond, false);
+                    walk(unlessBody, false);
+                    if (unlessElse != null) walk(unlessElse, false);
+                case EFor(generators, filters, body, into, _uniq):
+                    // For comprehensions - walk generators, filters, and body
+                    for (gen in generators) {
+                        walk(gen.expr, false);
+                        // Note: gen.pattern binds names, don't treat as use
+                    }
+                    for (filter in filters) walk(filter, false);
+                    if (body != null) walk(body, false);
+                    if (into != null) walk(into, false);
+                case ECapture(capturedExpr, _):
+                    // Capture expressions can reference variables
+                    walk(capturedExpr, false);
                 default:
             }
         }

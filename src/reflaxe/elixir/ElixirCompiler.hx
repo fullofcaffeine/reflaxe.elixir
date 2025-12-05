@@ -36,6 +36,19 @@ using reflaxe.helpers.TypeHelper;
 using reflaxe.helpers.ModuleTypeHelper;
 
 /**
+ * Internal helper result for framework-aware naming.
+ *
+ * Used by ElixirCompiler to keep module naming and file placement decisions
+ * in sync for annotations like @:application without leaking implementation
+ * details into other modules.
+ */
+typedef FrameworkNamingResult = {
+    var moduleName: String;
+    var modulePack: Array<String>;
+    var outputPath: Null<String>;
+}
+
+/**
  * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
  * 
  * This compiler extends GenericCompiler to provide comprehensive Haxe-to-Elixir transpilation
@@ -411,7 +424,31 @@ class ElixirCompiler extends GenericCompiler<
             #end
             return true;
         }
-        
+
+        // Force generation for @:endpoint classes (Phoenix Endpoint modules)
+        if (classType.meta.has(":endpoint")) {
+            #if debug_annotation_transforms
+            trace('[shouldGenerateClass] Forcing compilation of @:endpoint class: ${classType.name}');
+            #end
+            return true;
+        }
+
+        // Force generation for @:router classes (Phoenix Router modules)
+        if (classType.meta.has(":router")) {
+            #if debug_annotation_transforms
+            trace('[shouldGenerateClass] Forcing compilation of @:router class: ${classType.name}');
+            #end
+            return true;
+        }
+
+        // Force generation for @:phoenixWebModule classes (Phoenix Web modules)
+        if (classType.meta.has(":phoenixWebModule") || classType.meta.has(":phoenixWeb")) {
+            #if debug_annotation_transforms
+            trace('[shouldGenerateClass] Forcing compilation of @:phoenixWebModule class: ${classType.name}');
+            #end
+            return true;
+        }
+
         // Force compilation of Date class when used
         // This ensures Date module with __elixir__() implementations is available
         if (classType.name == "Date" && classType.pack.length == 0) {
@@ -572,6 +609,11 @@ class ElixirCompiler extends GenericCompiler<
     
     /**
      * Get the output path for a module (for tracking)
+     *
+     * NOTE: For framework-aware modules (e.g. @:application), the compiler calls
+     * `setFrameworkAwareOutputPath` which computes a concrete `outputPath` and
+     * stores it in `moduleOutputPaths`. This helper is used as a fallback when
+     * no framework override exists.
      */
     public function getModuleOutputPath(moduleName: String, pack: Array<String> = null): String {
         var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase(moduleName) + ".ex";
@@ -607,12 +649,160 @@ class ElixirCompiler extends GenericCompiler<
         }
     }
     
-    
-    
-    
-    
-    
-    
+    /**
+     * setFrameworkAwareOutputPath
+     *
+     * WHAT
+     * - Computes framework-specific module names and file paths for annotated
+     *   classes such as `@:application`, while delegating all other classes to
+     *   the universal snake_case naming system.
+     *
+     * WHY
+     * - Phoenix conventions expect OTP application modules like
+     *   `TodoApp.Application` to live under `lib/todo_app/application.ex`.
+     *   Previously the compiler generated correct module names via
+     *   `ModuleBuilder.extractModuleName`, but still wrote files as
+     *   `lib/todo_app.ex`, causing `TodoApp.Application` to be missing at
+     *   runtime for the todo-app.
+     *
+     * HOW
+     * - For `@:application` classes:
+     *     - Derives the app module prefix from `PhoenixMapper.getAppModuleName`
+     *       (backed by `-D app_name` / @:appName annotations).
+     *     - Sets `moduleName` to `<App>.Application`.
+     *     - Sets `outputPath` and OutputManager state to
+     *       `todo_app/application.ex` (snake_case app name + fixed filename).
+     *   All other classes:
+     *     - Use `setUniversalOutputPath` + `getModuleOutputPath` for the
+     *       existing snake_case-per-module behavior.
+     *
+     * EXAMPLES
+     * Haxe:
+     *   @:application
+     *   @:appName("TodoApp")
+     *   class TodoApp { ... }
+     *
+     * Elixir (before – buggy):
+     *   # No TodoApp.Application module generated; runtime crash at boot.
+     *
+     * Elixir (after):
+     *   # lib/todo_app/application.ex
+     *   defmodule TodoApp.Application do
+     *     use Application
+     *     def start(type, args), do: ...
+     *   end
+     */
+    private function setFrameworkAwareOutputPath(
+        classType: ClassType,
+        moduleName: String,
+        modulePack: Array<String>
+    ): FrameworkNamingResult {
+        // Application modules: map to lib/<app_snake>/application.ex
+        if (classType.meta.has(":application")) {
+            var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
+            
+            // Final Elixir module name (TodoApp.Application)
+            var finalModuleName = appModuleName + ".Application";
+            var finalPack: Array<String> = [appSnake];
+            
+            // File placement: lib/todo_app/application.ex
+            setOutputFileName("application");
+            setOutputFileDir(appSnake);
+            
+            var outputPath = appSnake + "/application.ex";
+            #if debug_annotation_transforms
+            Sys.println('[setFrameworkAwareOutputPath] @:application ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            #end
+            return {
+                moduleName: finalModuleName,
+                modulePack: finalPack,
+                outputPath: outputPath
+            };
+        }
+
+        // Endpoint modules: map to lib/<app_snake>_web/endpoint.ex
+        if (classType.meta.has(":endpoint")) {
+            var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
+            var webSnake = appSnake + "_web";
+
+            // Final Elixir module name (TodoAppWeb.Endpoint)
+            var finalModuleName = appModuleName + "Web.Endpoint";
+            var finalPack: Array<String> = [webSnake];
+
+            // File placement: lib/todo_app_web/endpoint.ex
+            setOutputFileName("endpoint");
+            setOutputFileDir(webSnake);
+
+            var outputPath = webSnake + "/endpoint.ex";
+            #if debug_annotation_transforms
+            Sys.println('[setFrameworkAwareOutputPath] @:endpoint ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            #end
+            return {
+                moduleName: finalModuleName,
+                modulePack: finalPack,
+                outputPath: outputPath
+            };
+        }
+
+        // Router modules: map to lib/<app_snake>_web/router.ex
+        if (classType.meta.has(":router")) {
+            var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
+            var webSnake = appSnake + "_web";
+
+            // Final Elixir module name (TodoAppWeb.Router)
+            var finalModuleName = appModuleName + "Web.Router";
+            var finalPack: Array<String> = [webSnake];
+
+            // File placement: lib/todo_app_web/router.ex
+            setOutputFileName("router");
+            setOutputFileDir(webSnake);
+
+            var outputPath = webSnake + "/router.ex";
+            #if debug_annotation_transforms
+            Sys.println('[setFrameworkAwareOutputPath] @:router ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            #end
+            return {
+                moduleName: finalModuleName,
+                modulePack: finalPack,
+                outputPath: outputPath
+            };
+        }
+
+        // PhoenixWeb modules: map to lib/<app_snake>_web.ex
+        if (classType.meta.has(":phoenixWebModule") || classType.meta.has(":phoenixWeb")) {
+            var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
+
+            // Final Elixir module name (TodoAppWeb)
+            var finalModuleName = appModuleName + "Web";
+            var finalPack: Array<String> = [];
+
+            // File placement: lib/todo_app_web.ex (at lib root)
+            setOutputFileName(appSnake + "_web");
+            setOutputFileDir("");
+
+            var outputPath = appSnake + "_web.ex";
+            #if debug_annotation_transforms
+            Sys.println('[setFrameworkAwareOutputPath] @:phoenixWebModule ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            #end
+            return {
+                moduleName: finalModuleName,
+                modulePack: finalPack,
+                outputPath: outputPath
+            };
+        }
+
+        // Default path: snake_case(moduleName) under snake_case(pack)
+        setUniversalOutputPath(moduleName, modulePack);
+        return {
+            moduleName: moduleName,
+            modulePack: modulePack,
+            outputPath: null
+        };
+    }
     
     
     
@@ -667,7 +857,7 @@ class ElixirCompiler extends GenericCompiler<
         var functionUsageCollector = new reflaxe.elixir.helpers.FunctionUsageCollector();
         functionUsageCollector.currentModule = classType.name;
 
-        // Check for @:native annotation to determine output path
+        // Check for @:native annotation to determine base module name/pack
         var moduleName = classType.name;
         var modulePack = classType.pack;
         
@@ -690,6 +880,13 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
         }
+
+        // Apply framework-aware naming (e.g., @:application → TodoApp.Application,
+        // lib/todo_app/application.ex) while preserving default behavior for other
+        // modules via the universal naming system.
+        var frameworkNaming = setFrameworkAwareOutputPath(classType, moduleName, modulePack);
+        moduleName = frameworkNaming.moduleName;
+        modulePack = frameworkNaming.modulePack;
         
         // Set current module for dependency tracking using the final module name
         currentCompiledModule = moduleName;
@@ -698,11 +895,11 @@ class ElixirCompiler extends GenericCompiler<
             moduleDependencies.set(moduleName, new Map<String, Bool>());
         }
         
-        // Set output file path with snake_case naming
-        setUniversalOutputPath(moduleName, modulePack);
-        
-        // Track the output path for this module
-        var outputPath = getModuleOutputPath(moduleName, modulePack);
+        // Track the output path for this module. Use the framework override when
+        // provided; otherwise fall back to universal naming rules.
+        var outputPath = frameworkNaming.outputPath != null
+            ? frameworkNaming.outputPath
+            : getModuleOutputPath(moduleName, modulePack);
         moduleOutputPaths.set(moduleName, outputPath);
         // Track BaseType for synthetic outputs
         moduleBaseTypes.set(moduleName, classType);
@@ -2179,7 +2376,18 @@ class ElixirCompiler extends GenericCompiler<
         // Enable Schema transformation pass for @:schema modules
         if (classType.meta.has(":schema")) {
             metadata.isSchema = true;
-            
+
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Schema processing for ${classType.name}');
+            trace('[ElixirCompiler] varFields.length = ${varFields.length}');
+            // Also check classType.fields directly from Haxe type system
+            var typeFields = classType.fields.get();
+            trace('[ElixirCompiler] classType.fields.get().length = ${typeFields.length}');
+            for (f in typeFields) {
+                trace('[ElixirCompiler]   field: ${f.name}, kind: ${f.kind}, meta: [${[for (m in f.meta.get()) m.name].join(", ")}]');
+            }
+            #end
+
             // Extract table name from @:schema annotation if provided
             var schemaMeta = classType.meta.extract(":schema");
             if (schemaMeta.length > 0 && schemaMeta[0].params != null && schemaMeta[0].params.length > 0) {
@@ -2189,23 +2397,35 @@ class ElixirCompiler extends GenericCompiler<
                     default:
                 }
             }
-            
+
             // Check for @:timestamps annotation
             if (classType.meta.has(":timestamps")) {
                 metadata.hasTimestamps = true;
             }
-            
-            // Collect schema fields from varFields for the transformation pass
+
+            // Collect schema fields from classType.fields directly since varFields
+            // may not include all fields from Reflaxe's collection
             var schemaFields = [];
-            for (varData in varFields) {
-                // Skip if it's a static field or not a regular field
-                if (!varData.isStatic && varData.field.kind.match(FVar(_, _))) {
-                    var fieldName = varData.field.name;
-                    var fieldType = schemaTypeNameFromType(varData.field.type);
-                    schemaFields.push({
-                        name: fieldName,
-                        type: fieldType
-                    });
+            var typeFields = classType.fields.get();
+            for (field in typeFields) {
+                // Only collect instance fields (not functions) that have @:field annotation
+                var isField = field.meta.has(":field");
+                var isVirtual = field.meta.has(":virtual");
+                switch(field.kind) {
+                    case FVar(read, write):
+                        if (isField && !isVirtual) {
+                            var fieldName = field.name;
+                            var fieldType = schemaTypeNameFromType(field.type);
+                            schemaFields.push({
+                                name: fieldName,
+                                type: fieldType
+                            });
+                            #if debug_annotation_transforms
+                            trace('[ElixirCompiler] Added schema field: ${fieldName} (${fieldType})');
+                            #end
+                        }
+                    default:
+                        // Skip functions and other field kinds
                 }
             }
             metadata.schemaFields = schemaFields;
@@ -2254,6 +2474,14 @@ class ElixirCompiler extends GenericCompiler<
             metadata.isSupervisor = true;
             #if debug_annotation_transforms
             trace('[ElixirCompiler] Set isEndpoint=true and isSupervisor=true metadata for ${classType.name}');
+            #end
+        }
+
+        // Enable PhoenixWeb transformation pass for @:phoenixWebModule or @:phoenixWeb modules
+        if (classType.meta.has(":phoenixWebModule") || classType.meta.has(":phoenixWeb")) {
+            metadata.isPhoenixWeb = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isPhoenixWeb=true metadata for ${classType.name}');
             #end
         }
 

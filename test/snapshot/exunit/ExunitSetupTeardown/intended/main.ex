@@ -1,13 +1,13 @@
 defmodule Main do
   use ExUnit.Case
   setup_all context do
-    Log.trace("Setup all called", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "beforeAllTests"})
+    nil
   end
   setup context do
-    Log.trace("Setup called", %{:file_name => "Main.hx", :line_number => 32, :class_name => "Main", :method_name => "beforeEachTest"})
+    nil
   end
   setup context do
-    on_exit(fn -> Log.trace("Teardown called", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "afterEachTest"}) end)
+    on_exit(fn -> nil end)
     :ok
   end
   test "basic" do

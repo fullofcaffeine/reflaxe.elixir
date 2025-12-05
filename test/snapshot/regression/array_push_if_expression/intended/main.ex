@@ -11,7 +11,7 @@ defmodule Main do
     if (has_error) do
       errors = errors ++ ["Error occurred"]
     end
-    _ = Log.trace("Simple if push result: #{(fn -> inspect(errors) end).()}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testSimpleIfPush"})
+    nil
   end
   defp test_if_else_push() do
     messages = []
@@ -21,13 +21,13 @@ defmodule Main do
     else
       messages = messages ++ ["Failed!"]
     end
-    _ = Log.trace("If-else push result: #{(fn -> inspect(messages) end).()}", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testIfElsePush"})
+    nil
   end
   defp test_conditional_accumulation() do
     errors = []
     _ = errors ++ ["Error 1"]
     _ = errors ++ ["Error 3"]
-    _ = Log.trace("Conditional accumulation: #{(fn -> inspect(errors) end).()}", %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testConditionalAccumulation"})
+    nil
   end
   defp test_nested_if_push() do
     results = []
@@ -39,6 +39,6 @@ defmodule Main do
         results = results ++ ["Level 2"]
       end
     end
-    _ = Log.trace("Nested if push: #{(fn -> inspect(results) end).()}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testNestedIfPush"})
+    nil
   end
 end

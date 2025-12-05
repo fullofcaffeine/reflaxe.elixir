@@ -1,8 +1,8 @@
 defmodule TestAppWeb.TestLive do
   use Phoenix.Component
-  use TestAppWeb, :live_view
+  use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
   require Ecto.Query
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     %{:status => "ok", :socket => socket}
   end
   def render(assigns) do
@@ -22,7 +22,7 @@ defmodule TestAppWeb.TestLive do
 </div>
 """
   end
-  def handle_event(event, params, socket) do
+  def handle_event(_event, _params, socket) do
     %{:status => "noreply", :socket => socket}
   end
 end

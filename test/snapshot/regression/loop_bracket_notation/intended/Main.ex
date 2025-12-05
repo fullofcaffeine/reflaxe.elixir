@@ -1,25 +1,5 @@
 defmodule Main do
   def main() do
-    _ = Log.trace("Grid[#{(fn -> 0 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 6, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Grid[#{(fn -> 0 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 6, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Grid[#{(fn -> 1 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 6, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Grid[#{(fn -> 1 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 6, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 0 end).()}, #{(fn -> 0 end).()}) and Grid[#{(fn -> 0 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 0 end).()}, #{(fn -> 1 end).()}) and Grid[#{(fn -> 0 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 0 end).()}, #{(fn -> 2 end).()}) and Grid[#{(fn -> 0 end).()}][#{(fn -> 2 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 1 end).()}, #{(fn -> 0 end).()}) and Grid[#{(fn -> 1 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 1 end).()}, #{(fn -> 1 end).()}) and Grid[#{(fn -> 1 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 1 end).()}, #{(fn -> 2 end).()}) and Grid[#{(fn -> 1 end).()}][#{(fn -> 2 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 2 end).()}, #{(fn -> 0 end).()}) and Grid[#{(fn -> 2 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 2 end).()}, #{(fn -> 1 end).()}) and Grid[#{(fn -> 2 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cell(#{(fn -> 2 end).()}, #{(fn -> 2 end).()}) and Grid[#{(fn -> 2 end).()}][#{(fn -> 2 end).()}]", %{:file_name => "Main.hx", :line_number => 13, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 0 end).()}][#{(fn -> 0 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 0 end).()}][#{(fn -> 0 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 0 end).()}][#{(fn -> 1 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 0 end).()}][#{(fn -> 1 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 1 end).()}][#{(fn -> 0 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 1 end).()}][#{(fn -> 0 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 1 end).()}][#{(fn -> 1 end).()}][#{(fn -> 0 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
-    _ = Log.trace("Cube[#{(fn -> 1 end).()}][#{(fn -> 1 end).()}][#{(fn -> 1 end).()}]", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "main"})
+    nil
   end
 end

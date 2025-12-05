@@ -1,5 +1,7 @@
 # AI/Agent Development Context for Haxe→Elixir Compiler
 
+> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` must be kept in sync. When updating either file, update the other as well. Both files contain identical content to support different AI agent tooling (Claude Code uses `CLAUDE.md`, other agents may use `AGENTS.md`).
+
 ## 🚦 Non-Blocking Todo-App QA (Required)
 
 Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.
@@ -924,6 +926,29 @@ cd examples/todo-app && mix dev          # setup + start with watchers
 # ⚠️ IMPORTANT: Never add -D analyzer-optimize to build commands
 # It destroys idiomatic Elixir patterns. Use -dce full instead.
 ```
+
+### Issue Tracking with bd (Beads)
+
+This project uses **bd** (Beads) for dependency-aware issue tracking. Issues are stored in `.beads/beads.db` with prefix `haxe.elixir`.
+
+```bash
+# Essential commands
+bd list                          # List all issues
+bd ready                         # Show issues ready to work on (no blockers)
+bd create "Fix bug"              # Create new issue
+bd show haxe.elixir-1            # Show issue details
+bd update haxe.elixir-1 --status in_progress  # Update status
+bd close haxe.elixir-1           # Close issue
+
+# Dependencies
+bd dep add haxe.elixir-2 haxe.elixir-1  # haxe.elixir-1 blocks haxe.elixir-2
+bd dep tree haxe.elixir-1        # Visualize dependency tree
+
+# Agent workflow
+bd ready --json                  # Get unblocked work (for automation)
+```
+
+**Agent Integration**: Use `bd ready` to find unblocked work. Create issues when discovering new work during development. Dependencies prevent duplicate effort across agents.
 
 ### Run Servers in Background (Agents)
 

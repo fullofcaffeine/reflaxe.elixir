@@ -1,14 +1,13 @@
 {
   "filesGenerated": [
   "type.ex",
-  "test_app/application.ex",
   "task_supervisor.ex",
   "string_buf.ex",
   "std.ex",
   "my_worker.ex",
   "my_supervisor.ex",
   "my_complex_worker.ex",
-  "haxe/log.ex",
+  "my_app/application.ex",
   "haxe/iterators/array_iterator.ex",
   "elixir/otp/type_safe_child_spec.ex",
   "elixir/otp/supervisor_strategy.ex",

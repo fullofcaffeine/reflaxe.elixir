@@ -70,7 +70,7 @@ class ModuleBuilder {
                 }
             }
         }
-        
+
         // For @:application classes without @:native, append ".Application" to module name
         // This follows Phoenix/OTP convention where applications are named AppName.Application
         if (classType.meta.has(":application") && !classType.meta.has(":native")) {

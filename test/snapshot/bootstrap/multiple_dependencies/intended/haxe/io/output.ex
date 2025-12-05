@@ -1,8 +1,8 @@
 defmodule Output do
-  def write_byte(struct, c) do
+  def write_byte(_struct, _c) do
     
   end
-  def write_bytes(struct, b, pos, len) do
+  def write_bytes(_struct, b, pos, len) do
     if (pos < 0 or len < 0 or pos + len > length(b)) do
       throw("Invalid parameters")
     end
@@ -17,7 +17,7 @@ end end).())
   def write(struct, b) do
     struct.writeBytes(b, 0, length(b))
   end
-  def write_input(struct, i, bufsize) do
+  def write_input(_struct, _i, _bufsize) do
     if (Kernel.is_nil(bufsize)) do
       bufsize = 4096
     end
@@ -35,14 +35,14 @@ end end).())
   end
 end end).())
   end
-  def write_string(struct, s) do
+  def write_string(struct, _s) do
     b = MyApp.Bytes.of_string(s, nil)
     _ = struct.write(b)
   end
-  def flush(struct) do
+  def flush(_struct) do
     
   end
-  def close(struct) do
+  def close(_struct) do
     
   end
 end

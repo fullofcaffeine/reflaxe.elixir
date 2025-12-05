@@ -4,7 +4,7 @@ defmodule Point do
     dy = (struct.y - other.y)
     :math.sqrt(dx * dx + dy * dy)
   end
-  def to_string(struct) do
+  def to_string(_struct) do
     "Point(#{(fn -> Kernel.to_string(struct.x) end).()}, #{(fn -> Kernel.to_string(struct.y) end).()})"
   end
 end

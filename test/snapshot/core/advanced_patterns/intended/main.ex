@@ -17,7 +17,7 @@ defmodule Main do
   def process_array(arr) do
     (case arr do
       [] -> "empty"
-      [_head | _tail] -> "single: #{(fn -> Kernel.to_string(x) end).()}"
+      [__head | __tail] -> "single: #{(fn -> Kernel.to_string(x) end).()}"
       2 -> "pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
       3 -> "triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
       4 -> "quad: #{(fn -> Kernel.to_string(first) end).()},#{(fn -> Kernel.to_string(second) end).()},#{(fn -> Kernel.to_string(third) end).()},#{(fn -> Kernel.to_string(fourth) end).()}"
@@ -103,9 +103,9 @@ defmodule Main do
   def match_matrix(matrix) do
     (case matrix do
       [] -> "empty matrix"
-      [_head | _tail] when length(g) == 1 -> "single element: #{(fn -> Kernel.to_string(x) end).()}"
-      [_head | _tail] when length(m) == length(_head) -> "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
-      [_head | _tail] -> "non-square matrix"
+      [__head | __tail] when length(g) == 1 -> "single element: #{(fn -> Kernel.to_string(x) end).()}"
+      [_head | __tail] when length(m) == length(_head) -> "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+      [__head | __tail] -> "non-square matrix"
       2 ->
         cond do
           length(_g) == 2 ->

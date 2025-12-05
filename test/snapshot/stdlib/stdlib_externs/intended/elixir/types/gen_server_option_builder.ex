@@ -1,60 +1,66 @@
 defmodule GenServerOptionBuilder do
   def with_name(name, options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    name = __elixir__.call("String.to_atom(" <> name <> ")")
+    options = Map.put(options, "name", _elixir__.("String.to_atom(#{(fn -> name end).()})"))
     options
   end
   def with_via(module, name, options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    name = __elixir__.call("{:via, " <> Std.string(module) <> ", " <> Std.string(name) <> "}")
+    options = Map.put(options, "name", _elixir__.("{:via, #{(fn -> inspect(module) end).()}, #{(fn -> inspect(name) end).()}}"))
     options
   end
   def with_global_name(name, options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    name = __elixir__.call("{:global, String.to_atom(" <> name <> ")}")
+    options = Map.put(options, "name", _elixir__.("{:global, String.to_atom(#{(fn -> name end).()})}"))
     options
   end
   def with_infinite_timeout(options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    timeout = :infinity
+    options = Map.put(options, "timeout", :infinity)
     options
   end
   def with_trace(options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    if (Map.get(options, :debug) == nil) do
-      debug = []
+    options = if (Kernel.is_nil(options.debug)) do
+      Map.put(options, "debug", [])
+    else
+      options
     end
-    options.debug ++ [:trace]
+    _ = options.debug.push(:trace)
     options
   end
   def with_log(options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    if (Map.get(options, :debug) == nil) do
-      debug = []
+    options = if (Kernel.is_nil(options.debug)) do
+      Map.put(options, "debug", [])
+    else
+      options
     end
-    options.debug ++ [:log]
+    _ = options.debug.push(:log)
     options
   end
   def with_statistics(options) do
-    if (options == nil) do
+    if (Kernel.is_nil(options)) do
       options = %{}
     end
-    if (Map.get(options, :debug) == nil) do
-      debug = []
+    options = if (Kernel.is_nil(options.debug)) do
+      Map.put(options, "debug", [])
+    else
+      options
     end
-    options.debug ++ [:statistics]
+    _ = options.debug.push(:statistics)
     options
   end
 end

@@ -10,18 +10,27 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * FunctionArgBlockToIIFETransforms
  *
  * WHAT
- * - Ensures any multi-statement block used as a function argument is converted
- *   to an immediately-invoked anonymous function (IIFE), yielding a single
- *   valid expression in argument position.
+ * - Ensures any multi-statement block in expression positions requiring single
+ *   expressions is converted to an immediately-invoked anonymous function (IIFE).
  *
  * WHY
- * - Raw multi-statement blocks are invalid in argument position and lead to
- *   syntax errors (e.g., in Enum.join(<block>, ",")). Wrapping as an IIFE is
- *   idiomatic and preserves semantics.
+ * - Elixir requires single expressions in many contexts: function arguments,
+ *   list elements, map/struct values, keyword list values, string interpolations.
+ * - Raw multi-statement blocks in these positions lead to syntax errors.
+ * - Wrapping as an IIFE is idiomatic and preserves semantics.
+ * - CRITICAL: Creating IIFEs at AST level (not string level in printer) allows
+ *   cleanup passes (removeRedundantNilInitPass, DropTempNilAssignTransforms,
+ *   EFnTempChainSimplifyTransforms) to see and optimize the IIFE bodies.
  *
  * HOW
- * - Walk ECall/ERemoteCall nodes and wrap any argument whose def is EBlock
- *   with two or more statements: (fn -> <block> end).()
+ * - Walk all relevant nodes and wrap multi-statement blocks:
+ *   - ECall/ERemoteCall arguments
+ *   - EList elements
+ *   - EMap values
+ *   - EStruct field values
+ *   - EStructUpdate field values
+ *   - EKeywordList values
+ * - Creates: (fn -> <block> end).() as ECall(EFn([{body: block}]), "", [])
  */
 class FunctionArgBlockToIIFETransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
@@ -45,6 +54,92 @@ class FunctionArgBlockToIIFETransforms {
                         rewrittenArgs.push(makeIIFE(unwrapParens(argNode)));
                     } else rewrittenArgs.push(argNode);
                     if (rewrittenArgs != argsList) makeAST(ERemoteCall(mod, fnName, rewrittenArgs)) else n;
+
+                // EList - wrap multi-statement elements
+                case EList(elements):
+                    var changed = false;
+                    var newElements = [];
+                    for (el in elements) {
+                        if (shouldWrap(el)) {
+                            #if debug_iife
+                            trace('[FunctionArgBlockToIIFE] wrapping list element');
+                            #end
+                            newElements.push(makeIIFE(unwrapParens(el)));
+                            changed = true;
+                        } else {
+                            newElements.push(el);
+                        }
+                    }
+                    if (changed) makeAST(EList(newElements)) else n;
+
+                // EMap - wrap multi-statement values
+                case EMap(pairs):
+                    var changed = false;
+                    var newPairs = [];
+                    for (p in pairs) {
+                        if (shouldWrap(p.value)) {
+                            #if debug_iife
+                            trace('[FunctionArgBlockToIIFE] wrapping map value');
+                            #end
+                            newPairs.push({key: p.key, value: makeIIFE(unwrapParens(p.value))});
+                            changed = true;
+                        } else {
+                            newPairs.push(p);
+                        }
+                    }
+                    if (changed) makeAST(EMap(newPairs)) else n;
+
+                // EStruct - wrap multi-statement field values
+                case EStruct(module, fields):
+                    var changed = false;
+                    var newFields = [];
+                    for (f in fields) {
+                        if (shouldWrap(f.value)) {
+                            #if debug_iife
+                            trace('[FunctionArgBlockToIIFE] wrapping struct field value');
+                            #end
+                            newFields.push({key: f.key, value: makeIIFE(unwrapParens(f.value))});
+                            changed = true;
+                        } else {
+                            newFields.push(f);
+                        }
+                    }
+                    if (changed) makeAST(EStruct(module, newFields)) else n;
+
+                // EStructUpdate - wrap multi-statement field values
+                case EStructUpdate(struct, fields):
+                    var changed = false;
+                    var newFields = [];
+                    for (f in fields) {
+                        if (shouldWrap(f.value)) {
+                            #if debug_iife
+                            trace('[FunctionArgBlockToIIFE] wrapping struct update field value');
+                            #end
+                            newFields.push({key: f.key, value: makeIIFE(unwrapParens(f.value))});
+                            changed = true;
+                        } else {
+                            newFields.push(f);
+                        }
+                    }
+                    if (changed) makeAST(EStructUpdate(struct, newFields)) else n;
+
+                // EKeywordList - wrap multi-statement values
+                case EKeywordList(pairs):
+                    var changed = false;
+                    var newPairs = [];
+                    for (p in pairs) {
+                        if (shouldWrap(p.value)) {
+                            #if debug_iife
+                            trace('[FunctionArgBlockToIIFE] wrapping keyword list value');
+                            #end
+                            newPairs.push({key: p.key, value: makeIIFE(unwrapParens(p.value))});
+                            changed = true;
+                        } else {
+                            newPairs.push(p);
+                        }
+                    }
+                    if (changed) makeAST(EKeywordList(newPairs)) else n;
+
                 default:
                     n;
             }

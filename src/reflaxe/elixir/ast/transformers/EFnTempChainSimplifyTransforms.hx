@@ -30,14 +30,31 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class EFnTempChainSimplifyTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
+        #if debug_efn_temp_chain
+        trace("[EFnTempChainSimplify] PASS START");
+        #end
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EFn(clauses) if (clauses.length == 1):
+                    #if debug_efn_temp_chain
+                    trace("[EFnTempChainSimplify] Found EFn with 1 clause");
+                    #end
                     var cl = clauses[0];
                     var b = cl.body;
                     var nb = switch (b.def) {
-                        case EBlock(stmts): makeASTWithMeta(EBlock(simplify(stmts, b.metadata, b.pos)), b.metadata, b.pos);
-                        default: b;
+                        case EBlock(stmts):
+                            #if debug_efn_temp_chain
+                            trace('[EFnTempChainSimplify] Body is EBlock with ${stmts.length} stmts');
+                            for (i in 0...stmts.length) {
+                                trace('[EFnTempChainSimplify]   stmt[$i]: ${Type.enumConstructor(stmts[i].def)}');
+                            }
+                            #end
+                            makeASTWithMeta(EBlock(simplify(stmts, b.metadata, b.pos)), b.metadata, b.pos);
+                        default:
+                            #if debug_efn_temp_chain
+                            trace('[EFnTempChainSimplify] Body is NOT EBlock: ${Type.enumConstructor(b.def)}');
+                            #end
+                            b;
                     };
                     makeASTWithMeta(EFn([{ args: cl.args, guard: cl.guard, body: nb }]), n.metadata, n.pos);
                 default:
@@ -57,10 +74,19 @@ class EFnTempChainSimplifyTransforms {
      *   precise sentinel cleanup that preserves other side effects and ordering.
      */
     static function simplify(stmts:Array<ElixirAST>, meta:Dynamic, pos:Dynamic): Array<ElixirAST> {
+        #if debug_efn_temp_chain
+        trace('[EFnTempChainSimplify.simplify] Called with ${stmts.length} stmts');
+        #end
         if (stmts.length >= 2) {
             var last = stmts[stmts.length - 1];
+            #if debug_efn_temp_chain
+            trace('[EFnTempChainSimplify.simplify] Last stmt: ${Type.enumConstructor(last.def)}');
+            #end
             switch (last.def) {
                 case EVar(name):
+                    #if debug_efn_temp_chain
+                    trace('[EFnTempChainSimplify.simplify] Last is EVar("$name") - looking for assignment');
+                    #end
                     // Find last assignment to name
                     var assignIdx = -1;
                     var rhs:Null<ElixirAST> = null;
@@ -75,6 +101,9 @@ class EFnTempChainSimplifyTransforms {
                         }
                         if (assignIdx != -1) break;
                     }
+                    #if debug_efn_temp_chain
+                    trace('[EFnTempChainSimplify.simplify] assignIdx=$assignIdx, hasRhs=${rhs != null}');
+                    #end
                     if (assignIdx != -1 && rhs != null) {
                         var out:Array<ElixirAST> = [];
                         for (j in 0...assignIdx) out.push(stmts[j]);
@@ -94,9 +123,15 @@ class EFnTempChainSimplifyTransforms {
                             if (!dropped) out.push(stmts[j]);
                         }
                         out.push(rhs);
+                        #if debug_efn_temp_chain
+                        trace('[EFnTempChainSimplify.simplify] SIMPLIFIED: ${stmts.length} -> ${out.length} stmts');
+                        #end
                         return out;
                     }
                 default:
+                    #if debug_efn_temp_chain
+                    trace('[EFnTempChainSimplify.simplify] Last is NOT EVar, no simplification');
+                    #end
             }
         }
         return stmts;

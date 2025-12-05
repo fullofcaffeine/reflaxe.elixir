@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * DropUnusedLocalAssignmentTransforms
@@ -46,11 +47,12 @@ class DropUnusedLocalAssignmentTransforms {
         case EBinary(Match, left, rhs):
           switch (left.def) {
             case EVar(name):
-              if (!usedLater(stmts, i+1, name)) {
+              // Use centralized VarUseAnalyzer for proper closure/interpolation detection
+              if (!VarUseAnalyzer.usedLater(stmts, i+1, name)) {
                 // If binder is underscored and its base name is used later, promote binder
                 if (name.length > 1 && name.charAt(0) == "_") {
                   var base = name.substr(1);
-                  if (usedLater(stmts, i+1, base)) {
+                  if (VarUseAnalyzer.usedLater(stmts, i+1, base)) {
                     // Keep assignment but rename binder to base
                     replaced = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(base), left.metadata, left.pos), rhs), s.metadata, s.pos);
                   } else {
@@ -63,10 +65,11 @@ class DropUnusedLocalAssignmentTransforms {
             default:
           }
         case EMatch(PVar(name2), rhs2):
-          if (!usedLater(stmts, i+1, name2)) {
+          // Use centralized VarUseAnalyzer for proper closure/interpolation detection
+          if (!VarUseAnalyzer.usedLater(stmts, i+1, name2)) {
             if (name2.length > 1 && name2.charAt(0) == "_") {
               var base2 = name2.substr(1);
-              if (usedLater(stmts, i+1, base2)) {
+              if (VarUseAnalyzer.usedLater(stmts, i+1, base2)) {
                 // Keep match but rename binder to base
                 replaced = makeASTWithMeta(EMatch(PVar(base2), rhs2), s.metadata, s.pos);
               } else {
@@ -81,16 +84,6 @@ class DropUnusedLocalAssignmentTransforms {
       out.push(replaced != null ? replaced : s);
     }
     return out;
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 }
 

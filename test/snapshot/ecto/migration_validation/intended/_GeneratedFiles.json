@@ -6,7 +6,6 @@
   "string_tools.ex",
   "string_buf.ex",
   "std.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/bytes.ex",
   "ecto/table_builder.ex",

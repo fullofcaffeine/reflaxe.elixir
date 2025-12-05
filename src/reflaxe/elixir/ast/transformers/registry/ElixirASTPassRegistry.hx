@@ -2361,6 +2361,12 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.InlineUnderscoreTempUsedOnceTransforms.pass
         });
         passes.push({
+            name: "InlineUnderscoreTempFromNullCheck",
+            description: "Replace _this in if-expr then-branch with expression from null check condition",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineUnderscoreTempFromNullCheckTransforms.pass
+        });
+        passes.push({
             name: "MountBodyAlignToHead_Final",
             description: "Align body references (params/_params) to mount/3 head binder (absolute-final)",
             enabled: true,
@@ -2521,11 +2527,20 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.pass
         });
         // Ultra-final: underscore unused local assignments (same-block conservative)
+        // NOTE: Enabled even under fast_boot - it's lightweight and fixes this1 warnings
         passes.push({
             name: "UnusedLocalAssignUnderscoreFinal",
             description: "Rename unused local assignment binders `name = expr` to `_name` (same-block only)",
-            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
+            enabled: #if disable_hygiene_final false #else true #end,
             pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.pass
+        });
+        // Ultra-final: drop `thisN = nil` and `_thisN = nil` temp sentinel assignments
+        // NOTE: Enabled even under fast_boot - lightweight and eliminates unused this1 warnings
+        passes.push({
+            name: "DropTempNilAssign",
+            description: "Drop compiler-generated `thisN = nil` sentinel assignments from blocks/EFn bodies",
+            enabled: #if disable_hygiene_final false #else true #end,
+            pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
         });
         // Split chained assignments a = b = expr into two statements (late readability/shape cleanup)
         passes.push({
@@ -2587,10 +2602,12 @@ class ElixirASTPassRegistry {
         });
 
         // Robust inliner: works on render/1 EBlock/EDo, nested parens, any var name
+        // TEMPORARILY DISABLED: Performance issue with O(n²) string processing on large templates
+        // TODO: Fix the performance issue in HeexInlineCapturedContentTransforms before re-enabling
         passes.push({
             name: "HeexInlineCapturedContent",
             description: "Inline string assigned to a var referenced by Phoenix.HTML.raw(var|@var) inside ~H; drop scaffolding",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HeexInlineCapturedContentTransforms.transformPass
         });
 
@@ -3050,17 +3067,6 @@ class ElixirASTPassRegistry {
             description: "(disabled duplicate) Inline ~H content",
             enabled: false,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
-        });
-
-        // Robust inliner: supports arbitrary variable names (raw(var|@var)), EBlock/EDo bodies,
-        // nested parentheses, and ERaw(~H ...) forms. Runs after legacy simple inliner and
-        // before fallback/validator passes.
-        // Duplicate registration removed: keep single robust inliner earlier in the pipeline.
-        passes.push({
-            name: "HeexInlineCapturedContent (dup)",
-            description: "(disabled duplicate) Robust HXX/HEEx content inliner",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HeexInlineCapturedContentTransforms.transformPass
         });
 
         // (moved earlier) HeexStringReturnToSigil & HeexRenderHelperCallWrap now run before
@@ -3786,6 +3792,16 @@ class ElixirASTPassRegistry {
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HygieneFinal.build());
         #end
         #end
+
+        // CRITICAL: EFnTempChainSimplify MUST run even with fast_boot to prevent this1 warnings
+        // The pass simplifies `fn -> this1 = nil; this1 = expr; this1 end` → `fn -> expr end`
+        passes.push({
+            name: "EFnTempChainSimplify_AlwaysRun",
+            description: "Inside EFn, rewrite var=nil; var=expr; var → expr (runs even with fast_boot)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnTempChainSimplifyTransforms.pass
+        });
+
         passes.push({
             name: "HandleInfoDropUnusedAssign",
             description: "In handle_info/2, drop v = case ... when v is unused",
@@ -4276,8 +4292,8 @@ class ElixirASTPassRegistry {
         });
         passes.push({
             name: "DropUnusedLocalAssignment",
-            description: "Remove local assignments to variables unused later in the same block",
-            enabled: false,
+            description: "Remove local assignments to variables unused later in the same block (uses VarUseAnalyzer for proper closure detection)",
+            enabled: false,  // TEMPORARILY DISABLED - VarUseAnalyzer causing timeout on strings test
             pass: reflaxe.elixir.ast.transformers.DropUnusedLocalAssignmentTransforms.pass
         });
         passes.push({
@@ -5599,13 +5615,17 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "FunctionParamUnusedUnderscore_Final",
             description: "Underscore unused def/defp parameters (absolute-final)",
-            enabled: false,
+            // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
+            // to detect usage in IIFE call arguments like: end).(user, attrs)
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
         });
         passes.push({
             name: "CaseClauseUnusedBinderUnderscore_Final",
             description: "In case clauses, underscore unused binders (absolute-final)",
-            enabled: false,
+            // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
+            // to detect usage in nested expressions/IIFEs
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass
         });
 
@@ -5628,6 +5648,18 @@ class ElixirASTPassRegistry {
                 "UnderscoreToParamSocketFix_Final",
                 "HandleInfoAliasCleanup_Final"
             ]
+        });
+
+        // Phase 1.3: Final underscore repair - MUST run even in fast_boot mode
+        // Fixes "_varname is used after being set" Elixir warnings by detecting
+        // underscore-prefixed variables that are actually used later in the same block
+        // and removing the underscore prefix (e.g., _this -> this)
+        passes.push({
+            name: "FinalUnderscoreRepair",
+            description: "Absolute-final: repair underscore-prefixed variables that are actually used (Phase 1.3 of 1.0 roadmap)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FinalUnderscoreRepairTransforms.transformPass,
+            runAfter: ["HandleInfoAliasAndNoreply_AbsoluteFinal"]
         });
 
         // Filter disabled passes first

@@ -6,10 +6,8 @@
   "std.ex",
   "reflaxe/elixir/macros/http_method.ex",
   "partial_controller.ex",
-  "multiple_invalid_router_test.ex",
+  "my_app_web/router.ex",
   "main.ex",
-  "int_iterator.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

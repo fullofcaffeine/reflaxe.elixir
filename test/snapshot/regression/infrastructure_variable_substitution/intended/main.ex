@@ -13,6 +13,6 @@ defmodule Main do
         reason = value
         "Failed: #{(fn -> reason end).()}"
     end)
-    _ = Log.trace(result, %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "main"})
+    nil
   end
 end

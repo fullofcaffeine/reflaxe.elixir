@@ -1,23 +1,30 @@
 defmodule Main do
   def main() do
+    tuple2__2 = nil
+    tuple2__1 = nil
     tuple2__1 = "first"
     tuple2__2 = 42
+    t__3 = nil
+    t__2 = nil
+    t__1 = nil
     t__1 = true
     t__2 = 3.14
     t__3 = "third"
+    first = tuple2__1
     second = tuple2__2
-    nested__1__2 = Log.trace("Tuple2: first=#{(fn -> tuple2__1 end).()}, second=#{(fn -> second end).()}", %{:file_name => "Main.hx", :line_number => 10, :class_name => "Main", :method_name => "main"})
-    elem1 = t__1
-    elem2 = t__2
-    nested__1__2 = Log.trace("Tuple3: #{(fn -> inspect(elem1) end).()}, #{(fn -> elem2 end).()}, #{(fn -> t__3 end).()}", %{:file_name => "Main.hx", :line_number => 17, :class_name => "Main", :method_name => "main"})
+    _ = t__1
+    _ = t__2
+    _ = t__3
+    _ = nil
+    nested__1__2 = nil
+    nested__1__1 = nil
     nested__1__1 = "nested"
     nested__1__2 = 99
     _ = "outer"
+    inner_first = nested__1__1
     inner_second = nested__1__2
-    nested__1__2 = Log.trace("Nested: inner=(#{(fn -> nested__1__1 end).()}, #{(fn -> inner_second end).()})", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "main"})
     result = get_tuple()
-    nested__1__2 = Log.trace("Result: #{(fn -> result._1 end).()}, #{(fn -> result._2 end).()}", %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "main"})
-    nested__1__2
+    nil
   end
   defp get_tuple() do
     {"hello", 123}

@@ -1,2 +1,0 @@
-defmodule OrderController do
-end

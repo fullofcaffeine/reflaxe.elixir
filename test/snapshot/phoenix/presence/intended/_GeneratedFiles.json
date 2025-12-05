@@ -5,11 +5,9 @@
   "std.ex",
   "reflect_test.ex",
   "reflect.ex",
-  "phoenix/presence_helpers.ex",
   "my_app_web/special_presence.ex",
   "my_app_web/normal_module.ex",
   "my_app_web/chat_presence.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

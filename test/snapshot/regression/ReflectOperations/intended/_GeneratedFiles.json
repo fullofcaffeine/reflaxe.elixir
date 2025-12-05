@@ -7,7 +7,6 @@
   "reflect.ex",
   "option.ex",
   "main.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

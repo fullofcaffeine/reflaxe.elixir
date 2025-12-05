@@ -3,7 +3,6 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "counter_server.ex"
 ],

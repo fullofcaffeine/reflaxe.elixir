@@ -49,25 +49,29 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 
   static function collectUsed(ast: ElixirAST): Map<String,Bool> {
     var names = new Map<String,Bool>();
-    // Helper to mark identifiers found inside interpolation blocks
-    inline function markInterpolations(s:String):Void {
-      if (s == null) return;
-      var reBlock = new EReg("\\#\\{([^}]*)\\}", "g");
-      var pos = 0;
-      while (reBlock.matchSub(s, pos)) {
-        var inner = reBlock.matched(1);
-        var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
-        var tpos = 0;
-        while (tok.matchSub(inner, tpos)) {
-          var id = tok.matched(0);
-          // Only track lowercase/underscore-start identifiers as potential locals
-          if (id != null && id.length > 0) {
-            var c = id.charAt(0);
-            if (c == c.toLowerCase()) names.set(id, true);
+
+    // Helper to extract identifiers from raw code strings
+    // Matches: variable names that could be Elixir identifiers
+    // Pattern: word boundary, lowercase/underscore start, alphanumeric/underscore continuation
+    inline function extractIdentifiers(code: String): Void {
+      if (code == null) return;
+      // Match Elixir-style identifiers: start with lowercase or underscore, continue with alphanum/underscore
+      var identifierPattern = new EReg("\\b([a-z_][a-z0-9_]*)\\b", "g");
+      var searchPos = 0;
+      while (identifierPattern.matchSub(code, searchPos)) {
+        var id = identifierPattern.matched(1);
+        if (id != null && id.length > 0) {
+          // Skip Elixir keywords and common non-variable tokens
+          var isKeyword = (id == "do" || id == "end" || id == "fn" || id == "if" || id == "else" ||
+                          id == "case" || id == "when" || id == "cond" || id == "for" || id == "in" ||
+                          id == "true" || id == "false" || id == "nil" || id == "and" || id == "or" ||
+                          id == "not" || id == "def" || id == "defp" || id == "defmodule");
+          if (!isKeyword) {
+            names.set(id, true);
           }
-          tpos = tok.matchedPos().pos + tok.matchedPos().len;
         }
-        pos = reBlock.matchedPos().pos + reBlock.matchedPos().len;
+        var pos = identifierPattern.matchedPos();
+        searchPos = pos.pos + pos.len;
       }
     }
 
@@ -76,10 +80,11 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
       switch (x.def) {
         case EVar(v):
           names.set(v, true);
-        case EString(s):
-          markInterpolations(s);
         case ERaw(code):
-          markInterpolations(code);
+          extractIdentifiers(code);
+        case EString(s):
+          // Also check string interpolations for variable references
+          extractIdentifiers(s);
         default:
       }
     });

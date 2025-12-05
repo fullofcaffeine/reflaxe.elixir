@@ -1,5 +1,5 @@
 defmodule EReg do
-  def replace(struct, s, by) do
+  def replace(_struct, _s, _by) do
     nil
   end
 end

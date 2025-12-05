@@ -3,9 +3,8 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "int_iterator.ex",
-  "haxe/iterators/array_iterator.ex",
-  "app_router.ex"
+  "my_app_web/router.ex",
+  "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,
   "wasCached": false,

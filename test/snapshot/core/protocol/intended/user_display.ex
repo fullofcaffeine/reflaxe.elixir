@@ -1,5 +1,5 @@
 defmodule UserDisplay do
-  def display(user) do
+  def display(_user) do
     "#{(fn -> user.name end).()} (#{(fn -> Kernel.to_string(user.age) end).()})"
   end
   def format(user, options) do

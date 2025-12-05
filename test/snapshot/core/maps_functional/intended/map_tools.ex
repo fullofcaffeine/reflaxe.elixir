@@ -1,14 +1,14 @@
 defmodule MapTools do
-  def reduce(map, initial, reducer) do
+  def reduce(map, initial, _reducer) do
     Enum.reduce(map, initial, fn {k, v}, acc -> reducer.(acc, k, v) end)
   end
-  def any(map, predicate) do
+  def any(map, _predicate) do
     Enum.any?(map, fn {k, v} -> predicate.(k, v) end)
   end
-  def all(map, predicate) do
+  def all(map, _predicate) do
     Enum.all?(map, fn {k, v} -> predicate.(k, v) end)
   end
-  def find(map, predicate) do
+  def find(map, _predicate) do
     case Enum.find(map, fn {k, v} -> predicate.(k, v) end) do
       {k, v} -> %{key: k, value: v}
       nil -> nil

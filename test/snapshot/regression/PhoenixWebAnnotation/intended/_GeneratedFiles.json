@@ -1,11 +1,10 @@
 {
   "filesGenerated": [
   "type.ex",
-  "test_app_web.ex",
   "string_buf.ex",
   "std.ex",
   "haxe/iterators/array_iterator.ex",
-  "alternate_app_web.ex"
+  "my_app_web.ex"
 ],
   "id": 0,
   "wasCached": false,

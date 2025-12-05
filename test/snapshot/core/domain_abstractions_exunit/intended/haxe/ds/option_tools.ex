@@ -1,11 +1,11 @@
 defmodule OptionTools do
-  def map(option, transform) do
+  def map(option, _transform) do
     (case option do
       {:some, value} -> {:some, value.(value)}
       {:none} -> {:none}
     end)
   end
-  def then(option, transform) do
+  def then(option, _transform) do
     (case option do
       {:some, value} ->
         value.(value)
@@ -21,9 +21,9 @@ defmodule OptionTools do
       {:none} -> {:none}
     end)
   end
-  def filter(option, predicate) do
+  def filter(option, _predicate) do
     (case option do
-      {:some, value} ->
+      {:some, _value} ->
         cond do
           value.(value) -> {:some, value}
           true -> {:none}
@@ -33,7 +33,7 @@ defmodule OptionTools do
   end
   def unwrap(option, default_value) do
     (case option do
-      {:some, value} -> default_value
+      {:some, _value} -> default_value
       {:none} -> default_value
     end)
   end
@@ -101,7 +101,7 @@ end end).())
       {:ok, value} ->
         some = value
         {:some, value}
-      {:error, _value} -> {:none}
+      {:error, __value} -> {:none}
     end)
   end
   def from_nullable(value) do
@@ -119,7 +119,7 @@ end end).())
       {:none} -> %{:reply => nil, :status => "none"}
     end)
   end
-  def expect(option, message) do
+  def expect(option, _message) do
     (case option do
       {:some, value} -> value
       {:none} -> throw("Expected Some value but got None: " <> message)

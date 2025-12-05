@@ -85,21 +85,81 @@ class HandleInfoAliasAndNoreplyAbsoluteFinalTransforms {
     }
   }
 
+  /**
+   * Recursively normalize {:noreply, _socket} to {:noreply, socket}.
+   *
+   * CRITICAL: Uses direct recursion instead of ElixirASTTransformer.transformNode
+   * to avoid infinite recursion when called from within a transformNode context.
+   */
   static function noreplySocketNormalize(e: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(e, function(z: ElixirAST): ElixirAST {
-      return switch (z.def) {
-        case ETuple(elems) if (elems.length == 2):
-          switch (elems[0].def) {
-            case EAtom(a) if (a == ":noreply" || a == "noreply"):
-              switch (elems[1].def) {
-                case EVar(v) if (v == "_socket"): makeASTWithMeta(ETuple([elems[0], makeAST(EVar("socket"))]), z.metadata, z.pos);
-                default: z;
-              }
-            default: z;
-          }
-        default: z;
-      }
-    });
+    if (e == null) return e;
+
+    return switch (e.def) {
+      // Target pattern: {:noreply, _socket} -> {:noreply, socket}
+      case ETuple(elems) if (elems.length == 2):
+        switch (elems[0].def) {
+          case EAtom(a) if (a == ":noreply" || a == "noreply"):
+            switch (elems[1].def) {
+              case EVar(v) if (v == "_socket"):
+                makeASTWithMeta(ETuple([elems[0], makeAST(EVar("socket"))]), e.metadata, e.pos);
+              default:
+                // Recurse into tuple elements
+                var newElems = elems.map(noreplySocketNormalize);
+                makeASTWithMeta(ETuple(newElems), e.metadata, e.pos);
+            }
+          default:
+            // Recurse into tuple elements
+            var newElems = elems.map(noreplySocketNormalize);
+            makeASTWithMeta(ETuple(newElems), e.metadata, e.pos);
+        }
+
+      // Recurse into other container nodes
+      case ETuple(elems):
+        var newElems = elems.map(noreplySocketNormalize);
+        makeASTWithMeta(ETuple(newElems), e.metadata, e.pos);
+
+      case EBlock(stmts):
+        var newStmts = stmts.map(noreplySocketNormalize);
+        makeASTWithMeta(EBlock(newStmts), e.metadata, e.pos);
+
+      case EDo(stmts):
+        var newStmts = stmts.map(noreplySocketNormalize);
+        makeASTWithMeta(EDo(newStmts), e.metadata, e.pos);
+
+      case EList(elems):
+        var newElems = elems.map(noreplySocketNormalize);
+        makeASTWithMeta(EList(newElems), e.metadata, e.pos);
+
+      case ECase(target, clauses):
+        var newTarget = noreplySocketNormalize(target);
+        var newClauses = clauses.map(function(cl) {
+          return { pattern: cl.pattern, guard: cl.guard, body: noreplySocketNormalize(cl.body) };
+        });
+        makeASTWithMeta(ECase(newTarget, newClauses), e.metadata, e.pos);
+
+      case EIf(cond, thenBranch, elseBranch):
+        makeASTWithMeta(EIf(
+          noreplySocketNormalize(cond),
+          noreplySocketNormalize(thenBranch),
+          elseBranch != null ? noreplySocketNormalize(elseBranch) : null
+        ), e.metadata, e.pos);
+
+      case EBinary(op, left, right):
+        makeASTWithMeta(EBinary(op, noreplySocketNormalize(left), noreplySocketNormalize(right)), e.metadata, e.pos);
+
+      case ECall(target, funcName, args):
+        var newTarget = target != null ? noreplySocketNormalize(target) : null;
+        var newArgs = args.map(noreplySocketNormalize);
+        makeASTWithMeta(ECall(newTarget, funcName, newArgs), e.metadata, e.pos);
+
+      case ERemoteCall(module, funcName, args):
+        var newModule = noreplySocketNormalize(module);
+        var newArgs = args.map(noreplySocketNormalize);
+        makeASTWithMeta(ERemoteCall(newModule, funcName, newArgs), e.metadata, e.pos);
+
+      // For all other nodes, return unchanged
+      default: e;
+    }
   }
 }
 
