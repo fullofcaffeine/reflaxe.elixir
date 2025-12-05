@@ -40,7 +40,7 @@ defmodule Main do
         progress = _description
         to_string = _description
         description = "Progress: #{(fn -> Kernel.to_string(progress) end).()}%"
-      {:complete, _result} -> description = "Done: #{(fn -> result end).()}"
+      {:complete, result} -> description = "Done: #{(fn -> result end).()}"
       {:error, msg} ->
         msg = value
         description = "Error: #{(fn -> msg end).()}"

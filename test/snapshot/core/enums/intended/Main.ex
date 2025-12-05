@@ -4,7 +4,7 @@ defmodule Main do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, _r, _g, _b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()}, #{(fn -> Kernel.to_string(g) end).()}, #{(fn -> Kernel.to_string(b) end).()})"
+      {:rgb, r, g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()}, #{(fn -> Kernel.to_string(g) end).()}, #{(fn -> Kernel.to_string(b) end).()})"
     end)
   end
   def get_value(opt, default_value) do

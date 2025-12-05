@@ -14,7 +14,7 @@ defmodule Main do
       {:error, msg} ->
         msg = value
         msg
-      {:redirect, _url, __permanent} -> "Redirecting to #{(fn -> url end).()}"
+      {:redirect, url, __permanent} -> "Redirecting to #{(fn -> url end).()}"
     end)
   end
   defp get_redirect_info(status) do

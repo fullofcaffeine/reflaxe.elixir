@@ -5,7 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * CasePatternUnusedUnderscoreTransforms
@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ASTUtils;
  * WHY
  * - Eliminates compiler warnings about unused pattern variables without changing behavior.
  *   Purely shape-based and target-agnostic.
+ *
+ * HOW
+ * - Uses VarUseAnalyzer for comprehensive variable usage detection that handles:
+ *   - EMap structures (e.g., %{:key => value})
+ *   - EFn closures
+ *   - String interpolation
+ *   - ERaw nodes
+ *   - All other AST node types
  */
 class CasePatternUnusedUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
@@ -38,35 +46,33 @@ class CasePatternUnusedUnderscoreTransforms {
   }
 
   static function underscoreUnusedInClause(cl:ECaseClause):ECaseClause {
-    var used = collectUsedVars(cl.body);
-    var newPat = underscoreUnusedInPattern(cl.pattern, used);
+    var newPat = underscoreUnusedInPattern(cl.pattern, cl.body);
     return { pattern: newPat, guard: cl.guard, body: cl.body };
   }
 
   static function underscoreUnusedWithClause(wc:EWithClause):EWithClause {
-    var used = collectUsedVars(wc.expr); // conservative: consider expr and do-block
-    var newPat = underscoreUnusedInPattern(wc.pattern, used);
+    var newPat = underscoreUnusedInPattern(wc.pattern, wc.expr);
     return { pattern: newPat, expr: wc.expr };
   }
 
-  static function underscoreUnusedInPattern(p:EPattern, used:Map<String,Bool>):EPattern {
+  static function underscoreUnusedInPattern(p:EPattern, body:ElixirAST):EPattern {
     return switch (p) {
       case PVar(n):
-        if (n != null && n.length > 0 && n.charAt(0) != '_' && !used.exists(n)) PVar('_' + n) else p;
-      case PTuple(es): PTuple([for (e in es) underscoreUnusedInPattern(e, used)]);
-      case PList(es): PList([for (e in es) underscoreUnusedInPattern(e, used)]);
-      case PCons(h,t): PCons(underscoreUnusedInPattern(h, used), underscoreUnusedInPattern(t, used));
-      case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: underscoreUnusedInPattern(kv.value, used) }]);
-      case PStruct(m,fs): PStruct(m, [for (f in fs) { key: f.key, value: underscoreUnusedInPattern(f.value, used) }]);
-      case PPin(inner): PPin(underscoreUnusedInPattern(inner, used));
+        // Use VarUseAnalyzer for comprehensive usage detection including
+        // EMap, EFn closures, string interpolation, ERaw, etc.
+        var isUsed = VarUseAnalyzer.stmtUsesVar(body, n);
+        #if debug_case_pattern_underscore
+        trace('[CasePatternUnusedUnderscore] Checking var "$n" in body, isUsed=$isUsed');
+        #end
+        if (n != null && n.length > 0 && n.charAt(0) != '_' && !isUsed) PVar('_' + n) else p;
+      case PTuple(es): PTuple([for (e in es) underscoreUnusedInPattern(e, body)]);
+      case PList(es): PList([for (e in es) underscoreUnusedInPattern(e, body)]);
+      case PCons(h,t): PCons(underscoreUnusedInPattern(h, body), underscoreUnusedInPattern(t, body));
+      case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: underscoreUnusedInPattern(kv.value, body) }]);
+      case PStruct(m,fs): PStruct(m, [for (f in fs) { key: f.key, value: underscoreUnusedInPattern(f.value, body) }]);
+      case PPin(inner): PPin(underscoreUnusedInPattern(inner, body));
       default: p;
     }
-  }
-
-  static function collectUsedVars(body:ElixirAST):Map<String,Bool> {
-    var m = new Map<String,Bool>();
-    ASTUtils.walk(body, function(x:ElixirAST){ switch (x.def) { case EVar(v): if (v != null && v.length > 0 && v.charAt(0) != '_') m.set(v,true); default: } });
-    return m;
   }
 }
 
