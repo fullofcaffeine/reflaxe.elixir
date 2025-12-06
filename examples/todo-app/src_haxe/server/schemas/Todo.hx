@@ -13,7 +13,7 @@ typedef TodoParams = {
     ?description: String,
     ?completed: Bool,
     ?priority: String,
-    ?dueDate: Dynamic,  // Can be Date, String, or null
+    ?dueDate: String,
     ?tags: Dynamic,     // Can be Array<String>, String, or null
     ?userId: Int
 }
@@ -28,7 +28,7 @@ class Todo {
     @:field public var description: String;
     @:field public var completed: Bool = false;
     @:field public var priority: String = "medium";
-    @:field public var dueDate: Dynamic;
+    @:field public var dueDate: String;
     @:field public var tags: Dynamic;
     @:field public var userId: Int;
 
