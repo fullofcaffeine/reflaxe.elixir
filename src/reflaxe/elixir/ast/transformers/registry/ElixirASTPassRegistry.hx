@@ -5578,7 +5578,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventArg0FromValueToId_Ultimate",
             description: "When a helper call uses Map.get(params, \"value\", …) as first arg, replace with integer id from nested value map (or params id fallback)",
-            enabled: true,
+            enabled: false, // DISABLED: Causes mangled params in typed event handlers
             pass: reflaxe.elixir.ast.transformers.HandleEventArg0FromValueToIdUltimateTransforms.pass,
             runAfter: [
                 "HandleEventParamsHeadToParams_Ultimate",
@@ -5592,7 +5592,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventDecodeValueQueryIfBinary_Ultimate",
             description: "Decode Map.get(params, \"value\") when it is a URL-encoded query string (URI.decode_query)",
-            enabled: true,
+            enabled: false, // DISABLED: Causes mangled params in typed event handlers
             pass: reflaxe.elixir.ast.transformers.HandleEventDecodeValueQueryIfBinaryUltimateTransforms.pass,
             runAfter: [
                 "HandleEventParamsHeadToParams_Ultimate",
@@ -5604,7 +5604,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventMapGetValueDefaultToParams_Final",
             description: "In handle_event/3, rewrite Map.get(params|_params, \"value\") → Map.get(params|_params, \"value\", params|_params)",
-            enabled: true,
+            enabled: false, // DISABLED: Causes mangled params in typed event handlers
             pass: reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms.pass,
             runAfter: [
                 "HandleEventParamsHeadToParams_Ultimate",

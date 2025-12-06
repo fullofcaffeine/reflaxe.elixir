@@ -329,7 +329,7 @@ class TodoLive {
 			description: params.description,
 			completed: false,
 			priority: params.priority != null ? params.priority : "medium",
-			dueDate: params.dueDate != null ? Date.fromString(params.dueDate) : null,
+			dueDate: params.dueDate,
 			tags: params.tags != null ? parseTags(params.tags) : [],
             userId: socket.assigns.current_user.id
 		};
@@ -784,7 +784,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
             description: rawDesc != null ? rawDesc : "",
             completed: false,
             priority: (rawPriority != null && rawPriority != "") ? rawPriority : "medium",
-            dueDate: (rawDue != null && rawDue != "") ? Date.fromString(rawDue) : null,
+            dueDate: (rawDue != null && rawDue != "") ? rawDue : null,
             tags: (rawTags != null && rawTags != "") ? parseTags(rawTags) : [],
             userId: socket.assigns.current_user.id
         };
@@ -845,7 +845,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 			title: params.title,
 			description: params.description,
 			priority: params.priority,
-			dueDate: params.dueDate != null ? Date.fromString(params.dueDate) : null,
+			dueDate: params.dueDate,
 			tags: params.tags != null ? parseTags(params.tags) : null,
 			completed: params.completed
 		};
