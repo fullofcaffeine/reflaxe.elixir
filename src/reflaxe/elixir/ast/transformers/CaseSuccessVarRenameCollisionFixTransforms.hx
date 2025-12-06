@@ -73,7 +73,6 @@ class CaseSuccessVarRenameCollisionFixTransforms {
                                         switch (els[1]) {
                                             case PVar(vname) if (vname != null && args.exists(vname)):
                                                 var replacement = safeName(vname);
-                                                #if sys Sys.println('[CaseSuccessVarRenameCollisionFix] Renaming {:ok, ' + vname + '} -> {:ok, ' + replacement + '} to avoid arg shadow'); #end
                                                 var newPat = PTuple([els[0], PVar(replacement)]);
                                                 // Also rewrite body references from the old binder to the replacement
                                                 var newBody = renameVarInBody(c.body, vname, replacement);

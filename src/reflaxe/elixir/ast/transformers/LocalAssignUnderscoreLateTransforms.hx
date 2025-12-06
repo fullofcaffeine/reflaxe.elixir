@@ -141,7 +141,6 @@ class LocalAssignUnderscoreLateTransforms {
                     }
                     if (collapse && collapsedExpr != null) {
                         #if debug_hygiene
-                        Sys.println('[LocalAssignUnderscoreLate] collapsing nested assign into outer');
                         #end
                         out.push(makeASTWithMeta(EBinary(Match, newLeft, collapsedExpr), s.metadata, s.pos));
                     } else {

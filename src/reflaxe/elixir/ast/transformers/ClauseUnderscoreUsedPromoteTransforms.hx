@@ -41,7 +41,6 @@ class ClauseUnderscoreUsedPromoteTransforms {
                             var base = binder.substr(1);
                             if ((bodyUsesVar(cl.body, binder) || bodyUsesVar(cl.body, base)) && !patternHasName(cl.pattern, base)) {
                                 #if debug_ast_transformer
-                                Sys.println('[ClauseUnderscoreUsedPromote] Promoting binder ' + binder + ' -> ' + base);
                                 #end
                                 var newPattern = renameBinder(cl.pattern, binder, base);
                                 var newBody = replaceVar(cl.body, binder, base);

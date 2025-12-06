@@ -80,7 +80,7 @@ class ModuleMacro {
 
         #if hxx_instrument_sys
         var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
-        Sys.println(
+        // DISABLED: Sys.println(
             '[MacroTiming] name=ModuleMacro.build fields='
             + fields.length
             + ' elapsed_ms=' + Std.int(__elapsed)

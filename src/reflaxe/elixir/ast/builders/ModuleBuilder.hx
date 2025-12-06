@@ -102,7 +102,7 @@ class ModuleBuilder {
      */
     public static function buildClassModule(classType: ClassType, fields: Array<ElixirAST>, ?metadata: ElixirMetadata): ElixirAST {
         #if debug_compilation_hang
-        Sys.println('[HANG DEBUG] 🏗️ ModuleBuilder.buildClassModule START - Class: ${classType.name}, Fields: ${fields.length}');
+        // DISABLED: Sys.println('[HANG DEBUG] 🏗️ ModuleBuilder.buildClassModule START - Class: ${classType.name}, Fields: ${fields.length}');
         var moduleStartTime = haxe.Timer.stamp() * 1000;
         #end
 
@@ -125,7 +125,7 @@ class ModuleBuilder {
         // Check if this is an exception class
         if (moduleMetadata.isException == true) {
             #if debug_inheritance
-            trace('[ModuleBuilder] Generating exception module for ${moduleName}');
+            // DISABLED: trace('[ModuleBuilder] Generating exception module for ${moduleName}');
             #end
             
             // Don't add defstruct for exceptions - defexception handles it automatically
@@ -141,7 +141,7 @@ class ModuleBuilder {
 
         #if debug_compilation_hang
         var elapsed = (haxe.Timer.stamp() * 1000) - moduleStartTime;
-        Sys.println('[HANG DEBUG] ✅ ModuleBuilder.buildClassModule END - Took ${elapsed}ms');
+        // DISABLED: Sys.println('[HANG DEBUG] ✅ ModuleBuilder.buildClassModule END - Took ${elapsed}ms');
         #end
 
         return result;

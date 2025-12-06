@@ -66,11 +66,11 @@ class EctoQueryRequireEnsureTransforms {
                         case EBlock(stmts) | EDo(stmts):
                             var status = moduleNeedsRequire(doBlock);
                             #if debug_ecto_query_require
-                            trace('[EctoQueryRequireEnsure] Defmodule ' + name + ' needs=' + status.needs + ' has=' + status.has);
+                            // DISABLED: trace('[EctoQueryRequireEnsure] Defmodule ' + name + ' needs=' + status.needs + ' has=' + status.has);
                             #end
                             if (status.needs && !status.has) {
                             #if debug_ecto_query_require
-                            trace('[EctoQueryRequireEnsure] Injecting require into defmodule ' + name);
+                            // DISABLED: trace('[EctoQueryRequireEnsure] Injecting require into defmodule ' + name);
                             #end
                                 var req = makeAST(ERequire("Ecto.Query", null));
                                 var newDo: ElixirAST = switch (doBlock.def) {
@@ -86,11 +86,11 @@ class EctoQueryRequireEnsureTransforms {
                     var composed = makeAST(EBlock(body));
                     var status2 = moduleNeedsRequire(composed);
                     #if debug_ecto_query_require
-                    trace('[EctoQueryRequireEnsure] Module ' + name + ' needs=' + status2.needs + ' has=' + status2.has);
+                    // DISABLED: trace('[EctoQueryRequireEnsure] Module ' + name + ' needs=' + status2.needs + ' has=' + status2.has);
                     #end
                     if (status2.needs && !status2.has) {
                         #if debug_ecto_query_require
-                        trace('[EctoQueryRequireEnsure] Injecting require into module ' + name);
+                        // DISABLED: trace('[EctoQueryRequireEnsure] Injecting require into module ' + name);
                         #end
                         var req2 = makeAST(ERequire("Ecto.Query", null));
                         return makeASTWithMeta(EModule(name, attrs, [req2].concat(body)), n.metadata, n.pos);

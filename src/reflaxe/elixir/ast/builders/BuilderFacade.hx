@@ -87,7 +87,7 @@ class BuilderFacade {
         context.registerBuilder(builderType, builder);
 
         #if debug_ast_builder
-        trace('[BuilderFacade] Registered ${builderType} builder');
+        // DISABLED: trace('[BuilderFacade] Registered ${builderType} builder');
         #end
     }
 
@@ -106,7 +106,7 @@ class BuilderFacade {
             var patternBuilder = specializedBuilders.get("pattern");
             if (patternBuilder != null) {
                 #if debug_ast_builder
-                trace('[BuilderFacade] Routing switch to PatternMatchBuilder');
+                // DISABLED: trace('[BuilderFacade] Routing switch to PatternMatchBuilder');
                 #end
 
                 try {
@@ -117,7 +117,7 @@ class BuilderFacade {
                     throw "PatternMatchBuilder disabled";
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
-                    trace('[BuilderFacade] PatternMatchBuilder failed, falling back: ${e}');
+                    // DISABLED: trace('[BuilderFacade] PatternMatchBuilder failed, falling back: ${e}');
                     #end
                     // Fall through to legacy
                 }
@@ -126,7 +126,7 @@ class BuilderFacade {
 
         recordRouting("pattern.legacy");
         #if debug_ast_builder
-        trace('[BuilderFacade] Using legacy switch compilation');
+        // DISABLED: trace('[BuilderFacade] Using legacy switch compilation');
         #end
 
         // Call legacy implementation
@@ -149,7 +149,7 @@ class BuilderFacade {
             var loopBuilder = specializedBuilders.get("loop");
             if (loopBuilder != null) {
                 #if debug_ast_builder
-                trace('[BuilderFacade] Routing loop to LoopBuilder');
+                // DISABLED: trace('[BuilderFacade] Routing loop to LoopBuilder');
                 #end
 
                 try {
@@ -157,7 +157,7 @@ class BuilderFacade {
                     return loopBuilder.buildLoop(condition, body);
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
-                    trace('[BuilderFacade] LoopBuilder failed, falling back: ${e}');
+                    // DISABLED: trace('[BuilderFacade] LoopBuilder failed, falling back: ${e}');
                     #end
                     // Fall through to legacy
                 }
@@ -167,7 +167,7 @@ class BuilderFacade {
 
         recordRouting("loop.legacy");
         #if debug_ast_builder
-        trace('[BuilderFacade] Using legacy loop compilation');
+        // DISABLED: trace('[BuilderFacade] Using legacy loop compilation');
         #end
 
         // Call legacy implementation
@@ -190,7 +190,7 @@ class BuilderFacade {
             var functionBuilder = specializedBuilders.get("function");
             if (functionBuilder != null) {
                 #if debug_ast_builder
-                trace('[BuilderFacade] Routing function to FunctionBuilder');
+                // DISABLED: trace('[BuilderFacade] Routing function to FunctionBuilder');
                 #end
 
                 try {
@@ -198,7 +198,7 @@ class BuilderFacade {
                     return functionBuilder.buildFunction(field, expr);
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
-                    trace('[BuilderFacade] FunctionBuilder failed, falling back: ${e}');
+                    // DISABLED: trace('[BuilderFacade] FunctionBuilder failed, falling back: ${e}');
                     #end
                     // Fall through to legacy
                 }
@@ -208,7 +208,7 @@ class BuilderFacade {
 
         recordRouting("function.legacy");
         #if debug_ast_builder
-        trace('[BuilderFacade] Using legacy function compilation');
+        // DISABLED: trace('[BuilderFacade] Using legacy function compilation');
         #end
 
         // Call legacy implementation
@@ -232,7 +232,7 @@ class BuilderFacade {
             var comprehensionBuilder = specializedBuilders.get("comprehension");
             if (comprehensionBuilder != null) {
                 #if debug_ast_builder
-                trace('[BuilderFacade] Routing comprehension to ComprehensionBuilder');
+                // DISABLED: trace('[BuilderFacade] Routing comprehension to ComprehensionBuilder');
                 #end
 
                 try {
@@ -240,7 +240,7 @@ class BuilderFacade {
                     return comprehensionBuilder.buildComprehension(generator, mapper, filter);
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
-                    trace('[BuilderFacade] ComprehensionBuilder failed, falling back: ${e}');
+                    // DISABLED: trace('[BuilderFacade] ComprehensionBuilder failed, falling back: ${e}');
                     #end
                     // Fall through to legacy
                 }
@@ -250,7 +250,7 @@ class BuilderFacade {
 
         recordRouting("comprehension.legacy");
         #if debug_ast_builder
-        trace('[BuilderFacade] Using legacy comprehension compilation');
+        // DISABLED: trace('[BuilderFacade] Using legacy comprehension compilation');
         #end
 
         // Call legacy implementation
@@ -277,7 +277,7 @@ class BuilderFacade {
         context.setFeatureFlag(flagName, shouldEnable);
 
         #if debug_ast_builder
-        trace('[BuilderFacade] Gradual migration for ${builderType}: ${percentage}% (enabled=${shouldEnable})');
+        // DISABLED: trace('[BuilderFacade] Gradual migration for ${builderType}: ${percentage}% (enabled=${shouldEnable})');
         #end
     }
 
@@ -347,7 +347,7 @@ class BuilderFacade {
         }
 
         #if debug_ast_builder
-        trace('[BuilderFacade] EMERGENCY ROLLBACK - All builders disabled');
+        // DISABLED: trace('[BuilderFacade] EMERGENCY ROLLBACK - All builders disabled');
         #end
     }
 
@@ -368,7 +368,7 @@ class BuilderFacade {
         }
 
         #if debug_ast_builder
-        trace('[BuilderFacade] All new builders enabled');
+        // DISABLED: trace('[BuilderFacade] All new builders enabled');
         #end
     }
 }

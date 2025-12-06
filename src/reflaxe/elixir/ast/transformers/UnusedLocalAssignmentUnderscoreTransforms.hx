@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * UnusedLocalAssignmentUnderscoreTransforms
@@ -70,9 +71,10 @@ class UnusedLocalAssignmentUnderscoreTransforms {
                     for (i in 0...stmts.length) {
                         var s = stmts[i];
                         // Helper to decide rename based on future usage (AST + ERaw)
+                        // Uses VarUseAnalyzer for comprehensive detection (handles closures, ERaw, interpolation, underscore variants)
                         function futureUses(name:String):Bool {
                             if (name == null || name.length == 0) return false;
-                            for (j in i+1...stmts.length) if (statementUsesName(stmts[j], name) || statementContainsNameInRaw(stmts[j], name)) return true;
+                            for (j in i+1...stmts.length) if (VarUseAnalyzer.stmtUsesVar(stmts[j], name)) return true;
                             return false;
                         }
                         function canRename(name:String):Bool {

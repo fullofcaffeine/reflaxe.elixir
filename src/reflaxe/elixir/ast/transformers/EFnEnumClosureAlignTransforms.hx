@@ -35,7 +35,7 @@ class EFnEnumClosureAlignTransforms {
             return switch (n.def) {
                 case ERemoteCall(mod, func, args) if (isEnum(mod) && isTargetFunc(func)):
                     #if debug_enum_closure
-                    trace('[EFnEnumAlign] Visiting Enum.' + func);
+                    // DISABLED: trace('[EFnEnumAlign] Visiting Enum.' + func);
                     #end
                     var newArgs = (args == null) ? args : args.copy();
                     for (i in 0...newArgs.length) {
@@ -70,7 +70,7 @@ class EFnEnumClosureAlignTransforms {
             var body = cl.body;
             var shapes = ValueShapeAnalyzer.classify(body);
             #if debug_enum_closure
-            trace('[EFnEnumAlign] primary=' + p);
+            // DISABLED: trace('[EFnEnumAlign] primary=' + p);
             #end
             // _primary -> primary
             body = renameVarDeep(body, '_' + p, p);
@@ -83,7 +83,7 @@ class EFnEnumClosureAlignTransforms {
             for (k in used.keys()) if (k != null && k.length > 1 && k.charAt(0) == '_' && looksLikeVar(k.substr(1))) unders.push(k);
             if (unders.length == 1) {
                 #if debug_enum_closure
-                trace('[EFnEnumAlign] underscored victim ' + unders[0] + ' -> ' + p);
+                // DISABLED: trace('[EFnEnumAlign] underscored victim ' + unders[0] + ' -> ' + p);
                 #end
                 // Guard against incompatible shape rewrites
                 var victim = unders[0];
@@ -100,11 +100,11 @@ class EFnEnumClosureAlignTransforms {
                 var recvVictims = [];
                 for (v in victims) if (varUsedAsFieldReceiver(body, v)) recvVictims.push(v);
                 #if debug_enum_closure
-                trace('[EFnEnumAlign] victims={' + victims.join(',') + '} recvVictims={' + recvVictims.join(',') + '}');
+                // DISABLED: trace('[EFnEnumAlign] victims={' + victims.join(',') + '} recvVictims={' + recvVictims.join(',') + '}');
                 #end
                 if (recvVictims.length == 1 && recvVictims[0] != p) {
                     #if debug_enum_closure
-                    trace('[EFnEnumAlign] field-receiver victim ' + recvVictims[0] + ' -> ' + p);
+                    // DISABLED: trace('[EFnEnumAlign] field-receiver victim ' + recvVictims[0] + ' -> ' + p);
                     #end
                 var rv = recvVictims[0];
                 if (!(ValueShapeAnalyzer.isIdLike(rv, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))) {
@@ -118,7 +118,7 @@ class EFnEnumClosureAlignTransforms {
                 for (a in argVictims) if (a != p && !assigned.exists(a)) filteredArgs.push(a);
                 if (filteredArgs.length == 1) {
                     #if debug_enum_closure
-                    trace('[EFnEnumAlign] single arg victim ' + filteredArgs[0] + ' -> ' + p);
+                    // DISABLED: trace('[EFnEnumAlign] single arg victim ' + filteredArgs[0] + ' -> ' + p);
                     #end
                 var fav = filteredArgs[0];
                 if (!(ValueShapeAnalyzer.isIdLike(fav, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))) {
@@ -132,7 +132,7 @@ class EFnEnumClosureAlignTransforms {
                 var actionList = [for (k in actionVictims.keys()) k];
                 if (actionList.length >= 1) {
                     #if debug_enum_closure
-                    trace('[EFnEnumAlign] action victims {' + actionList.join(',') + '} -> ' + p);
+                    // DISABLED: trace('[EFnEnumAlign] action victims {' + actionList.join(',') + '} -> ' + p);
                     #end
                 for (av in actionList) {
                     if ((ValueShapeAnalyzer.isIdLike(av, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))
@@ -143,12 +143,12 @@ class EFnEnumClosureAlignTransforms {
                 }
                 }
                 #if debug_enum_closure
-                trace('[EFnEnumAlign] filteredArgs={' + filteredArgs.join(',') + '}');
+                // DISABLED: trace('[EFnEnumAlign] filteredArgs={' + filteredArgs.join(',') + '}');
                 #end
                 // If exactly one remaining free var (after excluding locals), rewrite to primary
                 if (victims.length == 1 && victims[0] != p) {
                     #if debug_enum_closure
-                    trace('[EFnEnumAlign] single free var victim ' + victims[0] + ' -> ' + p);
+                    // DISABLED: trace('[EFnEnumAlign] single free var victim ' + victims[0] + ' -> ' + p);
                     #end
                     var v = victims[0];
                     if (!((ValueShapeAnalyzer.isIdLike(v, shapes) && ValueShapeAnalyzer.isStructLike(p, shapes))
@@ -160,7 +160,7 @@ class EFnEnumClosureAlignTransforms {
                 var afterUsed = collectUsedVars(body);
                 var afterList = [];
                 for (k in afterUsed.keys()) afterList.push(k);
-                trace('[EFnEnumAlign] after used={' + afterList.join(',') + '}');
+                // DISABLED: trace('[EFnEnumAlign] after used={' + afterList.join(',') + '}');
                 #end
             }
             // Drop numeric sentinels inside closure body (last local step)

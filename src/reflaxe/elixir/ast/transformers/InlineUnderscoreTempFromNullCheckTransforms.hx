@@ -54,12 +54,12 @@ class InlineUnderscoreTempFromNullCheckTransforms {
             return switch (n.def) {
                 case EIf(cond, thenBranch, elseBranch):
                     #if debug_underscore_temp_null_check
-                    trace("[InlineUnderscoreTempFromNullCheck] Found EIf node");
+                    // DISABLED: trace("[InlineUnderscoreTempFromNullCheck] Found EIf node");
                     #end
                     // Try to extract expression from null check condition
                     var checkedExpr = extractNullCheckExpr(cond);
                     #if debug_underscore_temp_null_check
-                    trace('[InlineUnderscoreTempFromNullCheck] checkedExpr = ' + checkedExpr);
+                    // DISABLED: trace('[InlineUnderscoreTempFromNullCheck] checkedExpr = ' + checkedExpr);
                     #end
                     if (checkedExpr != null) {
                         // We have a null check - look for _this in then-branch

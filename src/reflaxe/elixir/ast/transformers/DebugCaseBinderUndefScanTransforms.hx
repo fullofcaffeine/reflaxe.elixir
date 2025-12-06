@@ -35,7 +35,6 @@ class DebugCaseBinderUndefScanTransforms {
               reflaxe.elixir.ast.ASTUtils.walk(cl.body, function(x:ElixirAST){ switch (x.def) { case EVar(v): used.set(v,true); default: } });
               var undef:Array<String> = [];
               for (k in used.keys()) if (!declared.exists(k) && allow(k)) undef.push(k);
-              #if sys if (undef.length > 0) Sys.println('[DebugCaseBinderUndef] binder=' + binder + ' undef={' + undef.join(',') + '}'); #end
             }
           }
         default:

@@ -44,7 +44,6 @@ class FinalLocalReferenceAlignTransforms {
       return switch (n.def) {
         case EDef(name, args, guards, body):
           #if debug_ast_transformer
-          if (name == "create" || name == "update") Sys.println('[FinalLocalReferenceAlign] Enter def ' + name);
           #end
           var nb = alignInBody(body, args);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
@@ -92,7 +91,7 @@ class FinalLocalReferenceAlignTransforms {
     // Debug declared names for insight in tricky cases
     var dbg = [];
     for (k in declared.keys()) dbg.push(k);
-    Sys.println('[FinalLocalReferenceAlign] Declared={' + dbg.join(',') + '}');
+    // DEBUG: Sys.println('[FinalLocalReferenceAlign] Declared={' + dbg.join(',') + '}');
     #end
     for (k in declared.keys()) {
       var ck = canon(k);
@@ -165,7 +164,7 @@ class FinalLocalReferenceAlignTransforms {
           }
           if (target != null) {
             #if debug_ast_transformer
-            trace('[FinalLocalReferenceAlign] ' + v + ' -> ' + target);
+            // DISABLED: trace('[FinalLocalReferenceAlign] ' + v + ' -> ' + target);
             #end
             makeASTWithMeta(EVar(target), x.metadata, x.pos);
           } else {

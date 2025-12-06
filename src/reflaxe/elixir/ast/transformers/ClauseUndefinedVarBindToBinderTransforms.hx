@@ -31,21 +31,18 @@ class ClauseUndefinedVarBindToBinderTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case ECase(target, clauses):
-          #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] Visiting ECase target=' + (switch (target.def) { case EVar(v): v; default: Type.enumConstructor(target.def); })); #end
           var out:Array<ECaseClause> = [];
           for (cl in clauses) {
             var b = extractBinder(cl.pattern);
             if (b != null) {
-              #if sys
-              #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] clause {:_, ' + b + '}'); #end
+              #if debug_transforms
               #end
               var declared = collectDeclared(cl.pattern, cl.body);
               var used = collectUsed(cl.body);
               var undef:Array<String> = [];
               for (u in used.keys()) if (!declared.exists(u) && allow(u)) undef.push(u);
-              #if sys
+              #if debug_transforms
               var declArr = [for (k in declared.keys()) k];
-              #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] declared={' + declArr.join(',') + '} used={' + [for (k in used.keys()) k].join(',') + '} undef={' + undef.join(',') + '}'); #end
               #end
               if (undef.length >= 1) {
                 // Choose the most frequently referenced undefined variable in the body
@@ -63,7 +60,6 @@ class ClauseUndefinedVarBindToBinderTransforms {
                   // If binder is underscored and best equals its base name, emit two aliases to match intended shapes:
                   // fn_ = _binder; base = _binder
                   if (binderName.length > 1 && binderName.charAt(0) == '_' && best == binderName.substr(1)) {
-                    #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] alias best==base: fn_ = ' + binderName + '; ' + best + ' = ' + binderName); #end
                     if (!hasAliasInBody(cl.body, 'fn_', binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar('fn_')), makeAST(EVar(binderName)))));
                     if (!hasAliasInBody(cl.body, best, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName)))));
                   } else {
@@ -73,7 +69,6 @@ class ClauseUndefinedVarBindToBinderTransforms {
                       var underscored = '_' + binderName;
                       if (!hasAliasInBody(cl.body, underscored, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(underscored)), makeAST(EVar(binderName)))));
                     }
-                    #if (sys && debug_ast_transformer) Sys.println('[ClauseBindToBinder] prefix bind ' + best + ' = ' + binderName + ' (count=' + Std.string(bestCount) + ')'); #end
                     if (!hasAliasInBody(cl.body, best, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName)))));
                   }
                   var newBody = switch (cl.body.def) {

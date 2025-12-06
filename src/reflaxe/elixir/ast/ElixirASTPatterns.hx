@@ -310,7 +310,7 @@ class ElixirASTPatterns {
         }
         
         #if debug_inline_expansion
-        trace('[XRay InlineExpansion] Transforming inline expansion with var ${pattern.tmpVar.name}');
+        // DISABLED: trace('[XRay InlineExpansion] Transforming inline expansion with var ${pattern.tmpVar.name}');
         #end
         
         // Build the transformed AST
@@ -397,9 +397,9 @@ class ElixirASTPatterns {
                                                    buildFromTypedExpr: TypedExpr -> ElixirAST,
                                                    toElixirVarName: String -> String): ElixirASTDef {
         #if debug_inline_expansion
-        trace('[XRay InlineExpansion] Transforming complex inline expansion block with ${block.length} expressions');
+        // DISABLED: trace('[XRay InlineExpansion] Transforming complex inline expansion block with ${block.length} expressions');
         for (i in 0...block.length) {
-            trace('[XRay InlineExpansion]   Block[$i]: ${Type.enumConstructor(block[i].expr)}');
+            // DISABLED: trace('[XRay InlineExpansion]   Block[$i]: ${Type.enumConstructor(block[i].expr)}');
         }
         #end
         

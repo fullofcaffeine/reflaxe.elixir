@@ -41,12 +41,12 @@ class NestedAssignCollapseGlobalTransforms {
                     switch (rhsUnwrapped.def) {
                         case EBinary(Match, _, expr):
                             #if debug_hygiene
-                            Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(inner=expr)');
+                            // DEBUG: Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(inner=expr)');
                             #end
                             makeASTWithMeta(EBinary(Match, left, expr), n.metadata, n.pos);
                         case EMatch(_, innerExprForMatch):
                             #if debug_hygiene
-                            Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(PVar inner=expr)');
+                            // DEBUG: Sys.println('[NestedAssignCollapseGlobal] collapsing outer=(PVar inner=expr)');
                             #end
                             makeASTWithMeta(EBinary(Match, left, innerExprForMatch), n.metadata, n.pos);
                         default: n;
@@ -59,12 +59,12 @@ class NestedAssignCollapseGlobalTransforms {
                     switch (rhsMatchUnwrapped.def) {
                         case EBinary(Match, _, expr):
                             #if debug_hygiene
-                            Sys.println('[NestedAssignCollapseGlobal] collapsing EMatch pat=(inner=expr)');
+                            // DEBUG: Sys.println('[NestedAssignCollapseGlobal] collapsing EMatch pat=(inner=expr)');
                             #end
                             makeASTWithMeta(EMatch(patLeft, expr), n.metadata, n.pos);
                         case EMatch(_, innerExprForPat):
                             #if debug_hygiene
-                            Sys.println('[NestedAssignCollapseGlobal] collapsing EMatch pat=(PVar inner=expr)');
+                            // DEBUG: Sys.println('[NestedAssignCollapseGlobal] collapsing EMatch pat=(PVar inner=expr)');
                             #end
                             makeASTWithMeta(EMatch(patLeft, innerExprForPat), n.metadata, n.pos);
                         default:

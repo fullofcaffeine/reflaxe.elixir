@@ -64,7 +64,6 @@ class HandleEventIdExtractNormalizeTransforms {
           var recvThen = isStringToIntegerOnMapGetId(thenE);
           var recvElse = isMapGetId(elseE);
           if (recvCond != null && recvThen != null && recvElse != null) {
-            #if sys Sys.println('[HandleEventIdExtractNormalize] normalizing id branches to common receiver'); #end
             // Force both cond and then to use recvElse
             var fixedCond = replaceMapGetReceiver(cond, recvElse);
             var fixedThen = replaceMapGetReceiver(thenE, recvElse);

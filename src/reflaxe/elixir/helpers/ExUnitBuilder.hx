@@ -40,7 +40,7 @@ class ExUnitBuilder {
         var cls = Context.getLocalClass().get();
 
         #if debug_exunit
-        trace('[ExUnitBuilder] Processing class: ${cls.name} with ${fields.length} fields');
+        // DISABLED: trace('[ExUnitBuilder] Processing class: ${cls.name} with ${fields.length} fields');
         #end
 
         // Prevent DCE from removing test functions: add @:keep to fields
@@ -66,7 +66,7 @@ class ExUnitBuilder {
                         if (!hasKeep) {
                             f.meta.push({ name: ":keep", params: [], pos: f.pos });
                             #if debug_exunit
-                            trace('[ExUnitBuilder]   Added @:keep to test function: ${f.name}');
+                            // DISABLED: trace('[ExUnitBuilder]   Added @:keep to test function: ${f.name}');
                             #end
                         }
                     }

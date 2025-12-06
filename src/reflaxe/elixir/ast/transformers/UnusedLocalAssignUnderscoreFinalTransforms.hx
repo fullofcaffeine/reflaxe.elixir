@@ -29,17 +29,16 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class UnusedLocalAssignUnderscoreFinalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
-        #if sys Sys.println('[UnusedLocalAssign] PASS START'); #end
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EBlock(stmts):
                     #if debug_underscore_pass
-                    trace('[UnusedLocalAssign] Found EBlock with ${stmts.length} statements');
+                    // DISABLED: trace('[UnusedLocalAssign] Found EBlock with ${stmts.length} statements');
                     #end
                     makeASTWithMeta(EBlock(processStatements(stmts)), n.metadata, n.pos);
                 case EDo(stmts):
                     #if debug_underscore_pass
-                    trace('[UnusedLocalAssign] Found EDo with ${stmts.length} statements');
+                    // DISABLED: trace('[UnusedLocalAssign] Found EDo with ${stmts.length} statements');
                     #end
                     makeASTWithMeta(EDo(processStatements(stmts)), n.metadata, n.pos);
                 case EFn(clauses):
@@ -48,12 +47,12 @@ class UnusedLocalAssignUnderscoreFinalTransforms {
                         var processedBody = switch (clause.body.def) {
                             case EBlock(bodyStmts):
                                 #if debug_underscore_pass
-                                trace('[UnusedLocalAssign] Processing EFn body EBlock with ${bodyStmts.length} statements');
+                                // DISABLED: trace('[UnusedLocalAssign] Processing EFn body EBlock with ${bodyStmts.length} statements');
                                 #end
                                 makeASTWithMeta(EBlock(processStatements(bodyStmts)), clause.body.metadata, clause.body.pos);
                             case EDo(bodyStmts2):
                                 #if debug_underscore_pass
-                                trace('[UnusedLocalAssign] Processing EFn body EDo with ${bodyStmts2.length} statements');
+                                // DISABLED: trace('[UnusedLocalAssign] Processing EFn body EDo with ${bodyStmts2.length} statements');
                                 #end
                                 makeASTWithMeta(EDo(processStatements(bodyStmts2)), clause.body.metadata, clause.body.pos);
                             default:
@@ -95,7 +94,7 @@ class UnusedLocalAssignUnderscoreFinalTransforms {
                     if (nextVarName == varName) {
                         // Dead store - skip this assignment entirely
                         #if debug_underscore_pass
-                        trace('[UnusedLocalAssign] Removing dead store: $varName');
+                        // DISABLED: trace('[UnusedLocalAssign] Removing dead store: $varName');
                         #end
                         continue;
                     }

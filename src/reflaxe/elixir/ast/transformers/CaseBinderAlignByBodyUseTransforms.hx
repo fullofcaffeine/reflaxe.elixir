@@ -84,7 +84,7 @@ class CaseBinderAlignByBodyUseTransforms {
     var undef:Array<String> = [];
     for (k in used.keys()) if (!declared.exists(k) && isLower(k)) undef.push(k);
     #if debug_ast_transformer
-    Sys.println('[CaseBinderAlignByBodyUse] binder=' + binder + ' used={' + keys(used).join(',') + '} declared={' + keys(declared).join(',') + '} undef={' + undef.join(',') + '}');
+    // DEBUG: Sys.println('[CaseBinderAlignByBodyUse] binder=' + binder + ' used={' + keys(used).join(',') + '} declared={' + keys(declared).join(',') + '} undef={' + undef.join(',') + '}');
     #end
     if (undef.length == 1) {
       var newName = undef[0];
@@ -94,7 +94,6 @@ class CaseBinderAlignByBodyUseTransforms {
         default: c.pattern;
       };
       #if debug_ast_transformer
-      Sys.println('[CaseBinderAlignByBodyUse] Renaming binder ' + binder + ' -> ' + newName);
       #end
       return { pattern: newPat, guard: c.guard, body: c.body };
     }

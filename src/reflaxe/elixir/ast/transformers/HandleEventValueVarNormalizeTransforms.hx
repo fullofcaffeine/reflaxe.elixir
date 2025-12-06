@@ -92,7 +92,7 @@ class HandleEventValueVarNormalizeTransforms {
      *   segments that contain the same shape.
      *
      * DEBUG
-     * - The following Sys.println is wrapped in `#if debug_handle_event_value` so
+     * - The following // DEBUG: Sys.println is wrapped in `#if debug_handle_event_value` so
      *   it only logs when you opt in:
      *     npx haxe build.hxml -D debug_handle_event_value
      *   It runs in the compiler (macro) process, never in generated Elixir.
@@ -108,7 +108,6 @@ class HandleEventValueVarNormalizeTransforms {
             case EVar(v) if (v == "value"):
               var newArgs = [ makeAST(EVar(payloadVar)), a[1] ];
               #if debug_handle_event_value
-              #if sys Sys.println('[HandleEventValueVarNormalize] Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
               #end
               makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
             default: x;
@@ -119,7 +118,6 @@ class HandleEventValueVarNormalizeTransforms {
             case EVar(v2) if (v2 == "value"):
               var newArgs2 = [ makeAST(EVar(payloadVar)), a2[1] ];
               #if debug_handle_event_value
-              #if sys Sys.println('[HandleEventValueVarNormalize] call-form Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
               #end
               makeASTWithMeta(ECall(target, funcName, newArgs2), x.metadata, x.pos);
             default: x;
@@ -131,7 +129,6 @@ class HandleEventValueVarNormalizeTransforms {
             replaced = StringTools.replace(replaced, "Map.get(value,", 'Map.get(' + payloadVar + ',');
             if (replaced != code) {
               #if debug_handle_event_value
-              #if sys Sys.println('[HandleEventValueVarNormalize] ERaw: Map.get(value, …) → Map.get(' + payloadVar + ', …)'); #end
               #end
               makeASTWithMeta(ERaw(replaced), x.metadata, x.pos);
             } else {

@@ -123,7 +123,7 @@ class PresenceReduceRewriteTransforms {
             return switch (x.def) {
                 case EBlock(stmts) if (stmts.length >= 3):
 #if debug_presence
-                    trace('[PresenceReduceRewrite] Inspecting EBlock with ' + stmts.length + ' statements');
+                    // DISABLED: trace('[PresenceReduceRewrite] Inspecting EBlock with ' + stmts.length + ' statements');
 #end
                     // Broad presence-list pattern: listVar = <Presence>.list("users"); acc = []; Enum.each(listVar, fn ...); (optional tail acc)
                     var listVar: Null<String> = null;
@@ -181,7 +181,7 @@ class PresenceReduceRewriteTransforms {
                     }
                     if (listVar != null && accName != null && eachAt >= 0 && eachListMatches && eachFn != null) {
 #if debug_presence
-                        trace('[PresenceReduceRewrite] Broad pattern matched. listVar=' + listVar + ' acc=' + accName + ' eachAt=' + eachAt);
+                        // DISABLED: trace('[PresenceReduceRewrite] Broad pattern matched. listVar=' + listVar + ' acc=' + accName + ' eachAt=' + eachAt);
 #end
                         // Extract inner cond that controls appends to accName
                         var innerBody: Array<ElixirAST> = switch (eachFn.def) { case EFn(clauses) if (clauses.length == 1): switch (clauses[0].body.def) { case EBlock(ss): ss; default: [clauses[0].body]; } default: []; };
@@ -323,7 +323,7 @@ class PresenceReduceRewriteTransforms {
                         return x;
                     }
 #if debug_presence
-                    trace('[PresenceReduceRewrite] Found accumulator init: ' + accVar);
+                    // DISABLED: trace('[PresenceReduceRewrite] Found accumulator init: ' + accVar);
 #end
 
                     // Find Enum.each(...) immediately following (or later in block)
@@ -342,13 +342,13 @@ class PresenceReduceRewriteTransforms {
                     }
                     if (eachIdx == -1 || listTarget == null || fnClause == null) return x;
 #if debug_presence
-                    trace('[PresenceReduceRewrite] Found Enum.each on list target: ' + ElixirASTPrinter.print(listTarget, 0));
+                    // DISABLED: trace('[PresenceReduceRewrite] Found Enum.each on list target: ' + ElixirASTPrinter.print(listTarget, 0));
 #end
 
                     // Prefer when final statement returns the accumulator; if not, continue with synthesis
                     var returnsAcc = switch (stmts[stmts.length - 1].def) { case EVar(vn) if (vn == accVar): true; default: false; };
 #if debug_presence
-                    trace('[PresenceReduceRewrite] Found final return of accumulator: ' + accVar);
+                    // DISABLED: trace('[PresenceReduceRewrite] Found final return of accumulator: ' + accVar);
 #end
 
                     // Build Map.values(listTarget) for reduce input
@@ -363,9 +363,9 @@ class PresenceReduceRewriteTransforms {
 
                     var rawStmts: Array<ElixirAST> = switch (fnClause.body.def) { case EBlock(ss): ss; default: [fnClause.body]; };
 #if debug_presence
-                    trace('[PresenceReduceRewrite] Scanning fn body with ' + rawStmts.length + ' stmts');
+                    // DISABLED: trace('[PresenceReduceRewrite] Scanning fn body with ' + rawStmts.length + ' stmts');
                     for (idx in 0...rawStmts.length) {
-                        trace('  [raw[' + idx + ']] ' + ElixirASTPrinter.print(rawStmts[idx], 0));
+                        // DISABLED: trace('  [raw[' + idx + ']] ' + ElixirASTPrinter.print(rawStmts[idx], 0));
                     }
 #end
 
@@ -376,7 +376,7 @@ class PresenceReduceRewriteTransforms {
                         switch (s.def) {
                             case EBinary(Match, leftP, rightP):
 #if debug_presence
-                                trace('   [match] ' + ElixirASTPrinter.print(s, 0));
+                                // DISABLED: trace('   [match] ' + ElixirASTPrinter.print(s, 0));
 #end
                                 switch (rightP.def) {
                                     case EAccess(tgtP, _):
@@ -384,7 +384,7 @@ class PresenceReduceRewriteTransforms {
                                             case ERemoteCall({def: EVar("Reflect")}, "fields", [argP]) if (astEquals(argP, listTarget)):
                                                 hasReflectHead = true;
 #if debug_presence
-                                                trace('    [+] Detected Reflect.fields(list)[0]');
+                                                // DISABLED: trace('    [+] Detected Reflect.fields(list)[0]');
 #end
                                             default:
                                         }
@@ -406,7 +406,7 @@ class PresenceReduceRewriteTransforms {
                                 }
                             case EMatch(patP, rightP2):
 #if debug_presence
-                                trace('   [pattern match] ' + ElixirASTPrinter.print(s, 0));
+                                // DISABLED: trace('   [pattern match] ' + ElixirASTPrinter.print(s, 0));
 #end
                                 switch (rightP2.def) {
                                     case EAccess(tgtP2, _):
@@ -414,7 +414,7 @@ class PresenceReduceRewriteTransforms {
                                             case ERemoteCall({def: EVar("Reflect")}, "fields", [argP2]) if (astEquals(argP2, listTarget)):
                                                 hasReflectHead = true;
 #if debug_presence
-                                                trace('    [+] Detected Reflect.fields(list)[0] via EMatch');
+                                                // DISABLED: trace('    [+] Detected Reflect.fields(list)[0] via EMatch');
 #end
                                             default:
                                         }
@@ -438,7 +438,7 @@ class PresenceReduceRewriteTransforms {
                     }
                     if (hasReflectHead) {
 #if debug_presence
-                        trace('[PresenceReduceRewrite] Detected presence shape; rewriting to Enum.reduce(Map.values(...))');
+                        // DISABLED: trace('[PresenceReduceRewrite] Detected presence shape; rewriting to Enum.reduce(Map.values(...))');
 #end
                         var binderSafe = safeBinder(binderName);
                         var metaExprSyn = makeAST(EAccess(makeAST(EField(makeAST(EVar(binderSafe)), "metas")), makeAST(EInteger(0))));

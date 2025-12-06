@@ -51,10 +51,10 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
         isStatic: Bool
     ): Null<ElixirAST> {
         #if debug_behavior_transformer
-        trace('[PresenceBehaviorTransformer] ========================================');
-        trace('[PresenceBehaviorTransformer] Checking ${className}.${methodName}');
-        trace('[PresenceBehaviorTransformer] - isStatic: ${isStatic}');
-        trace('[PresenceBehaviorTransformer] - args.length: ${args.length}');
+        // DISABLED: trace('[PresenceBehaviorTransformer] ========================================');
+        // DISABLED: trace('[PresenceBehaviorTransformer] Checking ${className}.${methodName}');
+        // DISABLED: trace('[PresenceBehaviorTransformer] - isStatic: ${isStatic}');
+        // DISABLED: trace('[PresenceBehaviorTransformer] - args.length: ${args.length}');
         #end
         
         // Only transform Phoenix.Presence extern class calls
@@ -63,7 +63,7 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
         // not custom modules like TodoPresence
         if (className != "Presence" && className != "phoenix.Presence") {
             #if debug_behavior_transformer
-            trace('[PresenceBehaviorTransformer] Not a Phoenix.Presence class (className="${className}"), skipping');
+            // DISABLED: trace('[PresenceBehaviorTransformer] Not a Phoenix.Presence class (className="${className}"), skipping');
             #end
             return null;
         }
@@ -72,14 +72,14 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
         var snakeCaseMethod = toSnakeCase(methodName);
         
         #if debug_behavior_transformer
-        trace('[PresenceBehaviorTransformer] Method: ${methodName} -> ${snakeCaseMethod}, args: ${args.length}');
+        // DISABLED: trace('[PresenceBehaviorTransformer] Method: ${methodName} -> ${snakeCaseMethod}, args: ${args.length}');
         #end
         
         // Determine if this method needs self() injection
         var needsSelfInjection = needsSelf(methodName, args.length);
         
         #if debug_behavior_transformer
-        trace('[PresenceBehaviorTransformer] Needs self() injection: ${needsSelfInjection}');
+        // DISABLED: trace('[PresenceBehaviorTransformer] Needs self() injection: ${needsSelfInjection}');
         #end
         
         if (needsSelfInjection) {

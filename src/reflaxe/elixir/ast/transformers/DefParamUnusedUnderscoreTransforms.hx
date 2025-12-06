@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * DefParamUnusedUnderscoreTransforms
@@ -71,14 +72,12 @@ class DefParamUnusedUnderscoreTransforms {
         return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
             return switch (x.def) {
                 case EDef(name, args, guards, body):
-                    var paramNames = extractParamNames(args);
-                    var used = collectUsedNames(body, paramNames);
-                    var newArgs = underscoreUnusedParams(args, used);
+                    // Use VarUseAnalyzer for comprehensive variable usage detection
+                    var newArgs = underscoreUnusedParamsWithAnalyzer(args, body, guards);
                     makeASTWithMeta(EDef(name, newArgs, guards, body), x.metadata, x.pos);
                 case EDefp(name, args2, guards2, body2):
-                    var paramNames2 = extractParamNames(args2);
-                    var used2 = collectUsedNames(body2, paramNames2);
-                    var newArgs2 = underscoreUnusedParams(args2, used2);
+                    // Use VarUseAnalyzer for comprehensive variable usage detection
+                    var newArgs2 = underscoreUnusedParamsWithAnalyzer(args2, body2, guards2);
                     makeASTWithMeta(EDefp(name, newArgs2, guards2, body2), x.metadata, x.pos);
                 default:
                     x;
@@ -102,6 +101,51 @@ class DefParamUnusedUnderscoreTransforms {
         }
         if (args != null) for (a in args) visit(a);
         return names;
+    }
+
+    /**
+     * Use VarUseAnalyzer for comprehensive variable usage detection.
+     * This replaces the previous collectUsedNames approach which missed some usages.
+     */
+    static function underscoreUnusedParamsWithAnalyzer(args: Array<EPattern>, body: ElixirAST, guards: Null<ElixirAST>): Array<EPattern> {
+        if (args == null) return args;
+
+        // Check each parameter pattern individually using VarUseAnalyzer
+        var result: Array<EPattern> = [];
+        for (a in args) {
+            result.push(underscorePatternWithAnalyzer(a, body, guards));
+        }
+        return result;
+    }
+
+    /**
+     * Underscore a pattern if it's a PVar that's not used in the body or guards.
+     */
+    static function underscorePatternWithAnalyzer(p: EPattern, body: ElixirAST, guards: Null<ElixirAST>): EPattern {
+        return switch (p) {
+            case PVar(name):
+                // Never underscore Phoenix-idiomatic parameter names that are commonly used indirectly
+                var preserve = (name == "assigns" || name == "opts" || name == "args" || name == "conn");
+                if (preserve || name == null || name.length == 0 || name.charAt(0) == '_') {
+                    p;
+                } else {
+                    // Use VarUseAnalyzer for comprehensive detection
+                    var usedInBody = VarUseAnalyzer.stmtUsesVar(body, name);
+                    var usedInGuards = guards != null && VarUseAnalyzer.stmtUsesVar(guards, name);
+                    if (usedInBody || usedInGuards) {
+                        p; // Keep unchanged - parameter is used
+                    } else {
+                        PVar("_" + name); // Add underscore prefix
+                    }
+                }
+            case PTuple(es): PTuple([for (e in es) underscorePatternWithAnalyzer(e, body, guards)]);
+            case PList(es): PList([for (e in es) underscorePatternWithAnalyzer(e, body, guards)]);
+            case PCons(h, t): PCons(underscorePatternWithAnalyzer(h, body, guards), underscorePatternWithAnalyzer(t, body, guards));
+            case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: underscorePatternWithAnalyzer(kv.value, body, guards) }]);
+            case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: underscorePatternWithAnalyzer(f.value, body, guards) }]);
+            case PPin(inner): PPin(underscorePatternWithAnalyzer(inner, body, guards));
+            default: p;
+        };
     }
 
     static function underscoreUnusedParams(args: Array<EPattern>, used: Map<String, Bool>): Array<EPattern> {

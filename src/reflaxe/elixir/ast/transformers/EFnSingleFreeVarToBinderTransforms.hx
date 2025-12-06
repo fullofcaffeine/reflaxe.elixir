@@ -53,7 +53,6 @@ class EFnSingleFreeVarToBinderTransforms {
         for (k in referenced.keys()) if (looksLikeVar(k)) freeNames.push(k);
         if (freeNames.length != 1) return cl;
         var victim = freeNames[0];
-        #if sys Sys.println('[EFnSingleFreeVarToBinder] Rewriting free var ' + victim + ' -> ' + binder); #end
         var newBody = renameVarInNode(cl.body, victim, binder);
         return { args: cl.args, guard: cl.guard, body: newBody };
     }

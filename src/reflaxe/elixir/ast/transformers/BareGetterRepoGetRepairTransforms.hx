@@ -71,7 +71,6 @@ class BareGetterRepoGetRepairTransforms {
                     switch (mod.def) {
                         case EVar(m) if (m != null && (StringTools.endsWith(m, ".Repo") || m == "Repo")):
                             found = mod;
-                            #if sys Sys.println('[BareGetterRepoGetRepair] Detected repo module: ' + m); #end
                         default:
                     }
                     if (found == null && args != null) for (a in args) scan(a);
@@ -97,12 +96,10 @@ class BareGetterRepoGetRepairTransforms {
                     // Do not rewrite canonical Ecto changeset builders
                     if (name == "changeset") return n;
                     var newBody = rewriteBody(body, params, repoMod);
-                    #if sys if (newBody != body) Sys.println('[BareGetterRepoGetRepair] Rewrote def ' + name); #end
                     makeASTWithMeta(EDef(name, params, guards, newBody), n.metadata, n.pos);
                 case EDefp(name, params, guards, body):
                     if (name == "changeset") return n;
                     var newBodyp = rewriteBody(body, params, repoMod);
-                    #if sys if (newBodyp != body) Sys.println('[BareGetterRepoGetRepair] Rewrote defp ' + name); #end
                     makeASTWithMeta(EDefp(name, params, guards, newBodyp), n.metadata, n.pos);
                 default:
                     n;
@@ -126,7 +123,6 @@ class BareGetterRepoGetRepairTransforms {
         var firstParamName: String = deriveFirstParamName(params);
         if (firstParamName == null) firstParamName = "id";
         var call = makeASTWithMeta(ERemoteCall(repoMod, "get", [ makeAST(EAtom(bareVar.toLowerCase())), makeAST(EVar(firstParamName)) ]), body.metadata, body.pos);
-        #if sys Sys.println('[BareGetterRepoGetRepair] Rewriting bare var ' + bareVar + ' -> ' + firstParamName); #end
         return call;
     }
 

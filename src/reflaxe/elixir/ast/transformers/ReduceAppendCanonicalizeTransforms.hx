@@ -58,7 +58,6 @@ class ReduceAppendCanonicalizeTransforms {
                             var accName:Null<String> = switch (cl.args[1]) { case PVar(a): a; default: null; };
                             if (binderName == null || accName == null) return n;
                             #if debug_reduce_append_canon
-                            Sys.println('[ReduceAppendCanonicalize] reducer binder=' + binderName + ', acc=' + accName);
                             #end
 
                             var bodyStmts:Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
@@ -76,21 +75,20 @@ class ReduceAppendCanonicalizeTransforms {
                                 default:
                             }
                             #if debug_reduce_append_canon
-                            if (elementAlias != null) Sys.println('[ReduceAppendCanonicalize] found alias of binder: ' + elementAlias + ' = ' + binderName);
                             #end
                             // Second pass: rewrite alias concat to acc concat and substitute alias->binder in RHS list expr
                             var newBody:Array<ElixirAST> = [];
                             var didRewrite = false;
                             for (stmt in bodyStmts) {
                                 #if debug_reduce_append_canon
-                                Sys.println('[ReduceAppendCanonicalize] stmt=' + ElixirASTPrinter.print(stmt, 0));
+                                // DEBUG: Sys.println('[ReduceAppendCanonicalize] stmt=' + ElixirASTPrinter.print(stmt, 0));
                                 #end
                                 var localRewrote = false;
                                 var rewritten = ElixirASTTransformer.transformNode(stmt, function(node: ElixirAST): ElixirAST {
                                     return switch (node.def) {
                                         case EBinary(Match, left, rhs):
                                             #if debug_reduce_append_canon
-                                            Sys.println('[ReduceAppendCanonicalize] HIT EBinary(Match) ' + ElixirASTPrinter.print(node, 0));
+                                            // DEBUG: Sys.println('[ReduceAppendCanonicalize] HIT EBinary(Match) ' + ElixirASTPrinter.print(node, 0));
                                             #end
                                             var lhs:Null<String> = switch (left.def) { case EVar(n): n; default: null; };
                                             if (lhs != null && containsVar(rhs, lhs)) {
@@ -184,7 +182,6 @@ class ReduceAppendCanonicalizeTransforms {
                             var usedSpecificRewrite = didRewrite;
                             if (!usedSpecificRewrite) {
                                 #if debug_reduce_append_canon
-                                Sys.println('[ReduceAppendCanonicalize] entering fallback with alias=' + elementAlias);
                                 #end
                                 var foundList:Null<ElixirAST> = null;
                                 var foundExpr:Null<ElixirAST> = null;
@@ -195,12 +192,12 @@ class ReduceAppendCanonicalizeTransforms {
                                                 // Capture list arg
                                                 foundList = argsX[1];
                                                 #if debug_reduce_append_canon
-                                                Sys.println('[ReduceAppendCanonicalize] walk found ERemoteCall concat: ' + ElixirASTPrinter.print(n2, 0));
+                                                // DEBUG: Sys.println('[ReduceAppendCanonicalize] walk found ERemoteCall concat: ' + ElixirASTPrinter.print(n2, 0));
                                                 #end
                                             case ECall(_, "concat", argsCX) if (argsCX.length == 2):
                                                 foundList = argsCX[1];
                                                 #if debug_reduce_append_canon
-                                                Sys.println('[ReduceAppendCanonicalize] walk found ECall concat: ' + ElixirASTPrinter.print(n2, 0));
+                                                // DEBUG: Sys.println('[ReduceAppendCanonicalize] walk found ECall concat: ' + ElixirASTPrinter.print(n2, 0));
                                                 #end
                                             case EList(itemsX) if (itemsX.length == 1):
                                                 // Capture singleton list element if present
@@ -211,7 +208,7 @@ class ReduceAppendCanonicalizeTransforms {
                                     if (foundList != null) break;
                                 }
                                 #if debug_reduce_append_canon
-                                Sys.println('[ReduceAppendCanonicalize] fallback foundList=' + (foundList == null ? 'null' : ElixirASTPrinter.print(foundList, 0)) + ', foundExpr=' + (foundExpr == null ? 'null' : ElixirASTPrinter.print(foundExpr, 0)));
+                                // DEBUG: Sys.println('[ReduceAppendCanonicalize] fallback foundList=' + (foundList == null ? 'null' : ElixirASTPrinter.print(foundList, 0)) + ', foundExpr=' + (foundExpr == null ? 'null' : ElixirASTPrinter.print(foundExpr, 0)));
                                 #end
                                 // Guard: only rebuild if body currently returns acc
                                 var returnsAcc = switch (bodyStmts.length > 0 ? bodyStmts[bodyStmts.length - 1].def : ENil) { case EVar(v) if (v == accName): true; default: false; };
@@ -224,7 +221,7 @@ class ReduceAppendCanonicalizeTransforms {
                                         }
                                     });
                                     #if debug_reduce_append_canon
-                                    Sys.println('[ReduceAppendCanonicalize] fallback rebuilding acc concat with list=' + ElixirASTPrinter.print(listPrime, 0));
+                                    // DEBUG: Sys.println('[ReduceAppendCanonicalize] fallback rebuilding acc concat with list=' + ElixirASTPrinter.print(listPrime, 0));
                                     #end
                                     newBody = [
                                         makeAST(EBinary(Match, makeAST(EVar(accName)), makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), listPrime])))),

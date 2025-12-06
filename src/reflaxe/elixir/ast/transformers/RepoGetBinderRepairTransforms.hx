@@ -109,11 +109,9 @@ class RepoGetBinderRepairTransforms {
             return switch (n.def) {
                 case EDef(name, params, guards, body):
                     var newBody = rewriteBodyIfBareUndeclaredVar(body, params, info);
-                    #if (sys && debug_ast_transformer) if (newBody != body) Sys.println('[RepoGetBinderRepair] Rewrote def ' + name); #end
                     makeASTWithMeta(EDef(name, params, guards, newBody), n.metadata, n.pos);
                 case EDefp(name, params, guards, body):
                     var newBody = rewriteBodyIfBareUndeclaredVar(body, params, info);
-                    #if (sys && debug_ast_transformer) if (newBody != body) Sys.println('[RepoGetBinderRepair] Rewrote defp ' + name); #end
                     makeASTWithMeta(EDefp(name, params, guards, newBody), n.metadata, n.pos);
                 default:
                     n;
@@ -159,7 +157,6 @@ class RepoGetBinderRepairTransforms {
 
         // Build Repo.get(repoInfo.schemaArg, <firstParamName>) using the captured repo module
         var call = makeASTWithMeta(ERemoteCall(repoInfo.repoMod, "get", [repoInfo.schemaArg, makeAST(EVar(firstParamName))]), body.metadata, body.pos);
-        #if (sys && debug_ast_transformer) Sys.println('[RepoGetBinderRepair] Rewriting bare var `' + bareVar + '` to ' + ElixirASTPrinter.printAST(call) ); #end
         return call;
     }
 

@@ -67,7 +67,6 @@ class CaseUnderscoreAssignHoistAnyTransforms {
           var name = pickName(env);
           var assign = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(name), n.metadata, n.pos), scrut), n.metadata, n.pos);
           var caze = makeASTWithMeta(ECase(makeASTWithMeta(EVar(name), n.metadata, n.pos), clauses), n.metadata, n.pos);
-          #if debug_case_hoist Sys.println('[CaseUnderscoreAssignHoistAny] Rewriting _ = case <scrut> as ' + name + ' + case'); #end
           makeASTWithMeta(EBlock([assign, caze]), n.metadata, n.pos);
         case EMatch(pat, {def: ECase(scr2, cls2)}):
           // Handle pattern-style match as assignment
@@ -77,7 +76,6 @@ class CaseUnderscoreAssignHoistAnyTransforms {
             var nname = pickName(env2);
             var assign2 = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(nname), n.metadata, n.pos), scr2), n.metadata, n.pos);
             var caze2 = makeASTWithMeta(ECase(makeASTWithMeta(EVar(nname), n.metadata, n.pos), cls2), n.metadata, n.pos);
-            #if debug_case_hoist Sys.println('[CaseUnderscoreAssignHoistAny] Rewriting (EMatch _) case <scrut> as ' + nname + ' + case'); #end
             makeASTWithMeta(EBlock([assign2, caze2]), n.metadata, n.pos);
           } else n;
         default:
