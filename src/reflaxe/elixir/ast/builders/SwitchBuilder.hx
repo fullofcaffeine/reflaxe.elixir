@@ -671,7 +671,10 @@ class SwitchBuilder {
                                         });
                                         var undef:Array<String> = [];
                                         for (k in used.keys()) if (!declared.exists(k) && k != bn) undef.push(k);
-                                        if (undef.length == 1) {
+                                        // Only rename if the original pattern variable bn is NOT used in the body.
+                                        // If bn IS used, keep the original binding - don't rename to some other variable.
+                                        var bnIsUsed = used.exists(bn);
+                                        if (undef.length == 1 && !bnIsUsed) {
                                             var newName = undef[0];
                                             harmonized = { pattern: PTuple([es[0], PVar(newName)]), guard: cl.guard,
                                                 body: reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
@@ -1057,20 +1060,56 @@ class SwitchBuilder {
                 usedFlags = computeEnumParamUsage(caseBody, parameterNames.length);
                 localUsage = collectLocalNameUsage(caseBody);
             }
+            #if debug_switch_builder
+            trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
+            trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
+            trace('[SwitchBuilder]   guardVars = ${guardVars != null ? "[" + guardVars.join(", ") + "]" : "null"}');
+            trace('[SwitchBuilder]   preferredLower = $preferredLower');
+            #end
             for (i in 0...parameterNames.length) {
                 // Select a safe base source name with strict filtering
                 var candidate:Null<String> = null;
                 if (guardVars != null && i < guardVars.length) candidate = guardVars[i];
+                #if debug_switch_builder
+                trace('[SwitchBuilder]   i=$i: initial candidate from guardVars[$i] = "$candidate"');
+                if (candidate != null) {
+                    trace('[SwitchBuilder]     isEnvLikeName("$candidate") = ${isEnvLikeName(candidate)}');
+                    trace('[SwitchBuilder]     isFunctionParamByName("$candidate") = ${isFunctionParamByName(candidate)}');
+                }
+                #end
                 if (candidate == null || isEnvLikeName(candidate) || isFunctionParamByName(candidate)) {
                     candidate = parameterNames[i];
+                    #if debug_switch_builder
+                    trace('[SwitchBuilder]     -> fell back to parameterNames[$i] = "$candidate"');
+                    #end
                 }
 
                 var baseParamName = VariableAnalyzer.toElixirVarName(candidate);
+                #if debug_switch_builder
+                trace('[SwitchBuilder]     baseParamName after toElixirVarName = "$baseParamName"');
+                #end
                 if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
 
-                // If only one parameter and we detected lower-case locals in body,
-                // prefer the first safe lower-case local as binder (usage-driven, generic).
-                if (preferredLower != null) baseParamName = preferredLower;
+                // Only apply preferredLower when the original name is generic/auto-generated.
+                // NEVER override meaningful parameter names from the enum definition.
+                // A name is considered generic if it: starts with underscore, is single char,
+                // contains digits (like _g0), or is "value"/"arg" (Haxe defaults).
+                function isGenericParamName(name: String): Bool {
+                    if (name == null || name.length == 0) return true;
+                    if (name.charAt(0) == "_") return true;
+                    if (name.length == 1) return true;
+                    if (name == "value" || name == "arg" || name == "v") return true;
+                    // Check for auto-generated names with digits like _g0, g1, etc.
+                    var hasDigit = false;
+                    for (j in 0...name.length) {
+                        var c = name.charCodeAt(j);
+                        if (c >= 48 && c <= 57) { hasDigit = true; break; }
+                    }
+                    return hasDigit;
+                }
+                if (preferredLower != null && isGenericParamName(baseParamName)) {
+                    baseParamName = preferredLower;
+                }
 
                 // CRITICAL: Use precomputed usage from a single scan
                 var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
@@ -1207,7 +1246,9 @@ class SwitchBuilder {
         var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
         var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
         for (i in 0...paramCount) {
-            // Priority: guard var > TLocal name from arg > enum field param name
+            // Priority: guard var > enum field param name (if meaningful) > TLocal name from arg > enum field param name (fallback)
+            // CRITICAL FIX: Prefer enum definition names over TCall arg names because Haxe often generates
+            // generic names like "value" in TCall args while the enum definition has meaningful names.
             var guardName = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
             var argLocal: Null<String> = null;
             if (i < callArgs.length) {
@@ -1220,7 +1261,35 @@ class SwitchBuilder {
             }
             var enumParamName: Null<String> = null;
             switch(ef.type) { case TFun(args, _): if (i < args.length) enumParamName = args[i].name; default: }
-            var chosen = guardName != null ? guardName : (argLocal != null ? argLocal : enumParamName);
+
+            // Helper: check if a name is generic/auto-generated (should not take priority)
+            function isGenericParamName(name: Null<String>): Bool {
+                if (name == null || name.length == 0) return true;
+                if (name.charAt(0) == "_") return true;
+                if (name.length == 1) return true;
+                if (name == "value" || name == "arg" || name == "v" || name == "item") return true;
+                // Check for auto-generated names with digits like _g0, g1, etc.
+                var hasDigit = false;
+                for (j in 0...name.length) {
+                    var c = name.charCodeAt(j);
+                    if (c >= 48 && c <= 57) { hasDigit = true; break; }
+                }
+                return hasDigit;
+            }
+
+            // Choose best name: guardName first, then prefer non-generic names from enum definition
+            var chosen: Null<String> = null;
+            if (guardName != null && !isGenericParamName(guardName)) {
+                chosen = guardName;
+            } else if (enumParamName != null && !isGenericParamName(enumParamName)) {
+                // Prefer meaningful enum parameter name over potentially generic argLocal
+                chosen = enumParamName;
+            } else if (argLocal != null && !isGenericParamName(argLocal)) {
+                chosen = argLocal;
+            } else {
+                // Fallback: use whatever we have (prefer non-null)
+                chosen = guardName != null ? guardName : (enumParamName != null ? enumParamName : argLocal);
+            }
             var baseParamName = VariableAnalyzer.toElixirVarName(chosen);
             if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
             var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || (chosen != null && EnumHandler.isLocalNameUsed(chosen, caseBody));
