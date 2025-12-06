@@ -28,7 +28,6 @@ class VarRefSuffixParamNormalizeTransforms {
           var suffixMap = collectUniqueSuffixParams(parameters);
           #if debug_varref_suffix {
             var keys = [for (k in suffixMap.keys()) k].join(",");
-            if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] def ' + functionName + ' suffixes={' + keys + '}');
           } #end
           var newBody = rewriteRefsScoped(body, suffixMap);
           var ret = makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
@@ -39,7 +38,6 @@ class VarRefSuffixParamNormalizeTransforms {
           var suffixMap = collectUniqueSuffixParams(parameters);
           #if debug_varref_suffix {
             var keys = [for (k in suffixMap.keys()) k].join(",");
-            if (keys.length > 0) Sys.println('[VarRefSuffixParamNormalize] defp ' + functionName + ' suffixes={' + keys + '}');
           } #end
           var newBody = rewriteRefsScoped(body, suffixMap);
           var ret2 = makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
@@ -104,8 +102,6 @@ class VarRefSuffixParamNormalizeTransforms {
                 return switch (y.def) {
                   case EVar(v) if (suff.exists(v) && !declared.exists(v)):
                     var full = suff.get(v);
-                    #if debug_varref_suffix Sys.println('[VarRefSuffixParamNormalize] ' + v + ' -> ' + full);
-                    #end
                     makeASTWithMeta(EVar(full), y.metadata, y.pos);
                   default: y;
                 }
@@ -117,8 +113,6 @@ class VarRefSuffixParamNormalizeTransforms {
             // Top-level within function scope (use precomputed cache)
             if (suff.exists(nm) && !topDeclaredCache.exists(nm)) {
               var fullTop = suff.get(nm);
-              #if debug_varref_suffix Sys.println('[VarRefSuffixParamNormalize] ' + nm + ' -> ' + fullTop);
-              #end
               makeASTWithMeta(EVar(fullTop), x.metadata, x.pos);
             } else x;
           default: x;

@@ -40,7 +40,6 @@ class CaseScrutineeHoistTransforms {
         // Pattern: _ = case parse_*(...) do ... end
         case EMatch(PVar("_"), {def: ECase(scrut, clauses)}):
           if (isParseCall(scrut)) {
-            #if debug_case_hoist Sys.println('[CaseScrutineeHoist] Hoisting scrutinee to parsed_result (EMatch)'); #end
             var varName = "parsed_result";
             var assign = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(varName), n.metadata, n.pos), scrut), n.metadata, n.pos);
             var caze = makeASTWithMeta(ECase(makeASTWithMeta(EVar(varName), n.metadata, n.pos), clauses), n.metadata, n.pos);
@@ -49,7 +48,6 @@ class CaseScrutineeHoistTransforms {
         // Pattern: _ =^ EBinary(Match, EVar("_"), ECase(scrut, clauses)) — simple assignment
         case EBinary(Match, {def: EVar("_")}, {def: ECase(scrut2, clauses2)}):
           if (isParseCall(scrut2)) {
-            #if debug_case_hoist Sys.println('[CaseScrutineeHoist] Hoisting scrutinee to parsed_result (EBinary)'); #end
             var varName2 = "parsed_result";
             var assign2 = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(varName2), n.metadata, n.pos), scrut2), n.metadata, n.pos);
             var caze2 = makeASTWithMeta(ECase(makeASTWithMeta(EVar(varName2), n.metadata, n.pos), clauses2), n.metadata, n.pos);

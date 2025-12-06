@@ -457,10 +457,11 @@ class ElixirASTPassRegistry {
         });
 
         // Collapse nested alias chains: lhs = alias = expr → lhs = expr (when alias unused later)
+        // NOTE: Has O(n²) complexity - DISABLED under fast_boot due to performance issues with large files
         passes.push({
             name: "AssignmentChainCleanup",
             description: "Collapse nested match alias chains to eliminate unused alias binders",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.transformPass
         });
 
@@ -1401,7 +1402,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LocalUnderscoreBinderPromote",
             description: "Rename EMatch(_name = ...) to name = ... when subsequent code uses name",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
         });
         // Generic underscore promotion: _any -> any when used later in the same body
@@ -2318,10 +2319,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.InlineIfInContainersGlobalTransforms.pass
         });
         // Generic: underscore unused case/with pattern vars
+        // NOTE: Uses VarUseAnalyzer - can be slow for large files. DISABLED under fast_boot.
         passes.push({
             name: "CasePatternUnusedUnderscore",
             description: "Underscore unused variables bound in case/with patterns",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.CasePatternUnusedUnderscoreTransforms.pass
         });
         passes.push({
@@ -2527,11 +2529,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.pass
         });
         // Ultra-final: underscore unused local assignments (same-block conservative)
-        // NOTE: Enabled even under fast_boot - it's lightweight and fixes this1 warnings
+        // NOTE: Has O(n²) complexity - DISABLED under fast_boot due to performance issues with large files
         passes.push({
             name: "UnusedLocalAssignUnderscoreFinal",
             description: "Rename unused local assignment binders `name = expr` to `_name` (same-block only)",
-            enabled: #if disable_hygiene_final false #else true #end,
+            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.pass
         });
         // Ultra-final: drop `thisN = nil` and `_thisN = nil` temp sentinel assignments
@@ -2766,10 +2768,11 @@ class ElixirASTPassRegistry {
         });
 
         // Late sweep: collapse nested aliasing chains like `lhs = g = expr` when alias is unused.
+        // NOTE: Has O(n²) complexity - DISABLED under fast_boot due to performance issues with large files
         passes.push({
             name: "AssignmentChainCleanupLate",
             description: "Late sweep to collapse nested aliasing chains (lhs = g = expr) when alias is unused",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.transformPass
         });
 
@@ -2850,7 +2853,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -2858,7 +2861,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Late sweep: underscore unused def/defp params in Phoenix modules",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -2879,14 +2882,14 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Ultra-final underscore of unused def/defp params in Web/Live/Presence",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
         // Final: discard top-level nil assignments in function bodies when unused
         passes.push({
             name: "TopLevelNilAssignDiscard",
             description: "Rewrite var = nil to _ = nil when var is not used later in function",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.TopLevelNilAssignDiscardTransforms.transformPass
         });
         // Absolutely last: promote underscore binders by use one more time
@@ -3829,7 +3832,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ControllerLocalAssignUnusedUnderscore_Final",
             description: "In conn actions, underscore unused local assignment binders",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ControllerLocalAssignUnusedUnderscoreTransforms.pass,
             runAfter: ["LocalAssignUnusedUnderscore_Global_Final"]
         });
@@ -5426,7 +5429,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LocalAssignUnusedUnderscore_Scoped_Final",
             description: "Final (scoped): underscore local assigns not used later in defs except mount/3",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransforms.pass,
             runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
         });
@@ -5617,7 +5620,8 @@ class ElixirASTPassRegistry {
             description: "Underscore unused def/defp parameters (absolute-final)",
             // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
             // to detect usage in IIFE call arguments like: end).(user, attrs)
-            enabled: true,
+            // NOTE: Uses VarUseAnalyzer - DISABLED under fast_boot
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
         });
         passes.push({
@@ -5625,7 +5629,8 @@ class ElixirASTPassRegistry {
             description: "In case clauses, underscore unused binders (absolute-final)",
             // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
             // to detect usage in nested expressions/IIFEs
-            enabled: true,
+            // NOTE: Uses VarUseAnalyzer - DISABLED under fast_boot
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass
         });
 
@@ -5657,7 +5662,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "FinalUnderscoreRepair",
             description: "Absolute-final: repair underscore-prefixed variables that are actually used (Phase 1.3 of 1.0 roadmap)",
-            enabled: true,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.FinalUnderscoreRepairTransforms.transformPass,
             runAfter: ["HandleInfoAliasAndNoreply_AbsoluteFinal"]
         });
@@ -5719,9 +5724,7 @@ class ElixirASTPassRegistry {
         }
 
         if (out.length != passes.length) {
-            #if debug_pass_order
-            Sys.println('[PassOrder] Cycle or unresolved constraint; falling back to original order');
-            #end
+            // Debug: PassOrder cycle detection disabled
             return passes;
         }
         var byName = new Map<String, ElixirASTTransformer.PassConfig>();
@@ -5729,7 +5732,7 @@ class ElixirASTPassRegistry {
         var sorted:Array<ElixirASTTransformer.PassConfig> = [];
         for (n in out) sorted.push(byName.get(n));
         #if debug_pass_order
-        Sys.println('[PassOrder] ' + out.join(' → '));
+        // DEBUG: Sys.println('[PassOrder] ' + out.join(' → '));
         #end
         return sorted;
     }

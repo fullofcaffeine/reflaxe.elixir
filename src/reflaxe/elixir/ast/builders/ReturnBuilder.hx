@@ -60,10 +60,10 @@ class ReturnBuilder {
      */
     public static function build(e: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[ReturnBuilder] Building return expression');
-        trace('[ReturnBuilder]   Has expression: ${e != null}');
+        // DISABLED: trace('[ReturnBuilder] Building return expression');
+        // DISABLED: trace('[ReturnBuilder]   Has expression: ${e != null}');
         if (e != null) {
-            trace('[ReturnBuilder]   Expression type: ${Type.enumConstructor(e.expr)}');
+            // DISABLED: trace('[ReturnBuilder]   Expression type: ${Type.enumConstructor(e.expr)}');
         }
         #end
         
@@ -73,7 +73,7 @@ class ReturnBuilder {
             // Check if it's a switch, potentially wrapped in metadata
             if (isSwitchExpression(e)) {
                 #if debug_ast_builder
-                trace('[ReturnBuilder] Return contains switch expression, handling specially');
+                // DISABLED: trace('[ReturnBuilder] Return contains switch expression, handling specially');
                 #end
                 // Process the switch with special handling
                 return processReturnSwitch(e, context);
@@ -90,7 +90,7 @@ class ReturnBuilder {
             
             if (result == null) {
                 #if debug_ast_builder
-                trace('[ReturnBuilder] Failed to compile return expression, using nil');
+                // DISABLED: trace('[ReturnBuilder] Failed to compile return expression, using nil');
                 #end
                 return makeAST(ENil).def;
             }
@@ -99,7 +99,7 @@ class ReturnBuilder {
         } else {
             // Empty return - explicit nil
             #if debug_ast_builder
-            trace('[ReturnBuilder] Empty return, generating explicit nil');
+            // DISABLED: trace('[ReturnBuilder] Empty return, generating explicit nil');
             #end
             return ENil;
         }
@@ -169,7 +169,7 @@ class ReturnBuilder {
                                 case TVar(tvar, init) if (init != null && tvar.id == v.id):
                                     // Found infrastructure variable pattern!
                                     #if debug_ast_builder
-                                    trace('[ReturnBuilder] Detected infrastructure variable pattern: ${tvar.name}');
+                                    // DISABLED: trace('[ReturnBuilder] Detected infrastructure variable pattern: ${tvar.name}');
                                     #end
                                     return true;
                                 default:
@@ -227,8 +227,8 @@ class ReturnBuilder {
                                     switch(exprs[i].expr) {
                                         case TVar(tvar, init) if (init != null && tvar.id == v.id):
                                             #if debug_ast_builder
-                                            trace('[ReturnBuilder] Found infrastructure variable ${tvar.name}, replacing with original expression');
-                                            trace('[ReturnBuilder]   Original expression type: ${Type.enumConstructor(init.expr)}');
+                                            // DISABLED: trace('[ReturnBuilder] Found infrastructure variable ${tvar.name}, replacing with original expression');
+                                            // DISABLED: trace('[ReturnBuilder]   Original expression type: ${Type.enumConstructor(init.expr)}');
                                             #end
                                             originalExpr = init;
                                             break;
@@ -244,7 +244,7 @@ class ReturnBuilder {
                                         t: lastExpr.t
                                     };
                                     #if debug_ast_builder
-                                    trace('[ReturnBuilder] Replaced infrastructure variable with original expression');
+                                    // DISABLED: trace('[ReturnBuilder] Replaced infrastructure variable with original expression');
                                     #end
                                     newSwitch;
                                 } else {
@@ -296,7 +296,7 @@ class ReturnBuilder {
                 }
                 // Could transfer specific metadata if needed
                 #if debug_ast_builder
-                trace('[ReturnBuilder] Preserved metadata from wrapped switch');
+                // DISABLED: trace('[ReturnBuilder] Preserved metadata from wrapped switch');
                 #end
             default:
         }

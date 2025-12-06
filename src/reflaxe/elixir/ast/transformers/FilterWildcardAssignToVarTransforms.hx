@@ -74,7 +74,7 @@ class FilterWildcardAssignToVarTransforms {
                                             var newThen = fixThenBranch(thenBr, lhs);
                                             if (newThen != thenBr) {
                                                 #if debug_filter_wildcard_assign
-                                                trace('[FilterWildcardAssign] Rebinding in if-then branch for ' + lhs);
+                                                // DISABLED: trace('[FilterWildcardAssign] Rebinding in if-then branch for ' + lhs);
                                                 #end
                                                 out[i] = makeASTWithMeta(EBinary(Match, left, makeASTWithMeta(EIf(cond, newThen, elseBr), rhs2.metadata, rhs2.pos)), stmts[i].metadata, stmts[i].pos);
                                             }
@@ -88,7 +88,7 @@ class FilterWildcardAssignToVarTransforms {
                             var newThen = retVar != null ? fixThenBranch(normalizedThen, retVar) : normalizedThen;
                             if (newThen != thenBr) {
                                 #if debug_filter_wildcard_assign
-                                trace('[FilterWildcardAssign] Rebinding in standalone if-then to ' + retVar);
+                                // DISABLED: trace('[FilterWildcardAssign] Rebinding in standalone if-then to ' + retVar);
                                 #end
                                 out[i] = makeASTWithMeta(EIf(cond, newThen, elseBr), stmts[i].metadata, stmts[i].pos);
                             }

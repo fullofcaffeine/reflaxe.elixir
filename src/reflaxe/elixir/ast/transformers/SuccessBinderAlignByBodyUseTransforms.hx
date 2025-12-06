@@ -80,11 +80,9 @@ class SuccessBinderAlignByBodyUseTransforms {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ECase(target, clauses):
-                    #if (sys && debug_ast_transformer) Sys.println('[SuccessBinderAlign] Inspecting ECase with ' + clauses.length + ' clauses'); #end
                     var newClauses = [];
                     for (cl in clauses) {
                         var okBinder = extractOkBinder(cl.pattern);
-                        #if (sys && debug_ast_transformer) if (okBinder != null) Sys.println('[SuccessBinderAlign] Found {:ok, ' + okBinder + '}'); #end
                         if (okBinder != null) {
                             // Respect canonical payload locking: keep {:ok, _value} + aliases intact
                             var locked = false;
@@ -101,12 +99,11 @@ class SuccessBinderAlignByBodyUseTransforms {
                             #if (sys && debug_ast_transformer) {
                                 var declArr = [for (k in clauseDeclared.keys()) k];
                                 var usedArr = [for (k in used.keys()) k];
-                                Sys.println('[SuccessBinderAlign] declared=' + declArr.join(',') + ' used=' + usedArr.join(','));
+                                // DEBUG: Sys.println('[SuccessBinderAlign] declared=' + declArr.join(',') + ' used=' + usedArr.join(','));
                             } #end
                             // Find exactly one undefined, excluding env names
                             var undef = [];
                             for (u in used.keys()) if (!clauseDeclared.exists(u) && u != okBinder && allowUndefined(u)) undef.push(u);
-                            #if (sys && debug_ast_transformer) if (undef.length > 0) Sys.println('[SuccessBinderAlign] undefined candidates: ' + undef.join(',')); #end
                             if (undef.length == 1) {
                                 var newName = undef[0];
                                 // Guard: never rename binder to a reserved env name
@@ -114,7 +111,6 @@ class SuccessBinderAlignByBodyUseTransforms {
                                     newClauses.push(cl);
                                     continue;
                                 }
-                                #if (sys && debug_ast_transformer) Sys.println('[SuccessBinderAlign] Renaming binder ' + okBinder + ' -> ' + newName); #end
                                 // Rewrite pattern binder to newName
                                 var newPattern = rewriteOkBinder(cl.pattern, newName);
                                 // Rewrite old binder references in body to newName

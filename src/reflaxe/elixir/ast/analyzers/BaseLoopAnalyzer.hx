@@ -234,7 +234,7 @@ abstract class BaseLoopAnalyzer {
      */
     function trace(message: String): Void {
         #if debug_loop_analyzers
-        trace('[Analyzer ${Type.getClassName(Type.getClass(this))}] $message');
+        // DISABLED: trace('[Analyzer ${Type.getClassName(Type.getClass(this))}] $message');
         #end
     }
 }

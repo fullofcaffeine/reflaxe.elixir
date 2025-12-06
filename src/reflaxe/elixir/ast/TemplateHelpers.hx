@@ -739,14 +739,14 @@ class TemplateHelpers {
                 var moduleName = moduleTypeToString(m);
                 #if debug_hxx_transformation
                 #if debug_ast_builder
-                trace('[HXX] Checking module: $moduleName against "HXX"');
+                // DISABLED: trace('[HXX] Checking module: $moduleName against "HXX"');
                 #end
                 #end
                 moduleName == "HXX";
             default: 
                 #if debug_hxx_transformation
                 #if debug_ast_builder
-                trace('[HXX] Not a TTypeExpr, expr type: ${expr.expr}');
+                // DISABLED: trace('[HXX] Not a TTypeExpr, expr type: ${expr.expr}');
                 #end
                 #end
                 false;

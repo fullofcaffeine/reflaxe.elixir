@@ -98,7 +98,7 @@ class HeexAssignsCaptureTransforms {
                             }
                             var heex = findHeexSigil(stmts);
                             if (heex.idx == -1) return node;
-                            trace('[HeexAssignsCapture] Found candidate in render/1: assignIdx=' + assignIdx + ', heexIdx=' + heex.idx + ', hasHtml=' + (html != null));
+                            // DISABLED: trace('[HeexAssignsCapture] Found candidate in render/1: assignIdx=' + assignIdx + ', heexIdx=' + heex.idx + ', hasHtml=' + (html != null));
                             var newStmts = [];
                             for (i in 0...stmts.length) {
                                 // Drop the content assignment if we have an html replacement

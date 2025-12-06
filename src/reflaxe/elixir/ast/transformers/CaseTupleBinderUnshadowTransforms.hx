@@ -52,7 +52,6 @@ class CaseTupleBinderUnshadowTransforms {
           // Trigger when scrutinizing a simple variable; avoid atoms/tuples/maps
           var scrName:Null<String> = switch (expr.def) { case EVar(v): v; default: null; };
           if (scrName == null) return x;
-          #if (sys && debug_ast_transformer) Sys.println('[CaseTupleUnshadow] Scrutinee is variable: ' + scrName); #end
           var out:Array<ECaseClause> = [];
           for (c in clauses) out.push(repairClause(c, scrName));
           makeASTWithMeta(ECase(expr, out), x.metadata, x.pos);
@@ -76,7 +75,6 @@ class CaseTupleBinderUnshadowTransforms {
       default: c.pattern;
     };
     if (binderName == null) return c;
-    #if (sys && debug_ast_transformer) Sys.println('[CaseTupleUnshadow] Renaming {:tag, ' + scrutinee + '} -> {:tag, value}'); #end
     // If body references exactly one undefined lower-case local, prefix bind it to value
     var declared = collectDeclared(pat2, c.body);
     var used = collectUsed(c.body);
@@ -84,7 +82,6 @@ class CaseTupleBinderUnshadowTransforms {
     for (u in used.keys()) if (!declared.exists(u) && allowLocal(u)) undef.push(u);
     if (undef.length == 1) {
       var chosen = undef[0];
-      #if (sys && debug_ast_transformer) Sys.println('[CaseTupleUnshadow] Prefix-bind ' + chosen + ' = value'); #end
       var prefix = makeAST(EBinary(Match, makeAST(EVar(chosen)), makeAST(EVar(binderName))));
       var body2 = switch (c.body.def) {
         case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), c.body.metadata, c.body.pos);

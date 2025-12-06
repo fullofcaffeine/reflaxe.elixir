@@ -112,8 +112,8 @@ class SwitchBuilder {
 
         // DEBUG: Log ALL switch compilations
         #if debug_switch_builder
-        trace('[SwitchBuilder START] Compiling switch at ${e.pos}');
-        trace('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
+        // DISABLED: trace('[SwitchBuilder START] Compiling switch at ${e.pos}');
+        // DISABLED: trace('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
         #end
 
         // CRITICAL: Detect TEnumIndex optimization and recover enum type
@@ -163,13 +163,13 @@ class SwitchBuilder {
 
         // DEBUG: Output switch target info
         #if debug_switch_builder
-        trace('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
+        // DISABLED: trace('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
         if (targetVarName != null) {
-            trace('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
-            trace('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
+            // DISABLED: trace('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
+            // DISABLED: trace('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
         }
         if (targetVarName != null && isInfrastructureVar(targetVarName)) {
-            trace('[SwitchBuilder DEBUG] Infrastructure variable detected but not handled!');
+            // DISABLED: trace('[SwitchBuilder DEBUG] Infrastructure variable detected but not handled!');
         }
         #end
 
@@ -181,11 +181,11 @@ class SwitchBuilder {
             // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
             var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedTarget, context);
             #if debug_switch_builder
-            trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
+            // DISABLED: trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
             // DEBUG: Show exact variable name if it's EVar
             switch(result.def) {
                 case EVar(name):
-                    trace('[SwitchBuilder DEBUG] EVar variable name: "${name}"');
+                    // DISABLED: trace('[SwitchBuilder DEBUG] EVar variable name: "${name}"');
                 default:
             }
             #end
@@ -195,7 +195,7 @@ class SwitchBuilder {
         }
 
         if (targetAST == null) {
-            trace('[SwitchBuilder ERROR] Target AST compilation returned null!');
+            // DISABLED: trace('[SwitchBuilder ERROR] Target AST compilation returned null!');
             return null;
         }
 
@@ -443,7 +443,7 @@ class SwitchBuilder {
                 context.currentClauseContext.localToName.set(tvarId, name);
             }
         } #if debug_guard_compilation else {
-            trace('[SwitchBuilder ERROR] ClauseContext is NULL - cannot register mappings!');
+            // DISABLED: trace('[SwitchBuilder ERROR] ClauseContext is NULL - cannot register mappings!');
         } #end
 
         // Build pattern from case value (pass pattern variables and case body for usage analysis)
@@ -1270,7 +1270,7 @@ class SwitchBuilder {
                 // Use guard variable if available, otherwise use enum parameter name
                 var sourceName = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var paramName = VariableAnalyzer.toElixirVarName(sourceName);
-                trace('[SwitchBuilder]     Parameter $i: GuardVar=${guardVars != null && i < guardVars.length ? guardVars[i] : "none"}, EnumParam=${parameterNames[i]}, Using=${paramName}');
+                // DISABLED: trace('[SwitchBuilder]     Parameter $i: GuardVar=${guardVars != null && i < guardVars.length ? guardVars[i] : "none"}, EnumParam=${parameterNames[i]}, Using=${paramName}');
 
                 // CRITICAL FIX: Populate enumBindingPlan so TEnumParameter knows this was extracted
                 // Now properly detecting parameter usage to apply underscore prefix
@@ -1288,7 +1288,7 @@ class SwitchBuilder {
 
             var finalNames = [for (i in 0...parameterNames.length)
                 (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i]];
-            trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}');
+            // DISABLED: trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}');
             return PTuple(patterns);
         }
     }
@@ -1384,20 +1384,20 @@ class SwitchBuilder {
      */
     static function extractVarsFromGuardExpr(guardExpr: Null<TypedExpr>): Array<String> {
         if (guardExpr == null) {
-            trace('[extractVarsFromGuardExpr] guardExpr is null');
+            // DISABLED: trace('[extractVarsFromGuardExpr] guardExpr is null');
             return [];
         }
 
-        trace('[extractVarsFromGuardExpr] Starting extraction from: ${Type.enumConstructor(guardExpr.expr)}');
+        // DISABLED: trace('[extractVarsFromGuardExpr] Starting extraction from: ${Type.enumConstructor(guardExpr.expr)}');
         var vars: Array<String> = [];
 
         function traverse(expr: TypedExpr): Void {
             if (expr == null) return;
 
-            trace('[extractVarsFromGuardExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
+            // DISABLED: trace('[extractVarsFromGuardExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
             switch(expr.expr) {
                 case TLocal(v):
-                    trace('[extractVarsFromGuardExpr]     FOUND TLocal: ${v.name} (id=${v.id})');
+                    // DISABLED: trace('[extractVarsFromGuardExpr]     FOUND TLocal: ${v.name} (id=${v.id})');
                     if (!vars.contains(v.name)) {
                         vars.push(v.name);
                     }
@@ -1479,7 +1479,7 @@ class SwitchBuilder {
         var seenIds: Map<Int, Bool> = new Map();  // Track by TLocal.id to avoid duplicates
 
         #if debug_enum_extraction
-        trace('[extractUsedVariablesFromCaseBody] Scanning case body type: ${Type.enumConstructor(caseBodyExpr.expr)}');
+        // DISABLED: trace('[extractUsedVariablesFromCaseBody] Scanning case body type: ${Type.enumConstructor(caseBodyExpr.expr)}');
         #end
 
         // CRITICAL: For TSwitch in case body, the switch TARGET is the variable we need!
@@ -1491,7 +1491,7 @@ class SwitchBuilder {
                 switch(e.expr) {
                     case TLocal(v):
                         #if debug_enum_extraction
-                        trace('[extractUsedVariablesFromCaseBody]   Found TSwitch target TLocal: ${v.name} (id=${v.id})');
+                        // DISABLED: trace('[extractUsedVariablesFromCaseBody]   Found TSwitch target TLocal: ${v.name} (id=${v.id})');
                         #end
                         return [v.name];  // Return immediately - this is THE variable
                     default:
@@ -1500,9 +1500,9 @@ class SwitchBuilder {
             case TBlock(exprs):
                 // Unwrap block and recursively check expressions for TSwitch
                 #if debug_enum_extraction
-                trace('[extractUsedVariablesFromCaseBody]   TBlock has ${exprs.length} expressions');
+                // DISABLED: trace('[extractUsedVariablesFromCaseBody]   TBlock has ${exprs.length} expressions');
                 for (i in 0...exprs.length) {
-                    trace('[extractUsedVariablesFromCaseBody]     Expression $i type: ${Type.enumConstructor(exprs[i].expr)}');
+                    // DISABLED: trace('[extractUsedVariablesFromCaseBody]     Expression $i type: ${Type.enumConstructor(exprs[i].expr)}');
                 }
                 #end
 
@@ -1510,14 +1510,14 @@ class SwitchBuilder {
                 function findSwitchTarget(expr: TypedExpr, depth: Int = 0): Null<String> {
                     #if debug_enum_extraction
                     var indent = [for (i in 0...depth) "  "].join("");
-                    trace('[findSwitchTarget]${indent}Checking expr type: ${Type.enumConstructor(expr.expr)}');
+                    // DISABLED: trace('[findSwitchTarget]${indent}Checking expr type: ${Type.enumConstructor(expr.expr)}');
                     #end
 
                     switch(expr.expr) {
                         case TSwitch(e, _, _):
                             // Found a switch! Extract its target
                             #if debug_enum_extraction
-                            trace('[findSwitchTarget]${indent}  Found TSwitch! Target type: ${Type.enumConstructor(e.expr)}');
+                            // DISABLED: trace('[findSwitchTarget]${indent}  Found TSwitch! Target type: ${Type.enumConstructor(e.expr)}');
                             #end
 
                             // Unwrap target if it's wrapped in TParenthesis or TMeta
@@ -1526,12 +1526,12 @@ class SwitchBuilder {
                                 switch(unwrappedTarget.expr) {
                                     case TParenthesis(inner):
                                         #if debug_enum_extraction
-                                        trace('[findSwitchTarget]${indent}    Unwrapping target TParenthesis...');
+                                        // DISABLED: trace('[findSwitchTarget]${indent}    Unwrapping target TParenthesis...');
                                         #end
                                         unwrappedTarget = inner;
                                     case TMeta(_, inner):
                                         #if debug_enum_extraction
-                                        trace('[findSwitchTarget]${indent}    Unwrapping target TMeta...');
+                                        // DISABLED: trace('[findSwitchTarget]${indent}    Unwrapping target TMeta...');
                                         #end
                                         unwrappedTarget = inner;
                                     default:
@@ -1543,63 +1543,63 @@ class SwitchBuilder {
                             switch(unwrappedTarget.expr) {
                                 case TLocal(v):
                                     #if debug_enum_extraction
-                                    trace('[findSwitchTarget]${indent}    ✅ TSwitch target is TLocal: ${v.name} (id=${v.id})');
+                                    // DISABLED: trace('[findSwitchTarget]${indent}    ✅ TSwitch target is TLocal: ${v.name} (id=${v.id})');
                                     #end
                                     return v.name;
                                 case TEnumIndex(e):
                                     // The variable was transformed to enum index - extract from inner expr
                                     #if debug_enum_extraction
-                                    trace('[findSwitchTarget]${indent}    Found TEnumIndex, extracting from inner expr type: ${Type.enumConstructor(e.expr)}');
+                                    // DISABLED: trace('[findSwitchTarget]${indent}    Found TEnumIndex, extracting from inner expr type: ${Type.enumConstructor(e.expr)}');
                                     #end
                                     switch(e.expr) {
                                         case TLocal(v):
                                             #if debug_enum_extraction
-                                            trace('[findSwitchTarget]${indent}    ✅ TEnumIndex inner is TLocal: ${v.name} (id=${v.id})');
+                                            // DISABLED: trace('[findSwitchTarget]${indent}    ✅ TEnumIndex inner is TLocal: ${v.name} (id=${v.id})');
                                             #end
                                             return v.name;
                                         default:
                                             #if debug_enum_extraction
-                                            trace('[findSwitchTarget]${indent}    ❌ TEnumIndex inner is not TLocal (type: ${Type.enumConstructor(e.expr)})');
+                                            // DISABLED: trace('[findSwitchTarget]${indent}    ❌ TEnumIndex inner is not TLocal (type: ${Type.enumConstructor(e.expr)})');
                                             #end
                                             return null;
                                     }
                                 default:
                                     #if debug_enum_extraction
-                                    trace('[findSwitchTarget]${indent}    ❌ TSwitch target is not TLocal or TEnumIndex (type: ${Type.enumConstructor(unwrappedTarget.expr)})');
+                                    // DISABLED: trace('[findSwitchTarget]${indent}    ❌ TSwitch target is not TLocal or TEnumIndex (type: ${Type.enumConstructor(unwrappedTarget.expr)})');
                                     #end
                                     return null;
                             }
                         case TMeta(_, innerExpr):
                             // Unwrap metadata wrapper
                             #if debug_enum_extraction
-                            trace('[findSwitchTarget]${indent}  Unwrapping TMeta...');
+                            // DISABLED: trace('[findSwitchTarget]${indent}  Unwrapping TMeta...');
                             #end
                             return findSwitchTarget(innerExpr, depth + 1);
                         case TParenthesis(innerExpr):
                             // Unwrap parenthesis wrapper
                             #if debug_enum_extraction
-                            trace('[findSwitchTarget]${indent}  Unwrapping TParenthesis...');
+                            // DISABLED: trace('[findSwitchTarget]${indent}  Unwrapping TParenthesis...');
                             #end
                             return findSwitchTarget(innerExpr, depth + 1);
                         case TBlock(innerExprs):
                             // Recursively unwrap nested TBlock
                             #if debug_enum_extraction
-                            trace('[findSwitchTarget]${indent}  TBlock has ${innerExprs.length} inner expressions');
+                            // DISABLED: trace('[findSwitchTarget]${indent}  TBlock has ${innerExprs.length} inner expressions');
                             #end
                             for (i in 0...innerExprs.length) {
                                 #if debug_enum_extraction
-                                trace('[findSwitchTarget]${indent}    Checking inner expr $i...');
+                                // DISABLED: trace('[findSwitchTarget]${indent}    Checking inner expr $i...');
                                 #end
                                 var result = findSwitchTarget(innerExprs[i], depth + 1);
                                 if (result != null) {
                                     #if debug_enum_extraction
-                                    trace('[findSwitchTarget]${indent}    ✅ Found in inner expr $i: $result');
+                                    // DISABLED: trace('[findSwitchTarget]${indent}    ✅ Found in inner expr $i: $result');
                                     #end
                                     return result;
                                 }
                             }
                             #if debug_enum_extraction
-                            trace('[findSwitchTarget]${indent}  ❌ No TSwitch found in any inner expr');
+                            // DISABLED: trace('[findSwitchTarget]${indent}  ❌ No TSwitch found in any inner expr');
                             #end
                             return null;
                         default:
@@ -1627,7 +1627,7 @@ class SwitchBuilder {
                     // Found a variable used in case body
                     if (!seenIds.exists(v.id)) {
                         #if debug_enum_extraction
-                        trace('[extractUsedVariablesFromCaseBody]   Found TLocal (traversal): ${v.name} (id=${v.id})');
+                        // DISABLED: trace('[extractUsedVariablesFromCaseBody]   Found TLocal (traversal): ${v.name} (id=${v.id})');
                         #end
                         vars.push(v.name);
                         seenIds.set(v.id, true);
@@ -1693,7 +1693,7 @@ class SwitchBuilder {
         traverse(caseBodyExpr);
 
         #if debug_enum_extraction
-        trace('[extractUsedVariablesFromCaseBody] Extracted ${vars.length} variables: [${vars.join(", ")}]');
+        // DISABLED: trace('[extractUsedVariablesFromCaseBody] Extracted ${vars.length} variables: [${vars.join(", ")}]');
         #end
 
         return vars;
@@ -1702,44 +1702,44 @@ class SwitchBuilder {
     static function extractVarsFromPatternExpr(patternExpr: TypedExpr): Array<String> {
         var vars: Array<String> = [];
 
-        trace('[extractVarsFromPatternExpr] Pattern expr type: ${Type.enumConstructor(patternExpr.expr)}');
+        // DISABLED: trace('[extractVarsFromPatternExpr] Pattern expr type: ${Type.enumConstructor(patternExpr.expr)}');
 
         function traverse(expr: TypedExpr): Void {
             if (expr == null) return;
 
-            trace('[extractVarsFromPatternExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
+            // DISABLED: trace('[extractVarsFromPatternExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
 
             switch(expr.expr) {
                 case TEnumParameter(e, ef, index):
                     // This is an enum constructor parameter in the pattern
                     // Extract the actual parameter name from the enum field
-                    trace('[extractVarsFromPatternExpr]     Found TEnumParameter, ef.name=${ef.name}, index=$index');
-                    trace('[extractVarsFromPatternExpr]     Inner expr (e) type: ${Type.enumConstructor(e.expr)}');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Found TEnumParameter, ef.name=${ef.name}, index=$index');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Inner expr (e) type: ${Type.enumConstructor(e.expr)}');
 
                     // CRITICAL: Don't extract from enum type definition - traverse to find actual TLocal
                     // The enum parameter type has names like "value", but we need the actual variable like "n"
                     traverse(e);
                 case TLocal(v):
                     // Direct variable in pattern
-                    trace('[extractVarsFromPatternExpr]     Found TLocal: ${v.name} (id=${v.id})');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Found TLocal: ${v.name} (id=${v.id})');
                     if (!vars.contains(v.name)) {
                         vars.push(v.name);
                     }
                 case TCall(_, args):
                     // Constructor call in pattern
-                    trace('[extractVarsFromPatternExpr]     Found TCall with ${args.length} args');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Found TCall with ${args.length} args');
                     for (arg in args) traverse(arg);
                 case TField(e, _):
-                    trace('[extractVarsFromPatternExpr]     Found TField');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Found TField');
                     traverse(e);
                 default:
                     // Other pattern types
-                    trace('[extractVarsFromPatternExpr]     Unhandled type');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Unhandled type');
             }
         }
 
         traverse(patternExpr);
-        trace('[extractVarsFromPatternExpr] Final vars: [${vars.join(", ")}]');
+        // DISABLED: trace('[extractVarsFromPatternExpr] Final vars: [${vars.join(", ")}]');
         return vars;
     }
 
@@ -1802,17 +1802,17 @@ class SwitchBuilder {
         }
 
         #if debug_guard_compilation
-        trace('[SwitchBuilder] Extracting TLocal IDs from guard expression...');
-        trace('[SwitchBuilder]   Pattern variables: [${patternNames.join(", ")}]');
+        // DISABLED: trace('[SwitchBuilder] Extracting TLocal IDs from guard expression...');
+        // DISABLED: trace('[SwitchBuilder]   Pattern variables: [${patternNames.join(", ")}]');
         #end
 
         traverse(expr);
 
         #if debug_guard_compilation
         var extractedCount = Lambda.count(mapping);
-        trace('[SwitchBuilder] Extracted $extractedCount TLocal ID mapping(s):');
+        // DISABLED: trace('[SwitchBuilder] Extracted $extractedCount TLocal ID mapping(s):');
         for (id in mapping.keys()) {
-            trace('[SwitchBuilder]   TLocal#${id} → ${mapping.get(id)}');
+            // DISABLED: trace('[SwitchBuilder]   TLocal#${id} → ${mapping.get(id)}');
         }
         #end
 
@@ -1856,12 +1856,12 @@ class SwitchBuilder {
                     }
 
                     #if debug_ast_builder
-                    trace('[SwitchBuilder] Extracted parameter names from ${ef.name}: ${parameterNames}');
+                    // DISABLED: trace('[SwitchBuilder] Extracted parameter names from ${ef.name}: ${parameterNames}');
                     #end
                 default:
                     // No parameters or non-function type
                     #if debug_ast_builder
-                    trace('[SwitchBuilder] EnumField ${ef.name} has no function type, no parameters');
+                    // DISABLED: trace('[SwitchBuilder] EnumField ${ef.name} has no function type, no parameters');
                     #end
             }
         }
@@ -1874,7 +1874,7 @@ class SwitchBuilder {
             var arg = args[i];
 
             #if debug_enum_extraction
-            trace('[SwitchBuilder.buildEnumPattern] Processing arg $i: ${Type.enumConstructor(arg.expr)}');
+            // DISABLED: trace('[SwitchBuilder.buildEnumPattern] Processing arg $i: ${Type.enumConstructor(arg.expr)}');
             #end
 
             // Priority 1: Guard variable (from user's guard condition)
@@ -1884,7 +1884,7 @@ class SwitchBuilder {
             var enumParam = i < parameterNames.length ? parameterNames[i] : null;
 
             #if debug_enum_extraction
-            trace('[SwitchBuilder.buildEnumPattern]   guardVar: $guardVar, enumParam: $enumParam');
+            // DISABLED: trace('[SwitchBuilder.buildEnumPattern]   guardVar: $guardVar, enumParam: $enumParam');
             #end
 
             switch(arg.expr) {
@@ -1896,18 +1896,18 @@ class SwitchBuilder {
                     var sourceName = guardVar != null ? guardVar : v.name;
 
                     #if debug_enum_extraction
-                    trace('[SwitchBuilder.buildEnumPattern]   TLocal v.name: ${v.name}, sourceName: $sourceName');
+                    // DISABLED: trace('[SwitchBuilder.buildEnumPattern]   TLocal v.name: ${v.name}, sourceName: $sourceName');
                     #end
 
-                    trace('[SwitchBuilder] *** PATTERN VAR DEBUG ***');
-                    trace('[SwitchBuilder]   Index: $i');
-                    trace('[SwitchBuilder]   GuardVar: ${guardVar}');
-                    trace('[SwitchBuilder]   TLocal v.name: ${v.name}');
-                    trace('[SwitchBuilder]   EnumParam: ${enumParam}');
-                    trace('[SwitchBuilder]   Using sourceName: ${sourceName}');
+                    // DISABLED: trace('[SwitchBuilder] *** PATTERN VAR DEBUG ***');
+                    // DISABLED: trace('[SwitchBuilder]   Index: $i');
+                    // DISABLED: trace('[SwitchBuilder]   GuardVar: ${guardVar}');
+                    // DISABLED: trace('[SwitchBuilder]   TLocal v.name: ${v.name}');
+                    // DISABLED: trace('[SwitchBuilder]   EnumParam: ${enumParam}');
+                    // DISABLED: trace('[SwitchBuilder]   Using sourceName: ${sourceName}');
 
                     var varName = VariableAnalyzer.toElixirVarName(sourceName);
-                    trace('[SwitchBuilder]   Final varName: ${varName}');
+                    // DISABLED: trace('[SwitchBuilder]   Final varName: ${varName}');
 
                     patterns.push(PVar(varName));
 
@@ -1947,11 +1947,11 @@ class SwitchBuilder {
 
                 default:
                     // Use underscore for non-variable patterns
-                    trace('[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***');
-                    trace('[SwitchBuilder]   Index: $i');
-                    trace('[SwitchBuilder]   Arg expr type: ${Type.enumConstructor(arg.expr)}');
-                    trace('[SwitchBuilder]   EnumParam: ${enumParam}');
-                    trace('[SwitchBuilder]   GuardVar: ${guardVar}');
+                    // DISABLED: trace('[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***');
+                    // DISABLED: trace('[SwitchBuilder]   Index: $i');
+                    // DISABLED: trace('[SwitchBuilder]   Arg expr type: ${Type.enumConstructor(arg.expr)}');
+                    // DISABLED: trace('[SwitchBuilder]   EnumParam: ${enumParam}');
+                    // DISABLED: trace('[SwitchBuilder]   GuardVar: ${guardVar}');
                     patterns.push(PWildcard);
             }
         }

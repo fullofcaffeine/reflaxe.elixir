@@ -174,7 +174,7 @@ class EarlyBootstrap {
               for (p in pairs) {
                 switch(p.value.def) {
                   case EBlock(exprs):
-                    trace('[XRayMapBlocks] Found EBlock in map value with ' + exprs.length + ' exprs');
+                    // DISABLED: trace('[XRayMapBlocks] Found EBlock in map value with ' + exprs.length + ' exprs');
                     for (i in 0...exprs.length) trace('  expr[' + i + ']: ' + ElixirASTPrinter.print(exprs[i], 0));
                   default:
                 }

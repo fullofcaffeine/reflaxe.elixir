@@ -31,13 +31,11 @@ class UpgradeWildcardMapGetToNamedTransforms {
         case EBinary(Match, {def: EVar("_")}, rhs):
           var key = extractMapGetKey(rhs);
           if (key != null) {
-            #if sys Sys.println('[UpgradeWildcardMapGet] _ = Map.get(..., \'' + key + '\') → ' + key + ' = Map.get(...)'); #end
             makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs), n.metadata, n.pos);
           } else n;
         case EMatch(PVar("_"), rhs2):
           var key2 = extractMapGetKey(rhs2);
           if (key2 != null) {
-            #if sys Sys.println('[UpgradeWildcardMapGet] _ <- Map.get(..., \'' + key2 + '\') → ' + key2 + ' = Map.get(...)'); #end
             makeASTWithMeta(EBinary(Match, makeAST(EVar(key2)), rhs2), n.metadata, n.pos);
           } else n;
         default:

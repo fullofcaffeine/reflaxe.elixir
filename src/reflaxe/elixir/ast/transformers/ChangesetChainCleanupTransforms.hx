@@ -51,7 +51,7 @@ class ChangesetChainCleanupTransforms {
                     switch (rhs.def) {
                         case EBinary(Match, leftInner, expr) if (isCs):
                             #if debug_hygiene
-                            Sys.println('[ChangesetChainCleanup] cs = (thisN = expr) → cs = expr');
+                            // DEBUG: Sys.println('[ChangesetChainCleanup] cs = (thisN = expr) → cs = expr');
                             #end
                             makeASTWithMeta(EBinary(Match, left, expr), x.metadata, x.pos);
                         case EBinary(Match, leftInner2, expr2):
@@ -59,7 +59,7 @@ class ChangesetChainCleanupTransforms {
                             var outerIsThis = switch (left.def) { case EVar(n3) if (n3 != null && (n3.indexOf("this") == 0 || n3.indexOf("_this") == 0)): true; default: false; };
                             if (innerIsCs && outerIsThis) {
                                 #if debug_hygiene
-                                Sys.println('[ChangesetChainCleanup] thisN = (cs = expr) → cs = expr');
+                                // DEBUG: Sys.println('[ChangesetChainCleanup] thisN = (cs = expr) → cs = expr');
                                 #end
                                 makeASTWithMeta(EBinary(Match, leftInner2, expr2), x.metadata, x.pos);
                             } else x;

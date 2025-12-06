@@ -24,12 +24,10 @@ class EctoChangesetReturnFixTransforms {
                 case EDef(name, args, guards, body) if (name == "changeset"):
                     var needsCs = detectsCsAssign(body) && !endsWithVar(body, "cs");
                     #if debug_hygiene
-                    Sys.println('[EctoChangesetReturnFix] changeset/2 needsCs=' + needsCs);
                     #end
                     if (needsCs) {
                         var nb = appendVar(body, "cs");
                         #if debug_hygiene
-                        Sys.println('[EctoChangesetReturnFix] appended trailing cs');
                         #end
                         makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
                     } else n;

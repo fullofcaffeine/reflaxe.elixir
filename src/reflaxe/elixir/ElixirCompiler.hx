@@ -315,7 +315,7 @@ class ElixirCompiler extends GenericCompiler<
                         var cls = clsRef.get();
                         if (cls.meta != null && cls.meta.has(":repo")) {
                             #if debug_repo
-                            Sys.println('[RepoEnumerator/filterTypes] found @:repo class in moduleTypes: ' + cls.module + '.' + cls.name);
+                            // DISABLED: Sys.println('[RepoEnumerator/filterTypes] found @:repo class in moduleTypes: ' + cls.module + '.' + cls.name);
                             #end
                         }
                     case _:
@@ -372,12 +372,12 @@ class ElixirCompiler extends GenericCompiler<
         // Debug for TodoApp investigation
         #if debug_annotation_transforms
         if (classType.name == "TodoApp") {
-            trace('[shouldGenerateClass] Checking TodoApp...');
-            trace('[shouldGenerateClass]   isExtern: ${classType.isExtern}');
-            trace('[shouldGenerateClass]   has @:application: ${classType.meta.has(":application")}');
-            trace('[shouldGenerateClass]   has @:native: ${classType.meta.has(":native")}');
+            // DISABLED: trace('[shouldGenerateClass] Checking TodoApp...');
+            // DISABLED: trace('[shouldGenerateClass]   isExtern: ${classType.isExtern}');
+            // DISABLED: trace('[shouldGenerateClass]   has @:application: ${classType.meta.has(":application")}');
+            // DISABLED: trace('[shouldGenerateClass]   has @:native: ${classType.meta.has(":native")}');
             var result = super.shouldGenerateClass(classType);
-            trace('[shouldGenerateClass]   super.shouldGenerateClass returns: ${result}');
+            // DISABLED: trace('[shouldGenerateClass]   super.shouldGenerateClass returns: ${result}');
         }
         #end
         
@@ -398,7 +398,7 @@ class ElixirCompiler extends GenericCompiler<
         // This includes both regular classes and @:native classes (which are extern)
         if (classType.meta.has(":presence")) {
             #if debug_behavior_transformer
-            trace('[shouldGenerateClass] Forcing compilation of @:presence class: ${classType.name} (isExtern: ${classType.isExtern})');
+            // DISABLED: trace('[shouldGenerateClass] Forcing compilation of @:presence class: ${classType.name} (isExtern: ${classType.isExtern})');
             #end
             return true;
         }
@@ -420,7 +420,7 @@ class ElixirCompiler extends GenericCompiler<
         // These need to be compiled to generate OTP application modules
         if (classType.meta.has(":application")) {
             #if debug_annotation_transforms
-            trace('[shouldGenerateClass] Forcing compilation of @:application class: ${classType.name}');
+            // DISABLED: trace('[shouldGenerateClass] Forcing compilation of @:application class: ${classType.name}');
             #end
             return true;
         }
@@ -428,7 +428,7 @@ class ElixirCompiler extends GenericCompiler<
         // Force generation for @:endpoint classes (Phoenix Endpoint modules)
         if (classType.meta.has(":endpoint")) {
             #if debug_annotation_transforms
-            trace('[shouldGenerateClass] Forcing compilation of @:endpoint class: ${classType.name}');
+            // DISABLED: trace('[shouldGenerateClass] Forcing compilation of @:endpoint class: ${classType.name}');
             #end
             return true;
         }
@@ -436,7 +436,7 @@ class ElixirCompiler extends GenericCompiler<
         // Force generation for @:router classes (Phoenix Router modules)
         if (classType.meta.has(":router")) {
             #if debug_annotation_transforms
-            trace('[shouldGenerateClass] Forcing compilation of @:router class: ${classType.name}');
+            // DISABLED: trace('[shouldGenerateClass] Forcing compilation of @:router class: ${classType.name}');
             #end
             return true;
         }
@@ -444,7 +444,7 @@ class ElixirCompiler extends GenericCompiler<
         // Force generation for @:phoenixWebModule classes (Phoenix Web modules)
         if (classType.meta.has(":phoenixWebModule") || classType.meta.has(":phoenixWeb")) {
             #if debug_annotation_transforms
-            trace('[shouldGenerateClass] Forcing compilation of @:phoenixWebModule class: ${classType.name}');
+            // DISABLED: trace('[shouldGenerateClass] Forcing compilation of @:phoenixWebModule class: ${classType.name}');
             #end
             return true;
         }
@@ -712,7 +712,7 @@ class ElixirCompiler extends GenericCompiler<
             
             var outputPath = appSnake + "/application.ex";
             #if debug_annotation_transforms
-            Sys.println('[setFrameworkAwareOutputPath] @:application ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            // DISABLED: Sys.println('[setFrameworkAwareOutputPath] @:application ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
             #end
             return {
                 moduleName: finalModuleName,
@@ -737,7 +737,7 @@ class ElixirCompiler extends GenericCompiler<
 
             var outputPath = webSnake + "/endpoint.ex";
             #if debug_annotation_transforms
-            Sys.println('[setFrameworkAwareOutputPath] @:endpoint ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            // DISABLED: Sys.println('[setFrameworkAwareOutputPath] @:endpoint ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
             #end
             return {
                 moduleName: finalModuleName,
@@ -762,7 +762,7 @@ class ElixirCompiler extends GenericCompiler<
 
             var outputPath = webSnake + "/router.ex";
             #if debug_annotation_transforms
-            Sys.println('[setFrameworkAwareOutputPath] @:router ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            // DISABLED: Sys.println('[setFrameworkAwareOutputPath] @:router ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
             #end
             return {
                 moduleName: finalModuleName,
@@ -786,7 +786,7 @@ class ElixirCompiler extends GenericCompiler<
 
             var outputPath = appSnake + "_web.ex";
             #if debug_annotation_transforms
-            Sys.println('[setFrameworkAwareOutputPath] @:phoenixWebModule ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
+            // DISABLED: Sys.println('[setFrameworkAwareOutputPath] @:phoenixWebModule ${classType.name} -> module=${finalModuleName}, path=${outputPath}');
             #end
             return {
                 moduleName: finalModuleName,
@@ -819,8 +819,8 @@ class ElixirCompiler extends GenericCompiler<
      */
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         #if debug_compilation_flow
-        trace('[ElixirCompiler.compileClassImpl] START compiling class: ${classType.name}');
-        trace('[ElixirCompiler.compileClassImpl] varFields: ${varFields.length}, funcFields: ${funcFields.length}');
+        // DISABLED: trace('[ElixirCompiler.compileClassImpl] START compiling class: ${classType.name}');
+        // DISABLED: trace('[ElixirCompiler.compileClassImpl] varFields: ${varFields.length}, funcFields: ${funcFields.length}');
         #end
 
         if (classType == null) return null;
@@ -828,19 +828,19 @@ class ElixirCompiler extends GenericCompiler<
         // Debug output for TodoApp investigation
         #if debug_annotation_transforms
         if (classType.name == "TodoApp") {
-            trace('[ElixirCompiler.compileClassImpl] === TodoApp Debug Info ===');
-            trace('[ElixirCompiler.compileClassImpl] funcFields received: ${funcFields.length}');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] === TodoApp Debug Info ===');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] funcFields received: ${funcFields.length}');
             for (f in funcFields) {
-                trace('[ElixirCompiler.compileClassImpl]   - Function: ${f.field.name}');
+                // DISABLED: trace('[ElixirCompiler.compileClassImpl]   - Function: ${f.field.name}');
             }
-            trace('[ElixirCompiler.compileClassImpl] isExtern: ${classType.isExtern}');
-            trace('[ElixirCompiler.compileClassImpl] metadata: [${[for (m in classType.meta.get()) m.name].join(", ")}]');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] isExtern: ${classType.isExtern}');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] metadata: [${[for (m in classType.meta.get()) m.name].join(", ")}]');
             
             // Check if GenericCompiler considers this class extern
-            trace('[ElixirCompiler.compileClassImpl] classType.fields.get().length: ${classType.fields.get().length}');
-            trace('[ElixirCompiler.compileClassImpl] classType.statics.get().length: ${classType.statics.get().length}');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] classType.fields.get().length: ${classType.fields.get().length}');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] classType.statics.get().length: ${classType.statics.get().length}');
             for (field in classType.statics.get()) {
-                trace('[ElixirCompiler.compileClassImpl]   Static field: ${field.name}, kind: ${field.kind}');
+                // DISABLED: trace('[ElixirCompiler.compileClassImpl]   Static field: ${field.name}, kind: ${field.kind}');
             }
         }
         #end
@@ -848,7 +848,7 @@ class ElixirCompiler extends GenericCompiler<
         // Skip standard library/internal classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
             #if debug_compilation_flow
-            trace('[ElixirCompiler.compileClassImpl] Skipping std/internal class: ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler.compileClassImpl] Skipping std/internal class: ${classType.name}');
             #end
             return null;
         }
@@ -910,16 +910,16 @@ class ElixirCompiler extends GenericCompiler<
         // Activate behavior transformer based on class metadata
         // This replaces the old isInPresenceModule flag with a more generic system
         #if debug_behavior_transformer
-        trace('[ElixirCompiler] Compiling class: ${classType.name}');
+        // DISABLED: trace('[ElixirCompiler] Compiling class: ${classType.name}');
         #end
         
         if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
             var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
             #if debug_behavior_transformer
             if (behaviorName != null) {
-                trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for class ${classType.name}');
+                // DISABLED: trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for class ${classType.name}');
             } else {
-                trace('[BehaviorTransformer] No behavior found for class ${classType.name}');
+                // DISABLED: trace('[BehaviorTransformer] No behavior found for class ${classType.name}');
             }
             #end
         }
@@ -954,7 +954,7 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         #if debug_compilation_flow
-        trace('[ElixirCompiler.compileClassImpl] END compiling class: ${classType.name}');
+        // DISABLED: trace('[ElixirCompiler.compileClassImpl] END compiling class: ${classType.name}');
         #end
 
         // Return AST directly - transformation and printing handled by ElixirOutputIterator
@@ -1002,9 +1002,9 @@ class ElixirCompiler extends GenericCompiler<
                 // Use Reflaxe's TargetCodeInjection system like C# compiler does
                 if (options.targetCodeInjectionName != null) {
                     #if debug_injection
-                    trace('[ElixirCompiler] Checking injection for: ${options.targetCodeInjectionName}');
-                    trace('[ElixirCompiler] Expression type: ${expr.expr}');
-                    trace('[ElixirCompiler] Call target: ${e.expr}');
+                    // DISABLED: trace('[ElixirCompiler] Checking injection for: ${options.targetCodeInjectionName}');
+                    // DISABLED: trace('[ElixirCompiler] Expression type: ${expr.expr}');
+                    // DISABLED: trace('[ElixirCompiler] Call target: ${e.expr}');
                     #end
 
                     final result = TargetCodeInjection.checkTargetCodeInjectionGeneric(
@@ -1015,10 +1015,10 @@ class ElixirCompiler extends GenericCompiler<
 
                     #if debug_injection
                     if (result == null) {
-                        trace('[ElixirCompiler] ❌ checkTargetCodeInjectionGeneric returned NULL');
-                        trace('[ElixirCompiler] Trying manual TField detection...');
+                        // DISABLED: trace('[ElixirCompiler] ❌ checkTargetCodeInjectionGeneric returned NULL');
+                        // DISABLED: trace('[ElixirCompiler] Trying manual TField detection...');
                     } else {
-                        trace('[ElixirCompiler] ✓ checkTargetCodeInjectionGeneric returned result with ${result.length} entries');
+                        // DISABLED: trace('[ElixirCompiler] ✓ checkTargetCodeInjectionGeneric returned result with ${result.length} entries');
                     }
                     #end
 
@@ -1033,7 +1033,7 @@ class ElixirCompiler extends GenericCompiler<
                         var insideString = false;  // Track if we're currently inside a string literal
 
                         #if debug_injection
-                        trace('[ElixirCompiler] Processing ${result.length} injection entries');
+                        // DISABLED: trace('[ElixirCompiler] Processing ${result.length} injection entries');
                         #end
 
                         for (i in 0...result.length) {
@@ -1042,8 +1042,8 @@ class ElixirCompiler extends GenericCompiler<
                                 case Left(code):
                                     // Direct string code - check for string delimiters
                                     #if debug_injection
-                                    trace('[ElixirCompiler] Entry $i - Left: "$code"');
-                                    trace('[ElixirCompiler] insideString BEFORE: $insideString');
+                                    // DISABLED: trace('[ElixirCompiler] Entry $i - Left: "$code"');
+                                    // DISABLED: trace('[ElixirCompiler] insideString BEFORE: $insideString');
                                     #end
 
                                     finalCode += code;
@@ -1054,14 +1054,14 @@ class ElixirCompiler extends GenericCompiler<
                                         if (code.charAt(j) == '"' && (j == 0 || code.charAt(j-1) != '\\')) {
                                             insideString = !insideString;
                                             #if debug_injection
-                                            trace('[ElixirCompiler] Quote at position $j, insideString now: $insideString');
+                                            // DISABLED: trace('[ElixirCompiler] Quote at position $j, insideString now: $insideString');
                                             #end
                                         }
                                         j++;
                                     }
 
                                     #if debug_injection
-                                    trace('[ElixirCompiler] insideString AFTER: $insideString');
+                                    // DISABLED: trace('[ElixirCompiler] insideString AFTER: $insideString');
                                     #end
 
                                 case Right(ast):
@@ -1069,8 +1069,8 @@ class ElixirCompiler extends GenericCompiler<
                                     var astStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
 
                                     #if debug_injection
-                                    trace('[ElixirCompiler] Entry $i - Right: AST → "$astStr"');
-                                    trace('[ElixirCompiler] insideString: $insideString');
+                                    // DISABLED: trace('[ElixirCompiler] Entry $i - Right: AST → "$astStr"');
+                                    // DISABLED: trace('[ElixirCompiler] insideString: $insideString');
                                     #end
 
                                     if (insideString) {
@@ -1082,7 +1082,7 @@ class ElixirCompiler extends GenericCompiler<
                                     } else {
                                         // Outside string: direct substitution
                                         #if debug_injection
-                                        trace('[ElixirCompiler] Direct substitution (not in string)');
+                                        // DISABLED: trace('[ElixirCompiler] Direct substitution (not in string)');
                                         #end
                                         finalCode += astStr;
                                     }
@@ -1090,7 +1090,7 @@ class ElixirCompiler extends GenericCompiler<
                         }
 
                         #if debug_injection
-                        trace('[ElixirCompiler] Final injection code: "$finalCode"');
+                        // DISABLED: trace('[ElixirCompiler] Final injection code: "$finalCode"');
                         #end
 
                         // Return as raw Elixir code
@@ -1119,7 +1119,7 @@ class ElixirCompiler extends GenericCompiler<
 
                     #if debug_injection
                     if (isInjectionCall) {
-                        trace('[ElixirCompiler] ✓ Manual detection: Found ${options.targetCodeInjectionName} call');
+                        // DISABLED: trace('[ElixirCompiler] ✓ Manual detection: Found ${options.targetCodeInjectionName} call');
                     }
                     #end
 
@@ -1132,8 +1132,8 @@ class ElixirCompiler extends GenericCompiler<
 
                         if (injectionString != "") {
                             #if debug_injection
-                            trace('[ElixirCompiler] Manual injection processing: "${injectionString.substr(0, 50)}..."');
-                            trace('[ElixirCompiler] Number of parameter arguments: ${args.length - 1}');
+                            // DISABLED: trace('[ElixirCompiler] Manual injection processing: "${injectionString.substr(0, 50)}..."');
+                            // DISABLED: trace('[ElixirCompiler] Number of parameter arguments: ${args.length - 1}');
                             #end
 
                             // Try Ecto where AST build from manual path
@@ -1201,7 +1201,7 @@ class ElixirCompiler extends GenericCompiler<
                                                 var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
 
                                                 #if debug_injection
-                                                trace('[ElixirCompiler] Substituting {$num} with "$argStr" (insideString: $insideString)');
+                                                // DISABLED: trace('[ElixirCompiler] Substituting {$num} with "$argStr" (insideString: $insideString)');
                                                 #end
 
                                                 if (insideString) {
@@ -1226,7 +1226,7 @@ class ElixirCompiler extends GenericCompiler<
                             }
 
                             #if debug_injection
-                            trace('[ElixirCompiler] Manual injection final code: "$finalCode"');
+                            // DISABLED: trace('[ElixirCompiler] Manual injection final code: "$finalCode"');
                             #end
 
                             return reflaxe.elixir.ast.ElixirAST.makeAST(
@@ -1260,9 +1260,9 @@ class ElixirCompiler extends GenericCompiler<
         }
         var s = code.toString();
         #if debug_injection
-        trace('[ElixirCompiler] tryBuildEctoWhereAST code="$s"');
-        trace('[ElixirCompiler] tryBuildEctoWhereAST queryAst=' + (queryAst != null));
-        trace('[ElixirCompiler] tryBuildEctoWhereAST rhsAst=' + (rhsAst != null));
+        // DISABLED: trace('[ElixirCompiler] tryBuildEctoWhereAST code="$s"');
+        // DISABLED: trace('[ElixirCompiler] tryBuildEctoWhereAST queryAst=' + (queryAst != null));
+        // DISABLED: trace('[ElixirCompiler] tryBuildEctoWhereAST rhsAst=' + (rhsAst != null));
         #end
         // Fast check: contains Ecto.Query.where and [t]
         if (s.indexOf("Ecto.Query.where") == -1 || s.indexOf("[t]") == -1) return null;
@@ -1275,7 +1275,7 @@ class ElixirCompiler extends GenericCompiler<
             opStr = rx.matched(2);
         } else {
             #if debug_injection
-            trace('[ElixirCompiler] tryBuildEctoWhereAST regex did not match');
+            // DISABLED: trace('[ElixirCompiler] tryBuildEctoWhereAST regex did not match');
             #end
             return null;
         }
@@ -1343,7 +1343,7 @@ class ElixirCompiler extends GenericCompiler<
         if (currentClassType != null && currentClassType.meta.has(":exunit")) {
             context.isInExUnitTest = true;
             #if debug_exunit
-            trace('[ElixirCompiler] Setting isInExUnitTest=true for context (class: ${currentClassType.name})');
+            // DISABLED: trace('[ElixirCompiler] Setting isInExUnitTest=true for context (class: ${currentClassType.name})');
             #end
         }
 
@@ -1373,7 +1373,7 @@ class ElixirCompiler extends GenericCompiler<
             // context.builderFacade.registerBuilder("pattern", patternBuilder);
 
             #if debug_ast_builder
-            trace('[ElixirCompiler] BuilderFacade initialized with registered builders');
+            // DISABLED: trace('[ElixirCompiler] BuilderFacade initialized with registered builders');
             #end
         }
 
@@ -1462,9 +1462,9 @@ class ElixirCompiler extends GenericCompiler<
 
         // Debug flag to print enabled features
         #if debug_feature_flags
-        trace("Feature flags initialized:");
+        // DISABLED: trace("Feature flags initialized:");
         for (key in context.astContext.featureFlags.keys()) {
-            trace('  $key: ${context.astContext.featureFlags.get(key)}');
+            // DISABLED: trace('  $key: ${context.astContext.featureFlags.get(key)}');
         }
         #end
     }
@@ -1521,7 +1521,7 @@ class ElixirCompiler extends GenericCompiler<
         // Pass context as second parameter to ensure isolated state
         var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
-        trace('[AST Pipeline] After Builder - AST type: ${ast != null ? Type.enumConstructor(ast.def) : "null"}');
+        // DISABLED: trace('[AST Pipeline] After Builder - AST type: ${ast != null ? Type.enumConstructor(ast.def) : "null"}');
 
         // Apply transformations to all expressions, not just function bodies
         // Pass context to transformer as well
@@ -1530,9 +1530,9 @@ class ElixirCompiler extends GenericCompiler<
             var transformedAst = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast, context);
             var transformedAstId = Std.string(transformedAst);
 
-            trace('[AST Pipeline] After Transformer - Same object: ${originalAstId == transformedAstId}');
-            trace('[AST Pipeline]   Original AST ID: $originalAstId');
-            trace('[AST Pipeline]   Transformed AST ID: $transformedAstId');
+            // DISABLED: trace('[AST Pipeline] After Transformer - Same object: ${originalAstId == transformedAstId}');
+            // DISABLED: trace('[AST Pipeline]   Original AST ID: $originalAstId');
+            // DISABLED: trace('[AST Pipeline]   Transformed AST ID: $transformedAstId');
 
             ast = transformedAst;
 
@@ -1544,25 +1544,25 @@ class ElixirCompiler extends GenericCompiler<
                         switch(module.def) {
                             case EVar("Enum"):
                                 if (funcName == "reduce_while" && args != null && args.length >= 3) {
-                                    trace('[XRay Pipeline] After transformation - Enum.reduce_while detected');
+                                    // DISABLED: trace('[XRay Pipeline] After transformation - Enum.reduce_while detected');
                                     var reducerArg = args[2];
-                                    trace('[XRay Pipeline]   Reducer arg type: ${Type.enumConstructor(reducerArg.def)}');
+                                    // DISABLED: trace('[XRay Pipeline]   Reducer arg type: ${Type.enumConstructor(reducerArg.def)}');
                                     switch(reducerArg.def) {
                                         case EFn(clauses):
                                             if (clauses.length > 0) {
                                                 var clause = clauses[0];
-                                                trace('[XRay Pipeline]   Lambda body type: ${Type.enumConstructor(clause.body.def)}');
+                                                // DISABLED: trace('[XRay Pipeline]   Lambda body type: ${Type.enumConstructor(clause.body.def)}');
                                                 switch(clause.body.def) {
                                                     case EBlock(exprs):
-                                                        trace('[XRay Pipeline]   Lambda body is EBlock with ${exprs.length} expressions');
+                                                        // DISABLED: trace('[XRay Pipeline]   Lambda body is EBlock with ${exprs.length} expressions');
                                                     case EIf(_, _, _):
-                                                        trace('[XRay Pipeline]   Lambda body is EIf (correct structure)');
+                                                        // DISABLED: trace('[XRay Pipeline]   Lambda body is EIf (correct structure)');
                                                     default:
-                                                        trace('[XRay Pipeline]   Lambda body is: ${Type.enumConstructor(clause.body.def)}');
+                                                        // DISABLED: trace('[XRay Pipeline]   Lambda body is: ${Type.enumConstructor(clause.body.def)}');
                                                 }
                                             }
                                         default:
-                                            trace('[XRay Pipeline]   Reducer is not EFn: ${Type.enumConstructor(reducerArg.def)}');
+                                            // DISABLED: trace('[XRay Pipeline]   Reducer is not EFn: ${Type.enumConstructor(reducerArg.def)}');
                                     }
                                 }
                             default:
@@ -1573,7 +1573,7 @@ class ElixirCompiler extends GenericCompiler<
             #end
         }
 
-        trace('[AST Pipeline] Returning AST to caller');
+        // DISABLED: trace('[AST Pipeline] Returning AST to caller');
         return ast;
     }
 
@@ -1684,7 +1684,7 @@ class ElixirCompiler extends GenericCompiler<
             if (!added) {
                 // Debug trace for circular dependency detection
                 #if debug_module_sorting
-                trace('[ElixirCompiler] Breaking circular dependency, remaining: ' + [for (k in remaining.keys()) k].join(', '));
+                // DISABLED: trace('[ElixirCompiler] Breaking circular dependency, remaining: ' + [for (k in remaining.keys()) k].join(', '));
                 #end
 
                 // Add remaining modules anyway to avoid infinite loop
@@ -1735,7 +1735,7 @@ class ElixirCompiler extends GenericCompiler<
      */
     function discoverDependencies(classType: ClassType, funcFields: Array<ClassField>): Void {
         #if debug_compilation_flow
-        trace('[ElixirCompiler.discoverDependencies] START for class: ${classType.name} with ${funcFields.length} functions');
+        // DISABLED: trace('[ElixirCompiler.discoverDependencies] START for class: ${classType.name} with ${funcFields.length} functions');
         #end
 
         // Activate behavior transformer for dependency discovery
@@ -1746,7 +1746,7 @@ class ElixirCompiler extends GenericCompiler<
             var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
             #if debug_behavior_transformer
             if (behaviorName != null) {
-                trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for dependency discovery of ${classType.name}');
+                // DISABLED: trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for dependency discovery of ${classType.name}');
             }
             #end
         }
@@ -1790,7 +1790,7 @@ class ElixirCompiler extends GenericCompiler<
         #if debug_dependencies
         var deps = moduleDependencies.get(currentCompiledModule);
         if (deps != null) {
-            trace('[ElixirCompiler] After dependency discovery for ${currentCompiledModule}: ${[for (k in deps.keys()) k].join(", ")}');
+            // DISABLED: trace('[ElixirCompiler] After dependency discovery for ${currentCompiledModule}: ${[for (k in deps.keys()) k].join(", ")}');
         }
         #end
         
@@ -1800,7 +1800,7 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         #if debug_compilation_flow
-        trace('[ElixirCompiler.discoverDependencies] END for class: ${classType.name}');
+        // DISABLED: trace('[ElixirCompiler.discoverDependencies] END for class: ${classType.name}');
         #end
     }
     
@@ -1810,15 +1810,15 @@ class ElixirCompiler extends GenericCompiler<
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
 
         #if debug_behavior_transformer
-        trace('[ElixirCompiler.buildClassAST] Building class: ${classType.name}');
-        trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
+        // DISABLED: trace('[ElixirCompiler.buildClassAST] Building class: ${classType.name}');
+        // DISABLED: trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
         #end
 
         #if debug_annotation_transforms
         if (classType.name == "TodoApp") {
-            trace('[ElixirCompiler.buildClassAST] TodoApp received ${funcFields.length} functions');
+            // DISABLED: trace('[ElixirCompiler.buildClassAST] TodoApp received ${funcFields.length} functions');
             for (f in funcFields) {
-                trace('[ElixirCompiler.buildClassAST] Function: ${f.field.name}');
+                // DISABLED: trace('[ElixirCompiler.buildClassAST] Function: ${f.field.name}');
             }
         }
         #end
@@ -1837,9 +1837,9 @@ class ElixirCompiler extends GenericCompiler<
             var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
             #if debug_behavior_transformer
             if (behaviorName != null) {
-                trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for building ${classType.name} module');
+                // DISABLED: trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for building ${classType.name} module');
             } else {
-                trace('[BehaviorTransformer] No behavior found for ${classType.name}');
+                // DISABLED: trace('[BehaviorTransformer] No behavior found for ${classType.name}');
             }
             #end
         }
@@ -1880,8 +1880,8 @@ class ElixirCompiler extends GenericCompiler<
         // All classes go through ModuleBuilder now for consistency
 
         #if debug_module_builder
-        trace('[ElixirCompiler] Using provided funcFields parameter: ${funcFields.length} functions');
-        trace('[ElixirCompiler] Using provided varFields parameter: ${varFields.length} variables');
+        // DISABLED: trace('[ElixirCompiler] Using provided funcFields parameter: ${funcFields.length} functions');
+        // DISABLED: trace('[ElixirCompiler] Using provided varFields parameter: ${varFields.length} variables');
         #end
         
         // PASS 1: Discover dependencies by pre-compiling function bodies
@@ -1917,28 +1917,28 @@ class ElixirCompiler extends GenericCompiler<
             expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
 
             #if debug_ast_builder
-            trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
+            // DISABLED: trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
             if (expr != null) {
-                trace('[ElixirCompiler]   Body type: ${Type.enumConstructor(expr.expr)}');
+                // DISABLED: trace('[ElixirCompiler]   Body type: ${Type.enumConstructor(expr.expr)}');
                 switch(expr.expr) {
                     case TReturn(e) if (e != null):
-                        trace('[ElixirCompiler]   TReturn contains: ${Type.enumConstructor(e.expr)}');
+                        // DISABLED: trace('[ElixirCompiler]   TReturn contains: ${Type.enumConstructor(e.expr)}');
                         switch(e.expr) {
                             case TSwitch(_, cases, _):
-                                trace('[ElixirCompiler]     Direct return of TSwitch with ${cases.length} cases');
+                                // DISABLED: trace('[ElixirCompiler]     Direct return of TSwitch with ${cases.length} cases');
                             case TLocal(v):
-                                trace('[ElixirCompiler]     Return of TLocal: ${v.name}');
+                                // DISABLED: trace('[ElixirCompiler]     Return of TLocal: ${v.name}');
                             default:
-                                trace('[ElixirCompiler]     Return of: ${Type.enumConstructor(e.expr)}');
+                                // DISABLED: trace('[ElixirCompiler]     Return of: ${Type.enumConstructor(e.expr)}');
                         }
                     case TBlock(exprs):
-                        trace('[ElixirCompiler]   TBlock with ${exprs.length} expressions');
+                        // DISABLED: trace('[ElixirCompiler]   TBlock with ${exprs.length} expressions');
                         if (exprs.length > 0) {
                             var last = exprs[exprs.length - 1];
-                            trace('[ElixirCompiler]     Last expr: ${Type.enumConstructor(last.expr)}');
+                            // DISABLED: trace('[ElixirCompiler]     Last expr: ${Type.enumConstructor(last.expr)}');
                         }
                     default:
-                        trace('[ElixirCompiler]   Other: ${Type.enumConstructor(expr.expr)}');
+                        // DISABLED: trace('[ElixirCompiler]   Other: ${Type.enumConstructor(expr.expr)}');
                 }
             }
             #end
@@ -1960,14 +1960,14 @@ class ElixirCompiler extends GenericCompiler<
                                      funcData.field.meta.has(":teardownAll");
             
             #if debug_exunit
-            trace('[ElixirCompiler] Checking ${funcData.field.name}: has("test")=${funcData.field.meta.has("test")}, isExUnitTestMethod=$isExUnitTestMethod');
+            // DISABLED: trace('[ElixirCompiler] Checking ${funcData.field.name}: has("test")=${funcData.field.meta.has("test")}, isExUnitTestMethod=$isExUnitTestMethod');
             // Let's see what metadata IS present
             if (funcData.field.name.indexOf("test") == 0) {
                 var metaList = [];
                 for (m in funcData.field.meta.get()) {
                     metaList.push(m.name);
                 }
-                trace('[ElixirCompiler]   Metadata present on ${funcData.field.name}: [${metaList.join(", ")}]');
+                // DISABLED: trace('[ElixirCompiler]   Metadata present on ${funcData.field.name}: [${metaList.join(", ")}]');
             }
             #end
             
@@ -1982,8 +1982,8 @@ class ElixirCompiler extends GenericCompiler<
                 context.currentReceiverParamName = null;
                 context.isInExUnitTest = true;
                 #if debug_exunit
-                trace('[ElixirCompiler] Set isInExUnitTest=true for function ${funcData.field.name}');
-                trace('[ElixirCompiler] Context check immediately after setting: isInExUnitTest=${context.isInExUnitTest}');
+                // DISABLED: trace('[ElixirCompiler] Set isInExUnitTest=true for function ${funcData.field.name}');
+                // DISABLED: trace('[ElixirCompiler] Context check immediately after setting: isInExUnitTest=${context.isInExUnitTest}');
                 #end
             } else {
                 // Regular method handling
@@ -2003,8 +2003,8 @@ class ElixirCompiler extends GenericCompiler<
             // aren't mapped correctly in the function body
             if (funcData.tfunc != null) {
                 #if debug_variable_renaming
-                trace('[ElixirCompiler] Processing ${funcData.field.name} - funcData.tfunc is NOT null, registering ${funcData.tfunc.args.length} parameters');
-                trace('[ElixirCompiler] Context tempVarRenameMap BEFORE registration: ${Lambda.count(context.tempVarRenameMap)} entries');
+                // DISABLED: trace('[ElixirCompiler] Processing ${funcData.field.name} - funcData.tfunc is NOT null, registering ${funcData.tfunc.args.length} parameters');
+                // DISABLED: trace('[ElixirCompiler] Context tempVarRenameMap BEFORE registration: ${Lambda.count(context.tempVarRenameMap)} entries');
                 #end
 
                 for (arg in funcData.tfunc.args) {
@@ -2012,7 +2012,7 @@ class ElixirCompiler extends GenericCompiler<
                     var idKey = Std.string(arg.v.id);
 
                     #if debug_variable_renaming
-                    trace('[ElixirCompiler] Processing parameter for ${funcData.field.name}: "$originalName" (id: $idKey)');
+                    // DISABLED: trace('[ElixirCompiler] Processing parameter for ${funcData.field.name}: "$originalName" (id: $idKey)');
                     #end
 
                     // Check if parameter has numeric suffix that indicates shadowing
@@ -2028,7 +2028,7 @@ class ElixirCompiler extends GenericCompiler<
                             strippedName = baseWithoutSuffix;
 
                             #if debug_variable_renaming
-                            trace('[ElixirCompiler] Registering renamed parameter mapping: $originalName (id: ${arg.v.id}) -> $strippedName');
+                            // DISABLED: trace('[ElixirCompiler] Registering renamed parameter mapping: $originalName (id: ${arg.v.id}) -> $strippedName');
                             #end
                         }
                     }
@@ -2053,13 +2053,13 @@ class ElixirCompiler extends GenericCompiler<
                         baseName;
                     };
                     #if debug_variable_renaming
-                    trace('[ElixirCompiler] About to register for ${funcData.field.name}: idKey="$idKey" originalName="$originalName" finalName="$finalName" unused=$isUnused');
-                    trace('[ElixirCompiler] Map exists check: ${context.tempVarRenameMap.exists(idKey)}');
+                    // DISABLED: trace('[ElixirCompiler] About to register for ${funcData.field.name}: idKey="$idKey" originalName="$originalName" finalName="$finalName" unused=$isUnused');
+                    // DISABLED: trace('[ElixirCompiler] Map exists check: ${context.tempVarRenameMap.exists(idKey)}');
                     #end
 
                     if (!context.tempVarRenameMap.exists(idKey)) {
                         #if debug_variable_renaming
-                        trace('[ElixirCompiler] ENTERED if block - about to set mappings');
+                        // DISABLED: trace('[ElixirCompiler] ENTERED if block - about to set mappings');
                         #end
 
                         // Dual-key storage: ID for pattern positions, name for EVar references
@@ -2067,51 +2067,51 @@ class ElixirCompiler extends GenericCompiler<
                         context.tempVarRenameMap.set(originalName, finalName);    // NAME-based (EVar renaming)
 
                         #if debug_variable_renaming
-                        trace('[ElixirCompiler] COMPLETED setting mappings for idKey=$idKey');
-                        trace('[ElixirCompiler] Context hashcode: ${untyped context.__id}');
-                        trace('[ElixirCompiler] Map hashcode: ${untyped context.tempVarRenameMap.__id}');
+                        // DISABLED: trace('[ElixirCompiler] COMPLETED setting mappings for idKey=$idKey');
+                        // DISABLED: trace('[ElixirCompiler] Context hashcode: ${untyped context.__id}');
+                        // DISABLED: trace('[ElixirCompiler] Map hashcode: ${untyped context.tempVarRenameMap.__id}');
                         #end
 
                         #if debug_variable_renaming
-                        trace('[ElixirCompiler] ✓ Registered dual-key: id=$idKey name=$originalName -> $finalName');
-                        trace('[ElixirCompiler] Map size after registration: ${Lambda.count(context.tempVarRenameMap)}');
+                        // DISABLED: trace('[ElixirCompiler] ✓ Registered dual-key: id=$idKey name=$originalName -> $finalName');
+                        // DISABLED: trace('[ElixirCompiler] Map size after registration: ${Lambda.count(context.tempVarRenameMap)}');
                         #end
 
                         #if debug_hygiene
-                        trace('[Hygiene] Dual-key registered: id=$idKey name=$originalName -> $finalName');
+                        // DISABLED: trace('[Hygiene] Dual-key registered: id=$idKey name=$originalName -> $finalName');
                         #end
                     } else {
                         #if debug_variable_renaming
-                        trace('[ElixirCompiler] ✗ Skipped registration (idKey already exists): $idKey');
+                        // DISABLED: trace('[ElixirCompiler] ✗ Skipped registration (idKey already exists): $idKey');
                         #end
                     }
                 }
 
                 #if debug_variable_renaming
-                trace('[ElixirCompiler] AFTER registration loop for ${funcData.field.name} - map has ${Lambda.count(context.tempVarRenameMap)} entries');
+                // DISABLED: trace('[ElixirCompiler] AFTER registration loop for ${funcData.field.name} - map has ${Lambda.count(context.tempVarRenameMap)} entries');
                 #end
             }
 
             // Build the function body with proper context
             // Special handling for direct switch returns that may have lost context
             #if debug_switch_return
-            trace("[SwitchReturnDebug] Building function body for: " + funcData.field.name);
+            // DISABLED: trace("[SwitchReturnDebug] Building function body for: " + funcData.field.name);
             if (expr != null) {
-                trace("[SwitchReturnDebug] expr.expr type: " + Type.enumConstructor(expr.expr));
+                // DISABLED: trace("[SwitchReturnDebug] expr.expr type: " + Type.enumConstructor(expr.expr));
             } else {
-                trace("[SwitchReturnDebug] expr is null (no body)");
+                // DISABLED: trace("[SwitchReturnDebug] expr is null (no body)");
             }
             #end
 
             #if debug_exunit
-            trace('[ElixirCompiler] About to build funcBody for ${funcData.field.name}, context.isInExUnitTest=${context.isInExUnitTest}');
+            // DISABLED: trace('[ElixirCompiler] About to build funcBody for ${funcData.field.name}, context.isInExUnitTest=${context.isInExUnitTest}');
             #end
             
             var funcBody = switch(expr.expr) {
                 case TReturn(e) if (e != null):
                     #if debug_switch_return
-                    trace("[SwitchReturnDebug] Found TReturn with non-null expression");
-                    trace("[SwitchReturnDebug] Return expr type: " + (e != null ? Type.enumConstructor(e.expr) : "null"));
+                    // DISABLED: trace("[SwitchReturnDebug] Found TReturn with non-null expression");
+                    // DISABLED: trace("[SwitchReturnDebug] Return expr type: " + (e != null ? Type.enumConstructor(e.expr) : "null"));
                     #end
 
                     // Check if it's a return of a switch (potentially wrapped in metadata)
@@ -2119,51 +2119,51 @@ class ElixirCompiler extends GenericCompiler<
                     switch(e.expr) {
                         case TMeta(_, inner):
                             #if debug_switch_return
-                            trace("[SwitchReturnDebug] Found TMeta wrapper, unwrapping");
+                            // DISABLED: trace("[SwitchReturnDebug] Found TMeta wrapper, unwrapping");
                             #end
                             innerExpr = inner;
                         case _:
                     }
 
                     #if debug_switch_return
-                    trace("[SwitchReturnDebug] Inner expr type: " + Type.enumConstructor(innerExpr.expr));
+                    // DISABLED: trace("[SwitchReturnDebug] Inner expr type: " + Type.enumConstructor(innerExpr.expr));
                     #end
 
                     switch(innerExpr.expr) {
                         case TSwitch(_, _, _):
                             #if debug_switch_return
-                            trace("[SwitchReturnDebug] *** Direct switch return detected! Building switch AST directly ***");
+                            // DISABLED: trace("[SwitchReturnDebug] *** Direct switch return detected! Building switch AST directly ***");
                             #end
                             // For direct switch returns, build the switch expression and wrap in parentheses
                             // This ensures the full case structure is preserved
                             var switchAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
 
                             #if debug_switch_return
-                            trace("[SwitchReturnDebug] Built switch AST def: " + switchAST.def);
+                            // DISABLED: trace("[SwitchReturnDebug] Built switch AST def: " + switchAST.def);
                             #end
 
                             // The switch itself is the body - no need for additional wrapping
                             switchAST;
                         case _:
                             #if debug_switch_return
-                            trace("[SwitchReturnDebug] Not a switch, building normal return");
+                            // DISABLED: trace("[SwitchReturnDebug] Not a switch, building normal return");
                             #end
                             // Normal return handling
                             reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
                     }
                 case _:
                     #if debug_switch_return
-                    trace("[SwitchReturnDebug] Not a direct return, building normally");
+                    // DISABLED: trace("[SwitchReturnDebug] Not a direct return, building normally");
                     #end
                     // Normal expression handling
                     #if debug_variable_renaming
-                    trace('[ElixirCompiler] About to call buildFromTypedExpr for ${funcData.field.name} - context.tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries');
+                    // DISABLED: trace('[ElixirCompiler] About to call buildFromTypedExpr for ${funcData.field.name} - context.tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries');
                     #end
                     reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
             };
 
             #if debug_ast_builder
-            trace('[ElixirCompiler] Function ${funcData.field.name} body AST: ${funcBody.def}');
+            // DISABLED: trace('[ElixirCompiler] Function ${funcData.field.name} body AST: ${funcBody.def}');
             #end
 
             // Get function parameters from tfunc
@@ -2232,7 +2232,7 @@ class ElixirCompiler extends GenericCompiler<
 
             #if debug_exunit
             if (funcMetadata.isTest) {
-                trace('[ElixirCompiler] Set isTest=true for function ${funcData.field.name}');
+                // DISABLED: trace('[ElixirCompiler] Set isTest=true for function ${funcData.field.name}');
             }
             #end
 
@@ -2321,7 +2321,7 @@ class ElixirCompiler extends GenericCompiler<
             metadata.isException = isException;
             
             #if debug_inheritance
-            trace('[ElixirCompiler] Class ${classType.name} extends ${parentModuleName}, isException: ${isException}');
+            // DISABLED: trace('[ElixirCompiler] Class ${classType.name} extends ${parentModuleName}, isException: ${isException}');
             #end
         }
 
@@ -2336,7 +2336,7 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":liveview")) {
             metadata.isLiveView = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isLiveView=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isLiveView=true metadata for ${classType.name}');
             #end
         }
 
@@ -2344,8 +2344,8 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":application")) {
             metadata.isApplication = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isApplication=true metadata for ${classType.name}');
-            trace('[ElixirCompiler] Passing ${fields.length} fields to ModuleBuilder for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isApplication=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Passing ${fields.length} fields to ModuleBuilder for ${classType.name}');
             #end
         }
         
@@ -2369,7 +2369,7 @@ class ElixirCompiler extends GenericCompiler<
             }
             
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isRepo=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isRepo=true metadata for ${classType.name}');
             #end
         }
         
@@ -2378,13 +2378,13 @@ class ElixirCompiler extends GenericCompiler<
             metadata.isSchema = true;
 
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Schema processing for ${classType.name}');
-            trace('[ElixirCompiler] varFields.length = ${varFields.length}');
+            // DISABLED: trace('[ElixirCompiler] Schema processing for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] varFields.length = ${varFields.length}');
             // Also check classType.fields directly from Haxe type system
             var typeFields = classType.fields.get();
-            trace('[ElixirCompiler] classType.fields.get().length = ${typeFields.length}');
+            // DISABLED: trace('[ElixirCompiler] classType.fields.get().length = ${typeFields.length}');
             for (f in typeFields) {
-                trace('[ElixirCompiler]   field: ${f.name}, kind: ${f.kind}, meta: [${[for (m in f.meta.get()) m.name].join(", ")}]');
+                // DISABLED: trace('[ElixirCompiler]   field: ${f.name}, kind: ${f.kind}, meta: [${[for (m in f.meta.get()) m.name].join(", ")}]');
             }
             #end
 
@@ -2421,7 +2421,7 @@ class ElixirCompiler extends GenericCompiler<
                                 type: fieldType
                             });
                             #if debug_annotation_transforms
-                            trace('[ElixirCompiler] Added schema field: ${fieldName} (${fieldType})');
+                            // DISABLED: trace('[ElixirCompiler] Added schema field: ${fieldName} (${fieldType})');
                             #end
                         }
                     default:
@@ -2436,9 +2436,9 @@ class ElixirCompiler extends GenericCompiler<
                 : classType.name;
             
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isSchema=true metadata for ${classType.name}');
-            trace('[ElixirCompiler] Table name: ${metadata.tableName}, hasTimestamps: ${metadata.hasTimestamps}');
-            trace('[ElixirCompiler] Schema fields: ${schemaFields.length} fields collected');
+            // DISABLED: trace('[ElixirCompiler] Set isSchema=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Table name: ${metadata.tableName}, hasTimestamps: ${metadata.hasTimestamps}');
+            // DISABLED: trace('[ElixirCompiler] Schema fields: ${schemaFields.length} fields collected');
             #end
         }
         
@@ -2446,7 +2446,7 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":supervisor")) {
             metadata.isSupervisor = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isSupervisor=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isSupervisor=true metadata for ${classType.name}');
             #end
         }
 
@@ -2454,7 +2454,7 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":router")) {
             metadata.isRouter = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isRouter=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isRouter=true metadata for ${classType.name}');
             #end
         }
 
@@ -2462,7 +2462,7 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":presence")) {
             metadata.isPresence = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isPresence=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isPresence=true metadata for ${classType.name}');
             #end
         }
 
@@ -2473,7 +2473,7 @@ class ElixirCompiler extends GenericCompiler<
             // Endpoints are supervisors too - they need child_spec/start_link
             metadata.isSupervisor = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isEndpoint=true and isSupervisor=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isEndpoint=true and isSupervisor=true metadata for ${classType.name}');
             #end
         }
 
@@ -2481,7 +2481,7 @@ class ElixirCompiler extends GenericCompiler<
         if (classType.meta.has(":phoenixWebModule") || classType.meta.has(":phoenixWeb")) {
             metadata.isPhoenixWeb = true;
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Set isPhoenixWeb=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isPhoenixWeb=true metadata for ${classType.name}');
             #end
         }
 
@@ -2496,20 +2496,20 @@ class ElixirCompiler extends GenericCompiler<
         // ExUnit debug output
         if (moduleAST != null && moduleAST.metadata != null && moduleAST.metadata.isExunit == true) {
             #if debug_exunit
-            trace('[ElixirCompiler] Set isExunit=true metadata for ${classType.name}');
+            // DISABLED: trace('[ElixirCompiler] Set isExunit=true metadata for ${classType.name}');
             #end
         }
 
         // Application debug output
         if (moduleAST != null && moduleAST.metadata != null && moduleAST.metadata.isApplication == true) {
             #if debug_annotation_transforms
-            trace('[ElixirCompiler] Module ${classType.name} has isApplication metadata after building');
+            // DISABLED: trace('[ElixirCompiler] Module ${classType.name} has isApplication metadata after building');
             #end
         }
 
         #if debug_module_builder
         if (classType.name == "Main") {
-            trace('[ElixirCompiler] Received module AST for Main from ModuleBuilder');
+            // DISABLED: trace('[ElixirCompiler] Received module AST for Main from ModuleBuilder');
             // trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
             // if (moduleAST != null && moduleAST.metadata != null) {
             //     trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
@@ -2527,9 +2527,9 @@ class ElixirCompiler extends GenericCompiler<
             reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior = previousBehavior;
             #if debug_behavior_transformer
             if (previousBehavior != null) {
-                trace('[BehaviorTransformer] Restored previous behavior: ${previousBehavior}');
+                // DISABLED: trace('[BehaviorTransformer] Restored previous behavior: ${previousBehavior}');
             } else {
-                trace('[BehaviorTransformer] Deactivated behavior after building ${classType.name}');
+                // DISABLED: trace('[BehaviorTransformer] Deactivated behavior after building ${classType.name}');
             }
             #end
         }
@@ -2630,8 +2630,8 @@ class ElixirCompiler extends GenericCompiler<
         var typesModuleName = appName + ".PostgrexTypes";
         
         #if debug_repo
-        trace('[ElixirCompiler] Generating PostgrexTypes companion module: ${typesModuleName}');
-        trace('[ElixirCompiler] JSON module: ${metadata.jsonModule}, Extensions: ${metadata.extensions}');
+        // DISABLED: trace('[ElixirCompiler] Generating PostgrexTypes companion module: ${typesModuleName}');
+        // DISABLED: trace('[ElixirCompiler] JSON module: ${metadata.jsonModule}, Extensions: ${metadata.extensions}');
         #end
         
         // Build the module body
@@ -2714,7 +2714,7 @@ class ElixirCompiler extends GenericCompiler<
         var outputPath = filePackage.join("/") + "/" + fileName + ".ex";
         
         #if debug_repo
-        trace('[ElixirCompiler] Writing PostgrexTypes module to: ${outputPath}');
+        // DISABLED: trace('[ElixirCompiler] Writing PostgrexTypes module to: ${outputPath}');
         #end
         
         // Use setExtraFile to generate the companion module

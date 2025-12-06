@@ -81,12 +81,12 @@ class ClauseUndefinedVarToBinderTransforms {
                             // Merge outer (function parameter) scope to avoid rebinding params
                             if (outerDefined != null) for (k in outerDefined.keys()) clauseDefined.set(k, true);
                             var used = collectUsedLowerVars(cl.body);
-                            #if sys
+                            #if debug_transforms
                             var usedList = [for (u in used) u].join(",");
                             var defList = [];
                             for (k in clauseDefined.keys()) defList.push(k);
-                            Sys.println('[ClauseUndefinedVarToBinder] binder=' + binder + ' used=[' + usedList + '] declared=[' + defList.join(',') + ']');
-                            Sys.println('[ClauseUndefinedVarToBinder] body=' + ElixirASTPrinter.print(cl.body, 0));
+                            // DEBUG: Sys.println('[ClauseUndefinedVarToBinder] binder=' + binder + ' used=[' + usedList + '] declared=[' + defList.join(',') + ']');
+                            // DEBUG: Sys.println('[ClauseUndefinedVarToBinder] body=' + ElixirASTPrinter.print(cl.body, 0));
                             #end
                             // Prefer well-known, generic event payload names when present
                             var preferred = pickPreferred(used, binder, clauseDefined);
@@ -94,7 +94,6 @@ class ClauseUndefinedVarToBinderTransforms {
                                 // Rename binder to the body’s used local instead of rewriting body to binder
                                 var renamedPat = tryRenameSingleBinder(cl.pattern, preferred);
                                 if (renamedPat != null) {
-                                    Sys.println('[ClauseUndefinedVarToBinder] Renaming binder ' + binder + ' -> ' + preferred);
                                     var newBody = replaceVar(cl.body, binder, preferred);
                                     newClauses.push({ pattern: renamedPat, guard: cl.guard, body: newBody });
                                     continue;
@@ -108,7 +107,6 @@ class ClauseUndefinedVarToBinderTransforms {
                                     var targetVar = undef[0];
                                     var renamedPat2 = tryRenameSingleBinder(cl.pattern, targetVar);
                                     if (renamedPat2 != null) {
-                                        Sys.println('[ClauseUndefinedVarToBinder] Renaming binder ' + binder + ' -> ' + targetVar);
                                         var nbody = replaceVar(cl.body, binder, targetVar);
                                         newClauses.push({ pattern: renamedPat2, guard: cl.guard, body: nbody });
                                         continue;

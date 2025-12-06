@@ -49,19 +49,19 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                     var newBody = alignInBody(body, outer);
                     makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
                 case ECase(target, clauses):
-                    trace('[CasePayloadAlign] Visiting ECase with ' + clauses.length + ' clause(s)');
+                    // DISABLED: trace('[CasePayloadAlign] Visiting ECase with ' + clauses.length + ' clause(s)');
                     var out = [];
                     for (cl in clauses) {
                         var payloadBinder = extractTagPayloadBinder(cl.pattern);
                         if (payloadBinder != null) {
-                            trace('[CasePayloadAlign] Found {:tag, ' + payloadBinder + '}');
+                            // DISABLED: trace('[CasePayloadAlign] Found {:tag, ' + payloadBinder + '}');
                             var defined = new Map<String,Bool>();
                             collectPatternDecls(cl.pattern, defined);
                             collectLhsDeclsInBody(cl.body, defined);
                             // No outer function context at this ECase level
                             var used = collectUsedLowerNames(cl.body);
-                            #if sys
-                            Sys.println('[CasePayloadAlign] body=' + ElixirASTPrinter.print(cl.body, 0));
+                            #if debug_transforms
+                            // DEBUG: Sys.println('[CasePayloadAlign] body=' + ElixirASTPrinter.print(cl.body, 0));
                             #end
                             // candidates: unique undefined, excluding common env names
                             var cands:Array<String> = [];
@@ -74,7 +74,7 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                                 var first = findFirstMeaningfulVar(cl.body, ex);
                                 if (first != null) cands.push(first);
                             }
-                            trace('[CasePayloadAlign] candidates = ' + cands.join(','));
+                            // DISABLED: trace('[CasePayloadAlign] candidates = ' + cands.join(','));
                             var chosen:Null<String> = null;
                             if (cands.length > 1) {
                                 chosen = prefer(cands);
@@ -84,7 +84,7 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                                 var newName = cands[0];
                                 var newPat = rewriteTagPayloadBinder(cl.pattern, newName);
                                 if (newPat != cl.pattern) {
-                                    trace('[CasePayloadAlign] Renaming binder ' + payloadBinder + ' -> ' + newName);
+                                    // DISABLED: trace('[CasePayloadAlign] Renaming binder ' + payloadBinder + ' -> ' + newName);
                                     // Only rename in the pattern to avoid rewriting outer vars shadowed by binder
                                     out.push({ pattern: newPat, guard: cl.guard, body: cl.body });
                                     continue;
@@ -204,8 +204,7 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                 case EString(s):
                     // Capture #{name} occurrences inside string interpolation
                     if (s != null && s.indexOf("#{") != -1) {
-                        #if sys
-                        Sys.println('[CasePayloadAlign/collect] EString=' + s);
+                        #if debug_transforms
                         #end
                         var block = new EReg("\\#\\{([^}]*)\\}", "g");
                         var pos = 0;

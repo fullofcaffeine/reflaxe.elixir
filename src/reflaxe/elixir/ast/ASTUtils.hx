@@ -363,53 +363,53 @@ class ASTUtils {
         var indent = [for (i in 0...depth) "  "].join("");
         var nodeType = Type.enumConstructor(ast.def);
         
-        trace('$indent$nodeType');
+        // DISABLED: trace('$indent$nodeType');
         
         // Show key details for specific node types
         switch(ast.def) {
             case EVar(name):
-                trace('$indent  name: $name');
+                // DISABLED: trace('$indent  name: $name');
             case EField(_, field):
-                trace('$indent  field: $field');
+                // DISABLED: trace('$indent  field: $field');
             case ERemoteCall(_, func, args):
-                trace('$indent  func: $func, args: ${args.length}');
+                // DISABLED: trace('$indent  func: $func, args: ${args.length}');
             case EBlock(exprs):
-                trace('$indent  exprs: ${exprs.length}');
+                // DISABLED: trace('$indent  exprs: ${exprs.length}');
                 for (expr in exprs) {
                     debugAST(expr, depth + 1, maxDepth);
                 }
             case EIf(cond, then, else_):
-                trace('$indent  condition:');
+                // DISABLED: trace('$indent  condition:');
                 debugAST(cond, depth + 1, maxDepth);
-                trace('$indent  then:');
+                // DISABLED: trace('$indent  then:');
                 debugAST(then, depth + 1, maxDepth);
                 if (else_ != null) {
-                    trace('$indent  else:');
+                    // DISABLED: trace('$indent  else:');
                     debugAST(else_, depth + 1, maxDepth);
                 }
             case EMatch(pattern, expr):
-                trace('$indent  pattern: ${pattern}');
-                trace('$indent  expr:');
+                // DISABLED: trace('$indent  pattern: ${pattern}');
+                // DISABLED: trace('$indent  expr:');
                 debugAST(expr, depth + 1, maxDepth);
             case EFn(clauses):
                 for (i in 0...clauses.length) {
-                    trace('$indent  clause $i:');
+                    // DISABLED: trace('$indent  clause $i:');
                     debugAST(clauses[i].body, depth + 1, maxDepth);
                 }
             case ETuple(elements):
-                trace('$indent  elements: ${elements.length}');
+                // DISABLED: trace('$indent  elements: ${elements.length}');
                 for (elem in elements) {
                     debugAST(elem, depth + 1, maxDepth);
                 }
             case EList(elements):
-                trace('$indent  elements: ${elements.length}');
+                // DISABLED: trace('$indent  elements: ${elements.length}');
                 for (elem in elements) {
                     debugAST(elem, depth + 1, maxDepth);
                 }
             case ERemoteCall(mod, func, args):
-                trace('$indent  module:');
+                // DISABLED: trace('$indent  module:');
                 debugAST(mod, depth + 1, maxDepth);
-                trace('$indent  args: ${args.length}');
+                // DISABLED: trace('$indent  args: ${args.length}');
             default:
                 // Show basic info for other types
         }

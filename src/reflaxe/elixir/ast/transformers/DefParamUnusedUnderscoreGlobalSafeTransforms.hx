@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
@@ -53,18 +54,11 @@ class DefParamUnusedUnderscoreGlobalSafeTransforms {
 
     static function usedInBody(body:ElixirAST, name:String):Bool {
         if (name == null || name.length == 0) return false;
+        // Use VarUseAnalyzer for comprehensive detection (handles closures, ERaw, interpolation)
+        if (VarUseAnalyzer.stmtUsesVar(body, name)) return true;
+        // Also check VariableUsageCollector as a fallback
         if (VariableUsageCollector.usedInFunctionScope(body, name)) return true;
-        // Basic ERaw scan as a conservative check
-        var found = false;
-        ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
-            if (found || n == null || n.def == null) return n;
-            switch (n.def) {
-                case ERaw(code): if (code != null && code.indexOf(name) != -1) found = true;
-                default:
-            }
-            return n;
-        });
-        return found;
+        return false;
     }
 }
 

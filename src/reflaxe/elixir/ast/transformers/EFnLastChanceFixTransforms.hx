@@ -49,7 +49,7 @@ class EFnLastChanceFixTransforms {
                         var b = binderBase;
                         var newBody = renameVarInNode(cl.body, '_' + b, b);
                         #if debug_last_chance
-                        trace('[EFnLastChance] binder=' + b + ' applied _' + b + ' -> ' + b);
+                        // DISABLED: trace('[EFnLastChance] binder=' + b + ' applied _' + b + ' -> ' + b);
                         #end
                         var used = collectUsedVars(newBody);
                         used.remove(b);
@@ -61,7 +61,7 @@ class EFnLastChanceFixTransforms {
                             var uv = unders[0];
                             newBody = renameVarInNode(newBody, uv, b);
                             #if debug_last_chance
-                            trace('[EFnLastChance] Rewriting underscored free var ' + uv + ' -> ' + b);
+                            // DISABLED: trace('[EFnLastChance] Rewriting underscored free var ' + uv + ' -> ' + b);
                             #end
                             used = collectUsedVars(newBody);
                             used.remove(b);
@@ -76,13 +76,13 @@ class EFnLastChanceFixTransforms {
                             var victim = recvVictims[0];
                             newBody = renameVarInNode(newBody, victim, b);
                             #if debug_last_chance
-                            trace('[EFnLastChance] Rewriting field-receiver var ' + victim + ' -> ' + b);
+                            // DISABLED: trace('[EFnLastChance] Rewriting field-receiver var ' + victim + ' -> ' + b);
                             #end
                         } else if (victims.length == 1) {
                             var victim2 = victims[0];
                             newBody = renameVarInNode(newBody, victim2, b);
                             #if debug_last_chance
-                            trace('[EFnLastChance] Rewriting single free var ' + victim2 + ' -> ' + b);
+                            // DISABLED: trace('[EFnLastChance] Rewriting single free var ' + victim2 + ' -> ' + b);
                             #end
                         }
                         newClauses.push({args: [outArg], guard: cl.guard, body: newBody});

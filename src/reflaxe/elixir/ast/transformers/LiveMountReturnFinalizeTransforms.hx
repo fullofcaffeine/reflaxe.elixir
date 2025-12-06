@@ -73,7 +73,7 @@ class LiveMountReturnFinalizeTransforms {
                                             var replaced:Array<ElixirAST> = stmts.copy();
                                             replaced[replaced.length - 1] = finalTuple0;
                                             #if debug_live_mount
-                                            Sys.println('[LiveMountReturnFinalize] Replaced trailing map assignment with {:ok, assign(socket, %{})} in mount/3');
+                                            // DEBUG: Sys.println('[LiveMountReturnFinalize] Replaced trailing map assignment with {:ok, assign(socket, %{})} in mount/3');
                                             #end
                                             return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replaced))), n.metadata, n.pos);
                                         default:
@@ -87,7 +87,7 @@ class LiveMountReturnFinalizeTransforms {
                                             var replacedM:Array<ElixirAST> = stmts.copy();
                                             replacedM[replacedM.length - 1] = finalTupleM;
                                             #if debug_live_mount
-                                            Sys.println('[LiveMountReturnFinalize] Replaced trailing match map assignment with {:ok, assign(socket, %{})} in mount/3');
+                                            // DEBUG: Sys.println('[LiveMountReturnFinalize] Replaced trailing match map assignment with {:ok, assign(socket, %{})} in mount/3');
                                             #end
                                             return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(replacedM))), n.metadata, n.pos);
                                         default:
@@ -113,7 +113,6 @@ class LiveMountReturnFinalizeTransforms {
                                 : makeAST(EVar(socketParam));
                             var finalTuple = makeAST(ETuple([okAtom, tupleVal]));
                             #if debug_live_mount
-                            Sys.println('[LiveMountReturnFinalize] Appended {:ok, ...} to mount/3');
                             #end
                             var out:Array<ElixirAST> = stmts.copy();
                             out.push(finalTuple);
@@ -138,7 +137,7 @@ class LiveMountReturnFinalizeTransforms {
                                             var replaced2:Array<ElixirAST> = stmts2.copy();
                                             replaced2[replaced2.length - 1] = finalTupleX;
                                             #if debug_live_mount
-                                            Sys.println('[LiveMountReturnFinalize] Replaced trailing map assignment with {:ok, assign(socket, %{})} in mount/3 (EDo)');
+                                            // DEBUG: Sys.println('[LiveMountReturnFinalize] Replaced trailing map assignment with {:ok, assign(socket, %{})} in mount/3 (EDo)');
                                             #end
                                             return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replaced2))), n.metadata, n.pos);
                                         default:
@@ -152,7 +151,7 @@ class LiveMountReturnFinalizeTransforms {
                                             var replacedY:Array<ElixirAST> = stmts2.copy();
                                             replacedY[replacedY.length - 1] = finalTupleY;
                                             #if debug_live_mount
-                                            Sys.println('[LiveMountReturnFinalize] Replaced trailing match map assignment with {:ok, assign(socket, %{})} in mount/3 (EDo)');
+                                            // DEBUG: Sys.println('[LiveMountReturnFinalize] Replaced trailing match map assignment with {:ok, assign(socket, %{})} in mount/3 (EDo)');
                                             #end
                                             return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(replacedY))), n.metadata, n.pos);
                                         default:
@@ -177,7 +176,7 @@ class LiveMountReturnFinalizeTransforms {
                                 : makeAST(EVar(socketParam));
                             var finalTuple2 = makeAST(ETuple([okAtom2, tupleVal2]));
                             #if debug_live_mount
-                            Sys.println('[LiveMountReturnFinalize] Appended {:ok, ...} to mount/3 (EDo)');
+                            // DEBUG: Sys.println('[LiveMountReturnFinalize] Appended {:ok, ...} to mount/3 (EDo)');
                             #end
                             var out2:Array<ElixirAST> = stmts2.copy();
                             out2.push(finalTuple2);

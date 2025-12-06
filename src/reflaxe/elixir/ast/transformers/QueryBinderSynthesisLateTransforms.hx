@@ -125,13 +125,13 @@ class QueryBinderSynthesisLateTransforms {
             }
             #if debug_filter_query_consolidate
             if (needsSynth) {
-                trace('[QueryBinderSynthesisLate] Need binder at index ' + i + ', queryDefined=' + queryDefined);
+                // DISABLED: trace('[QueryBinderSynthesisLate] Need binder at index ' + i + ', queryDefined=' + queryDefined);
             }
             #end
             if (needsSynth && !queryDefined) {
                 var rhs = nearestDowncase(i);
                 #if debug_filter_query_consolidate
-                trace('[QueryBinderSynthesisLate] nearestDowncase found? ' + (rhs != null));
+                // DISABLED: trace('[QueryBinderSynthesisLate] nearestDowncase found? ' + (rhs != null));
                 #end
                 if (rhs != null) {
                     out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhs), ctxNode.metadata, ctxNode.pos));
@@ -139,7 +139,7 @@ class QueryBinderSynthesisLateTransforms {
                 } else {
                     var fallbackRhs = makeAST(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar("search_query"))]));
                     #if debug_filter_query_consolidate
-                    trace('[QueryBinderSynthesisLate] Inserting fallback query binder before filter');
+                    // DISABLED: trace('[QueryBinderSynthesisLate] Inserting fallback query binder before filter');
                     #end
                     out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), fallbackRhs), ctxNode.metadata, ctxNode.pos));
                     queryDefined = true;

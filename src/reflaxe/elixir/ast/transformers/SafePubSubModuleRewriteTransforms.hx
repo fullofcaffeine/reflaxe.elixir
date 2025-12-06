@@ -27,7 +27,7 @@ class SafePubSubModuleRewriteTransforms {
                     switch (mod.def) {
                         case EVar(m) if (m == 'SafePubSub'):
                             #if debug_safe_pubsub_rewrite
-                            trace('[SafePubSubRewrite] Rewriting SafePubSub.' + func + ' to Phoenix.SafePubSub.' + func);
+                            // DISABLED: trace('[SafePubSubRewrite] Rewriting SafePubSub.' + func + ' to Phoenix.SafePubSub.' + func);
                             #end
                             var newMod = makeASTWithMeta(EVar('Phoenix.SafePubSub'), mod.metadata, mod.pos);
                             makeASTWithMeta(ERemoteCall(newMod, func, args), n.metadata, n.pos);
@@ -37,7 +37,7 @@ class SafePubSubModuleRewriteTransforms {
                     if (tgt != null) switch (tgt.def) {
                         case EVar(m2) if (m2 == 'SafePubSub'):
                             #if debug_safe_pubsub_rewrite
-                            trace('[SafePubSubRewrite] Rewriting SafePubSub.' + func2 + ' (target call) to Phoenix.SafePubSub.' + func2);
+                            // DISABLED: trace('[SafePubSubRewrite] Rewriting SafePubSub.' + func2 + ' (target call) to Phoenix.SafePubSub.' + func2);
                             #end
                             var newTgt = makeASTWithMeta(EVar('Phoenix.SafePubSub'), tgt.metadata, tgt.pos);
                             makeASTWithMeta(ECall(newTgt, func2, args2), n.metadata, n.pos);

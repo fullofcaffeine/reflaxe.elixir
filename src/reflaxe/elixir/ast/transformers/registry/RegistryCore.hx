@@ -56,7 +56,6 @@ class RegistryCore {
     function dfs(n:String, path:Array<String>):Void {
       if (visited.exists(n)) return;
       if (visiting.exists(n)) {
-        #if (sys && debug_pass_order) Sys.println('[RegistryCore] Cycle detected: ' + (path.concat([n]).join(' -> '))); #end
         return;
       }
       visiting.set(n, true);
@@ -70,12 +69,12 @@ class RegistryCore {
     // Emit compact diagnostics only when explicitly requested
     #if (sys && debug_pass_order)
     if (duplicateNames.length > 0) {
-      Sys.println('[RegistryCore] Duplicate pass names (deduped): ' + duplicateNames.join(', '));
+      // DEBUG: Sys.println('[RegistryCore] Duplicate pass names (deduped): ' + duplicateNames.join(', '));
     }
     if (missingDeps.keys().hasNext()) {
       for (dep in missingDeps.keys()) {
         var users = missingDeps.get(dep);
-        Sys.println('[RegistryCore] Missing runAfter dependency: ' + dep + ' (referenced by ' + users.join(', ') + ')');
+        // DEBUG: Sys.println('[RegistryCore] Missing runAfter dependency: ' + dep + ' (referenced by ' + users.join(', ') + ')');
       }
     }
     #end

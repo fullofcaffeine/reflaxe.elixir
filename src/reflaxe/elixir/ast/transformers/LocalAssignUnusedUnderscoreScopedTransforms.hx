@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * LocalAssignUnusedUnderscoreScopedTransforms
@@ -99,14 +100,9 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
     return out;
   }
 
+  // Uses VarUseAnalyzer for comprehensive detection (handles closures, ERaw, interpolation, underscore variants)
   static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
+    return VarUseAnalyzer.usedLater(stmts, start, name);
   }
 
   static function isCase(rhs: ElixirAST): Bool {

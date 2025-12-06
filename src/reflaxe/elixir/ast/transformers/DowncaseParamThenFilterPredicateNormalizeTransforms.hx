@@ -57,7 +57,6 @@ class DowncaseParamThenFilterPredicateNormalizeTransforms {
     return ElixirASTTransformer.transformNode(pred, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EVar(nm) if (nm == "query"):
-          #if sys Sys.println('[DowncaseParamThenFilter] query -> ' + param); #end
           makeASTWithMeta(EVar(param), x.metadata, x.pos);
         default: x;
       }
@@ -72,17 +71,14 @@ class DowncaseParamThenFilterPredicateNormalizeTransforms {
           while (i < stmts.length) {
             var s = stmts[i];
             if (i + 1 < stmts.length && isDowncaseAssignOf(param, s)) {
-              #if sys Sys.println('[DowncaseParamThenFilter] detected downcase assign of ' + param + ' before possible Enum.filter'); #end
               var next = stmts[i + 1];
               switch (next.def) {
                 case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
-                  #if sys Sys.println('[DowncaseParamThenFilter] rewriting Enum.filter(remote) predicate query→' + param); #end
                   var np = rewriteQueryToParam(args[1], param);
                   out.push(s);
                   out.push(makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], np]), next.metadata, next.pos));
                   i += 2; continue;
                 case ECall(tgt, "filter", args2) if (args2 != null && args2.length >= 1):
-                  #if sys Sys.println('[DowncaseParamThenFilter] rewriting Enum.filter(call) predicate query→' + param); #end
                   var last = args2[args2.length - 1];
                   var np2 = rewriteQueryToParam(last, param);
                   var prefix = args2.slice(0, args2.length - 1);

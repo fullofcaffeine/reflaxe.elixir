@@ -81,7 +81,7 @@ class ReduceAccAliasUnifyTransforms {
                             var binderName:Null<String> = switch (cl.args[0]) { case PVar(b): b; default: null; };
                             if (accName == null) return n;
                             #if debug_reduce_unify
-                            Sys.println('[ReduceAccAliasUnify] reduce fn body before=\n' + ElixirASTPrinter.print(cl.body, 0));
+                            // DEBUG: Sys.println('[ReduceAccAliasUnify] reduce fn body before=\n' + ElixirASTPrinter.print(cl.body, 0));
                             #end
                             // Collect alias candidates
                             var accAliasSet = new Map<String,Bool>();
@@ -90,35 +90,35 @@ class ReduceAccAliasUnifyTransforms {
                                 switch (x.def) {
                                     case EBinary(Match, left, rhs):
                                         #if debug_reduce_unify
-                                        Sys.println('[ReduceAccAliasUnify][scan] match lhs=' + ElixirASTPrinter.print(left, 0) + ' rhs=' + ElixirASTPrinter.print(rhs, 0));
+                                        // DEBUG: Sys.println('[ReduceAccAliasUnify][scan] match lhs=' + ElixirASTPrinter.print(left, 0) + ' rhs=' + ElixirASTPrinter.print(rhs, 0));
                                         #end
                                         var lhs:Null<String> = switch (left.def) { case EVar(nm): nm; default: null; };
                                         if (lhs != null) {
                                             if (isSelfAppend(rhs, lhs) && lhs != accName) {
                                                 accAliasSet.set(lhs, true);
-                                                Sys.println('[ReduceAccAliasUnify] acc alias: ' + lhs + ' (acc=' + accName + ')');
+                                                // DEBUG: Sys.println('[ReduceAccAliasUnify] acc alias: ' + lhs + ' (acc=' + accName + ')');
                                             }
                                             switch (rhs.def) {
                                                 case EVar(rv) if (binderName != null && rv == binderName && lhs != binderName):
                                                     binderAliasSet.set(lhs, true);
-                                                    Sys.println('[ReduceAccAliasUnify] binder alias: ' + lhs + ' (binder=' + binderName + ')');
+                                                    // DEBUG: Sys.println('[ReduceAccAliasUnify] binder alias: ' + lhs + ' (binder=' + binderName + ')');
                                                 default:
                                             }
                                         }
                                     case EMatch(pat, rhs2):
                                         #if debug_reduce_unify
-                                        Sys.println('[ReduceAccAliasUnify][scan] ematch rhs=' + ElixirASTPrinter.print(rhs2, 0));
+                                        // DEBUG: Sys.println('[ReduceAccAliasUnify][scan] ematch rhs=' + ElixirASTPrinter.print(rhs2, 0));
                                         #end
                                         var lhs2:Null<String> = switch (pat) { case PVar(n2): n2; default: null; };
                                         if (lhs2 != null) {
                                             if (isSelfAppend(rhs2, lhs2) && lhs2 != accName) {
                                                 accAliasSet.set(lhs2, true);
-                                                Sys.println('[ReduceAccAliasUnify] acc alias: ' + lhs2 + ' (acc=' + accName + ')');
+                                                // DEBUG: Sys.println('[ReduceAccAliasUnify] acc alias: ' + lhs2 + ' (acc=' + accName + ')');
                                             }
                                             switch (rhs2.def) {
                                                 case EVar(rv2) if (binderName != null && rv2 == binderName && lhs2 != binderName):
                                                     binderAliasSet.set(lhs2, true);
-                                                    Sys.println('[ReduceAccAliasUnify] binder alias: ' + lhs2 + ' (binder=' + binderName + ')');
+                                                    // DEBUG: Sys.println('[ReduceAccAliasUnify] binder alias: ' + lhs2 + ' (binder=' + binderName + ')');
                                                 default:
                                             }
                                         }
@@ -129,7 +129,7 @@ class ReduceAccAliasUnifyTransforms {
                             // Unify all discovered aliases (one or more) to acc across reducer body
                             var accAliases = [for (k in accAliasSet.keys()) k];
                             var binderAliases = [for (k in binderAliasSet.keys()) k];
-                            Sys.println('[ReduceAccAliasUnify] reducer acc=' + accName + (binderName != null ? (', binder=' + binderName) : '') + ', accAliases=' + accAliases.length + ', binderAliases=' + binderAliases.length);
+                            // DEBUG: Sys.println('[ReduceAccAliasUnify] reducer acc=' + accName + (binderName != null ? (', binder=' + binderName) : '') + ', accAliases=' + accAliases.length + ', binderAliases=' + binderAliases.length);
                             if (accAliases.length == 0 && binderAliases.length == 0) return n;
                             var newBody = ElixirASTTransformer.transformNode(cl.body, function(y: ElixirAST): ElixirAST {
                                 return switch (y.def) {
@@ -169,7 +169,7 @@ class ReduceAccAliasUnifyTransforms {
                                 }
                             });
                             #if debug_reduce_unify
-                            Sys.println('[ReduceAccAliasUnify] reduce fn body after=\n' + ElixirASTPrinter.print(newBody, 0));
+                            // DEBUG: Sys.println('[ReduceAccAliasUnify] reduce fn body after=\n' + ElixirASTPrinter.print(newBody, 0));
                             #end
                             var newFn = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: newBody }]) );
                             makeASTWithMeta(ERemoteCall(mod, "reduce", [args[0], args[1], newFn]), n.metadata, n.pos);

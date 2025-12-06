@@ -46,13 +46,12 @@ class CaseBinderRebindUnderscoreTransforms {
             return switch (n.def) {
                 case ECase(target, clauses):
                     #if debug_hygiene
-                    Sys.println('[CaseBinderRebindUnderscore] inspecting case...');
                     #end
                     var newClauses = [];
                     for (cl in clauses) {
                         var binders = collectPatternBinders(cl.pattern);
                         #if debug_hygiene
-                        Sys.println('[CaseBinderRebindUnderscore] binders=' + binders.join(','));
+                        // DEBUG: Sys.println('[CaseBinderRebindUnderscore] binders=' + binders.join(','));
                         #end
                         var bodyStmts:Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
                         var toUnderscore:Array<String> = [];
@@ -60,7 +59,6 @@ class CaseBinderRebindUnderscoreTransforms {
                             var rebindIdx = firstRebindIndex(bodyStmts, b);
                             var useIdx = firstUseIndex(bodyStmts, b);
                             #if debug_hygiene
-                            Sys.println('[CaseBinderRebindUnderscore] binder=' + b + ' rebindIdx=' + rebindIdx + ' useIdx=' + useIdx);
                             #end
                             if (rebindIdx >= 0 && (useIdx == -1 || rebindIdx < useIdx)) {
                                 // Do not underscore when the immediate rebind is a clause‑local alias of the form b = _b
@@ -70,7 +68,7 @@ class CaseBinderRebindUnderscoreTransforms {
                             }
                         }
                         #if debug_hygiene
-                        if (toUnderscore.length > 0) Sys.println('[CaseBinderRebindUnderscore] underscore binders=' + toUnderscore.join(','));
+                        if (toUnderscore.length > 0) // DEBUG: Sys.println('[CaseBinderRebindUnderscore] underscore binders=' + toUnderscore.join(','));
                         #end
                         var newPat = (toUnderscore.length > 0) ? underscoreBinders(cl.pattern, toUnderscore) : cl.pattern;
                         newClauses.push({ pattern: newPat, guard: cl.guard, body: cl.body });

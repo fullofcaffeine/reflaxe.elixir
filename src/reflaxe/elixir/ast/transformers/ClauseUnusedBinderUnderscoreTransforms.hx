@@ -74,7 +74,6 @@ class ClauseUnusedBinderUnderscoreTransforms {
                             newPat = (unused.length > 0) ? underscoreBinders(newPat, unused) : newPat;
                             #if debug_hygiene
                             if (unused.length > 0) {
-                                for (u in unused) Sys.println('[ClauseUnusedBinderUnderscore] underscoring binder=' + u);
                             }
                             #end
                         }

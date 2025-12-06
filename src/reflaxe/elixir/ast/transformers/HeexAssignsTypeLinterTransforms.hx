@@ -87,7 +87,7 @@ class HeexAssignsTypeLinterTransforms {
                     hxPath = findAnySourceFile(body);
                 }
 #if debug_assigns_linter
-                trace('[HeexAssignsTypeLinter] render/1 at hxPath=' + hxPath);
+                // DISABLED: trace('[HeexAssignsTypeLinter] render/1 at hxPath=' + hxPath);
 #end
                 if (hxPath == null) return; // No source; skip
                 // Skip compiler/library/internal files to avoid scanning whole libs
@@ -104,14 +104,14 @@ class HeexAssignsTypeLinterTransforms {
                     ? extractAssignsTypeNameBefore(fileContent, nearLine)
                     : extractAssignsTypeName(fileContent);
 #if debug_assigns_linter
-                trace('[HeexAssignsTypeLinter] assigns type=' + assignsType);
+                // DISABLED: trace('[HeexAssignsTypeLinter] assigns type=' + assignsType);
 #end
                 if (assignsType == null) return; // cannot determine type name; skip
 
                 var fields = extractAssignsFields(assignsType, fileContent);
 #if debug_assigns_linter
                 var keys = [for (k in fields.keys()) k].join(',');
-                trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
+                // DISABLED: trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
 #end
                 if (fields == null) fields = new Map<String, String>();
 
@@ -128,7 +128,7 @@ class HeexAssignsTypeLinterTransforms {
                 for (item in contents) {
                     var used = collectAtFields(item.content);
 #if debug_assigns_linter
-                    trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
+                    // DISABLED: trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
 #end
                     for (f in used) if (!fields.exists(f)) {
                         error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + assignsType + ')', item.pos);

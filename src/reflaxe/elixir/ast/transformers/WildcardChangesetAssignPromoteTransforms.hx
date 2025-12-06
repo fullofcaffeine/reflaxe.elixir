@@ -48,8 +48,7 @@ class WildcardChangesetAssignPromoteTransforms {
         return switch (body.def) {
             case EBlock(stmts) if (stmts.length > 0):
                 var first = stmts[0];
-                #if sys
-                #if (sys && debug_ast_transformer) Sys.println('[WildcardChangesetAssignPromote] First stmt node: ' + Std.string(first.def)); #end
+                #if debug_transforms
                 #end
                 var rhs = rhsIfWildcardAssign(first);
                 if (rhs != null) {

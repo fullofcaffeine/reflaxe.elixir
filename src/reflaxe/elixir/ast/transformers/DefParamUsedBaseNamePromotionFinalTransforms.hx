@@ -36,7 +36,6 @@ class DefParamUsedBaseNamePromotionFinalTransforms {
                                 var base = pn.substr(1);
                                 var hit = containsVar(body, base);
 #if debug_final_promotion
-                                Sys.println('[FinalPromotion][scan] def ' + name + ' param ' + pn + ' base=' + base + ' used=' + hit);
 #end
                                 if (hit) { newArgs[i] = PVar(base); changed = true; }
                             default:
@@ -44,7 +43,7 @@ class DefParamUsedBaseNamePromotionFinalTransforms {
                     }
 #if debug_final_promotion
                     if (changed) {
-                        Sys.println('[FinalPromotion] Renamed underscored param(s) in def ' + name);
+                        // DEBUG: Sys.println('[FinalPromotion] Renamed underscored param(s) in def ' + name);
                     }
 #end
                     changed ? makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos) : n;
@@ -61,7 +60,7 @@ class DefParamUsedBaseNamePromotionFinalTransforms {
                     }
 #if debug_final_promotion
                     if (changed2) {
-                        Sys.println('[FinalPromotion] Renamed underscored param(s) in defp ' + name2);
+                        // DEBUG: Sys.println('[FinalPromotion] Renamed underscored param(s) in defp ' + name2);
                     }
 #end
                     changed2 ? makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos) : n;

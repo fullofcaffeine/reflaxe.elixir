@@ -28,23 +28,18 @@ class SplitChainedAssignmentsTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EBlock(stmts):
-                    #if debug_split_assign Sys.println('[SplitChainedAssignments] Visiting EBlock with ' + stmts.length + ' stmt(s)'); #end
                     var out:Array<ElixirAST> = [];
                     var i = 0;
                     while (i < stmts.length) {
                         var s = stmts[i];
                         // New fold: [a = (b = expr); if(cond) ... else b] → [b = expr; a = if(cond) ... else b]
                         if (i + 1 < stmts.length) {
-                            #if debug_split_assign Sys.println('[SplitChainedAssignments]   stmt[' + i + '] = ' + reflaxe.elixir.ast.ElixirASTPrinter.print(s, 0)); #end
                             switch (s.def) {
                                 case EBinary(Match, {def: EVar(a0)}, {def: EBinary(Match, {def: EVar(b0)}, rhs0)}):
-                                    #if debug_split_assign Sys.println('[SplitChainedAssignments]   Pattern a=(b=rhs) detected; a=' + a0 + ' b=' + b0); #end
-                                    #if sys Sys.println('[SplitChainedAssignments] Detected a=(b=expr) with a=' + a0 + ' b=' + b0); #end
                                     switch (stmts[i + 1].def) {
                                         case EIf(cond0, then0, else0):
                                             var elseIsB0 = switch (else0.def) { case EVar(bb) if (bb == b0): true; default: false; };
                                             if (elseIsB0) {
-                                                #if sys Sys.println('[SplitChainedAssignments] Folding to: b=expr; a=if ... else b'); #end
                                                 // Emit: b = rhs; a = if ... end
                                                 out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b0), s.metadata, s.pos), rhs0), s.metadata, s.pos));
                                                 out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a0), s.metadata, s.pos), makeASTWithMeta(EIf(cond0, then0, else0), stmts[i + 1].metadata, stmts[i + 1].pos)), s.metadata, s.pos));
@@ -62,14 +57,12 @@ class SplitChainedAssignmentsTransforms {
                         var matched = false;
                         switch (s.def) {
                             case EBinary(Match, {def: EVar(aW)}, {def: EBinary(Match, {def: EVar(bW)}, rhsW)}):
-                                #if debug_split_assign Sys.println('[SplitChainedAssignments]   Window scan for a=(b=rhs); a=' + aW + ' b=' + bW); #end
                                 var j = i + 1;
                                 while (j <= windowEnd) {
                                     switch (stmts[j].def) {
                                         case EIf(condW, thenW, elseW):
                                             var elseIsBW = switch (elseW.def) { case EVar(bb) if (bb == bW): true; default: false; };
                                             if (elseIsBW) {
-                                                #if debug_split_assign Sys.println('[SplitChainedAssignments]   Non-adjacent fold matched at ' + j); #end
                                                 out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(bW), s.metadata, s.pos), rhsW), s.metadata, s.pos));
                                                 out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(aW), s.metadata, s.pos), makeASTWithMeta(EIf(condW, thenW, elseW), stmts[j].metadata, stmts[j].pos)), s.metadata, s.pos));
                                                 // Copy any intervening statements that are side-effect free EVar references
@@ -242,12 +235,10 @@ class SplitChainedAssignmentsTransforms {
                         if (i2 + 1 < stmts2.length) {
                             switch (s.def) {
                                 case EBinary(Match, {def: EVar(a0)}, {def: EBinary(Match, {def: EVar(b0)}, rhs0)}):
-                                    #if sys Sys.println('[SplitChainedAssignments/EDo] Detected a=(b=expr) with a=' + a0 + ' b=' + b0); #end
                                     switch (stmts2[i2 + 1].def) {
                                         case EIf(cond0, then0, else0):
                                             var elseIsB0 = switch (else0.def) { case EVar(bb) if (bb == b0): true; default: false; };
                                             if (elseIsB0) {
-                                                #if sys Sys.println('[SplitChainedAssignments/EDo] Folding to: b=expr; a=if ... else b'); #end
                                                 out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b0), s.metadata, s.pos), rhs0), s.metadata, s.pos));
                                                 out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a0), s.metadata, s.pos), makeASTWithMeta(EIf(cond0, then0, else0), stmts2[i2 + 1].metadata, stmts2[i2 + 1].pos)), s.metadata, s.pos));
                                                 i2 += 2;

@@ -24,18 +24,16 @@ class VarRefQueryToSuffixParamTransforms {
         case EDef(name, args, guards, body):
           var p = detect(args);
           if (p == null) n else {
-            #if sys {
+            #if debug_transforms {
               var hasQuery = containsQuery(body);
-              if (hasQuery) Sys.println('[VarRefQueryToSuffixParam] def ' + name + ' has free query; param=' + p);
             } #end
             makeASTWithMeta(EDef(name, args, guards, rewrite(body, p)), n.metadata, n.pos);
           }
         case EDefp(name2, args2, guards2, body2):
           var p2 = detect(args2);
           if (p2 == null) n else {
-            #if sys {
+            #if debug_transforms {
               var hasQuery2 = containsQuery(body2);
-              if (hasQuery2) Sys.println('[VarRefQueryToSuffixParam] defp ' + name2 + ' has free query; param=' + p2);
             } #end
             makeASTWithMeta(EDefp(name2, args2, guards2, rewrite(body2, p2)), n.metadata, n.pos);
           }
@@ -51,7 +49,6 @@ class VarRefQueryToSuffixParamTransforms {
   static function rewrite(body:ElixirAST, param:String): ElixirAST {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
-        case EVar(nm) if (nm == "query"): #if sys Sys.println('[VarRefQueryToSuffixParam] query -> ' + param); #end makeASTWithMeta(EVar(param), x.metadata, x.pos);
         default: x;
       }
     });

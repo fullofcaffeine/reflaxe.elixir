@@ -164,7 +164,7 @@ class PatternBuilder {
                 
             // Variables (for pattern matching)
             case TLocal(v):
-                trace('[PatternBuilder.convertPattern] TLocal v.name: ${v.name}, v.id: ${v.id}');
+                // DISABLED: trace('[PatternBuilder.convertPattern] TLocal v.name: ${v.name}, v.id: ${v.id}');
                 PVar(ElixirASTHelpers.toElixirVarName(v.name));
                 
             // Enum constructors
@@ -254,7 +254,7 @@ class PatternBuilder {
     private static function convertRegularEnumPattern(ef: EnumField, args: Array<TypedExpr>, 
                                                      context: BuildContext): EPattern {
         #if debug_enum_patterns
-        trace('[EnumPattern] regular enum: ' + ef.name + ' index=' + ef.index);
+        // DISABLED: trace('[EnumPattern] regular enum: ' + ef.name + ' index=' + ef.index);
         #end
         var patterns:Array<EPattern> = [PLiteral(makeAST(EInteger(ef.index)))];
         for (arg in args) patterns.push(convertPattern(arg, context));

@@ -85,7 +85,6 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
                             var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
                                 return switch (x.def) {
                                     case EVar(v) if (isLower(v) && allowReplace(v) && !declared.exists(v)):
-                                        #if sys Sys.println('[SuccessVarReplace] ' + v + ' -> ' + binder); #end
                                         makeASTWithMeta(EVar(binder), x.metadata, x.pos);
                                     case ERaw(s) if (s != null):
                                         // Carefully replace undefined simple vars inside raw code fragments.

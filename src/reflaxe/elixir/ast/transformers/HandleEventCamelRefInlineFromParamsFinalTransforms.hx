@@ -21,16 +21,13 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class HandleEventCamelRefInlineFromParamsFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
-    #if (sys && debug_ast_transformer) Sys.println('[HandleEventCamelInlineFinal] pass start'); #end
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
-          #if (sys && debug_ast_transformer) Sys.println('[HandleEventCamelInlineFinal] handle_event def found'); #end
           var pvar = paramsVar(args);
           var nb = inlineCamelRefs(body, pvar);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
-          #if (sys && debug_ast_transformer) Sys.println('[HandleEventCamelInlineFinal] handle_event defp found'); #end
           var paramsVarAlt = paramsVar(args2);
           var inlinedBodyAlt = inlineCamelRefs(body2, paramsVarAlt);
           makeASTWithMeta(EDefp(name2, args2, guards2, inlinedBodyAlt), n.metadata, n.pos);
@@ -95,7 +92,6 @@ class HandleEventCamelRefInlineFromParamsFinalTransforms {
       return ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
         return switch (x.def) {
           case EVar(v) if (isCamel(v) && !reserved(v)):
-            #if (sys && debug_ast_transformer) Sys.println('[HandleEventCamelInlineFinal] inline ' + v + ' from ' + paramsVar); #end
             buildExtract(v, paramsVar);
           case ECall(target, fname, args):
             var newArgs = args != null ? [for (a in args) rewrite(a)] : args;

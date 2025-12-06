@@ -151,7 +151,6 @@ class ListMapFilterFixTransforms {
                         var elseIsParam = varNameEquals(elseB, param);
                         if (thenIsParam && elseIsParam) {
                             #if debug_list_fix
-                            Sys.println('[ListMapFilterFix] mapReplace: param=' + param + ', other=' + otherVar);
                             #end
                             var newThen = makeAST(EVar(otherVar));
                             return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EIf(cond, newThen, elseB)) } ]));
@@ -179,13 +178,11 @@ class ListMapFilterFixTransforms {
                         if (isFieldIdOfVar(left, param) && varNameEquals(right, param)) {
                             var newRight = makeAST(EVar(outerId));
                             #if debug_list_fix
-                            Sys.println('[ListMapFilterFix] filterRemove: replace RHS self with ' + outerId);
                             #end
                             return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(NotEqual, left, newRight)) } ]));
                         } else if (varNameEquals(left, param) && isFieldIdOfVar(right, param)) {
                             var newLeft = makeAST(EVar(outerId));
                             #if debug_list_fix
-                            Sys.println('[ListMapFilterFix] filterRemove: replace LHS self with ' + outerId);
                             #end
                             return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(NotEqual, newLeft, right)) } ]));
                         } else {

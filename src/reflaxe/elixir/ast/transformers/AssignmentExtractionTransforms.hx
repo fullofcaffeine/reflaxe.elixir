@@ -62,7 +62,7 @@ class AssignmentExtractionTransforms {
      */
     public static function assignmentExtractionPass(ast: ElixirAST): ElixirAST {
         #if debug_assignment_extraction
-        trace("[XRay AssignmentExtraction] Starting assignment extraction pass");
+        // DISABLED: trace("[XRay AssignmentExtraction] Starting assignment extraction pass");
         #end
         
         return transformAssignments(ast);
@@ -72,7 +72,7 @@ class AssignmentExtractionTransforms {
         #if debug_assignment_extraction
         var nodeType = Type.enumConstructor(node.def);
         if (nodeType == "EMatch" || nodeType == "EBinary" || nodeType == "ECase") {
-            trace('[XRay AssignmentExtraction] ⚡ Visiting ${nodeType} node');
+            // DISABLED: trace('[XRay AssignmentExtraction] ⚡ Visiting ${nodeType} node');
         }
         #end
         
@@ -80,7 +80,7 @@ class AssignmentExtractionTransforms {
         switch(node.def) {
             case ECase(expr, clauses):
                 #if debug_assignment_extraction
-                trace("[XRay AssignmentExtraction] Special ECase handling - preserving clause body statements");
+                // DISABLED: trace("[XRay AssignmentExtraction] Special ECase handling - preserving clause body statements");
                 #end
                 
                 // Transform the expression being matched
@@ -157,18 +157,18 @@ class AssignmentExtractionTransforms {
             // Look for assignments that are direct statements
             case EMatch(pattern, value):
                 #if debug_assignment_extraction
-                trace("[XRay AssignmentExtraction] Found top-level EMatch");
-                trace('[XRay AssignmentExtraction] Pattern: $pattern');
-                trace('[XRay AssignmentExtraction] Value type: ${Type.enumConstructor(value.def)}');
+                // DISABLED: trace("[XRay AssignmentExtraction] Found top-level EMatch");
+                // DISABLED: trace('[XRay AssignmentExtraction] Pattern: $pattern');
+                // DISABLED: trace('[XRay AssignmentExtraction] Value type: ${Type.enumConstructor(value.def)}');
                 if (value.metadata?.sourceFile != null) {
-                    trace('[XRay AssignmentExtraction] Source: ${value.metadata.sourceFile}:${value.metadata.sourceLine}');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Source: ${value.metadata.sourceFile}:${value.metadata.sourceLine}');
                 }
                 // Special check for chained assignments like c = index = s.cca(...)
                 switch(value.def) {
                     case EMatch(innerPattern, innerValue):
-                        trace('[XRay AssignmentExtraction] Found chained assignment!');
-                        trace('[XRay AssignmentExtraction] Inner pattern: $innerPattern');
-                        trace('[XRay AssignmentExtraction] Inner value type: ${Type.enumConstructor(innerValue.def)}');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Found chained assignment!');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Inner pattern: $innerPattern');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Inner value type: ${Type.enumConstructor(innerValue.def)}');
                     default:
                 }
                 #end
@@ -176,8 +176,8 @@ class AssignmentExtractionTransforms {
                 var result = extractAndTransformExpression(value);
                 if (result.hasExtracted) {
                     #if debug_assignment_extraction
-                    trace("[XRay AssignmentExtraction] Transforming top-level assignment");
-                    trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments');
+                    // DISABLED: trace("[XRay AssignmentExtraction] Transforming top-level assignment");
+                    // DISABLED: trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments');
                     #end
                     // Create a block with extracted assignments followed by the main assignment
                     var statements = result.extracted.copy();
@@ -215,7 +215,7 @@ class AssignmentExtractionTransforms {
             // Handle remote calls (like Enum.reduce_while) that might contain functions with assignments
             case ERemoteCall(_, _, _):
                 #if debug_assignment_extraction
-                trace("[XRay AssignmentExtraction] Processing ERemoteCall at top level");
+                // DISABLED: trace("[XRay AssignmentExtraction] Processing ERemoteCall at top level");
                 #end
                 var result = extractAndTransformExpression(transformedNode);
                 if (result.hasExtracted) {
@@ -229,8 +229,8 @@ class AssignmentExtractionTransforms {
             // Handle case expressions - need special handling for clause bodies
             case ECase(expr, clauses):
                 #if debug_assignment_extraction
-                trace("[XRay AssignmentExtraction] Processing top-level ECase");
-                trace('[XRay AssignmentExtraction] Number of clauses: ${clauses.length}');
+                // DISABLED: trace("[XRay AssignmentExtraction] Processing top-level ECase");
+                // DISABLED: trace('[XRay AssignmentExtraction] Number of clauses: ${clauses.length}');
                 #end
                 
                 // Process the matched expression for any embedded assignments
@@ -264,8 +264,8 @@ class AssignmentExtractionTransforms {
             // Handle if expressions that might contain assignments in conditions
             case EIf(condition, thenBranch, elseBranch):
                 #if debug_assignment_extraction
-                trace("[XRay AssignmentExtraction] Processing top-level EIf");
-                trace('[XRay AssignmentExtraction] Condition type: ${Type.enumConstructor(condition.def)}');
+                // DISABLED: trace("[XRay AssignmentExtraction] Processing top-level EIf");
+                // DISABLED: trace('[XRay AssignmentExtraction] Condition type: ${Type.enumConstructor(condition.def)}');
                 #end
                 
                 // First check if the condition is a parenthesized expression
@@ -275,7 +275,7 @@ class AssignmentExtractionTransforms {
                 };
                 
                 #if debug_assignment_extraction
-                trace('[XRay AssignmentExtraction] Actual condition type: ${Type.enumConstructor(actualCondition.def)}');
+                // DISABLED: trace('[XRay AssignmentExtraction] Actual condition type: ${Type.enumConstructor(actualCondition.def)}');
                 #end
                 
                 // Extract assignments from the condition
@@ -283,7 +283,7 @@ class AssignmentExtractionTransforms {
                 
                 if (condResult.hasExtracted) {
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Extracted ${condResult.extracted.length} assignments from if condition');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Extracted ${condResult.extracted.length} assignments from if condition');
                     #end
                     // Create a block with extracted assignments followed by the if expression
                     var statements = condResult.extracted.copy();
@@ -322,14 +322,14 @@ class AssignmentExtractionTransforms {
         }
 
         #if debug_assignment_extraction
-        trace('[XRay AssignmentExtraction] Transforming clause body type: ${Type.enumConstructor(body.def)}');
+        // DISABLED: trace('[XRay AssignmentExtraction] Transforming clause body type: ${Type.enumConstructor(body.def)}');
         #end
 
         // Simply recurse through the AST structure without extraction
         switch(body.def) {
             case EBlock(statements):
                 #if debug_assignment_extraction
-                trace('[XRay AssignmentExtraction] Clause body is EBlock with ${statements.length} statements - preserving all');
+                // DISABLED: trace('[XRay AssignmentExtraction] Clause body is EBlock with ${statements.length} statements - preserving all');
                 #end
                 // Transform each statement recursively but keep them all
                 var transformedStatements = [];
@@ -337,7 +337,7 @@ class AssignmentExtractionTransforms {
                     var transformedStmt = transformClauseBody(stmt);
                     if (shouldDropTempAssignment(transformedStmt)) {
                         #if debug_assignment_extraction
-                        trace('[XRay AssignmentExtraction] Dropping temp assignment statement');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Dropping temp assignment statement');
                         #end
                         continue;
                     }
@@ -516,10 +516,10 @@ class AssignmentExtractionTransforms {
             switch(e.def) {
                 case EMatch(pattern, value):
                     #if debug_assignment_extraction
-                    trace("[XRay AssignmentExtraction] 🔍 Found embedded assignment");
-                    trace('[XRay AssignmentExtraction] Pattern: $pattern');
-                    trace('[XRay AssignmentExtraction] Pattern type: ${Type.enumConstructor(pattern)}');
-                    trace('[XRay AssignmentExtraction] Value type: ${Type.enumConstructor(value.def)}');
+                    // DISABLED: trace("[XRay AssignmentExtraction] 🔍 Found embedded assignment");
+                    // DISABLED: trace('[XRay AssignmentExtraction] Pattern: $pattern');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Pattern type: ${Type.enumConstructor(pattern)}');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Value type: ${Type.enumConstructor(value.def)}');
                     #end
                     
                     // First extract any assignments from the value expression itself
@@ -529,14 +529,14 @@ class AssignmentExtractionTransforms {
                     switch pattern {
                         case PVar(name) if (ElixirASTBuilder.isTempPatternVarName(name)):
                             #if debug_assignment_extraction
-                            trace('[XRay AssignmentExtraction] ⚠️ Skipping temp pattern assignment for $name');
+                            // DISABLED: trace('[XRay AssignmentExtraction] ⚠️ Skipping temp pattern assignment for $name');
                             #end
                             return cleanValue;
                         case PVar(name):
                             switch(cleanValue.def) {
                                 case EVar(varName) if (varName == name):
                                     #if debug_assignment_extraction
-                                    trace('[XRay AssignmentExtraction] ⚠️ Skipping redundant self-assignment: $name = $varName');
+                                    // DISABLED: trace('[XRay AssignmentExtraction] ⚠️ Skipping redundant self-assignment: $name = $varName');
                                     #end
                                     return cleanValue;
                                 default:
@@ -555,7 +555,7 @@ class AssignmentExtractionTransforms {
                     switch(pattern) {
                         case PVar(name):
                             #if debug_assignment_extraction
-                            trace('[XRay AssignmentExtraction] 🔄 Replacing assignment with variable: $name');
+                            // DISABLED: trace('[XRay AssignmentExtraction] 🔄 Replacing assignment with variable: $name');
                             #end
                             return makeAST(EVar(name));
                         default:
@@ -597,15 +597,15 @@ class AssignmentExtractionTransforms {
                     
                 case EUnary(op, operand):
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Processing EUnary operator: $op');
-                    trace('[XRay AssignmentExtraction] Operand type: ${Type.enumConstructor(operand.def)}');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Processing EUnary operator: $op');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Operand type: ${Type.enumConstructor(operand.def)}');
                     #end
                     
                     // Special handling for EBlock inside unary operators
                     switch(operand.def) {
                         case EBlock(_):
                             #if debug_assignment_extraction
-                            trace('[XRay AssignmentExtraction] Found EBlock in unary - delegating to extractFromExpr');
+                            // DISABLED: trace('[XRay AssignmentExtraction] Found EBlock in unary - delegating to extractFromExpr');
                             #end
                             
                             // Let extractFromExpr handle the block properly
@@ -613,8 +613,8 @@ class AssignmentExtractionTransforms {
                             var cleanOperand = extractFromExpr(operand);
                             
                             #if debug_assignment_extraction
-                            trace('[XRay AssignmentExtraction] After extraction, applying unary to: ${Type.enumConstructor(cleanOperand.def)}');
-                            trace('[XRay AssignmentExtraction] Total extracted so far: ${extracted.length}');
+                            // DISABLED: trace('[XRay AssignmentExtraction] After extraction, applying unary to: ${Type.enumConstructor(cleanOperand.def)}');
+                            // DISABLED: trace('[XRay AssignmentExtraction] Total extracted so far: ${extracted.length}');
                             #end
                             
                             return makeASTWithMeta(
@@ -636,9 +636,9 @@ class AssignmentExtractionTransforms {
                     
                 case EBinary(op, left, right):
                     #if debug_assignment_extraction
-                    trace("[XRay AssignmentExtraction] Processing binary in expression: " + Type.enumConstructor(op));
-                    trace('[XRay AssignmentExtraction] Left: ${left.def}');
-                    trace('[XRay AssignmentExtraction] Right: ${right.def}');
+                    // DISABLED: trace("[XRay AssignmentExtraction] Processing binary in expression: " + Type.enumConstructor(op));
+                    // DISABLED: trace('[XRay AssignmentExtraction] Left: ${left.def}');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Right: ${right.def}');
                     
                     // Check if left or right contains assignments
                     var hasLeftAssignment = switch(left.def) {
@@ -649,8 +649,8 @@ class AssignmentExtractionTransforms {
                         case EMatch(_, _): true;
                         default: false;
                     };
-                    trace('[XRay AssignmentExtraction] Has left assignment: $hasLeftAssignment');
-                    trace('[XRay AssignmentExtraction] Has right assignment: $hasRightAssignment');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Has left assignment: $hasLeftAssignment');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Has right assignment: $hasRightAssignment');
                     #end
                     var cleanLeft = extractFromExpr(left);
                     var cleanRight = extractFromExpr(right);
@@ -664,17 +664,17 @@ class AssignmentExtractionTransforms {
                 case ECall(target, funcName, args):
                     #if debug_assignment_extraction
                     if (funcName == "reduce_while") {
-                        trace('[XRay AssignmentExtraction] 🎯 Processing Enum.reduce_while call!');
-                        trace('[XRay AssignmentExtraction] Args count: ${args.length}');
+                        // DISABLED: trace('[XRay AssignmentExtraction] 🎯 Processing Enum.reduce_while call!');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Args count: ${args.length}');
                         for (i in 0...args.length) {
-                            trace('[XRay AssignmentExtraction] Arg $i type: ${Type.enumConstructor(args[i].def)}');
+                            // DISABLED: trace('[XRay AssignmentExtraction] Arg $i type: ${Type.enumConstructor(args[i].def)}');
                             switch(args[i].def) {
                                 case EMatch(_, _):
-                                    trace('[XRay AssignmentExtraction] Found assignment in arg $i');
+                                    // DISABLED: trace('[XRay AssignmentExtraction] Found assignment in arg $i');
                                 case EFn(clauses):
-                                    trace('[XRay AssignmentExtraction] 🔥 Found anonymous function in arg $i with ${clauses.length} clauses');
+                                    // DISABLED: trace('[XRay AssignmentExtraction] 🔥 Found anonymous function in arg $i with ${clauses.length} clauses');
                                     if (clauses.length > 0) {
-                                        trace('[XRay AssignmentExtraction] First clause body type: ${Type.enumConstructor(clauses[0].body.def)}');
+                                        // DISABLED: trace('[XRay AssignmentExtraction] First clause body type: ${Type.enumConstructor(clauses[0].body.def)}');
                                     }
                                 default:
                             }
@@ -692,11 +692,11 @@ class AssignmentExtractionTransforms {
                     
                 case ERemoteCall(module, funcName, args):
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Processing remote call: ${funcName}');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Processing remote call: ${funcName}');
                     if (funcName == "reduce_while") {
-                        trace('[XRay AssignmentExtraction] 🎯 Found Enum.reduce_while!');
+                        // DISABLED: trace('[XRay AssignmentExtraction] 🎯 Found Enum.reduce_while!');
                         for (i in 0...args.length) {
-                            trace('[XRay AssignmentExtraction] Arg $i type: ${Type.enumConstructor(args[i].def)}');
+                            // DISABLED: trace('[XRay AssignmentExtraction] Arg $i type: ${Type.enumConstructor(args[i].def)}');
                         }
                     }
                     #end
@@ -711,8 +711,8 @@ class AssignmentExtractionTransforms {
                     
                 case EIf(condition, thenBranch, elseBranch):
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Processing if condition');
-                    trace('[XRay AssignmentExtraction] Condition type: ${Type.enumConstructor(condition.def)}');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Processing if condition');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Condition type: ${Type.enumConstructor(condition.def)}');
                     #end
                     
                     // Extract assignments from the condition
@@ -744,14 +744,14 @@ class AssignmentExtractionTransforms {
                     
                 case EFn(clauses):
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Processing anonymous function with ${clauses.length} clauses');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Processing anonymous function with ${clauses.length} clauses');
                     #end
                     
                     // Process each clause body for assignments
                     var cleanClauses = [];
                     for (clause in clauses) {
                         #if debug_assignment_extraction
-                        trace('[XRay AssignmentExtraction] Processing clause body type: ${Type.enumConstructor(clause.body.def)}');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Processing clause body type: ${Type.enumConstructor(clause.body.def)}');
                         #end
                         
                         // Extract assignments from the clause body
@@ -759,7 +759,7 @@ class AssignmentExtractionTransforms {
                         
                         if (result.hasExtracted) {
                             #if debug_assignment_extraction
-                            trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments from fn clause');
+                            // DISABLED: trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments from fn clause');
                             #end
                             
                             // Create a block with extracted assignments followed by the cleaned expression
@@ -790,12 +790,12 @@ class AssignmentExtractionTransforms {
                     
                 case EBlock(statements):
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Processing EBlock in expression context with ${statements.length} statements');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Processing EBlock in expression context with ${statements.length} statements');
                     for (i in 0...statements.length) {
-                        trace('[XRay AssignmentExtraction] Statement $i: ${Type.enumConstructor(statements[i].def)}');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Statement $i: ${Type.enumConstructor(statements[i].def)}');
                     }
                     var inStatementContext = isInStatementContext(e);
-                    trace('[XRay AssignmentExtraction] Block is in statement context: $inStatementContext');
+                    // DISABLED: trace('[XRay AssignmentExtraction] Block is in statement context: $inStatementContext');
                     #end
                     
                     // Only extract assignments if we're NOT in a statement context
@@ -807,7 +807,7 @@ class AssignmentExtractionTransforms {
                             switch(statements[0].def) {
                                 case EMatch(pattern, value):
                                     #if debug_assignment_extraction
-                                    trace('[XRay AssignmentExtraction] Found assignment in expression context block - extracting');
+                                    // DISABLED: trace('[XRay AssignmentExtraction] Found assignment in expression context block - extracting');
                                     #end
                                     // Extract the assignment
                                     extracted.push(statements[0]);
@@ -818,7 +818,7 @@ class AssignmentExtractionTransforms {
                         }
                     } else {
                         #if debug_assignment_extraction
-                        trace('[XRay AssignmentExtraction] Block is in statement context - preserving all statements');
+                        // DISABLED: trace('[XRay AssignmentExtraction] Block is in statement context - preserving all statements');
                         #end
                     }
                     
@@ -871,11 +871,11 @@ class AssignmentExtractionTransforms {
         
         #if debug_assignment_extraction
         if (extracted.length > 0) {
-            trace('[XRay AssignmentExtraction] ✅ Extracted ${extracted.length} assignments from expression');
+            // DISABLED: trace('[XRay AssignmentExtraction] ✅ Extracted ${extracted.length} assignments from expression');
             for (i in 0...extracted.length) {
-                trace('[XRay AssignmentExtraction] Extracted[$i]: ${Type.enumConstructor(extracted[i].def)}');
+                // DISABLED: trace('[XRay AssignmentExtraction] Extracted[$i]: ${Type.enumConstructor(extracted[i].def)}');
             }
-            trace('[XRay AssignmentExtraction] Cleaned expression: ${Type.enumConstructor(cleanExpr.def)}');
+            // DISABLED: trace('[XRay AssignmentExtraction] Cleaned expression: ${Type.enumConstructor(cleanExpr.def)}');
         }
         #end
         

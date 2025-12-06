@@ -18,12 +18,10 @@ class DebugDumpQueryFunctionBodiesTransforms {
         case EDef(name, args, _, body):
           var q = qparam(args);
           if (q != null) {
-            #if sys Sys.println('[DebugDumpQueryFn] def ' + name + '/' + args.length + ' qparam=' + q + ' body=\n' + reflaxe.elixir.ast.ElixirASTPrinter.print(body, 0)); #end
           }
         case EDefp(name2, args2, _, body2):
           var q2 = qparam(args2);
           if (q2 != null) {
-            #if sys Sys.println('[DebugDumpQueryFn] defp ' + name2 + '/' + args2.length + ' qparam=' + q2 + ' body=\n' + reflaxe.elixir.ast.ElixirASTPrinter.print(body2, 0)); #end
           }
         default:
       }

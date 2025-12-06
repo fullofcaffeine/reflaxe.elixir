@@ -64,7 +64,6 @@ class NestedCaseTupleUnshadowTransforms {
     // For each inner clause, if pattern is {:tag, PVar(b)} where b == printed innerExpr var name, rename b to value and optionally prefix-bind sole undefined local to value.
     var innerVar: Null<String> = switch (inner.expr.def) { case EVar(v): v; default: null; };
     if (innerVar == null) return oc;
-    #if debug_ast_transformer Sys.println('[NestedCaseUnshadow] Found inner case over var: ' + innerVar); #end
 
     var newInnerClauses:Array<ECaseClause> = [];
     for (ic in inner.clauses) {
@@ -75,14 +74,12 @@ class NestedCaseTupleUnshadowTransforms {
         default: ic.pattern;
       };
       if (!binderRenamed) { newInnerClauses.push(ic); continue; }
-      #if debug_ast_transformer Sys.println('[NestedCaseUnshadow] Renaming inner {:tag, ' + innerVar + '} -> {:tag, value}'); #end
       var declared = collectDeclared(pat2, ic.body);
       var used = collectUsed(ic.body);
       var undef:Array<String> = [];
       for (u in used.keys()) if (!declared.exists(u) && allowLocal(u)) undef.push(u);
       if (undef.length == 1) {
         var chosen = undef[0];
-        #if debug_ast_transformer Sys.println('[NestedCaseUnshadow] Prefix-bind ' + chosen + ' = value'); #end
         var prefix = makeAST(EBinary(Match, makeAST(EVar(chosen)), makeAST(EVar("value"))));
         var innerBody2 = switch (ic.body.def) {
           case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), ic.body.metadata, ic.body.pos);

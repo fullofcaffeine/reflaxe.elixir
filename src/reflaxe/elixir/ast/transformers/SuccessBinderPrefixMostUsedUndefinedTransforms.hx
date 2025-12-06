@@ -44,7 +44,6 @@ class SuccessBinderPrefixMostUsedUndefinedTransforms {
                 if (c > bestCount) { bestCount = c; best = k; }
               }
               if (best != null) {
-                #if sys Sys.println('[SuccessBinderPrefix] ' + best + ' = ' + binder + ' (count=' + Std.string(bestCount) + ')'); #end
                 var prefix = makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binder))));
                 var newBody = switch (cl.body.def) {
                   case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), cl.body.metadata, cl.body.pos);

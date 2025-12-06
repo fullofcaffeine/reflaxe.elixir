@@ -67,9 +67,9 @@ class ObjectBuilder {
      */
     public static function build(fields: Array<{name: String, expr: TypedExpr}>, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[ObjectBuilder] Building object with ${fields.length} fields');
+        // DISABLED: trace('[ObjectBuilder] Building object with ${fields.length} fields');
         for (field in fields) {
-            trace('[ObjectBuilder]   Field "${field.name}" expr type: ${Type.enumConstructor(field.expr.expr)}');
+            // DISABLED: trace('[ObjectBuilder]   Field "${field.name}" expr type: ${Type.enumConstructor(field.expr.expr)}');
         }
         #end
         
@@ -78,7 +78,7 @@ class ObjectBuilder {
         // ====================================================================
         if (isTuplePattern(fields)) {
             #if debug_ast_builder
-            trace('[ObjectBuilder] ✓ Detected tuple pattern, generating Elixir tuple');
+            // DISABLED: trace('[ObjectBuilder] ✓ Detected tuple pattern, generating Elixir tuple');
             #end
             return buildTuple(fields, context);
         }
@@ -88,7 +88,7 @@ class ObjectBuilder {
         // ====================================================================
         if (isSupervisorOptions(fields)) {
             #if debug_ast_builder
-            trace('[ObjectBuilder] ✓ Detected supervisor options, generating keyword list');
+            // DISABLED: trace('[ObjectBuilder] ✓ Detected supervisor options, generating keyword list');
             #end
             return buildSupervisorOptions(fields, context);
         }
@@ -98,7 +98,7 @@ class ObjectBuilder {
         // ====================================================================
         if (isChildSpec(fields)) {
             #if debug_ast_builder
-            trace('[ObjectBuilder] ✓ Detected child spec, generating map with special handling');
+            // DISABLED: trace('[ObjectBuilder] ✓ Detected child spec, generating map with special handling');
             #end
             return buildChildSpec(fields, context);
         }
@@ -107,7 +107,7 @@ class ObjectBuilder {
         // DEFAULT: Regular Object → Map
         // ====================================================================
         #if debug_ast_builder
-        trace('[ObjectBuilder] Building as regular map');
+        // DISABLED: trace('[ObjectBuilder] Building as regular map');
         #end
         return buildRegularMap(fields, context);
     }
@@ -413,13 +413,13 @@ class ObjectBuilder {
                 var idKey = Std.string(v.id);
 
                 #if debug_ast_builder
-                trace('[ObjectBuilder DEBUG] Field "${field.name}" TLocal: name="${v.name}" id=${v.id}');
-                trace('[ObjectBuilder DEBUG] Checking tempVarRenameMap for idKey "$idKey"');
-                trace('[ObjectBuilder DEBUG] tempVarRenameMap exists: ${context.tempVarRenameMap != null}');
+                // DISABLED: trace('[ObjectBuilder DEBUG] Field "${field.name}" TLocal: name="${v.name}" id=${v.id}');
+                // DISABLED: trace('[ObjectBuilder DEBUG] Checking tempVarRenameMap for idKey "$idKey"');
+                // DISABLED: trace('[ObjectBuilder DEBUG] tempVarRenameMap exists: ${context.tempVarRenameMap != null}');
                 if (context.tempVarRenameMap != null) {
-                    trace('[ObjectBuilder DEBUG] tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries');
-                    trace('[ObjectBuilder DEBUG] idKey exists in map: ${context.tempVarRenameMap.exists(idKey)}');
-                    trace('[ObjectBuilder DEBUG] name exists in map: ${context.tempVarRenameMap.exists(v.name)}');
+                    // DISABLED: trace('[ObjectBuilder DEBUG] tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries');
+                    // DISABLED: trace('[ObjectBuilder DEBUG] idKey exists in map: ${context.tempVarRenameMap.exists(idKey)}');
+                    // DISABLED: trace('[ObjectBuilder DEBUG] name exists in map: ${context.tempVarRenameMap.exists(v.name)}');
                 }
                 #end
 
@@ -427,15 +427,15 @@ class ObjectBuilder {
                 if (context.tempVarRenameMap.exists(idKey)) {
                     var mappedName = context.tempVarRenameMap.get(idKey);
                     #if debug_ast_builder
-                    trace('[ObjectBuilder DEBUG] Found ID mapping: "$idKey" -> "$mappedName"');
+                    // DISABLED: trace('[ObjectBuilder DEBUG] Found ID mapping: "$idKey" -> "$mappedName"');
                     #end
                     #if debug_variable_renaming
-                    trace('[ObjectBuilder] Field "${field.name}" using tempVarRenameMap: "${v.name}" -> "${mappedName}"');
+                    // DISABLED: trace('[ObjectBuilder] Field "${field.name}" using tempVarRenameMap: "${v.name}" -> "${mappedName}"');
                     #end
                     return makeAST(EVar(mappedName));
                 } else {
                     #if debug_ast_builder
-                    trace('[ObjectBuilder DEBUG] No ID mapping found, falling back to buildFromTypedExpr');
+                    // DISABLED: trace('[ObjectBuilder DEBUG] No ID mapping found, falling back to buildFromTypedExpr');
                     #end
                     // No mapping, compile normally
                     // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context

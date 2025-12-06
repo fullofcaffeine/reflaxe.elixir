@@ -75,13 +75,13 @@ class EFnSingleArgUndefinedAlignTransforms {
                         var freeNames:Array<String> = [];
                         for (k in referenced.keys()) if (looksLikeVar(k)) freeNames.push(k);
                         #if debug_efn_align
-                        trace('[EFnSingleArgUndefinedAlign] binder=' + binderName + ' freeNames={' + freeNames.join(',') + '}');
+                        // DISABLED: trace('[EFnSingleArgUndefinedAlign] binder=' + binderName + ' freeNames={' + freeNames.join(',') + '}');
                         #end
                         if (freeNames.length == 1) {
                             var victim = freeNames[0];
                             var newBody = renameVarInNode(cl.body, victim, binderName);
                             #if debug_efn_align
-                            trace('[EFnSingleArgUndefinedAlign] Rewriting free var ' + victim + ' -> ' + binderName);
+                            // DISABLED: trace('[EFnSingleArgUndefinedAlign] Rewriting free var ' + victim + ' -> ' + binderName);
                             #end
                             newClauses.push({args: cl.args, guard: cl.guard, body: newBody});
                         } else {

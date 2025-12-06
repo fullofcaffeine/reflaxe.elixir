@@ -58,9 +58,9 @@ class FunctionUsageCollector {
 
     #if debug_function_usage
     public function printStats(): Void {
-        trace('[FunctionUsageCollector] Module: $currentModule');
-        trace('[FunctionUsageCollector] Declared: ${Lambda.count(declaredFunctions)} functions');
-        trace('[FunctionUsageCollector] Called: ${Lambda.count(calledFunctions)} functions');
+        // DISABLED: trace('[FunctionUsageCollector] Module: $currentModule');
+        // DISABLED: trace('[FunctionUsageCollector] Declared: ${Lambda.count(declaredFunctions)} functions');
+        // DISABLED: trace('[FunctionUsageCollector] Called: ${Lambda.count(calledFunctions)} functions');
     }
     #end
 }

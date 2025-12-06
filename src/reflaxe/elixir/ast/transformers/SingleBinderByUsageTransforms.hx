@@ -100,7 +100,7 @@ class SingleBinderByUsageTransforms {
                             }
                             if (newName != null && newName != binder) {
                                 #if debug_single_binder
-                                trace('[SingleBinderByUsage] Renaming binder ' + binder + ' -> ' + newName);
+                                // DISABLED: trace('[SingleBinderByUsage] Renaming binder ' + binder + ' -> ' + newName);
                                 #end
                                 var renamed = tryRenameSingleBinder(cl.pattern, newName);
                                 if (renamed != null) {

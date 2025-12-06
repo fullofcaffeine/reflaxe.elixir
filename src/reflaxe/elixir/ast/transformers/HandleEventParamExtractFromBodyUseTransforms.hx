@@ -29,7 +29,6 @@ import reflaxe.elixir.ast.ASTUtils;
  */
 class HandleEventParamExtractFromBodyUseTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {
-    #if debug_ast_transformer Sys.println('[HandleEventExtract] pass start'); #end
     return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
       return switch (node.def) {
         case EModule(name, attrs, body):
@@ -42,12 +41,10 @@ class HandleEventParamExtractFromBodyUseTransforms {
           for (s in stmts) out2.push(transformPass(s));
           makeASTWithMeta(EDefmodule(modName, makeAST(EBlock(out2))), node.metadata, node.pos);
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
-          #if debug_ast_transformer Sys.println('[HandleEventExtract] EDef handle_event found'); #end
           var paramVar = extractParamsVarName(args);
           var newBody = synthesizeExtractsWithParam(body, paramVar);
           makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
         case EDefp(name, args, guards, body) if (isHandleEvent3(name, args)):
-          #if debug_ast_transformer Sys.println('[HandleEventExtract] EDefp handle_event found'); #end
           var paramVar2 = extractParamsVarName(args);
           var newBody2 = synthesizeExtractsWithParam(body, paramVar2);
           makeASTWithMeta(EDefp(name, args, guards, newBody2), node.metadata, node.pos);
@@ -101,7 +98,6 @@ class HandleEventParamExtractFromBodyUseTransforms {
     var undef:Array<String> = [];
     for (u in used.keys()) if (!declared.exists(u) && allow(u)) undef.push(u);
     if (undef.length == 0) return body;
-    #if debug_ast_transformer Sys.println('[HandleEventExtract] adding binds for: ' + undef.join(',')); #end
 
     // Prepend extraction matches to the body block
     return switch (body.def) {

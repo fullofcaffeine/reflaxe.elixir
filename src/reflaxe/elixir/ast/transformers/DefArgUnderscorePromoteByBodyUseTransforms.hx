@@ -63,7 +63,6 @@ class DefArgUnderscorePromoteByBodyUseTransforms {
           });
           if (usesBase && !usesUnders) {
             #if debug_ast_transformer
-            Sys.println('[DefArgUnderscorePromote] Renaming arg ' + nm + ' -> ' + base);
             #end
             outArgs[i] = PVar(base);
             newBody = ElixirASTTransformer.transformNode(newBody, function(x: ElixirAST): ElixirAST {

@@ -29,7 +29,6 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class HandleEventWrapperFinalRepairTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {
-    #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] pass start'); #end
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
@@ -85,7 +84,6 @@ class HandleEventWrapperFinalRepairTransforms {
             if (a0IsSocket && lastIsSocket) {
               var newArgs = args.copy();
               newArgs[0] = makeAST(EVar(paramsVar));
-              #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] Rewriting call ' + fname + '(socket, ..., socket) → (' + paramsVar + ', ..., ' + socketVar + ')'); #end
               makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);
             } else if (lastIsSocket) {
               // Prefer using a previously extracted local or an existing id/*_id over passing the whole params map
@@ -108,14 +106,11 @@ class HandleEventWrapperFinalRepairTransforms {
                   if (candidates.length == 1) { newArgs2[0] = makeAST(EVar(candidates[0])); replaced = true; }
                 }
                 if (replaced) {
-                  #if sys Sys.println('[HandleEventWrapperFinal] Rewriting call ' + fname + '(' + paramsVar + ', ..., ' + socketVar + ') to use local id/*_id'); #end
                   makeASTWithMeta(ECall(target, fname, newArgs2), x.metadata, x.pos);
                 } else {
                   // Generic fallback: pass extracted id from params if present
                   var newArgs3 = args.copy();
                   newArgs3[0] = buildExtract('id', paramsVar);
-                  #if sys Sys.println('[HandleEventWrapperFinal] Fallback: passing id extracted from ' + paramsVar + ' to ' + fname);
-                  #end
                   makeASTWithMeta(ECall(target, fname, newArgs3), x.metadata, x.pos);
                 }
               } else x;
@@ -126,7 +121,6 @@ class HandleEventWrapperFinalRepairTransforms {
             if (a0IsSocket2 && lastIsSocket2) {
               var newArgs2 = args2.copy();
               newArgs2[0] = makeAST(EVar(paramsVar));
-              #if sys Sys.println('[HandleEventWrapperFinal] Rewriting remote call ' + fname2 + '(socket, ..., socket)'); #end
               makeASTWithMeta(ERemoteCall(mod, fname2, newArgs2), x.metadata, x.pos);
             } else if (lastIsSocket2) {
               var a0IsParams2 = switch (args2[0].def) { case EVar(vp2) if (vp2 == paramsVar): true; default: false; };
@@ -144,13 +138,10 @@ class HandleEventWrapperFinalRepairTransforms {
                   if (candidates2.length == 1) { newArgs3[0] = makeAST(EVar(candidates2[0])); replaced2 = true; }
                 }
                 if (replaced2) {
-                  #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] Rewriting remote call ' + fname2 + '(' + paramsVar + ', ..., ' + socketVar + ') to use local id/*_id'); #end
                   makeASTWithMeta(ERemoteCall(mod, fname2, newArgs3), x.metadata, x.pos);
                 } else {
                   var newArgs4 = args2.copy();
                   newArgs4[0] = buildExtract('id', paramsVar);
-                  #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] Fallback: passing id extracted from ' + paramsVar + ' to remote ' + fname2);
-                  #end
                   makeASTWithMeta(ERemoteCall(mod, fname2, newArgs4), x.metadata, x.pos);
                 }
               } else x;
@@ -167,13 +158,11 @@ class HandleEventWrapperFinalRepairTransforms {
           case EBinary(Match, {def: EVar("_")}, rhs):
             var key = extractMapGetKey(rhs);
             if (key != null) {
-              #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] Upgrade wildcard Map.get("' + key + '") -> ' + key); #end
               makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs), x.metadata, x.pos);
             } else x;
           case EMatch(PVar("_"), rhs2):
             var key2 = extractMapGetKey(rhs2);
             if (key2 != null) {
-              #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] Upgrade wildcard Map.get("' + key2 + '") -> ' + key2); #end
               makeASTWithMeta(EBinary(Match, makeAST(EVar(key2)), rhs2), x.metadata, x.pos);
             } else x;
           default: x;
@@ -196,7 +185,6 @@ class HandleEventWrapperFinalRepairTransforms {
       return ElixirASTTransformer.transformNode(n, function(y: ElixirAST): ElixirAST {
         return switch (y.def) {
           case EVar(v) if (allow(v) && !declared.exists(v)):
-            #if debug_ast_transformer Sys.println('[HandleEventWrapperFinal] Inlining ' + v + ' from ' + paramsVar); #end
             buildExtract(v, paramsVar);
           default: y;
         }
@@ -218,15 +206,13 @@ class HandleEventWrapperFinalRepairTransforms {
     });
     declared.set(paramsVar, true); declared.set(socketVar, true);
     var used = collectAllUsed(step2);
-    #if sys
+    #if debug_transforms
     var declList = [for (k in declared.keys()) k].join(',');
-    Sys.println('[HandleEventWrapperFinal] declared={' + declList + '}');
-    Sys.println('[HandleEventWrapperFinal] used={' + used.join(',') + '}');
+    // DEBUG: Sys.println('[HandleEventWrapperFinal] used={' + used.join(',') + '}');
     #end
     var missing:Array<String> = [];
     for (u in used) if (!declared.exists(u) && allow(u)) missing.push(u);
     if (missing.length == 0) return step2;
-    #if sys Sys.println('[HandleEventWrapperFinal] prefix binds for: ' + missing.join(',')); #end
     var prefix = [for (v in missing) makeAST(EBinary(Match, makeAST(EVar(v)), buildExtract(v, paramsVar)))];
     return switch (step2.def) {
       case EBlock(sts): makeASTWithMeta(EBlock(prefix.concat(sts)), step2.metadata, step2.pos);
