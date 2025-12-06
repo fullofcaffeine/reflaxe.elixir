@@ -38,7 +38,6 @@ class FunctionHygieneTransforms {
                     n;
                 case EDef(name, args, guards, body):
                     #if debug_hygiene
-                    Sys.println('[BlockAssignChainSimplify] visiting def ' + name);
                     #end
                     var newBody = simplifyChainsInBody(body);
                     makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
@@ -61,12 +60,11 @@ class FunctionHygieneTransforms {
                                     var innerName: Null<String> = switch (leftInner.def) { case EVar(n): n; default: null; };
                                     var outerName: Null<String> = switch (leftOuter.def) { case EVar(n2): n2; default: null; };
                                     #if debug_hygiene
-                                    Sys.println('[BlockAssignChainSimplify] chain detected outer=' + (outerName == null ? 'null' : outerName) + ', inner=' + (innerName == null ? 'null' : innerName));
+                                    // DEBUG: Sys.println('[BlockAssignChainSimplify] chain detected outer=' + (outerName == null ? 'null' : outerName) + ', inner=' + (innerName == null ? 'null' : innerName));
                                     #end
                                     // Rule A: drop inner temp if not used later → outer = expr
                                     if (innerName != null && !usedLater(stmts, i + 1, innerName)) {
                                         #if debug_hygiene
-                                        Sys.println('[BlockAssignChainSimplify] dropping inner temp ' + innerName);
                                         #end
                                         out.push(makeAST(EBinary(Match, leftOuter, expr)));
                                         continue;
@@ -74,7 +72,6 @@ class FunctionHygieneTransforms {
                                     // Rule B: drop outer temp if not used later → inner = expr
                                     if (outerName != null && !usedLater(stmts, i + 1, outerName)) {
                                         #if debug_hygiene
-                                        Sys.println('[BlockAssignChainSimplify] dropping outer temp ' + outerName);
                                         #end
                                         out.push(makeAST(EBinary(Match, leftInner, expr)));
                                         continue;
@@ -84,7 +81,7 @@ class FunctionHygieneTransforms {
                                     var innerName2: Null<String> = switch (patInner) { case PVar(n3): n3; default: null; };
                                     var outerName2: Null<String> = switch (leftOuter.def) { case EVar(n4): n4; default: null; };
                                     #if debug_hygiene
-                                    Sys.println('[BlockAssignChainSimplify] chain (EMatch) detected outer=' + (outerName2 == null ? 'null' : outerName2) + ', inner=' + (innerName2 == null ? 'null' : innerName2));
+                                    // DEBUG: Sys.println('[BlockAssignChainSimplify] chain (EMatch) detected outer=' + (outerName2 == null ? 'null' : outerName2) + ', inner=' + (innerName2 == null ? 'null' : innerName2));
                                     #end
                                     if (innerName2 != null && !usedLater(stmts, i + 1, innerName2)) {
                                         out.push(makeAST(EBinary(Match, leftOuter, expr2)));

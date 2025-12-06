@@ -73,7 +73,7 @@ class ElixirASTPrinter {
         }
 
         #if debug_ast_printer
-        trace('[XRay AST Printer] Printing node: ${ast.def}');
+        // DISABLED: trace('[XRay AST Printer] Printing node: ${ast.def}');
         #end
 
         // Handle EDefmodule and EModule specially to access metadata
@@ -399,7 +399,7 @@ class ElixirASTPrinter {
         };
 
         #if debug_ast_printer
-        trace('[XRay AST Printer] Generated: ${result.substring(0, 100)}...');
+        // DISABLED: trace('[XRay AST Printer] Generated: ${result.substring(0, 100)}...');
         #end
 
         return result;
@@ -692,10 +692,10 @@ class ElixirASTPrinter {
                                (elseBranch == null || isSimpleExpression(elseBranch));
                 
                 #if debug_inline_if
-                trace('[XRay InlineIf] Checking if statement');
-                trace('[XRay InlineIf] Then branch def: ${thenBranch.def}');
-                trace('[XRay InlineIf] isSimpleExpression(thenBranch): ${isSimpleExpression(thenBranch)}');
-                trace('[XRay InlineIf] isInline decision: $isInline');
+                // DISABLED: trace('[XRay InlineIf] Checking if statement');
+                // DISABLED: trace('[XRay InlineIf] Then branch def: ${thenBranch.def}');
+                // DISABLED: trace('[XRay InlineIf] isSimpleExpression(thenBranch): ${isSimpleExpression(thenBranch)}');
+                // DISABLED: trace('[XRay InlineIf] isInline decision: $isInline');
                 #end
                 
                 // Print condition without unnecessary parentheses
@@ -1496,7 +1496,7 @@ class ElixirASTPrinter {
                 #if debug_ast_printer
                 switch(expr.def) {
                     case EBlock(stmts):
-                        trace('[XRay Printer] WARNING: EBlock inside EUnary! ${stmts.length} statements');
+                        // DISABLED: trace('[XRay Printer] WARNING: EBlock inside EUnary! ${stmts.length} statements');
                     default:
                 }
                 #end
@@ -1659,13 +1659,13 @@ class ElixirASTPrinter {
             case EVar(name):
                 #if debug_ast_pipeline
                 if (name.indexOf("priority") >= 0) {
-                    trace('[AST Printer] Printing EVar: ${name}');
+                    // DISABLED: trace('[AST Printer] Printing EVar: ${name}');
                 }
                 #end
 
                 #if debug_infrastructure_vars
                 if (name == "g" || name == "_g" || ~/^_?g\d+$/.match(name)) {
-                    trace('[AST Printer EVar] Printing infrastructure variable: $name');
+                    // DISABLED: trace('[AST Printer EVar] Printing infrastructure variable: $name');
                 }
                 #end
 
@@ -1736,17 +1736,17 @@ class ElixirASTPrinter {
             case EFn(clauses):
                 #if debug_loop_builder
                 if (clauses.length > 0) {
-                    trace('[XRay Printer] Printing EFn with ${clauses.length} clauses');
+                    // DISABLED: trace('[XRay Printer] Printing EFn with ${clauses.length} clauses');
                     var clause = clauses[0];
-                    trace('[XRay Printer]   Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                    // DISABLED: trace('[XRay Printer]   Clause body type: ${Type.enumConstructor(clause.body.def)}');
                     switch(clause.body.def) {
                         case EIf(cond, thenBranch, elseBranch):
-                            trace('[XRay Printer]   Body is EIf - condition type: ${Type.enumConstructor(cond.def)}');
-                            trace('[XRay Printer]   Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                            // DISABLED: trace('[XRay Printer]   Body is EIf - condition type: ${Type.enumConstructor(cond.def)}');
+                            // DISABLED: trace('[XRay Printer]   Then branch type: ${Type.enumConstructor(thenBranch.def)}');
                         case EBlock(exprs):
-                            trace('[XRay Printer]   Body is EBlock with ${exprs.length} expressions');
+                            // DISABLED: trace('[XRay Printer]   Body is EBlock with ${exprs.length} expressions');
                         default:
-                            trace('[XRay Printer]   Body is: ${Type.enumConstructor(clause.body.def)}');
+                            // DISABLED: trace('[XRay Printer]   Body is: ${Type.enumConstructor(clause.body.def)}');
                     }
                 }
                 #end
@@ -1774,7 +1774,7 @@ class ElixirASTPrinter {
                     bodyStr = stripBareNumericLines(bodyStr);
 
                     #if debug_loop_builder
-                    trace('[XRay Printer]   Printed body string (first 200 chars): ${bodyStr.substring(0, bodyStr.length > 200 ? 200 : bodyStr.length)}');
+                    // DISABLED: trace('[XRay Printer]   Printed body string (first 200 chars): ${bodyStr.substring(0, bodyStr.length > 200 ? 200 : bodyStr.length)}');
                     #end
                     var isMultiLine = switch(clause.body.def) {
                         case EIf(_, _, _): true;
@@ -2176,7 +2176,7 @@ class ElixirASTPrinter {
             case PLiteral(value): print(value, 0);
             case PTuple(elements):
                 #if debug_ast_printer
-                trace('[ASTPrinter] Printing PTuple with ${elements.length} elements');
+                // DISABLED: trace('[ASTPrinter] Printing PTuple with ${elements.length} elements');
                 for (i in 0...elements.length) {
                     var elem = elements[i];
                     switch(elem) {

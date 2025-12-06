@@ -76,7 +76,6 @@ class ReduceERawAliasCanonicalizeTransforms {
                             var acc = RE_BLOCK.matched(2);
                             var body = RE_BLOCK.matched(3);
                             #if debug_reduce_unify
-                            Sys.println('[ReduceERawAliasCanonicalize] found reduce block binder=' + binder + ', acc=' + acc);
                             #end
                             var canon = canonicalizeBlock(body, binder, acc);
                             // Reconstruct reduce block with canonicalized body

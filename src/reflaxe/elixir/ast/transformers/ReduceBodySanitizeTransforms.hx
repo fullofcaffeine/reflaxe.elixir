@@ -128,11 +128,8 @@ class ReduceBodySanitizeTransforms {
                             #if debug_reduce_body_sanitize
                             reducerCount++;
                             if (reducerCount % 50 == 0) {
-                                Sys.println('[ReduceBodySanitize] processed ' + reducerCount + ' reducer bodies so far');
                             }
-                            Sys.println('[ReduceBodySanitize] reducer clauses=' + clauses.length + ', binder=' + binderName + ', acc=' + accName);
                             if (reducerCount > REDUCER_WARN_THRESHOLD) {
-                                Sys.println('[ReduceBodySanitize] WARNING: reducerCount exceeded ' + REDUCER_WARN_THRESHOLD + ' – possible transform loop.');
                             }
                             #end
 
@@ -158,7 +155,7 @@ class ReduceBodySanitizeTransforms {
                                                 var lhs:Null<String> = switch (left.def) { case EVar(nm): nm; default: null; };
                                                 var isSelf = switch (cargs[0].def) { case EVar(nm2): (lhs != null && nm2 == lhs); default: false; };
                                                 #if debug_reduce_body_sanitize
-                                                Sys.println('[ReduceBodySanitize] concat lhs=' + (lhs == null ? 'null' : lhs) + ', arg0=' + (switch (cargs[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelf);
+                                                // DEBUG: Sys.println('[ReduceBodySanitize] concat lhs=' + (lhs == null ? 'null' : lhs) + ', arg0=' + (switch (cargs[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelf);
                                                 #end
                                                 if (isSelf) {
                                                     var replLeft = makeAST(EVar(accName));
@@ -179,7 +176,7 @@ class ReduceBodySanitizeTransforms {
                                                 var lhsNameM:Null<String> = switch (pat) { case PVar(nm): nm; default: null; };
                                                 var isSelfM = switch (cargsM[0].def) { case EVar(nm2): (lhsNameM != null && nm2 == lhsNameM); default: false; };
                                                 #if debug_reduce_body_sanitize
-                                                Sys.println('[ReduceBodySanitize] ematch concat lhs=' + (lhsNameM == null ? 'null' : lhsNameM) + ', arg0=' + (switch (cargsM[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelfM);
+                                                // DEBUG: Sys.println('[ReduceBodySanitize] ematch concat lhs=' + (lhsNameM == null ? 'null' : lhsNameM) + ', arg0=' + (switch (cargsM[0].def) { case EVar(n): n; default: '<non-var>'; }) + ', isSelf=' + isSelfM);
                                                 #end
                                                 if (isSelfM) {
                                                     var newLeft = makeAST(EVar(accName));

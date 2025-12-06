@@ -64,8 +64,8 @@ class ExceptionBuilder {
      */
     public static function buildTry(e: TypedExpr, catches: Array<{v:TVar, expr:TypedExpr}>, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[ExceptionBuilder] Building try/catch block');
-        trace('[ExceptionBuilder]   ${catches.length} catch clauses');
+        // DISABLED: trace('[ExceptionBuilder] Building try/catch block');
+        // DISABLED: trace('[ExceptionBuilder]   ${catches.length} catch clauses');
         #end
         
         // Build the try body
@@ -79,7 +79,7 @@ class ExceptionBuilder {
         
         if (body == null) {
             #if debug_ast_builder
-            trace('[ExceptionBuilder] Failed to build try body');
+            // DISABLED: trace('[ExceptionBuilder] Failed to build try body');
             #end
             return null;
         }
@@ -110,7 +110,7 @@ class ExceptionBuilder {
             });
             
             #if debug_ast_builder
-            trace('[ExceptionBuilder] Added rescue clause for: ${c.v.name}');
+            // DISABLED: trace('[ExceptionBuilder] Added rescue clause for: ${c.v.name}');
             #end
         }
         
@@ -132,7 +132,7 @@ class ExceptionBuilder {
      */
     public static function buildThrow(e: TypedExpr, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[ExceptionBuilder] Building throw expression');
+        // DISABLED: trace('[ExceptionBuilder] Building throw expression');
         #end
         
         var throwExpr = if (context.compiler != null) {
@@ -145,7 +145,7 @@ class ExceptionBuilder {
         
         if (throwExpr == null) {
             #if debug_ast_builder
-            trace('[ExceptionBuilder] Failed to build throw expression');
+            // DISABLED: trace('[ExceptionBuilder] Failed to build throw expression');
             #end
             return null;
         }
@@ -164,7 +164,7 @@ class ExceptionBuilder {
      */
     public static function buildBreak(): ElixirASTDef {
         #if debug_ast_builder
-        trace('[ExceptionBuilder] Building break exception');
+        // DISABLED: trace('[ExceptionBuilder] Building break exception');
         #end
         
         // Throw :break atom that will be caught by loop transformation
@@ -182,7 +182,7 @@ class ExceptionBuilder {
      */
     public static function buildContinue(): ElixirASTDef {
         #if debug_ast_builder
-        trace('[ExceptionBuilder] Building continue exception');
+        // DISABLED: trace('[ExceptionBuilder] Building continue exception');
         #end
         
         // Throw :continue atom that will be caught by loop transformation

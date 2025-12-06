@@ -92,7 +92,7 @@ class UnderscoreVarTransforms {
 
         #if true
         if (Lambda.count(rename) > 0) {
-            trace('[UnderscoreVarTransforms] renames: ' + [for (k in rename.keys()) k + '->' + rename.get(k)].join(', '));
+            // DISABLED: trace('[UnderscoreVarTransforms] renames: ' + [for (k in rename.keys()) k + '->' + rename.get(k)].join(', '));
         }
         #end
         if (Lambda.count(rename) == 0) return body;

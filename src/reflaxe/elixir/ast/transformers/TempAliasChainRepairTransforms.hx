@@ -57,7 +57,6 @@ class TempAliasChainRepairTransforms {
                   default:
                 }
                 if (s2IsDiscard && rhsOfTemp != null) {
-                  #if sys Sys.println('[TempAliasChainRepair] Rewriting ' + lhsName + ' = ' + tempName + '; _ = ' + tempName + '; ' + tempName + ' = <rhs>  ==>  ' + lhsName + ' = <rhs>'); #end
                   // Emit: lhsName = rhsOfTemp
                   var newAssign = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(lhsName), s1.metadata, s1.pos), rhsOfTemp), s1.metadata, s1.pos);
                   out.push(newAssign);
@@ -100,7 +99,6 @@ class TempAliasChainRepairTransforms {
                   default:
                 }
                 if (discard2 && rhs2 != null) {
-                  #if sys Sys.println('[TempAliasChainRepair] (EDo) Rewriting ' + lhs2 + ' = ' + temp2 + '; _ = ' + temp2 + '; ' + temp2 + ' = <rhs>  ==>  ' + lhs2 + ' = <rhs>'); #end
                   out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(lhs2), t1.metadata, t1.pos), rhs2), t1.metadata, t1.pos));
                   j += 3; continue;
                 }

@@ -12,7 +12,6 @@ class DebugControllerJsonArgsPass {
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
         case EModule(name, attrs, body) if (isController(name)):
-          Sys.println('[DebugControllerJson] Visiting ' + name);
           var out = [for (b in body) visit(b)];
           makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
         default: n;
@@ -33,7 +32,6 @@ class DebugControllerJsonArgsPass {
         case ERemoteCall(t, fnName, args) if (fnName == 'json' && args != null && args.length == 2):
           var arg2 = args[1];
           var kind = Std.string(arg2.def);
-          Sys.println('[DebugControllerJson] json arg2 kind: ' + kind);
           n;
         default: n;
       }

@@ -132,16 +132,16 @@ class ElixirOutputIterator {
         index++;
 
         #if debug_output_iterator
-        trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
+        // DISABLED: trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
         // Debug the DataAndFileInfo overrides for this item
         var moduleName = switch(astData.data.def) {
             case EModule(name, _, _): name;
             case EDefmodule(name, _): name;
             default: "(unknown)";
         };
-        trace('[ElixirOutputIterator] Module: ${moduleName}');
-        trace('[ElixirOutputIterator] overrideFileName: ${astData.overrideFileName}');
-        trace('[ElixirOutputIterator] overrideDirectory: ${astData.overrideDirectory}');
+        // DISABLED: trace('[ElixirOutputIterator] Module: ${moduleName}');
+        // DISABLED: trace('[ElixirOutputIterator] overrideFileName: ${astData.overrideFileName}');
+        // DISABLED: trace('[ElixirOutputIterator] overrideDirectory: ${astData.overrideDirectory}');
         #end
         
         // Apply transformation passes to the AST
@@ -164,7 +164,7 @@ class ElixirOutputIterator {
                 case EDefmodule(name, _): name;
                 default: "(unknown)";
             };
-            trace('[ElixirOutputIterator] SUPPRESSING emission of: ${moduleName}');
+            // DISABLED: trace('[ElixirOutputIterator] SUPPRESSING emission of: ${moduleName}');
             #end
             // Recursively advance to the next item; hasNext() already reflects remaining items
             return next();

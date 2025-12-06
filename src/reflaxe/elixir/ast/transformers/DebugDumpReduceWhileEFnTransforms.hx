@@ -15,7 +15,6 @@ class DebugDumpReduceWhileEFnTransforms {
           switch (fnArg.def) {
             case EFn(clauses):
               for (cl in clauses) {
-                #if sys Sys.println('[DebugReduceDump] EFn body: ' + ElixirASTPrinter.print(cl.body, 0)); #end
               }
             default:
           }

@@ -67,10 +67,8 @@ class QueryBinderSynthesisUltraFinalTransforms {
             var inserted = false;
             switch (s.def) {
               case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
-                if (predicateUsesQuery(args[1]) && !hasQueryBinder(out, out.length)) { #if sys Sys.println('[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (block)'); #end out.push(binder()); inserted = true; }
               case ECall(_, "filter", args2) if (args2 != null && args2.length >= 1):
                 var pred = args2[args2.length - 1];
-                if (predicateUsesQuery(pred) && !hasQueryBinder(out, out.length)) { #if sys Sys.println('[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (block)'); #end out.push(binder()); inserted = true; }
               default:
             }
             out.push(s);
@@ -85,9 +83,7 @@ class QueryBinderSynthesisUltraFinalTransforms {
             var s2 = stmts2[i]; var ins = false;
             switch (s2.def) {
               case ERemoteCall({def: EVar(m2)}, "filter", a2) if (m2 == "Enum" && a2 != null && a2.length == 2):
-                if (predicateUsesQuery(a2[1]) && !hasQueryBinder(out2, out2.length)) { #if sys Sys.println('[QueryBinderSynthesis_UltraFinal] insert query binder before Enum.filter (do)'); #end out2.push(binder()); ins = true; }
               case ECall(_, "filter", a3) if (a3 != null && a3.length >= 1):
-                var pred2 = a3[a3.length - 1]; if (predicateUsesQuery(pred2) && !hasQueryBinder(out2, out2.length)) { #if sys Sys.println('[QueryBinderSynthesis_UltraFinal] insert query binder before call.filter (do)'); #end out2.push(binder()); ins = true; }
               default:
             }
             out2.push(s2);

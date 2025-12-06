@@ -52,12 +52,10 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleInfo2(name, args)):
-          #if (sys && debug_ast_transformer) Sys.println('[HandleInfoBinderRepair] pass start in def handle_info/2'); #end
           var socketVar = secondArgVar(args);
           var repaired = rewriteCaseClauses(body, socketVar);
           makeASTWithMeta(EDef(name, args, guards, repaired), n.metadata, n.pos);
         case EDefp(privateName, privateArgs, privateGuards, privateBody) if (isHandleInfo2(privateName, privateArgs)):
-          #if (sys && debug_ast_transformer) Sys.println('[HandleInfoBinderRepair] pass start in defp handle_info/2'); #end
           var socketVar2 = secondArgVar(privateArgs);
           var repaired2 = rewriteCaseClauses(privateBody, socketVar2);
           makeASTWithMeta(EDefp(privateName, privateArgs, privateGuards, repaired2), n.metadata, n.pos);
@@ -91,7 +89,6 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
   static function repairClause(c:ECaseClause, socketVar:String): ECaseClause {
     var renamed = renameTupleBinderIfCollides(c.pattern, socketVar);
     if (renamed == null) return c;
-    #if (sys && debug_ast_transformer) Sys.println('[HandleInfoBinderRepair] Renamed tuple binder colliding with ' + socketVar + ' -> payload'); #end
     // Clause pattern was renamed; repair helper calls in body where arg0==argN==socket
     var fixedBody = fixLocalCalls(c.body, socketVar, /*newBinder*/ "payload");
     // Additionally, align the most-used undefined simple local in the clause body

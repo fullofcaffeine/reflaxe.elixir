@@ -30,7 +30,6 @@ class AssignChainGenericSimplifyTransforms {
           }
           makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
         case EBlock(stmts):
-          #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Visiting EBlock with ' + stmts.length + ' stmt(s)'); #end #end
           var out = [];
           var i = 0;
           while (i < stmts.length) {
@@ -40,7 +39,6 @@ class AssignChainGenericSimplifyTransforms {
                 var un = unwrapRhsAssign(rhsAny);
                 if (un != null && un.b != null && un.rhs != null) {
                   var b = un.b; var rhs = un.rhs;
-                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain a=(b=rhs) a=' + a + ' b=' + b); #end #end
                   out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
                   out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EVar(b), s.metadata, s.pos)), s.metadata, s.pos));
                   break;
@@ -51,7 +49,6 @@ class AssignChainGenericSimplifyTransforms {
                 var un2 = unwrapRhsAssign(rhsAny2);
                 if (un2 != null && un2.b != null && un2.rhs != null) {
                   var b2 = un2.b; var rhs2 = un2.rhs;
-                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain (EMatch) a=(b=rhs) a=' + a2 + ' b=' + b2); #end #end
                   out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
                   out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
                   break;
@@ -65,7 +62,6 @@ class AssignChainGenericSimplifyTransforms {
           }
           makeASTWithMeta(EBlock(out), n.metadata, n.pos);
         case EDo(stmts2):
-          #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Visiting EDo with ' + stmts2.length + ' stmt(s)'); #end #end
           var out2 = [];
           for (s in stmts2) {
             switch (s.def) {
@@ -73,7 +69,6 @@ class AssignChainGenericSimplifyTransforms {
                 var un3 = unwrapRhsAssign(rhsAny3);
                 if (un3 != null && un3.b != null && un3.rhs != null) {
                   var b2 = un3.b; var rhs2 = un3.rhs;
-                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain in EDo a=' + a2 + ' b=' + b2); #end #end
                   out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b2), s.metadata, s.pos), rhs2), s.metadata, s.pos));
                   out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a2), s.metadata, s.pos), makeASTWithMeta(EVar(b2), s.metadata, s.pos)), s.metadata, s.pos));
                   break;
@@ -84,7 +79,6 @@ class AssignChainGenericSimplifyTransforms {
                 var un4 = unwrapRhsAssign(rhsAny4);
                 if (un4 != null && un4.b != null && un4.rhs != null) {
                   var b3 = un4.b; var rhs3 = un4.rhs;
-                  #if debug_assign_chain #if sys Sys.println('[AssignChainSimplify] Found chain in EDo (EMatch*) a=' + a3 + ' b=' + b3); #end #end
                   out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b3), s.metadata, s.pos), rhs3), s.metadata, s.pos));
                   out2.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a3), s.metadata, s.pos), makeASTWithMeta(EVar(b3), s.metadata, s.pos)), s.metadata, s.pos));
                   break;

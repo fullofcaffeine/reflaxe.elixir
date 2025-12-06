@@ -74,7 +74,7 @@ class EctoQueryMacros {
         var schemaName = extractSchemaName(schemaType);
         
         if (schemaName == null) {
-            trace("Warning: Query requires a valid schema type");
+            // DISABLED: trace("Warning: Query requires a valid schema type");
             return macro ""; // Return empty query instead of erroring
         }
         
@@ -105,7 +105,7 @@ class EctoQueryMacros {
         var schemaName = extractSchemaName(schemaType);
         
         if (schemaName == null) {
-            trace("Warning: from() requires a valid schema type");
+            // DISABLED: trace("Warning: from() requires a valid schema type");
             return macro ""; // Return empty query instead of erroring
         }
         
@@ -187,7 +187,7 @@ class EctoQueryMacros {
         var context = queryContext.get(contextId);
         
         if (context == null) {
-            trace("Warning: Invalid query context");
+            // DISABLED: trace("Warning: Invalid query context");
             return macro ""; // Return empty query instead of erroring
         }
         
@@ -308,7 +308,7 @@ class EctoQueryMacros {
             // Check field existence
             if (!SchemaIntrospection.hasField(currentSchema, field)) {
                 var availableFields = getAvailableFields(currentSchema);
-                trace('Warning: Field "${field}" does not exist in schema "${currentSchema}". Available fields: ${availableFields.join(", ")}');
+                // DISABLED: trace('Warning: Field "${field}" does not exist in schema "${currentSchema}". Available fields: ${availableFields.join(", ")}');
             }
             
             // Validate field type matches operator usage
@@ -318,7 +318,7 @@ class EctoQueryMacros {
     
     static function validateSchemaExists(schemaName: String, pos: haxe.macro.Expr.Position): Void {
         if (!SchemaIntrospection.schemaExists(schemaName)) {
-            trace('Warning: Schema "${schemaName}" not found');
+            // DISABLED: trace('Warning: Schema "${schemaName}" not found');
         }
     }
     
@@ -388,7 +388,7 @@ class EctoQueryMacros {
         for (field in select.fields) {
             if (!SchemaIntrospection.hasField(currentSchema, field)) {
                 var availableFields = getAvailableFields(currentSchema);
-                trace('Warning: Field "${field}" does not exist in schema "${currentSchema}". Available fields: ${availableFields.join(", ")}');
+                // DISABLED: trace('Warning: Field "${field}" does not exist in schema "${currentSchema}". Available fields: ${availableFields.join(", ")}');
             }
         }
     }
@@ -421,13 +421,13 @@ class EctoQueryMacros {
         // Validate association exists in schema
         if (!SchemaIntrospection.hasAssociation(currentSchema, join.alias)) {
             var availableAssociations = getAvailableAssociations(currentSchema);
-            trace('Warning: Association "${join.alias}" does not exist in schema "${currentSchema}". Available associations: ${availableAssociations.join(", ")}');
+            // DISABLED: trace('Warning: Association "${join.alias}" does not exist in schema "${currentSchema}". Available associations: ${availableAssociations.join(", ")}');
         }
         
         // Validate association type and target schema
         var association = SchemaIntrospection.getAssociation(currentSchema, join.alias);
         if (association != null && !SchemaIntrospection.schemaExists(association.schema)) {
-            trace('Warning: Target schema "${association.schema}" for association "${join.alias}" does not exist');
+            // DISABLED: trace('Warning: Target schema "${association.schema}" for association "${join.alias}" does not exist');
         }
     }
     
@@ -448,7 +448,7 @@ class EctoQueryMacros {
     static function validateOrderFields(order: OrderInfo): Void {
         for (fieldInfo in order.fields) {
             if (!SchemaIntrospection.hasField(getCurrentSchema(), fieldInfo.field)) {
-                trace('Warning: Field "${fieldInfo.field}" does not exist in schema');
+                // DISABLED: trace('Warning: Field "${fieldInfo.field}" does not exist in schema');
             }
         }
     }
@@ -475,7 +475,7 @@ class EctoQueryMacros {
     static function validateGroupFields(group: GroupInfo): Void {
         for (field in group.fields) {
             if (!SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-                trace('Warning: Field "${field}" does not exist in schema');
+                // DISABLED: trace('Warning: Field "${field}" does not exist in schema');
             }
         }
     }
@@ -517,7 +517,7 @@ class EctoQueryMacros {
     public static macro function count(contextExpr: Expr, ?fieldExpr: Expr): Expr {
         var field = fieldExpr != null ? extractFieldName(fieldExpr) : "*";
         if (field != "*" && !SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-            trace('Warning: Field "${field}" does not exist in schema');
+            // DISABLED: trace('Warning: Field "${field}" does not exist in schema');
         }
         
         var countQuery = field == "*" ? "count()" : 'count(${getCurrentBinding()}.${field})';
@@ -543,7 +543,7 @@ class EctoQueryMacros {
     public static macro function max(contextExpr: Expr, fieldExpr: Expr): Expr {
         var field = extractFieldName(fieldExpr);
         if (!SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-            trace('Warning: Field "${field}" does not exist in schema');
+            // DISABLED: trace('Warning: Field "${field}" does not exist in schema');
         }
         
         var maxQuery = 'max(${getCurrentBinding()}.${field})';
@@ -553,7 +553,7 @@ class EctoQueryMacros {
     public static macro function min(contextExpr: Expr, fieldExpr: Expr): Expr {
         var field = extractFieldName(fieldExpr);
         if (!SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-            trace('Warning: Field "${field}" does not exist in schema');
+            // DISABLED: trace('Warning: Field "${field}" does not exist in schema');
         }
         
         var minQuery = 'min(${getCurrentBinding()}.${field})';
@@ -577,12 +577,12 @@ class EctoQueryMacros {
     
     static function validateNumericField(field: String, pos: haxe.macro.Expr.Position): Void {
         if (!SchemaIntrospection.hasField(getCurrentSchema(), field)) {
-            trace('Warning: Field "${field}" does not exist in schema');
+            // DISABLED: trace('Warning: Field "${field}" does not exist in schema');
         }
         
         var fieldType = SchemaIntrospection.getFieldType(getCurrentSchema(), field);
         if (!isNumericType(fieldType)) {
-            trace('Warning: Field "${field}" is not numeric (${fieldType})');
+            // DISABLED: trace('Warning: Field "${field}" is not numeric (${fieldType})');
         }
     }
     
@@ -883,12 +883,12 @@ class EctoQueryMacros {
         
         // Check numeric operators on non-numeric fields
         if (isNumericOperator(op) && !isNumericType(fieldType)) {
-            trace('Warning: Cannot use numeric operator "${op}" on non-numeric field "${fieldName}" of type "${fieldType}"');
+            // DISABLED: trace('Warning: Cannot use numeric operator "${op}" on non-numeric field "${fieldName}" of type "${fieldType}"');
         }
         
         // Check string operators on non-string fields
         if (isStringOperator(op) && !isStringType(fieldType)) {
-            trace('Warning: Cannot use string operator "${op}" on non-string field "${fieldName}" of type "${fieldType}"');
+            // DISABLED: trace('Warning: Cannot use string operator "${op}" on non-string field "${fieldName}" of type "${fieldType}"');
         }
     }
     

@@ -62,7 +62,7 @@ class CasePatternUnusedUnderscoreTransforms {
         // EMap, EFn closures, string interpolation, ERaw, etc.
         var isUsed = VarUseAnalyzer.stmtUsesVar(body, n);
         #if debug_case_pattern_underscore
-        trace('[CasePatternUnusedUnderscore] Checking var "$n" in body, isUsed=$isUsed');
+        // DISABLED: trace('[CasePatternUnusedUnderscore] Checking var "$n" in body, isUsed=$isUsed');
         #end
         if (n != null && n.length > 0 && n.charAt(0) != '_' && !isUsed) PVar('_' + n) else p;
       case PTuple(es): PTuple([for (e in es) underscoreUnusedInPattern(e, body)]);

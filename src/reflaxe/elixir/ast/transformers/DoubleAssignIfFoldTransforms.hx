@@ -26,20 +26,16 @@ class DoubleAssignIfFoldTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts):
-          #if debug_double_assign Sys.println('[DoubleAssignIfFold] Visiting EBlock with ' + stmts.length + ' stmt(s)'); #end
           var out:Array<ElixirAST> = [];
           var i = 0;
           while (i < stmts.length) {
             var s = stmts[i];
             var folded = false;
-            #if debug_double_assign Sys.println('[DoubleAssignIfFold]   stmt[' + i + '] = ' + reflaxe.elixir.ast.ElixirASTPrinter.print(s, 0)); #end
             switch (s.def) {
               case EBinary(Match, {def: EVar(a)}, {def: EBinary(Match, {def: EVar(b)}, rhs)}):
-                #if debug_double_assign Sys.println('[DoubleAssignIfFold]   Found a=(b=rhs) a=' + a + ' b=' + b); #end
                 if (i + 1 < stmts.length) {
                   switch (stmts[i + 1].def) {
                     case EIf(cond, thenE, elseE):
-                      #if debug_double_assign Sys.println('[DoubleAssignIfFold]   Next is EIf: else=' + Type.enumConstructor(elseE.def)); #end
                       var elseIsB = switch (elseE.def) { case EVar(bb) if (bb == b): true; default: false; };
                       if (elseIsB) {
                         out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));

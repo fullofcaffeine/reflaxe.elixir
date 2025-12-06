@@ -112,10 +112,8 @@ class UndefinedRefInlineDiscardedMapGetTransforms {
           if (!declared.exists(name)) {
             var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
             if (discarded.exists(snake)) {
-              #if (sys && debug_ast_transformer) Sys.println('[InlineDiscardedMapGet] inline ' + name + ' <- key ' + snake); #end
               return makeASTWithMeta(EParen(discarded.get(snake)), e.metadata, e.pos);
             }
-            #if (sys && debug_ast_transformer) Sys.println('[InlineDiscardedMapGet] miss name=' + name + ' snake=' + snake + ' keys=' + [for (k in discarded.keys()) k].join(',')); #end
           }
           return e;
         default:

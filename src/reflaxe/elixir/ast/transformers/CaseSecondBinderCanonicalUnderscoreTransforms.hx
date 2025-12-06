@@ -55,7 +55,6 @@ class CaseSecondBinderCanonicalUnderscoreTransforms {
       case PTuple(es2) if (es2.length == 2): PTuple([es2[0], PVar("_value")]);
       default: cl.pattern;
     };
-    #if sys if (pat2 != cl.pattern) Sys.println('[CaseSecondBinderCanonical] canonicalized second binder to _value'); #end
     // Add lock flag on body to prevent late passes from drifting binder name
     var body2 = cl.body;
     try {

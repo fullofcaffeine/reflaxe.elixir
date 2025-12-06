@@ -851,13 +851,13 @@ class CompilationContext implements BuildContext {
      */
     public function dumpState(): Void {
         #if debug_compilation_context trace('[CompilationContext] State dump:'); #end
-        trace('  tempVarRenameMap entries: ${Lambda.count(tempVarRenameMap)}');
-        trace('  underscorePrefixedVars entries: ${Lambda.count(underscorePrefixedVars)}');
-        trace('  currentModule: $currentModule');
-        trace('  isInClassMethodContext: $isInClassMethodContext');
-        trace('  clauseContextStack depth: ${clauseContextStack.length}');
-        trace('  AST context initialized: ${astContext != null}');
-        trace('  Feature flags: ${astContext.featureFlags}');
+        // DISABLED: trace('  tempVarRenameMap entries: ${Lambda.count(tempVarRenameMap)}');
+        // DISABLED: trace('  underscorePrefixedVars entries: ${Lambda.count(underscorePrefixedVars)}');
+        // DISABLED: trace('  currentModule: $currentModule');
+        // DISABLED: trace('  isInClassMethodContext: $isInClassMethodContext');
+        // DISABLED: trace('  clauseContextStack depth: ${clauseContextStack.length}');
+        // DISABLED: trace('  AST context initialized: ${astContext != null}');
+        // DISABLED: trace('  Feature flags: ${astContext.featureFlags}');
     }
     #end
 }

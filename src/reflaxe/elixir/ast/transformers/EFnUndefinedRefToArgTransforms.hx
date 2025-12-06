@@ -89,12 +89,11 @@ class EFnUndefinedRefToArgTransforms {
             // Compute undefined references
             var undefined = [for (k in referenced.keys()) if (!declared.exists(k)) k];
             #if debug_ast_transformer
-            if (undefined.length > 0) Sys.println('[EFnUndefinedRefToArg] arg=' + argName + ' undefined=' + undefined.join(','));
+            if (undefined.length > 0) // DEBUG: Sys.println('[EFnUndefinedRefToArg] arg=' + argName + ' undefined=' + undefined.join(','));
             #end
             var hasTodo = (undefined.indexOf("todo") != -1);
             if (hasTodo) {
               #if debug_ast_transformer
-              Sys.println('[EFnUndefinedRefToArg] Mapping drifted todo -> ' + argName);
               #end
               var newBodyTodo = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
                 return switch (x.def) {
@@ -106,7 +105,6 @@ class EFnUndefinedRefToArgTransforms {
             } else if (undefined.length == 1) {
               var u = undefined[0];
               #if debug_ast_transformer
-              Sys.println('[EFnUndefinedRefToArg] Rewriting ' + u + ' -> ' + argName);
               #end
               var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
                 return switch (x.def) {

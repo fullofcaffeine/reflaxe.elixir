@@ -44,14 +44,14 @@ class LiveViewPreserver {
                     // Check if this is a LiveView class
                     if (cls.meta.has(":liveview")) {
                         #if debug_function_collection
-                        trace('[LiveViewPreserver] Processing LiveView class: ${cls.name}');
+                        // DISABLED: trace('[LiveViewPreserver] Processing LiveView class: ${cls.name}');
                         #end
                         
                         // Add @:keep to the class itself
                         if (!cls.meta.has(":keep")) {
                             cls.meta.add(":keep", [], cls.pos);
                             #if debug_function_collection
-                            trace('[LiveViewPreserver]   Added @:keep to class ${cls.name}');
+                            // DISABLED: trace('[LiveViewPreserver]   Added @:keep to class ${cls.name}');
                             #end
                         }
                         
@@ -60,7 +60,7 @@ class LiveViewPreserver {
                             if (!field.meta.has(":keep")) {
                                 field.meta.add(":keep", [], field.pos);
                                 #if debug_function_collection
-                                trace('[LiveViewPreserver]   Added @:keep to static method: ${field.name}');
+                                // DISABLED: trace('[LiveViewPreserver]   Added @:keep to static method: ${field.name}');
                                 #end
                             }
                         }
@@ -70,13 +70,13 @@ class LiveViewPreserver {
                             if (!field.meta.has(":keep")) {
                                 field.meta.add(":keep", [], field.pos);
                                 #if debug_function_collection
-                                trace('[LiveViewPreserver]   Added @:keep to field: ${field.name}');
+                                // DISABLED: trace('[LiveViewPreserver]   Added @:keep to field: ${field.name}');
                                 #end
                             }
                         }
                         
                         #if debug_function_collection
-                        trace('[LiveViewPreserver]   Preserved ${cls.statics.get().length} static methods');
+                        // DISABLED: trace('[LiveViewPreserver]   Preserved ${cls.statics.get().length} static methods');
                         #end
                     }
                     

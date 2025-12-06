@@ -17,30 +17,22 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class DropTempNilAssignTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
-        #if sys Sys.println('[DropTempNilAssign] PASS START'); #end
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EBlock(stmts):
-                    #if sys Sys.println('[DropTempNilAssign] Found EBlock with ' + stmts.length + ' stmts'); #end
                     makeASTWithMeta(EBlock(filter(stmts)), n.metadata, n.pos);
                 case EDo(stmts2):
-                    #if sys Sys.println('[DropTempNilAssign] Found EDo with ' + stmts2.length + ' stmts'); #end
                     makeASTWithMeta(EDo(filter(stmts2)), n.metadata, n.pos);
                 case EFn(clauses):
-                    #if sys Sys.println('[DropTempNilAssign] Found EFn with ' + clauses.length + ' clauses'); #end
                     var newClauses = [];
                     for (cl in clauses) {
                         var b = cl.body;
-                        #if sys Sys.println('[DropTempNilAssign] EFn body type: ' + Type.enumConstructor(b.def)); #end
                         var nb = switch (b.def) {
                             case EBlock(ss):
-                                #if sys Sys.println('[DropTempNilAssign] EFn body is EBlock with ' + ss.length + ' stmts'); #end
                                 makeASTWithMeta(EBlock(filter(ss)), b.metadata, b.pos);
                             case EDo(ss2):
-                                #if sys Sys.println('[DropTempNilAssign] EFn body is EDo with ' + ss2.length + ' stmts'); #end
                                 makeASTWithMeta(EDo(filter(ss2)), b.metadata, b.pos);
                             default:
-                                #if sys Sys.println('[DropTempNilAssign] EFn body is OTHER - passing through unchanged'); #end
                                 b;
                         };
                         newClauses.push({ args: cl.args, guard: cl.guard, body: nb });

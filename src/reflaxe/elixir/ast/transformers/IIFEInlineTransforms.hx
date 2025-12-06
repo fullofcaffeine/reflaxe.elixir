@@ -39,7 +39,7 @@ class IIFEInlineTransforms {
               if (isZeroArg) switch (c.body.def) {
                 case EFn(_):
                 #if debug_inline_iife
-                trace('[IIFEInline] inlining trivial IIFE that returns EFn');
+                // DISABLED: trace('[IIFEInline] inlining trivial IIFE that returns EFn');
                 #end
                 // Return inner function, preserving outer metadata
                 makeASTWithMeta(c.body.def, n.metadata, n.pos);

@@ -37,12 +37,10 @@ class DebugPredicateQueryScanTransforms {
       switch (x.def) {
         case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
           if (predUsesQuery(args[1])) {
-            #if sys Sys.println('[DebugPredicateQueryScan] def ' + fname + ' qparam=' + qparam + ' pred=' + ElixirASTPrinter.print(args[1], 0)); #end
           }
         case ECall(_, "filter", args2) if (args2 != null && args2.length >= 1):
           var pred = args2[args2.length - 1];
           if (predUsesQuery(pred)) {
-            #if sys Sys.println('[DebugPredicateQueryScan] def ' + fname + ' qparam=' + qparam + ' pred=' + ElixirASTPrinter.print(pred, 0)); #end
           }
         default:
       }

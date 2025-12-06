@@ -44,14 +44,14 @@ class ArrayBuildingAnalyzer {
      */
     public static function analyzeForLoop(v: TVar, iterator: TypedExpr, body: TypedExpr): ArrayBuildingPattern {
         #if debug_loop_builder
-        trace("[ArrayBuildingAnalyzer] Analyzing for loop with var: " + v.name);
+        // DISABLED: trace("[ArrayBuildingAnalyzer] Analyzing for loop with var: " + v.name);
         #end
 
         // Look for array.push() calls in the body
         var pushInfo = findArrayPushInBody(body);
         if (pushInfo == null) {
             #if debug_loop_builder
-            trace("[ArrayBuildingAnalyzer] No array push found in loop body");
+            // DISABLED: trace("[ArrayBuildingAnalyzer] No array push found in loop body");
             #end
             return NotArrayBuilding;
         }
@@ -61,12 +61,12 @@ class ArrayBuildingAnalyzer {
 
         if (conditionInfo != null) {
             #if debug_loop_builder
-            trace("[ArrayBuildingAnalyzer] Found filter condition around push");
+            // DISABLED: trace("[ArrayBuildingAnalyzer] Found filter condition around push");
             #end
             return FilterMap(pushInfo.arrayVar, conditionInfo.condition, pushInfo.element);
         } else {
             #if debug_loop_builder
-            trace("[ArrayBuildingAnalyzer] Simple map pattern detected");
+            // DISABLED: trace("[ArrayBuildingAnalyzer] Simple map pattern detected");
             #end
             return SimpleMap(pushInfo.arrayVar, pushInfo.element);
         }
@@ -199,7 +199,7 @@ class ArrayBuildingAnalyzer {
         switch (pattern) {
             case SimpleMap(arrayVar, elementExpr):
                 #if debug_loop_builder
-                trace("[ArrayBuildingAnalyzer] Generating comprehension for simple map");
+                // DISABLED: trace("[ArrayBuildingAnalyzer] Generating comprehension for simple map");
                 #end
                 // Transform to: arrayVar = for v <- iterator, do: elementExpr
                 return LoopBuilder.LoopTransform.Comprehension(
@@ -212,7 +212,7 @@ class ArrayBuildingAnalyzer {
 
             case FilterMap(arrayVar, condition, elementExpr):
                 #if debug_loop_builder
-                trace("[ArrayBuildingAnalyzer] Generating comprehension with filter");
+                // DISABLED: trace("[ArrayBuildingAnalyzer] Generating comprehension with filter");
                 #end
                 // Transform to: arrayVar = for v <- iterator, condition, do: elementExpr
                 return LoopBuilder.LoopTransform.Comprehension(
@@ -225,7 +225,7 @@ class ArrayBuildingAnalyzer {
 
             case NotArrayBuilding:
                 #if debug_loop_builder
-                trace("[ArrayBuildingAnalyzer] No array building pattern, using standard for");
+                // DISABLED: trace("[ArrayBuildingAnalyzer] No array building pattern, using standard for");
                 #end
                 // Fall back to standard for loop
                 return LoopBuilder.LoopTransform.StandardFor(v, iterator, null);

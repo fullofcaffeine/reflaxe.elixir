@@ -52,7 +52,7 @@ class RouterBuildMacro {
         var __t0 = haxe.Timer.stamp();
         #end
         #if debug_compilation_hang
-        Sys.println('[HANG DEBUG] 🎯 RouterBuildMacro.generateRoutes START');
+        // DISABLED: Sys.println('[HANG DEBUG] 🎯 RouterBuildMacro.generateRoutes START');
         var routerStartTime = haxe.Timer.stamp() * 1000;
         #end
 
@@ -60,7 +60,7 @@ class RouterBuildMacro {
         var classType = Context.getLocalClass().get();
 
         #if debug_compilation_hang
-        Sys.println('[HANG DEBUG] Router class: ${classType.name}');
+        // DISABLED: Sys.println('[HANG DEBUG] Router class: ${classType.name}');
         #end
 
         // Extract route definitions from @:routes annotation
@@ -79,7 +79,7 @@ class RouterBuildMacro {
         // Generate functions for each route definition
         for (routeDef in routeDefinitions) {
             #if debug_compilation_hang
-            Sys.println('[HANG DEBUG] Generating route: ${routeDef.name} - ${routeDef.method} ${routeDef.path}');
+            // DISABLED: Sys.println('[HANG DEBUG] Generating route: ${routeDef.name} - ${routeDef.method} ${routeDef.path}');
             #end
 
             var generatedFunction = createRouteFunction(routeDef, classType.pos);
@@ -91,12 +91,12 @@ class RouterBuildMacro {
 
         #if debug_compilation_hang
         var elapsed = (haxe.Timer.stamp() * 1000) - routerStartTime;
-        Sys.println('[HANG DEBUG] ✅ RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
+        // DISABLED: Sys.println('[HANG DEBUG] ✅ RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
         #end
 
         #if hxx_instrument_sys
         var __elapsedMacro = (haxe.Timer.stamp() - __t0) * 1000.0;
-        Sys.println(
+        // DISABLED: Sys.println(
             '[MacroTiming] name=RouterBuildMacro.generateRoutes routes='
             + routeDefinitions.length
             + ' elapsed_ms=' + Std.int(__elapsedMacro)

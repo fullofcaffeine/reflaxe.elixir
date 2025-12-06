@@ -93,7 +93,7 @@ class ControllerJsonSecondArgUndefinedRewriteUltimateTransforms {
               }
               if (replacement == null) replacement = makeAST(EMap([]));
               #if debug_ast_transformer
-              Sys.println('[ControllerJsonSecondArgUndefinedRewrite] Rewriting json(conn, data) to in-scope expression');
+              // DEBUG: Sys.println('[ControllerJsonSecondArgUndefinedRewrite] Rewriting json(conn, data) to in-scope expression');
               #end
               makeASTWithMeta(ERemoteCall(t, fnName, [args[0], replacement]), n.metadata, n.pos);
             default: n;

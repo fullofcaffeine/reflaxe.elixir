@@ -245,7 +245,7 @@ class HygieneTransforms {
         state.scopeStack.push(newFrame);
         
         #if debug_hygiene
-        trace('[XRay Hygiene] Entering scope: $kind (depth: ${state.scopeStack.length})');
+        // DISABLED: trace('[XRay Hygiene] Entering scope: $kind (depth: ${state.scopeStack.length})');
         #end
     }
     
@@ -257,7 +257,7 @@ class HygieneTransforms {
             var exitingScope = state.scopeStack.pop();
             
             #if debug_hygiene
-            trace('[XRay Hygiene] Exiting scope: ${exitingScope.kind} (depth: ${state.scopeStack.length})');
+            // DISABLED: trace('[XRay Hygiene] Exiting scope: ${exitingScope.kind} (depth: ${state.scopeStack.length})');
             #end
         }
     }
@@ -303,7 +303,7 @@ class HygieneTransforms {
         currentFrame.bindings.get(name).push(binding);
         
         #if debug_hygiene
-        trace('[XRay Hygiene] Bound variable "$name" as $kind in ${currentFrame.kind} scope (container:$containerId, slot:$slotIndex, path:[${path.join(",")}])');
+        // DISABLED: trace('[XRay Hygiene] Bound variable "$name" as $kind in ${currentFrame.kind} scope (container:$containerId, slot:$slotIndex, path:[${path.join(",")}])');
         #end
         
         return binding;
@@ -324,7 +324,7 @@ class HygieneTransforms {
                     binding.used = true;
                     
                     #if debug_hygiene
-                    trace('[XRay Hygiene] Resolved read of "$name" to binding in ${frame.kind} scope');
+                    // DISABLED: trace('[XRay Hygiene] Resolved read of "$name" to binding in ${frame.kind} scope');
                     #end
                     
                     return binding;
@@ -334,7 +334,7 @@ class HygieneTransforms {
         }
         
         #if debug_hygiene
-        trace('[XRay Hygiene] Variable "$name" not found in any scope (might be module attribute)');
+        // DISABLED: trace('[XRay Hygiene] Variable "$name" not found in any scope (might be module attribute)');
         #end
         
         return null;
@@ -349,7 +349,7 @@ class HygieneTransforms {
      */
     public static function hygienicNamingPass(ast: ElixirAST): ElixirAST {
         #if debug_hygiene
-        trace('[XRay Hygiene] Starting hygienic naming pass');
+        // DISABLED: trace('[XRay Hygiene] Starting hygienic naming pass');
         #end
         
         // For now, return AST unchanged to avoid stack overflow
@@ -378,7 +378,7 @@ class HygieneTransforms {
      */
     public static function usageAnalysisPass(ast: ElixirAST): ElixirAST {
         #if debug_hygiene
-        trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking (STATELESS)');
+        // DISABLED: trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking (STATELESS)');
         #end
 
         // Phase 0: Assign unique IDs to all AST nodes
@@ -392,12 +392,12 @@ class HygieneTransforms {
         collectBindingsAndUsage(astWithIds, state, allBindings);
 
         #if debug_hygiene
-        trace('[XRay Hygiene] Collected ${allBindings.length} bindings');
+        // DISABLED: trace('[XRay Hygiene] Collected ${allBindings.length} bindings');
         var unusedCount = 0;
         for (binding in allBindings) {
             if (!binding.used) unusedCount++;
         }
-        trace('[XRay Hygiene] Found $unusedCount unused bindings to rename');
+        // DISABLED: trace('[XRay Hygiene] Found $unusedCount unused bindings to rename');
         #end
 
         // Phase 2: Apply renaming transformations using collected bindings (local mapping)
@@ -429,10 +429,10 @@ class HygieneTransforms {
      */
     public static function usageAnalysisPassWithContext(ast: ElixirAST, context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_hygiene
-        trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking (CONTEXTUAL)');
-        trace('[XRay Hygiene] Context provided: ${context != null}');
+        // DISABLED: trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking (CONTEXTUAL)');
+        // DISABLED: trace('[XRay Hygiene] Context provided: ${context != null}');
         if (context != null) {
-            trace('[XRay Hygiene] Existing renames in context: ${[for (k in context.tempVarRenameMap.keys()) k + " -> " + context.tempVarRenameMap.get(k)].join(", ")}');
+            // DISABLED: trace('[XRay Hygiene] Existing renames in context: ${[for (k in context.tempVarRenameMap.keys()) k + " -> " + context.tempVarRenameMap.get(k)].join(", ")}');
         }
         #end
 
@@ -447,12 +447,12 @@ class HygieneTransforms {
         collectBindingsAndUsage(astWithIds, state, allBindings);
 
         #if debug_hygiene
-        trace('[XRay Hygiene] Collected ${allBindings.length} bindings');
+        // DISABLED: trace('[XRay Hygiene] Collected ${allBindings.length} bindings');
         var unusedCount = 0;
         for (binding in allBindings) {
             if (!binding.used) unusedCount++;
         }
-        trace('[XRay Hygiene] Found $unusedCount unused bindings to rename');
+        // DISABLED: trace('[XRay Hygiene] Found $unusedCount unused bindings to rename');
         #end
 
         // Phase 2: Apply renaming transformations using context's shared mapping
@@ -522,7 +522,7 @@ class HygieneTransforms {
                 // NOT variable declaration like in imperative languages
 
                 #if debug_hygiene
-                trace('[XRay Hygiene] Skipping LHS pattern processing for EMatch - Elixir rebinding semantics');
+                // DISABLED: trace('[XRay Hygiene] Skipping LHS pattern processing for EMatch - Elixir rebinding semantics');
                 #end
                 
             case ECase(expr, clauses):
@@ -574,7 +574,7 @@ class HygieneTransforms {
                         case EVar(_): "EVar";
                         default: Type.enumConstructor(arg.def);
                     };
-                    trace('[XRay Hygiene] ECall arg type: $argType');
+                    // DISABLED: trace('[XRay Hygiene] ECall arg type: $argType');
                     #end
                     // Each argument needs to be properly traversed to mark variables as used
                     traverseWithContext(arg, state, allBindings);
@@ -620,8 +620,8 @@ class HygieneTransforms {
                 // Raw Elixir code from __elixir__() injection
                 // Parse string interpolations #{variable} to detect variable usage
                 #if debug_hygiene
-                trace('[XRay Hygiene] Traversing ERaw node with code: ${code.substr(0, 100)}...');
-                trace('[XRay Hygiene] Checking for #{...} patterns in code');
+                // DISABLED: trace('[XRay Hygiene] Traversing ERaw node with code: ${code.substr(0, 100)}...');
+                // DISABLED: trace('[XRay Hygiene] Checking for #{...} patterns in code');
                 #end
 
                 // Use regex to find all #{variable_name} patterns (including camelCase)
@@ -632,7 +632,7 @@ class HygieneTransforms {
                     matchCount++;
                     var varName = interpolationPattern.matched(1);
                     #if debug_hygiene
-                    trace('[XRay Hygiene] MATCH #$matchCount - Found interpolated variable: $varName');
+                    // DISABLED: trace('[XRay Hygiene] MATCH #$matchCount - Found interpolated variable: $varName');
                     #end
 
                     // Mark variable as used by resolving it in expression context
@@ -728,7 +728,7 @@ class HygieneTransforms {
                 }
 
                 #if debug_hygiene
-                trace('[XRay Hygiene] Total matches found: $matchCount');
+                // DISABLED: trace('[XRay Hygiene] Total matches found: $matchCount');
                 #end
 
             default:
@@ -814,10 +814,10 @@ class HygieneTransforms {
         }
 
         #if debug_hygiene
-        trace('[XRay Hygiene] Built rename index with ${Lambda.count(renameIndex)} containers to process');
-        trace('[XRay Hygiene] Built name mapping with ${Lambda.count(nameMapping)} entries');
+        // DISABLED: trace('[XRay Hygiene] Built rename index with ${Lambda.count(renameIndex)} containers to process');
+        // DISABLED: trace('[XRay Hygiene] Built name mapping with ${Lambda.count(nameMapping)} entries');
         for (oldName in nameMapping.keys()) {
-            trace('[XRay Hygiene]   $oldName -> ${nameMapping.get(oldName)}');
+            // DISABLED: trace('[XRay Hygiene]   $oldName -> ${nameMapping.get(oldName)}');
         }
         #end
 
@@ -888,7 +888,7 @@ class HygieneTransforms {
                     if (nameMapping.exists(name)) {
                         var newName = nameMapping.get(name);
                         #if debug_hygiene
-                        trace('[XRay Hygiene] Renaming EVar "$name" to "$newName"');
+                        // DISABLED: trace('[XRay Hygiene] Renaming EVar "$name" to "$newName"');
                         #end
                         return make(EVar(newName), node.metadata);
                     }
@@ -932,9 +932,9 @@ class HygieneTransforms {
         var nameMapping = initializeNameMappingFromContext(context);
 
         #if debug_hygiene
-        trace('[XRay Hygiene] Initialized nameMapping with ${Lambda.count(nameMapping)} entries from context');
+        // DISABLED: trace('[XRay Hygiene] Initialized nameMapping with ${Lambda.count(nameMapping)} entries from context');
         for (key in nameMapping.keys()) {
-            trace('[XRay Hygiene]   Context mapping: $key -> ${nameMapping.get(key)}');
+            // DISABLED: trace('[XRay Hygiene]   Context mapping: $key -> ${nameMapping.get(key)}');
         }
         #end
 
@@ -958,16 +958,16 @@ class HygieneTransforms {
                 nameMapping.set(binding.name, "_" + binding.name);
 
                 #if debug_hygiene
-                trace('[XRay Hygiene Context] Registered rename in context: ${binding.name} -> _${binding.name}');
+                // DISABLED: trace('[XRay Hygiene Context] Registered rename in context: ${binding.name} -> _${binding.name}');
                 #end
             }
         }
 
         #if debug_hygiene
-        trace('[XRay Hygiene Context] Built rename index with ${Lambda.count(renameIndex)} containers to process');
-        trace('[XRay Hygiene Context] Using context name mapping with ${Lambda.count(nameMapping)} entries');
+        // DISABLED: trace('[XRay Hygiene Context] Built rename index with ${Lambda.count(renameIndex)} containers to process');
+        // DISABLED: trace('[XRay Hygiene Context] Using context name mapping with ${Lambda.count(nameMapping)} entries');
         for (oldName in nameMapping.keys()) {
-            trace('[XRay Hygiene Context]   $oldName -> ${nameMapping.get(oldName)}');
+            // DISABLED: trace('[XRay Hygiene Context]   $oldName -> ${nameMapping.get(oldName)}');
         }
         #end
 
@@ -1039,7 +1039,7 @@ class HygieneTransforms {
                     if (nameMapping.exists(name)) {
                         var newName = nameMapping.get(name);
                         #if debug_hygiene
-                        trace('[XRay Hygiene Context] Renaming EVar "$name" to "$newName" (from context)');
+                        // DISABLED: trace('[XRay Hygiene Context] Renaming EVar "$name" to "$newName" (from context)');
                         #end
                         return make(EVar(newName), node.metadata);
                     }
@@ -1145,14 +1145,14 @@ class HygieneTransforms {
         // Defensive: context.tempVarRenameMap may be null in early compilation phases
         if (context.tempVarRenameMap == null) {
             #if debug_hygiene
-            trace('[XRay Hygiene Context] tempVarRenameMap is null, returning empty mapping');
+            // DISABLED: trace('[XRay Hygiene Context] tempVarRenameMap is null, returning empty mapping');
             #end
             return mapping;
         }
 
         #if debug_hygiene
-        trace('[XRay Hygiene Context] Initializing name mapping from context...');
-        trace('[XRay Hygiene Context] Context has ${Lambda.count(context.tempVarRenameMap)} total entries');
+        // DISABLED: trace('[XRay Hygiene Context] Initializing name mapping from context...');
+        // DISABLED: trace('[XRay Hygiene Context] Context has ${Lambda.count(context.tempVarRenameMap)} total entries');
         #end
 
         // Extract name-based keys, filtering out numeric IDs and already-prefixed names
@@ -1162,7 +1162,7 @@ class HygieneTransforms {
             // Filter 1: Skip numeric AST node IDs (e.g., "57694")
             if (isNumericId(key)) {
                 #if debug_hygiene
-                trace('[XRay Hygiene Context] Skipping numeric ID: $key');
+                // DISABLED: trace('[XRay Hygiene Context] Skipping numeric ID: $key');
                 #end
                 continue;
             }
@@ -1170,7 +1170,7 @@ class HygieneTransforms {
             // Filter 2: Skip already-prefixed names (e.g., "_unused")
             if (key.startsWith("_")) {
                 #if debug_hygiene
-                trace('[XRay Hygiene Context] Skipping underscore-prefixed: $key');
+                // DISABLED: trace('[XRay Hygiene Context] Skipping underscore-prefixed: $key');
                 #end
                 continue;
             }
@@ -1179,12 +1179,12 @@ class HygieneTransforms {
             mapping.set(key, value);
 
             #if debug_hygiene
-            trace('[XRay Hygiene Context] ✓ Loaded from context: $key -> $value');
+            // DISABLED: trace('[XRay Hygiene Context] ✓ Loaded from context: $key -> $value');
             #end
         }
 
         #if debug_hygiene
-        trace('[XRay Hygiene Context] Extracted ${Lambda.count(mapping)} name-based mappings');
+        // DISABLED: trace('[XRay Hygiene Context] Extracted ${Lambda.count(mapping)} name-based mappings');
         #end
 
         return mapping;
@@ -1201,7 +1201,7 @@ class HygieneTransforms {
                 for (rename in renames) {
                     if (pathsEqual(currentPath, rename.path) && name == rename.oldName) {
                         #if debug_hygiene
-                        trace('[XRay Hygiene] Renaming "$name" to "${rename.newName}" at path [${currentPath.join(",")}]');
+                        // DISABLED: trace('[XRay Hygiene] Renaming "$name" to "${rename.newName}" at path [${currentPath.join(",")}]');
                         #end
                         return PVar(rename.newName);
                     }
@@ -1265,19 +1265,19 @@ class HygieneTransforms {
                 if (name.charAt(0) == "_") return pattern;
                 
                 #if debug_hygiene
-                trace('[XRay Hygiene] Checking usage of parameter: $name');
+                // DISABLED: trace('[XRay Hygiene] Checking usage of parameter: $name');
                 #end
                 
                 // Check if variable is used in body
                 var isUsed = isVariableUsedInBody(name, body);
                 
                 #if debug_hygiene
-                trace('[XRay Hygiene] Parameter $name is ${isUsed ? "USED" : "UNUSED"}');
+                // DISABLED: trace('[XRay Hygiene] Parameter $name is ${isUsed ? "USED" : "UNUSED"}');
                 #end
                 
                 if (!isUsed) {
                     #if debug_hygiene
-                    trace('[XRay Hygiene] Adding underscore to unused parameter: $name -> _$name');
+                    // DISABLED: trace('[XRay Hygiene] Adding underscore to unused parameter: $name -> _$name');
                     #end
                     return PVar("_" + name);
                 }
@@ -1310,18 +1310,18 @@ class HygieneTransforms {
             
             #if debug_hygiene_verbose
             var indent = [for (i in 0...depth) "  "].join("");
-            trace('$indent[XRay Hygiene] Node #$nodeCount: ${Type.enumConstructor(node.def)}');
+            // DISABLED: trace('$indent[XRay Hygiene] Node #$nodeCount: ${Type.enumConstructor(node.def)}');
             #end
             
             // Check if this node is a variable reference
             switch(node.def) {
                 case EVar(name):
                     #if debug_hygiene
-                    trace('[XRay Hygiene] Found EVar("$name") - checking against "$varName"');
+                    // DISABLED: trace('[XRay Hygiene] Found EVar("$name") - checking against "$varName"');
                     #end
                     if (name == varName) {
                         #if debug_hygiene
-                        trace('[XRay Hygiene] ✓ MATCH! Variable $varName is USED in the body!');
+                        // DISABLED: trace('[XRay Hygiene] ✓ MATCH! Variable $varName is USED in the body!');
                         #end
                         used = true;
                     }
@@ -1330,45 +1330,45 @@ class HygieneTransforms {
                 // since transformNode will recurse into them automatically
                 case ECall(target, funcName, args):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] ECall to $funcName with ${args.length} args - will traverse args');
+                    // DISABLED: trace('[XRay Hygiene] ECall to $funcName with ${args.length} args - will traverse args');
                     #end
                     
                 case EBinary(op, left, right):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] EBinary operator - will traverse both operands');
+                    // DISABLED: trace('[XRay Hygiene] EBinary operator - will traverse both operands');
                     #end
                     
                 case ETuple(elements):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] ETuple with ${elements.length} elements - will traverse all');
+                    // DISABLED: trace('[XRay Hygiene] ETuple with ${elements.length} elements - will traverse all');
                     #end
                     
                 case EList(elements):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] EList with ${elements.length} elements - will traverse all');
+                    // DISABLED: trace('[XRay Hygiene] EList with ${elements.length} elements - will traverse all');
                     #end
                     
                 case EBlock(statements):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] EBlock with ${statements.length} statements - will traverse all');
+                    // DISABLED: trace('[XRay Hygiene] EBlock with ${statements.length} statements - will traverse all');
                     depth++;
                     #end
                     
                 case EIf(cond, thenBranch, elseBranch):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] EIf - will traverse condition and both branches');
+                    // DISABLED: trace('[XRay Hygiene] EIf - will traverse condition and both branches');
                     #end
                     
                 case ECase(expr, clauses):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] ECase with ${clauses.length} clauses - will traverse all');
+                    // DISABLED: trace('[XRay Hygiene] ECase with ${clauses.length} clauses - will traverse all');
                     #end
                     
                 default:
                     // transformNode handles all other cases automatically
                     #if debug_hygiene_verbose
                     if (nodeCount < 20) { // Limit verbose output
-                        trace('[XRay Hygiene] Other node type: ${Type.enumConstructor(node.def)}');
+                        // DISABLED: trace('[XRay Hygiene] Other node type: ${Type.enumConstructor(node.def)}');
                     }
                     #end
             }
@@ -1379,9 +1379,9 @@ class HygieneTransforms {
         
         #if debug_hygiene
         if (!used) {
-            trace('[XRay Hygiene] Variable "$varName" NOT found after checking $nodeCount nodes');
+            // DISABLED: trace('[XRay Hygiene] Variable "$varName" NOT found after checking $nodeCount nodes');
         } else {
-            trace('[XRay Hygiene] Variable "$varName" WAS FOUND (checked $nodeCount nodes)');
+            // DISABLED: trace('[XRay Hygiene] Variable "$varName" WAS FOUND (checked $nodeCount nodes)');
         }
         #end
         
@@ -1397,7 +1397,7 @@ class HygieneTransforms {
      */
     public static function atomNormalizationPass(ast: ElixirAST): ElixirAST {
         #if debug_hygiene
-        trace('[XRay Hygiene] Starting atom normalization pass');
+        // DISABLED: trace('[XRay Hygiene] Starting atom normalization pass');
         #end
         
         return ElixirASTTransformer.transformNode(ast, function(node) {
@@ -1424,7 +1424,7 @@ class HygieneTransforms {
      */
     public static function equalityToPatternPass(ast: ElixirAST): ElixirAST {
         #if debug_hygiene
-        trace('[XRay Hygiene] Starting equality to pattern pass');
+        // DISABLED: trace('[XRay Hygiene] Starting equality to pattern pass');
         #end
         
         return ElixirASTTransformer.transformNode(ast, function(node) {

@@ -51,9 +51,9 @@ class VariableBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        trace('[VarBuilder] Processing declaration: ${v.name} (id: ${v.id})');
+        // DISABLED: trace('[VarBuilder] Processing declaration: ${v.name} (id: ${v.id})');
         if (init != null) {
-            trace('[VarBuilder] Init type: ${Type.enumConstructor(init.expr)}');
+            // DISABLED: trace('[VarBuilder] Init type: ${Type.enumConstructor(init.expr)}');
         }
         #end
         
@@ -76,7 +76,7 @@ class VariableBuilder {
         
         if (initAST == null) {
             #if debug_ast_builder
-            trace('[VarBuilder] Init expression returned null for ${v.name}');
+            // DISABLED: trace('[VarBuilder] Init expression returned null for ${v.name}');
             #end
             return null;
         }
@@ -137,7 +137,7 @@ class VariableBuilder {
         }
         
         #if debug_infrastructure_vars
-        trace('[Infrastructure Variable] Declaration: ${v.name} = ${Type.enumConstructor(init.expr)}');
+        // DISABLED: trace('[Infrastructure Variable] Declaration: ${v.name} = ${Type.enumConstructor(init.expr)}');
         #end
         
         // Track infrastructure variable mappings for switch targets
@@ -161,8 +161,8 @@ class VariableBuilder {
                         context.tempVarRenameMap.set(v.name, extractedVarName);
                         
                         #if debug_infrastructure_vars
-                        trace('[Infrastructure Variable] Mapping ${v.name} -> $extractedVarName');
-                        trace('[Infrastructure Variable FIX] Generating variable binding instead of skipping');
+                        // DISABLED: trace('[Infrastructure Variable] Mapping ${v.name} -> $extractedVarName');
+                        // DISABLED: trace('[Infrastructure Variable FIX] Generating variable binding instead of skipping');
                         #end
 
                         // FIXED: Don't skip! Generate the variable binding so g is defined
@@ -171,19 +171,19 @@ class VariableBuilder {
                         var initAST = buildExpression(init);
 
                         #if debug_infrastructure_vars
-                        trace('[Infrastructure Variable FIX] initAST is ${initAST == null ? "null" : "not null"}');
+                        // DISABLED: trace('[Infrastructure Variable FIX] initAST is ${initAST == null ? "null" : "not null"}');
                         #end
 
                         if (initAST != null) {
                             var varName = resolveDeclarationName(v, context);
                             #if debug_infrastructure_vars
-                            trace('[Infrastructure Variable FIX] Generating EMatch for $varName');
+                            // DISABLED: trace('[Infrastructure Variable FIX] Generating EMatch for $varName');
                             #end
                             return EMatch(PVar(varName), initAST);
                         }
 
                         #if debug_infrastructure_vars
-                        trace('[Infrastructure Variable FIX] FAILED - initAST was null, returning null');
+                        // DISABLED: trace('[Infrastructure Variable FIX] FAILED - initAST was null, returning null');
                         #end
                         return null;
                         
@@ -196,7 +196,7 @@ class VariableBuilder {
                 if (isInfrastructureVariableToSkip(localVar.name)) {
                     // Skip infrastructure variable chains: g1 = g
                     #if debug_infrastructure_vars
-                    trace('[Infrastructure Variable] Skipping chain: ${v.name} = ${localVar.name}');
+                    // DISABLED: trace('[Infrastructure Variable] Skipping chain: ${v.name} = ${localVar.name}');
                     #end
                     return null;
                 }
@@ -205,7 +205,7 @@ class VariableBuilder {
                 // Pattern: g = elem(tuple, index)
                 // Usually handled by pattern matching
                 #if debug_infrastructure_vars
-                trace('[Infrastructure Variable] TEnumParameter assignment: ${v.name}');
+                // DISABLED: trace('[Infrastructure Variable] TEnumParameter assignment: ${v.name}');
                 #end
                 // Let it be processed normally for now
                 
@@ -279,7 +279,7 @@ class VariableBuilder {
         var variableName = resolveVariableName(tvar, context);
         
         #if debug_ast_builder
-        trace('[AST Builder] TVar: ${tvar.name} (id: ${tvar.id}) -> $variableName');
+        // DISABLED: trace('[AST Builder] TVar: ${tvar.name} (id: ${tvar.id}) -> $variableName');
         #end
         
         return EVar(variableName);
@@ -295,11 +295,11 @@ class VariableBuilder {
      */
     public static function buildLocal(tvar: TVar, expr: TypedExpr, context: CompilationContext): ElixirASTDef {
         // TLocal is similar to TVar but represents a local variable in the current scope
-        trace('[buildLocal] TLocal: ${tvar.name}, constructorArgCtx: ${context.isInConstructorArgContext}');
+        // DISABLED: trace('[buildLocal] TLocal: ${tvar.name}, constructorArgCtx: ${context.isInConstructorArgContext}');
         var variableName = resolveVariableName(tvar, context);
         
         #if debug_ast_builder
-        trace('[AST Builder] TLocal: ${tvar.name} (id: ${tvar.id}) -> $variableName');
+        // DISABLED: trace('[AST Builder] TLocal: ${tvar.name} (id: ${tvar.id}) -> $variableName');
         #end
         
         return EVar(variableName);
@@ -336,13 +336,13 @@ class VariableBuilder {
             // Check tempVarRenameMap for the mapping (e.g., "replacer2" → "replacer")
             if (context.tempVarRenameMap != null && context.tempVarRenameMap.exists(defaultName)) {
                 var mappedName = context.tempVarRenameMap.get(defaultName);
-                trace('[Constructor Args] Found mapping: ${defaultName} -> $mappedName');
+                // DISABLED: trace('[Constructor Args] Found mapping: ${defaultName} -> $mappedName');
                 return mappedName;
             }
 
             // If not in map, strip numeric suffix as fallback
             var strippedName = stripNumericShadowSuffix(defaultName);
-            trace('[Constructor Args] No mapping, stripping suffix: ${defaultName} -> $strippedName');
+            // DISABLED: trace('[Constructor Args] No mapping, stripping suffix: ${defaultName} -> $strippedName');
             return strippedName;
         }
 
@@ -350,7 +350,7 @@ class VariableBuilder {
         if (context.patternVariableRegistry != null && context.patternVariableRegistry.exists(tvarId)) {
             var patternName = context.patternVariableRegistry.get(tvarId);
             #if debug_pattern_variables
-            trace('[Pattern Variable] Using pattern registry mapping: ${tvar.name} (id: $tvarId) -> $patternName');
+            // DISABLED: trace('[Pattern Variable] Using pattern registry mapping: ${tvar.name} (id: $tvarId) -> $patternName');
             #end
             return patternName;
         }
@@ -358,20 +358,20 @@ class VariableBuilder {
         // Priority 2: Check clause context for case-local variables
         if (context.currentClauseContext != null) {
             #if debug_clause_context
-            trace('[VarBuilder] Checking ClauseContext for TVar: ${tvar.name} (id: $tvarId)');
+            // DISABLED: trace('[VarBuilder] Checking ClauseContext for TVar: ${tvar.name} (id: $tvarId)');
             #end
             var clauseMapping = context.currentClauseContext.lookupVariable(tvarId);
             if (clauseMapping != null) {
                 #if debug_clause_context
-                trace('[Clause Context] Found mapping for ${tvar.name} (id: $tvarId) -> $clauseMapping');
+                // DISABLED: trace('[Clause Context] Found mapping for ${tvar.name} (id: $tvarId) -> $clauseMapping');
                 #end
                 return clauseMapping;
             }
             #if debug_clause_context
-            trace('[VarBuilder] No ClauseContext mapping found for ${tvar.name} (id: $tvarId)');
+            // DISABLED: trace('[VarBuilder] No ClauseContext mapping found for ${tvar.name} (id: $tvarId)');
             #end
         } #if debug_clause_context else {
-            trace('[VarBuilder] ClauseContext is NULL for ${tvar.name} (id: $tvarId)');
+            // DISABLED: trace('[VarBuilder] ClauseContext is NULL for ${tvar.name} (id: $tvarId)');
         } #end
 
         // Priority 3: Check tempVarRenameMap for function parameters (DUAL-KEY STORAGE)
@@ -386,7 +386,7 @@ class VariableBuilder {
             if (context.tempVarRenameMap.exists(idKey)) {
                 var mappedName = context.tempVarRenameMap.get(idKey);
                 #if debug_hygiene
-                trace('[Dual-Key Storage] Found ID mapping: ${tvar.name} (id: $tvarId) -> $mappedName');
+                // DISABLED: trace('[Dual-Key Storage] Found ID mapping: ${tvar.name} (id: $tvarId) -> $mappedName');
                 #end
                 return mappedName;
             }
@@ -395,7 +395,7 @@ class VariableBuilder {
             if (context.tempVarRenameMap.exists(defaultName)) {
                 var mappedName = context.tempVarRenameMap.get(defaultName);
                 #if debug_hygiene
-                trace('[Dual-Key Storage] Found NAME mapping: ${tvar.name} -> $mappedName');
+                // DISABLED: trace('[Dual-Key Storage] Found NAME mapping: ${tvar.name} -> $mappedName');
                 #end
                 return mappedName;
             }
@@ -407,7 +407,7 @@ class VariableBuilder {
         if (context.variableMappings != null && context.variableMappings.exists(tvarId)) {
             var mapping = context.variableMappings.get(tvarId);
             #if debug_variable_mappings
-            trace('[Variable Mapping] Found global mapping: ${tvar.name} (id: $tvarId) -> $mapping');
+            // DISABLED: trace('[Variable Mapping] Found global mapping: ${tvar.name} (id: $tvarId) -> $mapping');
             #end
             return mapping;
         }
@@ -427,7 +427,7 @@ class VariableBuilder {
         if (context.preservedLoopVariables != null && context.preservedLoopVariables.exists(tvarId)) {
             var preserved = context.preservedLoopVariables.get(tvarId);
             #if debug_loop_variables
-            trace('[Loop Variable] Using preserved name: ${tvar.name} (id: $tvarId) -> $preserved');
+            // DISABLED: trace('[Loop Variable] Using preserved name: ${tvar.name} (id: $tvarId) -> $preserved');
             #end
             return preserved;
         }
@@ -441,7 +441,7 @@ class VariableBuilder {
             if (hasUnderscorePrefix && varName.length > 0 && varName.charAt(0) != "_") {
                 varName = "_" + varName;
                 #if debug_ast_builder
-                trace('[VarBuilder] Variable reference ${tvar.name} (id: $tvarId) uses underscore: $varName');
+                // DISABLED: trace('[VarBuilder] Variable reference ${tvar.name} (id: $tvarId) uses underscore: $varName');
                 #end
             }
         }
@@ -545,7 +545,7 @@ class VariableBuilder {
         context.patternVariableRegistry.set(tvarId, patternName);
         
         #if debug_pattern_variables
-        trace('[Pattern Variable] Registered: var $tvarId -> $patternName');
+        // DISABLED: trace('[Pattern Variable] Registered: var $tvarId -> $patternName');
         #end
     }
     
@@ -571,7 +571,7 @@ class VariableBuilder {
         */
         
         #if debug_variable_mappings
-        trace('[Variable Mapping] Registered global: var $tvarId -> $newName');
+        // DISABLED: trace('[Variable Mapping] Registered global: var $tvarId -> $newName');
         #end
     }
     
@@ -588,7 +588,7 @@ class VariableBuilder {
         context.patternVariableRegistry = null;
         
         #if debug_pattern_variables
-        trace('[Pattern Variable] Registry cleared');
+        // DISABLED: trace('[Pattern Variable] Registry cleared');
         #end
     }
     
@@ -614,7 +614,7 @@ class VariableBuilder {
         */
         
         #if debug_loop_variables
-        trace('[Loop Variable] Preserved: var $tvarId -> $name');
+        // DISABLED: trace('[Loop Variable] Preserved: var $tvarId -> $name');
         #end
     }
 
@@ -637,7 +637,7 @@ class VariableBuilder {
             var base = pattern.matched(1);
             var suffix = pattern.matched(2);
             #if debug_constructor_args
-            trace('[Shadow Strip] $name -> $base (removed suffix: $suffix)');
+            // DISABLED: trace('[Shadow Strip] $name -> $base (removed suffix: $suffix)');
             #end
             return base;
         }

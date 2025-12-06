@@ -50,7 +50,7 @@ class ControlFlowBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        trace('[ControlFlow] Processing TIf with condition: ${Type.enumConstructor(econd.expr)}');
+        // DISABLED: trace('[ControlFlow] Processing TIf with condition: ${Type.enumConstructor(econd.expr)}');
         #end
         
         // Check if this is an optimized enum switch
@@ -121,7 +121,7 @@ class ControlFlowBuilder {
                         enumIndex = index;
                         enumTypeRef = eRef;
                         #if debug_ast_builder
-                        trace('[ControlFlow] Detected optimized enum switch: index $index');
+                        // DISABLED: trace('[ControlFlow] Detected optimized enum switch: index $index');
                         #end
                     default:
                 }
@@ -152,7 +152,7 @@ class ControlFlowBuilder {
             
             if (matchingConstructor != null) {
                 #if debug_ast_builder
-                trace('[ControlFlow] Transforming to case with constructor: $matchingConstructor');
+                // DISABLED: trace('[ControlFlow] Transforming to case with constructor: $matchingConstructor');
                 #end
                 
                 // Build case expression

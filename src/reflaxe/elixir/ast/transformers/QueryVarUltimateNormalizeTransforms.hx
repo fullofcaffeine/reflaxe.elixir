@@ -85,8 +85,6 @@ class QueryVarUltimateNormalizeTransforms {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EVar(nm) if (nm == "query"):
-          #if sys Sys.println('[QueryUltimateNormalize] query -> ' + (preferParam ? param : ('String.downcase(' + param + ')')));
-          #end
           if (preferParam) makeASTWithMeta(EVar(param), x.metadata, x.pos) else makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar(param))]), x.metadata, x.pos);
         default: x;
       }

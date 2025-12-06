@@ -202,8 +202,8 @@ class XRay {
         
 //         trace('[XRAY:INIT] ====================================================');
         // trace('XRay Session Started: $sessionId');
-        trace('Timestamp: ${Date.now().toString()}');
-        trace('Debug Categories: ${getActiveCategories()}');
+        // DISABLED: trace('Timestamp: ${Date.now().toString()}');
+        // DISABLED: trace('Debug Categories: ${getActiveCategories()}');
 //         trace('[XRAY:INIT] ====================================================');
         #end
     }
@@ -236,7 +236,7 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:FLOW_START] $flowName');
-        trace('${indent}Context: $context');
+        // DISABLED: trace('${indent}Context: $context');
         if (metadata != null) trace('${indent}Metadata: ${Json.stringify(metadata)}');
         #end
     }
@@ -267,7 +267,7 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:FLOW_END] $flowName');
-        trace('${indent}Duration: ${flow.duration}ms');
+        // DISABLED: trace('${indent}Duration: ${flow.duration}ms');
         if (summary != null) trace('${indent}Summary: ${Json.stringify(summary)}');
         
         // Add completed flow to events
@@ -303,9 +303,9 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:AST] $context');
-        trace('${indent}Type: ${astInfo.type} (${astInfo.haxeType})');
-        trace('${indent}Position: ${astInfo.position}');
-        trace('${indent}Structure: ${astInfo.structure}');
+        // DISABLED: trace('${indent}Type: ${astInfo.type} (${astInfo.haxeType})');
+        // DISABLED: trace('${indent}Position: ${astInfo.position}');
+        // DISABLED: trace('${indent}Structure: ${astInfo.structure}');
         if (metadata != null) trace('${indent}Metadata: ${Json.stringify(metadata)}');
         #end
     }
@@ -337,8 +337,8 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:STATEMENT] $context');
-        trace('${indent}Generated: ${truncateString(statement, 100)}');
-        trace('${indent}Length: ${stmtInfo.length} chars, ${stmtInfo.lines} lines');
+        // DISABLED: trace('${indent}Generated: ${truncateString(statement, 100)}');
+        // DISABLED: trace('${indent}Length: ${stmtInfo.length} chars, ${stmtInfo.lines} lines');
         if (metadata != null) trace('${indent}Metadata: ${Json.stringify(metadata)}');
         #end
     }
@@ -369,7 +369,7 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:CONCAT] $context');
-        trace('${indent}Statements: ${concatInfo.statementCount} (${concatInfo.totalLength} chars total)');
+        // DISABLED: trace('${indent}Statements: ${concatInfo.statementCount} (${concatInfo.totalLength} chars total)');
         for (i in 0...statements.length) {
 //             trace('${indent}  [$i]: ${concatInfo.statements[i]}');
         }
@@ -402,8 +402,8 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:DECISION] $context');
-        trace('${indent}Decision: $decision');
-        trace('${indent}Reasoning: ${Json.stringify(reasoning)}');
+        // DISABLED: trace('${indent}Decision: $decision');
+        // DISABLED: trace('${indent}Reasoning: ${Json.stringify(reasoning)}');
         #end
     }
     
@@ -433,9 +433,9 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:ERROR] $context');
-        trace('${indent}Error: $error');
-        trace('${indent}Details: ${Json.stringify(details)}');
-        trace('${indent}Flow Stack: ${errorInfo.flowStack.join(" → ")}');
+        // DISABLED: trace('${indent}Error: $error');
+        // DISABLED: trace('${indent}Details: ${Json.stringify(details)}');
+        // DISABLED: trace('${indent}Flow Stack: ${errorInfo.flowStack.join(" → ")}');
         #end
     }
     
@@ -464,8 +464,8 @@ class XRay {
         
         var indent = getIndentation();
 //         trace('${indent}[XRAY:Y_COMBINATOR] $context');
-        trace('${indent}Pattern: $pattern');
-        trace('${indent}Details: ${Json.stringify(details)}');
+        // DISABLED: trace('${indent}Pattern: $pattern');
+        // DISABLED: trace('${indent}Details: ${Json.stringify(details)}');
         #end
     }
     

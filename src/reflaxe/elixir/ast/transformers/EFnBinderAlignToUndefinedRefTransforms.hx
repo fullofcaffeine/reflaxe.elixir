@@ -85,7 +85,7 @@ class EFnBinderAlignToUndefinedRefTransforms {
               };
             });
             #if debug_ast_transformer
-            if (undefined.length > 0) Sys.println('[EFnBinderAlignToUndefinedRef] arg=' + argName + ' undefined=' + undefined.join(','));
+            if (undefined.length > 0) // DEBUG: Sys.println('[EFnBinderAlignToUndefinedRef] arg=' + argName + ' undefined=' + undefined.join(','));
             #end
             var receiverList = [for (k in fieldReceivers.keys()) k];
             #if debug_ast_transformer
@@ -95,12 +95,11 @@ class EFnBinderAlignToUndefinedRefTransforms {
               // no-op traversal; just here to allow potential future context
               return y;
             });
-            Sys.println('[EFnBinderAlignToUndefinedRef] binder=' + argName + ' undefined={' + undefined.join(',') + '} fieldReceivers={' + receiverList.join(',') + '}');
+            // DEBUG: Sys.println('[EFnBinderAlignToUndefinedRef] binder=' + argName + ' undefined={' + undefined.join(',') + '} fieldReceivers={' + receiverList.join(',') + '}');
             #end
             if (receiverList.length == 1) {
               var u = receiverList[0];
               #if debug_ast_transformer
-              Sys.println('[EFnBinderAlignToUndefinedRef] Renaming binder ' + argName + ' -> ' + u);
               #end
               // Rename binder and its uses to u
               var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {

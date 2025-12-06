@@ -96,7 +96,7 @@ class HeexStringReturnToSigilTransforms {
         // Keep other inline cases as-is for readability
         #if hxx_instrument
         var dt = Std.int((haxe.Timer.stamp() - t0) * 1000);
-        trace('[HXX-INSTR] convertInterpolations: ms=' + dt + ' loops=' + loops + ' inLen=' + (s != null ? s.length : 0) + ' outLen=' + res.length);
+        // DISABLED: trace('[HXX-INSTR] convertInterpolations: ms=' + dt + ' loops=' + loops + ' inLen=' + (s != null ? s.length : 0) + ' outLen=' + res.length);
         #end
         return res;
     }

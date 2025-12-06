@@ -72,9 +72,9 @@ class BlockBuilder {
      */
     public static function build(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[BlockBuilder] Building block with ${el.length} expressions');
+        // DISABLED: trace('[BlockBuilder] Building block with ${el.length} expressions');
         for (i in 0...Math.ceil(Math.min(5, el.length))) {
-            trace('[BlockBuilder]   Expr[$i]: ${Type.enumConstructor(el[i].expr)}');
+            // DISABLED: trace('[BlockBuilder]   Expr[$i]: ${Type.enumConstructor(el[i].expr)}');
         }
         #end
         
@@ -83,7 +83,7 @@ class BlockBuilder {
         // Return EBlock([]) which prints as empty string, NOT ENil which prints as 'nil'
         if (el.length == 0) {
             #if debug_ast_builder
-            trace('[BlockBuilder] Empty block, returning EBlock([]) for no code generation');
+            // DISABLED: trace('[BlockBuilder] Empty block, returning EBlock([]) for no code generation');
             #end
             return EBlock([]);
         }
@@ -91,7 +91,7 @@ class BlockBuilder {
         // Single expression - just return it unwrapped
         if (el.length == 1) {
             #if debug_ast_builder
-            trace('[BlockBuilder] Single expression block, unwrapping');
+            // DISABLED: trace('[BlockBuilder] Single expression block, unwrapping');
             #end
             // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
             // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
@@ -104,13 +104,13 @@ class BlockBuilder {
         // ====================================================================
         if (el.length >= 2) {
             #if debug_map_iteration
-            trace('[BlockBuilder] Checking for Map iteration pattern...');
+            // DISABLED: trace('[BlockBuilder] Checking for Map iteration pattern...');
             #end
             
             var mapPattern = LoopOptimizer.detectMapIterationPattern(el);
             if (mapPattern != null) {
                 #if debug_map_iteration
-                trace('[BlockBuilder] ✓ Detected Map iteration, delegating to specialized handler');
+                // DISABLED: trace('[BlockBuilder] ✓ Detected Map iteration, delegating to specialized handler');
                 #end
                 return buildMapIteration(mapPattern, context);
             }
@@ -121,7 +121,7 @@ class BlockBuilder {
         // ====================================================================
         if (el.length >= 3) {
             #if debug_loop_detection
-            trace('[BlockBuilder] Checking for desugared for loop pattern...');
+            // DISABLED: trace('[BlockBuilder] Checking for desugared for loop pattern...');
             #end
             
             // Try to detect desugared for patterns  
@@ -129,7 +129,7 @@ class BlockBuilder {
             var forPattern = null; // DesugarredForDetector.detectAndEliminate(el);
             if (forPattern != null && forPattern.eliminationData != null) {
                 #if debug_loop_detection
-                trace('[BlockBuilder] ✓ Detected desugared for loop, transforming to idiomatic Elixir');
+                // DISABLED: trace('[BlockBuilder] ✓ Detected desugared for loop, transforming to idiomatic Elixir');
                 #end
                 return buildIdiomaticLoop(forPattern, el, context);
             }
@@ -140,14 +140,14 @@ class BlockBuilder {
         // ====================================================================
         if (el.length >= 5) {
             #if debug_array_patterns
-            trace('[BlockBuilder] Checking for array operation patterns...');
+            // DISABLED: trace('[BlockBuilder] Checking for array operation patterns...');
             #end
             
             if (isArrayOperationPattern(el)) {
                 var operation = detectArrayOperation(el);
                 if (operation != null) {
                     #if debug_array_patterns
-                    trace('[BlockBuilder] ✓ Detected array operation: ${operation.type}');
+                    // DISABLED: trace('[BlockBuilder] ✓ Detected array operation: ${operation.type}');
                     #end
                     return buildArrayOperation(operation, el, context);
                 }
@@ -159,13 +159,13 @@ class BlockBuilder {
         // ====================================================================
         if (el.length == 2) {
             #if debug_null_coalescing
-            trace('[BlockBuilder] Checking for null coalescing pattern...');
+            // DISABLED: trace('[BlockBuilder] Checking for null coalescing pattern...');
             #end
             
             var nullCoalescingResult = detectNullCoalescingPattern(el, context);
             if (nullCoalescingResult != null) {
                 #if debug_null_coalescing
-                trace('[BlockBuilder] ✓ Detected null coalescing, generating inline if expression');
+                // DISABLED: trace('[BlockBuilder] ✓ Detected null coalescing, generating inline if expression');
                 #end
                 return nullCoalescingResult;
             }
@@ -176,7 +176,7 @@ class BlockBuilder {
         // ====================================================================
         if (isListBuildingPattern(el)) {
             #if debug_array_comprehension
-            trace('[BlockBuilder] ✓ Detected list building pattern, generating comprehension');
+            // DISABLED: trace('[BlockBuilder] ✓ Detected list building pattern, generating comprehension');
             #end
             return buildListComprehension(el, context);
         }
@@ -243,13 +243,13 @@ class BlockBuilder {
         // Pattern: doubled = n = 1; [] ++ [expr]; n = 2; ...; []
         if (el.length >= 3) {
             #if debug_array_comprehension
-            trace('[BlockBuilder] Scanning for embedded comprehension patterns in ${el.length} statements');
+            // DISABLED: trace('[BlockBuilder] Scanning for embedded comprehension patterns in ${el.length} statements');
             #end
 
             var result = detectAndReplaceEmbeddedComprehensions(el, context);
             if (result != null) {
                 #if debug_array_comprehension
-                trace('[BlockBuilder] ✓ Detected and replaced embedded comprehensions');
+                // DISABLED: trace('[BlockBuilder] ✓ Detected and replaced embedded comprehensions');
                 #end
                 return result;
             }
@@ -264,7 +264,7 @@ class BlockBuilder {
             var loose = ComprehensionBuilder.extractListElementsLoose(el, context);
             if (loose != null && loose.length > 0) {
                 #if debug_array_comprehension
-                trace('[BlockBuilder] ✓ Loose list-building extraction succeeded (elements=' + loose.length + ')');
+                // DISABLED: trace('[BlockBuilder] ✓ Loose list-building extraction succeeded (elements=' + loose.length + ')');
                 #end
                 return EList(loose);
             }
@@ -534,20 +534,20 @@ class BlockBuilder {
         if (el.length < 3) return false;
 
         #if debug_ast_builder
-        trace('[DEBUG BlockBuilder] isListBuildingPattern called with ${el.length} statements');
-        trace('[DEBUG BlockBuilder] First statement type: ${el[0].expr.getName()}');
+        // DISABLED: trace('[DEBUG BlockBuilder] isListBuildingPattern called with ${el.length} statements');
+        // DISABLED: trace('[DEBUG BlockBuilder] First statement type: ${el[0].expr.getName()}');
         #end
 
         // Check if first statement is TVar with TBlock initialization (unrolled comprehension)
         var hasVarWithBlock = switch(el[0].expr) {
             case TVar(v, init) if (init != null):
                 #if debug_ast_builder
-                trace('[DEBUG BlockBuilder] TVar found: ${v.name}, init type: ${init.expr.getName()}');
+                // DISABLED: trace('[DEBUG BlockBuilder] TVar found: ${v.name}, init type: ${init.expr.getName()}');
                 #end
                 switch(init.expr) {
                     case TBlock(stmts):
                         #if debug_ast_builder
-                        trace('[DEBUG BlockBuilder] TVar has TBlock init with ${stmts.length} statements!');
+                        // DISABLED: trace('[DEBUG BlockBuilder] TVar has TBlock init with ${stmts.length} statements!');
                         #end
                         true;
                     default: false;
@@ -585,12 +585,12 @@ class BlockBuilder {
         };
 
         #if debug_ast_builder
-        trace('[DEBUG BlockBuilder] hasChainedAssignment: $hasChainedAssignment (length: ${el.length})');
+        // DISABLED: trace('[DEBUG BlockBuilder] hasChainedAssignment: $hasChainedAssignment (length: ${el.length})');
         #end
 
         if (hasChainedAssignment) {
             #if debug_ast_builder
-            trace('[DEBUG BlockBuilder] Found chained assignment in first statement!');
+            // DISABLED: trace('[DEBUG BlockBuilder] Found chained assignment in first statement!');
             #end
 
             // Check last statement is empty array
@@ -601,7 +601,7 @@ class BlockBuilder {
             };
 
             #if debug_array_comprehension
-            trace('[BlockBuilder.isListBuildingPattern] Last statement is empty array: $endsWithEmptyArray');
+            // DISABLED: trace('[BlockBuilder.isListBuildingPattern] Last statement is empty array: $endsWithEmptyArray');
             #end
 
             if (endsWithEmptyArray) {
@@ -610,14 +610,14 @@ class BlockBuilder {
                     switch(el[i].expr) {
                         case TBinop(OpAdd, {expr: TArrayDecl([])}, {expr: TArrayDecl(_)}):
                             #if debug_array_comprehension
-                            trace('[BlockBuilder.isListBuildingPattern] ✓ Found bare concatenation at index $i - PATTERN MATCHED!');
+                            // DISABLED: trace('[BlockBuilder.isListBuildingPattern] ✓ Found bare concatenation at index $i - PATTERN MATCHED!');
                             #end
                             return true;  // Found bare concatenation - this is the pattern!
                         case _:
                     }
                 }
                 #if debug_array_comprehension
-                trace('[BlockBuilder.isListBuildingPattern] No bare concatenations found in middle');
+                // DISABLED: trace('[BlockBuilder.isListBuildingPattern] No bare concatenations found in middle');
                 #end
             }
         }
@@ -729,14 +729,14 @@ class BlockBuilder {
                     var comprehensionStmts = el.slice(patternStart, patternEnd + 1);
 
                     #if debug_array_comprehension
-                    trace('[BlockBuilder] Found embedded comprehension: statements ${patternStart} to ${patternEnd}');
+                    // DISABLED: trace('[BlockBuilder] Found embedded comprehension: statements ${patternStart} to ${patternEnd}');
                     #end
 
                     // Try to build comprehension from this subsequence
                     var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(comprehensionStmts, context);
                     if (comprehension != null) {
                         #if debug_array_comprehension
-                        trace('[BlockBuilder] Successfully built comprehension from embedded pattern');
+                        // DISABLED: trace('[BlockBuilder] Successfully built comprehension from embedded pattern');
                         #end
 
                         // Add the comprehension as a statement
@@ -797,7 +797,7 @@ class BlockBuilder {
                         context.infrastructureVarInitValues.set(v.name, initAST);
                         
                         #if debug_infrastructure_vars
-                        trace('[BlockBuilder] Tracked infrastructure var ${v.name}');
+                        // DISABLED: trace('[BlockBuilder] Tracked infrastructure var ${v.name}');
                         #end
                     }
                 default:
@@ -889,29 +889,29 @@ class BlockBuilder {
         // CRITICAL: This preserves `var _g = expr; switch(_g)` patterns from Haxe desugaring
         if (expressions.length == 2) {
             #if debug_ast_builder
-            trace('[BlockBuilder] Checking 2-expr block for infrastructure var pattern');
-            trace('[BlockBuilder]   Expr[0] type: ${Type.enumConstructor(expressions[0].def)}');
-            trace('[BlockBuilder]   Expr[1] type: ${Type.enumConstructor(expressions[1].def)}');
+            // DISABLED: trace('[BlockBuilder] Checking 2-expr block for infrastructure var pattern');
+            // DISABLED: trace('[BlockBuilder]   Expr[0] type: ${Type.enumConstructor(expressions[0].def)}');
+            // DISABLED: trace('[BlockBuilder]   Expr[1] type: ${Type.enumConstructor(expressions[1].def)}');
             #end
 
             switch(expressions[0].def) {
                 case EMatch(PVar(varName), init):
                     #if debug_ast_builder
-                    trace('[BlockBuilder]   Found EMatch with PVar: $varName');
-                    trace('[BlockBuilder]   Is infrastructure var: ${isInfrastructureVar(varName)}');
+                    // DISABLED: trace('[BlockBuilder]   Found EMatch with PVar: $varName');
+                    // DISABLED: trace('[BlockBuilder]   Is infrastructure var: ${isInfrastructureVar(varName)}');
                     #end
 
                     // Check if varName is infrastructure variable (_g, _g1, g, g1, etc.)
                     if (isInfrastructureVar(varName)) {
                         #if debug_ast_builder
-                        trace('[BlockBuilder] ✓ PRESERVING infrastructure variable pattern: $varName = ...; switch');
+                        // DISABLED: trace('[BlockBuilder] ✓ PRESERVING infrastructure variable pattern: $varName = ...; switch');
                         #end
                         // Keep both statements - infrastructure var is needed for switch
                         return EBlock(expressions);
                     }
                 default:
                     #if debug_ast_builder
-                    trace('[BlockBuilder]   Not EMatch pattern');
+                    // DISABLED: trace('[BlockBuilder]   Not EMatch pattern');
                     #end
             }
         }

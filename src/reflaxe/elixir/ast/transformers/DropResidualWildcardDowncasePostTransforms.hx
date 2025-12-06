@@ -78,7 +78,6 @@ class DropResidualWildcardDowncasePostTransforms {
             if (seenQueryBinder && isWildcardDowncase(s)) {
                 // Drop redundant wildcard downcase after establishing `query`
                 #if debug_filter_query_consolidate
-                Sys.println('[DropResidualWildcardDowncasePost] Dropping redundant wildcard downcase after query binder');
                 #end
                 continue;
             }

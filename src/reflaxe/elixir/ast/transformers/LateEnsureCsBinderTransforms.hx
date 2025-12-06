@@ -74,7 +74,6 @@ class LateEnsureCsBinderTransforms {
 
         // Already declared?
         var declares = bodyDeclaresVar(body, "cs");
-        #if sys Sys.println('[LateEnsureCsBinder] cs declared? ' + declares); #end
         if (declares) return body;
 
         // Rewrite earliest candidate statement to cs = <expr>
@@ -93,7 +92,6 @@ class LateEnsureCsBinderTransforms {
                     if (!bound) {
                         var rhs = rhsIfChangesetProducer(s);
                         if (rhs != null) {
-                            #if sys Sys.println('[LateEnsureCsBinder] Binding cs from stmt ' + i); #end
                             out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), rhs), s.metadata, s.pos));
                             bound = true;
                             continue; // skip original s
@@ -108,7 +106,6 @@ class LateEnsureCsBinderTransforms {
                         case EMatch(_, r2): r2;
                         default: s0;
                     };
-                    #if sys Sys.println('[LateEnsureCsBinder] Fallback binding cs from first stmt'); #end
                     var newStmts = [ makeASTWithMeta(EBinary(Match, makeAST(EVar("cs")), rhs0), s0.metadata, s0.pos) ];
                     for (i in 1...stmts.length) newStmts.push(stmts[i]);
                     // Always end with `cs`

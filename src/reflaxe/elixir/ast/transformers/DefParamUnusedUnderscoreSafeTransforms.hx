@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
@@ -105,6 +106,8 @@ class DefParamUnusedUnderscoreSafeTransforms {
     // Closure-aware + ERaw-aware usage check
     static function usedInBodyOrRaw(b: ElixirAST, name: String): Bool {
         if (name == null || name.length == 0) return false;
+        // Use VarUseAnalyzer for comprehensive detection (handles closures, ERaw, interpolation, underscore variants)
+        if (VarUseAnalyzer.stmtUsesVar(b, name)) return true;
         // Special-case: render(assigns) must keep `assigns` when ~H is present even if not explicitly referenced
         if (name == "assigns") {
             var hasHeex = false;

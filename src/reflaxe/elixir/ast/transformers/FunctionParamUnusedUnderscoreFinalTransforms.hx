@@ -104,20 +104,20 @@ class FunctionParamUnusedUnderscoreFinalTransforms {
           if (code != null && (code.indexOf('~H"') != -1 || code.indexOf("~H'") != -1 ||
               code.indexOf('~H"""') != -1 || code.indexOf("~H'''") != -1)) {
             #if debug_underscore_pass
-            trace('[FunctionParamUnderscore] Found ~H template in ERaw');
+            // DISABLED: trace('[FunctionParamUnderscore] Found ~H template in ERaw');
             #end
             found = true;
           }
           #if debug_underscore_pass
           else if (code != null && code.length < 200) {
-            trace('[FunctionParamUnderscore] ERaw code: ' + code.substr(0, 100));
+            // DISABLED: trace('[FunctionParamUnderscore] ERaw code: ' + code.substr(0, 100));
           }
           #end
         case ESigil(sigilType, content, modifiers):
           // Also check ESigil node type for ~H templates
           if (sigilType == "H") {
             #if debug_underscore_pass
-            trace('[FunctionParamUnderscore] Found ESigil ~H');
+            // DISABLED: trace('[FunctionParamUnderscore] Found ESigil ~H');
             #end
             found = true;
           }

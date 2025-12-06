@@ -36,7 +36,6 @@ class ReduceToComprehensionTransforms {
             return switch (n.def) {
                 case ERemoteCall({def: EVar(mod)}, "reduce", args) if (mod == "Enum" && args != null && args.length >= 3):
                     // DEBUG: opportunistic trace to confirm detection (will be removed once stable)
-                    Sys.println('[ReduceToComprehension] Inspect potential reduce → comp rewrite');
                     var source = args[0];
                     var init = args[1];
                     var reducer = args[2];
@@ -61,10 +60,8 @@ class ReduceToComprehensionTransforms {
                             } else {
                                 var valueExpr: Null<ElixirAST> = extractAppendedElement(cl.body, iterName, accName);
                                 if (valueExpr == null || isEmptyValue(valueExpr)) {
-                                    Sys.println('[ReduceToComprehension] Not canonical append; skipping');
                                     n; // Not a canonical append-single-element reducer
                                 } else {
-                                    Sys.println('[ReduceToComprehension] ✔ rewriting to comprehension');
                                     // Build comprehension: for <iter> <- <source>, do: <valueExpr>
                                     // If source is Map.values(coll), unwrap to coll to avoid
                                     // invalid generators like `for x <- Map.values(0..2)`.

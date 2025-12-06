@@ -64,11 +64,11 @@ class EctoMigrationNowarnAndStubTransforms {
                     // Gate strictly to migration modules to avoid false positives
                     if (!isMigrationModule(n.metadata, attrs, body)) return n;
                     #if debug_migration_nowarn
-                    trace('[EctoMigrationNowarn] Inspect module ' + name);
+                    // DISABLED: trace('[EctoMigrationNowarn] Inspect module ' + name);
                     #end
                     var needed = detectMigrationCalls(body);
                     #if debug_migration_nowarn
-                    trace('[EctoMigrationNowarn] hasAny=' + needed.hasAny + ' names=' + [for (k in needed.names.keys()) k].join(','));
+                    // DISABLED: trace('[EctoMigrationNowarn] hasAny=' + needed.hasAny + ' names=' + [for (k in needed.names.keys()) k].join(','));
                     #end
                     if (!needed.hasAny) return n;
                     // Only act when standard migration helpers are present
@@ -82,7 +82,7 @@ class EctoMigrationNowarnAndStubTransforms {
                 case EDefmodule(name2, doBlock):
                     if (!isMigrationDoBlock(doBlock)) return n;
                     #if debug_migration_nowarn
-                    trace('[EctoMigrationNowarn] Inspect defmodule ' + name2);
+                    // DISABLED: trace('[EctoMigrationNowarn] Inspect defmodule ' + name2);
                     #end
                     var stmts: Array<ElixirAST> = switch (doBlock.def) {
                         case EBlock(ss): ss;
@@ -91,7 +91,7 @@ class EctoMigrationNowarnAndStubTransforms {
                     };
                     var needed2 = detectMigrationCalls(stmts);
                     #if debug_migration_nowarn
-                    trace('[EctoMigrationNowarn] hasAny(defmodule)=' + needed2.hasAny + ' names=' + [for (k in needed2.names.keys()) k].join(','));
+                    // DISABLED: trace('[EctoMigrationNowarn] hasAny(defmodule)=' + needed2.hasAny + ' names=' + [for (k in needed2.names.keys()) k].join(','));
                     #end
                     if (!needed2.hasAny) return n;
                     // Convert to EModule shape for attribute placement consistency

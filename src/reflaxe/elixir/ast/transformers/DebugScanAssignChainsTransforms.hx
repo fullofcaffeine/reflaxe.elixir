@@ -11,11 +11,8 @@ class DebugScanAssignChainsTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       switch (n.def) {
         case EBinary(Match, left, {def: EBinary(Match, left2, rhs)}):
-          #if sys Sys.println('[DebugScanAssign] EBinary chain: ' + ElixirASTPrinter.print(n, 0)); #end
         case EMatch(pat, {def: EBinary(Match, left3, rhs3)}):
-          #if sys Sys.println('[DebugScanAssign] EMatch chain: ' + ElixirASTPrinter.print(n, 0)); #end
         case EMatch(pat2, {def: EMatch(pat3, rhs4)}):
-          #if sys Sys.println('[DebugScanAssign] EMatch/EMatch chain: ' + ElixirASTPrinter.print(n, 0)); #end
         default:
       }
       return n;

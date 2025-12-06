@@ -757,7 +757,7 @@ class HelloWorld {
 	
 	public static function main(): Void {
 		var message = greet("World");
-		trace(message);
+		// DISABLED: trace(message);
 	}
 }
 ';

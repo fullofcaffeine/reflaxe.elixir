@@ -73,9 +73,9 @@ class LoopVariableRestorer {
         #if debug_loop_variable_restore
         switch(ast.def) {
             case EModule(name, _, _):
-                trace('[LoopVariableRestorer] Processing module: $name');
+                // DISABLED: trace('[LoopVariableRestorer] Processing module: $name');
             default:
-                trace('[LoopVariableRestorer] Processing non-module AST');
+                // DISABLED: trace('[LoopVariableRestorer] Processing non-module AST');
         }
         #end
         // Start with empty loop context, will be populated from metadata
@@ -106,9 +106,9 @@ class LoopVariableRestorer {
         
         #if debug_loop_variable_restore
         if (loopContexts != null && loopContexts.length > 0) {
-            trace('[LoopVariableRestorer] Found loop context metadata with ${loopContexts.length} contexts');
+            // DISABLED: trace('[LoopVariableRestorer] Found loop context metadata with ${loopContexts.length} contexts');
             for (ctx in loopContexts) {
-                trace('[LoopVariableRestorer]   - Variable: ${ctx.variableName}, Range: ${ctx.rangeMin}..${ctx.rangeMax}');
+                // DISABLED: trace('[LoopVariableRestorer]   - Variable: ${ctx.variableName}, Range: ${ctx.rangeMin}..${ctx.rangeMax}');
             }
         }
         #end
@@ -117,16 +117,16 @@ class LoopVariableRestorer {
             // Process raw interpolated strings with metadata context
             case ERaw(str) if (str.indexOf("#{") >= 0 && loopContexts != null && loopContexts.length > 0):
                 #if debug_loop_variable_restore
-                trace('[LoopVariableRestorer] Found ERaw with interpolation and loop context: $str');
+                // DISABLED: trace('[LoopVariableRestorer] Found ERaw with interpolation and loop context: $str');
                 #end
                 
                 var restoredStr = restoreVariablesFromMetadata(str, loopContexts);
                 
                 #if debug_loop_variable_restore
                 if (restoredStr != str) {
-                    trace('[LoopVariableRestorer] ✅ Restored string: $str -> $restoredStr');
+                    // DISABLED: trace('[LoopVariableRestorer] ✅ Restored string: $str -> $restoredStr');
                 } else {
-                    trace('[LoopVariableRestorer] ❌ No changes made to string');
+                    // DISABLED: trace('[LoopVariableRestorer] ❌ No changes made to string');
                 }
                 #end
                 
@@ -271,7 +271,7 @@ class LoopVariableRestorer {
                 
                 if (result.indexOf(pattern) >= 0) {
                     #if debug_loop_variable_restore
-                    trace('[LoopVariableRestorer] Replacing $pattern with $replacement');
+                    // DISABLED: trace('[LoopVariableRestorer] Replacing $pattern with $replacement');
                     #end
                     result = StringTools.replace(result, pattern, replacement);
                 }
@@ -297,9 +297,9 @@ class LoopVariableRestorer {
             // Detect Enum.each loops
             case ERemoteCall(module, "each", [range, fn]):
                 #if debug_loop_variable_restore
-                trace('[LoopVariableRestorer] Found ERemoteCall with each');
-                trace('[LoopVariableRestorer]   isEnumModule: ${isEnumModule(module)}');
-                trace('[LoopVariableRestorer]   isAnonymousFunction: ${isAnonymousFunction(fn)}');
+                // DISABLED: trace('[LoopVariableRestorer] Found ERemoteCall with each');
+                // DISABLED: trace('[LoopVariableRestorer]   isEnumModule: ${isEnumModule(module)}');
+                // DISABLED: trace('[LoopVariableRestorer]   isAnonymousFunction: ${isAnonymousFunction(fn)}');
                 #end
                 
                 if (isEnumModule(module) && isAnonymousFunction(fn)) {
@@ -308,7 +308,7 @@ class LoopVariableRestorer {
                     var newContext = extractLoopContext(range, params, context);
                     
                     #if debug_loop_variable_restore
-                    trace('[LoopVariableRestorer] ✅ Processing Enum.each loop with variable: ${params}');
+                    // DISABLED: trace('[LoopVariableRestorer] ✅ Processing Enum.each loop with variable: ${params}');
                     #end
                     
                     // Transform the loop body with the new context
@@ -339,12 +339,12 @@ class LoopVariableRestorer {
             // Process raw interpolated strings
             case ERaw(str) if (str.indexOf("#{") >= 0):
                 #if debug_loop_variable_restore
-                trace('[LoopVariableRestorer] Found ERaw with interpolation: $str');
+                // DISABLED: trace('[LoopVariableRestorer] Found ERaw with interpolation: $str');
                 if (context != null) {
-                    trace('[LoopVariableRestorer]   Context variable: ${context.variableName}');
-                    trace('[LoopVariableRestorer]   Context range: ${context.rangeMin}..${context.rangeMax}');
+                    // DISABLED: trace('[LoopVariableRestorer]   Context variable: ${context.variableName}');
+                    // DISABLED: trace('[LoopVariableRestorer]   Context range: ${context.rangeMin}..${context.rangeMax}');
                 } else {
-                    trace('[LoopVariableRestorer]   No loop context available');
+                    // DISABLED: trace('[LoopVariableRestorer]   No loop context available');
                 }
                 #end
                 
@@ -353,9 +353,9 @@ class LoopVariableRestorer {
                     
                     #if debug_loop_variable_restore
                     if (restoredStr != str) {
-                        trace('[LoopVariableRestorer] ✅ Restored string: $str -> $restoredStr');
+                        // DISABLED: trace('[LoopVariableRestorer] ✅ Restored string: $str -> $restoredStr');
                     } else {
-                        trace('[LoopVariableRestorer] ❌ No changes made to string');
+                        // DISABLED: trace('[LoopVariableRestorer] ❌ No changes made to string');
                     }
                     #end
                     
@@ -368,7 +368,7 @@ class LoopVariableRestorer {
             case EModule(name, attributes, body):
                 #if debug_loop_variable_restore
                 if (name == "Main") {
-                    trace('[LoopVariableRestorer] Processing Main module body with ${body.length} items');
+                    // DISABLED: trace('[LoopVariableRestorer] Processing Main module body with ${body.length} items');
                 }
                 #end
                 makeASTWithMeta(
@@ -386,7 +386,7 @@ class LoopVariableRestorer {
                 
             case EDef(name, args, guard, body):
                 #if debug_loop_variable_restore
-                trace('[LoopVariableRestorer] Processing function: $name');
+                // DISABLED: trace('[LoopVariableRestorer] Processing function: $name');
                 #end
                 makeASTWithMeta(
                     EDef(name, args, guard, transformWithContext(body, context)),
@@ -396,7 +396,7 @@ class LoopVariableRestorer {
                 
             case EDefp(name, args, guard, body):
                 #if debug_loop_variable_restore
-                trace('[LoopVariableRestorer] Processing private function: $name');
+                // DISABLED: trace('[LoopVariableRestorer] Processing private function: $name');
                 #end
                 makeASTWithMeta(
                     EDefp(name, args, guard, transformWithContext(body, context)),
@@ -558,7 +558,7 @@ class LoopVariableRestorer {
                                 result.substring(index + pattern.length);
                         
                         #if debug_loop_variable_restore
-                        trace('[LoopVariableRestorer] Replaced $pattern with $replacement');
+                        // DISABLED: trace('[LoopVariableRestorer] Replaced $pattern with $replacement');
                         #end
                     }
                 }

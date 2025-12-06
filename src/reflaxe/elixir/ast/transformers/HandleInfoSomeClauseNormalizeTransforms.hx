@@ -21,7 +21,6 @@ class HandleInfoSomeClauseNormalizeTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (name == "handle_info" || name == "handleInfo"):
-          #if sys Sys.println('[HandleInfoSomeNormalize] Visiting ' + name); #end
           var socketArg: Null<String> = extractSocketArg(args);
           var nb = normalizeHandleInfoBody(body, socketArg);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
@@ -57,7 +56,6 @@ class HandleInfoSomeClauseNormalizeTransforms {
               default:
             }
             if (binder != null) {
-              #if sys Sys.println('[HandleInfoSomeNormalize] Found {:some, ' + binder + '}'); #end
               // Attempt to collapse alias `alias = binder` and rewire inner case
               var newBody = cl.body;
               // Remove leading alias assignment

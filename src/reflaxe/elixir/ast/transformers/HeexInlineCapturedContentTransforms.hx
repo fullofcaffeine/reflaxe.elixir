@@ -180,19 +180,19 @@ class HeexInlineCapturedContentTransforms {
             switch (stmts[i].def) {
                 case EMatch(PVar(vn), rhs) if (vn == varName):
                     #if debug_heex_inline
-                    trace('[HeexInlineCapturedContent] match PVar(' + vn + ') at ' + i + ', rhs=' + Type.enumConstructor(rhs.def));
+                    // DISABLED: trace('[HeexInlineCapturedContent] match PVar(' + vn + ') at ' + i + ', rhs=' + Type.enumConstructor(rhs.def));
                     #end
                     var lit = extractStringLiteral(rhs);
                     if (lit != null) { foundIdx = i; html = lit; }
                 case EBinary(Match, {def:EVar(vn2)}, rhs2) if (vn2 == varName):
                     #if debug_heex_inline
-                    trace('[HeexInlineCapturedContent] binary match EVar(' + vn2 + ') at ' + i);
+                    // DISABLED: trace('[HeexInlineCapturedContent] binary match EVar(' + vn2 + ') at ' + i);
                     #end
                     var lit2 = extractStringLiteral(rhs2);
                     if (lit2 != null) { foundIdx = i; html = lit2; }
                 case EBinary(Match, left, rhs3):
                     #if debug_heex_inline
-                    trace('[HeexInlineCapturedContent] binary match (other left=' + Type.enumConstructor(left.def) + ') at ' + i);
+                    // DISABLED: trace('[HeexInlineCapturedContent] binary match (other left=' + Type.enumConstructor(left.def) + ') at ' + i);
                     #end
                 default:
                     #if debug_heex_inline
@@ -337,12 +337,12 @@ class HeexInlineCapturedContentTransforms {
     static function inlineCaptured(stmts:Array<ElixirAST>): { changed:Bool, out:Array<ElixirAST> } {
         var sig = findHeexSigilIndexAndVar(stmts);
         #if debug_heex_inline
-        trace('[HeexInlineCapturedContent] scan: sig.idx=' + sig.idx + ', var=' + sig.varName + ', parens=' + sig.parens);
+        // DISABLED: trace('[HeexInlineCapturedContent] scan: sig.idx=' + sig.idx + ', var=' + sig.varName + ', parens=' + sig.parens);
         #end
         if (sig.idx == -1 || sig.varName == null) return { changed:false, out: stmts };
         var assign = findLastStringAssign(stmts, sig.varName);
         #if debug_heex_inline
-        trace('[HeexInlineCapturedContent] assign: idx=' + assign.idx + ', hasHtml=' + (assign.html != null));
+        // DISABLED: trace('[HeexInlineCapturedContent] assign: idx=' + assign.idx + ', hasHtml=' + (assign.html != null));
         #end
         if (assign.html == null) return { changed:false, out: stmts };
         var html = convertInterpolations(assign.html);
@@ -350,7 +350,7 @@ class HeexInlineCapturedContentTransforms {
         var assignsIdx = -1;
         for (i in 0...stmts.length) if (isAssignsCaptureOfVar(stmts[i], sig.varName)) { assignsIdx = i; break; }
         #if debug_heex_inline
-        trace('[HeexInlineCapturedContent] assigns capture idx=' + assignsIdx);
+        // DISABLED: trace('[HeexInlineCapturedContent] assigns capture idx=' + assignsIdx);
         #end
         var out: Array<ElixirAST> = [];
         for (i in 0...stmts.length) {
@@ -373,7 +373,6 @@ class HeexInlineCapturedContentTransforms {
             return switch (n.def) {
                 case EDef(name, args, guards, body) if (name == "render"):
                     #if (sys && !no_traces)
-                    Sys.println('[HeexInlineCapturedContent] Scanning render/1');
                     #end
                     switch (body.def) {
                         case EBlock(stmts):

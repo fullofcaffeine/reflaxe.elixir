@@ -43,20 +43,20 @@ class EarlyExitAnalyzer {
      */
     public static function analyzeLoopBody(body: TypedExpr): EarlyExitPattern {
         #if debug_loop_builder
-        trace("[EarlyExitAnalyzer] Analyzing loop body for early exits");
+        // DISABLED: trace("[EarlyExitAnalyzer] Analyzing loop body for early exits");
         #end
 
         // Look for break/return patterns
         var exitInfo = findEarlyExitInBody(body);
         if (exitInfo != null) {
             #if debug_loop_builder
-            trace("[EarlyExitAnalyzer] Found early exit pattern: " + exitInfo);
+            // DISABLED: trace("[EarlyExitAnalyzer] Found early exit pattern: " + exitInfo);
             #end
             return exitInfo;
         }
 
         #if debug_loop_builder
-        trace("[EarlyExitAnalyzer] No early exit patterns found");
+        // DISABLED: trace("[EarlyExitAnalyzer] No early exit patterns found");
         #end
         return NoEarlyExit;
     }
@@ -190,7 +190,7 @@ class EarlyExitAnalyzer {
         switch (pattern) {
             case BreakPattern(condition) | ReturnPattern(condition, _) | ContinuePattern(condition):
                 #if debug_loop_builder
-                trace("[EarlyExitAnalyzer] Generating reduce_while for early exit pattern");
+                // DISABLED: trace("[EarlyExitAnalyzer] Generating reduce_while for early exit pattern");
                 #end
                 // For now, return StandardFor as we need more complex transformation
                 // TODO: Implement ReduceWhile variant in LoopTransform
@@ -198,7 +198,7 @@ class EarlyExitAnalyzer {
 
             case NoEarlyExit:
                 #if debug_loop_builder
-                trace("[EarlyExitAnalyzer] No early exit, using standard for");
+                // DISABLED: trace("[EarlyExitAnalyzer] No early exit, using standard for");
                 #end
                 return LoopBuilder.LoopTransform.StandardFor(v, iterator, body);
         }

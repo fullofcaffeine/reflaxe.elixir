@@ -92,14 +92,14 @@ class GuardConditionCollector {
 			visitedNodes.set(nodeId, true);
 			
 			#if debug_guard_flattening
-			trace('[GuardCollector] Depth $depth, examining: ${Type.enumConstructor(node.def)}');
+			// DISABLED: trace('[GuardCollector] Depth $depth, examining: ${Type.enumConstructor(node.def)}');
 			#end
 			
 			// Check for inline function expansion pattern BEFORE unwrapping
 			// This prevents breaking inline function logic
 			if (isInlineFunctionExpansion(node)) {
 				#if debug_guard_flattening
-				trace('[GuardCollector] Detected inline function expansion, treating as terminal node');
+				// DISABLED: trace('[GuardCollector] Detected inline function expansion, treating as terminal node');
 				#end
 				// Treat the entire inline expansion as a terminal body
 				if (depth > 0) {
@@ -149,7 +149,7 @@ class GuardConditionCollector {
 					if (isInlineCheck) {
 						// This is likely an inline function's nil check, not a guard
 						#if debug_guard_flattening
-						trace('[GuardCollector] Detected inline function nil check, treating as expression not guard');
+						// DISABLED: trace('[GuardCollector] Detected inline function nil check, treating as expression not guard');
 						#end
 						if (depth > 0) {
 							branches.push({
@@ -171,7 +171,7 @@ class GuardConditionCollector {
 					});
 					
 					#if debug_guard_flattening
-					trace('[GuardCollector] Found guard at depth $depth');
+					// DISABLED: trace('[GuardCollector] Found guard at depth $depth');
 					#end
 					
 					// Continue collecting from else branch
@@ -213,7 +213,7 @@ class GuardConditionCollector {
 						});
 						
 						#if debug_guard_flattening
-						trace('[GuardCollector] Found default case at depth $depth');
+						// DISABLED: trace('[GuardCollector] Found default case at depth $depth');
 						#end
 					}
 			}
@@ -222,7 +222,7 @@ class GuardConditionCollector {
 		collectRecursive(ast, 0);
 		
 		#if debug_guard_flattening
-		trace('[GuardCollector] Collected ${branches.length} branches total');
+		// DISABLED: trace('[GuardCollector] Collected ${branches.length} branches total');
 		#end
 		
 		return branches;
@@ -486,7 +486,7 @@ class GuardGroupValidator {
 		}
 		
 		#if debug_guard_flattening
-		trace('[GuardValidator] Validating ${branches.length} branches with bound vars: $boundVars');
+		// DISABLED: trace('[GuardValidator] Validating ${branches.length} branches with bound vars: $boundVars');
 		#end
 		
 		// Analyze branches for groupability
@@ -527,8 +527,8 @@ class GuardGroupValidator {
 		}
 		
 		#if debug_guard_flattening
-		trace('[GuardValidator] Can group: ${result.canGroup}, reason: ${result.reason}');
-		trace('[GuardValidator] Patterns found: ${patternsFound}');
+		// DISABLED: trace('[GuardValidator] Can group: ${result.canGroup}, reason: ${result.reason}');
+		// DISABLED: trace('[GuardValidator] Patterns found: ${patternsFound}');
 		#end
 		
 		return result;
@@ -609,7 +609,7 @@ class GuardConditionReconstructor {
 		if (branches.length == 0) return null;
 		
 		#if debug_guard_flattening
-		trace('[GuardReconstructor] Building cond from ${branches.length} branches');
+		// DISABLED: trace('[GuardReconstructor] Building cond from ${branches.length} branches');
 		#end
 		
 		// Build cond branches with variable fixing
@@ -640,7 +640,7 @@ class GuardConditionReconstructor {
 			
 			#if debug_guard_flattening
 			var condStr = ElixirASTPrinter.printAST(fixedCondition);
-			trace('[GuardReconstructor] Added condition: $condStr');
+			// DISABLED: trace('[GuardReconstructor] Added condition: $condStr');
 			#end
 		}
 		
@@ -663,14 +663,14 @@ class GuardConditionReconstructor {
 			});
 			
 			#if debug_guard_flattening
-			trace('[GuardReconstructor] Added default true -> nil branch');
+			// DISABLED: trace('[GuardReconstructor] Added default true -> nil branch');
 			#end
 		}
 		
 		var result = makeAST(ECond(condBranches));
 		
 		#if debug_guard_flattening
-		trace('[GuardReconstructor] Built cond with ${condBranches.length} branches');
+		// DISABLED: trace('[GuardReconstructor] Built cond with ${condBranches.length} branches');
 		#end
 		
 		return result;
@@ -698,7 +698,7 @@ class GuardConditionReconstructor {
 						var baseName = ~/^([a-z]+)\d+$/.replace(name, "$1");
 						if (varMap.exists(baseName)) {
 							#if debug_guard_flattening
-							trace('[GuardReconstructor] Fixing variable $name -> $baseName');
+							// DISABLED: trace('[GuardReconstructor] Fixing variable $name -> $baseName');
 							#end
 							return makeAST(EVar(baseName), node.pos);
 						}

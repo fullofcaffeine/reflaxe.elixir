@@ -42,13 +42,11 @@ class SwitchInnerCaseBinderRepairTransforms {
                 case EBinary(Match, left, rhs):
                     var fixed = tryRepairBinary(left, rhs);
                     if (fixed != null) {
-                        #if (sys && debug_ast_transformer) Sys.println('[BinderRepair] Applied repair in EBinary context'); #end
                         fixed;
                     } else n;
                 case EMatch(pat, rhs2):
                     var fixed2 = tryRepairMatch(pat, rhs2);
                     if (fixed2 != null) {
-                        #if (sys && debug_ast_transformer) Sys.println('[BinderRepair] Applied repair in EMatch context'); #end
                         fixed2;
                     } else n;
                 case ECase(target, clauses):
@@ -69,7 +67,6 @@ class SwitchInnerCaseBinderRepairTransforms {
                         }
                     }
                     if (changed) {
-                        #if (sys && debug_ast_transformer) Sys.println('[BinderRepair] Applied repair in ECase clause bodies'); #end
                         makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
                     } else n;
                 default:
@@ -106,7 +103,6 @@ class SwitchInnerCaseBinderRepairTransforms {
                 }
                 if (!changed) return null;
                 #if debug_switch_binder_repair
-                #if (sys && debug_ast_transformer) Sys.println('[BinderRepair] Rewrote inner case scrutinee from ' + lhsName + ' to binder in one or more clauses'); #end
                 #end
                 makeASTWithMeta(EBinary(Match, lhs, { def: ECase(target, newClauses), metadata: rhs.metadata, pos: rhs.pos }),
                     { }, // keep outer metadata minimal; parent retains it
@@ -136,7 +132,6 @@ class SwitchInnerCaseBinderRepairTransforms {
                 }
                 if (!changed) return null;
                 #if debug_switch_binder_repair
-                #if (sys && debug_ast_transformer) Sys.println('[BinderRepair] (EMatch) Rewrote inner case scrutinee from ' + lhsName + ' to binder'); #end
                 #end
                 makeASTWithMeta(EMatch(pat, { def: ECase(target, newClauses), metadata: rhs.metadata, pos: rhs.pos }), { }, null);
             default:

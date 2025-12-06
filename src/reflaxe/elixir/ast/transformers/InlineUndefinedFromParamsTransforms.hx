@@ -82,7 +82,6 @@ class InlineUndefinedFromParamsTransforms {
     return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EVar(v) if ((allow(v) || isCamel(v)) && !declared.exists(v)):
-          #if sys Sys.println('[InlineFromParams] Inlining ' + v + ' from ' + paramsVar); #end
           buildExtract(v, paramsVar);
         default: n;
       }

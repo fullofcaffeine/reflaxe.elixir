@@ -81,7 +81,6 @@ class CountEachToEnumCountTransforms {
         var safeBinder = safeBinderName(binderName);
         predicate = replaceVar(predicate, binderName, safeBinder);
         var fnNode = makeAST(EFn([{ args: [PVar(safeBinder)], guard: null, body: predicate }]));
-        #if sys Sys.println('[CountEachToEnumCount] Rewriting Enum.each -> Enum.count'); #end
         return makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "count", [listExpr, fnNode]), node.metadata, node.pos);
     }
 

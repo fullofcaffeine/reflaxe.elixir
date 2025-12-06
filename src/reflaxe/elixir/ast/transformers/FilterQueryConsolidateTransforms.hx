@@ -369,7 +369,7 @@ class FilterQueryConsolidateTransforms {
     static function rewrite(stmts:Array<ElixirAST>, ctx: ElixirAST): Array<ElixirAST> {
         var out:Array<ElixirAST> = [];
         #if debug_filter_query_consolidate
-        trace('[FilterQueryConsolidate] Rewriting block with ' + stmts.length + ' statements');
+        // DISABLED: trace('[FilterQueryConsolidate] Rewriting block with ' + stmts.length + ' statements');
         #end
 
         function definesQuery(idx:Int): Bool {
@@ -474,7 +474,7 @@ class FilterQueryConsolidateTransforms {
         while (i < stmts.length) {
             var s = stmts[i];
             #if debug_filter_query_consolidate
-            trace('[FilterQueryConsolidate] Inspect stmt[' + i + ']: ' + Type.enumConstructor(s.def));
+            // DISABLED: trace('[FilterQueryConsolidate] Inspect stmt[' + i + ']: ' + Type.enumConstructor(s.def));
             #end
 
             // EIf-aware binder injection within blocks: handle `if not is_nil(search_query) and search_query != "" do ... end`
@@ -537,7 +537,7 @@ class FilterQueryConsolidateTransforms {
                                 makeASTWithMeta(EDo([binderIf, rewrittenThen]), rewrittenThen.metadata, rewrittenThen.pos);
                         };
                         #if debug_filter_query_consolidate
-                        trace('[FilterQueryConsolidate] Ensured binder in EIf then-branch at stmt[' + i + ']');
+                        // DISABLED: trace('[FilterQueryConsolidate] Ensured binder in EIf then-branch at stmt[' + i + ']');
                         #end
                         s = makeASTWithMeta(EIf(cond, newThenIf, elseB), s.metadata, s.pos);
                     } else if (rewrittenThen != thenB) {
@@ -601,25 +601,25 @@ class FilterQueryConsolidateTransforms {
             // bodyUsesQuery() failed to detect it (e.g., ERaw tokens). Inlining is gated by predPos.
             if (isFilter) {
                 #if debug_filter_query_consolidate
-                trace('[FilterQueryConsolidate] Found filter at index ' + i + ' predPos=' + (predPos != null));
+                // DISABLED: trace('[FilterQueryConsolidate] Found filter at index ' + i + ' predPos=' + (predPos != null));
                 var __prev = (i - 1 >= 0) ? stmts[i - 1] : null;
                 if (__prev != null) {
-                    trace('[FilterQueryConsolidate]   Prev stmt def: ' + Type.enumConstructor(__prev.def));
+                    // DISABLED: trace('[FilterQueryConsolidate]   Prev stmt def: ' + Type.enumConstructor(__prev.def));
                     switch (__prev.def) {
                         case EBinary(Match, _, rPrev):
                             var okPrev = isDowncaseOfSearchQuery(rPrev);
-                            trace('[FilterQueryConsolidate]   Prev is downcase(search_query)? ' + okPrev);
+                            // DISABLED: trace('[FilterQueryConsolidate]   Prev is downcase(search_query)? ' + okPrev);
                         case EMatch(_, rPrev2):
                             var okPrev2 = isDowncaseOfSearchQuery(rPrev2);
-                            trace('[FilterQueryConsolidate]   Prev (EMatch) is downcase(search_query)? ' + okPrev2);
+                            // DISABLED: trace('[FilterQueryConsolidate]   Prev (EMatch) is downcase(search_query)? ' + okPrev2);
                             // Extra: log RHS shape
-                            trace('[FilterQueryConsolidate]   Prev (EMatch) RHS def: ' + Type.enumConstructor(rPrev2.def));
+                            // DISABLED: trace('[FilterQueryConsolidate]   Prev (EMatch) RHS def: ' + Type.enumConstructor(rPrev2.def));
                             switch (rPrev2.def) {
                                 case ERemoteCall(modX, funcX, argsX):
                                     var modName = switch (modX.def) { case EVar(mn): mn; default: '<non-var>'; };
-                                    trace('[FilterQueryConsolidate]     RHS remote: ' + modName + '.' + funcX + '/' + (argsX != null ? argsX.length : 0));
+                                    // DISABLED: trace('[FilterQueryConsolidate]     RHS remote: ' + modName + '.' + funcX + '/' + (argsX != null ? argsX.length : 0));
                                 case ECall(tgtX, funcY, argsY):
-                                    trace('[FilterQueryConsolidate]     RHS call: ' + funcY + ' (args=' + (argsY != null ? argsY.length : 0) + ')');
+                                    // DISABLED: trace('[FilterQueryConsolidate]     RHS call: ' + funcY + ' (args=' + (argsY != null ? argsY.length : 0) + ')');
                                 default:
                             }
                         default:
@@ -634,7 +634,7 @@ class FilterQueryConsolidateTransforms {
                         switch (stmts[i - 1].def) {
                             case EMatch(PWildcard, r) if (isDowncaseOfSearchQuery(r)):
                                 #if debug_filter_query_consolidate
-                                trace('[FilterQueryConsolidate] Promoting wildcard downcase to query binder at index ' + (i-1));
+                                // DISABLED: trace('[FilterQueryConsolidate] Promoting wildcard downcase to query binder at index ' + (i-1));
                                 #end
                                 out.pop();
                                 out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), r), ctx.metadata, ctx.pos));
@@ -643,7 +643,7 @@ class FilterQueryConsolidateTransforms {
                                 // Accept `_ = String.downcase(...)` as binary match
                                 // Replace previous with binder assignment
                                 #if debug_filter_query_consolidate
-                                trace('[FilterQueryConsolidate] Promoting binary match downcase to query binder at index ' + (i-1));
+                                // DISABLED: trace('[FilterQueryConsolidate] Promoting binary match downcase to query binder at index ' + (i-1));
                                 #end
                                 out.pop();
                                 out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rB), ctx.metadata, ctx.pos));
@@ -656,13 +656,13 @@ class FilterQueryConsolidateTransforms {
                         var prior = nearestPriorDowncase(i);
                         if (prior != null) {
                             #if debug_filter_query_consolidate
-                            trace('[FilterQueryConsolidate] Inserting binder from nearest prior downcase before index ' + i);
+                            // DISABLED: trace('[FilterQueryConsolidate] Inserting binder from nearest prior downcase before index ' + i);
                             #end
                             out.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), prior), ctx.metadata, ctx.pos));
                         } else if (hasSearchQuery && predPos != null) {
                             // Inline in predicate body
                             #if debug_filter_query_consolidate
-                            trace('[FilterQueryConsolidate] Inlining query in predicate for filter at ' + i);
+                            // DISABLED: trace('[FilterQueryConsolidate] Inlining query in predicate for filter at ' + i);
                             #end
                             var cl = predPos.clauses[0];
                             var newBody = inlineQuery(cl.body);

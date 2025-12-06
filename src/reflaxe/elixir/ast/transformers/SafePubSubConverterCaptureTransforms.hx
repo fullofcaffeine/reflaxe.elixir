@@ -65,7 +65,6 @@ class SafePubSubConverterCaptureTransforms {
                     };
                     var rewritten = makeASTWithMeta(ERemoteCall(mod, func, [msgArg, captured]), n.metadata, n.pos);
                     #if debug_ast_transformer
-                    Sys.println('[SafePubSubConverterCapture] Rewrote parser arg to capture in parse_with_converter');
                     #end
                     rewritten;
                 // Also handle local call forms: parse_with_converter(msg, parser)
@@ -99,7 +98,6 @@ class SafePubSubConverterCaptureTransforms {
                     };
                     var rewrittenCall = makeASTWithMeta(ECall(null, funcName, [messageArgLocal, capturedParser]), n.metadata, n.pos);
 #if debug_ast_transformer
-                    Sys.println('[SafePubSubConverterCapture] Rewrote local parse_with_converter to use capture');
 #end
                     rewrittenCall;
                 default:

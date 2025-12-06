@@ -47,7 +47,6 @@ class FilterPredicateMissingQueryFixTransforms {
       return ElixirASTTransformer.transformNode(pred, function(x: ElixirAST): ElixirAST {
         return switch (x.def) {
           case EVar(nm) if (nm == "query"):
-            #if sys Sys.println('[FilterPredicateMissingQueryFix] query -> String.downcase(' + qparam + ')'); #end
             makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar(qparam))]), x.metadata, x.pos);
           default: x;
         }

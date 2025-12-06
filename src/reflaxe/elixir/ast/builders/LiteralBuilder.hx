@@ -68,7 +68,7 @@ class LiteralBuilder {
         
         #if debug_atom_generation
         #if debug_ast_builder
-        trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
+        // DISABLED: trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
         #end
         #end
         
@@ -77,7 +77,7 @@ class LiteralBuilder {
                 var abstractType = ref.get();
                 #if debug_atom_generation
                 #if debug_ast_builder
-                trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
+                // DISABLED: trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
                 #end
                 #end
                 
@@ -86,7 +86,7 @@ class LiteralBuilder {
                     isAtom = true;
                     #if debug_atom_generation
                     #if debug_ast_builder
-                    trace('[Atom Debug TConst] DETECTED: String is Atom type!');
+                    // DISABLED: trace('[Atom Debug TConst] DETECTED: String is Atom type!');
                     #end
                     #end
                 }
@@ -94,7 +94,7 @@ class LiteralBuilder {
             case _:
                 #if debug_atom_generation
                 #if debug_ast_builder
-                trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
+                // DISABLED: trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
                 #end
                 #end
                 // Not an abstract type
@@ -103,7 +103,7 @@ class LiteralBuilder {
         if (isAtom) {
             #if debug_atom_generation
             #if debug_ast_builder
-            trace('[Atom Debug TConst] Generating atom :${s}');
+            // DISABLED: trace('[Atom Debug TConst] Generating atom :${s}');
             #end
             #end
             // Generate atom for Atom-typed strings
@@ -111,7 +111,7 @@ class LiteralBuilder {
         } else {
             #if debug_atom_generation
             #if debug_ast_builder
-            trace('[Atom Debug TConst] Generating string "${s}"');
+            // DISABLED: trace('[Atom Debug TConst] Generating string "${s}"');
             #end
             #end
             // Regular string
@@ -130,7 +130,7 @@ class LiteralBuilder {
         // Handle 'this' references - use the receiver parameter name from context
         // In instance methods, this refers to the first parameter (struct)
         #if debug_exunit
-        trace('[AST Builder] TThis: isInClassMethodContext=${context?.isInClassMethodContext}, isInExUnitTest=${context?.isInExUnitTest}, receiverParam=${context?.currentReceiverParamName}, context exists=${context != null}');
+        // DISABLED: trace('[AST Builder] TThis: isInClassMethodContext=${context?.isInClassMethodContext}, isInExUnitTest=${context?.isInExUnitTest}, receiverParam=${context?.currentReceiverParamName}, context exists=${context != null}');
         #end
 
         if (context.isInClassMethodContext && context.currentReceiverParamName != null) {
@@ -139,7 +139,7 @@ class LiteralBuilder {
             // In ExUnit tests, 'this' should refer to the test context
             // This will be used for instance field access patterns
             #if debug_exunit
-            trace('[AST Builder] Using "context" for ExUnit test');
+            // DISABLED: trace('[AST Builder] Using "context" for ExUnit test');
             #end
             return EVar("context");
         } else if (context.currentReceiverParamName != null) {
@@ -147,14 +147,14 @@ class LiteralBuilder {
             // if we have a receiver parameter name, use it!
             // This handles cases where context flags are lost due to inlining or nested contexts
             #if debug_exunit
-            trace('[AST Builder] Using receiver param without flag: ${context.currentReceiverParamName}');
+            // DISABLED: trace('[AST Builder] Using receiver param without flag: ${context.currentReceiverParamName}');
             #end
             return EVar(context.currentReceiverParamName);
         } else {
             // DEFAULT FOR INSTANCE CLASSES: In Elixir, instance methods ALWAYS get "struct" as first parameter
             // This is a safe fallback - if TConst(TThis) appears and we're not in a static context, use "struct"
             #if debug_exunit
-            trace('[AST Builder] Defaulting to "struct" for TConst(TThis) - likely instance method');
+            // DISABLED: trace('[AST Builder] Defaulting to "struct" for TConst(TThis) - likely instance method');
             #end
             return EVar("struct");
         }

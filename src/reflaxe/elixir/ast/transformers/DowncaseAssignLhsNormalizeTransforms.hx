@@ -26,7 +26,6 @@ class DowncaseAssignLhsNormalizeTransforms {
         case EBinary(Match, left, right):
           var p = extractDowncaseVar(right);
           if (p != null && isDowncaseCallOf(left, p)) {
-            #if sys Sys.println('[DowncaseAssignLhsNormalize] fixing LHS to ' + p); #end
             makeASTWithMeta(EBinary(Match, makeAST(EVar(p)), right), n.metadata, n.pos);
           } else n;
         case EMatch(pat, rhs):

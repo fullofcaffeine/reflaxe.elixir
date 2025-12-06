@@ -55,13 +55,11 @@ class RepoDeleteCaseArgRestoreTransforms {
                 // Run for all modules; transformation is shape-based and guarded by Repo.delete + id/socket usage
                 case EModule(name, attrs, body):
                     #if debug_ast_transformer
-                    Sys.println('[RepoDeleteCaseArgRestore] Entering LiveView module ' + name);
                     #end
                     var newBody = [for (b in body) rewriteDefs(b)];
                     makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
                 case EDefmodule(name, doBlock):
                     #if debug_ast_transformer
-                    Sys.println('[RepoDeleteCaseArgRestore] Entering LiveView defmodule ' + name);
                     #end
                     var rewritten = rewriteDefs(doBlock);
                     makeASTWithMeta(EDefmodule(name, rewritten), node.metadata, node.pos);
@@ -77,7 +75,7 @@ class RepoDeleteCaseArgRestoreTransforms {
                 case EDef(name, args, guards, body):
                     var idParam = findIdParam(args);
                     #if debug_ast_transformer
-                    Sys.println('[RepoDeleteCaseArgRestore] Visiting def ' + name + ', idParam=' + (idParam == null ? 'null' : idParam));
+                    // DEBUG: Sys.println('[RepoDeleteCaseArgRestore] Visiting def ' + name + ', idParam=' + (idParam == null ? 'null' : idParam));
                     #end
                     if (idParam == null) return node;
                     // Collect success binders from Repo.delete cases in this function
@@ -90,7 +88,7 @@ class RepoDeleteCaseArgRestoreTransforms {
                 case EDefp(name, args, guards, body):
                     var idParamPrivate = findIdParam(args);
                     #if debug_ast_transformer
-                    Sys.println('[RepoDeleteCaseArgRestore] Visiting defp ' + name + ', idParam=' + (idParamPrivate == null ? 'null' : idParamPrivate));
+                    // DEBUG: Sys.println('[RepoDeleteCaseArgRestore] Visiting defp ' + name + ', idParam=' + (idParamPrivate == null ? 'null' : idParamPrivate));
                     #end
                     if (idParamPrivate == null) return node;
                     var successBinders = collectSuccessBinders(body);
@@ -287,7 +285,7 @@ class RepoDeleteCaseArgRestoreTransforms {
                                 }
                                 if (isDeleteCase) {
                                     #if debug_ast_transformer
-                                    Sys.println('[RepoDeleteCaseArgRestore] Found case (direct or temp) on Repo.delete, idParam=' + idParam);
+                                    // DEBUG: Sys.println('[RepoDeleteCaseArgRestore] Found case (direct or temp) on Repo.delete, idParam=' + idParam);
                                     #end
                                     var newClauses = [];
                                     for (cl in clauses) {
@@ -313,7 +311,6 @@ class RepoDeleteCaseArgRestoreTransforms {
                     makeASTWithMeta(EBlock(out), n.metadata, n.pos);
                 case ECase(expr, clauses) if (isRepoDelete(expr)):
                     #if debug_ast_transformer
-                    Sys.println('[RepoDeleteCaseArgRestore] Found case on Repo.delete, idParam=' + idParam);
                     #end
                     var newClauses = [];
                     for (cl in clauses) {
@@ -350,7 +347,6 @@ class RepoDeleteCaseArgRestoreTransforms {
                         case ECase(expr2, _):
                             try {
                                 var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(expr2, 0);
-                                Sys.println('[RepoDeleteCaseArgRestore] Non-matching ECase expr: ' + printed);
                             } catch (e: Dynamic) {}
                         default:
                     }
@@ -370,12 +366,11 @@ class RepoDeleteCaseArgRestoreTransforms {
                     #if debug_ast_transformer
                     if (isSocket2nd) {
                         var firstName = switch (a0.def) { case EVar(n0): n0; default: '<non-var>'; };
-                        Sys.println('[RepoDeleteCaseArgRestore] Local call ' + name + ' first=' + firstName + ' second=socket binder=' + binder + ' idParam=' + idParam + ' match=' + isBinder1st);
                     }
                     #end
                     if (isSocket2nd && isBinder1st) {
                         #if debug_ast_transformer
-                        Sys.println('[RepoDeleteCaseArgRestore] Rewriting local call "' + name + '" (' + binder + ', socket) -> (' + idParam + ', socket)');
+                        // DEBUG: Sys.println('[RepoDeleteCaseArgRestore] Rewriting local call "' + name + '" (' + binder + ', socket) -> (' + idParam + ', socket)');
                         #end
                         makeASTWithMeta(ECall(target, name, [ makeAST(EVar(idParam)), a1 ]), x.metadata, x.pos);
                     } else x;
@@ -386,12 +381,11 @@ class RepoDeleteCaseArgRestoreTransforms {
                     #if debug_ast_transformer
                     if (isSocketSecond) {
                         var firstName2 = switch (b0.def) { case EVar(n00): n00; default: '<non-var>'; };
-                        Sys.println('[RepoDeleteCaseArgRestore] Remote call ' + name2 + ' first=' + firstName2 + ' second=socket binder=' + binder + ' idParam=' + idParam + ' match=' + isBinderFirst);
                     }
                     #end
                     if (isSocketSecond && isBinderFirst) {
                         #if debug_ast_transformer
-                        Sys.println('[RepoDeleteCaseArgRestore] Rewriting remote call ' + name2 + ' (' + binder + ', socket) -> (' + idParam + ', socket)');
+                        // DEBUG: Sys.println('[RepoDeleteCaseArgRestore] Rewriting remote call ' + name2 + ' (' + binder + ', socket) -> (' + idParam + ', socket)');
                         #end
                         makeASTWithMeta(ERemoteCall(mod, name2, [ makeAST(EVar(idParam)), b1 ]), x.metadata, x.pos);
                     } else x;
@@ -420,7 +414,6 @@ class RepoDeleteCaseArgRestoreTransforms {
                     if (lhs != null && rhsIsCallOnSocket) {
                         found = lhs;
                         #if debug_ast_transformer
-                        Sys.println('[RepoDeleteCaseArgRestore] Found assigned-from-socket-call var=' + lhs);
                         #end
                     }
                     // Continue scanning right side for nested matches
@@ -437,7 +430,6 @@ class RepoDeleteCaseArgRestoreTransforms {
                     if (lhs2 != null && rhs2IsCallOnSocket) {
                         found = lhs2;
                         #if debug_ast_transformer
-                        Sys.println('[RepoDeleteCaseArgRestore] Found assigned-from-socket-call var=' + lhs2);
                         #end
                     }
                     scan(rhs2);
@@ -472,7 +464,6 @@ class RepoDeleteCaseArgRestoreTransforms {
                                 newPairs.push({ key: p.key, value: makeAST(EVar(toVar)) });
                                 changed = true;
                                 #if debug_ast_transformer
-                                Sys.println('[RepoDeleteCaseArgRestore] Rewriting noreply value ' + fromBinder + ' -> ' + toVar);
                                 #end
                                 continue;
                             }

@@ -49,7 +49,7 @@ class StructUpdateTransform {
      */
     public static function structUpdateTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_struct_update_transform
-        trace("[XRay StructUpdate] Starting struct update transformation");
+        // DISABLED: trace("[XRay StructUpdate] Starting struct update transformation");
         #end
         
         return transformStructUpdates(ast);
@@ -117,7 +117,7 @@ class StructUpdateTransform {
                         filteredExprs.push(transformFunctionBody(expr, functionName));
                     } else {
                         #if debug_struct_update_transform
-                        trace('[XRay StructUpdate] Removing problematic assignment in $functionName');
+                        // DISABLED: trace('[XRay StructUpdate] Removing problematic assignment in $functionName');
                         #end
                         // Skip this assignment to avoid the warning
                         // TODO: Transform to proper struct update pattern
@@ -157,7 +157,7 @@ class StructUpdateTransform {
                     var mutation = detectAndExtractFieldMutation(exprs[0]);
                     if (mutation != null && isReturnStruct(exprs[1])) {
                         #if debug_struct_update_transform
-                        trace('[XRay StructUpdate] Transforming field mutation + return to struct update');
+                        // DISABLED: trace('[XRay StructUpdate] Transforming field mutation + return to struct update');
                         #end
                         return makeAST(EStructUpdate(
                             makeAST(EVar("struct")),
@@ -179,7 +179,7 @@ class StructUpdateTransform {
                         transformedExprs.push(transformed);
                         hasTransformations = true;
                         #if debug_struct_update_transform
-                        trace('[XRay StructUpdate] Transformed struct method call');
+                        // DISABLED: trace('[XRay StructUpdate] Transformed struct method call');
                         #end
                     }
                     // Check if this is a field mutation that's being ignored  
@@ -188,7 +188,7 @@ class StructUpdateTransform {
                         var update = extractFieldUpdate(expr);
                         if (update != null) {
                             #if debug_struct_update_transform
-                            trace('[XRay StructUpdate] Transforming field mutation: ${update.key}');
+                            // DISABLED: trace('[XRay StructUpdate] Transforming field mutation: ${update.key}');
                             #end
                             transformedExprs.push(makeAST(EStructUpdate(
                                 makeAST(EVar("struct")),
@@ -224,7 +224,7 @@ class StructUpdateTransform {
                             // This is a method call on struct that should return a new struct
                             // Transform: struct.method(...) -> struct = struct.method(...)
                             #if debug_struct_update_transform
-                            trace('[XRay StructUpdate] Found struct method call: $method');
+                            // DISABLED: trace('[XRay StructUpdate] Found struct method call: $method');
                             #end
                             return makeAST(EMatch(
                                 PVar("struct"),
@@ -256,7 +256,7 @@ class StructUpdateTransform {
                                 // GUARD: Only treat as struct field if field is not an array variable
                                 if (isArrayVariable(field)) {
                                     #if debug_struct_update_transform
-                                    trace('[XRay StructUpdate] Skipping array variable field: struct.$field');
+                                    // DISABLED: trace('[XRay StructUpdate] Skipping array variable field: struct.$field');
                                     #end
                                     return null;
                                 }
@@ -328,7 +328,7 @@ class StructUpdateTransform {
                                 // GUARD: Reject array variables (g, g2, _g, etc.)
                                 if (isArrayVariable(varName)) {
                                     #if debug_struct_update_transform
-                                    trace('[XRay StructUpdate] Skipping array variable: $varName.$field');
+                                    // DISABLED: trace('[XRay StructUpdate] Skipping array variable: $varName.$field');
                                     #end
                                     return false;
                                 }
@@ -403,7 +403,7 @@ class StructUpdateTransform {
             case EMatch(PVar("root"), right):
                 // Transform `root = insertNode(...)` to `%{struct | root: insertNode(...)}`
                 #if debug_struct_update_transform
-                trace('[XRay StructUpdate] Transforming root assignment to struct update');
+                // DISABLED: trace('[XRay StructUpdate] Transforming root assignment to struct update');
                 #end
                 // Return a struct update expression
                 return makeAST(EStructUpdate(
@@ -444,7 +444,7 @@ class StructUpdateTransform {
                 // Special case for BalancedTree methods that assign to root
                 if (functionName == "set" || functionName == "remove" || functionName == "clear") {
                     #if debug_struct_update_transform
-                    trace('[XRay StructUpdate] Found root assignment in $functionName');
+                    // DISABLED: trace('[XRay StructUpdate] Found root assignment in $functionName');
                     #end
                     return true;
                 }

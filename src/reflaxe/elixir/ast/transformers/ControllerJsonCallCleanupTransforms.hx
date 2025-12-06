@@ -25,19 +25,16 @@ class ControllerJsonCallCleanupTransforms {
       return switch (n.def) {
         case EModule(name, attrs, body) if (isController(name)):
           #if debug_ast_transformer
-          Sys.println('[ControllerJsonCallCleanup] Visiting controller module ' + name);
           #end
           var out = [for (b in body) cleanseDefs(b)];
           makeASTWithMeta(EModule(name, attrs, out), n.metadata, n.pos);
         case EDefmodule(name2, doBlock) if (isController(name2)):
           #if debug_ast_transformer
-          Sys.println('[ControllerJsonCallCleanup] Visiting defmodule ' + name2);
           #end
           makeASTWithMeta(EDefmodule(name2, cleanseDefs(doBlock)), n.metadata, n.pos);
         // Also handle nested case bodies anywhere under a controller module
         case ECase(expr, clauses):
           #if debug_ast_transformer
-          Sys.println('[ControllerJsonCallCleanup] Cleaning case clause bodies');
           #end
           // Cleanse each clause body for alias-chains directly inside the case arms
           var newClauses = [];
@@ -165,11 +162,9 @@ class ControllerJsonCallCleanupTransforms {
     #if debug_ast_transformer
     var dbgBinder = binder == null ? "null" : binder;
     var dbgWant = want == null ? "null" : want;
-    Sys.println('[ControllerJsonCallCleanup] maybeRenameBinder: binder=' + dbgBinder + ' want=' + dbgWant + ' cnt=' + cnt);
     #end
     if (want != null && binder != want) {
       #if debug_ast_transformer
-      Sys.println('[ControllerJsonCallCleanup] Renaming success binder ' + binder + ' -> ' + want + ' based on map keys');
       #end
       return switch (pat) {
         case PTuple(es) if (es.length == 2): PTuple([es[0], PVar(want)]);
@@ -236,7 +231,6 @@ class ControllerJsonCallCleanupTransforms {
           var c = v.charAt(0);
           if (c.toLowerCase() == c && !declared.exists(v) && v != "socket" && v != "live_socket" && v != "liveSocket") {
             #if debug_ast_transformer
-            Sys.println('[ControllerJsonCallCleanup] Mapping undefined var ' + v + ' -> ' + binder);
             #end
             makeASTWithMeta(EVar(binder), n.metadata, n.pos);
           }
@@ -365,7 +359,6 @@ class ControllerJsonCallCleanupTransforms {
         var call = stmts[i];
         if (rhs != null) {
           #if debug_ast_transformer
-          Sys.println('[ControllerJsonCallCleanup] Rewriting Phoenix.Controller.json second arg to ' + rhs);
           #end
           call = ElixirASTTransformer.transformNode(call, function(n:ElixirAST): ElixirAST {
             return switch (n.def) {

@@ -91,12 +91,10 @@ class DropUnusedDowncaseWildcardAssignTransforms {
                 if (hasQueryBinder) {
                     // Redundant after a query binder exists; drop
                     #if debug_filter_query_consolidate
-                    Sys.println('[DropUnusedDowncaseWildcardAssign] Dropping redundant wildcard downcase');
                     #end
                     continue;
                 }
                 #if debug_filter_query_consolidate
-                Sys.println('[DropUnusedDowncaseWildcardAssign] Promoting wildcard downcase to query binder');
                 #end
                 // Normalize binder: promote wildcard to a stable local `query` so that
                 // later passes relying on `query` can operate deterministically.

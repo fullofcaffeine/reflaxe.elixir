@@ -41,14 +41,12 @@ class CaseBinderAlignFinalTransforms {
           for (cl in clauses) {
             var binder = extractTagPayloadBinder(cl.pattern);
             if (binder != null) {
-              #if sys Sys.println('[CaseBinderAlignFinal] clause with binder=' + binder); #end
-              #if sys Sys.println('[CaseBinderAlignFinal] Found {:tag, ' + binder + '}'); #end
               var declared = collectDeclaredNames(cl.pattern, cl.body);
               var used = collectUsedLowerVars(cl.body);
-              #if sys
+              #if debug_transforms
               var declArr = [for (k in declared.keys()) k];
-              Sys.println('[CaseBinderAlignFinal] declared=' + declArr.join(','));
-              Sys.println('[CaseBinderAlignFinal] used=' + used.join(','));
+              // DEBUG: Sys.println('[CaseBinderAlignFinal] declared=' + declArr.join(','));
+              // DEBUG: Sys.println('[CaseBinderAlignFinal] used=' + used.join(','));
               #end
               var undef:Array<String> = [];
               for (u in used) if (!declared.exists(u) && u != binder) undef.push(u);
@@ -59,7 +57,6 @@ class CaseBinderAlignFinalTransforms {
                 var alt = findFirstMeaningfulVar(cl.body, ex);
                 if (alt != null) undef.push(alt);
               }
-              #if sys Sys.println('[CaseBinderAlignFinal] used=' + used.join(',') + ' declared=' + (function(){var a=[]; for (k in declared.keys()) a.push(k); return a.join(','); })() + ' undef=' + undef.join(',')); #end
               // If multiple, try a semantic preference
               if (undef.length > 1) {
                 var pref = prefer(undef);
@@ -69,7 +66,6 @@ class CaseBinderAlignFinalTransforms {
                 var newName = undef[0];
                 var newPat = rewriteTagPayloadBinder(cl.pattern, newName);
                 if (newPat != null) {
-                  #if sys Sys.println('[CaseBinderAlignFinal] Renaming binder ' + binder + ' -> ' + newName); #end
                   var newBody = replaceVar(cl.body, binder, newName);
                   out.push({ pattern: newPat, guard: cl.guard, body: newBody });
                   continue;

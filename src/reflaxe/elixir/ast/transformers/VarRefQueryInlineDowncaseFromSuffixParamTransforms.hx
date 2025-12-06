@@ -45,7 +45,6 @@ class VarRefQueryInlineDowncaseFromSuffixParamTransforms {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EVar(nm) if (nm == "query"):
-          #if sys Sys.println('[VarRefQueryInlineDowncase] query -> String.downcase(' + paramName + ')'); #end
           makeASTWithMeta(ERemoteCall(makeAST(EVar("String")), "downcase", [makeAST(EVar(paramName))]), x.metadata, x.pos);
         default: x;
       }

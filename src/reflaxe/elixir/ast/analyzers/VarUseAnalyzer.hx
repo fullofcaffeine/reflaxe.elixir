@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.analyzers;
 
 #if (macro || reflaxe_runtime)
 
+import Lambda;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 
@@ -72,6 +73,24 @@ class VarUseAnalyzer {
             if (sn != name) candidates.push(sn);
             var cc = camelCase(name);
             if (cc != name && cc != sn) candidates.push(cc);
+            // Also check base name without underscore prefix for underscore-prefixed inputs
+            if (name.charAt(0) == '_' && name.length > 1) {
+                var baseName = name.substr(1);
+                if (!Lambda.exists(candidates, function(c) return c == baseName)) {
+                    candidates.push(baseName);
+                }
+                var snBase = snakeCase(baseName);
+                if (snBase != baseName && !Lambda.exists(candidates, function(c) return c == snBase)) {
+                    candidates.push(snBase);
+                }
+            }
+            // Also check underscore-prefixed variant for non-underscore inputs
+            if (name.charAt(0) != '_') {
+                var underscored = '_' + name;
+                if (!Lambda.exists(candidates, function(c) return c == underscored)) {
+                    candidates.push(underscored);
+                }
+            }
         }
         function scanStringInterpolation(str:String):Void {
             var i = 0;

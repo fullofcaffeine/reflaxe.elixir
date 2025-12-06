@@ -110,14 +110,12 @@ class VarNameNormalizationTransforms {
                 case EVar(name):
                     var snake = toSnake(name);
                     if (snake != name && defined.exists(snake)) {
-                        #if debug_ast_transformer Sys.println('[VarNameNormalization] ' + name + ' -> ' + snake); #end
                         makeASTWithMeta(EVar(snake), n.metadata, n.pos);
                     } else {
                         // If not defined, try fuzzy token match to an existing defined binding
                         if (!defined.exists(name)) {
                             var candidate = findTokenMatch(name);
                             if (candidate != null) {
-                                #if debug_ast_transformer Sys.println('[VarNameNormalization] ' + name + ' -> ' + candidate + ' (fuzzy)'); #end
                                 return makeASTWithMeta(EVar(candidate), n.metadata, n.pos);
                             }
                         }

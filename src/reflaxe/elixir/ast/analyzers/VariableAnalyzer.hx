@@ -303,7 +303,7 @@ class VariableAnalyzer {
         if (context == null) return;
         
         #if debug_variable_mapping
-        trace('[VariableAnalyzer] Registering mapping: $originalId -> $mappedName');
+        // DISABLED: trace('[VariableAnalyzer] Registering mapping: $originalId -> $mappedName');
         #end
         
         // Note: The actual map is stored in CompilationContext

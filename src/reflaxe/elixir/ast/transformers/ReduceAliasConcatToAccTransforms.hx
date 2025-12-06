@@ -57,14 +57,12 @@ class ReduceAliasConcatToAccTransforms {
                                                 var arg0Name:Null<String> = switch (cargs[0].def) { case EVar(nm2): nm2; default: null; };
                                                 var isSelf = (arg0Name != null && arg0Name == lhs);
                                                 if (isSelf) {
-                                                    Sys.println('[ReduceAliasConcatToAcc] Rewriting alias concat lhs=' + lhs + ' -> acc=' + accName);
                                                     var replLeft = makeAST(EVar(accName));
                                                     var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
                                                     makeASTWithMeta(EBinary(Match, replLeft, replRight), stmt.metadata, stmt.pos);
                                                 } else stmt;
                                             case ERemoteCall(_, "concat", cargs) if (lhs != null):
                                                 var arg0Dbg = switch (cargs[0].def) { case EVar(nm4): nm4; default: '<non-var>'; };
-                                                Sys.println('[ReduceAliasConcatToAcc] concat found but not self: lhs=' + lhs + ', arg0=' + arg0Dbg);
                                                 stmt;
                                             default: stmt;
                                         }
@@ -74,7 +72,6 @@ class ReduceAliasConcatToAccTransforms {
                                             case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
                                                 var isSelf2 = switch (cargs2[0].def) { case EVar(nm3): (nm3 == lhs2); default: false; };
                                                 if (isSelf2) {
-                                                    Sys.println('[ReduceAliasConcatToAcc] Rewriting alias concat pat=' + lhs2 + ' -> acc=' + accName);
                                                     var newLeft = makeAST(EVar(accName));
                                                     var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs2[1]]));
                                                     makeASTWithMeta(EBinary(Match, newLeft, newRight), stmt.metadata, stmt.pos);

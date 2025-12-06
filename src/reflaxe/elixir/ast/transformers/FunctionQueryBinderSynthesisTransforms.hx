@@ -53,7 +53,6 @@ class FunctionQueryBinderSynthesisTransforms {
     });
     if (!usesQuery || declared.exists('query')) return body;
     var binder = makeAST(EBinary(Match, makeAST(EVar('query')), makeAST(ERemoteCall(makeAST(EVar('String')), 'downcase', [makeAST(EVar(paramName))]))));
-    #if sys Sys.println('[FunctionQueryBinderSynthesis] prepend query binder from ' + paramName); #end
     return switch (body.def) {
       case EBlock(sts): makeASTWithMeta(EBlock([binder].concat(sts)), body.metadata, body.pos);
       case EDo(sts2): makeASTWithMeta(EDo([binder].concat(sts2)), body.metadata, body.pos);

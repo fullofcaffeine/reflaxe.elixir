@@ -71,7 +71,6 @@ class RefDeclAlignmentTransforms {
         });
         #if hxx_hygiene_trace
         var elapsedMs = Std.int((haxe.Timer.stamp() - alignmentStart) * 1000.0);
-        #if sys Sys.println('[HygieneTrace] RefDeclAlignment elapsed_ms=' + elapsedMs); #else trace('[HygieneTrace] RefDeclAlignment elapsed_ms=' + elapsedMs); #end
         #end
         return result;
     }
@@ -174,7 +173,6 @@ class RefDeclAlignmentTransforms {
         if (Lambda.count(canonical) == 0) {
             #if hxx_hygiene_trace
             var elapsedNoop = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
-            #if sys Sys.println('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=0 elapsed_ms=' + elapsedNoop); #else trace('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=0 elapsed_ms=' + elapsedNoop); #end
             #end
             return body;
         }
@@ -202,7 +200,6 @@ class RefDeclAlignmentTransforms {
 
         #if hxx_hygiene_trace
         var elapsedMs = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
-        #if sys Sys.println('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=' + Lambda.count(canonical) + ' elapsed_ms=' + elapsedMs); #else trace('[HygieneTrace] RefDeclAlignment fn=' + functionName + ' decl=' + Lambda.count(declared) + ' refs=' + Lambda.count(referenced) + ' canonical=' + Lambda.count(canonical) + ' elapsed_ms=' + elapsedMs); #end
         #end
 
         return aligned;

@@ -81,7 +81,7 @@ class BuilderRegistry {
         builders.sort((a, b) -> b.getPriority() - a.getPriority());
         
         #if debug_builder_registry
-        trace('[BuilderRegistry] Registered ${builder.getName()} with priority ${builder.getPriority()}');
+        // DISABLED: trace('[BuilderRegistry] Registered ${builder.getName()} with priority ${builder.getPriority()}');
         #end
     }
     
@@ -97,7 +97,7 @@ class BuilderRegistry {
         for (builder in builders) {
             if (builder.canHandle(expr, context)) {
                 #if debug_builder_registry
-                trace('[BuilderRegistry] Using ${builder.getName()} for ${expr.expr}');
+                // DISABLED: trace('[BuilderRegistry] Using ${builder.getName()} for ${expr.expr}');
                 #end
                 
                 var result = builder.build(expr, context);
@@ -109,7 +109,7 @@ class BuilderRegistry {
         
         // Fallback to legacy builder
         #if debug_builder_registry
-        trace('[BuilderRegistry] Falling back to legacy builder for ${expr.expr}');
+        // DISABLED: trace('[BuilderRegistry] Falling back to legacy builder for ${expr.expr}');
         #end
         
         return legacyBuilder.buildFromTypedExpr(expr, context);
@@ -125,7 +125,7 @@ class BuilderRegistry {
         featureFlags.set(flag, enabled);
         
         #if debug_builder_registry
-        trace('[BuilderRegistry] Feature flag "$flag" set to $enabled');
+        // DISABLED: trace('[BuilderRegistry] Feature flag "$flag" set to $enabled');
         #end
     }
     

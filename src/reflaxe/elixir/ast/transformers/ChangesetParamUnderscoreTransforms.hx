@@ -23,19 +23,19 @@ class ChangesetParamUnderscoreTransforms {
             return switch (n.def) {
                 case EDef(name, args, guards, body) if (name == "changeset"):
                     #if debug_changeset_underscore
-                    trace('[ChangesetParamUnderscore] EDef changeset/ ' + (args != null ? args.length : 0) + ' args');
+                    // DISABLED: trace('[ChangesetParamUnderscore] EDef changeset/ ' + (args != null ? args.length : 0) + ' args');
                     #end
                     var newArgs = underscoreUnused(args, body);
                     #if debug_changeset_underscore
                     inline function patToStr(p:EPattern):String return switch(p){ case PVar(nm): nm; default: Std.string(p); };
                     var before = [for (a in args) patToStr(a)].join(',');
                     var after = [for (a in newArgs) patToStr(a)].join(',');
-                    trace('[ChangesetParamUnderscore] args before=' + before + ' after=' + after);
+                    // DISABLED: trace('[ChangesetParamUnderscore] args before=' + before + ' after=' + after);
                     #end
                     makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
                 case EDefp(functionName, functionArgs, functionGuards, functionBody) if (functionName == "changeset"):
                     #if debug_changeset_underscore
-                    trace('[ChangesetParamUnderscore] EDefp changeset/ ' + (functionArgs != null ? functionArgs.length : 0) + ' args');
+                    // DISABLED: trace('[ChangesetParamUnderscore] EDefp changeset/ ' + (functionArgs != null ? functionArgs.length : 0) + ' args');
                     #end
                     var newArgs = underscoreUnused(functionArgs, functionBody);
                     makeASTWithMeta(EDefp(functionName, newArgs, functionGuards, functionBody), n.metadata, n.pos);

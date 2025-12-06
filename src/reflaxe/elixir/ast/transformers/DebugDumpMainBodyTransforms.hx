@@ -14,11 +14,10 @@ class DebugDumpMainBodyTransforms {
       switch (n.def) {
         case EModule(name, _, body):
           if (name == "Main") {
-            Sys.println('[DebugDumpMain] Visiting module Main; body size=' + body.length);
           }
         case EDef(name, args, guards, body):
           if (name == "main") {
-            Sys.println('[DebugDumpMain] Found def main/0; dumping body:\n' + ElixirASTPrinter.print(body, 0));
+            // DEBUG: Sys.println('[DebugDumpMain] Found def main/0; dumping body:\n' + ElixirASTPrinter.print(body, 0));
           }
         default:
       }

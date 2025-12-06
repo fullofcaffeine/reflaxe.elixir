@@ -35,12 +35,11 @@ class CaseListGuardToConsTransforms {
           for (cl in clauses) {
             switch (cl.pattern) {
               case PList([]) if (cl.guard != null && guardImpliesNonEmpty(cl.guard)):
-                Sys.println('[CaseListGuardToCons] Rewrite [] → [head|tail] with repaired guard');
                 var newPat = PCons(PVar("head"), PVar("tail"));
                 var newGuard = rewriteGuard(cl.guard);
                 updated.push({ pattern: newPat, guard: newGuard, body: cl.body });
               case PLiteral({def: EList([])}) if (cl.guard != null && guardImpliesNonEmpty(cl.guard)):
-                Sys.println('[CaseListGuardToCons] Rewrite PLiteral([]) → [head|tail] with repaired guard');
+                // DEBUG: Sys.println('[CaseListGuardToCons] Rewrite PLiteral([]) → [head|tail] with repaired guard');
                 var newPat2 = PCons(PVar("head"), PVar("tail"));
                 var newGuard2 = rewriteGuard(cl.guard);
                 updated.push({ pattern: newPat2, guard: newGuard2, body: cl.body });

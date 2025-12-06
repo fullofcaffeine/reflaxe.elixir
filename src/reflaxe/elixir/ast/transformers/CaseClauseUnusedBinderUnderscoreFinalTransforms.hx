@@ -51,7 +51,7 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
         // Use VarUseAnalyzer for comprehensive usage detection
         var isUsed = VarUseAnalyzer.stmtUsesVar(body, n);
         #if debug_case_clause_binder
-        trace('[CaseClauseUnusedBinder] Checking var "$n" in body, isUsed=$isUsed');
+        // DISABLED: trace('[CaseClauseUnusedBinder] Checking var "$n" in body, isUsed=$isUsed');
         #end
         isUsed ? p : PVar('_' + n);
       case PTuple(es): PTuple([for (e in es) underscoreUnusedInPattern(e, body)]);

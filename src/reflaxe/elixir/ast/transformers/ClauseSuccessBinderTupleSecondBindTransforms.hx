@@ -44,7 +44,6 @@ class ClauseSuccessBinderTupleSecondBindTransforms {
               var chosen:Null<String> = null;
               for (v in candidates) if (!declared.exists(v) && allow(v)) { chosen = v; break; }
               if (chosen != null) {
-                #if sys Sys.println('[ClauseSuccessBinderTupleSecondBind] prefix ' + chosen + ' = ' + okBinder); #end
                 var prefix = makeAST(EBinary(Match, makeAST(EVar(chosen)), makeAST(EVar(okBinder))));
                 var newBody = switch (cl.body.def) {
                   case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), cl.body.metadata, cl.body.pos);

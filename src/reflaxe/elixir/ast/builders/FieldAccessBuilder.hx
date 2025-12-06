@@ -64,7 +64,7 @@ class FieldAccessBuilder {
      */
     public static function build(e: TypedExpr, fa: FieldAccess, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[FieldAccessBuilder] Building field access: ${Type.enumConstructor(fa)}');
+        // DISABLED: trace('[FieldAccessBuilder] Building field access: ${Type.enumConstructor(fa)}');
         #end
         
         switch(fa) {
@@ -85,7 +85,7 @@ class FieldAccessBuilder {
                 
             default:
                 #if debug_ast_builder
-                trace('[FieldAccessBuilder] Unhandled field access type: ${Type.enumConstructor(fa)}');
+                // DISABLED: trace('[FieldAccessBuilder] Unhandled field access type: ${Type.enumConstructor(fa)}');
                 #end
                 return null;
         }
@@ -145,7 +145,7 @@ class FieldAccessBuilder {
         var fieldName = field.name;
         
         #if debug_ast_builder
-        trace('[FieldAccessBuilder] Static field: ${className}.${fieldName}');
+        // DISABLED: trace('[FieldAccessBuilder] Static field: ${className}.${fieldName}');
         #end
         
         // Check if this is an enum abstract field that should be an atom
@@ -200,7 +200,7 @@ class FieldAccessBuilder {
         
         if (isAtomField && atomValue != null) {
             #if debug_ast_builder
-            trace('[FieldAccessBuilder] Generating atom: :${atomValue}');
+            // DISABLED: trace('[FieldAccessBuilder] Generating atom: :${atomValue}');
             #end
             return EAtom(atomValue);
         }
@@ -240,7 +240,7 @@ class FieldAccessBuilder {
         var fieldName = field.name;
         
         #if debug_ast_builder
-        trace('[FieldAccessBuilder] Instance field: ${fieldName}');
+        // DISABLED: trace('[FieldAccessBuilder] Instance field: ${fieldName}');
         #end
         
         // Compile the object expression
@@ -254,7 +254,7 @@ class FieldAccessBuilder {
 
         if (objAST == null) {
             #if debug_ast_builder
-            trace('[FieldAccessBuilder] Failed to compile object for field access');
+            // DISABLED: trace('[FieldAccessBuilder] Failed to compile object for field access');
             #end
             return null;
         }
@@ -273,7 +273,7 @@ class FieldAccessBuilder {
      */
     static function buildDynamicField(e: TypedExpr, fieldName: String, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[FieldAccessBuilder] Dynamic field: ${fieldName}');
+        // DISABLED: trace('[FieldAccessBuilder] Dynamic field: ${fieldName}');
         #end
 
         // Compile the object expression
@@ -308,7 +308,7 @@ class FieldAccessBuilder {
         // Handle null closure type (can happen for certain edge cases)
         if (closureType == null) {
             #if debug_ast_builder
-            trace('[FieldAccessBuilder] Closure with null type');
+            // DISABLED: trace('[FieldAccessBuilder] Closure with null type');
             #end
             return null;
         }
@@ -317,7 +317,7 @@ class FieldAccessBuilder {
         var methodName = cf.get().name;
         
         #if debug_ast_builder
-        trace('[FieldAccessBuilder] Closure: ${className}.${methodName}');
+        // DISABLED: trace('[FieldAccessBuilder] Closure: ${className}.${methodName}');
         #end
         
         // For closures, we need to generate a function reference

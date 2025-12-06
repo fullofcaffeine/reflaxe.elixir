@@ -82,9 +82,9 @@ class BehaviorTransformer {
     public function checkAndActivateBehavior(classType: ClassType): Null<String> {
         // Check for behavior annotations like @:presence, @:genserver, etc.
         #if debug_behavior_transformer
-        trace('[BehaviorTransformer.checkAndActivateBehavior] Checking class: ${classType.name}');
-        trace('[BehaviorTransformer.checkAndActivateBehavior] Metadata: ${[for (m in classType.meta.get()) m.name]}');
-        trace('[BehaviorTransformer.checkAndActivateBehavior] isExtern: ${classType.isExtern}');
+        // DISABLED: trace('[BehaviorTransformer.checkAndActivateBehavior] Checking class: ${classType.name}');
+        // DISABLED: trace('[BehaviorTransformer.checkAndActivateBehavior] Metadata: ${[for (m in classType.meta.get()) m.name]}');
+        // DISABLED: trace('[BehaviorTransformer.checkAndActivateBehavior] isExtern: ${classType.isExtern}');
         #end
         
         for (meta in classType.meta.get()) {

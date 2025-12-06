@@ -32,7 +32,6 @@ class HandleInfoScrutineeToPayloadRefTransforms {
       return switch (n.def) {
         case EDef(name, args, guards, body):
           if (name == "handle_info" && args.length == 2) {
-            #if sys Sys.println('[HandleInfoScrutineeToPayload] start in handle_info/2'); #end
             var newBody = rewriteInBody(body);
             makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
           } else n;
@@ -48,7 +47,6 @@ class HandleInfoScrutineeToPayloadRefTransforms {
         case ECase(scrut, clauses):
           var s = switch (scrut.def) { case EVar(v): v; default: null; };
           if (s == null) return x;
-          #if sys Sys.println('[HandleInfoScrutineeToPayload] found case scrutinee var=' + s); #end
           var out:Array<ECaseClause> = [];
           for (cl in clauses) out.push(rewriteClause(cl, s));
           makeASTWithMeta(ECase(scrut, out), x.metadata, x.pos);
@@ -61,7 +59,6 @@ class HandleInfoScrutineeToPayloadRefTransforms {
   static function rewriteClause(cl: ECaseClause, scrutVar:String): ECaseClause {
     var binder = extractSecondBinder(cl.pattern);
     if (binder == null) return cl;
-    #if sys Sys.println('[HandleInfoScrutineeToPayload] clause binder=' + binder + ' (from scrutinee=' + scrutVar + ')'); #end
     // Prefer rewriting the exact scrutinee variable only (no name heuristics)
     var newBody = substituteVar(cl.body, scrutVar, binder);
     return { pattern: cl.pattern, guard: cl.guard, body: newBody };

@@ -55,9 +55,9 @@ class CallExprBuilder {
         var buildExpression = context.getExpressionBuilder();
 
         #if debug_ast_builder
-        trace('[CallExpr] Processing TCall with ${args.length} args');
+        // DISABLED: trace('[CallExpr] Processing TCall with ${args.length} args');
         if (e != null) {
-            trace('[CallExpr] Call target: ${Type.enumConstructor(e.expr)}');
+            // DISABLED: trace('[CallExpr] Call target: ${Type.enumConstructor(e.expr)}');
         }
         #end
 
@@ -100,7 +100,7 @@ class CallExprBuilder {
 
                 if (injectionString != "") {
                     #if debug_ast_builder
-                    trace('[CallExpr] ✓ Detected __elixir__() injection: ${injectionString.substr(0, 50)}...');
+                    // DISABLED: trace('[CallExpr] ✓ Detected __elixir__() injection: ${injectionString.substr(0, 50)}...');
                     #end
 
                     // SPECIAL-CASE: Ecto.Query.where injection → build full AST (no ERaw)
@@ -340,7 +340,7 @@ class CallExprBuilder {
                     }
 
                     #if debug_ast_builder
-                    trace('[CallExpr] Generated injection code: $finalCode');
+                    // DISABLED: trace('[CallExpr] Generated injection code: $finalCode');
                     #end
 
                     // Return raw Elixir code directly
@@ -513,7 +513,7 @@ class CallExprBuilder {
             tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
             
             #if debug_ast_builder
-            trace('[CallExpr] Building idiomatic enum tuple: ${tag} with ${args.length} args');
+            // DISABLED: trace('[CallExpr] Building idiomatic enum tuple: ${tag} with ${args.length} args');
             #end
         }
         
@@ -582,7 +582,7 @@ class CallExprBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        trace('[CallExpr] Checking special call: ${className}.${methodName}');
+        // DISABLED: trace('[CallExpr] Checking special call: ${className}.${methodName}');
         #end
         
         switch(className) {
@@ -731,7 +731,7 @@ class CallExprBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        trace('[CallExpr] Checking Phoenix call: ${className}.${methodName}');
+        // DISABLED: trace('[CallExpr] Checking Phoenix call: ${className}.${methodName}');
         #end
         
         // Check for PubSub patterns

@@ -77,7 +77,6 @@ class QueryBinderFinalizationTransforms {
                     n;
                 case EIf(cond, thenB, elseB) if (detectSearchGuard(cond)):
                     #if debug_filter_query_consolidate
-                    Sys.println('[QueryBinderFinalization] Detected search_guard EIf');
                     #end
                     var newThen = finalizeBranch(thenB);
                     if (newThen != thenB) makeASTWithMeta(EIf(cond, newThen, elseB), n.metadata, n.pos) else n;
@@ -288,7 +287,7 @@ class QueryBinderFinalizationTransforms {
                     var nextIsFilter = (i + 1 < es.length) && isFilterStmt(es[i + 1]);
                     if (!promoted && isWildcardDowncase(s) && (nextIsFilter || branchHasFilterLater(es, i + 1))) {
                         #if debug_filter_query_consolidate
-                        Sys.println('[QueryBinderFinalization] Promoting wildcard downcase to query binder (EDo)');
+                        // DEBUG: Sys.println('[QueryBinderFinalization] Promoting wildcard downcase to query binder (EDo)');
                         #end
                         // Replace with named binder
                         switch (s.def) {
@@ -299,7 +298,7 @@ class QueryBinderFinalizationTransforms {
                     } else if (seenQuery && isWildcardDowncase(s)) {
                         // Drop redundant wildcard downcase after establishing query binder
                         #if debug_filter_query_consolidate
-                        Sys.println('[QueryBinderFinalization] Dropping redundant wildcard downcase (EDo)');
+                        // DEBUG: Sys.println('[QueryBinderFinalization] Dropping redundant wildcard downcase (EDo)');
                         #end
                         // skip
                     } else out.push(s);
@@ -316,7 +315,7 @@ class QueryBinderFinalizationTransforms {
                     var nextIsFilter2 = (i + 1 < es2.length) && isFilterStmt(es2[i + 1]);
                     if (!promoted2 && (isWildcardDowncase(s2) || (anyDown.match && anyDown.renameNeeded)) && (nextIsFilter2 || branchHasFilterLater(es2, i + 1))) {
                         #if debug_filter_query_consolidate
-                        Sys.println('[QueryBinderFinalization] Forcing query binder for downcase(search_query) (EBlock)');
+                        // DEBUG: Sys.println('[QueryBinderFinalization] Forcing query binder for downcase(search_query) (EBlock)');
                         #end
                         switch (s2.def) {
                             case EMatch(_, rhs2): out2.push(makeASTWithMeta(EBinary(Match, makeAST(EVar("query")), rhs2), thenB.metadata, thenB.pos)); promoted2 = true;
@@ -325,7 +324,7 @@ class QueryBinderFinalizationTransforms {
                         }
                     } else if (seenQuery2 && isWildcardDowncase(s2)) {
                         #if debug_filter_query_consolidate
-                        Sys.println('[QueryBinderFinalization] Dropping redundant wildcard downcase (EBlock)');
+                        // DEBUG: Sys.println('[QueryBinderFinalization] Dropping redundant wildcard downcase (EBlock)');
                         #end
                         // skip
                     } else {

@@ -123,12 +123,11 @@ class ControllerJsonFinalizeAbsoluteTransforms {
               // fall back to case binder as a generic safety net.
               if (lastDataRhs != null) {
                 #if debug_ast_transformer
-                Sys.println('[ControllerJsonFinalize] Inlining last data RHS into Phoenix.Controller.json');
                 #end
                 makeASTWithMeta(ERemoteCall(t, fnName, [args[0], lastDataRhs]), n.metadata, n.pos);
               } else if (binder != null) {
                 #if debug_ast_transformer
-                Sys.println('[ControllerJsonFinalize] Rewriting Phoenix.Controller.json(conn, data) -> binder ' + binder);
+                // DEBUG: Sys.println('[ControllerJsonFinalize] Rewriting Phoenix.Controller.json(conn, data) -> binder ' + binder);
                 #end
                 makeASTWithMeta(ERemoteCall(t, fnName, [args[0], makeAST(EVar(binder))]), n.metadata, n.pos);
               } else {
@@ -138,7 +137,7 @@ class ControllerJsonFinalizeAbsoluteTransforms {
               // Historical alias; rewrite to binder if present to avoid undefined var
               if (binder != null) {
                 #if debug_ast_transformer
-                Sys.println('[ControllerJsonFinalize] Rewriting Phoenix.Controller.json(conn, json) -> binder ' + binder);
+                // DEBUG: Sys.println('[ControllerJsonFinalize] Rewriting Phoenix.Controller.json(conn, json) -> binder ' + binder);
                 #end
                 makeASTWithMeta(ERemoteCall(t, fnName, [args[0], makeAST(EVar(binder))]), n.metadata, n.pos);
               } else n;

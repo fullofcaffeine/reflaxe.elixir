@@ -71,7 +71,7 @@ class FunctionBuilder {
      */
     public static function build(f: TFunc, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        trace('[FunctionBuilder] Building function with ${f.args.length} parameters');
+        // DISABLED: trace('[FunctionBuilder] Building function with ${f.args.length} parameters');
         #end
         
         // Detect fluent API patterns (for future use when metadata is extended)
@@ -161,7 +161,7 @@ class FunctionBuilder {
         var idKey = Std.string(arg.v.id);
         
         #if debug_variable_renaming
-        trace('[FunctionBuilder] Processing parameter "$originalName" (ID: ${arg.v.id})');
+        // DISABLED: trace('[FunctionBuilder] Processing parameter "$originalName" (ID: ${arg.v.id})');
         #end
         
         // Detect unused parameters
@@ -183,7 +183,7 @@ class FunctionBuilder {
 
         #if debug_variable_renaming
         if (hasNumericSuffix) {
-            trace('[FunctionBuilder] Stripped suffix: "$originalName" -> "$strippedName"');
+            // DISABLED: trace('[FunctionBuilder] Stripped suffix: "$originalName" -> "$strippedName"');
         }
         #end
         
@@ -210,7 +210,7 @@ class FunctionBuilder {
             context.tempVarRenameMap.set(originalName, finalName);    // NAME-based (EVar renaming)
 
             #if debug_hygiene
-            trace('[Hygiene] Dual-key registered: id=$idKey name=$originalName -> $finalName');
+            // DISABLED: trace('[Hygiene] Dual-key registered: id=$idKey name=$originalName -> $finalName');
             #end
         }
         

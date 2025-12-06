@@ -51,19 +51,19 @@ class FinalUnderscoreRepairTransforms {
      */
     public static function transformPass(ast: ElixirAST): ElixirAST {
         #if debug_underscore_repair
-        trace('[FinalUnderscoreRepair] === PASS INVOKED ===');
+        // DISABLED: trace('[FinalUnderscoreRepair] === PASS INVOKED ===');
         #end
         return ElixirASTTransformer.transformNode(ast, transformNode);
     }
 
     static function transformNode(n: ElixirAST): ElixirAST {
         #if debug_underscore_repair
-        trace('[UnderscoreRepair] Processing node: ${Type.enumConstructor(n.def)}');
+        // DISABLED: trace('[UnderscoreRepair] Processing node: ${Type.enumConstructor(n.def)}');
         #end
         return switch (n.def) {
             case EBlock(stmts):
                 #if debug_underscore_repair
-                trace('[UnderscoreRepair] EBlock with ${stmts.length} statements');
+                // DISABLED: trace('[UnderscoreRepair] EBlock with ${stmts.length} statements');
                 for (s in stmts) {
                     if (s != null) trace('[UnderscoreRepair]   - ${Type.enumConstructor(s.def)}');
                 }
@@ -77,18 +77,18 @@ class FinalUnderscoreRepairTransforms {
 
             case EIf(cond, thenBranch, elseBranch):
                 #if debug_underscore_repair
-                trace('[UnderscoreRepair] EIf detected');
-                trace('[UnderscoreRepair]   thenBranch type: ${thenBranch != null ? Type.enumConstructor(thenBranch.def) : "null"}');
-                trace('[UnderscoreRepair]   elseBranch type: ${elseBranch != null ? Type.enumConstructor(elseBranch.def) : "null"}');
+                // DISABLED: trace('[UnderscoreRepair] EIf detected');
+                // DISABLED: trace('[UnderscoreRepair]   thenBranch type: ${thenBranch != null ? Type.enumConstructor(thenBranch.def) : "null"}');
+                // DISABLED: trace('[UnderscoreRepair]   elseBranch type: ${elseBranch != null ? Type.enumConstructor(elseBranch.def) : "null"}');
                 // Show contents of thenBranch if it's a block
                 if (thenBranch != null && thenBranch.def != null) {
                     switch (thenBranch.def) {
                         case EBlock(stmts):
-                            trace('[UnderscoreRepair]   thenBranch EBlock has ${stmts.length} stmts');
+                            // DISABLED: trace('[UnderscoreRepair]   thenBranch EBlock has ${stmts.length} stmts');
                             for (ti in 0...stmts.length) {
                                 var ts = stmts[ti];
                                 if (ts != null && ts.def != null) {
-                                    trace('[UnderscoreRepair]     then[$ti]: ${Type.enumConstructor(ts.def)}');
+                                    // DISABLED: trace('[UnderscoreRepair]     then[$ti]: ${Type.enumConstructor(ts.def)}');
                                     switch (ts.def) {
                                         case EMatch(pattern, _):
                                             switch (pattern) {
@@ -96,7 +96,7 @@ class FinalUnderscoreRepairTransforms {
                                                 default:
                                             }
                                         case EBinary(op, lhs, _):
-                                            trace('[UnderscoreRepair]       EBinary op: $op');
+                                            // DISABLED: trace('[UnderscoreRepair]       EBinary op: $op');
                                             if (lhs != null) switch (lhs.def) {
                                                 case EVar(vn): trace('[UnderscoreRepair]         LHS EVar: "$vn"');
                                                 default:
@@ -106,7 +106,7 @@ class FinalUnderscoreRepairTransforms {
                                 }
                             }
                         case EDo(stmts):
-                            trace('[UnderscoreRepair]   thenBranch EDo has ${stmts.length} stmts');
+                            // DISABLED: trace('[UnderscoreRepair]   thenBranch EDo has ${stmts.length} stmts');
                         default:
                     }
                 }
@@ -162,23 +162,23 @@ class FinalUnderscoreRepairTransforms {
         if (stmts == null || stmts.length == 0) return stmts;
 
         #if debug_underscore_repair
-        trace('[UnderscoreRepair] repairUnderscoreUsageInBlock called with ${stmts.length} statements');
+        // DISABLED: trace('[UnderscoreRepair] repairUnderscoreUsageInBlock called with ${stmts.length} statements');
         for (idx in 0...stmts.length) {
             var s = stmts[idx];
             if (s != null && s.def != null) {
-                trace('[UnderscoreRepair] repairBlock stmt[$idx]: ${Type.enumConstructor(s.def)}');
+                // DISABLED: trace('[UnderscoreRepair] repairBlock stmt[$idx]: ${Type.enumConstructor(s.def)}');
                 // Show more detail for match patterns
                 switch (s.def) {
                     case EMatch(pattern, _):
-                        trace('[UnderscoreRepair]   EMatch pattern: ${Type.enumConstructor(pattern)}');
+                        // DISABLED: trace('[UnderscoreRepair]   EMatch pattern: ${Type.enumConstructor(pattern)}');
                         switch (pattern) {
                             case PVar(vn): trace('[UnderscoreRepair]     PVar: "$vn"');
                             default:
                         }
                     case EBinary(op, lhs, _):
-                        trace('[UnderscoreRepair]   EBinary op: $op');
+                        // DISABLED: trace('[UnderscoreRepair]   EBinary op: $op');
                         if (lhs != null && lhs.def != null) {
-                            trace('[UnderscoreRepair]   EBinary lhs: ${Type.enumConstructor(lhs.def)}');
+                            // DISABLED: trace('[UnderscoreRepair]   EBinary lhs: ${Type.enumConstructor(lhs.def)}');
                             switch (lhs.def) {
                                 case EVar(vn): trace('[UnderscoreRepair]     EVar: "$vn"');
                                 default:
@@ -202,31 +202,31 @@ class FinalUnderscoreRepairTransforms {
             switch (stmt.def) {
                 case EMatch(pattern, rhsExpr):
                     #if debug_underscore_repair
-                    trace('[UnderscoreRepair] Found EMatch at index $i');
-                    trace('[UnderscoreRepair]   Pattern type: ${Type.enumConstructor(pattern)}');
+                    // DISABLED: trace('[UnderscoreRepair] Found EMatch at index $i');
+                    // DISABLED: trace('[UnderscoreRepair]   Pattern type: ${Type.enumConstructor(pattern)}');
                     switch (pattern) {
                         case PVar(varName):
-                            trace('[UnderscoreRepair]   PVar name: "$varName"');
-                            trace('[UnderscoreRepair]   isUnderscorePrefixed: ${isUnderscorePrefixedUsableVar(varName)}');
+                            // DISABLED: trace('[UnderscoreRepair]   PVar name: "$varName"');
+                            // DISABLED: trace('[UnderscoreRepair]   isUnderscorePrefixed: ${isUnderscorePrefixedUsableVar(varName)}');
                         default:
-                            trace('[UnderscoreRepair]   Not a PVar pattern');
+                            // DISABLED: trace('[UnderscoreRepair]   Not a PVar pattern');
                     }
                     #end
                     // Only process if it's a PVar with underscore prefix
                     switch (pattern) {
                         case PVar(name) if (isUnderscorePrefixedUsableVar(name)):
                             #if debug_underscore_repair
-                            trace('[UnderscoreRepair] Found underscore var assignment (EMatch): $name at index $i');
+                            // DISABLED: trace('[UnderscoreRepair] Found underscore var assignment (EMatch): $name at index $i');
                             #end
                             // Check if this variable is used later
                             if (VarUseAnalyzer.usedLater(stmts, i + 1, name)) {
                                 #if debug_underscore_repair
-                                trace('[UnderscoreRepair] Variable $name IS used later - marking for repair');
+                                // DISABLED: trace('[UnderscoreRepair] Variable $name IS used later - marking for repair');
                                 #end
                                 usedUnderscoreVars.set(name, i);
                             } else {
                                 #if debug_underscore_repair
-                                trace('[UnderscoreRepair] Variable $name is NOT used later');
+                                // DISABLED: trace('[UnderscoreRepair] Variable $name is NOT used later');
                                 #end
                             }
                         default:
@@ -238,17 +238,17 @@ class FinalUnderscoreRepairTransforms {
                     switch (lhs.def) {
                         case EVar(name) if (isUnderscorePrefixedUsableVar(name)):
                             #if debug_underscore_repair
-                            trace('[UnderscoreRepair] Found underscore var assignment (EBinary Match): $name at index $i');
+                            // DISABLED: trace('[UnderscoreRepair] Found underscore var assignment (EBinary Match): $name at index $i');
                             #end
                             // Check if this variable is used later
                             if (VarUseAnalyzer.usedLater(stmts, i + 1, name)) {
                                 #if debug_underscore_repair
-                                trace('[UnderscoreRepair] Variable $name IS used later - marking for repair');
+                                // DISABLED: trace('[UnderscoreRepair] Variable $name IS used later - marking for repair');
                                 #end
                                 usedUnderscoreVars.set(name, i);
                             } else {
                                 #if debug_underscore_repair
-                                trace('[UnderscoreRepair] Variable $name is NOT used later');
+                                // DISABLED: trace('[UnderscoreRepair] Variable $name is NOT used later');
                                 #end
                             }
                         default:

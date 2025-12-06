@@ -42,23 +42,18 @@ class CaseTupleMultiBinderPromoteByUseTransforms {
   }
 
   static function promoteInClause(cl: ECaseClause): ECaseClause {
-    #if debug_ast_transformer Sys.println('[TuplePromote] Visiting clause'); #end
     var used = collectUsedNames(cl.body);
     if (cl.guard != null) mergeInto(used, collectUsedNames(cl.guard));
     var promoted = promoteInPattern(cl.pattern, used);
-    #if debug_ast_transformer Sys.println('[TuplePromote] used={' + [for (k in used.keys()) k].join(',') + '}'); #end
     // Fallback: if nothing changed and pattern has underscored binders, promote
     // when the clause body text contains the base name anywhere (best-effort),
     // guarding against app coupling by deriving bases only from the pattern.
     if (promoted == cl.pattern) {
       var bases = collectUnderscoredBases(cl.pattern);
-      #if debug_ast_transformer Sys.println('[TuplePromote] pattern=' + reflaxe.elixir.ast.ElixirASTPrinter.print(makeAST(ECase(makeAST(EVar("_")), [cl])), 0)); #end
-      #if debug_ast_transformer Sys.println('[TuplePromote] bases={' + bases.join(',') + '}'); #end
       if (bases.length > 0 && (bodyContainsAny(cl.body, bases) || (cl.guard != null && bodyContainsAny(cl.guard, bases)))) {
         var used2 = new Map<String,Bool>();
         for (b in bases) used2.set(b, true);
         promoted = promoteInPattern(cl.pattern, used2);
-        #if debug_ast_transformer Sys.println('[TuplePromote] fallback promotion applied'); #end
       }
     }
     return { pattern: promoted, guard: cl.guard, body: cl.body };

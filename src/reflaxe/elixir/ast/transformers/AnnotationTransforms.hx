@@ -80,9 +80,9 @@ class AnnotationTransforms {
      */
     public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
-        trace('[XRay Endpoint Transform] Checking AST node type: ${ast.def}');
+        // DISABLED: trace('[XRay Endpoint Transform] Checking AST node type: ${ast.def}');
         if (ast.metadata?.isEndpoint == true) {
-            trace('[XRay Endpoint Transform] Found endpoint module with metadata');
+            // DISABLED: trace('[XRay Endpoint Transform] Found endpoint module with metadata');
         }
         #end
         
@@ -90,7 +90,7 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EModule(name, attrs, exprs) if (ast.metadata?.isEndpoint == true):
                 #if debug_annotation_transforms
-                trace('[XRay Endpoint Transform] Processing endpoint EModule: ${name}');
+                // DISABLED: trace('[XRay Endpoint Transform] Processing endpoint EModule: ${name}');
                 #end
                 
                 var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
@@ -104,7 +104,7 @@ class AnnotationTransforms {
                 
             case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
                 #if debug_annotation_transforms
-                trace('[XRay Endpoint Transform] Processing endpoint EDefmodule: ${name}');
+                // DISABLED: trace('[XRay Endpoint Transform] Processing endpoint EDefmodule: ${name}');
                 #end
                 
                 var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
@@ -674,7 +674,7 @@ class AnnotationTransforms {
     public static function schemaTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         if (ast.metadata != null && ast.metadata.isSchema == true) {
-            trace('[XRay Schema Transform] Found schema module with isSchema metadata');
+            // DISABLED: trace('[XRay Schema Transform] Found schema module with isSchema metadata');
         }
         #end
         
@@ -682,7 +682,7 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isSchema == true):
                 #if debug_annotation_transforms
-                trace('[XRay Schema Transform] Processing schema EDefmodule: ${name}');
+                // DISABLED: trace('[XRay Schema Transform] Processing schema EDefmodule: ${name}');
                 #end
                 
                 var tableName = ast.metadata.tableName ?? "items";
@@ -697,7 +697,7 @@ class AnnotationTransforms {
             
             case EModule(name, attrs, exprs) if (ast.metadata?.isSchema == true):
                 #if debug_annotation_transforms
-                trace('[XRay Schema Transform] Processing schema EModule: ${name}');
+                // DISABLED: trace('[XRay Schema Transform] Processing schema EModule: ${name}');
                 #end
                 
                 var tableName = ast.metadata.tableName ?? "items";
@@ -926,9 +926,9 @@ class AnnotationTransforms {
      */
     public static function repoTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
-        trace("[XRay Repo Transform] PASS START");
+        // DISABLED: trace("[XRay Repo Transform] PASS START");
         if (ast.metadata?.isRepo == true) {
-            trace('[XRay Repo Transform] Found isRepo metadata on AST type: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[XRay Repo Transform] Found isRepo metadata on AST type: ${Type.enumConstructor(ast.def)}');
         }
         #end
         
@@ -936,7 +936,7 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EModule(name, attributes, body) if (ast.metadata?.isRepo == true):
                 #if debug_annotation_transforms
-                trace('[XRay Repo Transform] ✓ Processing @:repo EModule: $name');
+                // DISABLED: trace('[XRay Repo Transform] ✓ Processing @:repo EModule: $name');
                 #end
                 
                 var appName = extractAppName(name);
@@ -956,7 +956,7 @@ class AnnotationTransforms {
                 
             case EDefmodule(name, body) if (ast.metadata?.isRepo == true):
                 #if debug_annotation_transforms
-                trace('[XRay Repo Transform] ✓ Processing @:repo module: $name');
+                // DISABLED: trace('[XRay Repo Transform] ✓ Processing @:repo module: $name');
                 #end
                 
                 var appName = extractAppName(name);
@@ -1085,8 +1085,8 @@ class AnnotationTransforms {
     public static function applicationTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         if (ast.metadata != null && ast.metadata.isApplication == true) {
-            trace('[XRay Application Transform] PASS START - Found Application module with metadata');
-            trace('[XRay Application Transform] AST type: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[XRay Application Transform] PASS START - Found Application module with metadata');
+            // DISABLED: trace('[XRay Application Transform] AST type: ${Type.enumConstructor(ast.def)}');
         }
         #end
         
@@ -1094,7 +1094,7 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EModule(name, attributes, body) if (ast.metadata?.isApplication == true):
                 #if debug_annotation_transforms
-                trace('[XRay Application Transform] Processing EModule: $name');
+                // DISABLED: trace('[XRay Application Transform] Processing EModule: $name');
                 #end
                 
                 // For EModule, body is Array<ElixirAST>, need to handle differently
@@ -1108,7 +1108,7 @@ class AnnotationTransforms {
                 
             case EDefmodule(name, body) if (ast.metadata?.isApplication == true):
                 #if debug_annotation_transforms
-                trace('[XRay Application Transform] Processing EDefmodule: $name');
+                // DISABLED: trace('[XRay Application Transform] Processing EDefmodule: $name');
                 #end
                 
                 var appBody = buildApplicationBody(name, body);
@@ -1132,7 +1132,7 @@ class AnnotationTransforms {
         var result = [];
         
         #if debug_annotation_transforms
-        trace('[XRay Application Transform] buildApplicationBodyFromArray - existing functions: ${existingBody.length}');
+        // DISABLED: trace('[XRay Application Transform] buildApplicationBodyFromArray - existing functions: ${existingBody.length}');
         #end
         
         // Add use Application
@@ -1142,7 +1142,7 @@ class AnnotationTransforms {
         for (func in existingBody) {
             #if debug_annotation_transforms
             if (func.def != null) {
-                trace('[XRay Application Transform] Adding existing function: ${Type.enumConstructor(func.def)}');
+                // DISABLED: trace('[XRay Application Transform] Adding existing function: ${Type.enumConstructor(func.def)}');
             }
             #end
             result.push(func);
@@ -1503,12 +1503,12 @@ class AnnotationTransforms {
      */
     public static function exunitTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
-        trace("[XRay ExUnit Transform] PASS START");
-        trace('[XRay ExUnit Transform] AST type: ${Type.enumConstructor(ast.def)}');
+        // DISABLED: trace("[XRay ExUnit Transform] PASS START");
+        // DISABLED: trace('[XRay ExUnit Transform] AST type: ${Type.enumConstructor(ast.def)}');
         if (ast.metadata != null) {
-            trace('[XRay ExUnit Transform] AST has metadata: isExunit=${ast.metadata.isExunit}');
+            // DISABLED: trace('[XRay ExUnit Transform] AST has metadata: isExunit=${ast.metadata.isExunit}');
         } else {
-            trace('[XRay ExUnit Transform] AST has NO metadata');
+            // DISABLED: trace('[XRay ExUnit Transform] AST has NO metadata');
         }
         #end
         
@@ -1516,11 +1516,11 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EModule(name, attributes, bodyExprs):
                 #if debug_annotation_transforms
-                trace('[XRay ExUnit Transform] Found EModule: $name');
+                // DISABLED: trace('[XRay ExUnit Transform] Found EModule: $name');
                 if (ast.metadata != null) {
-                    trace('[XRay ExUnit Transform] Module metadata exists, isExunit=${ast.metadata.isExunit}');
+                    // DISABLED: trace('[XRay ExUnit Transform] Module metadata exists, isExunit=${ast.metadata.isExunit}');
                 } else {
-                    trace('[XRay ExUnit Transform] Module has NO metadata!');
+                    // DISABLED: trace('[XRay ExUnit Transform] Module has NO metadata!');
                 }
                 #end
 
@@ -1529,7 +1529,7 @@ class AnnotationTransforms {
 
                 if (isExunit) {
                     #if debug_annotation_transforms
-                    trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
+                    // DISABLED: trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
                     #end
 
                     // Create a block from the body expressions
@@ -1548,11 +1548,11 @@ class AnnotationTransforms {
 
             case EDefmodule(name, body):
                 #if debug_annotation_transforms
-                trace('[XRay ExUnit Transform] Found EDefmodule: $name');
+                // DISABLED: trace('[XRay ExUnit Transform] Found EDefmodule: $name');
                 if (ast.metadata != null) {
-                    trace('[XRay ExUnit Transform] Module metadata exists, isExunit=${ast.metadata.isExunit}');
+                    // DISABLED: trace('[XRay ExUnit Transform] Module metadata exists, isExunit=${ast.metadata.isExunit}');
                 } else {
-                    trace('[XRay ExUnit Transform] Module has NO metadata!');
+                    // DISABLED: trace('[XRay ExUnit Transform] Module has NO metadata!');
                 }
                 #end
 
@@ -1570,7 +1570,7 @@ class AnnotationTransforms {
                                     expr.metadata?.isTeardown == true ||
                                     expr.metadata?.isTeardownAll == true) {
                                     #if debug_annotation_transforms
-                                    trace('[XRay ExUnit Transform] ✓ Detected ExUnit module by test function metadata');
+                                    // DISABLED: trace('[XRay ExUnit Transform] ✓ Detected ExUnit module by test function metadata');
                                     #end
                                     isExunit = true;
                                     break;
@@ -1582,7 +1582,7 @@ class AnnotationTransforms {
                 
                 if (isExunit) {
                     #if debug_annotation_transforms
-                    trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
+                    // DISABLED: trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
                     #end
                     
                     var exunitBody = buildExUnitBody(name, body);
@@ -1842,8 +1842,8 @@ class AnnotationTransforms {
     public static function supervisorTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         if (ast.metadata?.isSupervisor == true) {
-            trace('[XRay Supervisor Transform] PASS START - Found Supervisor module');
-            trace('[XRay Supervisor Transform] AST type: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[XRay Supervisor Transform] PASS START - Found Supervisor module');
+            // DISABLED: trace('[XRay Supervisor Transform] AST type: ${Type.enumConstructor(ast.def)}');
         }
         #end
         
@@ -1858,7 +1858,7 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EModule(name, attributes, body):
                 #if debug_annotation_transforms
-                trace('[XRay Supervisor Transform] Processing supervisor EModule: $name');
+                // DISABLED: trace('[XRay Supervisor Transform] Processing supervisor EModule: $name');
                 #end
                 
                 // Transform the body array to preserve supervisor functions
@@ -1873,7 +1873,7 @@ class AnnotationTransforms {
                 
             case EDefmodule(name, body):
                 #if debug_annotation_transforms
-                trace('[XRay Supervisor Transform] Processing supervisor EDefmodule: $name');
+                // DISABLED: trace('[XRay Supervisor Transform] Processing supervisor EDefmodule: $name');
                 #end
                 
                 // Transform the body to preserve supervisor functions
@@ -1922,7 +1922,7 @@ class AnnotationTransforms {
                         );
                         statements.push(preservedFunc);
                         #if debug_annotation_transforms
-                        trace('[XRay Supervisor Transform] Marked child_spec for preservation');
+                        // DISABLED: trace('[XRay Supervisor Transform] Marked child_spec for preservation');
                         #end
                     } else if (name == "start_link") {
                         hasStartLink = true;
@@ -1942,7 +1942,7 @@ class AnnotationTransforms {
                         );
                         statements.push(preservedFunc);
                         #if debug_annotation_transforms
-                        trace('[XRay Supervisor Transform] Marked start_link for preservation');
+                        // DISABLED: trace('[XRay Supervisor Transform] Marked start_link for preservation');
                         #end
                     } else {
                         // Keep other functions as-is
@@ -1978,7 +1978,7 @@ class AnnotationTransforms {
                 // Add use Supervisor at the beginning
                 statements.insert(0, makeAST(EUse("Supervisor", [])));
                 #if debug_annotation_transforms
-                trace('[XRay Supervisor Transform] Added use Supervisor statement');
+                // DISABLED: trace('[XRay Supervisor Transform] Added use Supervisor statement');
                 #end
             }
             
@@ -2004,7 +2004,7 @@ class AnnotationTransforms {
                 
                 statements.push(initFunc);
                 #if debug_annotation_transforms
-                trace('[XRay Supervisor Transform] Added default init/1 callback');
+                // DISABLED: trace('[XRay Supervisor Transform] Added default init/1 callback');
                 #end
             }
         }
@@ -2044,7 +2044,7 @@ class AnnotationTransforms {
                                 );
                                 statements.push(preservedFunc);
                                 #if debug_annotation_transforms
-                                trace('[XRay Supervisor Transform] Marked child_spec for preservation');
+                                // DISABLED: trace('[XRay Supervisor Transform] Marked child_spec for preservation');
                                 #end
                             } else if (name == "start_link") {
                                 hasStartLink = true;
@@ -2064,7 +2064,7 @@ class AnnotationTransforms {
                                 );
                                 statements.push(preservedFunc);
                                 #if debug_annotation_transforms
-                                trace('[XRay Supervisor Transform] Marked start_link for preservation');
+                                // DISABLED: trace('[XRay Supervisor Transform] Marked start_link for preservation');
                                 #end
                             } else {
                                 // Keep other functions as-is
@@ -2105,7 +2105,7 @@ class AnnotationTransforms {
                 // Add use Supervisor at the beginning
                 statements.insert(0, makeAST(EUse("Supervisor", [])));
                 #if debug_annotation_transforms
-                trace('[XRay Supervisor Transform] Added use Supervisor statement');
+                // DISABLED: trace('[XRay Supervisor Transform] Added use Supervisor statement');
                 #end
             }
             
@@ -2131,7 +2131,7 @@ class AnnotationTransforms {
                 
                 statements.push(initFunc);
                 #if debug_annotation_transforms
-                trace('[XRay Supervisor Transform] Added default init/1 callback');
+                // DISABLED: trace('[XRay Supervisor Transform] Added default init/1 callback');
                 #end
             }
         }

@@ -178,12 +178,12 @@ class PhoenixMapper {
         var v = Context.definedValue("app_name");
         if (v == null || v == "") {
             #if debug_presence
-            trace('[PhoenixMapper] getAppModuleName default=MyApp (define not set)');
+            // DISABLED: trace('[PhoenixMapper] getAppModuleName default=MyApp (define not set)');
             #end
             return "MyApp";
         }
         #if debug_presence
-        trace('[PhoenixMapper] getAppModuleName define=' + v);
+        // DISABLED: trace('[PhoenixMapper] getAppModuleName define=' + v);
         #end
         return v;
     }
@@ -225,7 +225,7 @@ class PhoenixMapper {
      */
     public static function registerPresenceModule(b: PresenceBootstrap): Void {
         #if debug_presence
-        trace('[PhoenixMapper] registerPresenceModule ' + b.moduleName + ' otp=' + b.otpAppAtom + ' pubsub=' + b.pubsubModule);
+        // DISABLED: trace('[PhoenixMapper] registerPresenceModule ' + b.moduleName + ' otp=' + b.otpAppAtom + ' pubsub=' + b.pubsubModule);
         #end
         for (p in presenceBootstraps) {
             if (p.moduleName == b.moduleName) return;
@@ -254,7 +254,7 @@ class PhoenixMapper {
             var dir = parts.map(NameUtils.toSnakeCase).join("/");
             var outputPath = (dir.length > 0 ? dir + "/" : "") + fileName + ".ex";
             #if debug_presence
-            trace('[PhoenixMapper] Emitting Presence bootstrap ' + p.moduleName + ' -> ' + outputPath);
+            // DISABLED: trace('[PhoenixMapper] Emitting Presence bootstrap ' + p.moduleName + ' -> ' + outputPath);
             #end
             var code = 'defmodule ${p.moduleName} do\n' +
                 '  use Phoenix.Presence,\n' +

@@ -58,7 +58,6 @@ class ReduceStrictSelfAppendRewriteTransforms {
             return switch (n.def) {
                 case ERemoteCall(modRef, "reduce", args) if (args.length == 3):
                     #if debug_reduce_unify
-                    Sys.println('[ReduceStrictSelfAppendRewrite] inspecting reduce call');
                     #end
                     var fnNode = args[2];
                     switch (fnNode.def) {
@@ -68,14 +67,14 @@ class ReduceStrictSelfAppendRewriteTransforms {
                             var binderName:Null<String> = switch (cl.args[0]) { case PVar(b): b; default: null; };
                             var accName:Null<String> = switch (cl.args[1]) { case PVar(a): a; default: null; };
                             #if debug_reduce_unify
-                            Sys.println('[ReduceStrictSelfAppendRewrite] binder=' + (binderName == null ? 'null' : binderName) + ', acc=' + (accName == null ? 'null' : accName));
+                            // DEBUG: Sys.println('[ReduceStrictSelfAppendRewrite] binder=' + (binderName == null ? 'null' : binderName) + ', acc=' + (accName == null ? 'null' : accName));
                             #end
                             if (accName == null) return n;
                             var bodyStmts:Array<ElixirAST> = switch (cl.body.def) { case EBlock(ss): ss; default: [cl.body]; };
                             #if debug_reduce_unify
                             for (i in 0...bodyStmts.length) {
                                 var st = bodyStmts[i];
-                                Sys.println('[ReduceStrictSelfAppendRewrite] stmt[' + i + '] repr=' + reflaxe.elixir.ast.ElixirASTPrinter.print(st, 0));
+                                // DEBUG: Sys.println('[ReduceStrictSelfAppendRewrite] stmt[' + i + '] repr=' + reflaxe.elixir.ast.ElixirASTPrinter.print(st, 0));
                             }
                             #end
                             // Find a self-append alias assignment
@@ -135,7 +134,6 @@ class ReduceStrictSelfAppendRewriteTransforms {
                                                     ]));
                                                     var newFn2 = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: newBody2 }]) );
                                                     #if debug_reduce_unify
-                                                    Sys.println('[ReduceStrictSelfAppendRewrite] ERaw-based rewrite applied: ' + newRhsCode);
                                                     #end
                                                     return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn2]), n.metadata, n.pos);
                                                 }
@@ -145,7 +143,6 @@ class ReduceStrictSelfAppendRewriteTransforms {
                                         if (lhsName != null) {
                                             var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.print(rhsE, 0);
                                             #if debug_reduce_unify
-                                            Sys.println('[ReduceStrictSelfAppendRewrite] rhsStr=' + rhsStr);
                                             #end
                                             var needle = 'Enum.concat(' + lhsName + ', ';
                                             var idx = rhsStr.indexOf(needle);
@@ -165,7 +162,6 @@ class ReduceStrictSelfAppendRewriteTransforms {
                                                 ]));
                                                 var newFn3 = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: newBody3 }]) );
                                                 #if debug_reduce_unify
-                                                Sys.println('[ReduceStrictSelfAppendRewrite] Printer-based ERaw rewrite applied: ' + newRhsCode2);
                                                 #end
                                                 return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn3]), n.metadata, n.pos);
                                             }
@@ -174,7 +170,7 @@ class ReduceStrictSelfAppendRewriteTransforms {
                                 }
                             }
                             #if debug_reduce_unify
-                            Sys.println('[ReduceStrictSelfAppendRewrite] listArg found? ' + (listArg != null));
+                            // DEBUG: Sys.println('[ReduceStrictSelfAppendRewrite] listArg found? ' + (listArg != null));
                             #end
                             if (listArg == null) {
                                 // Last-resort statement-string based rewrite
@@ -193,7 +189,6 @@ class ReduceStrictSelfAppendRewriteTransforms {
                                             ]));
                                             var newFn4 = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: newBody4 }]) );
                                             #if debug_reduce_unify
-                                            Sys.println('[ReduceStrictSelfAppendRewrite] Statement-string rewrite applied: ' + newRhsCode4);
                                             #end
                                             return makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn4]), n.metadata, n.pos);
                                         }
@@ -207,7 +202,6 @@ class ReduceStrictSelfAppendRewriteTransforms {
                                 makeAST(EVar(accName))
                             ]));
                             #if debug_reduce_unify
-                            Sys.println('[ReduceStrictSelfAppendRewrite] rewriting reducer body to canonical acc concat');
                             #end
                             var newFn = makeAST( EFn([{ args: cl.args, guard: cl.guard, body: newBody }]) );
                             makeASTWithMeta(ERemoteCall(modRef, "reduce", [args[0], args[1], newFn]), n.metadata, n.pos);

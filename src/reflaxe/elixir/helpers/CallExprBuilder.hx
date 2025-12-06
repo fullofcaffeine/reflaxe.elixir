@@ -62,7 +62,7 @@ class CallExprBuilder {
      */
     public function buildCall(target: TypedExpr, args: Array<TypedExpr>): ElixirAST {
         #if debug_call_expr
-        trace('[CallExprBuilder] Building call with target type: ${target.expr}');
+        // DISABLED: trace('[CallExprBuilder] Building call with target type: ${target.expr}');
         #end
 
         return switch(target.expr) {
@@ -89,7 +89,7 @@ class CallExprBuilder {
      */
     function buildFieldCall(expr: TypedExpr, fieldAccess: FieldAccess, args: Array<TypedExpr>): ElixirAST {
         #if debug_call_expr
-        trace('[CallExprBuilder] Field call detected');
+        // DISABLED: trace('[CallExprBuilder] Field call detected');
         #end
 
         // Build the target expression
@@ -119,7 +119,7 @@ class CallExprBuilder {
      */
     function buildLocalCall(v: TVar, args: Array<TypedExpr>): ElixirAST {
         #if debug_call_expr
-        trace('[CallExprBuilder] Anonymous function call: ${v.name}');
+        // DISABLED: trace('[CallExprBuilder] Anonymous function call: ${v.name}');
         #end
 
         // Resolve variable name from context
@@ -150,7 +150,7 @@ class CallExprBuilder {
      */
     function buildIdentCall(s: String, args: Array<TypedExpr>): ElixirAST {
         #if debug_call_expr
-        trace('[CallExprBuilder] Identifier call: $s');
+        // DISABLED: trace('[CallExprBuilder] Identifier call: $s');
         #end
 
         // Special function handling

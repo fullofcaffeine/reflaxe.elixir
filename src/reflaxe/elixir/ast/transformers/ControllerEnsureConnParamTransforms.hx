@@ -62,7 +62,7 @@ class ControllerEnsureConnParamTransforms {
                     #if debug_controller_conn
                     inline function patStr(p:EPattern):String return switch(p){ case PVar(nm): nm; case PAlias(nm,_): nm; default: Std.string(p);} ;
                     var beforeArgs = args != null ? [for (a in args) patStr(a)].join(',') : '';
-                    trace('[ControllerEnsureConnParam] visit def ' + fname + '(' + beforeArgs + ')');
+                    // DISABLED: trace('[ControllerEnsureConnParam] visit def ' + fname + '(' + beforeArgs + ')');
                     #end
                     var needsConn = VariableUsageCollector.usedInFunctionScope(body, "conn");
                     var hasConn = false;
@@ -74,7 +74,7 @@ class ControllerEnsureConnParamTransforms {
                         for (a in args) switch (a) { case PVar(n) if (n == "_conn"): newArgs.push(PVar("conn")); case PAlias(nm, pat) if (nm == "_conn"): newArgs.push(PAlias("conn", pat)); default: newArgs.push(a); }
                         #if debug_controller_conn
                         var afterArgs = [for (a in newArgs) patStr(a)].join(',');
-                        trace('[ControllerEnsureConnParam] ' + fname + '(' + beforeArgs + ') -> (' + afterArgs + ')');
+                        // DISABLED: trace('[ControllerEnsureConnParam] ' + fname + '(' + beforeArgs + ') -> (' + afterArgs + ')');
                         #end
                         makeASTWithMeta(EDef(fname, newArgs, guards, body), x.metadata, x.pos);
                     } else if (needsConn && !hasConn) {

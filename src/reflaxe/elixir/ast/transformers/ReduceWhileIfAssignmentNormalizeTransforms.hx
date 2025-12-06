@@ -27,7 +27,6 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case ERemoteCall(module, "reduce_while", args) if (args != null && args.length >= 3):
-          #if debug_reduce_while Sys.println('[ReduceWhileNormalize] Visiting Enum.reduce_while(...)'); #end
           var collection = args[0];
           var init = args[1];
           var fnArg = args[2];
@@ -35,9 +34,7 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
             case EFn(clauses):
               var outClauses = [];
               for (cl in clauses) {
-                #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   Clause body before = ' + ElixirASTPrinter.print(cl.body, 0)); #end
                 var nb = normalizeBlock(cl.body);
-                #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   Clause body after  = ' + ElixirASTPrinter.print(nb, 0)); #end
                 outClauses.push({ args: cl.args, guard: cl.guard, body: nb });
               }
               makeASTWithMeta(ERemoteCall(module, "reduce_while", [collection, init, makeAST(EFn(outClauses))]), n.metadata, n.pos);
@@ -46,12 +43,9 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
           }
         // Global fallback: apply the same window normalization in any anonymous fn bodies
         case EFn(clauses):
-          #if debug_reduce_while Sys.println('[ReduceWhileNormalize] Visiting generic EFn with ' + clauses.length + ' clause(s)'); #end
           var outClauses = [];
           for (cl in clauses) {
-            #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   (generic) body before = ' + ElixirASTPrinter.print(cl.body, 0)); #end
             var normalizedBody = normalizeBlock(cl.body);
-            #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   (generic) body after  = ' + ElixirASTPrinter.print(normalizedBody, 0)); #end
             outClauses.push({ args: cl.args, guard: cl.guard, body: normalizedBody });
           }
           makeASTWithMeta(EFn(outClauses), n.metadata, n.pos);
@@ -75,14 +69,12 @@ class ReduceWhileIfAssignmentNormalizeTransforms {
           var rewritten = false;
           switch (s.def) {
             case EBinary(Match, {def: EVar(a)}, {def: EBinary(Match, {def: EVar(b)}, rhs)}):
-              #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   Found double-assign window: ' + a + ' = (' + b + ' = <rhs>)'); #end
               var j = i + 1;
               while (j < stmts.length && j <= i + 3) {
                 switch (stmts[j].def) {
                   case EIf(cond, thenE, elseE) if (elseE != null):
                     var elseIsB = switch (elseE.def) { case EVar(bb) if (bb == b): true; default: false; };
                     if (elseIsB) {
-                      #if debug_reduce_while Sys.println('[ReduceWhileNormalize]   Matched trailing if ... else ' + b + ' → rewriting to b = rhs; ' + a + ' = if ...'); #end
                       // Emit: b = rhs; a = if ...
                       out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(b), s.metadata, s.pos), rhs), s.metadata, s.pos));
                       out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(a), s.metadata, s.pos), makeASTWithMeta(EIf(cond, thenE, elseE), stmts[j].metadata, stmts[j].pos)), s.metadata, s.pos));
