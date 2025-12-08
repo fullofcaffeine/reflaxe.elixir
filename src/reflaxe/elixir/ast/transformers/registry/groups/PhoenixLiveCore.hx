@@ -39,7 +39,7 @@ class PhoenixLiveCore {
     passes.push({
       name: "LiveViewTypedEventBridge",
       description: "Synthesize handle_event/3 callbacks from typed handleEvent/2 (enum) dispatcher",
-      enabled: true,
+      enabled: false, // DISABLED: Conflicts with LiveEventCaseToCallbacks
       pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
     });
 

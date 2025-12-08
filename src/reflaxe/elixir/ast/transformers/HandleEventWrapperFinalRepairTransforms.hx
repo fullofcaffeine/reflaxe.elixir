@@ -108,10 +108,9 @@ class HandleEventWrapperFinalRepairTransforms {
                 if (replaced) {
                   makeASTWithMeta(ECall(target, fname, newArgs2), x.metadata, x.pos);
                 } else {
-                  // Generic fallback: pass extracted id from params if present
-                  var newArgs3 = args.copy();
-                  newArgs3[0] = buildExtract('id', paramsVar);
-                  makeASTWithMeta(ECall(target, fname, newArgs3), x.metadata, x.pos);
+                  // If first arg is already params, leave it - function expects full params map
+                  // Only do id extraction for functions that clearly expect an id-like value
+                  x;
                 }
               } else x;
             } else x;
@@ -140,9 +139,9 @@ class HandleEventWrapperFinalRepairTransforms {
                 if (replaced2) {
                   makeASTWithMeta(ERemoteCall(mod, fname2, newArgs3), x.metadata, x.pos);
                 } else {
-                  var newArgs4 = args2.copy();
-                  newArgs4[0] = buildExtract('id', paramsVar);
-                  makeASTWithMeta(ERemoteCall(mod, fname2, newArgs4), x.metadata, x.pos);
+                  // If first arg is already params, leave it - function expects full params map
+                  // Only do id extraction for functions that clearly expect an id-like value
+                  x;
                 }
               } else x;
             } else x;
@@ -211,7 +210,12 @@ class HandleEventWrapperFinalRepairTransforms {
     // DEBUG: Sys.println('[HandleEventWrapperFinal] used={' + used.join(',') + '}');
     #end
     var missing:Array<String> = [];
-    for (u in used) if (!declared.exists(u) && allow(u)) missing.push(u);
+    // Check both exact name AND snake_case version to handle camelCase/snake_case naming mismatches
+    // (e.g., searchSocket used but search_socket declared)
+    for (u in used) {
+        var snake = toSnake(u);
+        if (!declared.exists(u) && !declared.exists(snake) && allow(u)) missing.push(u);
+    }
     if (missing.length == 0) return step2;
     var prefix = [for (v in missing) makeAST(EBinary(Match, makeAST(EVar(v)), buildExtract(v, paramsVar)))];
     return switch (step2.def) {
@@ -318,8 +322,41 @@ class HandleEventWrapperFinalRepairTransforms {
   static inline function allow(name:String):Bool {
     if (name == null || name.length == 0) return false;
     if (name == "socket" || name == "params" || name == "_params" || name == "event") return false;
+    // Skip internal/intermediate variables that should NOT be extracted from params
+    if (isInternalVariable(name)) return false;
     var c = name.charAt(0);
     return c.toLowerCase() == c;
+  }
+
+  /**
+   * Check if a variable name looks like an internal/intermediate variable rather than
+   * a form field that should be extracted from params.
+   *
+   * Internal variables typically have names like:
+   * - searchSocket, updatedSocket, resultSocket (socket variants)
+   * - newSelected, currentlySelected (computed values)
+   * - refreshedTodos, filteredItems (processed collections)
+   *
+   * Form fields typically have names like:
+   * - id, title, description, name, email, query, tag, priority
+   */
+  static function isInternalVariable(name:String):Bool {
+    // Check for common internal variable suffixes (case-insensitive check via lowercase)
+    var lower = name.toLowerCase();
+    // Socket-related
+    if (StringTools.endsWith(lower, "socket")) return true;
+    // Selection/state-related
+    if (StringTools.endsWith(lower, "selected")) return true;
+    // Processed data
+    if (StringTools.startsWith(lower, "refreshed")) return true;
+    if (StringTools.startsWith(lower, "filtered")) return true;
+    if (StringTools.startsWith(lower, "updated")) return true;
+    if (StringTools.startsWith(lower, "new") && lower.length > 3) return true; // "newX" but not "new"
+    // Result/temp variables
+    if (StringTools.endsWith(lower, "result")) return true;
+    if (StringTools.startsWith(lower, "temp")) return true;
+    if (StringTools.startsWith(lower, "tmp")) return true;
+    return false;
   }
 
   static function collectPat(p:EPattern, out:Map<String,Bool>):Void {

@@ -1395,7 +1395,14 @@ class ElixirASTBuilder {
                             if (ifExpr.metadata == null) ifExpr.metadata = {};
                             ifExpr.metadata.keepInlineInAssignment = true;
                             ifExpr;
-                            
+
+                        // FIX: Handle TIf (ternary) expressions as TVar init
+                        // This case was missing, causing newSelected and similar variables to be dropped.
+                        // TIf is correctly marked as non-simple in isSimpleInit(), so it comes here.
+                        // We just delegate to buildFromTypedExpr which calls ControlFlowBuilder.buildIf.
+                        case TIf(_, _, _):
+                            buildFromTypedExpr(init, currentContext);
+
                         case _:
                             // Check if init is an unrolled array comprehension pattern
                             // Pattern: TBlock containing "g = []" followed by "g = g ++ [value]" statements

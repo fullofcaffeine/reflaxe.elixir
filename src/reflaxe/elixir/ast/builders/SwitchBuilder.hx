@@ -674,7 +674,21 @@ class SwitchBuilder {
                                         // Only rename if the original pattern variable bn is NOT used in the body.
                                         // If bn IS used, keep the original binding - don't rename to some other variable.
                                         var bnIsUsed = used.exists(bn);
-                                        if (undef.length == 1 && !bnIsUsed) {
+                                        // Helper to check if a name is generic/auto-generated (single char, _prefix, contains digit, or "value"/"arg"/"v")
+                                        // Only rename generic names - descriptive names like "query" should be preserved!
+                                        inline function isGenericBinder(name:String):Bool {
+                                            if (name == null || name.length == 0) return true;
+                                            if (name.charAt(0) == "_") return true;
+                                            if (name.length == 1) return true;
+                                            if (name == "value" || name == "arg" || name == "v") return true;
+                                            var hasDigit = false;
+                                            for (j in 0...name.length) {
+                                                var c = name.charCodeAt(j);
+                                                if (c >= 48 && c <= 57) { hasDigit = true; break; }
+                                            }
+                                            return hasDigit;
+                                        }
+                                        if (undef.length == 1 && !bnIsUsed && isGenericBinder(bn)) {
                                             var newName = undef[0];
                                             harmonized = { pattern: PTuple([es[0], PVar(newName)]), guard: cl.guard,
                                                 body: reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(x:ElixirAST):ElixirAST {
@@ -1032,20 +1046,9 @@ class SwitchBuilder {
                 return foundId != null && context.functionParameterIds.exists(Std.string(foundId));
             }
 
-            // Choose a better binder when exactly one parameter and there are lower-case locals used
-            function bestUsedLowerName(): Null<String> {
-                if (parameterNames.length != 1 || usedLower.length == 0) return null;
-                // Filter out env-like and function parameters
-                var filtered = [];
-                for (n in usedLower) {
-                    var alt = VariableAnalyzer.toElixirVarName(n);
-                    if (!isEnvLikeName(alt) && !isFunctionParamByName(alt)) filtered.push(alt);
-                }
-                // Only choose when exactly one clear candidate remains
-                if (filtered.length == 1) return filtered[0];
-                return null;
-            }
-            var preferredLower: Null<String> = bestUsedLowerName();
+            // NOTE: The bestUsedLowerName/preferredLower pattern was removed because it incorrectly
+            // chose body local variables (like "searchSocket") over meaningful enum parameter names
+            // (like "query"). The isGenericOrAutoName check in the loop below now handles the fallback.
 
             var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
             // Precompute usage to avoid repeated full-tree scans per parameter
@@ -1064,42 +1067,22 @@ class SwitchBuilder {
             trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
             trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
             trace('[SwitchBuilder]   guardVars = ${guardVars != null ? "[" + guardVars.join(", ") + "]" : "null"}');
-            trace('[SwitchBuilder]   preferredLower = $preferredLower');
             #end
             for (i in 0...parameterNames.length) {
-                // Select a safe base source name with strict filtering
-                var candidate:Null<String> = null;
-                if (guardVars != null && i < guardVars.length) candidate = guardVars[i];
-                #if debug_switch_builder
-                trace('[SwitchBuilder]   i=$i: initial candidate from guardVars[$i] = "$candidate"');
-                if (candidate != null) {
-                    trace('[SwitchBuilder]     isEnvLikeName("$candidate") = ${isEnvLikeName(candidate)}');
-                    trace('[SwitchBuilder]     isFunctionParamByName("$candidate") = ${isFunctionParamByName(candidate)}');
-                }
-                #end
-                if (candidate == null || isEnvLikeName(candidate) || isFunctionParamByName(candidate)) {
-                    candidate = parameterNames[i];
-                    #if debug_switch_builder
-                    trace('[SwitchBuilder]     -> fell back to parameterNames[$i] = "$candidate"');
-                    #end
-                }
+                // CRITICAL FIX: ALWAYS prefer the enum parameter name from the type definition
+                // unless it's truly generic (like "value", "_g0", etc.)
+                // The guardVars from extractUsedVariablesFromCaseBody can contain ALL body variables
+                // (like "searchSocket", "refreshedTodos"), not just enum parameters!
+                var enumParamName = parameterNames[i];
+                var candidate:Null<String> = enumParamName;
 
-                var baseParamName = VariableAnalyzer.toElixirVarName(candidate);
-                #if debug_switch_builder
-                trace('[SwitchBuilder]     baseParamName after toElixirVarName = "$baseParamName"');
-                #end
-                if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
-
-                // Only apply preferredLower when the original name is generic/auto-generated.
-                // NEVER override meaningful parameter names from the enum definition.
-                // A name is considered generic if it: starts with underscore, is single char,
-                // contains digits (like _g0), or is "value"/"arg" (Haxe defaults).
-                function isGenericParamName(name: String): Bool {
+                // Only consider guardVars if the enum parameter name is generic
+                // (single char, starts with _, contains digits, or is "value"/"arg")
+                function isGenericOrAutoName(name: String): Bool {
                     if (name == null || name.length == 0) return true;
                     if (name.charAt(0) == "_") return true;
                     if (name.length == 1) return true;
                     if (name == "value" || name == "arg" || name == "v") return true;
-                    // Check for auto-generated names with digits like _g0, g1, etc.
                     var hasDigit = false;
                     for (j in 0...name.length) {
                         var c = name.charCodeAt(j);
@@ -1107,9 +1090,28 @@ class SwitchBuilder {
                     }
                     return hasDigit;
                 }
-                if (preferredLower != null && isGenericParamName(baseParamName)) {
-                    baseParamName = preferredLower;
+
+                // Only use guardVars if enum parameter name is generic AND guardVar is better
+                if (isGenericOrAutoName(enumParamName) && guardVars != null && i < guardVars.length) {
+                    var gv = guardVars[i];
+                    if (gv != null && !isEnvLikeName(gv) && !isFunctionParamByName(gv) && !isGenericOrAutoName(gv)) {
+                        candidate = gv;
+                    }
                 }
+
+                #if debug_switch_builder
+                trace('[SwitchBuilder]   i=$i: enumParamName="$enumParamName", isGeneric=${isGenericOrAutoName(enumParamName)}, final candidate="$candidate"');
+                #end
+
+                var baseParamName = VariableAnalyzer.toElixirVarName(candidate);
+                #if debug_switch_builder
+                trace('[SwitchBuilder]     baseParamName after toElixirVarName = "$baseParamName"');
+                #end
+                if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
+
+                // NOTE: The preferredLower logic was removed because it incorrectly replaced
+                // meaningful parameter names (like "query") with body variables (like "searchSocket").
+                // The isGenericOrAutoName check above now handles generic parameter fallback properly.
 
                 // CRITICAL: Use precomputed usage from a single scan
                 var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
@@ -1117,8 +1119,7 @@ class SwitchBuilder {
                     var rawParamName = candidate;
                     if (rawParamName != null) isUsed = (localUsage.exists(rawParamName));
                 }
-                // If a preferred lower-case local was selected, treat binder as used
-                if (!isUsed && preferredLower != null) isUsed = true;
+                // Result constructors (Ok/Error) should always be considered used
                 if (!isUsed && isResultCtor) isUsed = true;
 
                 // Apply underscore prefix for unused parameters
@@ -1137,14 +1138,9 @@ class SwitchBuilder {
                 }
             }
 
-            var finalNames = [for (i in 0...parameterNames.length) {
-                var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
-                var effectiveBase = (preferredLower != null) ? preferredLower : base;
-                var used = bodyIsLarge || (i < usedFlags.length && usedFlags[i]) ||
-                    (effectiveBase != null && localUsage.exists(effectiveBase));
-                used ? base : "_" + base;
-            }];
-            #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}'); #end
+            // Extract actual pattern variable names for debug trace
+            var actualPatternNames = [for (p in patterns) switch (p) { case PVar(n): n; default: "?"; }];
+            #if debug_switch_builder trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${actualPatternNames.join(", ")}}'); #end
 
             // CRITICAL FIX: Store enum field name so TEnumParameter knows this constructor was pattern-matched
             if (context.currentClauseContext != null) {

@@ -774,6 +774,17 @@ typedef ElixirMetadata = {
     ?schemaFields: Array<{ name: String, type: String }>,
     // Whether the original Haxe class had @:timestamps annotation
     ?hasTimestamps: Bool,
+    // Whether the user defined their own changeset function (prevents auto-generation)
+    // WHY: User-defined changesets using __elixir__() generate ERaw nodes that can't be detected
+    //      by structure alone in transformers. Setting this flag at compile time when we have
+    //      access to funcFields allows clean detection without string matching.
+    ?hasUserChangeset: Bool,
+    // @:changeset annotation parameters - fields to cast and required fields
+    // WHY: Allows users to specify exactly which fields to cast and which are required
+    // WHAT: Extracted from @:changeset([castFields], [requiredFields]) annotation
+    // HOW: Used by AnnotationTransforms to generate proper Ecto changeset function
+    ?changesetCastFields: Array<String>,
+    ?changesetRequiredFields: Array<String>,
     
     // Loop Expression Preservation (Critical for idiomatic Elixir generation)
     // WHY: Haxe's optimizer replaces loop variables with literals BEFORE our compiler runs

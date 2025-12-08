@@ -92,16 +92,28 @@ class AssignMacro {
 					});
 				}
 
-				// Generate map literal with atom keys
-				// This creates proper AST that HygieneTransforms can process
-				var mapFields = [];
+				// Generate map for assign_multiple with atom keys
+				// Build the map string with atom keys and placeholders for values
+				var mapPairs = [];
+				var values: Array<Expr> = [];
+				var i = 1; // Start from 1 since socket is {0}
 				for (field in transformedFields) {
-					mapFields.push({field: field.field, expr: field.expr});
+					mapPairs.push(':${field.field} => {${i}}');
+					values.push(field.expr);
+					i++;
 				}
-				var mapExpr = {expr: EObjectDecl(mapFields), pos: updates.pos};
+				var mapString = '%{' + mapPairs.join(', ') + '}';
 
-				// Generate assign call with map - using proper extern
-				return macro phoenix.Component.assign($socketExpr, $mapExpr);
+				// Build complete code string as a constant
+				var codeStr = 'Phoenix.Component.assign({0}, $mapString)';
+
+				// Build the __elixir__ call with all arguments
+				// We need to construct: __elixir__(codeStr, socket, value1, value2, ...)
+				// Using $a{} to spread the array of expressions into the call arguments
+				var allArgs: Array<Expr> = [macro $v{codeStr}, socketExpr].concat(values);
+
+				// Return macro expression with $a{} to spread arguments
+				return macro untyped __elixir__($a{allArgs});
 
 			case _:
 				Context.error("Expected object literal with fields to merge", updates.pos);

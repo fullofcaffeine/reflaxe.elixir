@@ -3,8 +3,8 @@ package phoenix;
 // Import framework types
 import haxe.functional.Result;
 import haxe.ds.Option;
-import phoenix.Ecto.Changeset;
 import phoenix.types.Flash.FlashType;
+
 
 /**
  * Comprehensive Phoenix framework extern definitions with full type safety
@@ -207,7 +207,6 @@ extern class LiveView {
      * @param assigns Partial assigns object (only fields being updated)
      */
     extern inline static function assignMultiple<TAssigns>(socket: Socket<TAssigns>, assigns: Dynamic): Socket<TAssigns> {
-        // Emit fully-qualified call to prevent reliance on local imports
         return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, assigns);
     }
     
@@ -361,7 +360,7 @@ extern class HTML {
     /**
      * Generate a form with changeset validation
      */
-    static function formFor<T>(changeset: Changeset<T>, action: String, options: FormOptions, content: Form<T> -> String): String;
+    static function formFor<T, P>(changeset: ecto.Changeset<T, P>, action: String, options: FormOptions, content: Form<T> -> String): String;
     
     /**
      * Generate form inputs with proper typing
@@ -787,9 +786,12 @@ typedef FormOptions = {
 
 /**
  * Phoenix HTML form structure
+ *
+ * Note: source uses ecto.Changeset<T, {}> with empty params type since
+ * the form structure doesn't need to know about the changeset's param type.
  */
 typedef Form<T> = {
-    var source: Changeset<T>;
+    var source: ecto.Changeset<T, {}>;
     var impl: String;
     var id: String;
     var name: String;

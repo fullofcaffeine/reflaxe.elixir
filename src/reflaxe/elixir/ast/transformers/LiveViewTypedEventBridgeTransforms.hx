@@ -112,17 +112,84 @@ class LiveViewTypedEventBridgeTransforms {
     }
 
     static function collectFromHandleEvent(body: Array<ElixirAST>, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): Array<{event:String, def:ElixirAST}> {
+        #if debug_typed_event_bridge
+        trace("[TypedEventBridge] collectFromHandleEvent START, body length=" + body.length);
+        for (s in body) switch (s.def) {
+            case EDef(n, a, _, _): trace("[TypedEventBridge]   Found function: " + n + " with " + (a != null ? a.length : -1) + " args");
+            case EDefp(n, a, _, _): trace("[TypedEventBridge]   Found private function: " + n + " with " + (a != null ? a.length : -1) + " args");
+            default:
+        }
+        #end
         var out:Array<{event:String, def:ElixirAST}> = [];
         for (stmt in body) switch (stmt.def) {
             case EDef(fname, args, _, bdy) if ((fname == "handleEvent" || fname == "handle_event") && args.length == 2):
+                #if debug_typed_event_bridge
+                trace("[TypedEventBridge] MATCHED handleEvent function, fname=" + fname + ", args=" + args.length);
+                trace("[TypedEventBridge] args[0]=" + Std.string(args[0]));
+                #end
                 var evArg = patternVarName(args[0]);
+                #if debug_typed_event_bridge
+                trace("[TypedEventBridge] evArg from patternVarName=" + evArg);
+                #end
+                #if debug_typed_event_bridge
+                trace("[TypedEventBridge] About to call findCaseOnVar with evArg=" + evArg);
+                trace("[TypedEventBridge] bdy.def type=" + Type.enumConstructor(bdy.def));
+                // Show body structure
+                switch (bdy.def) {
+                    case EBlock(exprs):
+                        trace("[TypedEventBridge] Body is EBlock with " + exprs.length + " exprs");
+                        for (i in 0...exprs.length) {
+                            var ec = Type.enumConstructor(exprs[i].def);
+                            trace("[TypedEventBridge]   expr[" + i + "]=" + ec);
+                            // Dig into EMatch
+                            if (ec == "EMatch") {
+                                switch (exprs[i].def) {
+                                    case EMatch(pat, rhs):
+                                        trace("[TypedEventBridge]     EMatch pattern=" + Std.string(pat));
+                                        trace("[TypedEventBridge]     EMatch rhs type=" + Type.enumConstructor(rhs.def));
+                                        // Check if rhs is case
+                                        switch (rhs.def) {
+                                            case ECase(scrut, clauses):
+                                                trace("[TypedEventBridge]     Found nested ECase! scrut=" + Type.enumConstructor(scrut.def) + ", clauses=" + clauses.length);
+                                                switch (scrut.def) {
+                                                    case EVar(v):
+                                                        trace("[TypedEventBridge]       Case scrutinee is EVar=" + v);
+                                                    default:
+                                                        trace("[TypedEventBridge]       Case scrutinee is " + Type.enumConstructor(scrut.def));
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            }
+                        }
+                    case EDo(exprs):
+                        trace("[TypedEventBridge] Body is EDo with " + exprs.length + " exprs");
+                        for (i in 0...exprs.length) {
+                            trace("[TypedEventBridge]   expr[" + i + "]=" + Type.enumConstructor(exprs[i].def));
+                        }
+                    case ECase(scrut, clauses):
+                        trace("[TypedEventBridge] Body is ECase with " + clauses.length + " clauses, scrut=" + Type.enumConstructor(scrut.def));
+                    default:
+                        trace("[TypedEventBridge] Body is something else: " + Type.enumConstructor(bdy.def));
+                }
+                #end
                 var caseNode = findCaseOnVar(bdy, evArg);
+                #if debug_typed_event_bridge
+                trace("[TypedEventBridge] findCaseOnVar returned: " + (caseNode != null ? "FOUND" : "null"));
+                #end
                 if (caseNode != null) {
                     switch (caseNode.def) {
                         case ECase(_, clauses):
+                            #if debug_typed_event_bridge
+                            trace("[TypedEventBridge] Found case with " + clauses.length + " clauses");
+                            #end
                             for (cl in clauses) {
                                 var info = patternToEventAndBinders(cl.pattern);
                                 if (info != null) {
+                                    #if debug_typed_event_bridge
+                                    trace("[TypedEventBridge] Building callback for event=" + info.event + " binders=[" + info.binders.join(",") + "]");
+                                    #end
                                     var def = buildCallback(info.event, info.binders, cl.body, meta, pos);
                                     out.push({event: info.event, def: def});
                                 }
@@ -132,6 +199,9 @@ class LiveViewTypedEventBridgeTransforms {
                 }
             default:
         }
+        #if debug_typed_event_bridge
+        trace("[TypedEventBridge] collectFromHandleEvent END, synthesized " + out.length + " callbacks");
+        #end
         return out;
     }
 
@@ -148,11 +218,12 @@ class LiveViewTypedEventBridgeTransforms {
                 case ECase(scrut, _):
                     switch (scrut.def) { case EVar(v) if (v == evArgName): found = n; default: }
                     if (found == null) {
-                        // keep walking
+                        // keep walking into case clause bodies
                         switch (n.def) { case ECase(_, clauses): for (c in clauses) walk(c.body); default: }
                     }
                 case EBlock(es) | EDo(es): for (e in es) walk(e);
                 case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case EMatch(_, rhs): walk(rhs);  // Walk into EMatch right-hand side
                 default:
             }
         }
@@ -161,13 +232,33 @@ class LiveViewTypedEventBridgeTransforms {
     }
 
     static function patternToEventAndBinders(p: EPattern): Null<{event:String, binders:Array<String>}> {
+        #if debug_typed_event_bridge
+        trace("[TypedEventBridge] patternToEventAndBinders: " + Std.string(p));
+        #end
         return switch (p) {
-            case PLiteral({def: EAtom(a)}): { event: (a : String), binders: [] };
+            case PLiteral({def: EAtom(a)}):
+                #if debug_typed_event_bridge
+                trace("[TypedEventBridge] PLiteral atom: " + (a : String));
+                #end
+                { event: (a : String), binders: [] };
             case PTuple(items) if (items.length >= 1):
                 switch (items[0]) {
                     case PLiteral({def: EAtom(a)}):
                         var binders:Array<String> = [];
-                        for (i in 1...items.length) switch (items[i]) { case PVar(n): binders.push(n); default: }
+                        for (i in 1...items.length) switch (items[i]) {
+                            case PVar(n):
+                                #if debug_typed_event_bridge
+                                trace("[TypedEventBridge] PTuple binder[" + i + "]: " + n);
+                                #end
+                                binders.push(n);
+                            default:
+                                #if debug_typed_event_bridge
+                                trace("[TypedEventBridge] PTuple item[" + i + "] is NOT PVar: " + Std.string(items[i]));
+                                #end
+                        }
+                        #if debug_typed_event_bridge
+                        trace("[TypedEventBridge] PTuple event=" + (a : String) + " binders=" + binders.join(","));
+                        #end
                         { event: (a : String), binders: binders };
                     default: null;
                 }
@@ -181,6 +272,37 @@ class LiveViewTypedEventBridgeTransforms {
 
     static inline function needsIntConversion(varName:String):Bool {
         return varName == "id" || StringTools.endsWith(varName, "_id");
+    }
+
+    /**
+     * Check if a variable name looks like an internal/intermediate variable rather than
+     * a form field that should be extracted from params.
+     *
+     * Internal variables typically have names like:
+     * - searchSocket, updatedSocket, resultSocket (socket variants)
+     * - newSelected, currentlySelected (computed values)
+     * - refreshedTodos, filteredItems (processed collections)
+     *
+     * Form fields typically have names like:
+     * - id, title, description, name, email, query, tag, priority
+     */
+    static function isInternalVariable(name:String):Bool {
+        if (name == null || name.length == 0) return false;
+        var lower = name.toLowerCase();
+        // Socket-related
+        if (StringTools.endsWith(lower, "socket")) return true;
+        // Selection/state-related
+        if (StringTools.endsWith(lower, "selected")) return true;
+        // Processed data
+        if (StringTools.startsWith(lower, "refreshed")) return true;
+        if (StringTools.startsWith(lower, "filtered")) return true;
+        if (StringTools.startsWith(lower, "updated")) return true;
+        if (StringTools.startsWith(lower, "new") && lower.length > 3) return true; // "newX" but not "new"
+        // Result/temp variables
+        if (StringTools.endsWith(lower, "result")) return true;
+        if (StringTools.startsWith(lower, "temp")) return true;
+        if (StringTools.startsWith(lower, "tmp")) return true;
+        return false;
     }
 
     static function buildExtract(varName:String):ElixirAST {
@@ -217,8 +339,8 @@ class LiveViewTypedEventBridgeTransforms {
         // `{:noreply, socket}`. This avoids double-running any branch preludes and
         // prevents nested {:noreply, {:noreply, socket}} shapes.
         var finalBinders = binders != null ? binders.copy() : [];
-        // Build param extracts (skip reserved)
-        for (b in finalBinders) if (!reserved.exists(b)) extracts.push(makeAST(EMatch(PVar(b), buildExtract(b))));
+        // Build param extracts (skip reserved and internal variables)
+        for (b in finalBinders) if (!reserved.exists(b) && !isInternalVariable(b)) extracts.push(makeAST(EMatch(PVar(b), buildExtract(b))));
 
         // Construct typed enum value to delegate to handleEvent/2
         var tagAtom = makeAST(EAtom(ElixirAtom.raw(eventName)));
@@ -230,7 +352,8 @@ class LiveViewTypedEventBridgeTransforms {
             typed = makeAST(ETuple([tagAtom].concat(args)));
         }
 
-        var delegate = makeAST(ECall(null, "handleEvent", [ typed, makeAST(EVar("socket")) ]));
+        // Call handle_event (snake_case) since that's what the function becomes after name transforms
+        var delegate = makeAST(ECall(null, "handle_event", [ typed, makeAST(EVar("socket")) ]));
         var blk:Array<ElixirAST> = [];
         for (e in extracts) blk.push(e);
         // Normalize the result of handleEvent/2 into {:noreply, socket}
