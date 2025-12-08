@@ -54,7 +54,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LiveViewTypedEventBridge",
             description: "Generate handle_event/3 clauses that map string events + params to typed enums and delegate to handleEvent/2",
-            enabled: true,
+            enabled: false, // DISABLED: Conflicts with LiveEventCaseToCallbacks - generates delegating calls to non-existent handle_event/2
             pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
         });
         // Immediately normalize locals camel→snake and repair/extract handler params after event generation
@@ -4798,7 +4798,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "InlineUndefinedFromParams_Final",
             description: "Inline undefined locals from params where prefix binding was not possible",
-            enabled: true,
+            enabled: false, // DISABLED: Incorrectly replaces case-pattern-bound variables like {:noreply, s} -> s with Map.get(params, "s")
             pass: reflaxe.elixir.ast.transformers.InlineUndefinedFromParamsTransforms.transformPass
         });
         // Re-add clause binder harmonization after handler param extractions, before wrapper repair
@@ -5603,8 +5603,8 @@ class ElixirASTPassRegistry {
         // Very late: ensure Map.get(<payload>, "value") uses `<payload>` as default when missing (forms)
         passes.push({
             name: "HandleEventMapGetValueDefaultToParams_Final",
-            description: "In handle_event/3, rewrite Map.get(params|_params, \"value\") → Map.get(params|_params, \"value\", params|_params)",
-            enabled: false, // DISABLED: Causes mangled params in typed event handlers
+            description: "In handle_event/3, rewrite Map.get(params|_params, \"value\") → params|_params (value is Haxe default, not a Phoenix key)",
+            enabled: true, // RE-ENABLED: Transform now correctly replaces Map.get(params, "value") with just params
             pass: reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms.pass,
             runAfter: [
                 "HandleEventParamsHeadToParams_Ultimate",

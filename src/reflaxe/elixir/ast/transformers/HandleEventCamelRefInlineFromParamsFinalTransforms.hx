@@ -68,6 +68,37 @@ class HandleEventCamelRefInlineFromParamsFinalTransforms {
   static function reserved(name:String):Bool {
     return name == "params" || name == "_params" || name == "socket" || name == "event" || name == "live_socket";
   }
+
+  /**
+   * Check if a variable name looks like an internal/intermediate variable rather than
+   * a form field that should be extracted from params.
+   *
+   * Internal variables typically have names like:
+   * - searchSocket, updatedSocket, resultSocket (socket variants)
+   * - newSelected, currentlySelected (computed values)
+   * - refreshedTodos, filteredItems (processed collections)
+   *
+   * Form fields typically have names like:
+   * - id, title, description, name, email, query, tag, priority
+   */
+  static function isInternalVariable(name:String):Bool {
+    // Check for common internal variable suffixes (case-insensitive check via lowercase)
+    var lower = name.toLowerCase();
+    // Socket-related
+    if (StringTools.endsWith(lower, "socket")) return true;
+    // Selection/state-related
+    if (StringTools.endsWith(lower, "selected")) return true;
+    // Processed data
+    if (StringTools.startsWith(lower, "refreshed")) return true;
+    if (StringTools.startsWith(lower, "filtered")) return true;
+    if (StringTools.startsWith(lower, "updated")) return true;
+    if (StringTools.startsWith(lower, "new") && lower.length > 3) return true; // "newX" but not "new"
+    // Result/temp variables
+    if (StringTools.endsWith(lower, "result")) return true;
+    if (StringTools.startsWith(lower, "temp")) return true;
+    if (StringTools.startsWith(lower, "tmp")) return true;
+    return false;
+  }
   static function buildExtract(varName:String, paramsVar:String):ElixirAST {
     var key = toSnake(varName);
     var get = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString(key)) ]));
@@ -91,7 +122,10 @@ class HandleEventCamelRefInlineFromParamsFinalTransforms {
     function rewrite(n: ElixirAST): ElixirAST {
       return ElixirASTTransformer.transformNode(n, function(x: ElixirAST): ElixirAST {
         return switch (x.def) {
-          case EVar(v) if (isCamel(v) && !reserved(v)):
+          // Only convert to Map.get if variable is NOT declared in the body
+          // Check both camelCase and snake_case versions to handle naming mismatches
+          // Also skip internal variables that look like socket/state/computed values
+          case EVar(v) if (isCamel(v) && !reserved(v) && !isInternalVariable(v) && !declared.exists(v) && !declared.exists(toSnake(v))):
             buildExtract(v, paramsVar);
           case ECall(target, fname, args):
             var newArgs = args != null ? [for (a in args) rewrite(a)] : args;

@@ -12,22 +12,22 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - In handle_event/3 wrappers, rewrite Map.get(params|_params, "value") to
- *   Map.get(params|_params, "value", params|_params), i.e. provide a default
- *   of the full params payload when the "value" key is absent.
+ *   just params|_params. The "value" key is a Haxe enum parameter default name
+ *   that doesn't exist in Phoenix params.
  *
  * WHY
- * - Phoenix form submissions (phx-submit) send the form fields as the params
- *   map, without a "value" key. Click events commonly use phx-value-* and a
- *   single "value" entry. This transform preserves existing click semantics
- *   while making form handlers receive the full params map without relying on
- *   app-specific heuristics.
+ * - Phoenix form submissions (phx-submit) send the form fields directly as the
+ *   params map, without a "value" key.
+ * - Click events with phx-value-* also don't use "value" - they use the actual
+ *   key names like "id".
+ * - Map.get(params, "value") always returns nil because there's no "value" key.
  *
  * HOW
  * - For each def handle_event/3, capture the payload var name from the second
  *   parameter (typically `params` or `_params`). Inside the body, replace:
- *     Map.get(payloadVar, "value")
+ *     Map.get(payloadVar, "value") or Map.get(payloadVar, "value", ...)
  *   with:
- *     Map.get(payloadVar, "value", payloadVar)
+ *     payloadVar
  * - Applies to both ERemoteCall(Map.get, …) and ECall forms, and performs a
  *   conservative ERaw textual patch as a last resort.
  * - Runs very late, after head/binder alignment and other value/param repairs.
@@ -38,7 +38,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  *   →
  *   def handle_event("create_todo", params, socket) do
- *     {:noreply, create_todo(Map.get(params, "value", params), socket)}
+ *     {:noreply, create_todo(params, socket)}
  *   end
  */
 class HandleEventMapGetValueDefaultToParamsFinalTransforms {
@@ -71,35 +71,30 @@ class HandleEventMapGetValueDefaultToParamsFinalTransforms {
   static function rewrite(body: ElixirAST, payloadVar:String): ElixirAST {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
-        // Map.get(payloadVar, "value") → Map.get(payloadVar, "value", Map.get(payloadVar, "id", payloadVar))
-        case ERemoteCall({def: EVar("Map")}, "get", a) if (a != null && a.length == 2):
+        // Map.get(payloadVar, "value") → payloadVar (simply return the params)
+        // Also handle Map.get(payloadVar, "value", default) → payloadVar
+        case ERemoteCall({def: EVar("Map")}, "get", a) if (a != null && a.length >= 2):
           var isPayload = switch (a[0].def) { case EVar(v) if (v == payloadVar): true; default: false; };
           var isValueKey = switch (a[1].def) { case EString(s): s == "value"; default: false; };
           if (isPayload && isValueKey) {
-            var idRaw = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ a[0], makeAST(EString("id")), makeAST(EVar(payloadVar)) ]));
-            var isBin = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [ idRaw ]));
-            var idToInt = makeAST(ERemoteCall(makeAST(EVar("String")), "to_integer", [ idRaw ]));
-            var idCoerced = makeAST(EIf(isBin, idToInt, idRaw));
-            var newArgs = [ a[0], a[1], idCoerced ];
-            makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
+            // Simply return params instead of Map.get(params, "value")
+            makeASTWithMeta(EVar(payloadVar), x.metadata, x.pos);
           } else x;
-        case ECall(target, funcName, a2) if (funcName == "get" && a2 != null && a2.length == 2):
+        case ECall(target, funcName, a2) if (funcName == "get" && a2 != null && a2.length >= 2):
           var isMap = switch (target.def) { case EVar(m): m == "Map"; default: false; };
           var isPayload2 = isMap && switch (a2[0].def) { case EVar(v2) if (v2 == payloadVar): true; default: false; };
           var isValueKey2 = isMap && switch (a2[1].def) { case EString(s2): s2 == "value"; default: false; };
           if (isPayload2 && isValueKey2) {
-            var idRaw2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ a2[0], makeAST(EString("id")), makeAST(EVar(payloadVar)) ]));
-            var isBin2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [ idRaw2 ]));
-            var idToInt2 = makeAST(ERemoteCall(makeAST(EVar("String")), "to_integer", [ idRaw2 ]));
-            var idCoerced2 = makeAST(EIf(isBin2, idToInt2, idRaw2));
-            var newArgs2 = [ a2[0], a2[1], idCoerced2 ];
-            makeASTWithMeta(ECall(target, funcName, newArgs2), x.metadata, x.pos);
+            // Simply return params instead of Map.get(params, "value")
+            makeASTWithMeta(EVar(payloadVar), x.metadata, x.pos);
           } else x;
-        case ERaw(code) if (code != null && code.indexOf("Map.get(" + payloadVar + ", \"value\")") != -1):
-          var replaced = StringTools.replace(code, 
-            "Map.get(" + payloadVar + ", \"value\")",
-            "Map.get(" + payloadVar + ", \"value\", (if Kernel.is_binary(Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")), do: String.to_integer(Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")), else: Map.get(" + payloadVar + ", \"id\", " + payloadVar + ")) )"
-          );
+        case ERaw(code) if (code != null && code.indexOf("Map.get(" + payloadVar + ", \"value\"") != -1):
+          // Handle both Map.get(params, "value") and Map.get(params, "value", default)
+          var pattern1 = "Map.get(" + payloadVar + ", \"value\")";
+          var pattern2 = ~/Map\.get\(\s*params\s*,\s*"value"\s*,\s*[^)]+\)/g;
+          var replaced = StringTools.replace(code, pattern1, payloadVar);
+          // Also try to replace with default argument using regex
+          replaced = pattern2.replace(replaced, payloadVar);
           if (replaced != code) makeASTWithMeta(ERaw(replaced), x.metadata, x.pos) else x;
         default: x;
       }

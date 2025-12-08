@@ -16,7 +16,7 @@ extern class Ecto {
     // Re-export key Ecto classes for convenience
     static var Repo(get, never): Class<EctoRepo>;
     static var Query(get, never): Class<EctoQuery>;
-    static var Changeset(get, never): Class<EctoChangeset>;
+    // NOTE: For Changeset operations, use ecto.Changeset<T, P> abstract instead
     static var Schema(get, never): Class<EctoSchema>;
 }
 
@@ -48,22 +48,22 @@ extern class EctoRepo {
     /**
      * Insert a new record with changeset validation
      */
-    static function insert<T>(changeset: Changeset<T>): Result<T, String>;
-    
+    static function insert<T, P>(changeset: ecto.Changeset<T, P>): Result<T, String>;
+
     /**
      * Update an existing record with changeset validation
      */
-    static function update<T>(changeset: Changeset<T>): Result<T, String>;
-    
+    static function update<T, P>(changeset: ecto.Changeset<T, P>): Result<T, String>;
+
     /**
      * Delete a record
      */
     static function delete<T>(record: T): Result<T, String>;
-    
+
     /**
      * Insert or update based on primary key
      */
-    static function insert_or_update<T>(changeset: Changeset<T>): Result<T, String>;
+    static function insert_or_update<T, P>(changeset: ecto.Changeset<T, P>): Result<T, String>;
     
     /**
      * Execute a raw SQL query
@@ -167,106 +167,12 @@ extern class EctoQuery {
     static function union_all<T>(query1: Query<T>, query2: Query<T>): Query<T>;
 }
 
-/**
- * Ecto.Changeset for data validation and casting
- */
-@:native("Ecto.Changeset")
-extern class EctoChangeset {
-    /**
-     * Cast parameters into changeset with permitted fields
-     */
-    static function castChangeset<T>(data: T, params: ChangesetParams, permitted: Array<String>): Changeset<T>;
-    
-    /**
-     * Validate required fields
-     */
-    static function validate_required<T>(changeset: Changeset<T>, fields: Array<String>): Changeset<T>;
-    
-    /**
-     * Validate field length
-     */
-    static function validate_length<T>(changeset: Changeset<T>, field: String, options: LengthValidationOptions): Changeset<T>;
-    
-    /**
-     * Validate field format using regex
-     */
-    static function validate_format<T>(changeset: Changeset<T>, field: String, format: EReg, ?options: FormatValidationOptions): Changeset<T>;
-    
-    /**
-     * Validate field inclusion in list
-     */
-    static function validate_inclusion<T>(changeset: Changeset<T>, field: String, list: Array<ChangesetValue>, ?options: ValidationOptions): Changeset<T>;
-    
-    /**
-     * Validate field exclusion from list
-     */
-    static function validate_exclusion<T>(changeset: Changeset<T>, field: String, list: Array<ChangesetValue>, ?options: ValidationOptions): Changeset<T>;
-    
-    /**
-     * Validate field confirmation (password confirmation)
-     */
-    static function validate_confirmation<T>(changeset: Changeset<T>, field: String, ?options: ValidationOptions): Changeset<T>;
-    
-    /**
-     * Validate field acceptance (terms and conditions)
-     */
-    static function validate_acceptance<T>(changeset: Changeset<T>, field: String, ?options: ValidationOptions): Changeset<T>;
-    
-    /**
-     * Validate number ranges
-     */
-    static function validate_number<T>(changeset: Changeset<T>, field: String, options: NumberValidationOptions): Changeset<T>;
-    
-    /**
-     * Add a custom validation error
-     */
-    static function add_error<T>(changeset: Changeset<T>, field: String, message: String, ?keys: Array<String>): Changeset<T>;
-    
-    /**
-     * Put a change in the changeset
-     */
-    static function put_change<T>(changeset: Changeset<T>, field: String, value: ChangesetValue): Changeset<T>;
-    
-    /**
-     * Get a field value from changeset
-     */
-    static function get_field<T>(changeset: Changeset<T>, field: String): ChangesetValue;
-    
-    /**
-     * Get a change value from changeset
-     */
-    static function get_change<T>(changeset: Changeset<T>, field: String): Option<ChangesetValue>;
-    
-    /**
-     * Check if changeset is valid
-     */
-    static function valid(changeset: Changeset<Dynamic>): Bool;
-    
-    /**
-     * Apply changeset changes to data
-     */
-    static function apply_changes<T>(changeset: Changeset<T>): T;
-    
-    /**
-     * Merge two changesets
-     */
-    static function merge<T>(changeset1: Changeset<T>, changeset2: Changeset<T>): Changeset<T>;
-    
-    /**
-     * Add foreign key constraint validation
-     */
-    static function foreign_key_constraint<T>(changeset: Changeset<T>, field: String, ?options: ValidationOptions): Changeset<T>;
-    
-    /**
-     * Add unique constraint validation
-     */
-    static function unique_constraint<T>(changeset: Changeset<T>, field: String, ?options: ValidationOptions): Changeset<T>;
-    
-    /**
-     * Add check constraint validation
-     */
-    static function check_constraint<T>(changeset: Changeset<T>, field: String, ?options: ValidationOptions): Changeset<T>;
-}
+// NOTE: EctoChangeset class has been removed. All changeset operations should use
+// the ecto.Changeset<T, P> abstract type instead, which provides:
+// - Full type safety with two type parameters (schema type T, params type P)
+// - Chainable validation methods (validateRequired, validateLength, etc.)
+// - Zero runtime overhead via extern inline methods
+// See: std/ecto/Changeset.hx
 
 /**
  * Ecto.Schema for defining database schemas
@@ -671,19 +577,9 @@ enum LogLevel {
     Error;
 }
 
-/**
- * Ecto changeset type with validation
- */
-typedef Changeset<T> = {
-    var action: Null<ChangesetAction>;
-    var changes: ChangesetParams; // Type-safe changes instead of Dynamic
-    var errors: Array<ValidationError>;
-    var data: T;
-    var valid: Bool;
-    var required: Array<String>;
-    var repo: Null<EctoRepo>;
-    var repo_opts: Array<RepoOption>; // Type-safe options instead of Dynamic
-}
+// NOTE: Changeset type is in ecto.Changeset<T, P> - use that instead of
+// defining a duplicate here. The ecto.Changeset abstract provides chainable
+// validation methods and full type safety.
 
 /**
  * Changeset actions

@@ -2403,6 +2403,29 @@ class ElixirCompiler extends GenericCompiler<
                 metadata.hasTimestamps = true;
             }
 
+            // Extract @:changeset annotation parameters
+            // Format: @:changeset(["field1", "field2"], ["required1"])
+            // First param: fields to cast, Second param: required fields
+            if (classType.meta.has(":changeset")) {
+                var changesetMeta = classType.meta.extract(":changeset");
+                if (changesetMeta != null && changesetMeta.length > 0) {
+                    var params = changesetMeta[0].params;
+                    if (params != null && params.length >= 1) {
+                        // First parameter: cast fields
+                        var castFieldsExpr = params[0];
+                        metadata.changesetCastFields = extractStringArrayFromExpr(castFieldsExpr);
+
+                        // Second parameter (optional): required fields
+                        if (params.length >= 2) {
+                            var requiredFieldsExpr = params[1];
+                            metadata.changesetRequiredFields = extractStringArrayFromExpr(requiredFieldsExpr);
+                        } else {
+                            metadata.changesetRequiredFields = [];
+                        }
+                    }
+                }
+            }
+
             // Collect schema fields from classType.fields directly since varFields
             // may not include all fields from Reflaxe's collection
             var schemaFields = [];
@@ -2429,16 +2452,37 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
             metadata.schemaFields = schemaFields;
-            
+
             // Store the fully qualified class name for lookups
-            metadata.haxeFqcn = classType.pack.length > 0 
-                ? classType.pack.join(".") + "." + classType.name 
+            metadata.haxeFqcn = classType.pack.length > 0
+                ? classType.pack.join(".") + "." + classType.name
                 : classType.name;
-            
+
+            // Check if user defined their own changeset function (with implementation, not just extern declaration)
+            // WHY: User-defined changesets using __elixir__() generate ERaw nodes that can't be detected
+            //      by AST structure alone in transformers. This metadata flag allows clean detection.
+            // WHAT: We check funcFields (available here) for a function named "changeset" WITH a body
+            // HOW: Check for function name AND that it has an expression (not extern)
+            for (funcData in funcFields) {
+                if (funcData.field.name == "changeset") {
+                    // Only count as user-defined if it has a body (not extern)
+                    switch(funcData.field.kind) {
+                        case FMethod(_):
+                            // Check if there's an actual expression
+                            if (funcData.expr != null) {
+                                metadata.hasUserChangeset = true;
+                            }
+                        default:
+                    }
+                    break;
+                }
+            }
+
             #if debug_annotation_transforms
             // DISABLED: trace('[ElixirCompiler] Set isSchema=true metadata for ${classType.name}');
             // DISABLED: trace('[ElixirCompiler] Table name: ${metadata.tableName}, hasTimestamps: ${metadata.hasTimestamps}');
             // DISABLED: trace('[ElixirCompiler] Schema fields: ${schemaFields.length} fields collected');
+            // DISABLED: trace('[ElixirCompiler] hasUserChangeset: ${metadata.hasUserChangeset}');
             #end
         }
         
@@ -3188,10 +3232,37 @@ class ElixirCompiler extends GenericCompiler<
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
+    /**
+     * Extract an array of strings from a macro expression
+     * Used for extracting annotation parameters like @:changeset(["field1", "field2"], ["required"])
+     * WHY: Annotations store their parameters as Expr values that need to be parsed
+     * WHAT: Extracts string values from array expressions at compile time
+     * HOW: Pattern matches on EArrayDecl and extracts CString constants
+     */
+    private function extractStringArrayFromExpr(expr: Expr): Array<String> {
+        if (expr == null) return [];
+
+        switch(expr.expr) {
+            case EArrayDecl(values):
+                var result = [];
+                for (value in values) {
+                    switch(value.expr) {
+                        case EConst(CString(s, _)):
+                            result.push(s);
+                        default:
+                            // Skip non-string values
+                    }
+                }
+                return result;
+            default:
+                return [];
+        }
+    }
+
     /**
      * Determine if an object should use atom keys based on field patterns
      * Takes a conservative approach - defaults to string keys unless we're certain
