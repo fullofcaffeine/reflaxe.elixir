@@ -12,6 +12,7 @@ import reflaxe.elixir.ast.ElixirAST.EKeywordPair;
 import reflaxe.elixir.ast.ElixirAST.EMapPair;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.ast.NameUtils;
 
 /**
  * AnnotationTransforms: AST transformation passes for annotation-based modules
@@ -183,11 +184,14 @@ class AnnotationTransforms {
             {key: "at", value: makeAST(EString("/"))},
             {key: "from", value: makeAST(EAtom(appName))},
             {key: "gzip", value: makeAST(EBoolean(false))},
-            {key: "only", value: makeAST(ESigil(
-                "w",
-                "assets fonts images favicon.ico robots.txt",
-                ""
-            ))}
+            // Use a list of strings instead of ~w sigil (heredoc printing issue)
+            {key: "only", value: makeAST(EList([
+                makeAST(EString("assets")),
+                makeAST(EString("fonts")),
+                makeAST(EString("images")),
+                makeAST(EString("favicon.ico")),
+                makeAST(EString("robots.txt"))
+            ]))}
         ]));
         statements.push(makeAST(ECall(null, "plug", [
             makeAST(EVar("Plug.Static")),
@@ -738,12 +742,67 @@ class AnnotationTransforms {
                     schemaFields
                 ));
                 bodyStatements.push(schemaBlock);
-                
+
                 // Add the existing functions
                 for (expr in exprs) {
                     bodyStatements.push(expr);
                 }
-                
+
+                // Generate changeset function if user didn't provide one
+                // Check metadata for user-defined changeset (hasUserChangeset flag)
+                var hasChangeset = ast.metadata?.hasUserChangeset == true;
+
+                if (!hasChangeset) {
+                    var castFields:Array<String> = [];
+                    var requiredFields:Array<String> = [];
+
+                    // PRIORITY 1: Use explicit @:changeset annotation if present
+                    if (ast.metadata?.changesetCastFields != null && ast.metadata.changesetCastFields.length > 0) {
+                        for (field in ast.metadata.changesetCastFields) {
+                            var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
+                            castFields.push(':$snakeField');
+                        }
+                        if (ast.metadata?.changesetRequiredFields != null) {
+                            for (field in ast.metadata.changesetRequiredFields) {
+                                var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
+                                requiredFields.push(snakeField);
+                            }
+                        }
+                    }
+                    // PRIORITY 2: Fall back to schema field inference
+                    else if (ast.metadata?.schemaFields != null) {
+                        for (field in ast.metadata.schemaFields) {
+                            if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
+                                var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+                                castFields.push(':$snakeField');
+                                if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
+                                    requiredFields.push(snakeField);
+                                }
+                            }
+                        }
+                    }
+
+                    // Generate changeset function if we have fields to cast
+                    if (castFields.length > 0) {
+                        var castFieldsStr = castFields.join(", ");
+                        var requiredFieldsStr = requiredFields.map(f -> ':$f').join(", ");
+                        var paramName = name.toLowerCase();
+                        // Extract just the last part for param name (e.g., "TodoApp.Todo" -> "todo")
+                        var lastDot = paramName.lastIndexOf(".");
+                        if (lastDot != -1) {
+                            paramName = paramName.substr(lastDot + 1);
+                        }
+
+                        var changesetCode = '
+  def changeset($paramName, attrs) do
+    $paramName
+    |> Ecto.Changeset.cast(attrs, [$castFieldsStr])' +
+    (requiredFields.length > 0 ? '\n    |> Ecto.Changeset.validate_required([$requiredFieldsStr])' : '') + '
+  end';
+                        bodyStatements.push(makeAST(ERaw(changesetCode)));
+                    }
+                }
+
                 // Return the transformed module
                 return makeASTWithMeta(
                     EModule(name, attrs, bodyStatements),
@@ -866,52 +925,64 @@ class AnnotationTransforms {
                 }
         }
         
-        // Check if a changeset function exists in the body
-        // If not, generate a basic one (this handles DCE issues)
-        var hasChangeset = false;
-        switch(existingBody.def) {
-            case EBlock(stmts):
-                for (stmt in stmts) {
-                    switch(stmt.def) {
-                        case EDef("changeset", _, _, _):
-                            hasChangeset = true;
-                        default:
-                    }
-                }
-            default:
-        }
-        
+        // Check if user defined their own changeset function via metadata
+        // WHY: This is the clean, metadata-driven approach. The hasUserChangeset flag is set at compile time
+        //      in ElixirCompiler.hx when funcFields are available, so we don't need to do string matching
+        //      on ERaw nodes here. This follows the "metadata first" architectural principle.
+        // WHAT: If hasUserChangeset is true, skip auto-generation; user's changeset will be preserved
+        // HOW: Simple metadata check - no AST traversal needed at transform time
+        var hasChangeset = meta?.hasUserChangeset == true;
+
         // If no changeset function was found, add a basic one
         // This ensures schemas always have a changeset function for Ecto compatibility
-        if (!hasChangeset && meta?.schemaFields != null) {
-            var castFields = [];
-            var requiredFields = [];
-            
-            // Extract field names from metadata
-            if (meta.schemaFields != null) {
+        if (!hasChangeset) {
+            var castFields:Array<String> = [];
+            var requiredFields:Array<String> = [];
+
+            // PRIORITY 1: Use explicit @:changeset annotation if present
+            // Format: @:changeset(["field1", "field2"], ["required1"])
+            if (meta?.changesetCastFields != null && meta.changesetCastFields.length > 0) {
+                // Use fields from @:changeset annotation - convert to snake_case atoms
+                for (field in meta.changesetCastFields) {
+                    var snakeField = NameUtils.toSnakeCase(field);
+                    castFields.push(':$snakeField');
+                }
+                // Required fields from annotation
+                if (meta?.changesetRequiredFields != null) {
+                    for (field in meta.changesetRequiredFields) {
+                        var snakeField = NameUtils.toSnakeCase(field);
+                        requiredFields.push(snakeField);
+                    }
+                }
+            }
+            // PRIORITY 2: Fall back to schema field inference
+            else if (meta?.schemaFields != null) {
                 for (field in meta.schemaFields) {
                     if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
-                        castFields.push(':${field.name}');
+                        var snakeField = NameUtils.toSnakeCase(field.name);
+                        castFields.push(':$snakeField');
                         // Make some fields required based on type
                         if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
-                            requiredFields.push(field.name);
+                            requiredFields.push(snakeField);
                         }
                     }
                 }
             }
-            
-            // Generate a basic changeset function
-            var castFieldsStr = castFields.join(", ");
-            var requiredFieldsStr = requiredFields.map(f -> '"$f"').join(", ");
-            var paramName = moduleName.toLowerCase();
-            
-            var changesetCode = '
+
+            // Generate changeset function if we have fields to cast
+            if (castFields.length > 0) {
+                var castFieldsStr = castFields.join(", ");
+                var requiredFieldsStr = requiredFields.map(f -> ':$f').join(", ");
+                var paramName = moduleName.toLowerCase();
+
+                var changesetCode = '
   def changeset($paramName, attrs) do
     $paramName
-    |> cast(attrs, [$castFieldsStr])' + 
+    |> cast(attrs, [$castFieldsStr])' +
     (requiredFields.length > 0 ? '\n    |> validate_required([$requiredFieldsStr])' : '') + '
   end';
-            statements.push(makeAST(ERaw(changesetCode)));
+                statements.push(makeAST(ERaw(changesetCode)));
+            }
         }
         
         return makeAST(EBlock(statements));

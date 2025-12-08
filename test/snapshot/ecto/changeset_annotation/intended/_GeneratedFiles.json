@@ -1,0 +1,14 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "test_app/product.ex",
+  "string_buf.ex",
+  "std.ex",
+  "main.ex",
+  "haxe/log.ex",
+  "haxe/iterators/array_iterator.ex"
+],
+  "id": 1,
+  "wasCached": false,
+  "version": 1
+}
