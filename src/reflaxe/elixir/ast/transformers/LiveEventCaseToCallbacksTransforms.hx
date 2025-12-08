@@ -63,8 +63,9 @@ class LiveEventCaseToCallbacksTransforms {
     }
 
     static function buildExtract(varName:String):ElixirAST {
-        // Special-case: a binder literally named "params" maps to the whole params map
-        if (varName == "params") return makeAST(EVar("params"));
+        // Special-case: binders representing the whole params map
+        // "params" is the explicit name, "value" is the generic Haxe default for enum parameters
+        if (varName == "params" || varName == "value") return makeAST(EVar("params"));
         var key = reflaxe.elixir.ast.NameUtils.toSnakeCase(varName);
         var get = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar("params")), toStringLiteral(key) ]));
         if (!needsIntConversion(varName)) return get;
@@ -76,21 +77,127 @@ class LiveEventCaseToCallbacksTransforms {
 
     static function extractSocketExpr(expr: ElixirAST): { prelude: Array<ElixirAST>, socket: ElixirAST } {
         // If the branch returns {:noreply, socket}, unwrap to socket
+        #if debug_live_event_transform
+        trace('[extractSocketExpr] Processing expr type: ${describeASTType(expr)}');
+        #end
         switch (expr.def) {
             case ETuple(elts) if (elts.length == 2):
                 switch (elts[0].def) {
                     case EAtom(a) if ((a : String) == "noreply"):
+                        #if debug_live_event_transform
+                        trace('[extractSocketExpr]   -> ETuple {:noreply, ...} - unwrapping');
+                        #end
                         return { prelude: [], socket: elts[1] };
                     default:
                 }
             case EBlock(exprs) if (exprs.length > 0):
+                #if debug_live_event_transform
+                trace('[extractSocketExpr]   -> EBlock with ${exprs.length} statements');
+                for (i in 0...exprs.length) {
+                    trace('[extractSocketExpr]     stmt[$i]: ${describeASTType(exprs[i])}');
+                }
+                #end
                 var pre = exprs.slice(0, exprs.length - 1);
                 var last = exprs[exprs.length - 1];
                 var inner = extractSocketExpr(last);
+                #if debug_live_event_transform
+                trace('[extractSocketExpr]   -> returning prelude of ${pre.length} + inner.prelude of ${inner.prelude.length} statements');
+                #end
                 return { prelude: pre.concat(inner.prelude), socket: inner.socket };
             default:
         }
+        #if debug_live_event_transform
+        trace('[extractSocketExpr]   -> default case, returning expr as socket');
+        #end
         return { prelude: [], socket: expr };
+    }
+
+    #if debug_live_event_transform
+    static function describeASTType(ast: ElixirAST): String {
+        if (ast == null || ast.def == null) return "null";
+        return switch (ast.def) {
+            case EBlock(exprs): 'EBlock(${exprs.length})';
+            case EMatch(pat, _): 'EMatch(${describePattern(pat)}, ...)';
+            case EBinary(op, _, _): 'EBinary($op, ...)';
+            case ECall(target, name, args):
+                var argDescs = [for (a in args) describeASTType(a)];
+                'ECall($name, args=[${argDescs.join(", ")}])';
+            case ERemoteCall(mod, name, args):
+                var argDescs2 = [for (a in args) describeASTType(a)];
+                'ERemoteCall(?.$name, args=[${argDescs2.join(", ")}])';
+            case EVar(name): 'EVar($name)';
+            case ETuple(elts): 'ETuple(${elts.length})';
+            case EAtom(a): 'EAtom($a)';
+            case EString(s): 'EString("${s.length > 20 ? s.substr(0, 20) + "..." : s}")';
+            case EIf(_, _, _): 'EIf(...)';
+            case ECase(_, _): 'ECase(...)';
+            case EDo(_): 'EDo(...)';
+            default: 'Other';
+        }
+    }
+
+    static function describePattern(pat: EPattern): String {
+        return switch (pat) {
+            case PVar(name): 'PVar($name)';
+            case PLiteral(_): 'PLiteral';
+            case PTuple(_): 'PTuple';
+            case PList(_): 'PList';
+            case PMap(_): 'PMap';
+            default: 'Other';
+        }
+    }
+    #end
+
+    /**
+     * Collects variable names declared in an array of AST statements (typically a prelude).
+     * Looks for EMatch(PVar(name), ...) patterns which indicate variable assignments.
+     *
+     * CRITICAL: Stores BOTH the original name AND the camelCase variant to handle
+     * the case where prelude has snake_case names but inference finds camelCase names.
+     */
+    static function collectDeclaredVars(stmts:Array<ElixirAST>):Map<String, Bool> {
+        var declared = new Map<String, Bool>();
+        if (stmts == null) return declared;
+        for (stmt in stmts) {
+            if (stmt == null || stmt.def == null) continue;
+            switch (stmt.def) {
+                case EMatch(PVar(name), _):
+                    declared.set(name, true);
+                    // Also store camelCase variant if different
+                    var camel = snakeToCamel(name);
+                    if (camel != name) declared.set(camel, true);
+                case EBinary(Match, lhs, _):
+                    // Handle binary match: lhs = rhs
+                    switch (lhs.def) {
+                        case EVar(name):
+                            declared.set(name, true);
+                            // Also store camelCase variant if different
+                            var camel = snakeToCamel(name);
+                            if (camel != name) declared.set(camel, true);
+                        default:
+                    }
+                default:
+            }
+        }
+        return declared;
+    }
+
+    /**
+     * Converts snake_case to camelCase.
+     * Example: search_socket -> searchSocket
+     */
+    static function snakeToCamel(s:String):String {
+        if (s == null || s.length == 0) return s;
+        var parts = s.split("_");
+        if (parts.length <= 1) return s;
+        var result = parts[0];
+        for (i in 1...parts.length) {
+            var part = parts[i];
+            if (part.length > 0) {
+                result += part.charAt(0).toUpperCase() + part.substr(1);
+            }
+        }
+        return result;
     }
 
     static function buildCallback(eventName:String, binders:Array<String>, branchExpr:ElixirAST, meta:ElixirMetadata, pos: haxe.macro.Expr.Position):ElixirAST {
@@ -104,21 +211,40 @@ class LiveEventCaseToCallbacksTransforms {
         reserved.set("event", true);
         // Unwrap {:noreply, socket} if present in branch
         var unwrapped = extractSocketExpr(branchExpr);
+        // Collect variables already declared in the prelude - these should NOT be inferred from params
+        var declaredInPrelude = collectDeclaredVars(unwrapped.prelude);
+        #if debug_live_event_transform
+        trace('[LiveEventCaseToCallbacks buildCallback] Event: $eventName');
+        trace('[LiveEventCaseToCallbacks buildCallback]   Input binders: ${binders != null ? "[" + binders.join(", ") + "]" : "null"}');
+        trace('[LiveEventCaseToCallbacks buildCallback]   declaredInPrelude: [${[for (k in declaredInPrelude.keys()) k].join(", ")}]');
+        #end
         // If pattern binders are empty (e.g., clause pattern was just an atom),
         // infer candidate binders from the socket-producing expression (top-level call args preferred).
         if (binders == null || binders.length == 0) {
             var inferred = inferVarsFromExpr(unwrapped.socket);
-            // Keep only non-reserved identifiers
-            binders = [for (v in inferred) if (!reserved.exists(v)) v];
+            // Keep only non-reserved identifiers that are NOT already declared in the prelude
+            binders = [for (v in inferred) if (!reserved.exists(v) && !declaredInPrelude.exists(v)) v];
+            #if debug_live_event_transform
+            trace('[LiveEventCaseToCallbacks buildCallback]   Empty binders fallback inferred: [${binders.join(", ")}]');
+            #end
         }
-        // De-duplicate and filter reserved and non-local identifiers (modules/constants)
+        // De-duplicate and filter reserved, prelude-declared, and non-local identifiers (modules/constants)
         var seen = new Map<String,Bool>();
         var safeBinders:Array<String> = [];
-        for (b in binders) if (b != null && b.length > 0 && !reserved.exists(b) && !seen.exists(b) && isLocalVarName(b)) { seen.set(b, true); safeBinders.push(b); }
+        for (b in binders) if (b != null && b.length > 0 && !reserved.exists(b) && !declaredInPrelude.exists(b) && !seen.exists(b) && isLocalVarName(b) && !isInternalVariable(b)) { seen.set(b, true); safeBinders.push(b); }
+        #if debug_live_event_transform
+        trace('[LiveEventCaseToCallbacks buildCallback]   safeBinders after filter: [${safeBinders.join(", ")}]');
+        #end
         // Fallback: if none survived filtering, infer from expression arguments
         if (safeBinders.length == 0) {
             var inferred2 = inferVarsFromExpr(unwrapped.socket);
-            for (b in inferred2) if (b != null && b.length > 0 && !reserved.exists(b) && !seen.exists(b) && isLocalVarName(b)) { seen.set(b, true); safeBinders.push(b); }
+            #if debug_live_event_transform
+            trace('[LiveEventCaseToCallbacks buildCallback]   safeBinders empty, inferring from socket: [${inferred2.join(", ")}]');
+            #end
+            for (b in inferred2) if (b != null && b.length > 0 && !reserved.exists(b) && !declaredInPrelude.exists(b) && !seen.exists(b) && isLocalVarName(b) && !isInternalVariable(b)) { seen.set(b, true); safeBinders.push(b); }
+            #if debug_live_event_transform
+            trace('[LiveEventCaseToCallbacks buildCallback]   final safeBinders: [${safeBinders.join(", ")}]');
+            #end
         }
         for (b in safeBinders) {
             var valueExpr = buildExtract(b);
@@ -214,6 +340,37 @@ class LiveEventCaseToCallbacksTransforms {
         var isLower = c >= 'a' && c <= 'z';
         var containsDot = name.indexOf('.') != -1;
         return isLower && !containsDot;
+    }
+
+    /**
+     * Check if a variable name looks like an internal/intermediate variable rather than
+     * a form field that should be extracted from params.
+     *
+     * Internal variables typically have names like:
+     * - searchSocket, updatedSocket, resultSocket (socket variants)
+     * - newSelected, currentlySelected (computed values)
+     * - refreshedTodos, filteredItems (processed collections)
+     *
+     * Form fields typically have names like:
+     * - id, title, description, name, email, query, tag, priority
+     */
+    static function isInternalVariable(name:String):Bool {
+        if (name == null || name.length == 0) return false;
+        var lower = name.toLowerCase();
+        // Socket-related
+        if (StringTools.endsWith(lower, "socket")) return true;
+        // Selection/state-related
+        if (StringTools.endsWith(lower, "selected")) return true;
+        // Processed data
+        if (StringTools.startsWith(lower, "refreshed")) return true;
+        if (StringTools.startsWith(lower, "filtered")) return true;
+        if (StringTools.startsWith(lower, "updated")) return true;
+        if (StringTools.startsWith(lower, "new") && lower.length > 3) return true; // "newX" but not "new"
+        // Result/temp variables
+        if (StringTools.endsWith(lower, "result")) return true;
+        if (StringTools.startsWith(lower, "temp")) return true;
+        if (StringTools.startsWith(lower, "tmp")) return true;
+        return false;
     }
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -413,15 +570,43 @@ class LiveEventCaseToCallbacksTransforms {
                         for (cl in clauses) {
                             var evName:String = null;
                             var binders:Array<String> = [];
+                            #if debug_live_event_transform
+                            trace('[LiveEventCaseToCallbacks] Processing clause pattern');
+                            #end
                             switch (cl.pattern) {
-                                case PLiteral({def: EAtom(a)}): evName = atomToString(a);
+                                case PLiteral({def: EAtom(a)}):
+                                    evName = atomToString(a);
+                                    #if debug_live_event_transform
+                                    trace('[LiveEventCaseToCallbacks]   PLiteral atom: $evName');
+                                    #end
                                 case PTuple(ps):
                                     // first element should be atom event name
                                     switch (ps[0]) { case PLiteral({def: EAtom(a)}): evName = atomToString(a); default: }
+                                    #if debug_live_event_transform
+                                    trace('[LiveEventCaseToCallbacks]   PTuple with ${ps.length} elements, event: $evName');
+                                    #end
                                     // remaining binder names
-                                    for (i in 1...ps.length) switch (ps[i]) { case PVar(n): binders.push(n); default: }
+                                    for (i in 1...ps.length) {
+                                        switch (ps[i]) {
+                                            case PVar(n):
+                                                binders.push(n);
+                                                #if debug_live_event_transform
+                                                trace('[LiveEventCaseToCallbacks]     ps[$i] = PVar("$n")');
+                                                #end
+                                            default:
+                                                #if debug_live_event_transform
+                                                trace('[LiveEventCaseToCallbacks]     ps[$i] = OTHER (not PVar)');
+                                                #end
+                                        }
+                                    }
                                 default:
+                                    #if debug_live_event_transform
+                                    trace('[LiveEventCaseToCallbacks]   Unknown pattern type');
+                                    #end
                             }
+                            #if debug_live_event_transform
+                            trace('[LiveEventCaseToCallbacks]   Event: $evName, Binders: [${binders.join(", ")}]');
+                            #end
                             if (evName == null) continue;
                             var cb = buildCallback(evName, binders, cl.body, meta, pos);
                             out.push({event: evName, def: cb});

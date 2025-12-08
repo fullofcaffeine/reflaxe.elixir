@@ -49,8 +49,41 @@ class InlineUndefinedFromParamsTransforms {
   static inline function allow(name:String):Bool {
     if (name == null || name.length == 0) return false;
     if (name == "socket" || name == "params" || name == "_params" || name == "event") return false;
+    // Skip internal/intermediate variables that should NOT be extracted from params
+    if (isInternalVariable(name)) return false;
     var c = name.charAt(0);
     return c.toLowerCase() == c && c != '_';
+  }
+
+  /**
+   * Check if a variable name looks like an internal/intermediate variable rather than
+   * a form field that should be extracted from params.
+   *
+   * Internal variables typically have names like:
+   * - searchSocket, updatedSocket, resultSocket (socket variants)
+   * - newSelected, currentlySelected (computed values)
+   * - refreshedTodos, filteredItems (processed collections)
+   *
+   * Form fields typically have names like:
+   * - id, title, description, name, email, query, tag, priority
+   */
+  static function isInternalVariable(name:String):Bool {
+    if (name == null || name.length == 0) return false;
+    var lower = name.toLowerCase();
+    // Socket-related
+    if (StringTools.endsWith(lower, "socket")) return true;
+    // Selection/state-related
+    if (StringTools.endsWith(lower, "selected")) return true;
+    // Processed data
+    if (StringTools.startsWith(lower, "refreshed")) return true;
+    if (StringTools.startsWith(lower, "filtered")) return true;
+    if (StringTools.startsWith(lower, "updated")) return true;
+    if (StringTools.startsWith(lower, "new") && lower.length > 3) return true; // "newX" but not "new"
+    // Result/temp variables
+    if (StringTools.endsWith(lower, "result")) return true;
+    if (StringTools.startsWith(lower, "temp")) return true;
+    if (StringTools.startsWith(lower, "tmp")) return true;
+    return false;
   }
   static function isCamel(name:String):Bool {
     var result = false;
@@ -71,6 +104,8 @@ class InlineUndefinedFromParamsTransforms {
     return varName == "id" || StringTools.endsWith(varName, "_id");
   }
   static function buildExtract(varName:String, paramsVar:String):ElixirAST {
+    // Special-case: "value" typically represents the whole params map for form events
+    if (varName == "value") return makeAST(EVar(paramsVar));
     var key = toSnake(varName);
     var get = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString(key)) ]));
     if (!needsIntConversion(varName)) return get;
