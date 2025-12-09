@@ -5555,6 +5555,17 @@ class ElixirASTPassRegistry {
             ]
         });
         passes.push({
+            name: "HandleEventValueIdToParams_Ultimate",
+            description: "Absolute-ultimate: force Map.get(value, \"id\") to Map.get(paramsVar, \"id\") inside handle_event/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueIdToParamsUltimateTransforms.pass,
+            runAfter: [
+                "HandleEventValueVarNormalizeForceFinal_Last2",
+                "HandleEventIdExtractNormalize_AbsoluteLast",
+                "HandleEventParamsHeadToParams_Ultimate"
+            ]
+        });
+        passes.push({
             name: "IfBranchDowncaseTempInline_Final",
             description: "Inline `_tmp = rhs; String.downcase(_tmp)` inside if/else branches",
             enabled: true,
