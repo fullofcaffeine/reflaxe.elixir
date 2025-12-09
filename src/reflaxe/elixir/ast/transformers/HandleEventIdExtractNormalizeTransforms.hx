@@ -30,10 +30,12 @@ class HandleEventIdExtractNormalizeTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
-          var nb = normalizeIdExtract(body);
+          var paramsVar = extractParamsVar(args);
+          var nb = normalizeIdExtract(body, paramsVar);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
-          var nb2 = normalizeIdExtract(body2);
+          var paramsVar2 = extractParamsVar(args2);
+          var nb2 = normalizeIdExtract(body2, paramsVar2);
           makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
         default: n;
       }
@@ -56,8 +58,13 @@ class HandleEventIdExtractNormalizeTransforms {
     }
   }
 
-  static function normalizeIdExtract(body: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
+  static inline function extractParamsVar(args:Array<EPattern>):String {
+    if (args != null && args.length >= 2) return switch (args[1]) { case PVar(n): n; default: "params"; };
+    return "params";
+  }
+
+  static function normalizeIdExtract(body: ElixirAST, paramsVar:String): ElixirAST {
+    var rewritten = ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EIf(cond, thenE, elseE):
           var recvCond = isKernelIsBinaryOnMapGetId(cond);
@@ -67,12 +74,46 @@ class HandleEventIdExtractNormalizeTransforms {
             #if debug_handle_event_id
             Sys.println('[HandleEventIdExtractNormalize] normalizing Map.get(${describeRecv(recvCond)}, \"id\") -> ${describeRecv(recvElse)}');
             #end
-            // Force both cond and then to use recvElse
-            var fixedCond = replaceMapGetReceiver(cond, recvElse);
-            var fixedThen = replaceMapGetReceiver(thenE, recvElse);
+            var targetRecv = makeAST(EVar(paramsVar));
+            // Force both cond and then to use paramsVar (more stable than inferred recvElse)
+            var fixedCond = replaceMapGetReceiver(cond, targetRecv);
+            var fixedThen = replaceMapGetReceiver(thenE, targetRecv);
             makeASTWithMeta(EIf(fixedCond, fixedThen, elseE), x.metadata, x.pos);
           } else x;
         default: x;
+      }
+    });
+    // Final sweep: any Map.get(<var>, "id") whose receiver is not paramsVar → paramsVar
+    return ElixirASTTransformer.transformNode(rewritten, function(n: ElixirAST): ElixirAST {
+      return switch (n.def) {
+        case ERemoteCall({def: EVar("Map")}, "get", a) if (a != null && a.length >= 2):
+          switch (a[0].def) {
+            case EVar(v) if (v != paramsVar):
+              switch (a[1].def) {
+                case EString(s) if (s == "id"):
+                  var newArgs = a.copy();
+                  newArgs[0] = makeAST(EVar(paramsVar));
+                  return makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), n.metadata, n.pos);
+                default:
+              }
+            default:
+          }
+          n;
+        case ECall(target, "get", a2) if (a2 != null && a2.length >= 2):
+          var isMap = switch (target.def) { case EVar(m): m == "Map"; default: false; };
+          if (isMap) switch (a2[0].def) {
+            case EVar(v2) if (v2 != paramsVar):
+              switch (a2[1].def) {
+                case EString(s2) if (s2 == "id"):
+                  var newArgs2 = a2.copy();
+                  newArgs2[0] = makeAST(EVar(paramsVar));
+                  return makeASTWithMeta(ECall(target, "get", newArgs2), n.metadata, n.pos);
+                default:
+              }
+            default:
+          }
+          n;
+        default: n;
       }
     });
   }
