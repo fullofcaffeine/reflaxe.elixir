@@ -70,6 +70,10 @@ class HandleEventIdExtractNormalizeTransforms {
           var recvCond = isKernelIsBinaryOnMapGetId(cond);
           var recvThen = isStringToIntegerOnMapGetId(thenE);
           var recvElse = isMapGetId(elseE);
+          #if debug_handle_event_dump
+          Sys.println('[HandleEventIdExtractNormalize] cond AST: ' + reflaxe.elixir.ast.ElixirASTPrinter.printAST(cond));
+          Sys.println('[HandleEventIdExtractNormalize] then AST: ' + reflaxe.elixir.ast.ElixirASTPrinter.printAST(thenE));
+          #end
           if (recvCond != null && recvThen != null && recvElse != null) {
             #if debug_handle_event_id
             Sys.println('[HandleEventIdExtractNormalize] normalizing Map.get(${describeRecv(recvCond)}, \"id\") -> ${describeRecv(recvElse)}');

@@ -5557,7 +5557,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventValueIdToParams_Ultimate",
             description: "Absolute-ultimate: force Map.get(value, \"id\") to Map.get(paramsVar, \"id\") inside handle_event/3",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventValueIdToParamsUltimateTransforms.pass,
             runAfter: [
                 "HandleEventValueVarNormalizeForceFinal_Last2",
@@ -5565,6 +5565,45 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsHeadToParams_Ultimate"
             ]
         });
+        passes.push({
+            name: "HandleEventIdValueToParamsFix_Ultimate",
+            description: "Ultimate guard: rewrite Map.get(value, \"id\") and bare value to paramsVar in handle_event/3 bodies",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.HandleEventIdValueToParamsFixTransforms.pass,
+            runAfter: [
+                "HandleEventValueIdToParams_Ultimate",
+                "HandleEventIdExtractNormalize_AbsoluteLast",
+                "HandleEventValueVarNormalizeForceFinal_Last2"
+            ]
+        });
+        passes.push({
+            name: "HandleEventValueToParams_Global_Ultimate",
+            description: "Replace any bare `value` with paramsVar inside handle_event/3 bodies (ultimate guard)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueToParamsGlobalTransforms.pass,
+            runAfter: [
+                "HandleEventIdValueToParamsFix_Ultimate",
+                "HandleEventParamsHeadToParams_Ultimate"
+            ]
+        });
+        passes.push({
+            name: "HandleEventEnsureValueBinding_Ultimate",
+            description: "If handle_event/3 uses `value` without a binding, prepend value = paramsVar",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventEnsureValueBindingTransforms.pass,
+            runAfter: [
+                "HandleEventValueToParams_Global_Ultimate",
+                "HandleEventParamsHeadToParams_Ultimate"
+            ]
+        });
+        #if debug_handle_event_dump
+        passes.push({
+            name: "DebugHandleEventDump",
+            description: "Debug-only: dump handle_event clauses for inspection",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.DebugHandleEventDumpTransforms.pass
+        });
+        #end
         passes.push({
             name: "IfBranchDowncaseTempInline_Final",
             description: "Inline `_tmp = rhs; String.downcase(_tmp)` inside if/else branches",
