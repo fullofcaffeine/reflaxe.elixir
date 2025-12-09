@@ -207,15 +207,15 @@ class ElixirASTTransformer {
         }
         #end
 
-        #if hxx_ast_progress
-        transformInvocationCounter++;
-
         var rootName = switch (ast.def) {
             case EModule(name, _, _) | EDefmodule(name, _):
                 name;
             default:
                 "<root>";
         };
+
+        #if hxx_ast_progress
+        transformInvocationCounter++;
 
         #if sys
         // DISABLED: Sys.println('[ASTProgress] #' + transformInvocationCounter + ' ' + rootName);
@@ -235,7 +235,7 @@ class ElixirASTTransformer {
         var passes = getEnabledPasses();
         var result = ast;
 
-        #if (hxx_pass_timing && !hxx_disable_timing)
+        #if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
         var __pipelineStart = haxe.Timer.stamp();
         // Optional substring filter to reduce timing noise:
         //   -D hxx_pass_timing_filter=Reduce
@@ -310,7 +310,7 @@ class ElixirASTTransformer {
             // - Contextual passes get access to tempVarRenameMap for consistency
             // - Non-contextual passes continue working unchanged
             // - No null pointer errors when context not provided
-            #if (hxx_pass_timing && !hxx_disable_timing)
+            #if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
             var __t0 = haxe.Timer.stamp();
             #end
             #if debug_transformer_hang
@@ -336,7 +336,7 @@ class ElixirASTTransformer {
 
                 result = passConfig.pass(result);
             }
-            #if (hxx_pass_timing && !hxx_disable_timing)
+            #if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
             var __elapsedPass = (haxe.Timer.stamp() - __t0) * 1000.0;
 
             // Apply optional substring filter when present.
@@ -350,7 +350,7 @@ class ElixirASTTransformer {
                 // Append timing to a deterministic file so partial logs survive.
                 try {
                     var __log = sys.io.File.append("/tmp/passF-macro.log", false);
-                    __log.writeString("[PassTiming] name=" + passConfig.name + " ms=" + Std.int(__elapsedPass) + "\n");
+                    __log.writeString("[PassTiming] module=" + rootName + " name=" + passConfig.name + " ms=" + Std.int(__elapsedPass) + "\n");
                     __log.close();
                 } catch (e: Dynamic) {
                     // Fallback to stdout if append fails.
@@ -395,12 +395,12 @@ class ElixirASTTransformer {
             #end
         }
         
-        #if (hxx_pass_timing && !hxx_disable_timing)
+        #if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
         var __pipelineElapsed = (haxe.Timer.stamp() - __pipelineStart) * 1000.0;
         #if sys
         try {
             var __totalLog = sys.io.File.append("/tmp/passF-macro.log", false);
-            __totalLog.writeString("[PassTiming] name=ElixirASTTransformer.total ms=" + Std.int(__pipelineElapsed) + "\n");
+            __totalLog.writeString("[PassTiming] module=" + rootName + " name=ElixirASTTransformer.total ms=" + Std.int(__pipelineElapsed) + "\n");
             __totalLog.close();
         } catch (e: Dynamic) {
             // DISABLED: Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
