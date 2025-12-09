@@ -703,6 +703,20 @@ class ElixirASTBuilder {
                 #end
 
                 if (currentContext.currentClauseContext != null) {
+                    // DEBUG: Trace every TVar in a clause context to understand 's' issue
+                    #if sys
+                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
+                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
+                        debugFile.writeString('\n[TVar DEBUG] var=${v.name} id=${v.id}\n');
+                        debugFile.writeString('[TVar DEBUG]   init: ${init != null ? Type.enumConstructor(init.expr) : "null"}\n');
+                        debugFile.writeString('[TVar DEBUG]   localToName.exists(${v.id})?: ${currentContext.currentClauseContext.localToName.exists(v.id)}\n');
+                        var keys = [for (k in currentContext.currentClauseContext.localToName.keys()) Std.string(k)];
+                        debugFile.writeString('[TVar DEBUG]   localToName keys: [${keys.join(", ")}]\n');
+                        var vals = [for (val in currentContext.currentClauseContext.localToName) val];
+                        debugFile.writeString('[TVar DEBUG]   localToName values: [${vals.join(", ")}]\n');
+                        debugFile.close();
+                    }
+                    #end
                     #if debug_ast_builder
                     #if sys
                     var debugFile4 = sys.io.File.append("/tmp/enum_debug.log");
@@ -747,7 +761,24 @@ class ElixirASTBuilder {
                 // Delegate simple variable declarations to VariableBuilder
                 // Complex patterns (blocks, comprehensions) are handled below
                 if (init == null || isSimpleInit(init)) {
+                    // DEBUG: Trace VariableBuilder delegation
+                    #if sys
+                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
+                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
+                        debugFile.writeString('[TVar DEBUG] Delegating to VariableBuilder: ${v.name}\n');
+                        debugFile.close();
+                    }
+                    #end
                     var result = VariableBuilder.buildVariableDeclaration(v, init, currentContext);
+
+                    // DEBUG: Trace VariableBuilder result
+                    #if sys
+                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
+                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
+                        debugFile.writeString('[TVar DEBUG] VariableBuilder result for ${v.name}: ${result != null ? Type.enumConstructor(result) : "NULL"}\n');
+                        debugFile.close();
+                    }
+                    #end
 
                     #if debug_ast_builder
                     if (v.name == "_g" || v.name == "g") {
@@ -758,6 +789,15 @@ class ElixirASTBuilder {
                     if (result != null) {
                         return result;
                     }
+                } else {
+                    // DEBUG: Trace why not delegating
+                    #if sys
+                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
+                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
+                        debugFile.writeString('[TVar DEBUG] NOT delegating ${v.name} - init not simple\n');
+                        debugFile.close();
+                    }
+                    #end
                 }
                 
                 // COMPLETE FIX: Eliminate ALL infrastructure variable assignments at source

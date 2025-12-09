@@ -138,6 +138,22 @@ class SafeAssigns {
     public static function setShowForm(socket: Socket<TodoLiveAssigns>, showForm: Bool): Socket<TodoLiveAssigns> {
         return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.show_form, showForm);
     }
+
+    /**
+     * Toggle a tag in the selected_tags list (gets tag from params)
+     * If the tag is present, remove it; if absent, add it.
+     */
+    public static function toggleTagFromParams(socket: Socket<TodoLiveAssigns>, params: Dynamic): Socket<TodoLiveAssigns> {
+        var tag: String = Reflect.field(params, "tag");
+        var currentTags = socket.assigns.selected_tags;
+        var newTags: Array<String>;
+        if (currentTags.contains(tag)) {
+            newTags = currentTags.filter(function(t) return t != tag);
+        } else {
+            newTags = currentTags.concat([tag]);
+        }
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.selected_tags, newTags);
+    }
     
     /**
      * Update todos and automatically recalculate statistics

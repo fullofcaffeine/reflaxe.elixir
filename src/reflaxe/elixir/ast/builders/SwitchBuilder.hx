@@ -1684,19 +1684,62 @@ class SwitchBuilder {
         }
 
         // Fallback: Full traversal for non-switch cases
+        // CRITICAL FIX (December 2025): Only return pattern-bound variables, NOT locally-declared variables
+        // Pattern-bound variables are TLocal uses that are NOT targets of TVar assignments in the body
+        // Without this fix, local variables like `cleared`, `ids`, `filtered` get incorrectly treated
+        // as pattern variables, causing their assignments to be dropped in generated Elixir code
+
+        // First pass: collect all variable IDs that are ASSIGNED via TVar (locally-declared)
+        var assignedVarIds: Map<Int, Bool> = new Map();
+        function collectAssignedVars(expr: TypedExpr): Void {
+            if (expr == null) return;
+            switch(expr.expr) {
+                case TVar(v, _):
+                    // This is a variable declaration/assignment - mark it as locally-declared
+                    assignedVarIds.set(v.id, true);
+                    #if debug_enum_extraction
+                    trace('[extractUsedVariablesFromCaseBody] Marking ${v.name} (id=${v.id}) as locally-declared (TVar)');
+                    #end
+                case TBlock(exprs):
+                    for (e in exprs) collectAssignedVars(e);
+                case TIf(_, eif, eelse):
+                    collectAssignedVars(eif);
+                    if (eelse != null) collectAssignedVars(eelse);
+                case TSwitch(_, cases, edefault):
+                    for (c in cases) collectAssignedVars(c.expr);
+                    if (edefault != null) collectAssignedVars(edefault);
+                case TWhile(_, e, _):
+                    collectAssignedVars(e);
+                case TFor(_, _, e):
+                    collectAssignedVars(e);
+                case TTry(e, catches):
+                    collectAssignedVars(e);
+                    for (c in catches) collectAssignedVars(c.expr);
+                default:
+            }
+        }
+        collectAssignedVars(caseBodyExpr);
+
+        // Second pass: traverse and collect ONLY TLocal variables that are NOT assigned (pattern-bound)
         function traverse(expr: TypedExpr): Void {
             if (expr == null) return;
 
             switch(expr.expr) {
                 case TLocal(v):
                     // Found a variable used in case body
-                    if (!seenIds.exists(v.id)) {
+                    // CRITICAL: Only add if NOT a locally-declared variable (not assigned via TVar)
+                    if (!seenIds.exists(v.id) && !assignedVarIds.exists(v.id)) {
                         #if debug_enum_extraction
-                        // DISABLED: trace('[extractUsedVariablesFromCaseBody]   Found TLocal (traversal): ${v.name} (id=${v.id})');
+                        trace('[extractUsedVariablesFromCaseBody]   Found pattern-bound TLocal (traversal): ${v.name} (id=${v.id})');
                         #end
                         vars.push(v.name);
                         seenIds.set(v.id, true);
                     }
+                    #if debug_enum_extraction
+                    else if (assignedVarIds.exists(v.id)) {
+                        trace('[extractUsedVariablesFromCaseBody]   Skipping locally-declared TLocal: ${v.name} (id=${v.id})');
+                    }
+                    #end
 
                 // Traverse all expression types to find TLocal variables
                 case TBlock(exprs):

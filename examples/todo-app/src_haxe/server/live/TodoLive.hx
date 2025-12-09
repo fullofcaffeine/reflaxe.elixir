@@ -226,25 +226,12 @@ class TodoLive {
                 recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy));
 			
             case SearchTodos(query):
-                // Refresh from DB to ensure search operates on latest data
-                var refreshedTodos = loadTodos(socket.assigns.current_user.id);
-                var searchSocket: LiveSocket<TodoLiveAssigns> = LiveView.assignMultiple(socket, {
-                    search_query: query,
-                    todos: refreshedTodos,
-                    total_todos: refreshedTodos.length,
-                    completed_todos: countCompleted(refreshedTodos),
-                    pending_todos: countPending(refreshedTodos)
-                });
-                recomputeVisible(searchSocket);
-			
-            case ToggleTag(tag):
-                // Inline toggleTagFilter to avoid relying on helper emission ordering
-                // Compute toggled tags list deterministically
-                var currentlySelected = socket.assigns.selected_tags;
-                var newSelected = currentlySelected.contains(tag)
-                    ? currentlySelected.filter(function(t) return t != tag)
-                    : currentlySelected.concat([tag]);
-                recomputeVisible(SafeAssigns.setSelectedTags(socket, newSelected));
+                // Refresh from DB and update assigns in one call to avoid optimizer dropping variables
+                recomputeVisible(SafeAssigns.setSearchQuery(socket, query));
+
+            case ToggleTag(_):
+                // Toggle tag selection - pass raw params to avoid optimizer dropping the tag variable
+                recomputeVisible(SafeAssigns.toggleTagFromParams(socket, untyped __elixir__("params")));
 			
 			// Priority management
             case SetPriority(id, priority):
@@ -285,7 +272,13 @@ class TodoLive {
                             )
                         );
                     case TodoUpdated(todo):
-                        NoReply(recomputeVisible(updateTodoInList(todo, socket)));
+                        // Clear optimistic toggle flag since we have authoritative data now
+                        // Inline the clearing to avoid compiler DCE issues with intermediate variables
+                        var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+                        var ids = s.assigns.optimistic_toggle_ids;
+                        var filtered = ids.filter(function(x) return x != todo.id);
+                        var cleared = s.assign(_.optimistic_toggle_ids, filtered);
+                        NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
                     case TodoDeleted(id):
                         NoReply(recomputeVisible(removeTodoFromList(id, socket)));
                     case BulkUpdate(action):
@@ -427,14 +420,8 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
     var contains = ids.indexOf(id) != -1;
     var computedIds = contains ? ids.filter(function(x) return x != id) : [id].concat(ids);
     var sOptimistic = s.assign(_.optimistic_toggle_ids, computedIds);
-    // Also update the local todo immediately for instant visual feedback
-    var local = findTodo(id, s.assigns.todos);
-    if (local != null) {
-        // Copy from existing struct and flip only the completed flag
-        var toggled: server.schemas.Todo = local;
-        toggled.completed = !local.completed;
-        sOptimistic = updateTodoInList(toggled, sOptimistic);
-    }
+    // Note: makeViewRow already handles optimistic display by checking optimistic_toggle_ids
+    // and flipping completedForView, so we don't need to update the local todo here.
     // Persist synchronously; PubSub broadcast will reconcile actual state
     var db = Repo.get(server.schemas.Todo, id);
     if (db != null) {
@@ -448,6 +435,14 @@ static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Sock
         }
     }
     return recomputeVisible(sOptimistic);
+}
+
+// Helper to clear optimistic toggle flag when authoritative data arrives
+static function clearOptimisticToggle(id: Int, socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
+    var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+    var ids = s.assigns.optimistic_toggle_ids;
+    var filtered = ids.filter(function(x) return x != id);
+    return s.assign(_.optimistic_toggle_ids, filtered);
 }
 
 // Background reconcile for optimistic toggle
@@ -660,63 +655,40 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
     static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         // Update presence to show user is editing (idiomatic Phoenix pattern)
-        return SafeAssigns.setEditingTodo(socket, findTodo(id, socket.assigns.todos));
+        // Must call recomputeVisible to update visible_todos with is_editing flag
+        return recomputeVisible(SafeAssigns.setEditingTodo(socket, findTodo(id, socket.assigns.todos)));
     }
 	
 	// Bulk operations with type-safe socket handling
     static function completeAllTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // Toggle completion using index loop to avoid enumerator rewrite edge cases
-        var list = socket.assigns.todos;
-        for (item in list) {
+        // Mark all incomplete todos as completed using Enum.each
+        elixir.Enum.each(socket.assigns.todos, function(item) {
             if (!item.completed) {
                 var cs = server.schemas.Todo.toggleCompleted(item);
-                switch (Repo.update(cs)) { case Ok(_): case Error(_): }
+                Repo.update(cs);
             }
-        }
+        });
         // Broadcast (best-effort)
         TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll));
-        // Merge refreshed assigns inline
-        var ls: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                todos: loadTodos(socket.assigns.current_user.id),
-                filter: socket.assigns.filter,
-                sort_by: socket.assigns.sort_by,
-                current_user: socket.assigns.current_user,
-                editing_todo: socket.assigns.editing_todo,
-                show_form: socket.assigns.show_form,
-                search_query: socket.assigns.search_query,
-                selected_tags: socket.assigns.selected_tags,
-                total_todos: loadTodos(socket.assigns.current_user.id).length,
-                completed_todos: loadTodos(socket.assigns.current_user.id).length,
-                pending_todos: 0,
-                online_users: socket.assigns.online_users
-            });
-        return LiveView.putFlash(ls, FlashType.Info, "All todos marked as completed!");
+        // Reload todos and update assigns
+        var refreshedTodos = loadTodos(socket.assigns.current_user.id);
+        var s1 = SafeAssigns.setTodos(socket, refreshedTodos);
+        var s2 = recomputeVisible(s1);
+        return LiveView.putFlash(s2, FlashType.Info, "All todos marked as completed!");
     }
-	
+
     static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // Delete completed todos using index loop to avoid enumerator rewrite edge cases
-        var list = socket.assigns.todos;
-        for (item in list) {
+        // Delete completed todos using Enum.each
+        elixir.Enum.each(socket.assigns.todos, function(item) {
             if (item.completed) Repo.delete(item);
-        }
+        });
         // Notify others (best-effort)
         TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
-        // Merge recomputed assigns inline
-        var ls2: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                todos: socket.assigns.todos.filter(function(t) return !t.completed),
-                filter: socket.assigns.filter,
-                sort_by: socket.assigns.sort_by,
-                current_user: socket.assigns.current_user,
-                editing_todo: socket.assigns.editing_todo,
-                show_form: socket.assigns.show_form,
-                search_query: socket.assigns.search_query,
-                selected_tags: socket.assigns.selected_tags,
-                total_todos: socket.assigns.todos.filter(function(t) return !t.completed).length,
-                completed_todos: 0,
-                pending_todos: socket.assigns.todos.filter(function(t) return !t.completed).length,
-                online_users: socket.assigns.online_users
-            });
-        return LiveView.putFlash(ls2, FlashType.Info, "Completed todos deleted!");
+        // Reload fresh todos from DB and update assigns
+        var remaining = loadTodos(socket.assigns.current_user.id);
+        var s1 = SafeAssigns.setTodos(socket, remaining);
+        var s2 = recomputeVisible(s1);
+        return LiveView.putFlash(s2, FlashType.Info, "Completed todos deleted!");
     }
 	
 	// Additional helper functions with type-safe socket handling
