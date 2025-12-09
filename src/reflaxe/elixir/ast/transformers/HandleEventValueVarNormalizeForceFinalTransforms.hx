@@ -72,6 +72,7 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
             case EVar(v) if (v == "value"):
               var newArgs = [ makeAST(EVar(payloadVar)), a[1] ];
               #if debug_handle_event_value
+              Sys.println('[HandleEventValueVarNormalizeForceFinal] rewrite Map.get(value, ...) -> Map.get(' + payloadVar + ', ... )');
               #end
               makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "get", newArgs), x.metadata, x.pos);
             default: x;
@@ -82,6 +83,7 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
             case EVar(v2) if (v2 == "value"):
               var newArgs2 = [ makeAST(EVar(payloadVar)), a2[1] ];
               #if debug_handle_event_value
+              Sys.println('[HandleEventValueVarNormalizeForceFinal] rewrite Map.get(value, ...) -> Map.get(' + payloadVar + ', ... )');
               #end
               makeASTWithMeta(ECall(target, funcName, newArgs2), x.metadata, x.pos);
             default: x;
@@ -91,6 +93,7 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
             var replaced = StringTools.replace(code, "Map.get(value,", 'Map.get(' + payloadVar + ',');
             if (replaced != code) {
               #if debug_handle_event_value
+              Sys.println('[HandleEventValueVarNormalizeForceFinal] rewrite raw Map.get(value, ...) -> Map.get(' + payloadVar + ', ... )');
               #end
               makeASTWithMeta(ERaw(replaced), x.metadata, x.pos);
             } else x;
