@@ -262,23 +262,29 @@ class LiveEventCaseToCallbacksTransforms {
         #if debug_live_event_transform
         trace('[LiveEventCaseToCallbacks buildCallback]   safeBinders after filter: [${safeBinders.join(", ")}]');
         #end
-        // Fallback: if none survived filtering, infer from expression arguments
+        // Enrich from body usage to guarantee needed extracts (e.g., id/priority)
+        var inferredBody = inferVarsFromExpr(unwrapped.socket);
+        for (b in inferredBody) if (b != null && b.length > 0 && !reserved.exists(b) && !declaredInPrelude.exists(b) && !seen.exists(b) && isLocalVarName(b) && !isInternalVariable(b)) { seen.set(b, true); safeBinders.push(b); }
+        // Fallback: if still empty, infer from expression arguments
         if (safeBinders.length == 0) {
             var inferred2 = inferVarsFromExpr(unwrapped.socket);
             #if debug_live_event_transform
             trace('[LiveEventCaseToCallbacks buildCallback]   safeBinders empty, inferring from socket: [${inferred2.join(", ")}]');
             #end
             for (b in inferred2) if (b != null && b.length > 0 && !reserved.exists(b) && !declaredInPrelude.exists(b) && !seen.exists(b) && isLocalVarName(b) && !isInternalVariable(b)) { seen.set(b, true); safeBinders.push(b); }
-            #if debug_live_event_transform
-            trace('[LiveEventCaseToCallbacks buildCallback]   final safeBinders: [${safeBinders.join(", ")}]');
-            #end
         }
+        #if debug_live_event_transform
+        trace('[LiveEventCaseToCallbacks buildCallback]   final safeBinders: [${safeBinders.join(", ")}]');
+        #end
+        // Always alias params to value to satisfy helper branches that expect a generic payload name
+        var helperBinds:Array<ElixirAST> = [ makeAST(EBinary(Match, makeAST(EVar("value")), makeAST(EVar(paramsVar)))) ];
         for (b in safeBinders) {
             var valueExpr = buildExtract(b);
             extracts.push(makeAST(EMatch(PVar(b), valueExpr)));
         }
         var blk:Array<ElixirAST> = [];
-        // Deterministic ordering: param extracts first, then original prelude
+        // Deterministic ordering: helper binds, then param extracts, then original prelude
+        for (e in helperBinds) blk.push(e);
         for (e in extracts) blk.push(e);
         for (e in unwrapped.prelude) blk.push(e);
         blk.push(makeNoReply(unwrapped.socket));
@@ -296,6 +302,12 @@ class LiveEventCaseToCallbacksTransforms {
             meta,
             pos
         );
+        #if debug_handle_event_dump
+        if (eventName == "set_priority") {
+            Sys.println('[LiveEventCaseToCallbacks DEBUG] handle_event set_priority (gen):');
+            Sys.println(reflaxe.elixir.ast.ElixirASTPrinter.printAST(def));
+        }
+        #end
         return def;
     }
 
