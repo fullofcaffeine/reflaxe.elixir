@@ -5596,6 +5596,20 @@ class ElixirASTPassRegistry {
             ]
         });
         passes.push({
+            name: "HandleEventForceSortByBinding_Final",
+            description: "Force sort_by = Map.get(params,\"sort_by\") in handle_event/3 when undeclared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventForceSortByBindingTransforms.pass,
+            runAfter: ["HandleEventValueBindFromParams_AbsoluteLast"]
+        });
+        passes.push({
+            name: "HandleEventDropUnusedHelperBinds_Final",
+            description: "Drop injected value=params and sort_by=Map.get(...) when unused in handle_event/3 bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventDropUnusedHelperBindsTransforms.pass,
+            runAfter: ["HandleEventForceSortByBinding_Final", "HandleEventAndInfoMissingVar_Final"]
+        });
+        passes.push({
             name: "HandleEventIdExtractNormalize_AbsoluteLast",
             description: "Normalize id extract branches to use the same params var instead of `value` in handle_event/3",
             enabled: true,

@@ -31,7 +31,7 @@ var TodoApp = (() => {
     return target;
   };
 
-  // ../deps/phoenix_html/priv/static/phoenix_html.js
+  // node_modules/phoenix_html/priv/static/phoenix_html.js
   (function() {
     var PolyfillEvent = eventConstructor();
     function eventConstructor() {
@@ -100,7 +100,7 @@ var TodoApp = (() => {
     }, false);
   })();
 
-  // ../deps/phoenix/priv/static/phoenix.mjs
+  // node_modules/phoenix/priv/static/phoenix.mjs
   var closure = (value) => {
     if (typeof value === "function") {
       return value;
@@ -1470,7 +1470,7 @@ var TodoApp = (() => {
     }
   };
 
-  // ../deps/phoenix_live_view/priv/static/phoenix_live_view.esm.js
+  // node_modules/phoenix_live_view/priv/static/phoenix_live_view.esm.js
   var CONSECUTIVE_RELOADS = "consecutive-reloads";
   var MAX_RELOADS = 10;
   var RELOAD_JITTER_MIN = 5e3;
