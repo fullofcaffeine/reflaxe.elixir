@@ -242,7 +242,8 @@ class ElixirASTPassRegistry {
         });
 
         // HEEx/HXX prelude group (order preserved)
-        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
+        // PERF DIAG: temporarily disable HEEx prelude to locate slow pass
+        // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
         
         // Normalize trivial IIFEs returning anonymous functions before further pipeline work
         passes.push({
