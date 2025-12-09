@@ -4396,6 +4396,17 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoUnderscoreSocketFixTransforms.pass
         });
+        passes.push({
+            name: "HandleInfoMissingSocketVar_Final",
+            description: "If handle_info/2 uses `s` without a binding, inject `s = socket`",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleInfoMissingSocketVarTransforms.pass,
+            runAfter: [
+                "HandleInfoUnderscoreSocketFix_Final",
+                "HandleInfoSomeClauseNormalize_Final",
+                "HandleInfoAliasCleanup_Final"
+            ]
+        });
         // Generic: if a function has a `socket` param, fix `_socket` refs and alias lines
         passes.push({
             name: "UnderscoreToParamSocketFix_Final",
@@ -5563,6 +5574,28 @@ class ElixirASTPassRegistry {
             runAfter: ["HandleEventValueVarNormalizeForceFinal_Last2", "HandleEventParamsUltraFinal_Last"]
         });
         passes.push({
+            name: "HandleEventMissingSortByExtract_Final",
+            description: "Inject sort_by = Map.get(params, \"sort_by\") when handle_event/3 body references sort_by without a binding",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventMissingSortByExtractTransforms.pass,
+            runAfter: [
+                "HandleEventUndefinedValueToParam_AbsoluteLast",
+                "HandleEventParamExtractFromBodyUse_Final",
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventIdExtractNormalize_AbsoluteLast"
+            ]
+        });
+        passes.push({
+            name: "HandleEventValueBindFromParams_AbsoluteLast",
+            description: "If handle_event/3 uses `value` without a binding, set value = paramsVar",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventValueBindFromParamsTransforms.pass,
+            runAfter: [
+                "HandleEventMissingSortByExtract_Final",
+                "HandleEventIdExtractNormalize_AbsoluteLast"
+            ]
+        });
+        passes.push({
             name: "HandleEventIdExtractNormalize_AbsoluteLast",
             description: "Normalize id extract branches to use the same params var instead of `value` in handle_event/3",
             enabled: true,
@@ -5665,6 +5698,14 @@ class ElixirASTPassRegistry {
             enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.FinalUnderscoreRepairTransforms.transformPass,
             runAfter: ["HandleInfoAliasAndNoreply_AbsoluteFinal"]
+        });
+        // Absolute-final safety net for missing LiveView bindings (value/sort_by/s)
+        passes.push({
+            name: "HandleEventAndInfoMissingVar_Final",
+            description: "Last-chance binding insertion for handle_event/3 (value, sort_by) and handle_info/2 (s) when undeclared",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventAndInfoMissingVarFinalTransforms.pass,
+            runAfter: ["FinalUnderscoreRepair"]
         });
 
         // Filter disabled passes first

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill:*)",
+      "Bash(npx haxe:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

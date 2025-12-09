@@ -10,12 +10,11 @@
 #   - B..E:   additional server modules and infrastructure
 #   - F:      LiveView main (TodoLive)
 
---next build-server-passA1.hxml
---next build-server-passA2.hxml
---next build-server-passA3.hxml
---next build-server-passB.hxml
---next build-server-passC.hxml
---next build-server-passD.hxml
---next build-server-passE.hxml
---next build-server-passF.hxml
-
+--next examples/todo-app/build-server-passA1.hxml
+--next examples/todo-app/build-server-passA2.hxml
+--next examples/todo-app/build-server-passA3.hxml
+--next examples/todo-app/build-server-passB.hxml
+--next examples/todo-app/build-server-passC.hxml
+--next examples/todo-app/build-server-passD.hxml
+--next examples/todo-app/build-server-passE.hxml
+--next examples/todo-app/build-server-passF.hxml

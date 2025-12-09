@@ -1,0 +1,6 @@
+-cp ../../../../std
+-cp ../../../..
+--library reflaxe
+-D elixir_output
+-lib reflaxe.elixir
+--main Main
