@@ -244,16 +244,7 @@ class LiveEventCaseToCallbacksTransforms {
         trace('[LiveEventCaseToCallbacks buildCallback]   declaredInPrelude: [${[for (k in declaredInPrelude.keys()) k].join(", ")}]');
         #end
 
-        // Deterministic helper bindings to avoid late missing-var repairs.
-        // Always seed common LiveView params we know appear in todo-app (and
-        // other LiveViews) even if not detected by heuristic var-use analysis.
-        var helperBinds:Array<ElixirAST> = [];
         var paramsVar = "params"; // fixed by handle_event head
-        helperBinds.push(makeAST(EBinary(Match, makeAST(EVar("value")), makeAST(EVar(paramsVar)))));
-        helperBinds.push(makeAST(EBinary(Match, makeAST(EVar("sort_by")), makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [
-            makeAST(EVar(paramsVar)),
-            makeAST(EString("sort_by"))
-        ])))));
         // If pattern binders are empty (e.g., clause pattern was just an atom),
         // infer candidate binders from the socket-producing expression (top-level call args preferred).
         if (binders == null || binders.length == 0) {
@@ -287,8 +278,7 @@ class LiveEventCaseToCallbacksTransforms {
             extracts.push(makeAST(EMatch(PVar(b), valueExpr)));
         }
         var blk:Array<ElixirAST> = [];
-        // Deterministic helper bindings first, then param extracts, then original prelude
-        for (e in helperBinds) blk.push(e);
+        // Deterministic ordering: param extracts first, then original prelude
         for (e in extracts) blk.push(e);
         for (e in unwrapped.prelude) blk.push(e);
         blk.push(makeNoReply(unwrapped.socket));

@@ -64,6 +64,9 @@ class HandleEventIdExtractNormalizeTransforms {
           var recvThen = isStringToIntegerOnMapGetId(thenE);
           var recvElse = isMapGetId(elseE);
           if (recvCond != null && recvThen != null && recvElse != null) {
+            #if debug_handle_event_id
+            Sys.println('[HandleEventIdExtractNormalize] normalizing Map.get(${describeRecv(recvCond)}, \"id\") -> ${describeRecv(recvElse)}');
+            #end
             // Force both cond and then to use recvElse
             var fixedCond = replaceMapGetReceiver(cond, recvElse);
             var fixedThen = replaceMapGetReceiver(thenE, recvElse);
@@ -112,6 +115,15 @@ class HandleEventIdExtractNormalizeTransforms {
       }
     });
   }
+
+  #if debug_handle_event_id
+  static function describeRecv(r: ElixirAST): String {
+    return switch (r.def) {
+      case EVar(n): n;
+      default: reflaxe.elixir.ast.ElixirASTPrinter.printAST(r);
+    }
+  }
+  #end
 }
 
 #end
