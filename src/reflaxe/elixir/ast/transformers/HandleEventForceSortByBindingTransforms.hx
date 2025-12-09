@@ -43,6 +43,10 @@ class HandleEventForceSortByBindingTransforms {
 
   static function inject(args:Array<EPattern>, body:ElixirAST):ElixirAST {
     var paramsVar = extractParamsVar(args);
+    var declared = collectDeclared(body);
+    for (a in args) switch (a) { case PVar(n): declared.set(n, true); default: }
+    if (declared.exists("sort_by")) return body;
+
     var bind = makeAST(EBinary(Match, makeAST(EVar("sort_by")), makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [
       makeAST(EVar(paramsVar)),
       makeAST(EString("sort_by"))
