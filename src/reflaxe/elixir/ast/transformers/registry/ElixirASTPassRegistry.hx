@@ -1200,37 +1200,38 @@ class ElixirASTPassRegistry {
         });
 
         // Wrap parse_* helpers to return {:some, v} | :none to match caller patterns
-        passes.push({
-            name: "OptionWrapParseFunctions",
-            description: "Wrap results of parse_* functions into {:some, v} | :none",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.OptionWrapTransforms.optionWrapParseFunctionsPass
-        });
+        // PERF DIAG: temporarily disable changeset/option passes
+        // passes.push({
+        //     name: "OptionWrapParseFunctions",
+        //     description: "Wrap results of parse_* functions into {:some, v} | :none",
+        //     enabled: true,
+        //     pass: reflaxe.elixir.ast.transformers.OptionWrapTransforms.optionWrapParseFunctionsPass
+        // });
 
         // Introduce cs binder when validations reference cs before it is bound
-        passes.push({
-            name: "IntroduceChangesetBinder",
-            description: "When validate_* references cs without prior binding, bind cs = <prev expr>",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.IntroduceChangesetBinderTransforms.pass
-        });
+        // passes.push({
+        //     name: "IntroduceChangesetBinder",
+        //     description: "When validate_* references cs without prior binding, bind cs = <prev expr>",
+        //     enabled: true,
+        //     pass: reflaxe.elixir.ast.transformers.IntroduceChangesetBinderTransforms.pass
+        // });
 
         // Promote leading `_ = _ = ... = <changeset>` to `cs = <changeset>` inside changeset/2
-        passes.push({
-            name: "WildcardChangesetAssignPromote",
-            description: "In changeset/2, rewrite nested wildcard assign chain to `cs = <expr>`",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.WildcardChangesetAssignPromoteTransforms.pass
-        });
+        // passes.push({
+        //     name: "WildcardChangesetAssignPromote",
+        //     description: "In changeset/2, rewrite nested wildcard assign chain to `cs = <expr>`",
+        //     enabled: true,
+        //     pass: reflaxe.elixir.ast.transformers.WildcardChangesetAssignPromoteTransforms.pass
+        // });
         // (moved later in pipeline, after validate_* rewrites)
 
         // Changeset normalization: canonicalize cs variable, opts binding, and validate_* targets
-        passes.push({
-            name: "ChangesetNormalize",
-            description: "Normalize Ecto.Changeset pipelines (cs/opts/thisN)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeChangesetPass
-        });
+        // passes.push({
+        //     name: "ChangesetNormalize",
+        //     description: "Normalize Ecto.Changeset pipelines (cs/opts/thisN)",
+        //     enabled: true,
+        //     pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeChangesetPass
+        // });
         // Replace x == nil checks with Kernel.is_nil(x) AFTER Map.get(opts, :key) rewrites
         passes.push({
             name: "EqNilToIsNil",
@@ -3253,33 +3254,33 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "FindRewrite",
             description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
         });
         // Avoid duplicate side-effect calls: reuse prior assignment as case scrutinee
         passes.push({
             name: "CaseCallReuse",
             description: "Rewrite case Mod.func(args) to case tmp when tmp = Mod.func(args) was evaluated earlier in block",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.CaseCallReuseTransforms.transformPass
         });
         passes.push({
             name: "FlattenNestedUnderscoreAssign",
             description: "Flatten nested underscore matches: lhs = _ = expr -> lhs = expr",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.pass
         });
         // Early fold to align assigned var with case result before later hygiene
         passes.push({
             name: "DuplicateCaseAssignFold_Early",
             description: "EARLY: Fold var = _ = call; case call do ... -> var = case call do ...",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.DuplicateCaseAssignFoldTransforms.pass
         });
         passes.push({
             name: "CaseBindSuccessToAssignedVar_Early",
             description: "EARLY: Bind {:ok, u} to preceding assigned var inside case",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.CaseBindSuccessToAssignedVarTransforms.pass
         });
         passes.push({
