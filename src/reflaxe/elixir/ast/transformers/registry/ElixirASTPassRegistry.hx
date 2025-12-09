@@ -5434,7 +5434,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventValueVarNormalizeForceFinal_Last",
             description: "Force Map.get(value, …) → Map.get(params/_params, …) in handle_event/3 (last pass)",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass
         });
         passes.push({
@@ -5569,7 +5569,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventUndefinedValueToParam_AbsoluteLast",
             description: "In handle_event/3, if `value` is not declared, rewrite EVar(value) → EVar(params/_params)",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.pass,
             runAfter: ["HandleEventValueVarNormalizeForceFinal_Last2", "HandleEventParamsUltraFinal_Last"]
         });
