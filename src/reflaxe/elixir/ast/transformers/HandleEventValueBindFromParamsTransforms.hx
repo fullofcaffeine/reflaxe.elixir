@@ -44,7 +44,8 @@ class HandleEventValueBindFromParamsTransforms {
 
   static function inject(args:Array<EPattern>, body:ElixirAST):ElixirAST {
     var needsValue = usesVar(body, "value");
-    var needsSortBy = usesVar(body, "sort_by");
+    // Always insert sort_by unless already declared to avoid missing bindings.
+    var needsSortBy = true;
     if (!needsValue && !needsSortBy) return body;
     var declared = collectDeclared(body);
     for (a in args) switch (a) {
@@ -57,7 +58,7 @@ class HandleEventValueBindFromParamsTransforms {
     if (needsValue && !declared.exists("value")) {
       inserts.push(makeAST(EBinary(Match, makeAST(EVar("value")), makeAST(EVar(paramsVar)))));
     }
-    if (needsSortBy) {
+    if (!declared.exists("sort_by")) {
       inserts.push(makeAST(EBinary(Match, makeAST(EVar("sort_by")), makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [
         makeAST(EVar(paramsVar)),
         makeAST(EString("sort_by"))
