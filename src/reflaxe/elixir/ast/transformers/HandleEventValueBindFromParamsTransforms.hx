@@ -43,17 +43,29 @@ class HandleEventValueBindFromParamsTransforms {
   }
 
   static function inject(args:Array<EPattern>, body:ElixirAST):ElixirAST {
-    if (!usesVar(body, "value")) return body;
+    var needsValue = usesVar(body, "value");
+    var needsSortBy = usesVar(body, "sort_by");
+    if (!needsValue && !needsSortBy) return body;
     var declared = collectDeclared(body);
     for (a in args) switch (a) {
       case PVar(n): declared.set(n, true);
       default:
     }
-    if (declared.exists("value")) return body;
-
     var paramsVar = extractParamsVar(args);
-    var bind = makeAST(EBinary(Match, makeAST(EVar("value")), makeAST(EVar(paramsVar))));
-    return prepend(body, bind);
+    var inserts:Array<ElixirAST> = [];
+
+    if (needsValue && !declared.exists("value")) {
+      inserts.push(makeAST(EBinary(Match, makeAST(EVar("value")), makeAST(EVar(paramsVar)))));
+    }
+    if (needsSortBy) {
+      inserts.push(makeAST(EBinary(Match, makeAST(EVar("sort_by")), makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [
+        makeAST(EVar(paramsVar)),
+        makeAST(EString("sort_by"))
+      ])))));
+    }
+
+    if (inserts.length == 0) return body;
+    return prepend(body, inserts);
   }
 
   static function extractParamsVar(args:Array<EPattern>):String {
@@ -90,12 +102,12 @@ class HandleEventValueBindFromParamsTransforms {
     return found;
   }
 
-  static function prepend(body:ElixirAST, stmt:ElixirAST):ElixirAST {
+  static function prepend(body:ElixirAST, stmts:Array<ElixirAST>):ElixirAST {
     return switch (body.def) {
-      case EBlock(stmts):
-        makeASTWithMeta(EBlock([stmt].concat(stmts)), body.metadata, body.pos);
+      case EBlock(stmts0):
+        makeASTWithMeta(EBlock(stmts.concat(stmts0)), body.metadata, body.pos);
       default:
-        makeASTWithMeta(EBlock([stmt, body]), body.metadata, body.pos);
+        makeASTWithMeta(EBlock(stmts.concat([body])), body.metadata, body.pos);
     }
   }
 }

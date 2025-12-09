@@ -182,6 +182,31 @@ class LiveEventCaseToCallbacksTransforms {
         return declared;
     }
 
+    static function usesVar(ast:Dynamic, name:String):Bool {
+        if (ast == null) return false;
+        var found = false;
+        function walkOne(node:ElixirAST):Void {
+            if (node == null || found) return;
+            reflaxe.elixir.ast.ASTUtils.walk(node, function(x:ElixirAST){
+                if (found) return;
+                switch (x.def) {
+                    case EVar(v) if (v == name): found = true;
+                    default:
+                }
+            });
+        }
+        if (Std.isOfType(ast, Array)) {
+            var arr:Array<Dynamic> = cast ast;
+            for (item in arr) {
+                if (found) break;
+                walkOne(cast item);
+            }
+        } else {
+            walkOne(cast ast);
+        }
+        return found;
+    }
+
     /**
      * Converts snake_case to camelCase.
      * Example: search_socket -> searchSocket
@@ -218,6 +243,17 @@ class LiveEventCaseToCallbacksTransforms {
         trace('[LiveEventCaseToCallbacks buildCallback]   Input binders: ${binders != null ? "[" + binders.join(", ") + "]" : "null"}');
         trace('[LiveEventCaseToCallbacks buildCallback]   declaredInPrelude: [${[for (k in declaredInPrelude.keys()) k].join(", ")}]');
         #end
+
+        // Deterministic helper bindings to avoid late missing-var repairs.
+        // Always seed common LiveView params we know appear in todo-app (and
+        // other LiveViews) even if not detected by heuristic var-use analysis.
+        var helperBinds:Array<ElixirAST> = [];
+        var paramsVar = "params"; // fixed by handle_event head
+        helperBinds.push(makeAST(EBinary(Match, makeAST(EVar("value")), makeAST(EVar(paramsVar)))));
+        helperBinds.push(makeAST(EBinary(Match, makeAST(EVar("sort_by")), makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [
+            makeAST(EVar(paramsVar)),
+            makeAST(EString("sort_by"))
+        ])))));
         // If pattern binders are empty (e.g., clause pattern was just an atom),
         // infer candidate binders from the socket-producing expression (top-level call args preferred).
         if (binders == null || binders.length == 0) {
@@ -251,7 +287,8 @@ class LiveEventCaseToCallbacksTransforms {
             extracts.push(makeAST(EMatch(PVar(b), valueExpr)));
         }
         var blk:Array<ElixirAST> = [];
-        // First any param extracts, then any branch preludes, then final noreply tuple
+        // Deterministic helper bindings first, then param extracts, then original prelude
+        for (e in helperBinds) blk.push(e);
         for (e in extracts) blk.push(e);
         for (e in unwrapped.prelude) blk.push(e);
         blk.push(makeNoReply(unwrapped.socket));

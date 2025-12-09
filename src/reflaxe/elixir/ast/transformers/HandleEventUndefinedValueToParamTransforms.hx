@@ -31,11 +31,11 @@ class HandleEventUndefinedValueToParamTransforms {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
           var paramVar = extractParamsVarName(args);
-          var nb = rewrite(body, paramVar);
+          var nb = maybeRewrite(body, paramVar);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
           var paramVar2 = extractParamsVarName(args2);
-          var nb2 = rewrite(body2, paramVar2);
+          var nb2 = maybeRewrite(body2, paramVar2);
           makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
         default:
           n;
@@ -53,13 +53,32 @@ class HandleEventUndefinedValueToParamTransforms {
     return switch (args[1]) { case PVar(nm): nm; default: "params"; }
   }
 
-  static function rewrite(body: ElixirAST, paramVar:String): ElixirAST {
+  static function maybeRewrite(body: ElixirAST, paramVar:String): ElixirAST {
+    // Skip if a binding for `value` already exists anywhere in the function.
+    var declared = collectDeclared(body);
+    if (declared.exists("value")) return body;
+
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EVar(v) if (v == "value"): makeASTWithMeta(EVar(paramVar), x.metadata, x.pos);
         default: x;
       }
     });
+  }
+
+  static function collectDeclared(body:ElixirAST):Map<String,Bool> {
+    var declared = new Map<String,Bool>();
+    ASTUtils.walk(body, function(x:ElixirAST) {
+      switch (x.def) {
+        case EMatch(PVar(n), _): declared.set(n, true);
+        case EBinary(Match, lhs, _): switch (lhs.def) {
+            case EVar(n2): declared.set(n2, true);
+            default:
+          }
+        default:
+      }
+    });
+    return declared;
   }
 
   // (No declared-guard needed; this is an absolute-last repair scoped to handle_event/3 only.)
