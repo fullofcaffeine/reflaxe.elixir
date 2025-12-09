@@ -3814,13 +3814,13 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventParamsValueRewrite",
             description: "Forward specific SafeAssigns values directly from params to avoid ephemeral local mismatches",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventParamsValueRewriteTransforms.pass
         });
         passes.push({
             name: "HandleEventDropUnusedParamExtract_Final",
             description: "Drop name = Map.get(params, key) in handle_event/3 when name is unused later",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.pass
         });
         passes.push({
@@ -5605,7 +5605,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventDropUnusedHelperBinds_Final",
             description: "Drop injected value=params and sort_by=Map.get(...) when unused in handle_event/3 bodies",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventDropUnusedHelperBindsTransforms.pass,
             runAfter: ["HandleEventForceSortByBinding_Final", "HandleEventAndInfoMissingVar_Final"]
         });

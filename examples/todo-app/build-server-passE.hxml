@@ -16,5 +16,4 @@
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces
--D fast_boot
 TodoApp

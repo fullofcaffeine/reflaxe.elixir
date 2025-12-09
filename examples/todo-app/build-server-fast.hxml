@@ -41,7 +41,6 @@
 -D no_traces
 
 # Fast macro profile
--D fast_boot
 
 # Server modules
 TodoApp
