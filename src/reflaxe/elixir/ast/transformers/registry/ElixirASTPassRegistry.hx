@@ -5569,14 +5569,14 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventUndefinedValueToParam_AbsoluteLast",
             description: "In handle_event/3, if `value` is not declared, rewrite EVar(value) → EVar(params/_params)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.pass,
             runAfter: ["HandleEventValueVarNormalizeForceFinal_Last2", "HandleEventParamsUltraFinal_Last"]
         });
         passes.push({
             name: "HandleEventMissingSortByExtract_Final",
             description: "Inject sort_by = Map.get(params, \"sort_by\") when handle_event/3 body references sort_by without a binding",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventMissingSortByExtractTransforms.pass,
             runAfter: [
                 "HandleEventUndefinedValueToParam_AbsoluteLast",
@@ -5588,7 +5588,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventValueBindFromParams_AbsoluteLast",
             description: "If handle_event/3 uses `value` without a binding, set value = paramsVar",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventValueBindFromParamsTransforms.pass,
             runAfter: [
                 "HandleEventMissingSortByExtract_Final",
@@ -5598,7 +5598,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventForceSortByBinding_Final",
             description: "Force sort_by = Map.get(params,\"sort_by\") in handle_event/3 when undeclared",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventForceSortByBindingTransforms.pass,
             runAfter: ["HandleEventValueBindFromParams_AbsoluteLast"]
         });
