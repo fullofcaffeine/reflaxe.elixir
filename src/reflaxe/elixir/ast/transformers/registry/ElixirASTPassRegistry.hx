@@ -603,7 +603,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PatternVariableBinding",
             description: "Ensure correct variable scoping in pattern matching",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
         });
 
@@ -626,7 +626,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "SwitchReturnSanitizer",
             description: "Inline case into tail return when returning alias variable (sanitize direct switch returns)",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.SwitchReturnSanitizerTransforms.pass
         });
         // Parenthesize case expressions in assignment RHS for consistent value form
@@ -641,7 +641,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CaseResultAssignmentMerge",
             description: "Merge `x = init; case x do ... end` into `x = case init do ... end`",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass
         });
 
@@ -683,7 +683,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "NumericSuffixVarNormalize",
             description: "Normalize variables with trailing digits to descriptive base names (no integers)",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.NumericSuffixVarNormalizeTransforms.normalizePass
         });
 
@@ -708,7 +708,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CaseTupleMultiBinderPromoteByUse_Early",
             description: "Promote tuple binders (_a, _b, ...) to (a, b, ...) when used in body (AST or interpolation)",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.CaseTupleMultiBinderPromoteByUseTransforms.pass,
             runAfter: ["ClauseCamelRefToSnake", "CaseSecondBinderCanonicalUnderscore"]
         });
@@ -5422,7 +5422,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventValueVarNormalize_AbsoluteLast",
             description: "Rewrite Map.get(value, key) → Map.get(params/_params, key) when `value` is undefined in handle_event/3",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeTransforms.pass,
             runAfter: [
                 "HandleEventParamExtractFromBodyUse_Final",
@@ -5435,7 +5435,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventValueVarNormalizeForceFinal_Last",
             description: "Force Map.get(value, …) → Map.get(params/_params, …) in handle_event/3 (last pass)",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass
         });
         passes.push({
@@ -5463,7 +5463,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventValueVarNormalizeForceFinal_Last2",
             description: "Ultimate guard: Force Map.get(value, …) → Map.get(params/_params, …) inside handle_event/3",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass,
             runAfter: [
                 "ChainAssignIfPromote_Replay_Last",
@@ -5542,7 +5542,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventParamsHeadToParams_Ultimate",
             description: "Absolute-ultimate: when body uses params, force head binder to params",
-            enabled: true,
+            enabled: false, // perf bisection
             pass: reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsUltimateTransforms.pass,
             runAfter: [
                 "LocalAssignDiscardIfUnused_LiveView_Final",
