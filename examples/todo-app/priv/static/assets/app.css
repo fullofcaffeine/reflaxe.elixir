@@ -1192,10 +1192,6 @@ body {
   min-width: 100%;
 }
 
-.max-w-2xl {
-  max-width: 42rem;
-}
-
 .max-w-6xl {
   max-width: 72rem;
 }
@@ -1585,11 +1581,6 @@ body {
   padding-bottom: 0.5rem;
 }
 
-.py-20 {
-  padding-top: 5rem;
-  padding-bottom: 5rem;
-}
-
 .py-3 {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
@@ -1938,10 +1929,6 @@ body {
   overflow: visible;
   clip: auto;
   white-space: normal;
-}
-
-.\[scrollbar-gutter\:stable\] {
-  scrollbar-gutter: stable;
 }
 
 /* Custom base styles */
