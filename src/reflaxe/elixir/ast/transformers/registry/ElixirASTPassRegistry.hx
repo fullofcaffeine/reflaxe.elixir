@@ -85,7 +85,8 @@ class ElixirASTPassRegistry {
         });
         
         // Phoenix/LiveView core group (order preserved)
-        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
+        // PERF DIAG: temporarily disable PhoenixLiveCore group
+        // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
         
         // Phoenix/Ecto annotation-driven group (order preserved)
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
