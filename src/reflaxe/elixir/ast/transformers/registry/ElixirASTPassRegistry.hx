@@ -89,7 +89,8 @@ class ElixirASTPassRegistry {
         // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
         
         // Phoenix/Ecto annotation-driven group (order preserved)
-        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
+        // PERF DIAG: temporarily disable PhoenixAnnotations group
+        // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
         
         // Guard condition grouping pass (must run before other pattern transformations)
         passes.push({
