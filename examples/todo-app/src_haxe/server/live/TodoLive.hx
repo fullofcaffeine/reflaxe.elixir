@@ -261,6 +261,7 @@ class TodoLive {
 	 */
     public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
         // Handle PubSub messages with a two-step match to avoid alias churn
+        var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
         return switch (TodoPubSub.parseMessage(msg)) {
             case Some(payload):
                 switch (payload) {
@@ -274,7 +275,6 @@ class TodoLive {
                     case TodoUpdated(todo):
                         // Clear optimistic toggle flag since we have authoritative data now
                         // Inline the clearing to avoid compiler DCE issues with intermediate variables
-                        var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
                         var ids = s.assigns.optimistic_toggle_ids;
                         var filtered = ids.filter(function(x) return x != todo.id);
                         var cleared = s.assign(_.optimistic_toggle_ids, filtered);
@@ -786,6 +786,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
     static inline function boolToStr(b: Bool): String {
         return b ? "true" : "false";
     }
+
     static inline function cardId(id: Int): String {
         return "todo-" + Std.string(id);
     }
