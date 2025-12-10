@@ -192,7 +192,7 @@ defmodule HaxeCompiler do
       {:error, "Haxe compilation failed: #{Exception.message(error)}"}
   end
   
-  defp compile_with_direct_haxe(hxml_file, verbose, common_args \\ []) do
+  defp compile_with_direct_haxe(hxml_file, verbose, common_args) do
     {haxe_cmd, cmd_args} = get_haxe_command()
     args = cmd_args ++ common_args ++ [hxml_file]
     

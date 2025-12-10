@@ -229,7 +229,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CasePayloadCanonicalizeThenAlias",
             description: "Canonicalize {:tag, binder} -> {:tag, _value} and prepend `u = _value` aliases for undefined locals in body",
-            enabled: true,
+            enabled: false, // disabled to avoid alias pollution in LiveView handle_info
             pass: reflaxe.elixir.ast.transformers.CasePayloadCanonicalizeThenAliasTransforms.pass
         });
 
@@ -4426,7 +4426,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleInfoAliasCleanup_Final",
             description: "In handle_info/2, remove alias lines `x = _socket` and replace `{:noreply, _socket|x}` with `{:noreply, socket}`",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleInfoAliasCleanupTransforms.pass
         });
 
@@ -4434,7 +4434,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleInfoTupleArgToSecondElem",
             description: "In case msg of {:tag, v}, pass v instead of msg to *_from_list/*_in_list helpers",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
         });
         // Late promote of underscored case binders used in body
@@ -4792,7 +4792,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleInfoScrutineeToPayloadRef_Final",
             description: "Rewrite scrutinee references to payload binder within handle_info case clauses",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleInfoScrutineeToPayloadRefTransforms.transformPass
         });
         // Ultra-final: for toggle_* events, replace helper first-arg `params` with Map.get(params, suffix)
@@ -5110,7 +5110,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleInfoScrutineeToPayloadRef_AbsoluteFinal",
             description: "Absolute final: rewrite handle_info/2 nested case scrutinee refs to tuple payload binder (value)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleInfoScrutineeToPayloadRefTransforms.transformPass
         });
         // One more binder safety replay at the very end (covers any late ref/name rewrites)
@@ -5675,6 +5675,13 @@ class ElixirASTPassRegistry {
             runAfter: ["HandleEventDropUnusedHelperBinds_Final"]
         });
         passes.push({
+            name: "HandleEventPruneHelperBinds_Final",
+            description: "Prune duplicate/unused value/sort_by helper binds in handle_event/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventPruneHelperBindsTransforms.pass,
+            runAfter: ["HandleEventSortByFinalBind"]
+        });
+        passes.push({
             name: "HandleEventIdExtractNormalize_AbsoluteLast",
             description: "Normalize id extract branches to use the same params var instead of `value` in handle_event/3",
             enabled: true,
@@ -5684,7 +5691,8 @@ class ElixirASTPassRegistry {
                 "HandleEventValueVarNormalizeForceFinal_Last2",
                 "HandleEventParamExtractFromBodyUse_Final",
                 "HandleEventParamRepair_Final",
-                "HandleEventParamsUltraFinal_Last"
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventPruneHelperBinds_Final"
             ]
         });
         passes.push({
@@ -5733,7 +5741,7 @@ class ElixirASTPassRegistry {
             // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
             // to detect usage in IIFE call arguments like: end).(user, attrs)
             // NOTE: Uses VarUseAnalyzer - DISABLED under fast_boot
-            enabled: #if fast_boot false #else true #end,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
         });
         passes.push({
@@ -5764,6 +5772,19 @@ class ElixirASTPassRegistry {
                 "HandleInfoScrutineeToPayloadRef_Final",
                 "UnderscoreToParamSocketFix_Final",
                 "HandleInfoAliasCleanup_Final"
+            ]
+        });
+
+        // Late hygiene: underscore truly unused vars (params, locals, helper binds)
+        passes.push({
+            name: "UnusedVarUnderscore_Final",
+            description: "Prefix unused vars with underscore after all helper binds are injected (value/sort_by/payload/broadcast_result)",
+            enabled: false,
+            pass: reflaxe.elixir.ast.transformers.UnusedVarUnderscoreFinalTransforms.pass,
+            runAfter: [
+                "HandleEventSortByFinalBind",
+                "HandleEventIdExtractNormalize_AbsoluteLast",
+                "HandleInfoAliasAndNoreply_AbsoluteFinal"
             ]
         });
 

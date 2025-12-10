@@ -256,11 +256,12 @@ class BlockUnusedAssignmentDiscardTransforms {
         function scan(n: ElixirAST): Void {
             if (found || n == null || n.def == null) return;
             switch (n.def) {
-                case ERemoteCall(mod, _, _):
+                case ERemoteCall(mod, _, args):
                     switch (mod.def) { case EVar(m) if (m == "Ecto.Changeset"): found = true; default: }
+                    scan(mod);
+                    if (args != null) for (a in args) scan(a);
                 case ERaw(code): if (code != null && code.indexOf("Ecto.Changeset.") != -1) found = true;
                 case ECall(t, _, as): if (t != null) scan(t); if (as != null) for (a in as) scan(a);
-                case ERemoteCall(t2, _, as2): scan(t2); if (as2 != null) for (a2 in as2) scan(a2);
                 case EBinary(_, l, r): scan(l); scan(r);
                 case EMatch(_, rhs): scan(rhs);
                 case EBlock(ss): for (s in ss) scan(s);

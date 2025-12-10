@@ -252,6 +252,15 @@ class ElixirASTTransformer {
                 continue;
             }
 
+            #if diag_pass_log
+            #if sys
+            Sys.println('[Pass] ' + passConfig.name);
+            Sys.stdout().flush();
+            #else
+            trace('[Pass] ' + passConfig.name);
+            #end
+            #end
+
             #if debug_ast_transformer
             #if sys
             // DISABLED: Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');

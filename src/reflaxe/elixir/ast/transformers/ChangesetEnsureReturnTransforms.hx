@@ -54,8 +54,9 @@ class ChangesetEnsureReturnTransforms {
                 case EBlock(ss): for (s in ss) visit(s);
                 case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
                 case ECase(expr, cs): visit(expr); for (c in cs) visit(c.body);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
+                case ECall(tgt, _, args):
+                    if (tgt != null) visit(tgt);
+                    if (args != null) for (a in args) visit(a);
                 default:
             }
         }

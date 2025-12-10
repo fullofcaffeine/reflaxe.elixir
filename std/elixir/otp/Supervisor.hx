@@ -252,6 +252,12 @@ extern class SupervisorExtern {
      */
     @:native("start_child")
     static function startChild(supervisor: Dynamic, child_spec: ChildSpec): Dynamic;
+
+    /**
+     * Initialize supervisor flags and children (use inside init/1 callbacks)
+     */
+    @:native("init")
+    static function init(children: Array<ChildSpecFormat>, options: SupervisorOptions): Dynamic;
     
     /**
      * Terminate a child

@@ -29,12 +29,7 @@ class PhoenixLiveCore {
       pass: ElixirASTTransformer.alias_liveViewCoreComponentsImportPass
     });
 
-    passes.push({
-      name: "LiveEventCaseToCallbacks",
-      description: "Rewrite handle_event/2 case dispatch into multiple handle_event/3 callbacks in LiveViews",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.LiveEventCaseToCallbacksTransforms.transformPass
-    });
+    // Disabled globally: typed event bridge is handled directly in user code.
 
     passes.push({
       name: "LiveViewTypedEventBridge",
@@ -61,4 +56,3 @@ class PhoenixLiveCore {
   }
 }
 #end
-

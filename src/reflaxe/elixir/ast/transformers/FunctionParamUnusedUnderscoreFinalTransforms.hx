@@ -41,18 +41,22 @@ using Lambda;
  */
 class FunctionParamUnusedUnderscoreFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case EDef(name, args, guards, body):
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EDef(name, args, guards, body):
+          // LiveView handle_event/3 must keep event/params/socket names intact to
+          // satisfy downstream bridge logic and generated callbacks.
+          if (name == "handle_event" && args != null && args.length == 3) return n;
           var newArgs = underscoreUnusedParams(args, body);
           makeASTWithMeta(EDef(name, newArgs, guards, body), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2):
+                case EDefp(name2, args2, guards2, body2):
+          if (name2 == "handle_event" && args2 != null && args2.length == 3) return n;
           var newArgs2 = underscoreUnusedParams(args2, body2);
           makeASTWithMeta(EDefp(name2, newArgs2, guards2, body2), n.metadata, n.pos);
-        default: n;
-      }
-    });
-  }
+                default: n;
+            }
+        });
+    }
 
   /**
    * Check each parameter and add underscore prefix if unused in body.
@@ -131,4 +135,3 @@ class FunctionParamUnusedUnderscoreFinalTransforms {
 }
 
 #end
-
