@@ -39,7 +39,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EndpointTransform",
             description: "Transform @:endpoint modules into Phoenix.Endpoint structure",
-            enabled: true,
+            enabled: false, // toggled off
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.endpointTransformPass
         });
         
@@ -85,12 +85,10 @@ class ElixirASTPassRegistry {
         });
         
         // Phoenix/LiveView core group (order preserved)
-        // PERF DIAG: temporarily disable PhoenixLiveCore group
-        // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixLiveCore.build());
         
         // Phoenix/Ecto annotation-driven group (order preserved)
-        // PERF DIAG: temporarily disable PhoenixAnnotations group
-        // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
+        passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.PhoenixAnnotations.build());
         
         // Guard condition grouping pass (must run before other pattern transformations)
         passes.push({
@@ -605,7 +603,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PatternVariableBinding",
             description: "Ensure correct variable scoping in pattern matching",
-            enabled: false, // perf bisection
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
         });
 
@@ -628,7 +626,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "SwitchReturnSanitizer",
             description: "Inline case into tail return when returning alias variable (sanitize direct switch returns)",
-            enabled: false, // perf bisection
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.SwitchReturnSanitizerTransforms.pass
         });
         // Parenthesize case expressions in assignment RHS for consistent value form
@@ -643,7 +641,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CaseResultAssignmentMerge",
             description: "Merge `x = init; case x do ... end` into `x = case init do ... end`",
-            enabled: false, // perf bisection
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseResultAssignmentMergeTransforms.pass
         });
 
@@ -685,7 +683,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "NumericSuffixVarNormalize",
             description: "Normalize variables with trailing digits to descriptive base names (no integers)",
-            enabled: false, // perf bisection
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.NumericSuffixVarNormalizeTransforms.normalizePass
         });
 
@@ -710,7 +708,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CaseTupleMultiBinderPromoteByUse_Early",
             description: "Promote tuple binders (_a, _b, ...) to (a, b, ...) when used in body (AST or interpolation)",
-            enabled: false, // perf bisection
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseTupleMultiBinderPromoteByUseTransforms.pass,
             runAfter: ["ClauseCamelRefToSnake", "CaseSecondBinderCanonicalUnderscore"]
         });
@@ -1755,7 +1753,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HygieneConsolidated",
             description: "Consolidated pass: params underscore, underscore fallback, used underscore promotion, ref/decl alignment, case binder hygiene",
-            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
+            enabled: false, // perf diag: suspected hang hotspot
             pass: reflaxe.elixir.ast.transformers.HygieneConsolidatedTransforms.pass
         });
         // Late binder repair again after hygiene may rewrite locals
@@ -1776,7 +1774,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RefDeclAlignment",
             description: "Align declaration/reference spellings (underscore/numeric) to canonical name",
-            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
+            enabled: false, // perf diag: run after hygiene; disable for hang isolation
             pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
         passes.push({
@@ -1821,8 +1819,14 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "RefDeclAlignment",
             description: "Final alignment of declarations and references to canonical names",
-            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
-            pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HygieneVarAlignFastTransforms.alignPass
+        });
+        passes.push({
+            name: "UnderscorePromoteByUse_Late",
+            description: "Promote underscored locals to base name when base is referenced (late, O(n))",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.UnderscorePromoteByUseLateTransforms.promotePass
         });
 
         // Late sweep: ensure any '!= nil' remaining are converted to not is_nil
@@ -1836,7 +1840,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DropStandaloneLiteralOne",
             description: "Final sweep to remove standalone numeric literals (1/0)",
-            enabled: true,
+            enabled: false, // hang isolation
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
         // Replace inline if assignments with discard (final)
@@ -1865,21 +1869,21 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "AssignReturnInjection",
             description: "Append var as final expression when function ends with var = expr",
-            enabled: true,
+            enabled: false, // hang isolation
             pass: reflaxe.elixir.ast.transformers.AssignReturnInjectionTransforms.injectPass
         });
         // Absolute final sweep to drop stray numeric literals reintroduced by later passes
         passes.push({
             name: "DropStandaloneLiteralOne",
             description: "Absolute final sweep to remove standalone numeric literals (1/0)",
-            enabled: true,
+            enabled: false, // isolate AssignReturnInjection
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
         // Absolute final: convert any lingering `0 = call(...)` back to bare calls
         passes.push({
             name: "ZeroAssignCallToBareCall_Final",
             description: "Absolute final: rewrite numeric-sentinel call assignments to bare calls",
-            enabled: true,
+            enabled: false, // isolate AssignReturnInjection
             pass: reflaxe.elixir.ast.transformers.ZeroAssignCallToBareCallTransforms.pass
         });
         // Ultra-final safety net: ensure any remaining unused function parameters are underscored
@@ -1887,7 +1891,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "UnderscoreParamPromotion_Final",
             description: "Ultra-final: prefix unused function parameters with underscore",
-            enabled: true,
+            enabled: false, // isolate AssignReturnInjection
             runAfter: ["ZeroAssignCallToBareCall_Final"],
             pass: reflaxe.elixir.ast.transformers.SimplePrefixUnusedParamsFinalTransforms.pass
         });
@@ -1895,14 +1899,14 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "SwitchInnerCaseBinderRepair_Final",
             description: "Absolute final: rewrite inner case scrutinee to clause binder when needed",
-            enabled: true,
+            enabled: false, // isolate AssignReturnInjection
             pass: reflaxe.elixir.ast.transformers.SwitchInnerCaseBinderRepairTransforms.repairPass
         });
         // Late simplification: fold is_nil(var) -> false when var provably non-nil literal
         passes.push({
             name: "SimplifyIsNilFalse",
             description: "Fold Kernel.is_nil(var) to false when var assigned literal non-nil earlier",
-            enabled: true,
+            enabled: false, // isolate AssignReturnInjection
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass
         });
 
@@ -2537,7 +2541,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "UnusedLocalAssignUnderscoreFinal",
             description: "Rename unused local assignment binders `name = expr` to `_name` (same-block only)",
-            enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignUnderscoreFinalTransforms.pass
         });
         // Ultra-final: drop `thisN = nil` and `_thisN = nil` temp sentinel assignments
@@ -3254,7 +3258,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "FindRewrite",
             description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
-            enabled: false, // perf bisection
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
         });
         // Avoid duplicate side-effect calls: reuse prior assignment as case scrutinee
@@ -5593,7 +5597,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventEnsureValueBinding_Ultimate",
             description: "If handle_event/3 uses `value` without a binding, prepend value = paramsVar",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventEnsureValueBindingTransforms.pass,
             runAfter: [
                 "HandleEventValueToParams_Global_Ultimate",
@@ -5630,7 +5634,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventMissingSortByExtract_Final",
             description: "Inject sort_by = Map.get(params, \"sort_by\") when handle_event/3 body references sort_by without a binding",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventMissingSortByExtractTransforms.pass,
             runAfter: [
                 "HandleEventUndefinedValueToParam_AbsoluteLast",
@@ -5652,7 +5656,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventForceSortByBinding_Final",
             description: "Force sort_by = Map.get(params,\"sort_by\") in handle_event/3 when undeclared",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventForceSortByBindingTransforms.pass,
             runAfter: ["HandleEventValueBindFromParams_AbsoluteLast"]
         });
@@ -5662,6 +5666,13 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventDropUnusedHelperBindsTransforms.pass,
             runAfter: ["HandleEventForceSortByBinding_Final", "HandleEventAndInfoMissingVar_Final"]
+        });
+        passes.push({
+            name: "HandleEventSortByFinalBind",
+            description: "Absolute final: ensure sort_by binding exists when referenced in handle_event/3",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HandleEventSortByFinalBindTransforms.pass,
+            runAfter: ["HandleEventDropUnusedHelperBinds_Final"]
         });
         passes.push({
             name: "HandleEventIdExtractNormalize_AbsoluteLast",
