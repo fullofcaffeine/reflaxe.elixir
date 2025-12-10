@@ -44,20 +44,22 @@ class DefParamUnusedUnderscoreSafeTransforms {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
                     var newArgs:Array<EPattern> = [];
-                    // Special-case LiveView mount/3: never underscore the 3rd param when it is `socket`
+                    // Special-case LiveView callbacks:
+                    // - mount/3: keep socket (arg2)
+                    // - handle_event/3: keep event (arg0), params (arg1), socket (arg2) untouched;
+                    //   downstream passes do alignment and we must not underscore them even if
+                    //   early usage analysis thinks they're unused.
                     var isMount = (name == "mount") && (args != null && args.length >= 3);
                     var isHandleEvent = (name == "handle_event") && (args != null && args.length == 3);
                     for (i in 0...(args != null ? args.length : 0)) {
                         var a = args[i];
-                        if (isMount && i == 2) {
+                        if (isHandleEvent) {
+                            newArgs.push(a);
+                        } else if (isMount && i == 2) {
                             switch (a) {
                                 case PVar(nm) if (nm == "socket"): newArgs.push(a); // keep `socket` as-is
                                 default: newArgs.push(underscoreIfUnused(a, body));
                             }
-                        } else if (isHandleEvent && i == 1) {
-                            // Do not touch handle_event/3 second arg here; downstream
-                            // promotion/alignment passes handle it safely.
-                            newArgs.push(a);
                         } else {
                             newArgs.push(underscoreIfUnused(a, body));
                         }
@@ -66,9 +68,12 @@ class DefParamUnusedUnderscoreSafeTransforms {
                 case EDefp(name, args2, guards2, body2):
                     var newArgs2:Array<EPattern> = [];
                     var isMountP = (name == "mount") && (args2 != null && args2.length >= 3);
+                    var isHandleEventP = (name == "handle_event") && (args2 != null && args2.length == 3);
                     for (i in 0...(args2 != null ? args2.length : 0)) {
                         var a2 = args2[i];
-                        if (isMountP && i == 2) {
+                        if (isHandleEventP) {
+                            newArgs2.push(a2);
+                        } else if (isMountP && i == 2) {
                             switch (a2) {
                                 case PVar(nm2) if (nm2 == "socket"): newArgs2.push(a2);
                                 default: newArgs2.push(underscoreIfUnused(a2, body2));

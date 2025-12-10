@@ -197,13 +197,13 @@ extern class Kernel {
     
     // Module operations
     @:native("apply")
-    static function apply(module: Dynamic, function: String, args: Array<Dynamic>): Dynamic;
+    static function apply(module: Dynamic, funName: String, args: Array<Dynamic>): Dynamic;
     
     @:native("function_exported?")
-    static function functionExported(module: Dynamic, function: String, arity: Int): Bool;
+    static function functionExported(module: Dynamic, funName: String, arity: Int): Bool;
     
     @:native("macro_exported?")
-    static function macroExported(module: Dynamic, macro: String, arity: Int): Bool;
+    static function macroExported(module: Dynamic, macroName: String, arity: Int): Bool;
     
     // Math functions
     @:native("abs")

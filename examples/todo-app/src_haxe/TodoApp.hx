@@ -20,6 +20,9 @@ class TodoApp {
      */
     @:keep
     public static function start(_type: ApplicationStartType, _args: ApplicationArgs): ApplicationResult {
+        // Explicitly acknowledge OTP callback args to keep Elixir warnings clean
+        var _ = _type;
+        var _ = _args;
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
             // Database repository - Ecto.Repo handles Postgrex.TypeManager internally

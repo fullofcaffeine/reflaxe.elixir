@@ -143,16 +143,20 @@ class SafeAssigns {
      * Toggle a tag in the selected_tags list (gets tag from params)
      * If the tag is present, remove it; if absent, add it.
      */
-    public static function toggleTagFromParams(socket: Socket<TodoLiveAssigns>, params: Dynamic): Socket<TodoLiveAssigns> {
-        var tag: String = Reflect.field(params, "tag");
+    public static function toggleTag(socket: Socket<TodoLiveAssigns>, tag: String): Socket<TodoLiveAssigns> {
         var currentTags = socket.assigns.selected_tags;
-        var newTags: Array<String>;
-        if (currentTags.contains(tag)) {
-            newTags = currentTags.filter(function(t) return t != tag);
-        } else {
-            newTags = currentTags.concat([tag]);
-        }
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.selected_tags, newTags);
+        var updatedTags = currentTags.contains(tag)
+            ? currentTags.filter(function(existingTag) return existingTag != tag)
+            : currentTags.concat([tag]);
+        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.selected_tags, updatedTags);
+    }
+
+    /**
+     * Backward-compatible helper that accepts raw params.
+     * Prefer toggleTag/3 to avoid reflection.
+     */
+    public static function toggleTagFromParams(socket: Socket<TodoLiveAssigns>, params: { tag:String }): Socket<TodoLiveAssigns> {
+        return toggleTag(socket, params.tag);
     }
     
     /**

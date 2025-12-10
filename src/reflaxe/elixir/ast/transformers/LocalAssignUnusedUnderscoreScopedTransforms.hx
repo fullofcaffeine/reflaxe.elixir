@@ -6,7 +6,6 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * LocalAssignUnusedUnderscoreScopedTransforms
@@ -33,17 +32,21 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
       return switch (n.def) {
         case EDef(name, args, guards, body) if (name != "mount"):
           if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
-            if (!StringTools.startsWith(name, "render_") && !(name == "handle_event" && args != null && args.length == 3)) return n;
+            var isRender = StringTools.startsWith(name, "render_");
+            var isHandleEvent = name == "handle_event" && args != null && args.length == 3;
+            var isHandleInfo = name == "handle_info" && args != null && args.length == 2;
+            if (!isRender && !isHandleEvent && !isHandleInfo) return n;
           }
-          var usedInFn = collectUsedVars(body);
-          var newBody = rewriteBlocks(body, usedInFn);
+          var newBody = rewriteBlocks(body);
           makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (name2 != "mount"):
           if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
-            if (!StringTools.startsWith(name2, "render_") && !(name2 == "handle_event" && args2 != null && args2.length == 3)) return n;
+            var isRender2 = StringTools.startsWith(name2, "render_");
+            var isHandleEvent2 = name2 == "handle_event" && args2 != null && args2.length == 3;
+            var isHandleInfo2 = name2 == "handle_info" && args2 != null && args2.length == 2;
+            if (!isRender2 && !isHandleEvent2 && !isHandleInfo2) return n;
           }
-          var usedInFn2 = collectUsedVars(body2);
-          var newBody2 = rewriteBlocks(body2, usedInFn2);
+          var newBody2 = rewriteBlocks(body2);
           makeASTWithMeta(EDefp(name2, args2, guards2, newBody2), n.metadata, n.pos);
         default:
           n;
@@ -51,17 +54,19 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
     });
   }
 
-  static function rewriteBlocks(node: ElixirAST, used:Map<String,Bool>): ElixirAST {
+  static function rewriteBlocks(node: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EBlock(stmts):
-          makeASTWithMeta(EBlock(rewrite(stmts, used)), x.metadata, x.pos);
+          makeASTWithMeta(EBlock(rewrite(stmts)), x.metadata, x.pos);
         case EDo(stmts2):
-          makeASTWithMeta(EDo(rewrite(stmts2, used)), x.metadata, x.pos);
+          makeASTWithMeta(EDo(rewrite(stmts2)), x.metadata, x.pos);
+        case ECase(expr, clauses):
+          makeASTWithMeta(ECase(expr, rewriteClauses(clauses)), x.metadata, x.pos);
         case EFn(clauses):
           var newClauses = [];
           for (c in clauses) {
-            var nb = rewriteBlocks(c.body, used);
+            var nb = rewriteBlocks(c.body);
             newClauses.push({args: c.args, guard: c.guard, body: nb});
           }
           makeASTWithMeta(EFn(newClauses), x.metadata, x.pos);
@@ -71,38 +76,61 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
     });
   }
 
-  static function rewrite(stmts:Array<ElixirAST>, used:Map<String,Bool>):Array<ElixirAST> {
+  static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
     var out:Array<ElixirAST> = [];
-    for (i in 0...stmts.length) {
-      var s = stmts[i];
-      var s1 = switch (s.def) {
-        case EMatch(PVar(b), rhs) if (b != "children" && !usedLater(stmts, i+1, b) && !used.exists(b) && (isEphemeralRhs(rhs) || (b == "g" && isCase(rhs)))):
-          makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
-        case EBinary(Match, {def: EVar(b2)}, rhs2) if (b2 != "children" && !usedLater(stmts, i+1, b2) && !used.exists(b2) && (isEphemeralRhs(rhs2) || (b2 == "g" && isCase(rhs2)))):
-          makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), rhs2), s.metadata, s.pos);
-        // Align binder to Map.get(params, "key") base name when that base is used later
-        case EBinary(Match, {def: EVar(b3)}, rhs3):
-          switch (rhs3.def) {
-            case ERemoteCall({def: EVar("Map")}, "get", ra) if (ra != null && ra.length == 2):
-              switch (ra[1].def) {
-                case EString(key) if (usedLater(stmts, i+1, key) && !used.exists(key)):
-                  makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs3), s.metadata, s.pos);
-                default: s;
-              }
-            default: s;
+    var usedLater = new Map<String,Bool>();
+
+    // Reverse scan so we see future uses without quadratic lookahead
+    var idx = stmts.length - 1;
+    while (idx >= 0) {
+      var s = stmts[idx];
+      var rewritten = s;
+      var nextStmt:ElixirAST = (idx + 1 < stmts.length) ? stmts[idx + 1] : null;
+      switch (s.def) {
+        case EMatch(PVar(b), rhs):
+          if (skipAliasToCaseScrutinee(rhs, nextStmt)) {
+            idx--;
+            continue;
+          }
+          if (shouldRewriteBinder(b, usedLater, rhs)) {
+            rewritten = makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
+          }
+        case EBinary(Match, {def: EVar(b2)}, rhs2):
+          if (skipAliasToCaseScrutinee(rhs2, nextStmt)) {
+            idx--;
+            continue;
+          }
+          if (shouldRewriteBinder(b2, usedLater, rhs2)) {
+            rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), rhs2), s.metadata, s.pos);
+          } else {
+            // also allow aligning Map.get(params, "key") → key when key used later
+            switch (rhs2.def) {
+              case ERemoteCall({def: EVar("Map")}, "get", ra) if (ra != null && ra.length == 2):
+                switch (ra[1].def) {
+                  case EString(key) if (usedLater.exists(key) && !usedLater.exists(b2)):
+                    rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs2), s.metadata, s.pos);
+                  default:
+                }
+              default:
+            }
           }
         default:
-          s;
       }
-      out.push(s1);
+
+      collectUsedVars(rewritten, usedLater);
+      out.unshift(rewritten);
+      idx--;
     }
     return out;
   }
 
-  // Uses VarUseAnalyzer for comprehensive detection (handles closures, ERaw, interpolation, underscore variants)
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    return VarUseAnalyzer.usedLater(stmts, start, name);
+  static inline function shouldRewriteBinder(name:String, usedLater:Map<String,Bool>, rhs:ElixirAST):Bool {
+    if (name == null || name.length == 0) return false;
+    if (name == "children") return false;
+    if (name.charAt(0) == '_') return false;
+    if (usedLater.exists(name)) return false;
+    return isEphemeralRhs(rhs) || (name == "g" && isCase(rhs)) || isSimpleVar(rhs);
   }
 
   static function isCase(rhs: ElixirAST): Bool {
@@ -112,12 +140,13 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
     }
   }
 
-  static function collectUsedVars(node: ElixirAST): Map<String,Bool> {
-    var used:Map<String,Bool> = new Map();
+  static function collectUsedVars(node: ElixirAST, out: Map<String,Bool>): Void {
     reflaxe.elixir.ast.ASTUtils.walk(node, function(x:ElixirAST){
-      switch (x.def) { case EVar(v): used.set(v, true); default: }
+      switch (x.def) {
+        case EVar(v): out.set(v, true);
+        default:
+      }
     });
-    return used;
   }
 
   static function isEphemeralRhs(rhs: ElixirAST): Bool {
@@ -130,6 +159,59 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
         }
       // Do not treat list/map literals as ephemeral; they may be used later (e.g., permitted fields)
       default: false;
+    }
+  }
+
+  static function isSimpleVar(rhs: ElixirAST): Bool {
+    return switch (rhs.def) {
+      case EVar(_): true;
+      default: false;
+    }
+  }
+
+  static function skipAliasToCaseScrutinee(rhs:ElixirAST, nextStmt:ElixirAST):Bool {
+    if (nextStmt == null || nextStmt.def == null) return false;
+    var rhsVar:Null<String> = switch (rhs.def) { case EVar(v): v; default: null; };
+    if (rhsVar == null) return false;
+    return switch (nextStmt.def) {
+      case ECase(expr, _):
+        switch (expr.def) { case EVar(v2) if (v2 == rhsVar): true; default: false; }
+      default: false;
+    }
+  }
+
+  static function rewriteClauses(cs:Array<ECaseClause>):Array<ECaseClause> {
+    var out:Array<ECaseClause> = [];
+    for (c in cs) {
+      var used = new Map<String,Bool>();
+      var newBody = rewriteBlocks(c.body);
+      if (newBody != null) collectUsedVars(newBody, used);
+      if (c.guard != null) collectUsedVars(c.guard, used);
+      var pat = underscoreUnusedInPattern(c.pattern, used);
+      out.push({ pattern: pat, guard: c.guard, body: newBody });
+    }
+    return out;
+  }
+
+  static function underscoreUnusedInPattern(p:EPattern, used:Map<String,Bool>):EPattern {
+    return switch (p) {
+      case PVar(n) if (!used.exists(n) && n != null && n.length > 0 && n.charAt(0) != '_'): PVar('_' + n);
+      case PTuple(items):
+        PTuple([for (i in items) underscoreUnusedInPattern(i, used)]);
+      case PList(items):
+        PList([for (i in items) underscoreUnusedInPattern(i, used)]);
+      case PCons(h, t):
+        PCons(underscoreUnusedInPattern(h, used), underscoreUnusedInPattern(t, used));
+      case PMap(fs):
+        PMap([for (f in fs) { key: f.key, value: underscoreUnusedInPattern(f.value, used) }]);
+      case PStruct(mod, fs):
+        PStruct(mod, [for (f in fs) { key: f.key, value: underscoreUnusedInPattern(f.value, used) }]);
+      case PBinary(segs):
+        PBinary([for (s in segs) { pattern: underscoreUnusedInPattern(s.pattern, used), size: s.size, type: s.type, modifiers: s.modifiers }]);
+      case PPin(inner):
+        PPin(underscoreUnusedInPattern(inner, used));
+      default:
+        p;
     }
   }
 

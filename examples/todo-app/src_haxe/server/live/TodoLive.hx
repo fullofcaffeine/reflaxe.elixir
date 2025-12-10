@@ -27,8 +27,8 @@ import server.types.Types.MountParams;
 import server.types.Types.PubSubMessage;
 import server.types.Types.Session;
 import server.types.Types.User;
-
-using StringTools;
+import server.types.Types.AlertLevel;
+using reflaxe.elixir.macros.TypedQueryLambda;
 
 /**
  * Type-safe event definitions for TodoLive.
@@ -146,6 +146,19 @@ typedef TodoView = {
 @:native("TodoAppWeb.TodoLive")
 @:liveview
 class TodoLive {
+    // Prevent DCE from stripping private helpers used by LiveView callbacks.
+    @:keep private static var __keep_fns:Array<Dynamic> = [
+        toggle_todo_status,
+        delete_todo,
+        update_todo_priority,
+        start_editing,
+        save_edited_todo_typed,
+        complete_all_todos,
+        delete_completed_todos,
+        extract_id,
+        findTodo,
+        parseTags
+    ];
 	// All socket state is now defined in TodoLiveAssigns typedef for type safety
 	
 	/**
@@ -195,121 +208,112 @@ class TodoLive {
 	 * No more string matching or Dynamic params!
 	 * Each event carries its own typed parameters.
 	 */
-    public static function handleEvent(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
-        var resultSocket = switch (event) {
-            // Todo CRUD operations - params are already typed!
-            case CreateTodo(params):
-                createTodo(params, socket);
-			
-			case ToggleTodo(id):
-				toggleTodoStatus(id, socket);
-			
-            case DeleteTodo(id):
-                trace('[TodoLive] handleEvent DeleteTodo');
-                deleteTodo(id, socket);
-			
-			case EditTodo(id):
-				startEditing(id, socket);
-			
-			case SaveTodo(params):
-				saveEditedTodoTyped(params, socket);
-			
-            case CancelEdit:
-                // Clear editing state and recompute view
+    @:keep
+    @:native("handle_event")
+    public static function handle_event(event: String, params: Dynamic, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+        var sort_by = Reflect.field(params, "sort_by");
+        var s = switch (event) {
+            case "create_todo":
+                createTodo(cast params, socket);
+            case "toggle_todo":
+                toggle_todo_status(extract_id(params), socket);
+            case "delete_todo":
+                delete_todo(extract_id(params), socket);
+            case "edit_todo":
+                start_editing(extract_id(params), socket);
+            case "save_todo":
+                save_edited_todo_typed(cast params, socket);
+            case "cancel_edit":
                 recomputeVisible(SafeAssigns.setEditingTodo(socket, null));
-			
-			// Filtering and sorting
-            case FilterTodos(filter):
-                recomputeVisible(SafeAssigns.setFilter(socket, filter));
-			
-            case SortTodos(sortBy):
-                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy));
-			
-            case SearchTodos(query):
-                // Refresh from DB and update assigns in one call to avoid optimizer dropping variables
-                recomputeVisible(SafeAssigns.setSearchQuery(socket, query));
-
-            case ToggleTag(_):
-                // Toggle tag selection - pass raw params to avoid optimizer dropping the tag variable
-                recomputeVisible(SafeAssigns.toggleTagFromParams(socket, untyped __elixir__("params")));
-			
-			// Priority management
-            case SetPriority(id, priority):
-                updateTodoPriority(id, priority, socket);
-			
-			// UI interactions
-            case ToggleForm:
+            case "filter_todos":
+                recomputeVisible(SafeAssigns.setFilter(socket, Reflect.field(params, "filter")));
+            case "sort_todos":
+                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sort_by));
+            case "search_todos":
+                recomputeVisible(SafeAssigns.setSearchQuery(socket, Reflect.field(params, "query")));
+            case "toggle_tag":
+                recomputeVisible(SafeAssigns.toggleTag(socket, Reflect.field(params, "tag")));
+            case "set_priority":
+                update_todo_priority(extract_id(params), Reflect.field(params, "priority"), socket);
+            case "toggle_form":
                 recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
-			
-			// Bulk operations
-            case BulkComplete:
-                completeAllTodos(socket);
-			
-            case BulkDeleteCompleted:
-                deleteCompletedTodos(socket);
-			
-			// No default case needed - compiler ensures exhaustiveness!
-		};
-		
-		return NoReply(resultSocket);
-	}
+            case "bulk_complete":
+                complete_all_todos(socket);
+            case "bulk_delete_completed":
+                delete_completed_todos(socket);
+            case _:
+                socket;
+        };
+        return NoReply(s);
+    }
+
+    @:keep
+    public static function extract_id(params: Dynamic): Int {
+        var direct: Dynamic = Reflect.field(params, "id");
+        var todoObj: Dynamic = Reflect.field(params, "todo");
+        var todoId: Dynamic = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
+        var candidate: Dynamic = (direct != null) ? direct : todoId;
+
+        if (candidate == null) return 0;
+        if (elixir.Kernel.isInteger(candidate)) return cast candidate;
+        else if (elixir.Kernel.isFloat(candidate)) return elixir.Kernel.trunc(candidate);
+        else if (elixir.Kernel.isBinary(candidate)) {
+            try {
+                return Std.parseInt(cast candidate);
+            } catch (_:Dynamic) {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
 	
-	/**
-	 * Handle real-time updates from other users with type-safe assigns
-	 * 
-	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
-	 */
-    public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-        // Handle PubSub messages with a two-step match to avoid alias churn
-        var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
-        return switch (TodoPubSub.parseMessage(msg)) {
-            case Some(payload):
-                switch (payload) {
-                    case TodoCreated(_created):
-                        NoReply(
-                            recomputeVisible(
-                                (cast socket: LiveSocket<TodoLiveAssigns>)
-                                    .merge({ todos: loadTodos(socket.assigns.current_user.id) })
-                            )
-                        );
-                    case TodoUpdated(todo):
-                        // Clear optimistic toggle flag since we have authoritative data now
-                        // Inline the clearing to avoid compiler DCE issues with intermediate variables
-                        var ids = s.assigns.optimistic_toggle_ids;
-                        var filtered = ids.filter(function(x) return x != todo.id);
-                        var cleared = s.assign(_.optimistic_toggle_ids, filtered);
-                        NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
-                    case TodoDeleted(id):
-                        NoReply(recomputeVisible(removeTodoFromList(id, socket)));
-                    case BulkUpdate(action):
-                        switch (action) {
-                            case CompleteAll, DeleteCompleted:
-                                NoReply(
-                                    recomputeVisible(
-                                        (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                                            todos: loadTodos(socket.assigns.current_user.id),
-                                            total_todos: loadTodos(socket.assigns.current_user.id).length,
-                                            completed_todos: countCompleted(loadTodos(socket.assigns.current_user.id)),
-                                            pending_todos: countPending(loadTodos(socket.assigns.current_user.id))
-                                        })
-                                    )
-                                );
-                            case SetPriority(_):
-                                NoReply(socket);
-                            case AddTag(_):
-                                NoReply(socket);
-                            case RemoveTag(_):
-                                NoReply(socket);
-                        }
-                    case UserOnline(_):
-                        NoReply(socket);
-                    case UserOffline(_):
-                        NoReply(socket);
-                    case SystemAlert(_message, _level):
+    /**
+     * Handle real-time updates from other users with type-safe assigns
+     * 
+     * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
+     */
+    public static function handleInfo(msg: TodoPubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+        var liveSocket: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+        return handlePubSub(msg, liveSocket);
+    }
+
+    static function handlePubSub(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+        return switch (payload) {
+            case TodoCreated(todo):
+                var merged = socket.merge({
+                    todos: [todo].concat(socket.assigns.todos),
+                    total_todos: socket.assigns.total_todos + 1,
+                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
+                });
+                NoReply(recomputeVisible(merged));
+            case TodoUpdated(todo):
+                var cleared = clearOptimisticToggle(todo.id, socket);
+                NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
+            case TodoDeleted(id):
+                NoReply(recomputeVisible(removeTodoFromList(id, socket)));
+            case BulkUpdate(action):
+                switch (action) {
+                    case CompleteAll, DeleteCompleted:
+                        var refreshed = loadTodos(socket.assigns.current_user.id);
+                        var merged = socket.merge({
+                            todos: refreshed,
+                            total_todos: refreshed.length,
+                            completed_todos: countCompleted(refreshed),
+                            pending_todos: countPending(refreshed)
+                        });
+                        NoReply(recomputeVisible(merged));
+                    case _:
                         NoReply(socket);
                 }
-            case None:
-                trace("Received unknown PubSub message: " + msg);
+            case UserOnline(userId):
+                var _ = userId;
+                NoReply(socket);
+            case UserOffline(userId):
+                var _ = userId;
+                NoReply(socket);
+            case _:
                 NoReply(socket);
         };
     }
@@ -353,6 +357,7 @@ class TodoLive {
     /**
      * Create a new todo using typed TodoParams.
      */
+    @:keep
     static function createTodo(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         // LiveView form params arrive as a map with string keys; extract safely.
         var rawTitle: Null<String> = Reflect.field(params, "title");
@@ -382,21 +387,21 @@ class TodoLive {
         var cs = ecto.ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
         switch (Repo.insert(cs)) {
             case Ok(value):
-                var inserted = value;
-                // Best-effort broadcast; ignore result
-                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(inserted));
-                var todos = [inserted].concat(socket.assigns.todos);
-                var updatedSocket: LiveSocket<TodoLiveAssigns> = untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, {
+                // broadcast best-effort; ignore returned term
+                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value));
+                var todos = [value].concat(socket.assigns.todos);
+                var updatedSocket: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>).merge({
                     todos: todos,
                     show_form: false,
                     total_todos: socket.assigns.total_todos + 1,
-                    pending_todos: socket.assigns.pending_todos + (inserted.completed ? 0 : 1),
-                    completed_todos: socket.assigns.completed_todos + (inserted.completed ? 1 : 0)
+                    pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
                 });
                 var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
                 return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
-            case Error(_reason):
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
+            case Error(reason):
+                var reasonStr = elixir.Kernel.toString(reason);
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo: " + reasonStr);
         }
     }
 
@@ -414,42 +419,43 @@ class TodoLive {
  *   handle_info updates the list with the authoritative record; on error we broadcast the
  *   current DB row to revert.
  */
-static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-    var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
-    var ids = s.assigns.optimistic_toggle_ids;
-    var contains = ids.indexOf(id) != -1;
-    var computedIds = contains ? ids.filter(function(x) return x != id) : [id].concat(ids);
-    var sOptimistic = s.assign(_.optimistic_toggle_ids, computedIds);
-    // Note: makeViewRow already handles optimistic display by checking optimistic_toggle_ids
-    // and flipping completedForView, so we don't need to update the local todo here.
-    // Persist synchronously; PubSub broadcast will reconcile actual state
-    var db = Repo.get(server.schemas.Todo, id);
-    if (db != null) {
-        var updateResult = Repo.update(server.schemas.Todo.toggleCompleted(db));
-        switch (updateResult) {
-            case Ok(value):
-                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
-            case Error(_):
-                // Best effort: revert optimistic UI by broadcasting current db state
-                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
+    @:keep
+    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+        var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+        var ids = s.assigns.optimistic_toggle_ids;
+        var contains = ids.indexOf(id) != -1;
+        var computedIds = contains ? ids.filter(function(x) return x != id) : [id].concat(ids);
+        var sOptimistic = s.assign(_.optimistic_toggle_ids, computedIds);
+        var db = Repo.get(server.schemas.Todo, id);
+        if (db != null) {
+            var result = Repo.update(server.schemas.Todo.toggleCompleted(db));
+            switch (result) {
+                case Ok(updatedTodo):
+                    // Fetch authoritative row after update; fall back to updatedTodo
+                    var refreshed = Repo.get(server.schemas.Todo, id);
+                    var broadcastTodo = (refreshed != null) ? refreshed : updatedTodo;
+                    var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(broadcastTodo));
+                case Error(reason):
+                    var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
+                    var reasonStr = elixir.Kernel.toString(reason);
+                    return LiveView.putFlash(socket, FlashType.Error, "Failed to toggle todo: " + reasonStr);
+            }
         }
+        return recomputeVisible(sOptimistic);
     }
-    return recomputeVisible(sOptimistic);
-}
 
 // Helper to clear optimistic toggle flag when authoritative data arrives
-static function clearOptimisticToggle(id: Int, socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-    var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
-    var ids = s.assigns.optimistic_toggle_ids;
-    var filtered = ids.filter(function(x) return x != id);
-    return s.assign(_.optimistic_toggle_ids, filtered);
-}
+    static function clearOptimisticToggle(id: Int, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
+        var ids = socket.assigns.optimistic_toggle_ids;
+        var filtered = ids.filter(function(x) return x != id);
+        return socket.assign(_.optimistic_toggle_ids, filtered);
+    }
 
 // Background reconcile for optimistic toggle
 // Handle in-process persistence request in handleInfo
 	
-    static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        trace("[TodoLive] deleteTodo id=" + id + ", before_count=" + socket.assigns.todos.length);
+    @:keep
+    public static function delete_todo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         var todo = findTodo(id, socket.assigns.todos);
         if (todo == null) return socket;
         
@@ -457,31 +463,34 @@ static function clearOptimisticToggle(id: Int, socket: Socket<TodoLiveAssigns>):
         switch (Repo.delete(todo)) {
             case Ok(_):
                 // continue
-            case Error(_reason):
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo");
+            case Error(reason):
+                var reasonStr = elixir.Kernel.toString(reason);
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo: " + reasonStr);
         }
         // Reflect locally, then broadcast best-effort to others
         var updated = removeTodoFromList(id, socket);
-        TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id));
+        var _ = TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id));
         return recomputeVisible(updated);
     }
 	
-static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-    var todo = findTodo(id, socket.assigns.todos);
-    if (todo == null) return socket;
-    switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
-        case Ok(_):
-        case Error(_reason):
-            return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority");
+    @:keep
+    public static function update_todo_priority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+        var todo = findTodo(id, socket.assigns.todos);
+        if (todo == null) return socket;
+        switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
+            case Ok(_):
+                // proceed to refresh below
+            case Error(reason):
+                var reasonStr = elixir.Kernel.toString(reason);
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority: " + reasonStr);
+        }
+        var refreshed = Repo.get(server.schemas.Todo, id);
+        if (refreshed != null) {
+            var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed));
+            return recomputeVisible(updateTodoInList(refreshed, socket));
+        }
+        return socket;
     }
-    var refreshed = Repo.get(server.schemas.Todo, id);
-    if (refreshed != null) {
-        TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed));
-        var s1 = updateTodoInList(refreshed, socket);
-        return recomputeVisible(s1);
-    }
-    return socket;
-}
 	
 	// List management helpers with type-safe socket handling
 	static function addTodoToList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -498,15 +507,12 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	
 	
     static function loadTodos(userId: Int): Array<server.schemas.Todo> {
-        // Inline query to avoid ephemeral local renames
-        return Repo.all(
-            ecto.TypedQuery
-                .from(server.schemas.Todo)
-                .where(t -> t.userId == userId)
-        );
+        var query = ecto.TypedQuery.from(server.schemas.Todo).where(t -> t.userId == userId);
+        return Repo.all(query);
     }
 	
-	static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
+    @:keep
+    static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
 		for (todo in todos) {
 			if (todo.id == id) return todo;
 		}
@@ -523,34 +529,33 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         return todos.filter(function(t) return !t.completed).length;
     }
 	
+    @:keep @:native("parse_tags")
     static function parseTags(tagsString: String): Array<String> {
-        return untyped __elixir__('
-          case {0} do
-            nil -> []
-            "" -> []
-            bin when is_binary(bin) -> Enum.map(String.split(bin, ","), &String.trim/1)
-          end
-        ', tagsString);
+        if (tagsString == null || tagsString == "") return [];
+        var cleaned = tagsString
+            .split(",")
+            .map(tag -> trimTag(tag))
+            .filter(t -> t != "");
+        return cleaned;
+    }
+
+    static inline function trimTag(tag:String):String {
+        return elixir.Kernel.apply(elixir.ElixirString, "trim", [tag]);
     }
 	
-    static function getUserFromSession(session: Dynamic): User {
-    // Robust nil-safe session handling: avoid Map.get on nil
-    var uid: Int = if (session == null) {
-        1;
-    } else {
-        var idVal: Null<Int> = Reflect.field(session, "user_id");
-        idVal != null ? idVal : 1;
-    };
-    return {
-        id: uid,
-        name: "Demo User",
-        email: "demo@example.com", 
-        passwordHash: "hashed_password",
-        confirmedAt: null,
-        lastLoginAt: null,
-        active: true
-    };
-}
+    static function getUserFromSession(session: Session): User {
+        // Robust nil-safe session handling without reflection
+        var uid: Int = (session != null && session.userId != null) ? session.userId : 1;
+        return {
+            id: uid,
+            name: "Demo User",
+            email: "demo@example.com", 
+            passwordHash: "hashed_password",
+            confirmedAt: null,
+            lastLoginAt: null,
+            active: true
+        };
+    }
 	
 	// Missing helper functions
 	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -653,15 +658,16 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         });
     }
 	
-    static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+    @:keep
+    public static function start_editing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         // Update presence to show user is editing (idiomatic Phoenix pattern)
         // Must call recomputeVisible to update visible_todos with is_editing flag
         return recomputeVisible(SafeAssigns.setEditingTodo(socket, findTodo(id, socket.assigns.todos)));
     }
 	
 	// Bulk operations with type-safe socket handling
-    static function completeAllTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // Mark all incomplete todos as completed using Enum.each
+    @:keep
+    public static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         elixir.Enum.each(socket.assigns.todos, function(item) {
             if (!item.completed) {
                 var cs = server.schemas.Todo.toggleCompleted(item);
@@ -669,26 +675,30 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
             }
         });
         // Broadcast (best-effort)
-        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll));
+        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll));
         // Reload todos and update assigns
         var refreshedTodos = loadTodos(socket.assigns.current_user.id);
-        var s1 = SafeAssigns.setTodos(socket, refreshedTodos);
-        var s2 = recomputeVisible(s1);
-        return LiveView.putFlash(s2, FlashType.Info, "All todos marked as completed!");
+        return LiveView.putFlash(
+            recomputeVisible(SafeAssigns.setTodos(socket, refreshedTodos)),
+            FlashType.Info,
+            "All todos marked as completed!"
+        );
     }
 
-    static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // Delete completed todos using Enum.each
+    @:keep
+    public static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         elixir.Enum.each(socket.assigns.todos, function(item) {
             if (item.completed) Repo.delete(item);
         });
         // Notify others (best-effort)
-        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
+        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
         // Reload fresh todos from DB and update assigns
         var remaining = loadTodos(socket.assigns.current_user.id);
-        var s1 = SafeAssigns.setTodos(socket, remaining);
-        var s2 = recomputeVisible(s1);
-        return LiveView.putFlash(s2, FlashType.Info, "Completed todos deleted!");
+        return LiveView.putFlash(
+            recomputeVisible(SafeAssigns.setTodos(socket, remaining)),
+            FlashType.Info,
+            "Completed todos deleted!"
+        );
     }
 	
 	// Additional helper functions with type-safe socket handling
@@ -700,7 +710,8 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	/**
 	 * Save edited todo with typed parameters.
 	 */
-    static function saveEditedTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+    @:keep
+    public static function save_edited_todo_typed(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         if (socket.assigns.editing_todo == null) return socket;
         var todo = socket.assigns.editing_todo;
         // Inline computed title into changeset map to avoid local-binder rename mismatches
@@ -716,8 +727,9 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
                 ls = ls.assign(_.editing_todo, null);
                 ls = recomputeVisible(ls);
                 return ls;
-            case Error(_):
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
+            case Error(reason):
+                var reasonStr = elixir.Kernel.toString(reason);
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo: " + reasonStr);
         }
     }
 
@@ -1153,21 +1165,7 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
         ');
     }
 	
-	/**
-	 * Render presence panel showing online users and editing status
-	 * 
-	 * Uses idiomatic Phoenix pattern: single presence map with all user state
-	 */
-    @:keep public static function renderPresencePanel(_onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>): String {
-        // TEMP: Presence panel disabled pending compiler Map iteration fix.
-        // Keeps runtime clean while we finalize Presence iteration transform in AST pipeline.
-        return "";
-    }
-	
-	/**
-	 * Render bulk actions section
-	 */
-    @:keep public static function renderBulkActions(assigns: TodoLiveAssigns): String {
+    public static function renderBulkActions(assigns: TodoLiveAssigns): String {
 		if (assigns.todos.length == 0) {
 			return "";
 		}
@@ -1192,162 +1190,30 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 			</div>';
 	}
 	
-	/**
-	 * Render the todo list section
-	 */
-    @:keep public static function renderTodoList(assigns: TodoLiveAssigns): String {
-		if (assigns.todos.length == 0) {
-			return HXX.hxx('
-				<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center">
-					<div class="text-6xl mb-4">📋</div>
-					<h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-						No todos yet!
-					</h3>
-					<p class="text-gray-600 dark:text-gray-400">
-						Click "Add New Todo" to get started.
-					</p>
-				</div>
-			');
-		}
-		
-        var filteredTodos:Array<server.schemas.Todo> = filterAndSortTodos(
-            assigns.todos,
-            assigns.filter,
-            assigns.sort_by,
-            assigns.search_query,
-            assigns.selected_tags
-        );
-        var todoItems:Array<String> = filteredTodos.map(function(todo) {
-            return renderTodoItem(todo, assigns.editing_todo);
-        });
-        var buf = new StringBuf();
-        for (i in 0...todoItems.length) {
-            if (i > 0) buf.add("\n");
-            buf.add(todoItems[i]);
-        }
-        return buf.toString();
-	}
-	
-	/**
-	 * Render individual todo item
-	 */
-	static function renderTodoItem(todo: server.schemas.Todo, editingTodo: Null<server.schemas.Todo>): String {
-		var isEditing = editingTodo != null && editingTodo.id == todo.id;
-		var priorityColor = switch(todo.priority) {
-			case "high": "border-red-500";
-			case "medium": "border-yellow-500";
-			case "low": "border-green-500";
-			case _: "border-gray-300";
-		};
-		
-		if (isEditing) {
-			return '<div id="todo-${todo.id}" data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
-					<form phx-submit="save_todo" class="space-y-4">
-						<input type="text" name="title" value="${todo.title}" required data-testid="input-title"
-							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
-						<textarea name="description" rows="2"
-							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">${todo.description}</textarea>
-						<div class="flex space-x-2">
-							<button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-								Save
-							</button>
-							<button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-								Cancel
-							</button>
-						</div>
-					</form>
-				</div>';
-		} else {
-			var completedClass = todo.completed ? "opacity-60" : "";
-			var textDecoration = todo.completed ? "line-through" : "";
-			var checkmark = todo.completed ? '<span class="text-green-500">✓</span>' : '';
-			
-			return '<div id="todo-${todo.id}" data-testid="todo-card" data-completed="${Std.string(todo.completed)}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
-					<div class="flex items-start space-x-4">
-                        <!-- Checkbox -->
-                            <button type="button" phx-click="toggle_todo" phx-value-id="${todo.id}" data-testid="btn-toggle-todo"
-                                class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
-                                ${checkmark}
-                            </button>
-						
-						<!-- Content -->
-						<div class="flex-1">
-							<h3 class="text-lg font-semibold text-gray-800 dark:text-white ${textDecoration}">
-								${todo.title}
-							</h3>
-							${todo.description != null && todo.description != "" ? 
-								'<p class="text-gray-600 dark:text-gray-400 mt-1 ${textDecoration}">${todo.description}</p>' : 
-								''}
-							
-							<!-- Meta info -->
-							<div class="flex flex-wrap gap-2 mt-3">
-								<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-									Priority: ${todo.priority}
-								</span>
-                                ${todo.dueDate != null ? 
-                                    '<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${format_due_date(todo.dueDate)}</span>' : 
-                                    ''}
-								${renderTags(todo.tags)}
-							</div>
-						</div>
-						
-						<!-- Actions -->
-						<div class="flex space-x-2">
-                                            <button type="button" phx-click="edit_todo" phx-value-id="${todo.id}" data-testid="btn-edit-todo"
-                                    class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
-                                    ✏️
-                                </button>
-                                            <button type="button" phx-click="delete_todo" phx-value-id="${todo.id}" data-testid="btn-delete-todo"
-                                    class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
-                                    🗑️
-                                </button>
-						</div>
-					</div>
-				</div>';
-		}
-	}
-	
-	/**
-	 * Render tags for a todo item
-	 */
-	static function renderTags(tags: Array<String>): String {
-		if (tags == null || tags.length == 0) {
-			return "";
-		}
-		
-        var tagsNorm:Array<String> = (tags != null) ? tags : [];
-        var tagElements:Array<String> = tagsNorm.map(function(tag) {
-            return '<button phx-click="search_todos" phx-value-query="${tag}" class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#${tag}</button>';
-        });
-        var buf = new StringBuf();
-        for (el in tagElements) {
-            buf.add(el);
-        }
-        return buf.toString();
-	}
-	
-	/**
-	 * Helper to filter todos based on filter and search query
-	 * Uses __elixir__ to avoid compiler scope bug with ternary expressions in closures
-	 */
+    /**
+     * Helper to filter todos based on filter and search query
+     * Pure Haxe implementation (no __elixir__ injection).
+     */
     static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
-        return untyped __elixir__('
-            base = case {1} do
-                {:active} -> Enum.filter({0}, fn t -> not t.completed end)
-                {:completed} -> Enum.filter({0}, fn t -> t.completed end)
-                {:all} -> {0}
-            end
-            ql_opt = if {2} != nil and {2} != "", do: String.downcase({2}), else: nil
-            if ql_opt == nil do
-                base
-            else
-                Enum.filter(base, fn t ->
-                    title = if t.title != nil, do: String.downcase(t.title), else: ""
-                    desc = if t.description != nil, do: String.downcase(t.description), else: ""
-                    String.contains?(title, ql_opt) or String.contains?(desc, ql_opt)
-                end)
-            end
-        ', todos, filter, searchQuery);
+        inline function lower(s:String):String {
+            return elixir.Kernel.apply(elixir.ElixirString, "downcase", [s]);
+        }
+        var base = switch (filter) {
+            case shared.TodoTypes.TodoFilter.Active: todos.filter(function(t) return !t.completed);
+            case shared.TodoTypes.TodoFilter.Completed: todos.filter(function(t) return t.completed);
+            case shared.TodoTypes.TodoFilter.All: todos;
+        };
+
+        if (searchQuery == null || searchQuery == "") {
+            return base;
+        }
+
+        var ql = lower(searchQuery);
+        return base.filter(function(t) {
+            var title = (t.title != null) ? lower(t.title) : "";
+            var desc = (t.description != null) ? lower(t.description) : "";
+            return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1;
+        });
     }
 	
     /**
@@ -1359,22 +1225,19 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
      */
     public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String, selectedTags: Array<String>): Array<server.schemas.Todo> {
         final sortKey = encodeSort(sortBy);
-        // First, filter the todos using raw Elixir (filtering logic is complex)
-        final filtered: Array<Dynamic> = untyped __elixir__('
-          filtered = filter_todos({0}, {1}, {2})
-          if {3} != nil and length({3}) > 0 do
-            Enum.filter(filtered, fn t ->
-              tags = if is_nil(t.tags), do: [], else: t.tags
-              Enum.any?({3}, fn sel ->
-                Enum.find_index(tags, fn item -> item == sel end) != nil
-              end)
-            end)
-          else
-            filtered
-          end
-        ', todos, filter, searchQuery, selectedTags);
-        // Then sort using the typed Sorting API - this is a REAL Haxe function call
-        // that uses extern inline to inject proper Elixir sorting code
+        // First, filter the todos in Haxe
+        var filtered = filterTodos(todos, filter, searchQuery);
+        // Then apply tag filtering if needed
+        if (selectedTags != null && selectedTags.length > 0) {
+            filtered = filtered.filter(function(t) {
+                var tags = (t.tags != null) ? t.tags : [];
+                for (sel in selectedTags) {
+                    if (tags.indexOf(sel) != -1) return true;
+                }
+                return false;
+            });
+        }
+        // Sort using the typed Sorting API (extern inline on the framework side)
         return cast Sorting.by(sortKey, filtered);
     }
 }
