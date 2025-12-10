@@ -81,8 +81,9 @@ class UserController {
      * ```
      * 
      * With Haxe, we get type-safe JSON responses and can refactor safely.
-     */
+    */
     public static function index(conn: Conn<IndexParams>, _params: IndexParams): Conn<IndexParams> {
+        var _ = _params;
         // Fetch all users from database
         var users = Users.listUsers(null);
         return conn.json({users: users});
@@ -129,9 +130,7 @@ class UserController {
      */
     public static function create(conn: Conn<CreateParams>, params: CreateParams): Conn<CreateParams> {
         // Create user through Users context with database persistence
-        var result = Users.createUser(params);
-
-        switch (result) {
+        switch (Users.createUser(params)) {
             case Ok(value):
                 var okConn = conn.putStatus(201);
                 return okConn.json({
@@ -174,9 +173,7 @@ class UserController {
             active: params.active
         };
         
-        var result = Users.updateUser(user, updateAttrs);
-
-        switch (result) {
+        switch (Users.updateUser(user, updateAttrs)) {
             case Ok(value):
                 // Use a named local to avoid any intermediate aliasing of the json/2 payload
                 final payload = {
@@ -216,21 +213,23 @@ class UserController {
         var result = Users.deleteUser(user);
         
         return switch(result) {
-            case Ok(_value):
+            case Ok(value):
                 // Use a named local to avoid any intermediate aliasing of the json/2 payload
                 final payload = {
                     deleted: params.id,
                     success: true,
-                    message: 'User ${params.id} deleted successfully'
+                    message: 'User ${params.id} deleted successfully',
+                    user: value
                 };
                 conn.json(payload);
                 
-            case Error(_reason):
+            case Error(reason):
                 conn
                     .putStatus(500)
                     .json({
                         error: "Failed to delete user",
-                        success: false
+                        success: false,
+                        reason: reason
                     });
         }
     }

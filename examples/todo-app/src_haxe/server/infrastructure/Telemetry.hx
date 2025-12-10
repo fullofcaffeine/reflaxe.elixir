@@ -1,6 +1,9 @@
 package server.infrastructure;
 
 import elixir.otp.Supervisor;
+import elixir.otp.Supervisor.SupervisorExtern;
+import elixir.otp.Supervisor.SupervisorOptions;
+import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.Application;
 import elixir.otp.TypeSafeChildSpec;
 
@@ -87,13 +90,32 @@ class Telemetry {
      * @return Application result with supervisor PID
      * 
      * NOTE: @:keep is still required until we implement macro-time preservation
-     */
+    */
     @:keep
     public static function start_link(args: TelemetryOptions): ApplicationResult {
+        // Ack args (OTP callback) to keep compiler warnings clean
+        var _ = args;
         // Start a telemetry supervisor with no children; reporters are added dynamically.
-        // Inline empty list directly to avoid intermediate temp and ensure WAE=0.
-        return untyped __elixir__('Supervisor.start_link([], [strategy: :one_for_one, max_restarts: 3, max_seconds: 5])');
+        var options: SupervisorOptions = {
+            strategy: SupervisorStrategy.OneForOne,
+            max_restarts: 3,
+            max_seconds: 5
+        };
+        return SupervisorExtern.startLink([], options);
     }
+
+
+    @:keep
+    public static function init(args: TelemetryOptions): Dynamic {
+        var _ = args;
+        var options: SupervisorOptions = {
+            strategy: SupervisorStrategy.OneForOne,
+            max_restarts: 3,
+            max_seconds: 5
+        };
+        return SupervisorExtern.init([], options);
+    }
+
     
     /**
      * Get telemetry metrics configuration

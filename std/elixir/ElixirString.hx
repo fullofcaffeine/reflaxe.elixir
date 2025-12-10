@@ -8,7 +8,7 @@ package elixir;
  * 
  * Maps to Elixir's String module functions with proper type signatures
  */
-@:native("String")
+@:native("Elixir.String")
 extern class ElixirString {
     
     // Length and measurement

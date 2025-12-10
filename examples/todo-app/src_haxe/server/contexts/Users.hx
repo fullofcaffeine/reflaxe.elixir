@@ -63,25 +63,15 @@ class Users {
      * Get all users with optional filtering
      */
     public static function listUsers(?filter: UserFilter): Array<User> {
-        // Build a single query variable and refine it conditionally; return at the end.
-        var query: TypedQuery<User> = if (filter != null) {
-            var q = TypedQuery.from(contexts.User);
-            if (filter.name != null) {
-                q = q.where(u -> u.name == '%${filter.name}%');
-            }
-            if (filter.email != null) {
-                q = q.where(u -> u.email == '%${filter.email}%');
-            }
-            if (filter.isActive != null) {
-                q = q.where(u -> u.active == filter.isActive);
-            }
-            q;
+        var base = TypedQuery.from(contexts.User);
+        var filtered = if (filter == null) {
+            base;
         } else {
-            TypedQuery.from(contexts.User);
+            var byName = (filter.name != null) ? base.where(u -> u.name == '%${filter.name}%') : base;
+            var byEmail = (filter.email != null) ? byName.where(u -> u.email == '%${filter.email}%') : byName;
+            (filter.isActive != null) ? byEmail.where(u -> u.active == filter.isActive) : byEmail;
         }
-
-        var users = Repo.all(query);
-        return users;
+        return Repo.all(filtered);
     }
     
     /**
