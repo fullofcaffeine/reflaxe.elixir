@@ -98,7 +98,6 @@ server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 server.support.Flash
 server.support.FlashTypeTools
-server.support.ChangesetTools
 # PostgrexTypes is now auto-generated from Repo, not a separate class
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix

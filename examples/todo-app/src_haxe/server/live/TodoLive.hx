@@ -7,7 +7,6 @@ import elixir.Task; // Background work via Task.start
 import elixir.DateTime.NaiveDateTime;
 import elixir.Enum;
 import haxe.functional.Result; // Import Result type properly
-import server.support.ChangesetTools;
 import phoenix.LiveSocket; // Type-safe socket wrapper
 import phoenix.types.Flash.FlashType;
 import phoenix.Phoenix.HandleEventResult;
@@ -281,7 +280,6 @@ class TodoLive {
 
         // Build the todo struct for changeset
         var todoStruct = new server.schemas.Todo();
-        var permitted = ["title","description","completed","priority","due_date","tags","user_id"];
         var castParams: Dynamic = {
             title: title,
             description: description,
@@ -291,7 +289,8 @@ class TodoLive {
             tags: tagsArr,
             user_id: socket.assigns.current_user.id
         };
-        var cs = ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
+        // Use the schema-generated changeset to keep casting/validation idiomatic
+        var cs = Todo.changeset(todoStruct, castParams);
         switch (Repo.insert(cs)) {
             case Ok(value):
                 // broadcast best-effort; ignore returned term
