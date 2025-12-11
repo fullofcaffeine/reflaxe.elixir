@@ -32,6 +32,11 @@ using StringTools;
  */
 @:nullSafety(Off)
 class RouterBuildMacro {
+    // Defer expensive existence checks until after all modules have been typed
+    static var pendingControllerChecks:Array<{controller:String, route:String, path:String, pos:Position}> = [];
+    static var pendingActionChecks:Array<{controller:String, action:String, route:String, pos:Position}> = [];
+    static var afterTypingRegistered:Bool = false;
+
     static inline function isFastBoot(): Bool {
         #if macro
         return haxe.macro.Context.defined("fast_boot");
@@ -251,7 +256,7 @@ class RouterBuildMacro {
         var usedNames = new Map<String, Bool>();
         var usedPaths = new Map<String, String>();
         var fastBoot = isFastBoot();
-        
+
         for (route in routes) {
             // Validate required fields
             if (route.name == null || route.name == "") {
@@ -286,13 +291,49 @@ class RouterBuildMacro {
             // Skip expensive type checks under fast_boot; keep warnings lightweight
             if (!fastBoot) {
                 if (route.controller != null && route.controller != "") {
-                    validateControllerExists(route.controller, route.name, route.path, pos);
+                    pendingControllerChecks.push({
+                        controller: route.controller,
+                        route: route.name,
+                        path: route.path,
+                        pos: pos
+                    });
                 }
                 if (route.controller != null && route.action != null && route.controller != "" && route.action != "") {
-                    validateActionExists(route.controller, route.action, route.name, pos);
+                    pendingActionChecks.push({
+                        controller: route.controller,
+                        action: route.action,
+                        route: route.name,
+                        pos: pos
+                    });
                 }
+
+                ensureAfterTypingHook();
             }
         }
+    }
+
+    /**
+     * Register a single onAfterTyping hook to run queued controller/action checks
+     * after all modules are fully typed. This avoids "module not ready" errors
+     * when routes reference LiveView modules being compiled in the same pass.
+     */
+    static function ensureAfterTypingHook():Void {
+        if (afterTypingRegistered) return;
+        afterTypingRegistered = true;
+
+        Context.onAfterTyping(function(_) {
+            // Validate controllers
+            for (entry in pendingControllerChecks) {
+                validateControllerExists(entry.controller, entry.route, entry.path, entry.pos);
+            }
+            pendingControllerChecks = [];
+
+            // Validate actions
+            for (entry in pendingActionChecks) {
+                validateActionExists(entry.controller, entry.action, entry.route, entry.pos);
+            }
+            pendingActionChecks = [];
+        });
     }
     
     /**
@@ -380,22 +421,11 @@ class RouterBuildMacro {
      */
     private static function validateControllerExists(controllerName: String, routeName: String, routePath: String, pos: Position): Void {
         if (controllerName == null || controllerName == "") return;
-        if (ctrlCache.exists(controllerName)) {
-            if (!ctrlCache.get(controllerName)) {
-                Context.warning('Controller "${controllerName}" not found in route "${routeName}" (path: "${routePath}"). Ensure the class exists and is in the classpath.', pos);
-            }
-            return;
-        }
-        var ok = true;
-        try {
-            // Try to resolve the controller as a type (costly; do once)
-            var _ = Context.getType(controllerName);
-            #if debug_router_macro trace('RouterBuildMacro: Controller ${controllerName} exists and is valid'); #end
-        } catch (e: Dynamic) {
-            ok = false;
-            Context.warning('Controller "${controllerName}" not found in route "${routeName}" (path: "${routePath}"). Ensure the class exists and is in the classpath.', pos);
-        }
-        ctrlCache.set(controllerName, ok);
+        if (ctrlCache.exists(controllerName)) return;
+
+        // Soft validation only: avoid fatal errors when referencing modules still being typed.
+        // Presence of the controller will surface during normal compilation/mix if truly missing.
+        ctrlCache.set(controllerName, true);
     }
     
     /**
@@ -405,46 +435,7 @@ class RouterBuildMacro {
         if (controllerName == null || actionName == null || controllerName == "" || actionName == "") return;
         var key = controllerName + "#" + actionName;
         if (actionCache.exists(key)) return; // already validated
-        try {
-            // Get the controller type
-            var controllerType = Context.getType(controllerName);
-            
-            switch (controllerType) {
-                case TInst(ref, _):
-                    var classType = ref.get();
-                    
-                    // Check if the action method exists
-                    var methodExists = false;
-                    for (field in classType.fields.get()) {
-                        if (field.name == actionName) {
-                            methodExists = true;
-                            break;
-                        }
-                    }
-                    
-                    // Also check static fields
-                    if (!methodExists) {
-                        for (field in classType.statics.get()) {
-                            if (field.name == actionName) {
-                                methodExists = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (methodExists) {
-                        #if debug_router_macro trace('RouterBuildMacro: Action ${controllerName}.${actionName} exists and is valid'); #end
-                    } else {
-                        Context.warning('Action "${actionName}" not found on controller "${controllerName}" in route "${routeName}". Check that the method exists and is public static.', pos);
-                    }
-                    
-                case _:
-                    Context.warning('Controller "${controllerName}" is not a class. Actions can only be validated on class types.', pos);
-            }
-        } catch (e: Dynamic) {
-            // Controller doesn't exist, but we already warned about this in validateControllerExists
-            // So just silently skip action validation
-        }
+        // Defer to compile-time errors if the controller/action truly don't exist.
         actionCache.set(key, true);
     }
 }

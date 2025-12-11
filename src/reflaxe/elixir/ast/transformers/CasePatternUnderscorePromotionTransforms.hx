@@ -104,29 +104,22 @@ class CasePatternUnderscorePromotionTransforms {
         pos = re.matchedPos().pos + re.matchedPos().len;
       }
     }
-    function collect(n:ElixirAST) {
+    inline function noteName(v:String):Void {
+      if (v != null && v.length > 0 && v.charAt(0) != '_') s.set(v, true);
+    }
+    function visitor(n:ElixirAST):Void {
       if (n == null || n.def == null) return;
       switch (n.def) {
-        case EVar(v): if (v != null && v.length > 0 && v.charAt(0) != '_') s.set(v, true);
+        case EVar(v): noteName(v);
         case EString(sv): markTextInterps(sv);
         case ERaw(code): markTextInterps(code);
-        case EBinary(_, l, r): collect(l); collect(r);
-        case EMatch(_, rhs): collect(rhs);
-        case EBlock(ss): for (x in ss) collect(x);
-        case EDo(ss2): for (x in ss2) collect(x);
-        case EIf(c,t,e): collect(c); collect(t); if (e != null) collect(e);
-        case ECase(expr, cls): collect(expr); for (c in cls) { if (c.guard != null) collect(c.guard); collect(c.body); }
-        case EWith(wcs, doB, elseB): for (w in wcs) { collect(w.expr); } if (doB != null) collect(doB); if (elseB != null) collect(elseB);
-        case ECall(t,_,as): if (t != null) collect(t); if (as != null) for (a in as) collect(a);
-        case ERemoteCall(t2,_,as2): collect(t2); if (as2 != null) for (a2 in as2) collect(a2);
-        case EField(obj,_): collect(obj);
-        case EAccess(obj2,key): collect(obj2); collect(key);
         default:
       }
     }
-    collect(body);
+    ASTUtils.walk(body, visitor);
+    if (guard != null) ASTUtils.walk(guard, visitor);
+    // Include guard metadata and interpolation scan
     if (guard != null) {
-      // Include guard metadata and interpolation scan
       try {
         var gmeta:Dynamic = guard.metadata;
         if (gmeta != null && untyped gmeta.usedLocalsFromTyped != null) {
@@ -134,7 +127,6 @@ class CasePatternUnderscorePromotionTransforms {
           for (n in garr) if (n != null && n.length > 0) s.set(n, true);
         }
       } catch (e:Dynamic) {}
-      collect(guard);
     }
     return s;
   }

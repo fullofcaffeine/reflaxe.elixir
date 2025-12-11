@@ -32,22 +32,22 @@ extern class ElixirString {
     public static function capitalize(string: String): String;
     
     // Trimming operations
-    @:native("String.trim")
+    @:native("trim")
     public static function trim(string: String): String;
-    
-    @:native("String.trim")
+
+    @:native("trim")
     public static function trimWith(string: String, chars: String): String;
-    
-    @:native("String.trim_leading")
+
+    @:native("trim_leading")
     public static function trimLeading(string: String): String;
-    
-    @:native("String.trim_leading")
+
+    @:native("trim_leading")
     public static function trimLeadingWith(string: String, chars: String): String;
-    
-    @:native("String.trim_trailing")
+
+    @:native("trim_trailing")
     public static function trimTrailing(string: String): String;
-    
-    @:native("String.trim_trailing")
+
+    @:native("trim_trailing")
     public static function trimTrailingWith(string: String, chars: String): String;
     
     // Padding operations
@@ -93,13 +93,13 @@ extern class ElixirString {
     public static function match(string: String, regex: String): Bool; // Simple regex matching
     
     // String splitting
-    @:native("String.split")
+    @:native("split")
     public static function split(string: String): Array<String>; // Split on whitespace
-    
-    @:native("String.split")
+
+    @:native("split")
     public static function splitOn(string: String, pattern: String): Array<String>;
-    
-    @:native("String.split")
+
+    @:native("split")
     public static function splitWithOptions(string: String, pattern: String, options: Array<String>): Array<String>; // Options like "trim", "global"
     
     @:native("String.split_at")

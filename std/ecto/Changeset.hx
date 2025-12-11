@@ -519,14 +519,10 @@ class ChangesetUtils {
      * @return The successful value or default
      */
     public static function unwrapOr<T, P>(result: Result<T, Changeset<T, P>>, defaultValue: T): T {
-        // Workaround for EverythingIsExprSanitizer bug in Reflaxe
-        // Using explicit temp variable to prevent switch body from being lost
-        // See: docs/03-compiler-development/EVERYTHINGISEXPR_SANITIZER_ISSUE.md
-        var output = switch(result) {
+        return switch (result) {
             case Ok(value): value;
             case Error(_): defaultValue;
         };
-        return output;
     }
     
     /**
@@ -536,14 +532,10 @@ class ChangesetUtils {
      * @return Some(value) if successful, None if error
      */
     public static function toOption<T, P>(result: Result<T, Changeset<T, P>>): Option<T> {
-        // Workaround for EverythingIsExprSanitizer bug in Reflaxe
-        // Using explicit temp variable to prevent switch body from being lost
-        // See: docs/03-compiler-development/EVERYTHINGISEXPR_SANITIZER_ISSUE.md
-        var output = switch(result) {
+        return switch (result) {
             case Ok(value): Some(value);
             case Error(_): None;
         };
-        return output;
     }
 }
 

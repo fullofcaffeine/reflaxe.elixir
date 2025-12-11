@@ -2,7 +2,7 @@ package server.live;
 
 import phoenix.Phoenix.Socket;
 import phoenix.LiveSocket;
-import server.live.TodoLive.TodoLiveAssigns;
+import server.live.TodoLiveTypes.TodoLiveAssigns;
 
 // Bridge to the generated LiveView module for reuse of server-side helpers
 @:native("TodoAppWeb.TodoLive")

@@ -12,6 +12,11 @@
 -dce full
 --macro exclude('client')
 --macro exclude('test')
+--macro keep('server.support.ChangesetTools')
+--macro keep('server.support.Flash')
+--macro keep('server.support.FlashTypeTools')
+--macro keep('server.support.TagTools')
+--macro keep('server.live.TodoLiveTypes')
 -D reflaxe.elixir=0.1.0
 -D hxx_string_to_sigil
 -D no-traces

@@ -1,4 +1,5 @@
 package server.schemas;
+import elixir.DateTime.NaiveDateTime;
 
 /**
  * Todo schema for task management
@@ -14,7 +15,7 @@ typedef TodoParams = {
     ?description: String,
     ?completed: Bool,
     ?priority: String,
-    ?dueDate: String,
+    ?dueDate: NaiveDateTime,
     ?tags: Array<String>,
     ?userId: Int
 }
@@ -29,7 +30,7 @@ class Todo {
     @:field public var description: String;
     @:field public var completed: Bool = false;
     @:field public var priority: String = "medium";
-    @:field public var dueDate: String;
+    @:field public var dueDate: NaiveDateTime;
     @:field public var tags: Array<String>;
     @:field public var userId: Int;
 

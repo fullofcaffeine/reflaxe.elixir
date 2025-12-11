@@ -54,20 +54,25 @@ class UnderscoreBinderAlignByBodyUseTransforms {
           for (cl in clauses) {
             var binder = extractSecondBinder(cl.pattern);
             if (binder != null && isUnderscored(binder)) {
+              var base = binder.substr(1);
               var declared = new Map<String,Bool>();
               collectPatternDecls(cl.pattern, declared);
               collectLhsDeclsInBody(cl.body, declared);
               if (fnDeclared != null) for (k in fnDeclared.keys()) declared.set(k, true);
               var used = collectUsedLowerNames(cl.body);
+              // Prefer the binder's base name when it is actually used in the body, regardless
+              // of how many other locals appear. This avoids false negatives that leave the
+              // pattern underscored and produce undefined-variable errors downstream.
+              if (allow(base) && used.exists(base) && !declared.exists(base)) {
+                var newPat = rewriteSecondBinder(cl.pattern, base);
+                if (newPat != null) { out.push({ pattern: newPat, guard: cl.guard, body: cl.body }); continue; }
+              }
+              // Fallback to original heuristic: single undefined lower-case var
               var undef:Array<String> = [];
               for (u in used.keys()) if (!declared.exists(u) && allow(u)) undef.push(u);
               if (undef.length == 1) {
-                var newName = undef[0];
-                var newPat = rewriteSecondBinder(cl.pattern, newName);
-                if (newPat != null) {
-                  out.push({ pattern: newPat, guard: cl.guard, body: cl.body });
-                  continue;
-                }
+                var newPat2 = rewriteSecondBinder(cl.pattern, undef[0]);
+                if (newPat2 != null) { out.push({ pattern: newPat2, guard: cl.guard, body: cl.body }); continue; }
               }
             }
             out.push(cl);
@@ -155,4 +160,3 @@ class UnderscoreBinderAlignByBodyUseTransforms {
 }
 
 #end
-

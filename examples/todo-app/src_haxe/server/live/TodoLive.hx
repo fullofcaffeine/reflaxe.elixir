@@ -4,6 +4,8 @@ import HXX; // Import HXX for template rendering
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
 import elixir.Task; // Background work via Task.start
+import elixir.DateTime.NaiveDateTime;
+import elixir.Enum;
 import haxe.functional.Result; // Import Result type properly
 import phoenix.LiveSocket; // Type-safe socket wrapper
 import phoenix.types.Flash.FlashType;
@@ -16,6 +18,9 @@ import phoenix.Presence; // Import Presence module for PresenceEntry typedef
 import phoenix.Sorting; // Type-safe sorting API using extern inline pattern
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
 import server.live.SafeAssigns;
+import server.live.TodoLiveTypes.TodoLiveAssigns;
+import server.live.TodoLiveTypes.TodoLiveEvent;
+import server.live.TodoLiveTypes.TodoView;
 import server.presence.TodoPresence;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
@@ -29,116 +34,6 @@ import server.types.Types.Session;
 import server.types.Types.User;
 import server.types.Types.AlertLevel;
 using reflaxe.elixir.macros.TypedQueryLambda;
-
-/**
- * Type-safe event definitions for TodoLive.
- * 
- * This enum replaces string-based events with compile-time validated ADTs.
- * Each event variant carries its own strongly-typed parameters.
- * 
- * Benefits:
- * - Compile-time validation of event names
- * - Type-safe parameters for each event
- * - Exhaustiveness checking in handle_event
- * - IntelliSense/autocomplete support
- * - No Dynamic types or manual conversions
- */
-enum TodoLiveEvent {
-    // Todo CRUD operations
-    CreateTodo(params: server.schemas.Todo.TodoParams);
-    ToggleTodo(id: Int);
-    DeleteTodo(id: Int);
-    EditTodo(id: Int);
-    SaveTodo(params: server.schemas.Todo.TodoParams);
-    CancelEdit;
-    
-    // Filtering and sorting
-    FilterTodos(filter: String);
-    SortTodos(sortBy: String);
-    SearchTodos(query: String);
-    ToggleTag(tag: String);
-    
-    // Priority management
-    SetPriority(id: Int, priority: String);
-    
-    // UI interactions
-    ToggleForm;
-    
-    // Bulk operations
-    BulkComplete;
-    BulkDeleteCompleted;
-}
-
-/**
- * Type-safe assigns structure for TodoLive socket
- * 
- * This structure defines all the state that can be stored in the LiveView socket.
- * Using this typedef ensures compile-time type safety for all socket operations.
- */
-typedef TodoLiveAssigns = {
-	var todos: Array<server.schemas.Todo>;
-	var filter: shared.TodoTypes.TodoFilter; // All | Active | Completed
-	var sort_by: shared.TodoTypes.TodoSort;  // Created | Priority | DueDate
-	var current_user: User;
-	var editing_todo: Null<server.schemas.Todo>;
-	var show_form: Bool;
-	var search_query: String;
-	var selected_tags: Array<String>;
-    // Optimistic UI state: ids currently flipped client-first, pending server reconcile
-    /**
-     * optimistic_toggle_ids
-     *
-     * WHAT
-     * - Minimal optimistic state (ids only) for instant checkbox flips.
-     *
-     * WHY
-     * - Keep UX snappy for idempotent single-field toggles without duplicating rows.
-     *
-     * HOW
-     * - On toggle, push id here and recompute rows so completed_for_view reflects the change.
-     *   Persist to DB and reconcile via PubSub broadcast of the authoritative row.
-     */
-    var optimistic_toggle_ids: Array<Int>;
-    // Precomputed view rows for HXX (zero-logic rendering)
-    var visible_todos: Array<TodoView>;
-	// Statistics
-	var total_todos: Int;
-	var completed_todos: Int;
-	var pending_todos: Int;
-	// Presence tracking (idiomatic Phoenix pattern: single flat map)
-    var online_users: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
-    // UI convenience fields for zero-logic HXX
-    var visible_count: Int;
-    var filter_btn_all_class: String;
-    var filter_btn_active_class: String;
-    var filter_btn_completed_class: String;
-    var sort_selected_created: Bool;
-    var sort_selected_priority: Bool;
-    var sort_selected_due_date: Bool;
-}
-
-/**
- * Row view model for HXX zero-logic rendering.
- * All derived fields are computed in Haxe, so HXX only binds assigns.
- */
-typedef TodoView = {
-    var id: Int;
-    var title: String;
-    var description: String;
-    var completedForView: Bool;
-    var completedStr: String;
-    var domId: String;
-    var containerClass: String;
-    var titleClass: String;
-    var descClass: String;
-    var priority: String;
-    var hasDue: Bool;
-    var dueDisplay: String;
-    var hasTags: Bool;
-    var hasDescription: Bool;
-    var isEditing: Bool;
-    var tags: Array<String>;
-}
 
 /**
  * LiveView component for todo management with real-time updates
@@ -273,23 +168,33 @@ class TodoLive {
      * 
      * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
      */
+    @:keep
     public static function handleInfo(msg: TodoPubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
         return handlePubSub(msg, liveSocket);
     }
 
+    @:keep
     static function handlePubSub(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+        // Handle creation separately to avoid binder underscore transforms causing undefined vars
+        var created: Todo = switch (payload) {
+            case TodoCreated(_): cast elixir.Tuple.elem(payload, 1);
+            case _: null;
+        };
+        if (created != null) {
+            var merged = socket.merge({
+                todos: [created].concat(socket.assigns.todos),
+                total_todos: socket.assigns.total_todos + 1,
+                pending_todos: socket.assigns.pending_todos + (created.completed ? 0 : 1),
+                completed_todos: socket.assigns.completed_todos + (created.completed ? 1 : 0)
+            });
+            return NoReply(recomputeVisible(merged));
+        }
+
         return switch (payload) {
-            case TodoCreated(todo):
-                var merged = socket.merge({
-                    todos: [todo].concat(socket.assigns.todos),
-                    total_todos: socket.assigns.total_todos + 1,
-                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
-                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
-                });
-                NoReply(recomputeVisible(merged));
             case TodoUpdated(todo):
-                var cleared = clearOptimisticToggle(todo.id, socket);
+                var clearedIds = socket.assigns.optimistic_toggle_ids.filter(function(x) return x != todo.id);
+                var cleared = socket.assign(_.optimistic_toggle_ids, clearedIds);
                 NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
             case TodoDeleted(id):
                 NoReply(recomputeVisible(removeTodoFromList(id, socket)));
@@ -326,7 +231,7 @@ class TodoLive {
 			description: params.description,
 			completed: false,
 			priority: params.priority != null ? params.priority : "medium",
-			dueDate: params.dueDate,
+			dueDate: params.dueDate != null ? parseDueDate(params.dueDate) : null,
 			tags: params.tags != null ? parseTags(params.tags) : [],
             userId: socket.assigns.current_user.id
 		};
@@ -349,8 +254,8 @@ class TodoLive {
 				});
                     return LiveView.putFlash(updatedSocket, FlashType.Success, "Todo created successfully!");
 				
-			case Error(reason):
-                    return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo: " + reason);
+			case Error(_):
+					return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
 		}
 	}
 
@@ -371,6 +276,7 @@ class TodoLive {
         var description = (rawDesc != null) ? rawDesc : "";
         var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
         var tagsArr: Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
+        var dueDate = parseDueDate(rawDue);
 
         // Build the todo struct for changeset
         var todoStruct = new server.schemas.Todo();
@@ -380,7 +286,7 @@ class TodoLive {
             description: description,
             completed: false,
             priority: priority,
-            due_date: (rawDue != null && rawDue != "") ? ((rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue) : null,
+            due_date: dueDate,
             tags: tagsArr,
             user_id: socket.assigns.current_user.id
         };
@@ -400,8 +306,11 @@ class TodoLive {
                 var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
                 return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
             case Error(reason):
-                var reasonStr = elixir.Kernel.toString(reason);
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo: " + reasonStr);
+                // Touch reason to silence unused warning in generated Elixir
+                var _ignoredReason = reason;
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
+            case _:
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
         }
     }
 
@@ -422,33 +331,45 @@ class TodoLive {
     @:keep
     public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
-        var ids = s.assigns.optimistic_toggle_ids;
-        var contains = ids.indexOf(id) != -1;
-        var computedIds = contains ? ids.filter(function(x) return x != id) : [id].concat(ids);
-        var sOptimistic = s.assign(_.optimistic_toggle_ids, computedIds);
-        var db = Repo.get(server.schemas.Todo, id);
-        if (db != null) {
-            var result = Repo.update(server.schemas.Todo.toggleCompleted(db));
-            switch (result) {
-                case Ok(updatedTodo):
-                    // Fetch authoritative row after update; fall back to updatedTodo
-                    var refreshed = Repo.get(server.schemas.Todo, id);
-                    var broadcastTodo = (refreshed != null) ? refreshed : updatedTodo;
-                    var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(broadcastTodo));
-                case Error(reason):
-                    var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
-                    var reasonStr = elixir.Kernel.toString(reason);
-                    return LiveView.putFlash(socket, FlashType.Error, "Failed to toggle todo: " + reasonStr);
+        var toggledTodos = s.assigns.todos.map(function(todo) {
+            if (todo.id == id) {
+                return (cast {
+                    id: todo.id,
+                    title: todo.title,
+                    description: todo.description,
+                    completed: !todo.completed,
+                    priority: todo.priority,
+                    dueDate: todo.dueDate,
+                    tags: todo.tags,
+                    userId: todo.userId
+                }: server.schemas.Todo);
             }
-        }
-        return recomputeVisible(sOptimistic);
-    }
+            return todo;
+        });
 
-// Helper to clear optimistic toggle flag when authoritative data arrives
-    static function clearOptimisticToggle(id: Int, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-        var ids = socket.assigns.optimistic_toggle_ids;
-        var filtered = ids.filter(function(x) return x != id);
-        return socket.assign(_.optimistic_toggle_ids, filtered);
+        var sOptimistic = recomputeVisible(s.merge({
+            optimistic_toggle_ids: [],
+            todos: toggledTodos,
+            completed_todos: countCompleted(toggledTodos),
+            pending_todos: countPending(toggledTodos)
+        }));
+
+        var db = Repo.get(server.schemas.Todo, id);
+        if (db == null) {
+            return sOptimistic;
+        }
+
+        switch (Repo.update(server.schemas.Todo.toggleCompleted(db))) {
+            case Ok(_):
+                var refreshed = Repo.get(server.schemas.Todo, id);
+                var finalTodo = (refreshed != null) ? refreshed : db;
+                var withTodo = updateTodoInList(finalTodo, sOptimistic);
+                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo));
+                return recomputeVisible(withTodo);
+            case _:
+                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
+                return LiveView.putFlash(sOptimistic, FlashType.Error, "Failed to toggle todo");
+        }
     }
 
 // Background reconcile for optimistic toggle
@@ -463,9 +384,8 @@ class TodoLive {
         switch (Repo.delete(todo)) {
             case Ok(_):
                 // continue
-            case Error(reason):
-                var reasonStr = elixir.Kernel.toString(reason);
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo: " + reasonStr);
+            case _:
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo");
         }
         // Reflect locally, then broadcast best-effort to others
         var updated = removeTodoFromList(id, socket);
@@ -480,9 +400,8 @@ class TodoLive {
         switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
             case Ok(_):
                 // proceed to refresh below
-            case Error(reason):
-                var reasonStr = elixir.Kernel.toString(reason);
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority: " + reasonStr);
+            case _:
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority");
         }
         var refreshed = Repo.get(server.schemas.Todo, id);
         if (refreshed != null) {
@@ -510,7 +429,7 @@ class TodoLive {
         var query = ecto.TypedQuery.from(server.schemas.Todo).where(t -> t.userId == userId);
         return Repo.all(query);
     }
-	
+
     @:keep
     static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
 		for (todo in todos) {
@@ -531,21 +450,29 @@ class TodoLive {
 	
     @:keep @:native("parse_tags")
     static function parseTags(tagsString: String): Array<String> {
-        if (tagsString == null || tagsString == "") return [];
-        var cleaned = tagsString
-            .split(",")
-            .map(tag -> trimTag(tag))
-            .filter(t -> t != "");
-        return cleaned;
+        return server.support.TagTools.parseTags(tagsString);
     }
 
-    static inline function trimTag(tag:String):String {
-        return elixir.Kernel.apply(elixir.ElixirString, "trim", [tag]);
+    static inline function parseDueDate(rawDue: Null<String>): Null<NaiveDateTime> {
+        if (rawDue == null || rawDue == "") return null;
+        var iso = (rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue;
+        return switch (NaiveDateTime.from_iso8601(iso)) {
+            case Ok(dt): dt;
+            case Error(reason):
+                // Touch reason to avoid unused warnings in generated Elixir while still returning nil
+                var _ignore = reason;
+                null;
+        };
     }
 	
     static function getUserFromSession(session: Session): User {
-        // Robust nil-safe session handling without reflection
-        var uid: Int = (session != null && session.userId != null) ? session.userId : 1;
+        var uid: Int = switch (session) {
+            case null: 1;
+            case _:
+                var primary:Dynamic = elixir.ElixirMap.get(session, "user_id");
+                var chosen:Dynamic = primary != null ? primary : elixir.ElixirMap.get(session, "userId");
+                chosen != null ? cast chosen : 1;
+        };
         return {
             id: uid,
             name: "Demo User",
@@ -581,49 +508,54 @@ class TodoLive {
         return updated;
     }
 
+    static function buildTodoRow(todoItem: server.schemas.Todo, forceCompletedView: Bool, editing: Null<server.schemas.Todo>): TodoView {
+        var completedFlag: Bool = if (forceCompletedView) {
+            true;
+        } else {
+            todoItem.completed;
+        }
+        var lineThrough = completedFlag ? " line-through" : "";
+        var border = borderForPriority(todoItem.priority);
+        var containerClass = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
+            + border
+            + (completedFlag ? " opacity-60" : "")
+            + " transition-all hover:shadow-xl";
+        var hasDue = (todoItem.dueDate != null);
+        var dueDisplay = hasDue ? format_due_date(todoItem.dueDate) : "";
+        var hasTags = (todoItem.tags != null && todoItem.tags.length > 0);
+        var hasDescription = (todoItem.description != null && todoItem.description != "");
+        var isEditing = (editing != null && editing.id == todoItem.id);
+        return {
+            id: todoItem.id,
+            title: todoItem.title,
+            description: todoItem.description,
+            completed_for_view: completedFlag,
+            completed_str: completedFlag ? "true" : "false",
+            dom_id: "todo-" + Std.string(todoItem.id),
+            container_class: containerClass,
+            title_class: "text-lg font-semibold text-gray-800 dark:text-white" + lineThrough,
+            desc_class: "text-gray-600 dark:text-gray-400 mt-1" + lineThrough,
+            priority: todoItem.priority,
+            has_due: hasDue,
+            due_display: dueDisplay,
+            has_tags: hasTags,
+            has_description: hasDescription,
+            is_editing: isEditing,
+            tags: (todoItem.tags != null ? todoItem.tags : [])
+        };
+    }
+
     /**
      * Build typed view rows for zero-logic HXX rendering.
      */
-    static function buildVisibleTodos(a: TodoLiveAssigns): Array<TodoView> {
-        // Build from already-filtered/sorted list to keep map body purely a row constructor
-        var base = filterAndSortTodos(a.todos, a.filter, a.sort_by, a.search_query, a.selected_tags);
-        var optimistic = (a.optimistic_toggle_ids != null) ? a.optimistic_toggle_ids : [];
-        var rows = base.map(function(todoItem) return makeViewRow(a, optimistic, todoItem));
+    static function buildVisibleTodos(assigns: TodoLiveAssigns): Array<TodoView> {
+        var base = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags);
+        var forceCompletedView = (assigns.filter == shared.TodoTypes.TodoFilter.Completed) && countCompleted(assigns.todos) == 0;
+        var currentEdit = assigns.editing_todo;
+        var rows = elixir.Enum.map(base, function(rowSource: server.schemas.Todo): TodoView {
+            return buildTodoRow(rowSource, forceCompletedView, currentEdit);
+        });
         return rows;
-    }
-
-    // Small, pure helper to keep Enum.map body simple and unambiguous for transforms
-    static inline function makeViewRow(a: TodoLiveAssigns, optimisticIds: Array<Int>, t: server.schemas.Todo): TodoView {
-        var flipped = optimisticIds.contains(t.id);
-        var completedForView = flipped ? !t.completed : t.completed;
-        var border = borderForPriority(t.priority);
-        var containerClass = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
-            + border
-            + (completedForView ? " opacity-60" : "")
-            + " transition-all hover:shadow-xl";
-        var hasDue = (t.dueDate != null);
-        var dueDisplay = hasDue ? format_due_date(t.dueDate) : "";
-        var hasTags = (t.tags != null && t.tags.length > 0);
-        var hasDescription = (t.description != null && t.description != "");
-        var isEditing = (a.editing_todo != null && a.editing_todo.id == t.id);
-        return {
-            id: t.id,
-            title: t.title,
-            description: t.description,
-            completedForView: completedForView,
-            completedStr: completedForView ? "true" : "false",
-            domId: "todo-" + Std.string(t.id),
-            containerClass: containerClass,
-            titleClass: "text-lg font-semibold text-gray-800 dark:text-white" + (completedForView ? " line-through" : ""),
-            descClass: "text-gray-600 dark:text-gray-400 mt-1" + (completedForView ? " line-through" : ""),
-            priority: t.priority,
-            hasDue: hasDue,
-            dueDisplay: dueDisplay,
-            hasTags: hasTags,
-            hasDescription: hasDescription,
-            isEditing: isEditing,
-            tags: (t.tags != null ? t.tags : [])
-        };
     }
 
     /**
@@ -727,18 +659,9 @@ class TodoLive {
                 ls = ls.assign(_.editing_todo, null);
                 ls = recomputeVisible(ls);
                 return ls;
-            case Error(reason):
-                var reasonStr = elixir.Kernel.toString(reason);
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo: " + reasonStr);
+            case _:
+                return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
         }
-    }
-
-    // Optimistic helpers
-    static inline function is_optimistically_toggled(assigns: TodoLiveAssigns, id: Int): Bool {
-        return assigns.optimistic_toggle_ids != null && assigns.optimistic_toggle_ids.contains(id);
-    }
-    static inline function effective_completed(todo: server.schemas.Todo, assigns: TodoLiveAssigns): Bool {
-        return is_optimistically_toggled(assigns, todo.id) ? !todo.completed : todo.completed;
     }
 
     // Local helpers to bridge typed enums ↔ UI strings
@@ -768,14 +691,20 @@ class TodoLive {
             description: rawDesc != null ? rawDesc : "",
             completed: false,
             priority: (rawPriority != null && rawPriority != "") ? rawPriority : "medium",
-            dueDate: (rawDue != null && rawDue != "") ? rawDue : null,
+            dueDate: parseDueDate(rawDue),
             tags: (rawTags != null && rawTags != "") ? parseTags(rawTags) : [],
             userId: socket.assigns.current_user.id
         };
         return createTodo(todoParams, socket);
     }
     static inline function format_due_date(d: Dynamic): String {
-        return d == null ? "" : Std.string(d);
+        if (d == null) return "";
+        try {
+            var iso = (cast d : NaiveDateTime).to_iso8601();
+            return iso.substr(0, 10);
+        } catch (_:Dynamic) {
+            return Std.string(d);
+        }
     }
     static inline function encodeSort(s: shared.TodoTypes.TodoSort): String {
         return switch (s) { case Created: "created"; case Priority: "priority"; case DueDate: "due_date"; };
@@ -830,7 +759,7 @@ class TodoLive {
 			title: params.title,
 			description: params.description,
 			priority: params.priority,
-			dueDate: params.dueDate,
+			dueDate: params.dueDate != null ? parseDueDate(params.dueDate) : null,
 			tags: params.tags != null ? parseTags(params.tags) : null,
 			completed: params.completed
 		};
@@ -1043,7 +972,7 @@ class TodoLive {
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
                             <form phx-change="search_todos" class="relative">
-									<input type="search" name="query" value={@search_query}
+									<input type="search" name="query" value={@search_query} phx-debounce="300"
 										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Search todos..." />
 									<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -1058,6 +987,16 @@ class TodoLive {
                                 class={@filter_btn_active_class}>Active</button>
                             <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
                                 class={@filter_btn_completed_class}>Completed</button>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button phx-click="search_todos" phx-value-query="work"
+                                class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded text-xs hover:bg-blue-200">
+                                work
+                            </button>
+                            <button phx-click="search_todos" phx-value-query="home"
+                                class="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded text-xs hover:bg-purple-200">
+                                home
+                            </button>
                         </div>
 							
 							<!-- Sort Dropdown -->
@@ -1193,10 +1132,10 @@ class TodoLive {
     /**
      * Helper to filter todos based on filter and search query
      * Pure Haxe implementation (no __elixir__ injection).
-     */
+        */
     static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
         inline function lower(s:String):String {
-            return elixir.Kernel.apply(elixir.ElixirString, "downcase", [s]);
+            return s.toLowerCase();
         }
         var base = switch (filter) {
             case shared.TodoTypes.TodoFilter.Active: todos.filter(function(t) return !t.completed);
@@ -1204,16 +1143,17 @@ class TodoLive {
             case shared.TodoTypes.TodoFilter.All: todos;
         };
 
-        if (searchQuery == null || searchQuery == "") {
-            return base;
+        var result = if (searchQuery == null || searchQuery == "") {
+            base;
+        } else {
+            var ql = lower(searchQuery);
+            base.filter(function(t) {
+                var title = (t.title != null) ? lower(t.title) : "";
+                var desc = (t.description != null) ? lower(t.description) : "";
+                return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1;
+            });
         }
-
-        var ql = lower(searchQuery);
-        return base.filter(function(t) {
-            var title = (t.title != null) ? lower(t.title) : "";
-            var desc = (t.description != null) ? lower(t.description) : "";
-            return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1;
-        });
+        return result;
     }
 	
     /**
@@ -1231,10 +1171,7 @@ class TodoLive {
         if (selectedTags != null && selectedTags.length > 0) {
             filtered = filtered.filter(function(t) {
                 var tags = (t.tags != null) ? t.tags : [];
-                for (sel in selectedTags) {
-                    if (tags.indexOf(sel) != -1) return true;
-                }
-                return false;
+                return selectedTags.filter(function(sel) return tags.indexOf(sel) != -1).length > 0;
             });
         }
         // Sort using the typed Sorting API (extern inline on the framework side)

@@ -3537,155 +3537,122 @@ class ElixirASTTransformer {
      * most generated code that uses EDefmodule format.
      */
     static function bitwiseImportPass(ast: ElixirAST): ElixirAST {
-        // Phase 1: Detect if bitwise operators are used
-        var needsBitwise = false;
-        
-        #if debug_bitwise_import
-        // DISABLED: trace('[XRay BitwiseImport] Starting scan for bitwise operators');
-        #end
-        
-        // Recursive function to deeply traverse the AST
-        function checkForBitwise(node: ElixirAST): Void {
-            // Check for null node or def before processing
-            if (node == null || node.def == null) {
-                return;
+        // Detect bitwise operators per module
+        function containsBitwise(node: ElixirAST): Bool {
+            var found = false;
+            function walk(n: ElixirAST): Void {
+                if (n == null || n.def == null || found) return;
+                switch (n.def) {
+                    case EBinary(op, left, right):
+                        switch (op) {
+                            case BitwiseAnd | BitwiseOr | BitwiseXor | ShiftLeft | ShiftRight:
+                                found = true;
+                            default:
+                        }
+                        walk(left);
+                        walk(right);
+                    case EUnary(BitwiseNot, expr):
+                        found = true;
+                        walk(expr);
+                    default:
+                        iterateAST(n, walk);
+                }
             }
-
-            #if debug_bitwise_import
-            var nodeType = Type.enumConstructor(node.def);
-            if (nodeType == "EBinary") {
-                // DISABLED: trace('[XRay BitwiseImport] Checking EBinary node');
-            }
-            #end
-
-            switch(node.def) {
-                case EBinary(op, left, right):
-                    #if debug_bitwise_import
-                    // DISABLED: trace('[XRay BitwiseImport] Binary operator: $op');
-                    #end
-                    switch(op) {
-                        case BitwiseAnd | BitwiseOr | BitwiseXor | ShiftLeft | ShiftRight:
-                            #if debug_bitwise_import
-                            // DISABLED: trace('[XRay BitwiseImport] Found bitwise operator: $op');
-                            #end
-                            needsBitwise = true;
-                        default:
-                    }
-                    // Recursively check child nodes
-                    checkForBitwise(left);
-                    checkForBitwise(right);
-                case EUnary(BitwiseNot, expr):
-                    #if debug_bitwise_import
-                    // DISABLED: trace('[XRay BitwiseImport] Found BitwiseNot operator');
-                    #end
-                    needsBitwise = true;
-                    checkForBitwise(expr);
-                default:
-                    // For all other node types, recursively visit children
-                    iterateAST(node, checkForBitwise);
-            }
+            walk(node);
+            return found;
         }
-        
-        checkForBitwise(ast);
-        
-        #if debug_bitwise_import
-        // DISABLED: trace('[XRay BitwiseImport] Needs bitwise: $needsBitwise');
-        #end
-        
-        // Phase 2: Add import if needed
-        if (!needsBitwise) return ast;
-        
+
+        // Add import when needed; drop it when no bitwise ops remain
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
-            switch(node.def) {
+            switch (node.def) {
                 case EDefmodule(name, doBlock):
-                    #if debug_bitwise_import
-                    // DISABLED: trace('[XRay BitwiseImport] Processing defmodule: $name');
-                    #end
-                    
-                    // For defmodule, we need to inject the import into the do block
-                    switch(doBlock.def) {
+                    var hasBitwise = containsBitwise(node);
+
+                    switch (doBlock.def) {
                         case EBlock(statements):
-                            #if debug_bitwise_import
-                            // DISABLED: trace('[XRay BitwiseImport] Defmodule has ${statements.length} statements');
-                            #end
-                            
-                            // Check if Bitwise is already imported
+                            var filtered = new Array<ElixirAST>();
                             var hasImport = false;
+
                             for (stmt in statements) {
-                                switch(stmt.def) {
-                                    case EImport(module, _, _):  // Match all three parameters
-                                        if (module == "Bitwise") {
-                                            hasImport = true;
-                                            break;
-                                        }
-                                    default:
+                                var isBitwiseImport = switch (stmt.def) {
+                                    case EImport(module, _, _): module == "Bitwise";
+                                    default: false;
+                                };
+
+                                if (isBitwiseImport) {
+                                    if (hasBitwise) {
+                                        hasImport = true;
+                                        filtered.push(stmt);
+                                    } else {
+                                        // drop unused Bitwise import
+                                    }
+                                } else {
+                                    filtered.push(stmt);
                                 }
                             }
-                            
-                            if (!hasImport) {
-                                // Add import Bitwise at the beginning
-                                var newStatements = statements.copy();
-                                newStatements.insert(0, makeAST(EImport("Bitwise", null, null)));  // Provide all three parameters
-                                
-                                #if debug_bitwise_import
-                                // DISABLED: trace('[XRay BitwiseImport] Added import Bitwise to defmodule');
-                                #end
-                                
-                                return makeASTWithMeta(
-                                    EDefmodule(name, makeAST(EBlock(newStatements))),
-                                    node.metadata,
-                                    node.pos
-                                );
+
+                            if (hasBitwise && !hasImport) {
+                                filtered.insert(0, makeAST(EImport("Bitwise", null, null)));
                             }
+
+                            if (filtered.length == statements.length && (!hasBitwise || hasImport)) {
+                                return node;
+                            }
+
+                            return makeASTWithMeta(
+                                EDefmodule(name, makeAST(EBlock(filtered))),
+                                node.metadata,
+                                node.pos
+                            );
+
                         default:
+                            return node;
                     }
-                    return node;
-                    
+
                 case EModule(name, attributes, body):
-                    #if debug_bitwise_import
-                    // DISABLED: trace('[XRay BitwiseImport] Processing module: $name');
-                    // DISABLED: trace('[XRay BitwiseImport] Current attributes count: ${attributes.length}');
-                    #end
-                    
-                    // Check if Bitwise is already imported (by checking attribute names)
+                var hasBitwise = containsBitwise(node);
+                    var newAttributes = new Array<EAttribute>();
                     var hasImport = false;
+
                     for (attr in attributes) {
+                        var isBitwiseImport = false;
                         if (attr.name == "import" && attr.value != null) {
-                            // Check if it's importing Bitwise
-                            switch(attr.value.def) {
+                            switch (attr.value.def) {
                                 case EAtom(atomVal) if (atomVal == "Bitwise"):
-                                    hasImport = true;
+                                    isBitwiseImport = true;
                                 case EVar("Bitwise"):
-                                    hasImport = true;
+                                    isBitwiseImport = true;
                                 default:
                             }
                         }
+
+                        if (isBitwiseImport) {
+                            if (hasBitwise) {
+                                hasImport = true;
+                                newAttributes.push(attr);
+                            } // else drop it
+                        } else {
+                            newAttributes.push(attr);
+                        }
                     }
-                    
-                    #if debug_bitwise_import
-                    // DISABLED: trace('[XRay BitwiseImport] Has existing import: $hasImport');
-                    #end
-                    
-                    if (!hasImport) {
-                        // Add import Bitwise at the beginning of attributes
-                        var newAttributes = attributes.copy();
+
+                    if (hasBitwise && !hasImport) {
                         newAttributes.insert(0, {
                             name: "import",
                             value: makeAST(EAtom(ElixirAtom.raw("Bitwise")))
                         });
-                        
-                        #if debug_bitwise_import
-                        // DISABLED: trace('[XRay BitwiseImport] Added import Bitwise to module');
-                        #end
-                        
-                        return makeASTWithMeta(
-                            EModule(name, newAttributes, body),
-                            node.metadata,
-                            node.pos
-                        );
                     }
-                    return node;
-                    
+
+                    if (newAttributes.length == attributes.length && (!hasBitwise || hasImport)) {
+                        return node;
+                    }
+
+                    return makeASTWithMeta(
+                        EModule(name, newAttributes, body),
+                        node.metadata,
+                        node.pos
+                    );
+
                 default:
                     return node;
             }

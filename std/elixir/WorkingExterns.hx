@@ -75,7 +75,7 @@ extern class ElixirString {
     @:native("String.length")
     public static function length(string: String): Int;
     
-    @:native("String.trim")
+    @:native("trim")
     public static function trim(string: String): String;
     
     @:native("String.downcase")
@@ -84,7 +84,7 @@ extern class ElixirString {
     @:native("String.upcase")
     public static function upcase(string: String): String;
     
-    @:native("String.split")
+    @:native("split")
     public static function split(string: String): Array<String>;
     
     @:native("String.contains?")

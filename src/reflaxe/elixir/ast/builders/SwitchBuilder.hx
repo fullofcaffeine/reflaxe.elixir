@@ -1121,9 +1121,12 @@ class SwitchBuilder {
                 }
                 // Result constructors (Ok/Error) should always be considered used
                 if (!isUsed && isResultCtor) isUsed = true;
+                // Conservative fallback: if usage cannot be proven, treat the parameter as used to avoid
+                // introducing underscore binders that later appear in clause bodies.
+                if (!isUsed) isUsed = true;
 
-                // Apply underscore prefix for unused parameters
-                var paramName = isUsed ? baseParamName : "_" + baseParamName;
+                // Always keep the original base parameter name to avoid mismatched underscore binders.
+                var paramName = baseParamName;
 
                 #if debug_switch_builder trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}'); #end
 
@@ -1288,9 +1291,19 @@ class SwitchBuilder {
             }
             var baseParamName = VariableAnalyzer.toElixirVarName(chosen);
             if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
-            var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || (chosen != null && EnumHandler.isLocalNameUsed(chosen, caseBody));
+            // Usage detection must be conservative to avoid underscoring binders that are actually used.
+            // Always check the resolved base name, even when the original enum param name is missing.
+            var localNameUsed = baseParamName != null && EnumHandler.isLocalNameUsed(baseParamName, caseBody);
+            var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || localNameUsed;
+            if (!isUsed && chosen != null && chosen != baseParamName) {
+                isUsed = EnumHandler.isLocalNameUsed(chosen, caseBody);
+            }
+            // If usage cannot be proven, default to treating the parameter as used to avoid false
+            // negatives that lead to undefined-variable errors downstream.
+            if (!isUsed) isUsed = true;
             if (!isUsed && isResultCtor) isUsed = true;
-            var finalName = isUsed ? baseParamName : "_" + baseParamName;
+            // Always keep the base parameter name to avoid mismatched underscore binders.
+            var finalName = baseParamName;
             patterns.push(PVar(finalName));
             if (context.currentClauseContext != null) {
                 context.currentClauseContext.enumBindingPlan.set(i, { finalName: finalName, isUsed: isUsed });
