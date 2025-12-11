@@ -20,3 +20,7 @@
 -D no_traces
 -D hxx_pass_timing
 server.live.TodoLive
+server.support.ChangesetTools
+server.support.Flash
+server.support.FlashTypeTools
+server.support.TagTools
