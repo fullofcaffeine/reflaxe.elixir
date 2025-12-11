@@ -20,187 +20,127 @@ enum ValueType {
  * and are properly implemented in the generated Elixir runtime code.
  */
 class Type {
-	/**
-	 * Returns the runtime type of a value.
-	 * 
-	 * @param v The value to check
-	 * @return The ValueType of the value
-	 */
-	public static function typeof(v: Dynamic): ValueType {
-		// Placeholder implementation for compile time
-		// The real implementation is in Type.ex
-		return TUnknown;
+	/** Returns the runtime type of a value. */
+	public static function typeof(value: Dynamic): ValueType {
+		return untyped __elixir__('
+      case {0} do
+        nil -> {:TNull}
+        val when is_integer(val) -> {:TInt}
+        val when is_float(val) -> {:TFloat}
+        val when is_boolean(val) -> {:TBool}
+        %{__struct__: mod} -> {:TClass, mod}
+        val when is_tuple(val) and tuple_size(val) > 0 and is_atom(elem(val, 0)) -> {:TEnum, nil}
+        val when is_map(val) -> {:TObject}
+        _ -> {:TUnknown}
+      end
+    ', value);
 	}
-    /**
-     * Returns the index of an enum value.
-     * For Elixir, this extracts the first element of the tuple (the atom tag).
-     * 
-     * @param e The enum value
-     * @return The index of the enum constructor
-     */
-    public static function enumIndex(e: Dynamic): Int {
-        // For compile-time usage in EnumValueMap
-        // We need a basic implementation that works without __elixir__
-        #if (js || eval)
-        // During compilation, use a simple hash
-        return Std.int(Math.abs(Std.random() * 1000000));
-        #else
-        return 0;
-        #end
-    }
-    
-    /**
-     * Returns the parameters of an enum value as an array.
-     * For Elixir, this extracts all elements after the tag from the tuple.
-     * 
-     * @param e The enum value
-     * @return Array of parameters
-     */
-    public static function enumParameters(e: Dynamic): Array<Dynamic> {
-        // For compile-time usage in EnumValueMap
-        // Return empty array as placeholder
-        return [];
-    }
-    
-    /**
-     * Returns the constructor name of an enum value.
-     * 
-     * @param e The enum value
-     * @return The constructor name as a string
-     */
-    public static function enumConstructor(e: Dynamic): String {
-        return "";
-    }
-    
-    /**
-     * Checks if two enum values are equal.
-     * 
-     * @param a First enum value
-     * @param b Second enum value
-     * @return True if equal
-     */
-    public static function enumEq<T>(a: T, b: T): Bool {
-        // Simple equality check for compile time
-        return a == b;
-    }
-    
-    /**
-     * Gets the class/module of an instance.
-     * 
-     * @param o The object instance
-     * @return The class of the object
-     */
-    public static function getClass<T>(o: T): Class<T> {
-        return null;
-    }
-    
-    /**
-     * Gets the superclass of a class.
-     * Note: Elixir doesn't have traditional inheritance, so this returns null.
-     * 
-     * @param c The class
-     * @return The superclass or null
-     */
-    public static function getSuperClass(c: Class<Dynamic>): Class<Dynamic> {
-        return null; // Elixir doesn't have inheritance
-    }
-    
-    /**
-     * Gets the class name as a string.
-     * 
-     * @param c The class
-     * @return The class name
-     */
-    public static function getClassName(c: Class<Dynamic>): String {
-        return "";
-    }
-    
-    /**
-     * Gets the enum name as a string.
-     * 
-     * @param e The enum
-     * @return The enum name
-     */
-    public static function getEnumName(e: Enum<Dynamic>): String {
-        return "";
-    }
-    
-    /**
-     * Checks if an object is of a specific type.
-     * 
-     * @param v The value to check
-     * @param t The type to check against
-     * @return True if v is of type t
-     */
-    public static function isType(v: Dynamic, t: Dynamic): Bool {
-        return false;
-    }
-    
-    /**
-     * Creates an instance of a class with given arguments.
-     * 
-     * @param cl The class to instantiate
-     * @param args Constructor arguments
-     * @return The new instance
-     */
-    public static function createInstance<T>(cl: Class<T>, args: Array<Dynamic>): T {
-        return null;
-    }
-    
-    /**
-     * Creates an empty instance of a class without calling the constructor.
-     * 
-     * @param cl The class to instantiate
-     * @return The new instance
-     */
-    public static function createEmptyInstance<T>(cl: Class<T>): T {
-        return null;
-    }
-    
-    /**
-     * Creates an enum value by name and parameters.
-     * 
-     * @param e The enum type
-     * @param constr The constructor name
-     * @param params The constructor parameters
-     * @return The enum value
-     */
-    public static function createEnum<T>(e: Enum<T>, constr: String, ?params: Array<Dynamic>): T {
-        return null;
-    }
-    
-    /**
-     * Creates an enum value by index and parameters.
-     * Note: Not fully implemented for Elixir target.
-     * 
-     * @param e The enum type
-     * @param index The constructor index
-     * @param params The constructor parameters
-     * @return The enum value
-     */
-    public static function createEnumIndex<T>(e: Enum<T>, index: Int, ?params: Array<Dynamic>): T {
-        throw "Type.createEnumIndex not fully implemented for Elixir target";
-    }
-    
-    /**
-     * Returns all enum constructors.
-     * Note: Would need compile-time enum metadata.
-     * 
-     * @param e The enum type
-     * @return Array of constructor names
-     */
-    public static function getEnumConstructs(e: Enum<Dynamic>): Array<String> {
-        return [];
-    }
-    
-    /**
-     * Returns all values of an enum that has no parameters.
-     * Note: Would need compile-time enum metadata.
-     * 
-     * @param e The enum type
-     * @return Array of all enum values
-     */
-    public static function allEnums<T>(e: Enum<T>): Array<T> {
-        return [];
-    }
+
+	/** Returns the index of an enum value. */
+	public static function enumIndex(enumValue: Dynamic): Int {
+		return untyped __elixir__('
+      case {0} do
+        tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> :erlang.phash2(elem(tuple, 0))
+        atom when is_atom(atom) -> :erlang.phash2(atom)
+        _ -> 0
+      end
+    ', enumValue);
+	}
+
+	/** Returns the parameters of an enum value as an array. */
+	public static function enumParameters(enumValue: Dynamic): Array<Dynamic> {
+		return untyped __elixir__('
+      case {0} do
+        tuple when is_tuple(tuple) and tuple_size(tuple) > 1 ->
+          tuple |> Tuple.to_list() |> Enum.drop(1)
+        _ -> []
+      end
+    ', enumValue);
+	}
+
+	/** Returns the constructor name of an enum value. */
+	public static function enumConstructor(enumValue: Dynamic): String {
+		return untyped __elixir__('
+      case {0} do
+        tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> elem(tuple, 0) |> Atom.to_string()
+        atom when is_atom(atom) -> Atom.to_string(atom)
+        _ -> ""
+      end
+    ', enumValue);
+	}
+
+	/** Checks if two enum values are equal. */
+	public static function enumEq<T>(a: T, b: T): Bool {
+		return a == b;
+	}
+
+	/** Gets the class/module of an instance. */
+	public static function getClass<T>(object: T): Class<T> {
+		return untyped __elixir__('case {0} do %{__struct__: mod} -> mod; _ -> nil end', object);
+	}
+
+	/** Gets the superclass of a class (always nil in Elixir). */
+	public static function getSuperClass(c: Class<Dynamic>): Class<Dynamic> {
+		var _ignore = c;
+		return null;
+	}
+
+	/** Gets the class name as a string. */
+	public static function getClassName(c: Class<Dynamic>): String {
+		return untyped __elixir__('case {0} do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join(\".\"); _ -> nil end', c);
+	}
+
+	/** Gets the enum name as a string. */
+	public static function getEnumName(e: Enum<Dynamic>): String {
+		return untyped __elixir__('case {0} do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join(\".\"); _ -> nil end', e);
+	}
+
+	/** Checks if an object is of a specific type. */
+	public static function isType(value: Dynamic, t: Dynamic): Bool {
+		return untyped __elixir__('case {0} do %{__struct__: mod} -> mod == {1}; _ -> false end', value, t);
+	}
+
+	/** Creates an instance of a class with given arguments. */
+	public static function createInstance<T>(cl: Class<T>, args: Array<Dynamic>): T {
+		return untyped __elixir__('apply({0}, :new, {1})', cl, args);
+	}
+
+	/** Creates an empty instance of a class without calling the constructor. */
+	public static function createEmptyInstance<T>(cl: Class<T>): T {
+		return untyped __elixir__('struct({0})', cl);
+	}
+
+	/** Creates an enum value by name and parameters. */
+	public static function createEnum<T>(_enum: Enum<T>, constructor: String, ?params: Array<Dynamic>): T {
+		var _ignoreEnum = _enum; // keep parameter used to avoid warnings when unused
+		return untyped __elixir__('
+      tag = String.to_atom({0})
+      values = case {1} do
+        nil -> []
+        arr when is_list(arr) -> arr
+        other -> List.wrap(other)
+      end
+      List.to_tuple([tag | values])
+    ', constructor, params);
+	}
+
+	/** Creates an enum value by index and parameters (unsupported). */
+	public static function createEnumIndex<T>(_enum: Enum<T>, index: Int, ?params: Array<Dynamic>): T {
+		var _ignoreEnum = _enum;
+		var _ignoreI = index;
+		var _ignoreP = params;
+		throw "Type.createEnumIndex not implemented for Elixir target";
+	}
+
+	/** Returns all enum constructors (not available at runtime). */
+	public static function getEnumConstructs(_enum: Enum<Dynamic>): Array<String> {
+		var _ignoreEnum = _enum;
+		return [];
+	}
+
+	/** Returns all values of an enum that has no parameters (not available). */
+	public static function allEnums<T>(_enum: Enum<T>): Array<T> {
+		var _ignoreEnum = _enum;
+		return [];
+	}
 }

@@ -37,27 +37,21 @@ class RepoDiscovery {
             try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) {}
             if (app != null && app.length > 0) {
                 var repoMod = app + ".Repo";
-                try Context.getType(repoMod) catch (_:Dynamic) {}
                 if (discovered.indexOf(repoMod) == -1) discovered.push(repoMod);
 
                 var presenceMod = app + "Web.Presence";
-                try Context.getType(presenceMod) catch (_:Dynamic) {}
                 if (discovered.indexOf(presenceMod) == -1) discovered.push(presenceMod);
 
                 var telemetryMod = app + "Web.Telemetry";
-                try Context.getType(telemetryMod) catch (_:Dynamic) {}
                 if (discovered.indexOf(telemetryMod) == -1) discovered.push(telemetryMod);
 
                 var endpointMod = app + "Web.Endpoint";
-                try Context.getType(endpointMod) catch (_:Dynamic) {}
                 if (discovered.indexOf(endpointMod) == -1) discovered.push(endpointMod);
 
                 var routerMod = app + "Web.Router";
-                try Context.getType(routerMod) catch (_:Dynamic) {}
                 if (discovered.indexOf(routerMod) == -1) discovered.push(routerMod);
 
                 var webMod = app + "Web";
-                try Context.getType(webMod) catch (_:Dynamic) {}
                 if (discovered.indexOf(webMod) == -1) discovered.push(webMod);
             }
         } catch (_:Dynamic) {}
@@ -181,9 +175,6 @@ class RepoDiscovery {
 
             if (!(hasRepo || hasPresence || hasEndpoint || hasRouter || hasPhoenixWeb || hasPhoenixWebModule || hasTelemetryNative) || cls == null) return;
             var mod = (pkg != null && pkg.length > 0) ? (pkg + '.' + cls) : cls;
-
-            // Force typing so the module becomes available for the compiler
-            try Context.getType(mod) catch (_:Dynamic) {}
 
             // Record discovered module
             if (discovered.indexOf(mod) == -1) discovered.push(mod);

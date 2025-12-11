@@ -1,8 +1,11 @@
 package server.pubsub;
 
 import haxe.ds.Option;
+import StringTools;
 import server.types.Types.BulkOperationType;
 import server.types.Types.AlertLevel;
+import server.types.Types.TodoPriority;
+import Type;
 
 /**
  * Type-safe PubSub bridge for the todo-app.
@@ -104,12 +107,24 @@ class TodoPubSub {
     }
 
     public static function bulkActionToString(action: BulkOperationType): String {
-        return switch (action) {
-            case CompleteAll: "complete_all";
-            case DeleteCompleted: "delete_completed";
-            case SetPriority(p): 'set_priority_${p}';
-            case AddTag(tag): 'add_tag_${tag}';
-            case RemoveTag(tag): 'remove_tag_${tag}';
+        return switch (Type.enumIndex(action)) {
+            case 0: "complete_all";
+            case 1: "delete_completed";
+            case 2:
+                var priority: TodoPriority = cast Type.enumParameters(action)[0];
+                var priorityLabel = switch (priority) {
+                    case Low: "low";
+                    case Medium: "medium";
+                    case High: "high";
+                };
+                "set_priority_" + priorityLabel;
+            case 3:
+                var tagValue: String = cast Type.enumParameters(action)[0];
+                "add_tag_" + tagValue;
+            case 4:
+                var tagValue: String = cast Type.enumParameters(action)[0];
+                "remove_tag_" + tagValue;
+            case _: "complete_all";
         };
     }
 
@@ -123,11 +138,27 @@ class TodoPubSub {
     }
 
     public static function parseBulkAction(str: String): BulkOperationType {
-        // Simple cases
-        if (str == "complete_all") return CompleteAll;
-        if (str == "delete_completed") return DeleteCompleted;
-        // Default fallback
-        return CompleteAll;
+        return if (str == "complete_all") {
+            CompleteAll;
+        } else if (str == "delete_completed") {
+            DeleteCompleted;
+        } else if (str != null && untyped __elixir__('String.starts_with?({0}, "set_priority_")', str)) {
+            var suffix = untyped __elixir__('String.replace_prefix({0}, "set_priority_", "")', str);
+            switch (suffix) {
+                case "low": SetPriority(Low);
+                case "medium": SetPriority(Medium);
+                case "high": SetPriority(High);
+                case _: CompleteAll;
+            };
+        } else if (str != null && untyped __elixir__('String.starts_with?({0}, "add_tag_")', str)) {
+            var suffix = untyped __elixir__('String.replace_prefix({0}, "add_tag_", "")', str);
+            AddTag(suffix);
+        } else if (str != null && untyped __elixir__('String.starts_with?({0}, "remove_tag_")', str)) {
+            var suffix = untyped __elixir__('String.replace_prefix({0}, "remove_tag_", "")', str);
+            RemoveTag(suffix);
+        } else {
+            CompleteAll;
+        };
     }
 
     public static function parseAlertLevel(str: String): AlertLevel {

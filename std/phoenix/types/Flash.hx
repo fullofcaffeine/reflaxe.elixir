@@ -1,5 +1,7 @@
 package phoenix.types;
 
+#if (elixir || reflaxe_runtime)
+
 /**
  * Type-safe flash message system for Phoenix applications
  * 
@@ -306,11 +308,18 @@ class Flash {
      * @return Array<String> List of error messages
      */
     private static function extractChangesetErrors(changeset: EctoChangeset): Array<String> {
-        // Temporarily simplify to empty array to unblock compilation
-        // TODO: Fix for-loop compilation issue that generates undefined g1
-        return [];
+        if (changeset == null || changeset.errors == null) {
+            return [];
+        }
+        return changeset.errors.map(function(err) {
+            var field = err.field;
+            var text = (err.message != null) ? err.message.text : "";
+            return '$field: $text';
+        });
     }
 }
+
+#end
 
 /**
  * Flash message map type for Phoenix compatibility

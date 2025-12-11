@@ -16,7 +16,7 @@ extern class Sorting {
   extern inline public static function by(sortBy: String, todos: Array<Dynamic>): Array<Dynamic> {
     return untyped __elixir__('
       case {0} do
-        "priority" -> Enum.sort_by({1}, fn t -> { case t.priority do "high" -> 0; "medium" -> 1; "low" -> 2; _ -> 3 end, -t.id } end)
+        "priority" -> Enum.sort_by({1}, fn t -> { case t.priority do "low" -> 0; "medium" -> 1; "high" -> 2; _ -> 3 end, -t.id } end)
         "due_date" -> Enum.sort_by({1}, fn t -> { is_nil(t.due_date), t.due_date || ~N[0000-01-01 00:00:00], -t.id } end)
         _ -> Enum.sort_by({1}, fn t -> { not is_nil(t.inserted_at), t.inserted_at || ~N[0000-01-01 00:00:00], t.id } end, &>=/2)
       end
@@ -24,7 +24,7 @@ extern class Sorting {
   }
 
   extern inline public static function byPriorityThenIdDesc(todos: Array<Dynamic>): Array<Dynamic> {
-    return untyped __elixir__('Enum.sort_by({0}, fn t -> { case t.priority do "high" -> 0; "medium" -> 1; "low" -> 2; _ -> 3 end, -t.id } end)', todos);
+    return untyped __elixir__('Enum.sort_by({0}, fn t -> { case t.priority do "low" -> 0; "medium" -> 1; "high" -> 2; _ -> 3 end, -t.id } end)', todos);
   }
 
   extern inline public static function byDueDateThenIdDesc(todos: Array<Dynamic>): Array<Dynamic> {

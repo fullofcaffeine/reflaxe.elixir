@@ -18,10 +18,7 @@ test('bulk delete removes only completed and persists', async ({ page }) => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
     }, title)
     await page.getByTestId('btn-create-todo').click()
-    const freshCard = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
-    const anyCard = page.locator('[data-testid="todo-card"]').first()
-    const useFresh = await freshCard.count() > 0
-    const card = useFresh ? freshCard : anyCard
+    const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
     await expect.poll(async () => await card.count(), { timeout: 20000 }).toBeGreaterThan(0)
     if (complete) {
       await card.getByTestId('btn-toggle-todo').click()
