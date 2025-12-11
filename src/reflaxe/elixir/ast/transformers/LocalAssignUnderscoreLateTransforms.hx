@@ -5,7 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * LocalAssignUnderscoreLateTransforms
@@ -112,6 +112,7 @@ class LocalAssignUnderscoreLateTransforms {
      */
     static function processStmts(stmts:Array<ElixirAST>): Array<ElixirAST> {
         var out:Array<ElixirAST> = [];
+        var usage = OptimizedVarUseAnalyzer.build(stmts);
         for (i in 0...stmts.length) {
             var s = stmts[i];
             switch (s.def) {
@@ -122,7 +123,7 @@ class LocalAssignUnderscoreLateTransforms {
                     var newRhs = switch (rhs.def) {
                         case EBinary(Match, leftInner, expr):
                             var innerName:Null<String> = switch (leftInner.def) { case EVar(n): n; default: null; };
-                            if (innerName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName)) {
+                            if (innerName != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerName)) {
                                 // Collapse nested: outer = (inner = expr) -> outer = expr
                                 collapse = true;
                                 collapsedExpr = expr;
@@ -152,12 +153,12 @@ class LocalAssignUnderscoreLateTransforms {
                     var newRhsInner = switch (rhs.def) {
                         case EBinary(Match, innerLeft, rhsExprInner):
                             var innerName:Null<String> = switch (innerLeft.def) { case EVar(n): n; default: null; };
-                            if (innerName != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerName)) {
+                            if (innerName != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerName)) {
                                 collapseNested = true; collapsedExprInner = rhsExprInner; rhs;
                             } else rhs;
                         case EMatch(innerPattern, rhsExprCandidate):
                             var innerNameCandidate:Null<String> = switch (innerPattern) { case PVar(n3): n3; default: null; };
-                            if (innerNameCandidate != null && !VarUseAnalyzer.usedLater(stmts, i + 1, innerNameCandidate)) {
+                            if (innerNameCandidate != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerNameCandidate)) {
                                 collapseNested = true; collapsedExprInner = rhsExprCandidate; rhs;
                             } else rhs;
                         default: rhs;

@@ -5,7 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * DropUnusedLocalAssignmentTransforms
@@ -39,6 +39,7 @@ class DropUnusedLocalAssignmentTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var usage = OptimizedVarUseAnalyzer.build(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
       var s = stmts[i];
@@ -47,12 +48,11 @@ class DropUnusedLocalAssignmentTransforms {
         case EBinary(Match, left, rhs):
           switch (left.def) {
             case EVar(name):
-              // Use centralized VarUseAnalyzer for proper closure/interpolation detection
-              if (!VarUseAnalyzer.usedLater(stmts, i+1, name)) {
+              if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, name)) {
                 // If binder is underscored and its base name is used later, promote binder
                 if (name.length > 1 && name.charAt(0) == "_") {
                   var base = name.substr(1);
-                  if (VarUseAnalyzer.usedLater(stmts, i+1, base)) {
+                  if (OptimizedVarUseAnalyzer.usedLater(usage, i + 1, base)) {
                     // Keep assignment but rename binder to base
                     replaced = makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(base), left.metadata, left.pos), rhs), s.metadata, s.pos);
                   } else {
@@ -65,11 +65,10 @@ class DropUnusedLocalAssignmentTransforms {
             default:
           }
         case EMatch(PVar(name2), rhs2):
-          // Use centralized VarUseAnalyzer for proper closure/interpolation detection
-          if (!VarUseAnalyzer.usedLater(stmts, i+1, name2)) {
+          if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, name2)) {
             if (name2.length > 1 && name2.charAt(0) == "_") {
               var base2 = name2.substr(1);
-              if (VarUseAnalyzer.usedLater(stmts, i+1, base2)) {
+              if (OptimizedVarUseAnalyzer.usedLater(usage, i + 1, base2)) {
                 // Keep match but rename binder to base
                 replaced = makeASTWithMeta(EMatch(PVar(base2), rhs2), s.metadata, s.pos);
               } else {
