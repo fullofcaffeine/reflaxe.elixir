@@ -4,6 +4,9 @@ import haxe.ds.Option;
 import StringTools;
 import server.types.Types.BulkOperationType;
 import server.types.Types.AlertLevel;
+import elixir.Atom;
+import elixir.Tuple;
+import phoenix.PubSubShim;
 import server.types.Types.TodoPriority;
 import Type;
 
@@ -17,7 +20,8 @@ class TodoPubSub {
      */
     public static function subscribe(topic: TodoPubSubTopic): haxe.functional.Result<Void, String> {
         var topicStr = topicToString(topic);
-        untyped __elixir__('Phoenix.PubSub.subscribe(TodoApp.PubSub, {0})', topicStr);
+        // Phoenix.PubSub.subscribe/2 accepts the PubSub server name and topic
+        PubSubShim.subscribe("TodoApp.PubSub", topicStr);
         return Ok(null);
     }
 
@@ -27,7 +31,7 @@ class TodoPubSub {
     public static function broadcast(topic: TodoPubSubTopic, message: TodoPubSubMessage): haxe.functional.Result<Void, String> {
         var topicStr = topicToString(topic);
         var msgTuple = messageToElixir(message);
-        untyped __elixir__('Phoenix.PubSub.broadcast(TodoApp.PubSub, {0}, {1})', topicStr, msgTuple);
+        PubSubShim.broadcast("TodoApp.PubSub", topicStr, msgTuple);
         return Ok(null);
     }
 
@@ -54,54 +58,44 @@ class TodoPubSub {
      * Uses direct pattern matching to avoid variable name inconsistency issues.
      */
     public static function messageToElixir(message: TodoPubSubMessage): Dynamic {
-        // Use direct Elixir case expression to avoid variable naming bugs
-        return untyped __elixir__('
-            case {0} do
-              {:todo_created, todo} -> {:todo_created, todo}
-              {:todo_updated, todo} -> {:todo_updated, todo}
-              {:todo_deleted, id} -> {:todo_deleted, id}
-              {:bulk_update, action} -> {:bulk_update, action}
-              {:user_online, uid} -> {:user_online, uid}
-              {:user_offline, uid} -> {:user_offline, uid}
-              {:system_alert, msg, level} -> {:system_alert, msg, level}
-            end
-        ', message);
+        var idx = Type.enumIndex(message);
+        var params = Type.enumParameters(message);
+        return switch (idx) {
+            case 0: // TodoCreated(todo)
+                Tuple.make2(Atom.create("todo_created"), params[0]);
+            case 1: // TodoUpdated(todo)
+                Tuple.make2(Atom.create("todo_updated"), params[0]);
+            case 2: // TodoDeleted(id)
+                Tuple.make2(Atom.create("todo_deleted"), params[0]);
+            case 3: // BulkUpdate(action)
+                Tuple.make2(Atom.create("bulk_update"), bulkActionToString(cast params[0]));
+            case 4: // UserOnline(userId)
+                Tuple.make2(Atom.create("user_online"), params[0]);
+            case 5: // UserOffline(userId)
+                Tuple.make2(Atom.create("user_offline"), params[0]);
+            case _: // SystemAlert(message, level)
+                var msg: String = cast params[0];
+                var lvl: AlertLevel = cast params[1];
+                Tuple.make3(Atom.create("system_alert"), msg, alertLevelToString(lvl));
+        }
     }
 
     /**
      * Parse an Elixir tuple message back to the enum.
      */
     public static function parseMessageImpl(msg: Dynamic): Option<TodoPubSubMessage> {
-        // Match the tuple patterns from Elixir
-        var parsed = untyped __elixir__('
-            case {0} do
-              {:todo_created, todo} -> {:some, {:todo_created, todo}}
-              {:todo_updated, todo} -> {:some, {:todo_updated, todo}}
-              {:todo_deleted, id} -> {:some, {:todo_deleted, id}}
-              {:bulk_update, action} -> {:some, {:bulk_update, action}}
-              {:user_online, user_id} -> {:some, {:user_online, user_id}}
-              {:user_offline, user_id} -> {:some, {:user_offline, user_id}}
-              {:system_alert, message, level} -> {:some, {:system_alert, message, level}}
-              _ -> :none
-            end
-        ', msg);
-
-        if (parsed == untyped __elixir__(':none')) {
-            return None;
-        }
-
-        // Extract the inner value
-        var inner: Dynamic = untyped __elixir__('elem({0}, 1)', parsed);
-        var tag: String = untyped __elixir__('elem({0}, 0) |> Atom.to_string()', inner);
-
+        // Expect tuples shaped like {:tag, payload} or {:tag, payload, extra}
+        var tagAtom = Tuple.elem(msg, 0);
+        var tag = Atom.toString(tagAtom);
         return switch (tag) {
-            case "todo_created": Some(TodoCreated(untyped __elixir__('elem({0}, 1)', inner)));
-            case "todo_updated": Some(TodoUpdated(untyped __elixir__('elem({0}, 1)', inner)));
-            case "todo_deleted": Some(TodoDeleted(untyped __elixir__('elem({0}, 1)', inner)));
-            case "bulk_update": Some(BulkUpdate(parseBulkAction(untyped __elixir__('elem({0}, 1)', inner))));
-            case "user_online": Some(UserOnline(untyped __elixir__('elem({0}, 1)', inner)));
-            case "user_offline": Some(UserOffline(untyped __elixir__('elem({0}, 1)', inner)));
-            case "system_alert": Some(SystemAlert(untyped __elixir__('elem({0}, 1)', inner), parseAlertLevel(untyped __elixir__('elem({0}, 2)', inner))));
+            case "todo_created": Some(TodoCreated(cast Tuple.elem(msg, 1)));
+            case "todo_updated": Some(TodoUpdated(cast Tuple.elem(msg, 1)));
+            case "todo_deleted": Some(TodoDeleted(cast Tuple.elem(msg, 1)));
+            case "bulk_update": Some(BulkUpdate(parseBulkAction(cast Tuple.elem(msg, 1))));
+            case "user_online": Some(UserOnline(cast Tuple.elem(msg, 1)));
+            case "user_offline": Some(UserOffline(cast Tuple.elem(msg, 1)));
+            case "system_alert":
+                Some(SystemAlert(cast Tuple.elem(msg, 1), parseAlertLevel(cast Tuple.elem(msg, 2))));
             default: None;
         };
     }
@@ -142,19 +136,19 @@ class TodoPubSub {
             CompleteAll;
         } else if (str == "delete_completed") {
             DeleteCompleted;
-        } else if (str != null && untyped __elixir__('String.starts_with?({0}, "set_priority_")', str)) {
-            var suffix = untyped __elixir__('String.replace_prefix({0}, "set_priority_", "")', str);
+        } else if (str != null && StringTools.startsWith(str, "set_priority_")) {
+            var suffix = StringTools.replace(str, "set_priority_", "");
             switch (suffix) {
                 case "low": SetPriority(Low);
                 case "medium": SetPriority(Medium);
                 case "high": SetPriority(High);
                 case _: CompleteAll;
             };
-        } else if (str != null && untyped __elixir__('String.starts_with?({0}, "add_tag_")', str)) {
-            var suffix = untyped __elixir__('String.replace_prefix({0}, "add_tag_", "")', str);
+        } else if (str != null && StringTools.startsWith(str, "add_tag_")) {
+            var suffix = StringTools.replace(str, "add_tag_", "");
             AddTag(suffix);
-        } else if (str != null && untyped __elixir__('String.starts_with?({0}, "remove_tag_")', str)) {
-            var suffix = untyped __elixir__('String.replace_prefix({0}, "remove_tag_", "")', str);
+        } else if (str != null && StringTools.startsWith(str, "remove_tag_")) {
+            var suffix = StringTools.replace(str, "remove_tag_", "");
             RemoveTag(suffix);
         } else {
             CompleteAll;
