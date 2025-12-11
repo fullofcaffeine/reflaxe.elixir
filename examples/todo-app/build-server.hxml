@@ -5,6 +5,7 @@
 -lib reflaxe
 -lib reflaxe.elixir
 -cp ../../std/_std
+-cp ../../std
 
 # Source directories
 -cp src_haxe
@@ -51,6 +52,8 @@
 --macro exclude('test')
 --macro exclude('server.live.UserLive')
 --macro exclude('server.services.UserGenServer')
+--macro exclude('ecto.ChangesetAliasBare')
+--macro exclude('ecto.ChangesetAliasTodoApp')
 ## Include controllers and contexts in server build (needed for test WAE)
 ## (Removed earlier excludes for server.controllers.UserController and contexts.*)
 
@@ -61,6 +64,7 @@
 --macro keep('phoenix.DateFormat')
 --macro keep('phoenix.Sorting')
 --macro keep('server.live.TodoLive')
+--macro keep('TodoAppChangeset')
 # Skip problematic stdlib structures we don't use in the todo app
 
 # Define library version and initialize compiler
@@ -98,6 +102,8 @@ server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 server.support.Flash
 server.support.FlashTypeTools
+TodoAppChangeset
+server.pubsub.TodoPubSub
 # PostgrexTypes is now auto-generated from Repo, not a separate class
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix

@@ -1,0 +1,83 @@
+package ecto;
+
+#if (elixir || reflaxe_runtime)
+
+import elixir.Atom;
+
+/**
+ * ChangesetBridge
+ *
+ * WHAT
+ * - Thin wrapper around Ecto.Changeset to keep __elixir__ calls inside stdlib,
+ *   so app code stays free of __elixir__ while still calling the canonical
+ *   Ecto.Changeset API with fully qualified module names.
+ */
+@:native("Ecto.ChangesetBridge")
+class ChangesetBridge {
+    public static function castParams(data: Dynamic, params: Dynamic, permitted: Array<Atom>): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.cast({0}, {1}, {2})', data, params, permitted);
+    }
+
+    public static function validateRequired(cs: Dynamic, fields: Array<Atom>): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.validate_required({0}, {1})', cs, fields);
+    }
+
+    public static function validateLength(cs: Dynamic, field: Atom, opts: Dynamic): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.validate_length({0}, {1}, {2})', cs, field, opts);
+    }
+
+    public static function validateFormat(cs: Dynamic, field: Atom, regex: Dynamic): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.validate_format({0}, {1}, {2})', cs, field, regex);
+    }
+
+    public static function validateConfirmation(cs: Dynamic, field: Atom, ?opts: Dynamic): Dynamic {
+        return opts == null
+            ? untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1})', cs, field)
+            : untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1}, {2})', cs, field, opts);
+    }
+
+    public static function uniqueConstraint(cs: Dynamic, field: Atom, ?opts: Dynamic): Dynamic {
+        return opts == null
+            ? untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1})', cs, field)
+            : untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1}, {2})', cs, field, opts);
+    }
+
+    public static function change(data: Dynamic, params: Dynamic): Dynamic {
+        return untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
+    }
+
+    public static function registration(user: Dynamic, params: Dynamic): Dynamic {
+        return untyped __elixir__('
+            {0}
+            |> Ecto.Changeset.cast({1}, [:name, :email, :password, :password_confirmation])
+            |> Ecto.Changeset.validate_required([:name, :email, :password])
+            |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
+            |> Ecto.Changeset.validate_length(:password, min: 8, max: 128)
+            |> Ecto.Changeset.validate_confirmation(:password)
+            |> Ecto.Changeset.unique_constraint(:email)
+        ', user, params);
+    }
+
+    public static function update(user: Dynamic, params: Dynamic): Dynamic {
+        return untyped __elixir__('
+            {0}
+            |> Ecto.Changeset.cast({1}, [:name, :email])
+            |> Ecto.Changeset.validate_required([:name, :email])
+            |> Ecto.Changeset.validate_length(:name, min: 2, max: 100)
+            |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
+            |> Ecto.Changeset.unique_constraint(:email)
+        ', user, params);
+    }
+
+    public static function password(user: Dynamic, params: Dynamic): Dynamic {
+        return untyped __elixir__('
+            {0}
+            |> Ecto.Changeset.cast({1}, [:password, :password_confirmation])
+            |> Ecto.Changeset.validate_required([:password])
+            |> Ecto.Changeset.validate_length(:password, min: 8, max: 128)
+            |> Ecto.Changeset.validate_confirmation(:password)
+        ', user, params);
+    }
+}
+
+#end
