@@ -6,7 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 #if debug_underscore_repair
 import Type;
 #end
@@ -192,6 +192,7 @@ class FinalUnderscoreRepairTransforms {
 
         // Collect all underscore-prefixed variables that are used later
         var usedUnderscoreVars = new Map<String, Int>(); // varName -> index of assignment
+        var usage = OptimizedVarUseAnalyzer.build(stmts);
 
         for (i in 0...stmts.length) {
             var stmt = stmts[i];
@@ -219,7 +220,7 @@ class FinalUnderscoreRepairTransforms {
                             // DISABLED: trace('[UnderscoreRepair] Found underscore var assignment (EMatch): $name at index $i');
                             #end
                             // Check if this variable is used later
-                            if (VarUseAnalyzer.usedLater(stmts, i + 1, name)) {
+                            if (OptimizedVarUseAnalyzer.usedLater(usage, i + 1, name)) {
                                 #if debug_underscore_repair
                                 // DISABLED: trace('[UnderscoreRepair] Variable $name IS used later - marking for repair');
                                 #end
@@ -241,7 +242,7 @@ class FinalUnderscoreRepairTransforms {
                             // DISABLED: trace('[UnderscoreRepair] Found underscore var assignment (EBinary Match): $name at index $i');
                             #end
                             // Check if this variable is used later
-                            if (VarUseAnalyzer.usedLater(stmts, i + 1, name)) {
+                            if (OptimizedVarUseAnalyzer.usedLater(usage, i + 1, name)) {
                                 #if debug_underscore_repair
                                 // DISABLED: trace('[UnderscoreRepair] Variable $name IS used later - marking for repair');
                                 #end
