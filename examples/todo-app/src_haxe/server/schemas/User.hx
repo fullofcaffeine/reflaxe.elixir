@@ -1,6 +1,7 @@
 package server.schemas;
 
-import phoenix.Ecto;
+import ecto.Changeset;
+import elixir.DateTime.DateTime;
 
 /**
  * User schema for authentication and todo ownership
@@ -53,14 +54,12 @@ class User {
      */
     @:keep
     public static function changeset(user: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('
-            {0}
-            |> Ecto.Changeset.cast({1}, [:name, :email, :active])
-            |> Ecto.Changeset.validate_required([:name, :email])
-            |> Ecto.Changeset.validate_length(:name, min: 2, max: 100)
-            |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
-            |> Ecto.Changeset.unique_constraint(:email)
-        ', user, params);
+        var cs: ecto.Changeset<Dynamic, Dynamic> = new ecto.Changeset(user, params);
+        cs = cs.validateRequired(["name","email"]);
+        cs = cs.validateLength("name", {min: 2, max: 100});
+        cs = cs.validateFormat("email", ~/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);
+        cs = cs.uniqueConstraint("email");
+        return cs;
     }
     
     /**
@@ -68,13 +67,11 @@ class User {
      */
     @:keep
     public static function passwordChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('
-            {0}
-            |> Ecto.Changeset.cast({1}, [:password, :password_confirmation])
-            |> Ecto.Changeset.validate_required([:password])
-            |> Ecto.Changeset.validate_length(:password, min: 8, max: 128)
-            |> Ecto.Changeset.validate_confirmation(:password)
-        ', user, params);
+        var cs: ecto.Changeset<Dynamic, Dynamic> = new ecto.Changeset(user, params);
+        cs = cs.validateRequired(["password"]);
+        cs = cs.validateLength("password", {min: 8, max: 128});
+        cs = cs.validateConfirmation("password");
+        return cs;
     }
 
     /**
@@ -82,7 +79,7 @@ class User {
      */
     @:keep
     public static function confirmChangeset(user: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.change({0}, %{confirmed_at: DateTime.utc_now()})', user);
+        return Changeset.change(user, {confirmed_at: DateTime.utcNow()});
     }
 
     /**
@@ -90,7 +87,7 @@ class User {
      */
     @:keep
     public static function loginChangeset(user: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.change({0}, %{last_login_at: DateTime.utc_now()})', user);
+        return Changeset.change(user, {last_login_at: DateTime.utcNow()});
     }
     
     /**

@@ -13,6 +13,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Clean up double/nested assignment artifacts in changeset functions:
  *     cs = thisN = Ecto.Changeset.change(...)          → cs = Ecto.Changeset.change(...)
  *     thisN = cs = Ecto.Changeset.validate_*(cs, ...)  → cs = Ecto.Changeset.validate_*(cs, ...)
+ *     cs = thisN                                       → cs (drop alias)
  *
  * WHY
  * - Avoids redundant temps and restores idiomatic pipeline-like shapes inside
@@ -36,6 +37,7 @@ class ChangesetChainCleanupTransforms {
             return switch (n.def) {
                 case EDef(name, args, guards, body) if (name == "changeset"):
                     var nb = collapseNested(body);
+                    nb = dropTrailingCsAlias(nb);
                     makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
                 default:
                     n;
@@ -63,9 +65,53 @@ class ChangesetChainCleanupTransforms {
                                 #end
                                 makeASTWithMeta(EBinary(Match, leftInner2, expr2), x.metadata, x.pos);
                             } else x;
+                        case EVar(n) if (isCs):
+                            // cs = thisN  → drop alias, keep cs
+                            makeASTWithMeta(EVar("cs"), x.metadata, x.pos);
                         default:
                             x;
                     }
+                default:
+                    x;
+            }
+        });
+    }
+
+    /**
+     * dropTrailingCsAlias
+     *
+     * WHAT
+     * - Remove trailing statements of the form `cs = thisN` left after earlier
+     *   cleanup inside changeset functions.
+     */
+    static function dropTrailingCsAlias(b: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(b, function(x: ElixirAST): ElixirAST {
+            return switch (x.def) {
+                case EBlock(stmts):
+                    var trimmed = stmts;
+                    while (trimmed.length > 0) {
+                        var last = trimmed[trimmed.length - 1];
+                        var isAlias = switch (last.def) {
+                            case EBinary(Match, {def: EVar("cs")}, {def: EVar(name)}):
+                                // any alias to temp; drop
+                                true;
+                            default: false;
+                        };
+                        if (isAlias) trimmed = trimmed.slice(0, trimmed.length - 1); else break;
+                    }
+                    makeASTWithMeta(EBlock(trimmed), x.metadata, x.pos);
+                case EDo(stmts):
+                    var trimmedDo = stmts;
+                    while (trimmedDo.length > 0) {
+                        var lastDo = trimmedDo[trimmedDo.length - 1];
+                        var isAliasDo = switch (lastDo.def) {
+                            case EBinary(Match, {def: EVar("cs")}, {def: EVar(name)}):
+                                true;
+                            default: false;
+                        };
+                        if (isAliasDo) trimmedDo = trimmedDo.slice(0, trimmedDo.length - 1); else break;
+                    }
+                    makeASTWithMeta(EDo(trimmedDo), x.metadata, x.pos);
                 default:
                     x;
             }
