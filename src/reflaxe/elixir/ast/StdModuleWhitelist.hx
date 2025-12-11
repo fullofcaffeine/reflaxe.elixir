@@ -30,6 +30,8 @@ class StdModuleWhitelist {
             "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
             "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex",
             "Keyword","Access","Reflect","Type",
+            // PubSub is a Phoenix root module; keep unqualified
+            "PubSub",
             // Haxe runtime shim modules that must remain top-level
             // Prevent accidental qualification to <App>.StringBuf inside Web context
             "StringBuf",
