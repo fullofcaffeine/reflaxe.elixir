@@ -18,7 +18,7 @@ class CreateTodos extends Migration {
             .addColumn("description", Text)
             .addColumn("completed", Boolean, {defaultValue: false})
             .addColumn("priority", String())
-            .addColumn("due_date", String())
+            .addColumn("due_date", DateTime)
             .addColumn("tags", Json)
             .addColumn("user_id", Integer)
             .addTimestamps()

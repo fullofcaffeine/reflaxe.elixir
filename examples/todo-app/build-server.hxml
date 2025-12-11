@@ -96,6 +96,9 @@ server.components.CoreComponents
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
+server.support.ChangesetTools
+server.support.Flash
+server.support.FlashTypeTools
 # PostgrexTypes is now auto-generated from Repo, not a separate class
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix

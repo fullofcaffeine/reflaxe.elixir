@@ -323,28 +323,11 @@ class ElixirCompiler extends GenericCompiler<
             }
         } catch (_:Dynamic) {}
 
-        // Append force-typed repos discovered in macro phase
-        try {
-            var mods = reflaxe.elixir.macros.RepoDiscovery.getDiscovered();
-            if (mods != null) {
-                for (mod in mods) {
-                    try {
-                        var t = haxe.macro.Context.getType(mod);
-                        if (t != null) {
-                            var mt = t.toModuleType();
-                            if (mt != null) {
-                                var pth = mt.getPath();
-                                if (pth != null && !seen.exists(pth)) {
-                                    result.push(mt);
-                                    seen.set(pth, true);
-                                }
-                            }
-                        }
-                    } catch (_:Dynamic) {}
-                }
-            }
-        } catch (_:Dynamic) {}
-
+        // Append modules discovered in macro phase without force-typing to avoid
+        // re-entrancy issues when LiveView/Router modules are still being processed.
+        // Modules already present in `result` will be emitted normally; additional
+        // discovered modules are expected to be referenced explicitly in build hxml.
+        
         return result;
         #else
         return moduleTypes;

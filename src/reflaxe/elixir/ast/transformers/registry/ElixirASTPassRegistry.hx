@@ -39,7 +39,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EndpointTransform",
             description: "Transform @:endpoint modules into Phoenix.Endpoint structure",
-            enabled: false, // toggled off
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.endpointTransformPass
         });
         
@@ -2176,7 +2176,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DropUnusedEnumAssignToUnderscore",
             description: "Rewrite unused assigns to Enum.map/filter/... into `_ = ...` (snapshot canonical)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms.pass
         });
 
@@ -2331,7 +2331,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CasePatternUnusedUnderscore",
             description: "Underscore unused variables bound in case/with patterns",
-            enabled: #if fast_boot false #else true #end,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.CasePatternUnusedUnderscoreTransforms.pass
         });
         passes.push({
@@ -3541,28 +3541,28 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ReduceBodySanitize",
             description: "Fix head extraction and accumulator rebinds inside Enum.reduce bodies; drop stray arithmetic (late)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ReduceBodySanitizeTransforms.transformPass
         });
         // After reduce bodies are sanitized, rewrite trivial list-building reduces to comprehensions
         passes.push({
             name: "ReduceToComprehension",
             description: "Rewrite Enum.reduce(range, [], fn iter, acc -> Enum.concat(acc, [v]) end) to for-comprehension",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ReduceToComprehensionTransforms.rewritePass
         });
         // Sanitize any leftover push(...) sentinels to nil to avoid invalid syntax in non-reduce contexts
         passes.push({
             name: "PushSentinelSanitize",
             description: "Replace stray push(...) sentinel calls with nil in non-reduce contexts",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PushSentinelSanitizeTransforms.transformPass
         });
         // Late cleanup: unwrap Map.values(coll) in Enum.reduce when reducer does not use Presence metas
         passes.push({
             name: "ReduceInputValuesCleanup",
             description: "Unwrap Map.values(coll) in Enum.reduce when iterating lists (no binder.metas usage)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ReduceInputValuesCleanupTransforms.pass
         });
         // Replay: ensure multi-statement function arguments are IIFEs after late rewrites
@@ -3753,7 +3753,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "UnderscoreBinderAlignByBodyUse_Final",
             description: "Rename {:tag, _x} binder to unique undefined lower-case var used in body (scope-aware)",
-            enabled: false,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnderscoreBinderAlignByBodyUseTransforms.transformPass
         });
 

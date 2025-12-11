@@ -382,9 +382,13 @@ class Reflect {
      * @param args Array of arguments to pass to the function
      * @return The return value of the function call
      */
-    public static function callMethod(o: Dynamic, func: haxe.Constraints.Function, args: Array<Dynamic>): Dynamic {
-        return untyped __elixir__('apply({0}, {1})', func, args);
-    }
+	public static function callMethod(_o: Dynamic, func: haxe.Constraints.Function, args: Array<Dynamic>): Dynamic {
+		// Elixir functions don't carry a `this` context; keep the object parameter
+		// for API parity but only forward the provided arguments. Mark it used to
+		// avoid compiler warnings when no context is needed.
+		var _ignoreObj = _o;
+		return untyped __elixir__('apply({0}, {1})', func, args);
+	}
     
     /**
      * Compare two values for ordering.

@@ -9,8 +9,8 @@
 -D reflaxe_runtime
 -D no-utf16
 -D app_name=TodoApp
--dce std
---no-inline
+-dce full
+-D no-inline
 --macro exclude('client')
 --macro exclude('test')
 -D reflaxe.elixir=0.1.0

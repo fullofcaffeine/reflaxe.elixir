@@ -7,7 +7,7 @@ test('filter buttons switch visible items', async ({ page }) => {
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
 
   // Helper: create a new active todo quickly
-  const mk = async (title: string) => {
+  const mk = async (title: string, complete = false) => {
     // Use deterministic test ids for creation flow; wait on title input (most stable)
     await page.getByTestId('btn-new-todo').click()
     // Wait for the form to appear (primary guard that event fired). Retry once if needed.
@@ -30,9 +30,17 @@ test('filter buttons switch visible items', async ({ page }) => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
     }, title)
     await page.getByTestId('btn-create-todo').click()
+    const card = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: title }) }).first()
+    await expect.poll(async () => await card.count(), { timeout: 20000 }).toBeGreaterThan(0)
+    if (complete) {
+      await card.getByTestId('btn-toggle-todo').click()
+      await expect.poll(async () => (await card.getAttribute('data-completed')) || '').toBe('true')
+    }
   }
   const activeTitle = `Active ${Date.now()}`
-  await mk(activeTitle)
+  const completedTitle = `Completed ${Date.now()}`
+  await mk(activeTitle, false)
+  await mk(completedTitle, true)
 
   // Completed filter: ensure completed cards render; if none exist, perform bulk complete then verify
   await page.getByTestId('btn-filter-completed').click()
