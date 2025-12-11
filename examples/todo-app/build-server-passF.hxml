@@ -2,6 +2,7 @@
 -lib reflaxe
 -lib reflaxe.elixir
 -cp ../../std/_std
+-cp ../../std
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -23,3 +24,4 @@ server.live.TodoLive
 server.support.Flash
 server.support.FlashTypeTools
 server.support.TagTools
+phoenix.PubSubShim

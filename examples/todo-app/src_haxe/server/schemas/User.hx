@@ -1,6 +1,8 @@
 package server.schemas;
 
-import ecto.Changeset;
+import TodoAppChangeset as CS;
+import elixir.Atom;
+import elixir.Regex;
 import elixir.DateTime.DateTime;
 
 /**
@@ -36,16 +38,7 @@ class User {
      */
     @:keep
     public static function registrationChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('
-            {0}
-            |> Ecto.Changeset.cast({1}, [:name, :email, :password, :password_confirmation])
-            |> Ecto.Changeset.validate_required([:name, :email, :password])
-            |> Ecto.Changeset.validate_length(:name, min: 2, max: 100)
-            |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
-            |> Ecto.Changeset.validate_length(:password, min: 8, max: 128)
-            |> Ecto.Changeset.validate_confirmation(:password)
-            |> Ecto.Changeset.unique_constraint(:email)
-        ', user, params);
+        return CS.registration(user, params);
     }
     
     /**
@@ -54,12 +47,7 @@ class User {
      */
     @:keep
     public static function changeset(user: Dynamic, params: Dynamic): Dynamic {
-        var cs: ecto.Changeset<Dynamic, Dynamic> = new ecto.Changeset(user, params);
-        cs = cs.validateRequired(["name","email"]);
-        cs = cs.validateLength("name", {min: 2, max: 100});
-        cs = cs.validateFormat("email", ~/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/);
-        cs = cs.uniqueConstraint("email");
-        return cs;
+        return CS.update(user, params);
     }
     
     /**
@@ -67,11 +55,7 @@ class User {
      */
     @:keep
     public static function passwordChangeset(user: Dynamic, params: Dynamic): Dynamic {
-        var cs: ecto.Changeset<Dynamic, Dynamic> = new ecto.Changeset(user, params);
-        cs = cs.validateRequired(["password"]);
-        cs = cs.validateLength("password", {min: 8, max: 128});
-        cs = cs.validateConfirmation("password");
-        return cs;
+        return CS.password(user, params);
     }
 
     /**
@@ -79,7 +63,7 @@ class User {
      */
     @:keep
     public static function confirmChangeset(user: Dynamic): Dynamic {
-        return Changeset.change(user, {confirmed_at: DateTime.utcNow()});
+        return CS.change(user, {confirmed_at: DateTime.utcNow()});
     }
 
     /**
@@ -87,7 +71,7 @@ class User {
      */
     @:keep
     public static function loginChangeset(user: Dynamic): Dynamic {
-        return Changeset.change(user, {last_login_at: DateTime.utcNow()});
+        return CS.change(user, {last_login_at: DateTime.utcNow()});
     }
     
     /**
@@ -157,14 +141,17 @@ class User {
      * User initials for avatars (uses __elixir__ for clean generation)
      */
     public static function initials(user: Dynamic): String {
-        return untyped __elixir__('
-            name = TodoApp.User.display_name({0})
-            parts = String.split(name, " ")
-            if length(parts) >= 2 do
-                String.upcase(String.at(Enum.at(parts, 0), 0) || "") <> String.upcase(String.at(Enum.at(parts, 1), 0) || "")
-            else
-                String.upcase(String.at(name, 0) || "")
-            end
-        ', user);
+        var name = displayName(user);
+        if (name == null || name == "") return "";
+        var parts = name.split(" ");
+        var firstChar = parts[0].charAt(0);
+        var secondChar = (parts.length >= 2) ? parts[1].charAt(0) : "";
+        var initials = firstChar + secondChar;
+        return initials.toUpperCase();
+    }
+
+    // Helper to create atoms without using __elixir__ in app code
+    static inline function atom(name: String): Atom {
+        return Atom.create(name);
     }
 }

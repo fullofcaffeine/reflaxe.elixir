@@ -6,6 +6,7 @@ import server.types.Types.BulkOperationType;
 import server.types.Types.AlertLevel;
 import elixir.Atom;
 import elixir.Tuple;
+import elixir.Atom;
 import phoenix.PubSubShim;
 import server.types.Types.TodoPriority;
 import Type;
@@ -20,18 +21,20 @@ class TodoPubSub {
      */
     public static function subscribe(topic: TodoPubSubTopic): haxe.functional.Result<Void, String> {
         var topicStr = topicToString(topic);
-        // Phoenix.PubSub.subscribe/2 accepts the PubSub server name and topic
-        PubSubShim.subscribe("TodoApp.PubSub", topicStr);
+        var pubsub = pubsubModule();
+        // Phoenix.PubSub.subscribe/2 accepts the PubSub server module and topic
+        PubSubShim.subscribe(pubsub, topicStr);
         return Ok(null);
     }
 
     /**
      * Broadcast a message to a topic.
      */
-    public static function broadcast(topic: TodoPubSubTopic, message: TodoPubSubMessage): haxe.functional.Result<Void, String> {
+    public static function broadcast(topic: TodoPubSubTopic, msg: TodoPubSubMessage): haxe.functional.Result<Void, String> {
         var topicStr = topicToString(topic);
-        var msgTuple = messageToElixir(message);
-        PubSubShim.broadcast("TodoApp.PubSub", topicStr, msgTuple);
+        var msgTuple = messageToElixir(msg);
+        var pubsub = pubsubModule();
+        PubSubShim.broadcast(pubsub, topicStr, msgTuple);
         return Ok(null);
     }
 
@@ -55,29 +58,26 @@ class TodoPubSub {
 
     /**
      * Convert message enum to Elixir tuple format.
-     * Uses direct pattern matching to avoid variable name inconsistency issues.
      */
-    public static function messageToElixir(message: TodoPubSubMessage): Dynamic {
-        var idx = Type.enumIndex(message);
-        var params = Type.enumParameters(message);
-        return switch (idx) {
-            case 0: // TodoCreated(todo)
-                Tuple.make2(Atom.create("todo_created"), params[0]);
-            case 1: // TodoUpdated(todo)
-                Tuple.make2(Atom.create("todo_updated"), params[0]);
-            case 2: // TodoDeleted(id)
-                Tuple.make2(Atom.create("todo_deleted"), params[0]);
-            case 3: // BulkUpdate(action)
-                Tuple.make2(Atom.create("bulk_update"), bulkActionToString(cast params[0]));
-            case 4: // UserOnline(userId)
-                Tuple.make2(Atom.create("user_online"), params[0]);
-            case 5: // UserOffline(userId)
-                Tuple.make2(Atom.create("user_offline"), params[0]);
-            case _: // SystemAlert(message, level)
-                var msg: String = cast params[0];
-                var lvl: AlertLevel = cast params[1];
-                Tuple.make3(Atom.create("system_alert"), msg, alertLevelToString(lvl));
-        }
+    public static function messageToElixir(msg: TodoPubSubMessage): Dynamic {
+        var params = Type.enumParameters(msg);
+        return switch (Type.enumConstructor(msg)) {
+            case "TodoCreated":
+                Tuple.make2(todoCreatedAtom(), cast params[0]);
+            case "TodoUpdated":
+                Tuple.make2(todoUpdatedAtom(), cast params[0]);
+            case "TodoDeleted":
+                Tuple.make2(todoDeletedAtom(), cast params[0]);
+            case "BulkUpdate":
+                Tuple.make2(bulkUpdateAtom(), bulkActionToString(cast params[0]));
+            case "UserOnline":
+                Tuple.make2(userOnlineAtom(), cast params[0]);
+            case "UserOffline":
+                Tuple.make2(userOfflineAtom(), cast params[0]);
+            case "SystemAlert":
+                systemAlertTuple(cast params[0], cast params[1]);
+            case _: msg;
+        };
     }
 
     /**
@@ -100,29 +100,38 @@ class TodoPubSub {
         };
     }
 
+    // Legacy helper kept for compatibility; currently unused after enum switch.
+    static inline function paramAt(params: Array<Dynamic>, idx: Int): Dynamic {
+        return params[idx];
+    }
+
+    @:keep
     public static function bulkActionToString(action: BulkOperationType): String {
-        return switch (Type.enumIndex(action)) {
-            case 0: "complete_all";
-            case 1: "delete_completed";
-            case 2:
-                var priority: TodoPriority = cast Type.enumParameters(action)[0];
-                var priorityLabel = switch (priority) {
+        var params = Type.enumParameters(action);
+        return switch (Type.enumConstructor(action)) {
+            case "CompleteAll": "complete_all";
+            case "DeleteCompleted": "delete_completed";
+            case "SetPriority":
+                var priorityValue: TodoPriority = cast params[0];
+                var priorityLabel = switch (priorityValue) {
                     case Low: "low";
                     case Medium: "medium";
                     case High: "high";
                 };
                 "set_priority_" + priorityLabel;
-            case 3:
-                var tagValue: String = cast Type.enumParameters(action)[0];
+            case "AddTag":
+                var tagValue: String = cast params[0];
                 "add_tag_" + tagValue;
-            case 4:
-                var tagValue: String = cast Type.enumParameters(action)[0];
+            case "RemoveTag":
+                var tagValue: String = cast params[0];
                 "remove_tag_" + tagValue;
             case _: "complete_all";
         };
     }
 
+    @:keep
     public static function alertLevelToString(level: AlertLevel): String {
+        if (level == null) return "info";
         return switch (level) {
             case Info: "info";
             case Warning: "warning";
@@ -164,6 +173,24 @@ class TodoPubSub {
             default: Info;
         };
     }
+
+    static inline function systemAlertTuple(alertMessage: String, alertLevelValue: AlertLevel): Dynamic {
+        var levelLabel = alertLevelToString(alertLevelValue);
+        return Tuple.make3(systemAlertAtom(), alertMessage, levelLabel);
+    }
+
+    static inline function pubsubModule(): Dynamic {
+        // Module atoms are Elixir atoms like :"Elixir.TodoApp.PubSub"
+        return Atom.fromString("Elixir.TodoApp.PubSub");
+    }
+
+    static inline function todoCreatedAtom(): Dynamic return Atom.create("todo_created");
+    static inline function todoUpdatedAtom(): Dynamic return Atom.create("todo_updated");
+    static inline function todoDeletedAtom(): Dynamic return Atom.create("todo_deleted");
+    static inline function bulkUpdateAtom(): Dynamic return Atom.create("bulk_update");
+    static inline function userOnlineAtom(): Dynamic return Atom.create("user_online");
+    static inline function userOfflineAtom(): Dynamic return Atom.create("user_offline");
+    static inline function systemAlertAtom(): Dynamic return Atom.create("system_alert");
 }
 
 enum TodoPubSubTopic {
