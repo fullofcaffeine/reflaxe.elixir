@@ -1710,16 +1710,19 @@ class AnnotationTransforms {
 
         // Optional Phoenix test helpers: only inject when app_name is defined (indicates Phoenix app context)
         var appName = Context.definedValue("app_name");
+        var needsLiveViewHelpers = usesLiveViewHelpers(existingBody);
         if (appName != null && appName.length > 0) {
             // Import brings functions like build_conn/0 into scope; alias supports ConnTest.* calls.
             statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
             statements.push(makeAST(EAlias("Phoenix.ConnTest", "ConnTest")));
-            // Inject Phoenix.LiveViewTest helpers and alias for LiveViewTest.* calls
-            statements.push(makeAST(EImport("Phoenix.LiveViewTest", null, null)));
-            statements.push(makeAST(EAlias("Phoenix.LiveViewTest", "LiveViewTest")));
-            // Set @endpoint for ConnTest when app_name is provided
+            // ExUnit.ConnCase expects @endpoint to be set for request helpers
             var endpointModule = appName + "Web.Endpoint";
             statements.push(makeAST(EModuleAttribute("endpoint", makeAST(EVar(endpointModule)))));
+            if (needsLiveViewHelpers) {
+                // Inject Phoenix.LiveViewTest helpers and alias for LiveViewTest.* calls
+                statements.push(makeAST(EImport("Phoenix.LiveViewTest", null, null)));
+                statements.push(makeAST(EAlias("Phoenix.LiveViewTest", "LiveViewTest")));
+            }
         }
         
         // Group tests by describe blocks
@@ -1897,6 +1900,71 @@ class AnnotationTransforms {
         }
         
         return makeAST(EBlock(statements));
+    }
+
+    /**
+     * Detect whether an ExUnit module body references Phoenix.LiveViewTest helpers.
+     *
+     * WHAT: Walks the existing body AST to find any use/import/alias of LiveViewTest (or LiveView).
+     * WHY: Avoid injecting unused imports/aliases/@endpoint into tests that don't exercise LiveView,
+     *      which produces Elixir compiler warnings and slows test runs.
+     * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
+     */
+    static function usesLiveViewHelpers(ast: ElixirAST): Bool {
+        var found = false;
+        function visit(e: ElixirAST): Void {
+            if (found || e == null) return;
+            switch (e.def) {
+                case EVar(name):
+                    if (name == "LiveViewTest" || name == "Phoenix.LiveViewTest" || name == "LiveView") {
+                        found = true;
+                        return;
+                    }
+                case EImport(moduleName, _, _):
+                    if (moduleName == "Phoenix.LiveViewTest") {
+                        found = true;
+                        return;
+                    }
+                case EAlias(moduleName, aliasName):
+                    if (moduleName == "Phoenix.LiveViewTest" || aliasName == "LiveViewTest") {
+                        found = true;
+                        return;
+                    }
+                case ECall(target, _, args):
+                    if (target != null) visit(target);
+                    if (args != null) for (a in args) visit(a);
+                case ERemoteCall(targetExpr, _, argsList):
+                    visit(targetExpr);
+                    if (argsList != null) for (a in argsList) visit(a);
+                case EBlock(exprs):
+                    for (expr in exprs) visit(expr);
+                case EIf(condition, thenExpr, elseExpr):
+                    visit(condition); visit(thenExpr); if (elseExpr != null) visit(elseExpr);
+                case ECase(scrutinee, clauses):
+                    visit(scrutinee);
+                    for (c in clauses) {
+                        if (c.guard != null) visit(c.guard);
+                        visit(c.body);
+                    }
+                case EDef(_, _, _, body) | EDefp(_, _, _, body):
+                    visit(body);
+                case EKeywordList(kvs):
+                    for (kv in kvs) visit(kv.value);
+                case EList(items):
+                    for (item in items) visit(item);
+                case ETuple(items):
+                    for (item in items) visit(item);
+                case EMap(kvs):
+                    for (kv in kvs) { visit(kv.key); visit(kv.value); }
+                case EPipe(left, right):
+                    visit(left); visit(right);
+                case EModuleAttribute(_, value):
+                    visit(value);
+                default:
+            }
+        }
+        visit(ast);
+        return found;
     }
     
     /**

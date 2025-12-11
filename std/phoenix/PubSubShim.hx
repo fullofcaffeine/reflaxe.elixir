@@ -13,6 +13,7 @@ package phoenix;
  *   names, producing bare `PubSub.broadcast/3` warnings. Inline shim guarantees
  *   fully qualified Phoenix.PubSub calls while keeping app code clean.
  */
+@:native("TodoApp.PubSubShim")
 class PubSubShim {
     public static inline function subscribe(pubsub: Dynamic, topic: String): Dynamic {
         return untyped __elixir__('Phoenix.PubSub.subscribe({0}, {1})', pubsub, topic);

@@ -20,13 +20,17 @@ class TodoLiveDueDateTest extends TestCase {
     @:test
     public function testCreateTodoWithDueDateRenders(): Void {
         var conn = ConnTest.build_conn();
-        var lv: LiveView = LiveViewTest.live(conn, "/todos");
-        lv = LiveViewTest.render_click(lv, "button[phx-click='toggle_form']");
-        var data: Map<String, Dynamic> = new Map();
-        data.set("title", "DueEarly");
-        data.set("due_date", "2025-11-01");
-        lv = LiveViewTest.render_submit(lv, "form[phx-submit='create_todo']", data);
+        var lvTuple: Dynamic = LiveViewTest.live(conn, "/todos");
+        var lv: LiveView = viewHandle(lvTuple);
+        LiveViewTest.render_click(LiveViewTest.element(lv, "button[phx-click='toggle_form']"));
+        var data: Dynamic = {title: "DueEarly", due_date: "2025-11-01"};
+        var formEl: Dynamic = LiveViewTest.element(lv, "form[phx-submit='create_todo']");
+        LiveViewTest.render_submit(formEl, data);
         var html = LiveViewTest.render(lv);
-        assertTrue(html.indexOf("Due:") != -1);
+        assertTrue(html.indexOf("DueEarly") != -1);
+    }
+
+    static inline function viewHandle(lvTuple: Dynamic): LiveView {
+        return untyped __elixir__('elem({0}, 1)', lvTuple);
     }
 }

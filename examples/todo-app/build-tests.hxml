@@ -17,6 +17,10 @@
 -D app_name=TodoApp
 -dce full
 
+# Avoid re-emitting runtime std modules already compiled in the app build
+--macro exclude('haxe.iterators.ArrayIterator')
+--macro exclude('StringBuf')
+
 # Initialize compiler
 -D reflaxe.elixir=0.1.0
 --macro reflaxe.elixir.CompilerInit.Start()

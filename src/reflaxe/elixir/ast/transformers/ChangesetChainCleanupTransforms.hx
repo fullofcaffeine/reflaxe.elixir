@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import StringTools;
 
 /**
  * ChangesetChainCleanupTransforms
@@ -35,7 +36,7 @@ class ChangesetChainCleanupTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EDef(name, args, guards, body) if (name == "changeset"):
+                case EDef(name, args, guards, body) if (isChangesetFunction(name)):
                     var nb = collapseNested(body);
                     nb = dropTrailingCsAlias(nb);
                     makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
@@ -43,6 +44,10 @@ class ChangesetChainCleanupTransforms {
                     n;
             }
         });
+    }
+
+    static inline function isChangesetFunction(name:String):Bool {
+        return name == "changeset" || StringTools.endsWith(name, "_changeset");
     }
 
     static function collapseNested(b: ElixirAST): ElixirAST {

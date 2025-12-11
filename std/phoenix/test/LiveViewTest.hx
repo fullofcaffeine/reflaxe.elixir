@@ -51,12 +51,16 @@ extern class LiveViewTest {
     /**
      * Simulate a click event on an element.
      */
+    // Phoenix API: render_click(element_or_view, value \\ %{})
+    @:overload(function(element: Dynamic, value: Dynamic): LiveView {})
+    @:overload(function(element: Dynamic): LiveView {})
     @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
     public static function render_click(liveView: LiveView, element: String): LiveView;
     
     /**
      * Simulate form submission.
      */
+    @:overload(function(element: Dynamic, data: Dynamic): LiveView {})
     @:overload(function(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView {})
     public static function render_submit(liveView: LiveView, form: String): LiveView;
     
