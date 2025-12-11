@@ -7,6 +7,7 @@ import elixir.Task; // Background work via Task.start
 import elixir.DateTime.NaiveDateTime;
 import elixir.Enum;
 import haxe.functional.Result; // Import Result type properly
+import server.support.ChangesetTools;
 import phoenix.LiveSocket; // Type-safe socket wrapper
 import phoenix.types.Flash.FlashType;
 import phoenix.Phoenix.HandleEventResult;
@@ -290,7 +291,7 @@ class TodoLive {
             tags: tagsArr,
             user_id: socket.assigns.current_user.id
         };
-        var cs = ecto.ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
+        var cs = ChangesetTools.castWithStringFields(todoStruct, castParams, permitted);
         switch (Repo.insert(cs)) {
             case Ok(value):
                 // broadcast best-effort; ignore returned term
