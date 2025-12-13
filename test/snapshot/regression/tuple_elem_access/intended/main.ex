@@ -10,8 +10,8 @@ defmodule Main do
     t__1 = true
     t__2 = 3.14
     t__3 = "third"
-    first = tuple2__1
-    second = tuple2__2
+    _first = tuple2__1
+    _second = tuple2__2
     _ = t__1
     _ = t__2
     _ = t__3
@@ -21,8 +21,8 @@ defmodule Main do
     nested__1__1 = "nested"
     nested__1__2 = 99
     _ = "outer"
-    inner_first = nested__1__1
-    inner_second = nested__1__2
+    _inner_first = nested__1__1
+    _inner_second = nested__1__2
     result = get_tuple()
     nil
   end

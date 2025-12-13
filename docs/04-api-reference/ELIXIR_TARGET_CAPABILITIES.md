@@ -89,7 +89,7 @@ class OrderProcessor {
 
 **Type-Safe Ecto Queries (NEW!)**
 ```haxe
-import reflaxe.elixir.macro.EctoQueryMacros.*;
+import reflaxe.elixir.macros.EctoQueryMacros.*;
 
 @:module
 class UserQueries {

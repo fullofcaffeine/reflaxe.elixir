@@ -3,7 +3,7 @@ defmodule Main do
     (case status do
       {:ok} -> 200
       {:custom, code} -> code
-      {:error, __value} -> 500
+      {:error, __reason} -> 500
       {:redirect, __url, __permanent} -> 301
     end)
   end
@@ -11,10 +11,8 @@ defmodule Main do
     (case status do
       {:ok} -> "Success"
       {:custom, __code} -> "Custom status"
-      {:error, msg} ->
-        msg = value
-        msg
-      {:redirect, url, __permanent} -> "Redirecting to #{(fn -> url end).()}"
+      {:error, reason} -> reason
+      {:redirect, _url, __permanent} -> "Redirecting to #{(fn -> url end).()}"
     end)
   end
   defp get_redirect_info(status) do

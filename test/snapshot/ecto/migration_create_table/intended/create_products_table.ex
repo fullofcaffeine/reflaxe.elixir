@@ -13,13 +13,13 @@ defmodule CreateProductsTable do
   def down(struct) do
     struct.dropTable("products")
   end
-  defp drop_table(_struct, _name) do
+  defp drop_table(struct, _name) do
     
   end
-  defp add_column(_struct, _table, _column, _type) do
+  defp add_column(struct, _table, _column, _type) do
     
   end
-  defp should_add_inventory(_struct) do
+  defp should_add_inventory(struct) do
     true
   end
 end

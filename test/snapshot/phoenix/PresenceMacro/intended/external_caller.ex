@@ -1,5 +1,5 @@
 defmodule ExternalCaller do
-  def call_from_outside(_value) do
+  def call_from_outside(value) do
     meta = %{:online_at => DateTime.to_iso8601(DateTime.utc_now()), :user_name => "External User", :status => "online"}
     Phoenix.Presence.track("presence:test", "external_user", meta)
     Phoenix.Presence.update("presence:test", "external_user", meta)

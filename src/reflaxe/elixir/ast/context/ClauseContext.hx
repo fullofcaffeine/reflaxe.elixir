@@ -30,7 +30,7 @@ import reflaxe.elixir.ast.ElixirAST;
  * - Maintainability: Changes to mapping logic don't affect builder
  *
  * @see ElixirASTBuilder for usage in switch statement compilation
- * @see PatternMatchBuilder for future home when modularized
+ * @see PatternBuilder for enum-pattern-related operations
  */
 class ClauseContext {
     // Parent context for nested switches - allows lookups to fall through

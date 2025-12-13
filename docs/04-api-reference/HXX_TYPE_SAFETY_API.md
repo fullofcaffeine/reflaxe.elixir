@@ -177,7 +177,7 @@ var liveElement = HXX.hxx('
 ## Usage in Applications
 
 ```haxe
-import reflaxe.elixir.macro.HXX;
+import reflaxe.elixir.macros.HXX;
 import phoenix.types.HXXTypes;
 
 class TodoComponent {

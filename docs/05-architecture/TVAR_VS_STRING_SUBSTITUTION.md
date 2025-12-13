@@ -177,9 +177,8 @@ Enum.filter(list, fn item -> v.active end)
 
 ## Related Documentation
 
-- [`documentation/CONTEXT_SENSITIVE_COMPILATION.md`](CONTEXT_SENSITIVE_COMPILATION.md) - Overall compilation context architecture
-- [`documentation/helpers/EXPRESSION_COMPILER.md`](helpers/EXPRESSION_COMPILER.md) - ExpressionCompiler implementation details
-- [`documentation/COMPILER_BEST_PRACTICES.md`](COMPILER_BEST_PRACTICES.md) - General compiler development practices
+- [`/docs/05-architecture/CONTEXT_SENSITIVE_COMPILATION.md`](/docs/05-architecture/CONTEXT_SENSITIVE_COMPILATION.md) - Overall compilation context architecture
+- [`/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md`](/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md) - General compiler development practices
 
 ## Key Takeaways
 

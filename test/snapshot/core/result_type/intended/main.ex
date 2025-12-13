@@ -1,7 +1,7 @@
 defmodule Main do
   def parse_number(input) do
     parsed = String.to_integer(input)
-    if (not Kernel.is_nil(parsed)), do: {:some, {:ok, parsed}}, else: {:some, {:error, "Invalid number: " <> input}}
+    if (not Kernel.is_nil(parsed)), do: {:ok, parsed}, else: {:error, "Invalid number: " <> input}
   end
   def divide_numbers(a, b) do
     MyApp.ResultTools.flat_map(parse_number(a), (fn -> fn num_a ->
@@ -16,14 +16,14 @@ defmodule Main do
   def handle_result(result) do
     (case result do
       {:ok, value} ->
-        fn_ = value
-        end_ = value
-        fn_ = value
-        end_ = value
+        _fn_ = value
+        _end_ = value
+        _fn = value
+        _end = value
         to_string = value
         "Success: #{(fn -> Kernel.to_string(value) end).()}"
-      {:error, value} ->
-        message = value
+      {:error, reason} ->
+        message = reason
         "Error: #{(fn -> message end).()}"
     end)
   end

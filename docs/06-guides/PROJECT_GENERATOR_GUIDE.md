@@ -758,7 +758,7 @@ mix phx.server
 
 ### Getting Help
 
-1. **Documentation**: Check other guides in `documentation/`
+1. **Documentation**: Check other guides in `docs/`
 2. **Examples**: Review `examples/` directory
 3. **Issues**: Report at GitHub Issues
 4. **Community**: Join Discord/Slack for support

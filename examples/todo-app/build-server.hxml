@@ -61,7 +61,6 @@
 --macro keep('phoenix.DateFormat')
 --macro keep('phoenix.Sorting')
 --macro keep('server.live.TodoLive')
---macro keep('TodoAppChangeset')
 # Skip problematic stdlib structures we don't use in the todo app
 
 # Debug flags are disabled by default to keep QA builds quiet and fast
@@ -96,7 +95,6 @@ server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 server.support.Flash
 server.support.FlashTypeTools
-TodoAppChangeset
 server.pubsub.TodoPubSub
 # PostgrexTypes is now auto-generated from Repo, not a separate class
 # Temporarily exclude problematic stdlib modules

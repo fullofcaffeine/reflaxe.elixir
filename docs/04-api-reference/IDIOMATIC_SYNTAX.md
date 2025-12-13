@@ -723,7 +723,7 @@ count = length(data.items)
 
 **Key Point**: Even with Dynamic types, generated code remains idiomatic through intelligent method detection.
 
-**See**: [`documentation/DYNAMIC_HANDLING.md`](DYNAMIC_HANDLING.md) for detailed Dynamic handling patterns.
+**See**: [`/docs/05-architecture/DYNAMIC_HANDLING.md`](/docs/05-architecture/DYNAMIC_HANDLING.md) for detailed Dynamic handling patterns.
 
 ## Best Practices
 

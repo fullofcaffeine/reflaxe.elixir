@@ -28,45 +28,46 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 
 ### ⚙️ Compiler Development
 **[03-compiler-development/](03-compiler-development/)** - For contributors to the compiler itself
-- [Architecture Overview](03-compiler-development/architecture.md) - How the compiler works
-- [Macro-time vs Runtime](03-compiler-development/macro-time-vs-runtime.md) - Critical distinction
-- [AST Processing](03-compiler-development/ast-processing.md) - TypedExpr transformation
-- [Testing Infrastructure](03-compiler-development/testing-infrastructure.md) - Snapshot testing system
-- [Debugging Guide](03-compiler-development/debugging-guide.md) - XRay debugging methodology
-- [Best Practices](03-compiler-development/best-practices.md) - Development patterns
+- [Compilation Pipeline](03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md) - How TypedExpr becomes Elixir
+- [Macro Principles](03-compiler-development/MACRO_PRINCIPLES.md) - Macro-time compilation rules
+- [Testing Infrastructure](03-compiler-development/TESTING_INFRASTRUCTURE.md) - Snapshot + integration testing system
+- [XRay Debugging](03-compiler-development/DEBUG_XRAY_SYSTEM.md) - Debugging methodology
+- [Best Practices](03-compiler-development/COMPILER_BEST_PRACTICES.md) - Development patterns
 
 ### 📋 API Reference
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
-- [Annotations](04-api-reference/annotations.md) - @:router, @:liveview, @:schema reference
-- [Standard Library](04-api-reference/standard-library.md) - Haxe stdlib support matrix
+- [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
+- [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
 - [Haxe Stdlib API Reference](04-api-reference/haxe-stdlib-api-reference.md) - Complete Haxe standard library API reference
-- [Phoenix Externs](04-api-reference/phoenix-externs.md) - Phoenix framework type definitions
-- [Compiler APIs](04-api-reference/compiler-apis.md) - Reflaxe framework APIs
-- [Mix Tasks](04-api-reference/mix-tasks.md) - Custom Mix task reference
+- [Haxe Macro APIs](04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
+- [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Source map architecture + usage
+- [Router DSL](04-api-reference/ROUTER_DSL.md) - Phoenix router DSL reference
+- [Mix Tasks](04-api-reference/MIX_TASKS.md) - Custom Mix task reference
 
 ### 🏗️ Architecture
 **[05-architecture/](05-architecture/)** - System design and implementation details
-- [Compilation Pipeline](05-architecture/compilation-pipeline.md) - From Haxe AST to Elixir code
-- [File Naming System](05-architecture/file-naming-system.md) - snake_case conversion rules
-- [Module Resolution](05-architecture/module-resolution.md) - Phoenix naming conventions
-- [HXX Templates](05-architecture/hxx-templates.md) - Template compilation system
-- [Elixir Injection](05-architecture/elixir-injection.md) - Syntax.code() implementation
+- [Architecture](05-architecture/ARCHITECTURE.md) - Overall system design
+- [HXML Architecture](05-architecture/HXML_ARCHITECTURE.md) - Build file patterns and anti-patterns
+- [File Naming](05-architecture/FILE_NAMING_ARCHITECTURE.md) - snake_case conversion rules
+- [HXX Templates](05-architecture/HXX_ARCHITECTURE.md) - Template compilation system
+- [Elixir Injection](04-api-reference/ELIXIR_INJECTION_GUIDE.md) - `__elixir__()` / Syntax.code() patterns
 
 ### 📋 How-To Guides
 **[06-guides/](06-guides/)** - Practical guides for specific tasks
-- [Migrating from Elixir](06-guides/migrating-from-elixir.md) - Elixir→Haxe migration guide
-- [Creating Phoenix Apps](06-guides/creating-phoenix-app.md) - Phoenix from scratch
-- [Writing Externs](06-guides/writing-externs.md) - External library integration
-- [Performance Optimization](06-guides/optimizing-performance.md) - Compilation performance
-- [Troubleshooting](06-guides/troubleshooting.md) - Common issues and solutions
+- [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
+- [Getting Started](06-guides/GETTING_STARTED.md) - Practical onboarding
+- [Phoenix Integration Guide](06-guides/PHOENIX_INTEGRATION_GUIDE.md) - Phoenix app setup + patterns
+- [Project Generator Guide](06-guides/PROJECT_GENERATOR_GUIDE.md) - CLI project generation
+- [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
+- [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### 🎯 Patterns & Examples
 **[07-patterns/](07-patterns/)** - Code patterns and best practices
-- [Functional Transformations](07-patterns/functional-transformations.md) - Imperative→functional patterns
-- [OTP Patterns](07-patterns/otp-patterns.md) - GenServer, Supervisor integration
-- [PubSub Patterns](07-patterns/pubsub-patterns.md) - Type-safe messaging
-- [Error Handling](07-patterns/error-handling.md) - Result<T,E> usage patterns
-- [Async Patterns](07-patterns/async-patterns.md) - Async/await in Haxe
+- [Quick Start Patterns](07-patterns/quick-start-patterns.md) - Copy-paste patterns
+- [Functional Patterns](07-patterns/FUNCTIONAL_PATTERNS.md) - Result/Option and idioms
+- [LiveView Patterns](07-patterns/PHOENIX_LIVEVIEW_PATTERNS.md) - Phoenix LiveView patterns
+- [Ecto Patterns](07-patterns/ECTO_INTEGRATION_PATTERNS.md) - Ecto/Phoenix integration patterns
+- [JavaScript Patterns](07-patterns/JAVASCRIPT_PATTERNS.md) - JS generation patterns
 
 ### 🗺️ Roadmap & Planning
 **[08-roadmap/](08-roadmap/)** - Project direction and future plans
@@ -106,8 +107,8 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 
 - **[Installation](01-getting-started/installation.md)** - Get started in 5 minutes
 - **[Quickstart](01-getting-started/quickstart.md)** - Your first Haxe→Elixir project
-- **[Phoenix Guide](02-user-guide/phoenix-integration.md)** - Building Phoenix applications
-- **[Troubleshooting](06-guides/troubleshooting.md)** - Solve common issues
+- **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
+- **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Contributing](10-contributing/contributing.md)** - Help improve the project
 
 ## 📞 Support

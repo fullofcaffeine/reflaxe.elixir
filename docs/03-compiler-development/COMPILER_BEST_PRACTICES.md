@@ -2,7 +2,7 @@
 
 This document consolidates proven compiler development patterns and best practices for Reflaxe.Elixir, distilled from real implementation experience.
 
-**See also**: [`COMPILER_PATTERNS.md`](COMPILER_PATTERNS.md) for detailed implementation patterns and lessons learned.
+**See also**: [`../05-architecture/COMPILER_PATTERNS.md`](../05-architecture/COMPILER_PATTERNS.md) for detailed implementation patterns and lessons learned.
 
 ## Core Development Principles
 
@@ -14,7 +14,7 @@ This document consolidates proven compiler development patterns and best practic
 - **Check test directories** - Look for existing tests before creating new ones (`test/tests/`)
 - **Review standard library** - Check `std/` for existing types, helpers, and patterns
 - **Examine examples** - Look at `examples/` for similar use cases
-- **Check documentation** - Review `documentation/` for established patterns
+- **Check documentation** - Review `docs/` for established patterns
 
 ❌ **Never duplicate work**:
 - Don't create new tests when existing ones can be updated
@@ -506,11 +506,11 @@ grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
 ## Reference Resources
 
 ### Documentation System
-- [`COMPILER_PATTERNS.md`](COMPILER_PATTERNS.md) - Detailed implementation patterns and lessons learned
+- [`../05-architecture/COMPILER_PATTERNS.md`](../05-architecture/COMPILER_PATTERNS.md) - Detailed implementation patterns and lessons learned
 - [`TESTING_PRINCIPLES.md`](TESTING_PRINCIPLES.md) - Critical testing rules and methodologies
-- [`documentation/architecture/TESTING.md`](architecture/TESTING.md) - Technical testing infrastructure
-- [`PARADIGM_BRIDGE.md`](paradigms/PARADIGM_BRIDGE.md) - Understanding imperative→functional transformations
-- [`DEVELOPER_PATTERNS.md`](guides/DEVELOPER_PATTERNS.md) - Best practices and patterns
+- [`../05-architecture/TESTING.md`](../05-architecture/TESTING.md) - Technical testing infrastructure
+- [`../07-patterns/PARADIGM_BRIDGE.md`](../07-patterns/PARADIGM_BRIDGE.md) - Understanding imperative→functional transformations
+- [`../06-guides/DEVELOPER_PATTERNS.md`](../06-guides/DEVELOPER_PATTERNS.md) - Best practices and patterns
 
 ### External Resources
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features

@@ -130,7 +130,7 @@ extern class Controller {
  * LiveView.mount<MyAssigns>(params, session, socket);
  * ```
  * 
- * @see /documentation/GENERIC_EXTERN_STATIC_FUNCTIONS.md - Complete explanation of this pattern
+ * @see /docs/04-api-reference/GENERIC_EXTERN_STATIC_FUNCTIONS.md - Complete explanation of this pattern
  */
 @:native("Phoenix.LiveView")
 extern class LiveView {

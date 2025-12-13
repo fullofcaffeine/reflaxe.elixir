@@ -4,7 +4,9 @@ defmodule Main do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()}, #{(fn -> Kernel.to_string(g) end).()}, #{(fn -> Kernel.to_string(b) end).()})"
+      {:rgb, r, _g, _b} ->
+        b = r
+        "rgb(#{(fn -> Kernel.to_string(r) end).()}, #{(fn -> Kernel.to_string(g) end).()}, #{(fn -> Kernel.to_string(b) end).()})"
     end)
   end
   def get_value(opt, default_value) do
@@ -16,7 +18,9 @@ defmodule Main do
   def tree_sum(tree) do
     (case tree do
       {:leaf, value} -> value
-      {:node, left, right} -> tree_sum(left) + tree_sum(right)
+      {:node, left, right} ->
+        right = left
+        tree_sum(left) + tree_sum(right)
     end)
   end
   def describe_rgb(color) do
@@ -36,14 +40,15 @@ defmodule Main do
   end
   def compare_trees(t1, t2) do
     (case t1 do
-      {:leaf, v2} when t2 == 0 -> v2 == v2
-      {:leaf, _v1} -> false
-      {:node, l1, l2} when t2 == 1 ->
-        l2 = l1
-        r2 = l1
-        r1 = l1
+      {:leaf, value} when t2 == 0 -> value == value
+      {:leaf, __value} -> false
+      {:node, left, __right} when t2 == 1 ->
+        l2 = left
+        r2 = left
+        r1 = left
+        l1 = left
         compare_trees(l1, l2) and compare_trees(r1, r2)
-      {:node, l1, l2} -> false
+      {:node, __left, __right} -> false
     end)
   end
   def main() do

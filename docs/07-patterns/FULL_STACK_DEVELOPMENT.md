@@ -127,40 +127,41 @@ phoenix_app/
 ```hxml
 # Haxe→JavaScript compilation for Phoenix client-side
 -cp src_haxe/client
--cp src_haxe/shared
--cp ../../std
+-cp src_haxe
 
-# Enable async/await support
---macro reflaxe.js.AsyncJSGenerator.use()
--lib reflaxe
+# Enable Genes ES6 generator (uses haxe_libraries/genes.hxml)
+-lib genes
 
 # Modern JavaScript output
--js assets/js/app.js
--D js-es6
+-js assets/js/hx_app.js
 -D js-unflatten
 --dce=full
 
 # Source maps for debugging
+-D real-position
 -D js-source-map
 
-# Main entry point
-client.TodoApp
+# Exclude server code from client compilation
+--macro exclude('server')
+
+# Main client entry point
+-main client.Boot
 ```
 
 **Server Build (build-server.hxml)**:
 ```hxml
 # Haxe→Elixir compilation for Phoenix server-side
+-lib reflaxe.elixir
+
+-cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
--cp ../../src
--cp ../../std
 
-# Reflaxe.Elixir target
--lib reflaxe
---macro include('reflaxe.elixir')
+-D elixir_output=lib
+-D reflaxe_runtime
 
 # Main entry point
-server.TodoApp
+TodoApp
 ```
 
 ### Development Commands

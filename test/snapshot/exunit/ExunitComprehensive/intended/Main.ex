@@ -100,7 +100,7 @@ String.at(_this, 0) || "" == "H" end).(), "First character should be 'H'")
     (case success_result do
       {:ok, value} ->
         Assert.equals(value, 42, "Success value should be 42")
-      {:error, success_result} ->
+      {:error, reason} ->
         Assert.fail("Should not be an error")
     end)
   end

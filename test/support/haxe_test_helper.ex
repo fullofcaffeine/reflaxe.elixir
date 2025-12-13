@@ -77,28 +77,13 @@ defmodule HaxeTestHelper do
     # Create test-specific reflaxe.elixir.hxml with absolute paths
     test_config_target = Path.join(target_libraries, "reflaxe.elixir.hxml")
     
-    # Generate the configuration content with absolute paths
-    test_config_content = """
-    # Test-specific Reflaxe.Elixir Library Configuration
-    # Generated dynamically with absolute paths to avoid symlink issues
-    
-    # Include the compiler source code using absolute path
-    -cp #{project_root}/src/
-    
-    # Include the Elixir standard library definitions using absolute path  
-    -cp #{project_root}/std/
-    
-    # Depend on the base Reflaxe framework
-    -lib reflaxe
-    
-    # Define the library version
-    -D reflaxe.elixir=0.1.0
-    
-    # Initialize the Elixir compiler
-    --macro reflaxe.elixir.CompilerInit.Start()
-    """
-    
-    File.write!(test_config_target, test_config_content)
+    support_config_source = Path.join([project_root, "test", "support", "test_reflaxe_elixir.hxml"])
+
+    unless File.exists?(support_config_source) do
+      raise "Test reflaxe.elixir.hxml template not found at #{support_config_source}"
+    end
+
+    File.cp!(support_config_source, test_config_target)
     
     # Validate that required paths exist
     src_path = Path.join(project_root, "src")

@@ -45,6 +45,6 @@ class TodoLiveClassTest extends TestCase {
   }
 
   static inline function viewHandle(lvTuple: Dynamic): LiveView {
-    return untyped __elixir__('elem({0}, 1)', lvTuple);
+    return cast elixir.Tuple.elem(lvTuple, 1);
   }
 }

@@ -1603,7 +1603,7 @@ This is now documented to prevent future time waste on the same issue.
  * - Integration complexity points
  * - Future improvement areas
  * 
- * @see documentation/RELATED_ARCHITECTURE.md - Related patterns and designs
+ * @see docs/05-architecture/ARCHITECTURE.md - Related patterns and designs
  */
 @:nullSafety(Off)
 class CompilerClass {

@@ -1,6 +1,6 @@
 package server.schemas;
 
-import TodoAppChangeset as CS;
+import ecto.ChangesetBridge as CS;
 import elixir.Atom;
 import elixir.Regex;
 import elixir.DateTime.DateTime;

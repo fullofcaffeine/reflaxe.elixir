@@ -21,7 +21,7 @@ The HXX Type Safety System provides **TypeScript JSX-equivalent type safety** fo
 ### Basic Usage
 
 ```haxe
-import reflaxe.elixir.macro.HXX;
+import reflaxe.elixir.macros.HXX;
 import phoenix.types.HXXTypes;
 
 class MyComponent {

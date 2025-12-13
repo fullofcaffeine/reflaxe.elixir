@@ -316,7 +316,7 @@ args = [endpoint_config], else: nil  # Line 72 - ERROR: After variable assignmen
 **Priority**: MEDIUM - Quality of life and communication
 
 #### 4.1 XRay Documentation (Days 1-2)
-- [ ] **Create comprehensive XRay guide** - `/documentation/DEBUG_XRAY_SYSTEM.md`
+- [ ] **Create comprehensive XRay guide** - `/docs/03-compiler-development/DEBUG_XRAY_SYSTEM.md`
 - [ ] **Update ARCHITECTURE.md** - Include XRay integration details
 - [ ] **Usage examples** - How to use XRay for debugging
 - [ ] **Best practices** - Compiler debugging methodology

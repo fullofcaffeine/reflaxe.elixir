@@ -84,32 +84,29 @@ class Todo {
 Provides compile-time validated queries with lambda-based field access:
 
 ```haxe
-// Type-safe queries with compile-time validation
+// Type-safe queries with compile-time field existence validation (where/1)
 var query = TypedQuery.from(Todo)
-    .where(todo -> todo.completed == true)           // ✅ Field exists, type matches
-    .where(todo -> todo.priority == "high")          // ✅ String comparison valid
-    .select(todo -> {                                // ✅ Projection type-checked
+    .where(todo -> todo.completed == true)           // ✅ Field exists
+    .where(todo -> todo.priority == "high")          // ✅ Field exists
+    .select(todo -> {                                // Projection is type-checked by Haxe
         id: todo.id,
         title: todo.title,
         dueDate: todo.dueDate
     })
-    .orderBy(todo -> todo.dueDate, Desc)            // ✅ Field is sortable
+    .orderBy(todo -> [{field: todo.dueDate, direction: Desc}])
     .limit(10);
 
-// Compile-time errors for invalid queries
+// Compile-time error for invalid field access
 var bad = TypedQuery.from(Todo)
-    .where(todo -> todo.nonexistent == true)        // ❌ Compile error: field doesn't exist
-    .where(todo -> todo.completed == "yes")         // ❌ Compile error: Bool != String
-    .orderBy(todo -> todo.tags, Asc);               // ❌ Compile error: Can't sort JSON field
+    .where(todo -> todo.nonexistent == true);       // ❌ Compile error: field doesn't exist
 
 // Escape hatches for complex queries
 var complex = TypedQuery.from(Todo)
-    .whereRaw("completed = ? AND due_date < NOW()", [true])
-    .joinRaw("LEFT JOIN users u ON u.id = todos.user_id")
-    .selectRaw("todos.*, u.name as user_name");
+    .whereRaw("completed = ? AND due_date < NOW()", true)
+    .orderByRaw("due_date ASC, inserted_at DESC");
 
 // Direct Ecto access when needed
-var ectoQuery = typedQuery.toEctoQuery();  // Get underlying Ecto.Query
+var ectoQuery = query.toEctoQuery();  // Get underlying Ecto.Query
 ```
 
 ## Implementation Details
@@ -140,10 +137,8 @@ var ectoQuery = typedQuery.toEctoQuery();  // Get underlying Ecto.Query
 
 ### Field Validation Rules
 
-1. **Existence**: Field must exist in schema
-2. **Type compatibility**: Comparisons must be type-safe
-3. **Nullability**: Null checks only on nullable fields
-4. **Relationships**: Foreign keys validated against referenced tables
+1. **Existence**: Field must exist in schema (validated by the `where(...)` macro)
+2. **Type compatibility**: Haxe type checking applies to your predicate/projection expressions
 
 ## Usage Patterns
 
@@ -157,44 +152,28 @@ todo.completed = false;
 Repo.insert(todo);
 
 // READ - Type-safe queries
-var completed = TypedQuery.from(Todo)
+var completedQuery = TypedQuery.from(Todo)
     .where(t -> t.completed == true)
-    .orderBy(t -> t.updatedAt, Desc)
-    .all();
+    .orderBy(t -> [{field: t.updatedAt, direction: Desc}])
+    .limit(50);
+var completed = Repo.all(completedQuery);
 
-// UPDATE - Type-safe updates
-TypedQuery.from(Todo)
-    .where(t -> t.id == todoId)
-    .update(t -> {
-        t.completed = true;
-        t.updatedAt = Date.now();
-    });
-
-// DELETE - Type-safe deletion
-TypedQuery.from(Todo)
-    .where(t -> t.id == todoId)
-    .delete();
+// UPDATE / DELETE - use Repo + changesets/entities (standard Phoenix/Ecto patterns)
 ```
 
 ### Complex Queries with Escape Hatches
 
 ```haxe
 // Mix typed and raw for complex queries
-var results = TypedQuery.from(Todo)
+var query = TypedQuery.from(Todo)
     // Type-safe where clause
     .where(t -> t.userId == currentUser.id)
     // Raw SQL for complex date logic
-    .whereRaw("due_date BETWEEN ? AND ?", [startDate, endDate])
-    // Type-safe join
-    .join(t -> t.user)
-    // Raw aggregation
-    .selectRaw("""
-        todos.*,
-        users.name as user_name,
-        COUNT(comments.id) as comment_count
-    """)
-    .groupBy(t -> t.id)
-    .all();
+    .whereRaw("due_date BETWEEN ? AND ?", startDate, endDate)
+    // Raw ordering for expressions that don't map cleanly to the typed API
+    .orderByRaw("due_date ASC NULLS LAST, inserted_at DESC");
+
+var results = Repo.all(query);
 ```
 
 ### Migration-Driven Development
@@ -219,9 +198,9 @@ class Todo {
 }
 
 // 3. Queries immediately use new field (type-safe)
-var highPriority = TypedQuery.from(Todo)
-    .where(t -> t.priority == "high")  // ✅ Field exists, enum validated
-    .all();
+var query = TypedQuery.from(Todo)
+    .where(t -> t.priority == "high"); // ✅ Field exists, enum validated
+var highPriority = Repo.all(query);
 ```
 
 ## Benefits
@@ -286,7 +265,8 @@ var query = from(t in "todos",
 var query = TypedQuery.from(Todo)
     .where(t -> t.completed == true)
     .where(t -> t.priority == "high")  // Typo caught at compile time!
-    .all();
+
+var results = Repo.all(query);
 ```
 
 ### Gradual Migration Strategy
@@ -323,7 +303,7 @@ var query = TypedQuery.from(Todo)
 **Solution**: Check migration column type matches query usage
 
 **Issue**: Complex query doesn't fit typed API
-**Solution**: Use `whereRaw()`, `selectRaw()`, or `toEctoQuery()` escape hatches
+**Solution**: Use `whereRaw()`, `orderByRaw()`, or `toEctoQuery()` escape hatches
 
 **Issue**: Schema out of sync with database
 **Solution**: Re-run migrations and recompile with `--force`

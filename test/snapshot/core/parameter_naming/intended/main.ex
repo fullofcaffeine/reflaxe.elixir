@@ -1,11 +1,11 @@
 defmodule Main do
-  def greet_user(_struct, user_name, message) do
+  def greet_user(struct, user_name, message) do
     "Hello #{(fn -> user_name end).()}: #{(fn -> message end).()}"
   end
-  def process_order(_struct, order_id, customer_email, amount) do
+  def process_order(struct, order_id, customer_email, amount) do
     order_id > 0 and length(customer_email) > 0 and amount > 0
   end
-  def validate_email(_struct, email_address) do
+  def validate_email(struct, email_address) do
     case :binary.match(email_address, "@") do
                 {pos, _} -> pos
                 :nomatch -> -1

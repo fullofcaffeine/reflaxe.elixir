@@ -35,7 +35,7 @@
 **NEW**: You can now write type-safe Ecto queries directly in Haxe!
 
 ```haxe
-import reflaxe.elixir.macro.EctoQueryMacros.*;
+import reflaxe.elixir.macros.EctoQueryMacros.*;
 
 @:module
 class UserQueries {

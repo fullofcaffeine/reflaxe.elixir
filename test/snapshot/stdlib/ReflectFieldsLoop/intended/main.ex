@@ -6,7 +6,7 @@ defmodule Main do
   nil
 end end).())
     data = %{:errors => %{:name => ["Required"], :age => ["Invalid"]}}
-    _changeset_errors = Map.get(data, "errors")
+    changeset_errors = Map.get(data, "errors")
     if (not Kernel.is_nil(changeset_errors)) do
       Enum.each(changeset_errors, (fn -> fn item ->
         field = Reflect.fields(changeset_errors)[0]

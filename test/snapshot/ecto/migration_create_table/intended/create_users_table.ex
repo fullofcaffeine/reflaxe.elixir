@@ -12,7 +12,7 @@ defmodule CreateUsersTable do
   def down(struct) do
     struct.dropTable("users")
   end
-  defp drop_table(_struct, _name) do
+  defp drop_table(struct, _name) do
     
   end
 end

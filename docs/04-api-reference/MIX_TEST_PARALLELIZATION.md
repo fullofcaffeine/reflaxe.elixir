@@ -183,6 +183,6 @@ The parallelization implementation was validated by:
 
 ## Related Documentation
 
-- [`documentation/PARALLEL_TEST_ACHIEVEMENT.md`](PARALLEL_TEST_ACHIEVEMENT.md) - Snapshot test parallelization
-- [`documentation/TESTING_INFRASTRUCTURE.md`](TESTING_INFRASTRUCTURE.md) - Complete test architecture
-- [`documentation/architecture/TESTING.md`](architecture/TESTING.md) - Technical testing details
+- [`/docs/02-user-guide/PARALLEL_TEST_ACHIEVEMENT.md`](/docs/02-user-guide/PARALLEL_TEST_ACHIEVEMENT.md) - Snapshot test parallelization
+- [`/docs/03-compiler-development/TESTING_INFRASTRUCTURE.md`](/docs/03-compiler-development/TESTING_INFRASTRUCTURE.md) - Complete test architecture
+- [`/docs/05-architecture/TESTING.md`](/docs/05-architecture/TESTING.md) - Technical testing details

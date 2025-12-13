@@ -23,8 +23,13 @@ class MapTools {
      * @param predicate Function that takes (key, value) and returns boolean
      * @return New map containing only entries that match predicate
      */
-    // TODO: Fix type inference issue with Map<K,V> generic return types
-    // Temporarily commented out filter method
+    public static function filter<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Map<K, V> {
+        return cast untyped __elixir__(
+            "Map.new(Enum.filter({0}, fn {k, v} -> {1}.(k, v) end))",
+            map,
+            predicate
+        );
+    }
     
     /**
      * Transform map values while preserving keys
@@ -32,8 +37,13 @@ class MapTools {
      * @param transform Function that takes (key, value) and returns new value
      * @return New map with transformed values
      */
-    // TODO: Fix type inference issue with Map<K,U> generic return types
-    // Temporarily commented out map method
+    public static function map<K, V, U>(map: Map<K, V>, transform: (K, V) -> U): Map<K, U> {
+        return cast untyped __elixir__(
+            "Map.new(Enum.map({0}, fn {k, v} -> {k, {1}.(k, v)} end))",
+            map,
+            transform
+        );
+    }
     
     /**
      * Transform map keys while preserving values
@@ -41,8 +51,13 @@ class MapTools {
      * @param transform Function that takes (key, value) and returns new key
      * @return New map with transformed keys
      */
-    // TODO: Fix type inference issue with Map<J,V> generic return types
-    // Temporarily commented out mapKeys method
+    public static function mapKeys<K, V, J>(map: Map<K, V>, transform: (K, V) -> J): Map<J, V> {
+        return cast untyped __elixir__(
+            "Map.new(Enum.map({0}, fn {k, v} -> {{1}.(k, v), v} end))",
+            map,
+            transform
+        );
+    }
     
     /**
      * Fold/reduce map entries into a single value
@@ -117,8 +132,12 @@ class MapTools {
      * @param pairs Array of {key: K, value: V} objects
      * @return New map containing all pairs
      */
-    // TODO: Fix type inference issue with Map<K,V> generic return types
-    // Temporarily commented out fromArray method
+    public static function fromArray<K, V>(pairs: Array<{key: K, value: V}>): Map<K, V> {
+        return cast untyped __elixir__(
+            "Map.new(Enum.map({0}, fn %{key: k, value: v} -> {k, v} end))",
+            pairs
+        );
+    }
     
     /**
      * Merge two maps, with second map values taking precedence
@@ -126,8 +145,9 @@ class MapTools {
      * @param map2 Second map (values override first map)
      * @return New map containing merged entries
      */
-    // TODO: Fix type inference issue with Map<K,V> generic return types
-    // Temporarily commented out merge method
+    public static function merge<K, V>(map1: Map<K, V>, map2: Map<K, V>): Map<K, V> {
+        return cast untyped __elixir__("Map.merge({0}, {1})", map1, map2);
+    }
     
     /**
      * Check if map is empty
