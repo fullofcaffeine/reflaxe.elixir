@@ -16,15 +16,9 @@ MIX_ENV=test mix test                      # Runtime validation tests
 
 ### Integration Testing
 ```bash
-# Todo-app integration (primary benchmark)
-cd examples/todo-app
-rm -rf lib/*.ex lib/**/*.ex               # Clean generated files
-npx haxe build-server.hxml                # Regenerate from Haxe
-mix compile --force                       # Verify Elixir compilation
-mix phx.server                            # Test application starts
-
-# Test response
-curl http://localhost:4000/ | grep TodoApp
+# Todo-app integration (primary benchmark, non-blocking + bounded)
+scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
 ```
 
 ### Performance Testing
@@ -44,10 +38,6 @@ mix format                                # Code formatting
 
 ### Development Workflow
 ```bash
-# Watch mode (if available)
-mix test --watch                          # Auto-run tests on change
-mix phx.server --watch                    # Auto-reload server
-
 # Debugging
 mix compile --verbose                     # Verbose compilation output
 MIX_ENV=test mix compile --force          # Force recompilation

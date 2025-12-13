@@ -9,11 +9,13 @@ This directory contains Product Requirements Documents for Reflaxe.Elixir develo
 ## Directory Structure
 
 ```
-documentation/plans/
+docs/08-roadmap/
 ├── ACTIVE_PRD.md           # Current authoritative development plan
 ├── PRD_README.md           # This file - index and guidelines
-└── archive/                # Historical/completed plans
-    └── 2025-08-14_paradigm_todoapp_compiler_plan.md
+└── ...                     # Roadmaps and planning docs
+
+docs/prds/
+└── *.md                    # Product Requirements Documents (feature/initiative PRDs)
 ```
 
 ## PRD Guidelines
@@ -31,7 +33,7 @@ PRDs in this directory should follow this structure:
 
 - **PRDs** define **what** we need to build and **why**
 - **AGENTS.md** contains agent instructions and current project truth
-- **documentation/** contains implementation guides and technical details
+- **docs/** contains implementation guides and technical details
 
 ## Agent Instructions
 

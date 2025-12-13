@@ -1311,11 +1311,11 @@ class ElixirCompiler extends GenericCompiler<
      * Creates a properly initialized CompilationContext
      *
      * WHY: Centralizes context creation to ensure all contexts have proper initialization
-     * including the new AST modularization infrastructure (Phase 2)
+     * including feature flags and supporting helpers.
      *
-     * WHAT: Creates context with BuilderFacade and all necessary references
+     * WHAT: Creates a fresh CompilationContext for a compilation unit.
      *
-     * HOW: Initializes context, sets up BuilderFacade if enabled, registers builders
+     * HOW: Initializes context, wires compiler references, and applies feature toggles.
      */
     private function createCompilationContext(): CompilationContext {
         var context = new CompilationContext();
@@ -1337,28 +1337,6 @@ class ElixirCompiler extends GenericCompiler<
 
         // Initialize feature flags from compiler defines
         initializeFeatureFlags(context);
-
-        // Phase 2: Initialize BuilderFacade for gradual migration
-        // Only create if we're using any new builders
-        if (context.isFeatureEnabled("use_new_pattern_builder") ||
-            context.isFeatureEnabled("use_new_loop_builder") ||
-            context.isFeatureEnabled("use_new_function_builder") ||
-            context.isFeatureEnabled("use_new_comprehension_builder")) {
-
-            context.builderFacade = new reflaxe.elixir.ast.builders.BuilderFacade(this, context);
-
-            // Register specialized builders as they become available
-            // TODO: Restore when PatternMatchBuilder import is fixed
-            // var patternBuilder = new reflaxe.elixir.ast.builders.PatternMatchBuilder(
-            //     context,
-            //     context.getExpressionBuilder()
-            // );
-            // context.builderFacade.registerBuilder("pattern", patternBuilder);
-
-            #if debug_ast_builder
-            // DISABLED: trace('[ElixirCompiler] BuilderFacade initialized with registered builders');
-            #end
-        }
 
         return context;
     }
@@ -1405,17 +1383,6 @@ class ElixirCompiler extends GenericCompiler<
             context.setFeatureFlag("pattern_extraction", value != "false");
         }
 
-        // Check for the new builder flags that are already being used
-        if (haxe.macro.Context.defined("elixir.feature.use_new_pattern_builder")) {
-            var value = haxe.macro.Context.definedValue("elixir.feature.use_new_pattern_builder");
-            context.setFeatureFlag("use_new_pattern_builder", value != "false");
-        }
-
-        if (haxe.macro.Context.defined("elixir.feature.use_new_loop_builder")) {
-            var value = haxe.macro.Context.definedValue("elixir.feature.use_new_loop_builder");
-            context.setFeatureFlag("use_new_loop_builder", value != "false");
-        }
-
         // Global flag to enable all experimental features
         if (haxe.macro.Context.defined("elixir.feature.experimental")) {
             var value = haxe.macro.Context.definedValue("elixir.feature.experimental");
@@ -1424,8 +1391,6 @@ class ElixirCompiler extends GenericCompiler<
                 context.setFeatureFlag("loop_builder_enabled", true);
                 context.setFeatureFlag("idiomatic_comprehensions", true);
                 context.setFeatureFlag("pattern_extraction", true);
-                context.setFeatureFlag("use_new_pattern_builder", true);
-                context.setFeatureFlag("use_new_loop_builder", true);
             }
         }
 
@@ -1438,8 +1403,6 @@ class ElixirCompiler extends GenericCompiler<
                 context.setFeatureFlag("loop_builder_enabled", false);
                 context.setFeatureFlag("idiomatic_comprehensions", false);
                 context.setFeatureFlag("pattern_extraction", false);
-                context.setFeatureFlag("use_new_pattern_builder", false);
-                context.setFeatureFlag("use_new_loop_builder", false);
             }
         }
 

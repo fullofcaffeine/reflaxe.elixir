@@ -21,6 +21,6 @@ class TodoLiveCrudTest extends TestCase {
     // Keep additional CRUD steps in Playwright E2E for now; minimal LV mount here
 
     private static inline function viewHandle(lvTuple: Dynamic): LiveView {
-        return untyped __elixir__('elem({0}, 1)', lvTuple);
+        return cast elixir.Tuple.elem(lvTuple, 1);
     }
 }

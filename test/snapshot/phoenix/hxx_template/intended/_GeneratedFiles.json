@@ -6,7 +6,6 @@
   "std.ex",
   "main.ex",
   "live_view_components.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "form_template.ex"
 ],

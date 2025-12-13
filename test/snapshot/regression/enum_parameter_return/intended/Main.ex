@@ -6,7 +6,7 @@ defmodule Main do
   def to_int(status) do
     (case status do
       {:ok} -> 200
-      {:error, __value} -> 500
+      {:error, __reason} -> 500
       {:custom, code} -> code
     end)
   end

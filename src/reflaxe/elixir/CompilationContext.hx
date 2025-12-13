@@ -9,8 +9,6 @@ import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.behaviors.BehaviorTransformer;
 import reflaxe.elixir.ast.context.ElixirASTContext;
 import reflaxe.elixir.ast.context.BuildContext;
-import reflaxe.elixir.ast.builders.BuilderFacade;
-import reflaxe.elixir.ast.builders.IBuilder;
 import reflaxe.elixir.ast.ReentrancyGuard;
 import haxe.macro.Expr.Position;
 import haxe.ds.ObjectMap;
@@ -223,21 +221,11 @@ class CompilationContext implements BuildContext {
      */
     public var behaviorTransformer: Null<BehaviorTransformer>;
 
-    // ========================================================================
-    // AST Modularization Infrastructure (Phase 2 Integration)
-    // ========================================================================
-
     /**
      * Shared AST context for modular builders
      * Provides centralized state management for all AST builders
      */
     public var astContext: ElixirASTContext;
-
-    /**
-     * Builder facade for gradual migration to modular architecture
-     * Routes compilation to specialized builders based on feature flags
-     */
-    public var builderFacade: Null<BuilderFacade>;
 
     /**
      * Current position for error reporting
@@ -307,9 +295,8 @@ class CompilationContext implements BuildContext {
         compiler = null;
         behaviorTransformer = null;
 
-        // Initialize AST modularization infrastructure
+        // Initialize shared AST context
         astContext = new ElixirASTContext();
-        builderFacade = null; // Will be initialized when needed
         currentPosition = null;
 
         // Initialize reentrancy guard
@@ -622,22 +609,6 @@ class CompilationContext implements BuildContext {
     }
 
     /**
-     * Get module name with proper transformation
-     */
-    public function getModuleName(originalName: String): String {
-        // Apply snake_case transformation
-        return reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
-    }
-
-    /**
-     * Get function name with proper transformation
-     */
-    public function getFunctionName(originalName: String): String {
-        // Apply snake_case transformation
-        return reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
-    }
-
-    /**
      * Check if currently building within a pattern
      */
     public function isInPattern(): Bool {
@@ -690,13 +661,6 @@ class CompilationContext implements BuildContext {
     /**
      * Get type builder callback for delegation
      */
-    public function getTypeBuilder(): (Type) -> ElixirAST {
-        // Would need implementation
-        return function(type: Type): ElixirAST {
-            return makeAST(EAtom("todo_type"));
-        };
-    }
-
     /**
      * Get pattern builder callback for delegation
      */
@@ -709,13 +673,6 @@ class CompilationContext implements BuildContext {
             currentClauseContext = oldContext;
             return result;
         };
-    }
-
-    /**
-     * Register a specialized builder for feature-flagged routing
-     */
-    public function registerBuilder(builderType: String, builder: IBuilder): Void {
-        astContext.registerBuilder(builderType, builder);
     }
 
     /**

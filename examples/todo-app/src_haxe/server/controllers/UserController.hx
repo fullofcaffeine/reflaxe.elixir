@@ -63,7 +63,7 @@ class UserController {
      * Uses timestamp and random for uniqueness
      */
     private static function generateUniqueId(): String {
-        // Use Haxe's standard library instead of __elixir__()
+        // Use Haxe's standard library (avoid raw Elixir injection)
         var timestamp = Date.now().getTime();
         var random = Math.floor(Math.random() * 10000);
         return '${timestamp}_${random}';

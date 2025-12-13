@@ -1,5 +1,5 @@
 defmodule TypeSafeChildSpec do
-  def pub_sub(_name) do
+  def pub_sub(name) do
     {Phoenix.PubSub, [name: name]}
   end
   def repo(module, config) do
@@ -25,7 +25,7 @@ defmodule TypeSafeChildSpec do
   end
 end
 
-  def task_supervisor(_name) do
+  def task_supervisor(name) do
     {Task.Supervisor, [name: name]}
   end
   def registry(name, opts) do

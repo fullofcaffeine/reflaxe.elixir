@@ -210,7 +210,7 @@ server.live.TodoLive
 
 ```bash
 # Without HXML (hard to maintain)
-haxe -cp src -cp ../../std -lib reflaxe -D reflaxe_runtime -D elixir_output=lib --macro reflaxe.elixir.CompilerInit.Start() TodoApp
+haxe -cp src_haxe -lib reflaxe.elixir -D reflaxe_runtime -D elixir_output=lib TodoApp
 
 # With HXML (clean and versioned)
 haxe build.hxml
@@ -338,29 +338,34 @@ CounterLive               # Main class to compile
 **Orchestrator (`build.hxml`):**
 ```hxml
 --next build-server.hxml
+--next build-client.hxml
 ```
 
 **Server Target (`build-server.hxml`):**
 ```hxml
--cp ../../src             # Compiler source
--cp ../../std             # Standard library
--lib reflaxe              # Framework
--cp src_haxe              # Application source
--D elixir_output=lib      # Phoenix lib directory
--D reflaxe_runtime        # Enable runtime
--D app_name=TodoApp       # Application config
---macro exclude('client') # Server only
---macro reflaxe.elixir.CompilerInit.Start()
-TodoApp                   # Entry points...
+-lib reflaxe.elixir
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+-D elixir_output=lib
+-D reflaxe_runtime
+-D app_name=TodoApp
+--macro exclude('client')
+TodoApp
 ```
 
 **Client Target (`build-client.hxml`):**
 ```hxml
--cp src_haxe/client       # Client source
--js assets/js/app.js      # Output file
--D js-es6                 # Modern JavaScript
---macro exclude('server') # Client only
-client.PhoenixApp         # Entry point
+-cp src_haxe/client
+-cp src_haxe
+-lib genes
+-js assets/js/hx_app.js
+-D js-unflatten
+--dce=full
+-D real-position
+-D js-source-map
+--macro exclude('server')
+-main client.Boot
 ```
 
 ### 4. Library Management (`haxe_libraries/*.hxml`)

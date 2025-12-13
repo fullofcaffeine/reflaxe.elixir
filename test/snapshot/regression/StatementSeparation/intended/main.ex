@@ -6,7 +6,6 @@ defmodule Main do
     index = nil
     c = nil
     index = i + 1
-    c = index
-    c
+    _c = index
   end
 end

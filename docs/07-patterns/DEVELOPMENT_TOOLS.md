@@ -146,30 +146,18 @@ Always run `npm test` for comprehensive validation. This ensures:
 - ✅ Generated code quality (actually works in BEAM)
 - ✅ End-to-end workflow (Haxe source → running Elixir modules)
 
-## Installation & Setup Documentation ✅
+## Installation & Setup
 
-### Comprehensive Installation Guide Created
-Successfully documented complete setup process in `INSTALLATION.md`:
+**Primary docs**:
+- [`docs/01-getting-started/installation.md`](../01-getting-started/installation.md)
+- [`docs/01-getting-started/development-workflow.md`](../01-getting-started/development-workflow.md)
 
-- **Step-by-step installation** - From prerequisites through verification
-- **lix package manager explanation** - Why lix vs global Haxe, project-specific versions
-- **npx haxe usage** - Clear instructions on using project-specific Haxe binary
-- **Troubleshooting section** - Common issues and solutions
-- **Project structure explanation** - Understanding .haxerc, haxe_libraries/, dual ecosystems
-- **Development workflow** - How to make changes and test them
-
-### Key Documentation Improvements
-- **README.md updated** - Added reference to INSTALLATION.md for new users
-- **DEVELOPMENT.md updated** - Added installation guide reference
-- **Complete beginner onboarding** - No assumptions about lix familiarity
-- **Clear explanation of architecture** - Dual-ecosystem rationale and benefits
-
-### Installation Flow Documented
+**Quick setup**:
 ```bash
-npm install        # Installs lix locally
-npx lix download   # Downloads Haxe libraries
-mix deps.get       # Installs Elixir deps
-npm test           # Verifies complete setup
+npm ci
+npx lix download
+mix deps.get
+npm test
 ```
 
 ## Testing Architecture Decision ✅

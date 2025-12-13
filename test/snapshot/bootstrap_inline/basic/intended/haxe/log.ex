@@ -1,10 +1,10 @@
 defmodule Log do
-  def format_output(v, _infos) do
+  def format_output(v, infos) do
     str = inspect(v)
     if (Kernel.is_nil(infos)), do: str
     str
   end
-  def trace(_v, _infos) do
+  def trace(v, infos) do
     
             case infos do
               nil -> IO.inspect(v)

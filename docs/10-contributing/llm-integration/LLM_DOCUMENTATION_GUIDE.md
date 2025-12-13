@@ -49,7 +49,7 @@ Project Root/
 ### Documentation Priority Levels
 
 1. **AGENTS.md** - Always check first, contains project truth
-2. **Feature Docs** - documentation/*.md for specific features
+2. **Feature Docs** - docs/**/*.md for specific features
 3. **Memory Files** - .llm-memory/*.md for implementation details
 4. **README.md** - For user-facing feature status
 
@@ -130,7 +130,7 @@ end
 
 When documenting a new feature, create FOUR interconnected pieces:
 
-### 1. User Guide (`documentation/FEATURE_NAME.md`)
+### 1. User Guide (`docs/02-user-guide/FEATURE_NAME.md`)
 
 ```markdown
 # Feature Name Guide
@@ -193,7 +193,7 @@ Successfully implemented [feature] with [key characteristics]:
 - **Key Files**: [Important files created/modified]
 
 **Documentation Created**:
-- [`documentation/FEATURE_NAME.md`](documentation/FEATURE_NAME.md) - User guide
+- [`docs/02-user-guide/FEATURE_NAME.md`](/docs/02-user-guide/FEATURE_NAME.md) - User guide
 - [Other docs updated]
 
 [Brief summary of significance]
@@ -355,14 +355,14 @@ See [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) for Option patterns
 
 # In README.md:
 ### Core Documentation
-- [BEAM Type Abstractions](documentation/BEAM_TYPE_ABSTRACTIONS.md) - Option/Result types
+- [BEAM Type Abstractions](/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option/Result types
 ```
 
 ### Internal Links
 
 Always use relative paths:
 ```markdown
-See [`documentation/SOURCE_MAPPING.md`](documentation/SOURCE_MAPPING.md)
+See [`/docs/04-api-reference/SOURCE_MAPPING.md`](/docs/04-api-reference/SOURCE_MAPPING.md)
 ```
 
 ### Section Links
@@ -374,7 +374,7 @@ See [Architecture](#architecture) section below
 
 For other-file sections:
 ```markdown
-See [Architecture](documentation/FEATURE.md#architecture) in the feature guide
+See [Architecture](/docs/05-architecture/ARCHITECTURE.md) in the feature guide
 ```
 
 ### Code References
@@ -399,7 +399,7 @@ Test coverage in `test/tests/source_map_basic/`
    - AGENTS.md - Update task completions, known issues
    - README.md - Update feature list, test count, status
    - Feature guides - Update usage, examples, troubleshooting
-   - INSTALLATION.md - Update if setup changes
+   - docs/01-getting-started/installation.md - Update if setup changes
    - Memory files - Add lessons learned
 
 3. **Update test counts**:
@@ -441,7 +441,7 @@ Before writing new docs, search for existing content:
 
 ```bash
 # Find all references to a feature
-grep -r "source map" documentation/
+rg -n "source map" docs/
 
 # Find specific documentation files
 find documentation -name "*SOURCE*"
@@ -544,8 +544,8 @@ This guide ensures LLMs can:
 **Remember**: Documentation is not separate from implementation - it IS part of the implementation. Always update docs when changing code, and always check existing docs before implementing new features.
 
 When in doubt, look at these exemplary documentation files:
-- [`documentation/SOURCE_MAPPING.md`](SOURCE_MAPPING.md) - Comprehensive feature guide
-- [`documentation/WATCHER_WORKFLOW.md`](WATCHER_WORKFLOW.md) - Workflow documentation
-- [`documentation/MIX_TASKS.md`](MIX_TASKS.md) - Reference documentation
+- [`/docs/04-api-reference/SOURCE_MAPPING.md`](/docs/04-api-reference/SOURCE_MAPPING.md) - Comprehensive feature guide
+- [`/docs/06-guides/WATCHER_WORKFLOW.md`](/docs/06-guides/WATCHER_WORKFLOW.md) - Workflow documentation
+- [`/docs/04-api-reference/MIX_TASKS.md`](/docs/04-api-reference/MIX_TASKS.md) - Reference documentation
 
 **Final Rule**: If another LLM would struggle to understand or maintain your feature, your documentation is incomplete.

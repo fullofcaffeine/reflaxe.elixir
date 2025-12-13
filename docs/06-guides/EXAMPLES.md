@@ -225,10 +225,9 @@ class User {
 Standard build configuration pattern:
 ```hxml
 -cp src_haxe
--cp ../../src
--cp ../../std
--lib reflaxe
+-lib reflaxe.elixir
 -D reflaxe_runtime
+-D elixir_output=lib
 --no-output
 
 # List all modules to compile

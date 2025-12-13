@@ -2,23 +2,20 @@ defmodule Main do
   defp test_email_validation() do
     email_result = (case MyApp.Email_Impl_.parse("user@example.com") do
       {:ok, value} ->
-        fn_ = value
         email = value
         domain = MyApp.Email_Impl_.get_domain(email)
         local_part = MyApp.Email_Impl_.get_local_part(email)
         is_example_domain = MyApp.Email_Impl_.has_domain(email, "example.com")
         normalized = MyApp.Email_Impl_.normalize(email)
         nil
-      {:error, value} ->
-        fn_ = value
-        reason = value
-        nil
+      {:error, __reason} -> nil
     end)
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     _ = Enum.each(invalid_emails, (fn -> fn item ->
     (case Email_Impl_.parse(item) do
     {:ok, value} -> nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     email1_result = MyApp.Email_Impl_.parse("Test@Example.Com")
@@ -40,7 +37,8 @@ end end).())
       normalized = UserId_Impl_.normalize(user_id)
       starts_with_user = UserId_Impl_.starts_with_ignore_case(user_id, "user")
       nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join((fn ->
@@ -58,7 +56,8 @@ end).(), "")]
     _ = Enum.each(invalid_ids, (fn -> fn item ->
     (case UserId_Impl_.parse(item) do
     {:ok, value} -> nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     id1_result = MyApp.UserId_Impl_.parse("User123")
@@ -73,7 +72,7 @@ end end).())
   end
   defp test_positive_int_arithmetic() do
     valid_numbers = [1, 5, 42, 100, 999]
-    value = Enum.each(valid_numbers, (fn -> fn item ->
+    _ = Enum.each(valid_numbers, (fn -> fn item ->
     (case PositiveInt_Impl_.parse(item) do
     {:ok, value} ->
       pos_int = value
@@ -81,11 +80,10 @@ end end).())
       added = PositiveInt_Impl_.add(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(10)))
       subtract_result = PositiveInt_Impl_.safe_sub(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
       (case item do
-        {:ok, subtract_result} ->
-          result = item
+        {:ok, value} ->
+          result = value
           nil
-        {:error, subtract_result} ->
-          reason = item
+        {:error, reason} ->
           nil
       end)
       five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
@@ -93,37 +91,47 @@ end end).())
       min = PositiveInt_Impl_.min(pos_int, five)
       max = PositiveInt_Impl_.max(pos_int, five)
       nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     invalid_numbers = [0, -1, -42, -100]
-    value = Enum.each(invalid_numbers, (fn -> fn item ->
+    _ = Enum.each(invalid_numbers, (fn -> fn item ->
     (case PositiveInt_Impl_.parse(item) do
     {:ok, value} -> nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     five = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(5))
     ten = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(10))
     (case MyApp.PositiveInt_Impl_.safe_sub(five, ten) do
-      {:ok, __value} -> nil
-      {:error, __value} -> nil
+      {:ok, value} ->
+        _nil = value
+        nil
+      {:error, __reason} -> nil
     end)
     twenty = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(20))
     four = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(4))
     three = MyApp.ResultTools.unwrap(PositiveInt_Impl_.parse(3))
     (case MyApp.PositiveInt_Impl_.safe_div(twenty, four) do
-      {:ok, __value} -> nil
-      {:error, __value} -> nil
+      {:ok, value} ->
+        _nil = value
+        _result = value
+        nil
+      {:error, __reason} -> nil
     end)
     (case MyApp.PositiveInt_Impl_.safe_div(twenty, three) do
-      {:ok, __value} -> nil
-      {:error, __value} -> nil
+      {:ok, value} ->
+        _nil = value
+        _result = value
+        nil
+      {:error, __reason} -> nil
     end)
   end
   defp test_non_empty_string_operations() do
     valid_strings = ["hello", "world", "test", "NonEmptyString"]
-    value = Enum.each(valid_strings, (fn -> fn item ->
+    _ = Enum.each(valid_strings, (fn -> fn item ->
     (case NonEmptyString_Impl_.parse(item) do
     {:ok, value} ->
       non_empty_str = value
@@ -135,24 +143,32 @@ end end).())
       first_char = NonEmptyString_Impl_.first_char(non_empty_str)
       last_char = NonEmptyString_Impl_.last_char(non_empty_str)
       (case NonEmptyString_Impl_.safe_substring(non_empty_str, 1) do
-        {:ok, _g} -> nil
-        {:error, _g} -> nil
+        {:ok, value} ->
+          substr = value
+          nil
+        {:error, reason} ->
+          nil
       end)
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     invalid_strings = ["", "   ", "\t\n"]
-    value = Enum.each(invalid_strings, (fn -> fn item ->
+    _ = Enum.each(invalid_strings, (fn -> fn item ->
     (case NonEmptyString_Impl_.parse(item) do
     {:ok, value} -> nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
-    value = Enum.each(whitespace_strings, (fn -> fn item ->
+    _ = Enum.each(whitespace_strings, (fn -> fn item ->
     (case NonEmptyString_Impl_.parse_and_trim(item) do
-    {:ok, _g} -> nil
-    {:error, _g} -> nil
+    {:ok, value} ->
+      trimmed = value
+      nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     test_str = MyApp.ResultTools.unwrap(NonEmptyString_Impl_.parse("Hello World"))
@@ -160,14 +176,16 @@ end end).())
     ends_with_world = MyApp.NonEmptyString_Impl_.ends_with(test_str, "World")
     contains_space = MyApp.NonEmptyString_Impl_.contains(test_str, " ")
     (case MyApp.NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe") do
-      {:ok, __value} -> nil
-      {:error, __value} -> nil
+      {:ok, value} ->
+        _nil = value
+        _replaced = value
+        nil
+      {:error, __reason} -> nil
     end)
     parts = MyApp.NonEmptyString_Impl_.split_non_empty(test_str, " ")
-    value = Enum.each(parts, (fn -> fn _ ->
+    _ = Enum.each(parts, (fn -> fn _ ->
     nil
 end end).())
-    value
   end
   defp test_functional_composition() do
     email_chain = MyApp.ResultTools.unwrap_or(ResultTools.map(ResultTools.map(Email_Impl_.parse("USER@EXAMPLE.COM"), fn email -> Email_Impl_.normalize(email) end), fn email -> Email_Impl_.get_domain(email) end), "unknown")
@@ -175,8 +193,10 @@ end end).())
     math_chain = MyApp.ResultTools.unwrap_or(ResultTools.map(ResultTools.flat_map(PositiveInt_Impl_.parse(10), fn n -> PositiveInt_Impl_.safe_sub(n, ResultTools.unwrap(PositiveInt_Impl_.parse(3))) end), fn n -> PositiveInt_Impl_.multiply(n, ResultTools.unwrap(PositiveInt_Impl_.parse(2))) end), ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
     string_chain = MyApp.ResultTools.unwrap_or(ResultTools.flat_map(ResultTools.map(ResultTools.flat_map(NonEmptyString_Impl_.parse_and_trim("  hello world  "), fn s -> NonEmptyString_Impl_.safe_trim(s) end), fn s -> NonEmptyString_Impl_.to_upper_case(s) end), fn s -> NonEmptyString_Impl_.safe_replace(s, "WORLD", "UNIVERSE") end), ResultTools.unwrap(NonEmptyString_Impl_.parse("fallback")))
     composition_result = (case build_user_profile("user123", "  alice@example.com  ", "5") do
-      {:ok, __value} -> nil
-      {:error, __value} -> nil
+      {:ok, value} ->
+        _nil = value
+        nil
+      {:error, __reason} -> nil
     end)
   end
   defp test_error_handling() do
@@ -184,14 +204,18 @@ end end).())
     _ = Enum.each(invalid_inputs, (fn -> fn item ->
     (case build_user_profile(item.user_id, item.email, item.score) do
     {:ok, value} -> nil
-    {:error, _g} -> nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
     edge_cases = [%{:email => "a@b.co", :user_id => "usr", :score => "1"}, %{:email => "very.long.email.address@very.long.domain.name.example.com", :user_id => "user123456789", :score => "999"}]
     _ = Enum.each(edge_cases, (fn -> fn item ->
     (case build_user_profile(item.user_id, item.email, item.score) do
-    {:ok, _g} -> nil
-    {:error, _g} -> nil
+    {:ok, value} ->
+      profile = value
+      nil
+    {:error, reason} ->
+      nil
   end)
 end end).())
   end
@@ -202,10 +226,10 @@ end end).())
     user_result = create_user(item.user_id, item.email, item.preferred_name)
   (case item do
     {:ok, value} ->
+      user = value
       item = Enum.concat(item, [item])
       nil
-    {:error, user_result} ->
-      reason = item
+    {:error, reason} ->
       nil
   end)
 end end).())
@@ -213,11 +237,10 @@ end end).())
     _ = Enum.each(config_data, (fn -> fn item ->
     config_result = validate_configuration(item.timeout, item.retries, item.name)
   (case item do
-    {:ok, config_result} ->
-      valid_config = item
+    {:ok, value} ->
+      valid_config = value
       nil
-    {:error, config_result} ->
-      reason = item
+    {:error, reason} ->
       nil
   end)
 end end).())

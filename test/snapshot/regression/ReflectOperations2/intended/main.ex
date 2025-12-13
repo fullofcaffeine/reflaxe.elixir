@@ -19,7 +19,7 @@ defmodule Main do
     is_obj_object = Reflect.is_object(obj)
     is_string_object = Reflect.is_object("not an object")
     is_number_object = Reflect.is_object(42)
-    copied = obj
+    _copied = obj
     nil
   end
 end

@@ -41,6 +41,10 @@ RESET := \033[0m
 POSITIVE_TESTS := $(shell find $(TEST_DIR) -name compile.hxml -not -path "$(NEGATIVE_DIR)/*" -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
 NEGATIVE_TESTS := $(shell if [ -d "$(NEGATIVE_DIR)" ]; then find $(NEGATIVE_DIR) -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort; fi)
 
+# Legacy alias used by helper targets (update-intended, list, etc.)
+# Keep it scoped to positive tests only.
+TESTS := $(POSITIVE_TESTS)
+
 # Targets for positive tests (default summary uses these)
 TEST_TARGETS := $(shell echo "$(POSITIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
 
@@ -292,7 +296,6 @@ $(UPDATE_TARGETS): update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		# Direct build for update to avoid nested make quoting issues
 		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
@@ -313,7 +316,6 @@ update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		# Direct build for update to avoid nested make quoting issues
 		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \

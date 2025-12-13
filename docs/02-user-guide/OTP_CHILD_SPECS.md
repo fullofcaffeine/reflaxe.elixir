@@ -378,8 +378,8 @@ This approach:
 ## Related Documentation
 
 - [`/std/elixir/otp/Supervisor.hx`](/std/elixir/otp/Supervisor.hx) - Current ChildSpec typedef
-- [`/documentation/FUNCTIONAL_PATTERNS.md`](/documentation/FUNCTIONAL_PATTERNS.md) - Result/Option patterns for error handling
-- [`/documentation/TYPE_SAFETY.md`](/documentation/TYPE_SAFETY.md) - Type system guidelines
+- [`/docs/07-patterns/FUNCTIONAL_PATTERNS.md`](/docs/07-patterns/FUNCTIONAL_PATTERNS.md) - Result/Option patterns for error handling
+- [`/docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md`](/docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md) - Type system guidelines
 - [Elixir Supervisor Documentation](https://hexdocs.pm/elixir/Supervisor.html) - Official Elixir documentation
 
 ---

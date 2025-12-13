@@ -25,8 +25,8 @@ defmodule Main do
 end))
     scores = {:some, [1, 2, 3]}
     total = ((case scores do
-  {:some, score_list} ->
-    length(scoreList)
+  {:some, v} ->
+    length(score_list)
   {:none} -> 0
 end))
     _ = process_user({:some, "Charlie"})
@@ -34,7 +34,7 @@ end))
   end
   defp process_user(user) do
     (case user do
-      {:some, _v} -> nil
+      {:some, __v} -> nil
       {:none} -> nil
     end)
   end

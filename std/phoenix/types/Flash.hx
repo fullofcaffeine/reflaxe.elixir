@@ -20,7 +20,7 @@ package phoenix.types;
  * }
  * ```
  * 
- * @see documentation/guides/TYPE_SAFE_FLASH.md - Complete usage guide
+ * @see /docs/02-user-guide/PHOENIX_INTEGRATION.md - Complete usage guide
  */
 
 /**

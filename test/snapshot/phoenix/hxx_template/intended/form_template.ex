@@ -6,9 +6,9 @@ defmodule FormTemplate do
   def render_with_helpers(errors) do
     if (length(errors) == 0), do: "<div class='no-errors'></div>"
     error_items = []
-    Enum.each(errors, (fn -> fn item ->
-            item = Enum.concat(item, ["<li class='error-item'>" <> item <> "</li>"])
-    end end).())
+    _ = Enum.each(errors, (fn -> fn item ->
+    item = Enum.concat(item, ["<li class='error-item'>" <> item <> "</li>"])
+end end).())
     "<div class='form-errors'><ul class='error-list'>#{(fn -> Enum.join((fn -> error_items end).(), "") end).()}</ul></div>"
   end
   defp get_csrf_token() do

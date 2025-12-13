@@ -391,9 +391,9 @@ CMD ["_build/prod/rel/todo_app/bin/todo_app", "start"]
 ## 📚 Learning Resources
 
 ### Reflaxe.Elixir Documentation
-- [Getting Started](../../documentation/GETTING_STARTED.md)
-- [LiveView Guide](../../documentation/guides/LIVEVIEW_GUIDE.md)
-- [Ecto Integration](../../documentation/guides/ECTO_GUIDE.md)
+- [Getting Started](../../docs/06-guides/GETTING_STARTED.md)
+- [LiveView Guide](../../docs/06-guides/PHOENIX_LIVEVIEW_GUIDE.md)
+- [Ecto Integration](../../docs/02-user-guide/ECTO_INTEGRATION_PATTERNS.md)
 
 ### Key Concepts Demonstrated
 1. **Dual Compilation**: Same language (Haxe) for both backend and frontend
@@ -413,7 +413,7 @@ This example is part of Reflaxe.Elixir v1.0. Contributions welcome!
 
 ## 📝 License
 
-MIT - See LICENSE file in project root
+GPL-3.0 - See LICENSE file in project root
 
 ---
 

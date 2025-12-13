@@ -22,7 +22,7 @@ package phoenix.types;
  * }
  * ```
  * 
- * @see documentation/guides/TYPE_SAFE_ROUTING.md - Complete usage guide
+ * @see /docs/06-guides/ROUTER_MIGRATION_GUIDE.md - Complete usage guide
  */
 
 /**

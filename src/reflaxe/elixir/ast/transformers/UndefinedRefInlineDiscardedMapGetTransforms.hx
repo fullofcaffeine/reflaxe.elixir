@@ -109,7 +109,7 @@ class UndefinedRefInlineDiscardedMapGetTransforms {
     return ElixirASTTransformer.transformNode(stmt, function(e: ElixirAST): ElixirAST {
       switch (e.def) {
         case EVar(name):
-          if (!declared.exists(name)) {
+          if (name != null && !declared.exists(name)) {
             var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
             if (discarded.exists(snake)) {
               return makeASTWithMeta(EParen(discarded.get(snake)), e.metadata, e.pos);

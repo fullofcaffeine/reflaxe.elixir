@@ -68,7 +68,9 @@ class CaseBinderRebindUnderscoreTransforms {
                             }
                         }
                         #if debug_hygiene
-                        if (toUnderscore.length > 0) // DEBUG: Sys.println('[CaseBinderRebindUnderscore] underscore binders=' + toUnderscore.join(','));
+                        if (toUnderscore.length > 0) {
+                            // Sys.println('[CaseBinderRebindUnderscore] underscore binders=' + toUnderscore.join(','));
+                        }
                         #end
                         var newPat = (toUnderscore.length > 0) ? underscoreBinders(cl.pattern, toUnderscore) : cl.pattern;
                         newClauses.push({ pattern: newPat, guard: cl.guard, body: cl.body });

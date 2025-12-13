@@ -285,7 +285,7 @@ mix compile
 
 ## 📚 Learn More
 
-- [Reflaxe.Elixir Documentation](../../documentation/)
+- [Reflaxe.Elixir Documentation](../../docs/README.md)
 - [Haxe Language Manual](https://haxe.org/manual/)
 - [Phoenix Framework Guides](https://hexdocs.pm/phoenix)
 - [Compiler Source Code](../../src/reflaxe/elixir/)

@@ -14,18 +14,22 @@ This document explains the documentation architecture, the purpose of each docum
 - **What doesn't belong**: Historical task completions, duplicated content from other docs
 
 ### 2. Feature Documentation
-**Location**: `documentation/` organized in subdirectories
+**Location**: `docs/` organized in numbered sections
 - **Purpose**: Comprehensive guides for specific features and capabilities
 - **Organization**:
-  - `architecture/` - System design, compilation flow, testing architecture
-  - `guides/` - User guides and tutorials
-  - `reference/` - API references, annotations, feature status
-  - `plans/` - Product Requirements Documents and strategic planning
-  - `llm/` - LLM-specific documentation
-  - `history/` - Historical records and learnings
+  - `01-getting-started/` - Setup, quickstart, project structure
+  - `02-user-guide/` - Application developer docs (Phoenix/Ecto/LiveView)
+  - `03-compiler-development/` - Compiler internals and contributor docs
+  - `04-api-reference/` - API + annotation reference
+  - `05-architecture/` - System design and architectural decisions
+  - `06-guides/` - Task-focused how-to guides
+  - `07-patterns/` - Patterns and best practices
+  - `08-roadmap/` + `prds/` - Roadmaps and PRDs
+  - `09-history/` - Historical records and learnings
+  - `10-contributing/` - Contribution process and LLM integration docs
 
 ### 3. Architecture Documentation
-**Location**: `documentation/architecture/`
+**Location**: `docs/05-architecture/`
 - **Purpose**: Explain system design, compilation flow, and architectural decisions
 - **Key Files**:
   - `ARCHITECTURE.md` - Complete system architecture
@@ -33,7 +37,7 @@ This document explains the documentation architecture, the purpose of each docum
   - `TESTING_ARCHITECTURE_COMPLETE.md` - Comprehensive testing details
 
 ### 4. User Documentation
-**Location**: `documentation/guides/`
+**Location**: `docs/01-getting-started/`, `docs/02-user-guide/`, and `docs/06-guides/`
 - **Purpose**: Help users get started and use the project effectively
 - **Key Files**:
   - `GETTING_STARTED.md` - First steps with Reflaxe.Elixir
@@ -43,7 +47,7 @@ This document explains the documentation architecture, the purpose of each docum
   - `TUTORIAL_FIRST_PROJECT.md` - Step-by-step tutorial
 
 ### 5. Product Requirements Documentation
-**Location**: `documentation/plans/`
+**Location**: `docs/08-roadmap/` and `docs/prds/`
 - **Purpose**: Strategic vision, requirements analysis, and product roadmap
 - **Key Files**:
   - `PRD_VISION_ALIGNMENT.md` - Core vision and architecture requirements
@@ -52,7 +56,7 @@ This document explains the documentation architecture, the purpose of each docum
 - **Audience**: Project stakeholders, senior developers, strategic planners
 
 ### 6. Reference Documentation
-**Location**: `documentation/reference/`
+**Location**: `docs/04-api-reference/`
 - **Purpose**: API references and feature specifications
 - **Key Files**:
   - `ANNOTATIONS.md` - Annotation usage and reference
@@ -61,14 +65,14 @@ This document explains the documentation architecture, the purpose of each docum
   - `EXTERN_CREATION_GUIDE.md` - Creating extern definitions
 
 ### 6. Historical Documentation
-**Location**: `documentation/history/`
+**Location**: `docs/09-history/`
 - **Purpose**: Preserve record of completed tasks and learnings
 - **Key Files**:
   - `TASK_HISTORY.md` - Completed tasks and architectural decisions
   - `LEARNINGS.md` - Consolidated implementation learnings and patterns
 
 ### 7. LLM-Specific Guides
-**Location**: `documentation/llm/`
+**Location**: `docs/10-contributing/llm-integration/`
 - **Purpose**: Guide AI agents in specific tasks
 - **Key Files**:
   - `LLM_DOCUMENTATION_GUIDE.md` - How to write and maintain documentation
@@ -105,7 +109,7 @@ This document explains the documentation architecture, the purpose of each docum
 
 ### 3. Cross-Reference Strategy
 - **Don't duplicate**: If content exists in another doc, reference it
-- **Use links**: `See [documentation/FEATURE.md](documentation/FEATURE.md)`
+- **Use links**: `See [docs/FEATURE.md](../FEATURE.md)`
 - **Keep references current**: Update links when files move or rename
 
 ### 4. Documentation Updates with Code Changes

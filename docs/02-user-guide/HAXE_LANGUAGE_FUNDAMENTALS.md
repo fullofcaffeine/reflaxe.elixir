@@ -85,7 +85,7 @@ When designing language features or processing user code:
 
 ## Related Documentation
 
-- **HXX Template Guide**: [`documentation/guides/HXX_GUIDE.md`](guides/HXX_GUIDE.md) - Shows correct template syntax
+- **HXX Template Guide**: [`docs/06-guides/HXX_GUIDE.md`](../06-guides/HXX_GUIDE.md) - Shows correct template syntax
 - **Haxe Manual**: https://haxe.org/manual/expression-operators-binops.html - Official operator documentation
 - **Type System**: https://haxe.org/manual/types.html - Haxe typing rules
 

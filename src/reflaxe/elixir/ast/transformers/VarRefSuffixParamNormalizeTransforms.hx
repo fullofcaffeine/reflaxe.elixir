@@ -100,7 +100,7 @@ class VarRefSuffixParamNormalizeTransforms {
               var declared = collectDeclared(makeASTWithMeta(EFn([cl]), x.metadata, x.pos));
               var newBody = ElixirASTTransformer.transformNode(cl.body, function(y:ElixirAST):ElixirAST {
                 return switch (y.def) {
-                  case EVar(v) if (suff.exists(v) && !declared.exists(v)):
+                  case EVar(v) if (v != null && suff.exists(v) && !declared.exists(v)):
                     var full = suff.get(v);
                     makeASTWithMeta(EVar(full), y.metadata, y.pos);
                   default: y;
@@ -111,7 +111,7 @@ class VarRefSuffixParamNormalizeTransforms {
             makeASTWithMeta(EFn(newClauses), x.metadata, x.pos);
           case EVar(nm):
             // Top-level within function scope (use precomputed cache)
-            if (suff.exists(nm) && !topDeclaredCache.exists(nm)) {
+            if (nm != null && suff.exists(nm) && !topDeclaredCache.exists(nm)) {
               var fullTop = suff.get(nm);
               makeASTWithMeta(EVar(fullTop), x.metadata, x.pos);
             } else x;

@@ -826,10 +826,8 @@ EOF
 # 4. Create build configuration
 cat > build.hxml << 'EOF'
 -cp src_haxe
--cp ../../std
--cp ../../src
--lib reflaxe
---macro reflaxe.elixir.CompilerInit.Start()
+-lib reflaxe.elixir
+-D reflaxe_runtime
 -D elixir_output=lib
 EnhancedLive
 EOF
@@ -858,7 +856,7 @@ mix test
 
 # 9. Add to CI if successful
 cd ../..
-echo "Enhanced LiveView integration verified" >> documentation/EXAMPLES.md
+echo "Enhanced LiveView integration verified" >> docs/06-guides/EXAMPLES.md
 ```
 
 #### Common Patterns for All Scenarios
@@ -882,7 +880,7 @@ haxe test/Test.hxml test=YourTestName flexible-positions
 npm test
 
 # If tests pass, document what you've added
-echo "Added YourFeature testing" >> documentation/TASK_HISTORY.md
+echo "Added YourFeature testing" >> docs/09-history/task-history.md
 ```
 
 **Testing Philosophy**:

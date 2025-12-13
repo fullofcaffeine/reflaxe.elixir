@@ -260,15 +260,17 @@ class YourHelperTest {
 reflaxe.elixir/
 ├── src/                    # Compiler source code
 │   ├── reflaxe/elixir/
-│   │   ├── ElixirCompiler.hx    # Main compiler
-│   │   ├── helpers/             # Feature compilers
-│   │   └── macro/               # Macro processors
+│   │   ├── ElixirCompiler.hx    # Main compiler entrypoint
+│   │   ├── ast/                 # TypedExpr → ElixirAST pipeline (default)
+│   │   ├── macros/              # Macro processors (Phoenix/Ecto/etc.)
+│   │   └── helpers/             # Shared compiler helpers
 ├── std/                    # Standard library externs
 │   ├── elixir/            # Elixir stdlib
 │   └── phoenix/           # Phoenix framework
 ├── test/                   # Test files
 ├── examples/               # Example projects
-├── documentation/          # Project documentation
+├── docs/                   # Project documentation
+├── haxe_libraries/         # Self-referential haxelib configs
 └── lib/                    # Mix integration
 ```
 

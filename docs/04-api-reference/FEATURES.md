@@ -63,7 +63,7 @@ This document provides the current status of all major features in Reflaxe.Elixi
 - **Template Helper Metadata System** ✨ NEW: Uses @:templateHelper metadata for extensible Phoenix function compilation
 - **Phoenix.Component Integration**: Automatic import detection and template helper function compilation
 - **Type-Safe Phoenix Abstractions**: Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with @:arrayAccess operator overloading
-- **Documentation**: Comprehensive architectural guide at documentation/HXX_VS_TEMPLATE.md
+- **Documentation**: Comprehensive architectural guide at docs/02-user-guide/HXX_VS_TEMPLATE.md
 
 ### 8. Migration DSL
 - **Status**: Production Ready

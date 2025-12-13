@@ -154,12 +154,6 @@ extern class EctoQueryStruct {
  * })
  * ```
  * 
- * ### Aggregations
- * ```haxe
- * query.groupBy(t -> [t.status])                 // Group by status
- *      .having(t -> count(t.id) > 5)            // Having clause
- * ```
- * 
  * ## Integration with Repository Pattern
  * 
  * TypedQuery works seamlessly with the Repo extern:
@@ -508,53 +502,6 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             this, count
         );
         return new TypedQuery<T>(newQuery);
-    }
-    
-    /**
-     * Group results by specified fields
-     * 
-     * Groups query results for use with aggregate functions. Must be used
-     * with select clause that includes aggregate functions.
-     * 
-     * @param fields Lambda returning array of fields to group by
-     * @return Updated query with group_by clause added
-     * 
-     * @example
-     * ```haxe
-     * query.groupBy(t -> [t.status, t.priority])
-     *      .select(t -> {status: t.status, count: count(t.id)});
-     * // Generates: group_by: [t.status, t.priority],
-     * //           select: %{status: t.status, count: count(t.id)}
-     * ```
-     * 
-     * @todo Implement macro expansion similar to orderBy
-     */
-    public macro function groupBy(ethis: haxe.macro.Expr, fields: haxe.macro.Expr): haxe.macro.Expr {
-        // TODO: Implement similar to orderBy
-        return ethis;
-    }
-    
-    /**
-     * Filter grouped results with aggregate conditions
-     * 
-     * Applies conditions to grouped results using aggregate functions.
-     * Must be used after groupBy clause.
-     * 
-     * @param condition Lambda with aggregate condition
-     * @return Updated query with having clause added
-     * 
-     * @example
-     * ```haxe
-     * query.groupBy(t -> [t.status])
-     *      .having(t -> count(t.id) > 5);
-     * // Generates: group_by: [t.status], having: count(t.id) > 5
-     * ```
-     * 
-     * @todo Implement macro expansion similar to where
-     */
-    public macro function having(ethis: haxe.macro.Expr, condition: haxe.macro.Expr): haxe.macro.Expr {
-        // TODO: Implement similar to where
-        return ethis;
     }
     
     /**

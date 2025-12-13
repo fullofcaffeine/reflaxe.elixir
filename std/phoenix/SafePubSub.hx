@@ -47,7 +47,7 @@ import elixir.Application;
  * - Declaration-based topic/message definition
  * - Advanced pattern matching helpers
  * 
- * See `/documentation/PUBSUB_MACRO_ROADMAP.md` for complete enhancement roadmap.
+ * See `/docs/02-user-guide/PUBSUB_MACRO_ROADMAP.md` for complete enhancement roadmap.
  */
 
 /**
@@ -249,38 +249,4 @@ extern class SafePubSub {
     extern inline public static function getPubSubModule(): Dynamic {
         return untyped __elixir__('Phoenix.SafePubSub.get_pub_sub_module()');
     }
-}
-
-/**
- * Convenience macro for creating application-specific SafePubSub wrappers
- * 
- * This will be enhanced in future phases to auto-generate conversion functions
- * and provide even more ergonomic APIs.
- * 
- * For now, applications should create their own wrapper classes that use
- * the SafePubSub infrastructure with their specific topic and message types.
- */
-class SafePubSubMacros {
-    
-    #if macro
-    /**
-     * Future enhancement: Generate SafePubSub wrapper from topic/message enums
-     * 
-     * Usage (planned):
-     * ```haxe
-     * @:build(SafePubSubMacros.generateWrapper())
-     * enum MyTopics { TodoUpdates; UserActivity; }
-     * ```
-     * 
-     * This would auto-generate:
-     * - topicToString conversion function
-     * - type-safe broadcast/subscribe methods
-     * - message parsing utilities
-     */
-    public static function generateWrapper(): Array<haxe.macro.Expr.Field> {
-        // TODO: Implement in Phase 2 of the roadmap
-        // For now, return empty array
-        return [];
-    }
-    #end
 }

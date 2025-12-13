@@ -36,7 +36,7 @@ import phoenix.types.Assigns;
  * end
  * ```
  * 
- * @see documentation/PHOENIX_COMPONENTS.md - Complete usage guide
+ * @see /docs/02-user-guide/PHOENIX_INTEGRATION.md - Complete usage guide
  */
 @:native("TodoAppWeb.CoreComponents")
 @:phoenix.components

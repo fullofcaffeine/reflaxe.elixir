@@ -1131,7 +1131,7 @@ class TodoLive {
 	
     /**
      * Helper to filter todos based on filter and search query
-     * Pure Haxe implementation (no __elixir__ injection).
+     * Pure Haxe implementation (no raw Elixir injection).
         */
     static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
         inline function lower(s:String):String {
@@ -1159,7 +1159,7 @@ class TodoLive {
     /**
      * Helper to filter and sort todos
      *
-     * REFACTORED: Now uses typed Sorting API instead of raw __elixir__() string.
+     * REFACTORED: Now uses typed Sorting API instead of raw injection strings.
      * The Sorting.by() call is a proper Haxe function call that uses extern inline
      * to inject idiomatic Elixir sorting code at compile time.
      */

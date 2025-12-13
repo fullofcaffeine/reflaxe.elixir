@@ -12,7 +12,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  * WHAT
  * - Within `case` expressions that match `{:ok, var}`, rewrite references in the
  *   success clause body to consistently use the bound `var` instead of ad-hoc
- *   placeholder names like `todo` or `updated_todo` that were never declared.
+ *   placeholder names like `record` or `updated_record` that were never declared.
  *
  * WHY
  * - Code paths often broadcast or reuse the newly inserted/updated record but
@@ -32,15 +32,15 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  * Elixir before:
  *   case Repo.update(changeset) do
  *     {:ok, u} ->
- *       TodoPubSub.broadcast(:todo_updates, {:todo_updated, updated_todo})
- *       update_todo_in_list(updated_todo, socket)
+ *       PubSub.broadcast(:updates, {:updated, updated_record})
+ *       update_record_in_list(updated_record, socket)
  *   end
  *
  * Elixir after:
  *   case Repo.update(changeset) do
  *     {:ok, u} ->
- *       TodoPubSub.broadcast(:todo_updates, {:todo_updated, u})
- *       update_todo_in_list(u, socket)
+ *       PubSub.broadcast(:updates, {:updated, u})
+ *       update_record_in_list(u, socket)
  *   end
  */
 class CaseSuccessVarUnifier {

@@ -4,7 +4,6 @@ package reflaxe.elixir.ast.context;
 
 import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.builders.IBuilder;
 
 /**
  * Type alias for enum binding plan
@@ -147,55 +146,15 @@ class ElixirASTContext {
      */
     public var testResults: Map<String, TestResult> = new Map();
 
-    // ===== Naming Conventions =====
-
-    /**
-     * Module name transformations
-     * CamelCase -> snake_case mappings
-     */
-    public var moduleNameMap: Map<String, String> = new Map();
-
-    /**
-     * Function name transformations
-     * Method names to Elixir function names
-     */
-    public var functionNameMap: Map<String, String> = new Map();
-
     // ===== Feature Flags System (Codex Recommendation - January 2025) =====
 
     /**
-     * Feature flags for gradual migration to new builders
+     * Feature flags for controlling compilation strategies and optimizations.
      *
-     * These flags control which specialized builders are active at runtime.
-     * They work in two ways:
-     *
-     * 1. Build-time configuration via Haxe compiler definitions:
-     *    haxe build.hxml -D use_new_pattern_builder
-     *    This sets the default state for the entire compilation
-     *
-     * 2. Runtime configuration via setFeatureFlag():
-     *    context.setFeatureFlag("use_new_pattern_builder", true)
-     *    This allows dynamic control during compilation phases
-     *
-     * The combination allows:
-     * - CI/CD to enable features via build flags
-     * - Gradual rollout with percentage-based routing
-     * - Emergency rollback without recompilation
-     * - A/B testing of implementations
-     *
-     * Convention: Feature flags follow pattern "use_new_${builderType}_builder"
-     * Examples: use_new_pattern_builder, use_new_loop_builder
+     * Flags are initialized from build-time defines and can be overridden at runtime
+     * via setFeatureFlag() when the compiler chooses to expose a toggle.
      */
     public var featureFlags: Map<String, Bool> = new Map();
-
-    /**
-     * Registered specialized builders implementing IBuilder interface
-     * Maps builder type to concrete implementation for type-safe routing
-     *
-     * Type safety achieved via IBuilder interface instead of Dynamic
-     * Allows polymorphic storage while maintaining compile-time checks
-     */
-    public var registeredBuilders: Map<String, IBuilder> = new Map();
 
     // ===== Lifecycle Management (Codex Recommendation - January 2025) =====
 
@@ -236,77 +195,16 @@ class ElixirASTContext {
      *    - Others disabled until thoroughly tested
      *
      * **Default Strategy**:
-     * - New builders: DISABLED - Require explicit opt-in for testing
      * - Idiomatic transforms: ENABLED - Generate readable Elixir by default
      * - Experimental optimizations: DISABLED - Avoid surprises in production
      *
      * **Override Methods**:
-     * - Build-time: `haxe build.hxml -D use_new_pattern_builder`
-     * - Runtime: `context.setFeatureFlag("use_new_pattern_builder", true)`
-     * - Percentage rollout: `facade.enableGradualMigration("pattern", 25)`
+     * - Build-time: `haxe build.hxml -D enable_pipe_operator`
+     * - Runtime: `context.setFeatureFlag("enable_pipe_operator", true)`
      *
-     * **Testing Strategy**:
-     * - CI can enable all flags: `-D enable_all_features`
-     * - Debugging can disable all: `-D disable_all_transformations`
-     * - A/B testing via percentage routing in BuilderFacade
-     *
-     * @see BuilderFacade for routing implementation
      * @see ElixirASTTransformer for transformation passes
      */
     private function initializeFeatureFlags(): Void {
-        // ================================================================================
-        // BUILDER ROUTING FLAGS
-        // Default: DISABLED - New builders must prove stability before becoming default
-        // ================================================================================
-
-        /**
-         * Pattern matching builder (switch/case expressions)
-         * DEFAULT: DISABLED - Legacy implementation is battle-tested
-         * Enable when: Testing pattern matching improvements
-         * Risk: Low - Pattern matching is well-isolated
-         */
-        #if use_new_pattern_builder
-        featureFlags.set("use_new_pattern_builder", true);
-        #else
-        featureFlags.set("use_new_pattern_builder", false);
-        #end
-
-        /**
-         * Loop builder (while/for loops)
-         * DEFAULT: DISABLED - Complex loop transformations need validation
-         * Enable when: Testing comprehension generation
-         * Risk: Medium - Loops have many edge cases
-         */
-        #if use_new_loop_builder
-        featureFlags.set("use_new_loop_builder", true);
-        #else
-        featureFlags.set("use_new_loop_builder", false);
-        #end
-
-        /**
-         * Function builder (method compilation)
-         * DEFAULT: DISABLED - Critical path, needs extensive testing
-         * Enable when: Testing function signature improvements
-         * Risk: High - Affects all function generation
-         */
-        #if use_new_function_builder
-        featureFlags.set("use_new_function_builder", true);
-        #else
-        featureFlags.set("use_new_function_builder", false);
-        #end
-
-        /**
-         * Comprehension builder (array operations)
-         * DEFAULT: DISABLED - New implementation not complete
-         * Enable when: Testing optimized list operations
-         * Risk: Low - Limited scope to array methods
-         */
-        #if use_new_comprehension_builder
-        featureFlags.set("use_new_comprehension_builder", true);
-        #else
-        featureFlags.set("use_new_comprehension_builder", false);
-        #end
-
         // ================================================================================
         // TRANSFORMER OPTIMIZATION FLAGS
         // Mix of enabled/disabled based on stability and impact
@@ -707,46 +605,6 @@ class ElixirASTContext {
         return testResults.copy();
     }
 
-    // ===== Naming Convention Helpers =====
-
-    /**
-     * Get or compute module name transformation
-     */
-    public function getModuleName(originalName: String): String {
-        if (!moduleNameMap.exists(originalName)) {
-            // Apply transformation and cache
-            var transformed = transformModuleName(originalName);
-            moduleNameMap.set(originalName, transformed);
-        }
-        return moduleNameMap.get(originalName);
-    }
-
-    /**
-     * Get or compute function name transformation
-     */
-    public function getFunctionName(originalName: String): String {
-        if (!functionNameMap.exists(originalName)) {
-            // Apply transformation and cache
-            var transformed = transformFunctionName(originalName);
-            functionNameMap.set(originalName, transformed);
-        }
-        return functionNameMap.get(originalName);
-    }
-
-    // ===== Private Helpers =====
-
-    private function transformModuleName(name: String): String {
-        // Implementation would use existing naming utilities
-        // This is a placeholder for the actual transformation
-        return name; // TODO: Apply snake_case transformation
-    }
-
-    private function transformFunctionName(name: String): String {
-        // Implementation would use existing naming utilities
-        // This is a placeholder for the actual transformation
-        return name; // TODO: Apply snake_case transformation
-    }
-
     // ===== Feature Flag Management =====
 
     /**
@@ -773,40 +631,6 @@ class ElixirASTContext {
         #end
     }
 
-    /**
-     * Register a specialized builder
-     *
-     * @param builderType Type identifier (e.g., "pattern", "loop")
-     * @param builder The builder instance implementing IBuilder
-     */
-    public function registerBuilder(builderType: String, builder: IBuilder): Void {
-        // Validate builder type matches what it reports
-        if (builder.getType() != builderType) {
-            throw 'Builder type mismatch: expected ${builderType}, got ${builder.getType()}';
-        }
-
-        // Check builder is ready
-        if (!builder.isReady()) {
-            throw 'Builder ${builderType} is not ready for registration';
-        }
-
-        registeredBuilders.set(builderType, builder);
-
-        #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] Registered ${builderType} builder (ready=${builder.isReady()})');
-        #end
-    }
-
-    /**
-     * Get a registered builder by type
-     *
-     * @param builderType Type of builder to retrieve
-     * @return The builder instance or null if not registered
-     */
-    public function getBuilder(builderType: String): Null<IBuilder> {
-        return registeredBuilders.get(builderType);
-    }
-
     // ===== Lifecycle Management =====
 
     /**
@@ -828,8 +652,7 @@ class ElixirASTContext {
         enumBindingPlans.clear();
 
         // Keep cached transformations and feature flags
-        // moduleNameMap and functionNameMap are kept for performance
-        // featureFlags and registeredBuilders persist across runs
+        // featureFlags persist across runs
 
         // Reset counters
         nodeIdCounter = 0;
@@ -927,8 +750,6 @@ class ElixirASTContext {
         enumTypeCache.clear();
         idiomaticEnums.clear();
         testResults.clear();
-        moduleNameMap.clear();
-        functionNameMap.clear();
         enumBindingPlans.clear();
 
         // Reset to defaults

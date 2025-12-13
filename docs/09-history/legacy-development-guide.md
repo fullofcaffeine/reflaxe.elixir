@@ -173,7 +173,7 @@ async function loadTodos() {
 3. **Live Reload**: Hot reload for both Elixir and JavaScript changes
 4. **Type Safety**: Full-stack type guarantees at compile time
 
-**See**: [`documentation/FULL_STACK_DEVELOPMENT.md`](documentation/FULL_STACK_DEVELOPMENT.md) for complete guide
+**See**: [`/docs/06-guides/FULL_STACK_DEVELOPMENT.md`](/docs/06-guides/FULL_STACK_DEVELOPMENT.md) for complete guide
 
 ## Task Management with Shrimp
 

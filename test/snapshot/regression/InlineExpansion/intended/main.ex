@@ -4,10 +4,10 @@ defmodule Main do
     l = MyApp.TreeNode.new()
     r = MyApp.TreeNode.new()
     if ((fn ->
-  _this = l.left
+  this = l.left
   if (Kernel.is_nil(this)), do: 0, else: this._height
 end).() >= (fn ->
-  _this = l.right
+  this = l.right
   if (Kernel.is_nil(this)), do: 0, else: this._height
 end).()), do: nil
     total_height = (if (Kernel.is_nil(l)), do: 0, else: l._height) + (if (Kernel.is_nil(r)), do: 0, else: r._height)

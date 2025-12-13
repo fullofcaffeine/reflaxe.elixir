@@ -1,10 +1,8 @@
 # Basic Module Compilation
 # Compiles BasicModule.hx to demonstrate @:module syntax
 
--cp ../../src
--cp ../../std
--lib reflaxe
 -cp src_haxe
--main BasicModule
+-lib reflaxe.elixir
+-D elixir_output=lib
 -D reflaxe_runtime
---no-output
+BasicModule

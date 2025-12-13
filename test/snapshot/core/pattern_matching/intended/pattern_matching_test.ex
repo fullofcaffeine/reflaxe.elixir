@@ -4,7 +4,9 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(g) end).()},#{(fn -> Kernel.to_string(b) end).()})"
+      {:rgb, r, _g, _b} ->
+        b = r
+        "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(g) end).()},#{(fn -> Kernel.to_string(b) end).()})"
     end)
   end
   def match_option(option) do
@@ -41,7 +43,9 @@ defmodule PatternMatchingTest do
   def match_array(arr) do
     (case arr do
       [] -> "empty"
-      [__head | __tail] -> "single(#{(fn -> Kernel.to_string(x) end).()})"
+      [head | __tail] ->
+        x = head
+        "single(#{(fn -> Kernel.to_string(x) end).()})"
       2 -> "pair(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()})"
       3 -> "triple(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()})"
       _ -> "many"
@@ -50,8 +54,8 @@ defmodule PatternMatchingTest do
   def match_nested(option) do
     (case option do
       {:none} -> "no color"
-      {:some, r} ->
-        (case r do
+      {:some, value} ->
+        (case value do
           {:red} -> "red color"
           {:green} -> "green color"
           {:blue} -> "blue color"

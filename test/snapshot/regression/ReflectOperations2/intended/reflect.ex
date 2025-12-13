@@ -20,7 +20,8 @@ defmodule Reflect do
   def copy(o) do
     o
   end
-  def call_method(_o, func, args) do
+  def call_method(o, func, args) do
+    _ignore_obj = o
     apply(func, args)
   end
   def compare(a, b) do
@@ -45,7 +46,7 @@ defmodule Reflect do
   def set_property(o, field, value) do
     Map.put(o, field, value)
   end
-  def make_var_args(_f) do
+  def make_var_args(f) do
     fn args -> f.(args) end
   end
 end

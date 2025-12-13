@@ -153,7 +153,7 @@ typedef XRayFlow = {
  * 
  * @see DebugHelper - Existing debug infrastructure integration
  * @see ElixirCompiler - Main compilation orchestrator
- * @see /documentation/DEBUG_XRAY_SYSTEM.md - Complete XRay documentation
+ * @see /docs/03-compiler-development/DEBUG_XRAY_SYSTEM.md - Complete XRay documentation
  */
 class XRay {
     

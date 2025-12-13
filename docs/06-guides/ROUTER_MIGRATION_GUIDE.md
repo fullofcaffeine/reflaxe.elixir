@@ -375,7 +375,7 @@ mix test test/your_app_web/router_test.exs
 
 ## Further Resources
 
-- [`documentation/ROUTER_DSL.md`](../ROUTER_DSL.md) - Complete Router DSL documentation
+- [`/docs/04-api-reference/ROUTER_DSL.md`](/docs/04-api-reference/ROUTER_DSL.md) - Complete Router DSL documentation
 - [`examples/todo-app/src_haxe/TodoAppRouterNew.hx`](../../examples/todo-app/src_haxe/TodoAppRouterNew.hx) - Modern syntax example
 - [`test/tests/RouterBuildMacro/Main.hx`](../../test/tests/RouterBuildMacro/Main.hx) - Build macro test case
 - [`src/reflaxe/elixir/macros/RouterBuildMacro.hx`](../../src/reflaxe/elixir/macros/RouterBuildMacro.hx) - Build macro implementation

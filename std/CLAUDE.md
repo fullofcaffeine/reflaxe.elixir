@@ -109,7 +109,7 @@ class Date {
 - **Familiar APIs**: Elixir developers can use methods they know
 - **No Compromise**: Full type safety with maximum flexibility
 
-**See**: [`/documentation/COMPILER_BEST_PRACTICES.md`](/documentation/COMPILER_BEST_PRACTICES.md#dual-api-philosophy-for-standard-library) - Complete implementation guidelines
+**See**: [`/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md`](/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md#dual-api-philosophy-for-standard-library) - Complete implementation guidelines
 
 ### Core Design Patterns
 
@@ -629,7 +629,7 @@ extern class Changeset<T> {
  * - Usage patterns and examples
  * - Performance characteristics
  * 
- * @see RelatedModule or documentation/FILE.md for related information
+ * @see RelatedModule or docs/FILE.md for related information
  */
 class StandardLibraryModule {
     /**
@@ -736,24 +736,24 @@ end
 ## 📚 Related Documentation
 
 ### Core References
-- [`/documentation/STANDARD_LIBRARY_HANDLING.md`](/documentation/STANDARD_LIBRARY_HANDLING.md) - Complete standard library strategy
-- [`/documentation/FUNCTIONAL_PATTERNS.md`](/documentation/FUNCTIONAL_PATTERNS.md) - Option/Result functional patterns
-- [`/documentation/STRINGTOOLS_STRATEGY.md`](/documentation/STRINGTOOLS_STRATEGY.md) - Extern + Runtime pattern example
+- [`/docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`](/docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Complete standard library strategy
+- [`/docs/07-patterns/FUNCTIONAL_PATTERNS.md`](/docs/07-patterns/FUNCTIONAL_PATTERNS.md) - Option/Result functional patterns
+- [`/docs/04-api-reference/STRINGTOOLS_STRATEGY.md`](/docs/04-api-reference/STRINGTOOLS_STRATEGY.md) - Extern + Runtime pattern example
 
 ### Framework Integration
-- [`/documentation/PHOENIX_INTEGRATION.md`](/documentation/PHOENIX_INTEGRATION.md) - Phoenix framework patterns
-- [`/documentation/ECTO_INTEGRATION.md`](/documentation/ECTO_INTEGRATION.md) - Ecto ORM integration
-- [`/documentation/HXX_VS_TEMPLATE.md`](/documentation/HXX_VS_TEMPLATE.md) - Template system architecture
+- [`/docs/02-user-guide/PHOENIX_INTEGRATION.md`](/docs/02-user-guide/PHOENIX_INTEGRATION.md) - Phoenix framework patterns
+- [`/docs/02-user-guide/ECTO_INTEGRATION_PATTERNS.md`](/docs/02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Ecto ORM integration
+- [`/docs/02-user-guide/HXX_VS_TEMPLATE.md`](/docs/02-user-guide/HXX_VS_TEMPLATE.md) - Template system architecture
 
 ### Development Guides
-- [`/documentation/guides/DEVELOPER_PATTERNS.md`](/documentation/guides/DEVELOPER_PATTERNS.md) - Best practices
-- [`/documentation/TESTING_PRINCIPLES.md`](/documentation/TESTING_PRINCIPLES.md) - Testing methodology
-- [`/documentation/TYPE_SAFETY.md`](/documentation/TYPE_SAFETY.md) - Type system guidelines
+- [`/docs/06-guides/DEVELOPER_PATTERNS.md`](/docs/06-guides/DEVELOPER_PATTERNS.md) - Best practices
+- [`/docs/03-compiler-development/TESTING_PRINCIPLES.md`](/docs/03-compiler-development/TESTING_PRINCIPLES.md) - Testing methodology
+- [`/docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md`](/docs/03-compiler-development/TYPE_SAFETY_REQUIREMENTS.md) - Type system guidelines
 
 ### Code Injection and Architecture
-- [`/documentation/ELIXIR_INJECTION_GUIDE.md`](/documentation/ELIXIR_INJECTION_GUIDE.md) - **CRITICAL**: Complete `__elixir__()` usage guide
-- [`/documentation/CRITICAL_ARCHITECTURE_LESSONS.md`](/documentation/CRITICAL_ARCHITECTURE_LESSONS.md) - **MANDATORY**: Idiomatic code generation principles
-- [`/documentation/STANDARD_LIBRARY_COMPILATION_CONTEXT.md`](/documentation/STANDARD_LIBRARY_COMPILATION_CONTEXT.md) - Why `untyped` is required for `__elixir__()`
+- [`/docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md`](/docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md) - **CRITICAL**: Complete `__elixir__()` usage guide
+- [`/docs/05-architecture/CRITICAL_ARCHITECTURE_LESSONS.md`](/docs/05-architecture/CRITICAL_ARCHITECTURE_LESSONS.md) - **MANDATORY**: Idiomatic code generation principles
+- [`/docs/05-architecture/STANDARD_LIBRARY_COMPILATION_CONTEXT.md`](/docs/05-architecture/STANDARD_LIBRARY_COMPILATION_CONTEXT.md) - Why `untyped` is required for `__elixir__()`
 
 ## 🏆 Standard Library Quality Checklist
 

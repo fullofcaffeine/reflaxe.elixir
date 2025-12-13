@@ -391,16 +391,10 @@ class PatternDetector {
     
     /**
      * Detects array comprehension patterns
-     * 
-     * WHY: Array comprehensions should become Elixir for comprehensions
-     * WHAT: Identifies [for ...] patterns
-     * HOW: Checks for specific AST structures
+     *
+     * NOTE: This detection is intentionally not implemented. The AST pipeline
+     * handles loop/comprehension lowering in dedicated builder/transform passes.
      */
-    public static function isArrayComprehension(expr: TypedExpr): Bool {
-        // This would need more complex analysis of TArrayDecl with TFor
-        // Simplified for now
-        return false; // TODO: Implement comprehension detection
-    }
 }
 
 /**

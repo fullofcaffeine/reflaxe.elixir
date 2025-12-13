@@ -282,9 +282,8 @@ haxe test/Test.hxml test=new_tools
 - **Pattern**: ADT-aware compilation
 
 ### 4. **MapTools** ✅ IMPLEMENTED
-- **Methods**: size, isEmpty, any, all, reduce, find, keys, values, toArray (9 working)
-- **Disabled**: filter, map, mapKeys, merge, fromArray (5 methods - Haxe type inference issues)
-- **Target**: Elixir Map module with idiomatic functional compilation
+- **Methods**: size, isEmpty, any, all, reduce, find, keys, values, toArray, filter, map, mapKeys, merge, fromArray
+- **Target**: Elixir Map + Enum modules with idiomatic functional compilation
 - **Pattern**: Dual-parameter lambda substitution with Map/Enum module calls
 
 **Example Usage**:
@@ -297,12 +296,10 @@ var usernames = users.keys();
 ```
 
 **Compilation Examples**:
-- `map.size()` → `Map.size(map)`
-- `map.isEmpty()` → `Map.equal?(map, %{})`
-- `map.any((k,v) -> pred)` → `Enum.any?(Map.to_list(map), fn {k,v} -> pred end)`
-- `map.reduce(init, (acc,k,v) -> f)` → `Map.fold(map, init, fn k, v, acc -> f end)`
-
-**Known Limitations**: 5 methods temporarily disabled due to Haxe type system issues with `Map<K,V>` return types in static extension context. Compiler infrastructure fully supports these methods.
+- `map.size()` → `map_size(map)`
+- `map.isEmpty()` → `Enum.empty?(map)`
+- `map.any((k,v) -> pred)` → `Enum.any?(map, fn {k,v} -> pred end)`
+- `map.reduce(init, (acc,k,v) -> f)` → `Enum.reduce(map, init, fn {k,v}, acc -> f end)`
 
 ## Future Static Extension Candidates
 

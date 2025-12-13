@@ -21,7 +21,7 @@ package phoenix.types;
  * }
  * ```
  * 
- * @see documentation/guides/TYPE_SAFE_ASSIGNS.md - Complete usage guide
+ * @see /docs/06-guides/TYPE_SAFE_ASSIGNS.md - Complete usage guide
  */
 abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
     

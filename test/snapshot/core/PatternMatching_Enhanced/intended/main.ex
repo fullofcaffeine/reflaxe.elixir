@@ -25,10 +25,20 @@ end))
   {:green} -> "primary"
   {:blue} -> "primary"
   {:rgb, r, g, b} ->
-    cond do
-      r + g + b > 500 -> "bright"
-      r + g + b < 100 -> "dark"
-      true -> "medium"
+    r = g
+    b = _g2
+    if (r + g + b > 500) do
+      "bright"
+    else
+      r = g
+      b = _g2
+      if (r + g + b < 100) do
+        "dark"
+      else
+        r = g
+        b = _g2
+        "medium"
+      end
     end
 end))
     nil
@@ -36,14 +46,8 @@ end))
   defp test_result_pattern() do
     result = {:ok, "success"}
     message = ((case result do
-  {:ok, _value} ->
-    fn_ = _value
-    value = _value
-    "Got value: #{(fn -> value end).()}"
-  {:error, _value} ->
-    fn_ = _value
-    error = _value
-    "Got error: #{(fn -> error end).()}"
+  {:ok, value} -> "Got value: #{(fn -> value end).()}"
+  {:error, reason} -> "Got error: #{(fn -> error end).()}"
 end))
     nil
   end
@@ -70,9 +74,18 @@ end end).())
     _ = Enum.each(arrays, (fn -> fn item ->
     description = (case length(item) do
     0 -> "empty"
-    1 -> "single: " <> Kernel.to_string(x)
-    2 -> "pair: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y)
-    3 -> "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
+    1 ->
+      x = arr[0]
+      "single: " <> Kernel.to_string(x)
+    2 ->
+      x = arr[0]
+      y = arr[1]
+      "pair: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y)
+    3 ->
+      x = arr[0]
+      y = arr[1]
+      z = arr[2]
+      "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
     _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(item) > 0), do: inspect(arr[0]), else: "none")
   end)
   nil

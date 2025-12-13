@@ -438,7 +438,7 @@ var userName = assigns.user.name;
 - [`phoenix/types/Assigns.hx`](/std/phoenix/types/Assigns.hx) - Assigns<T> source code
 - [`phoenix/types/SocketState.hx`](/std/phoenix/types/SocketState.hx) - LiveViewSocket<T> implementation
 - [`phoenix/types/Flash.hx`](/std/phoenix/types/Flash.hx) - Flash message types
-- [`documentation/guides/HAXE_OPERATOR_OVERLOADING.md`](HAXE_OPERATOR_OVERLOADING.md) - Operator overloading patterns used
-- [`documentation/paradigms/PARADIGM_BRIDGE.md`](/documentation/paradigms/PARADIGM_BRIDGE.md) - Understanding functional patterns
+- [`/docs/06-guides/HAXE_OPERATOR_OVERLOADING.md`](/docs/06-guides/HAXE_OPERATOR_OVERLOADING.md) - Operator overloading patterns used
+- [`/docs/07-patterns/PARADIGM_BRIDGE.md`](/docs/07-patterns/PARADIGM_BRIDGE.md) - Understanding functional patterns
 
 **See also**: [`std/AGENTS.md`](/std/AGENTS.md) for standard library development patterns and architectural guidance.

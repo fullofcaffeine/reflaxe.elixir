@@ -168,4 +168,4 @@ This isn't just about Elixir or JavaScript or mobile. It's about fundamentally c
 
 ---
 
-**Ready to build the future?** See [`documentation/plans/PRD_VISION_ALIGNMENT.md`](documentation/plans/PRD_VISION_ALIGNMENT.md) for detailed requirements and implementation roadmap.
+**Ready to build the future?** See [`docs/08-roadmap/ACTIVE_PRD.md`](ACTIVE_PRD.md) for detailed requirements and implementation roadmap.

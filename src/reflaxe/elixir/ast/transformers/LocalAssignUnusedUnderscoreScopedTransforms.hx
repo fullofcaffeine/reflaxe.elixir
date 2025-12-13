@@ -143,7 +143,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
   static function collectUsedVars(node: ElixirAST, out: Map<String,Bool>): Void {
     reflaxe.elixir.ast.ASTUtils.walk(node, function(x:ElixirAST){
       switch (x.def) {
-        case EVar(v): out.set(v, true);
+        case EVar(v) if (v != null): out.set(v, true);
         default:
       }
     });
@@ -195,7 +195,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 
   static function underscoreUnusedInPattern(p:EPattern, used:Map<String,Bool>):EPattern {
     return switch (p) {
-      case PVar(n) if (!used.exists(n) && n != null && n.length > 0 && n.charAt(0) != '_'): PVar('_' + n);
+      case PVar(n) if (n != null && n.length > 0 && n.charAt(0) != '_' && !used.exists(n)): PVar('_' + n);
       case PTuple(items):
         PTuple([for (i in items) underscoreUnusedInPattern(i, used)]);
       case PList(items):

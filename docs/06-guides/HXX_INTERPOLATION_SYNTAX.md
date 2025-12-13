@@ -338,8 +338,8 @@ Enhanced parsing for mixed quote scenarios:
 
 ## Related Documentation
 
-- [`documentation/guides/HXX_GUIDE.md`](HXX_GUIDE.md) - General HXX usage patterns
-- [`documentation/HXX_ARCHITECTURE.md`](../HXX_ARCHITECTURE.md) - Technical implementation details
+- [`/docs/06-guides/HXX_GUIDE.md`](/docs/06-guides/HXX_GUIDE.md) - General HXX usage patterns
+- [`/docs/05-architecture/HXX_ARCHITECTURE.md`](/docs/05-architecture/HXX_ARCHITECTURE.md) - Technical implementation details
 - [`src/reflaxe/elixir/helpers/HxxCompiler.hx`](../../src/reflaxe/elixir/helpers/HxxCompiler.hx) - Implementation source
 - [Phoenix HEEx Documentation](https://hexdocs.pm/phoenix_live_view/Phoenix.Component.html#sigil_H/2) - Official HEEx syntax reference
 

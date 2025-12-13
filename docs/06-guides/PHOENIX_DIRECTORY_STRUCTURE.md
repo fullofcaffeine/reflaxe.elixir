@@ -245,7 +245,7 @@ Support multiple framework patterns:
 // - Custom: User-defined patterns
 ```
 
-**See also**: [`/documentation/MODULE_RESOLUTION_ROADMAP.md`](/documentation/MODULE_RESOLUTION_ROADMAP.md) for complete module resolution strategy
+**See also**: [`/docs/02-user-guide/MODULE_RESOLUTION_ROADMAP.md`](/docs/02-user-guide/MODULE_RESOLUTION_ROADMAP.md) for complete module resolution strategy
 
 ## Conclusion
 

@@ -98,7 +98,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.1
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.2
 
 # Add to existing project
 npx lix use
@@ -120,6 +120,8 @@ cp reflaxe.elixir/haxelib.json your-project/vendor/reflaxe.elixir/
 # In your build.hxml, add:
 # -cp vendor/reflaxe.elixir/src
 # -cp vendor/reflaxe.elixir/std
+# -lib reflaxe
+# --macro reflaxe.elixir.CompilerInit.Start()
 ```
 
 ### Usage in Your Project
@@ -280,8 +282,8 @@ haxe.elixir/
 
 ### Directory Purposes
 
-- **`src/`** - The actual compiler that transforms Haxe AST to Elixir strings (macro-time code)
-- **`std/`** - Haxe externs and abstractions for Elixir/Phoenix/Ecto functionality (included via `-cp std`)
+- **`src/`** - The compiler that transforms Haxe TypedExpr → ElixirAST → transforms → printed Elixir
+- **`std/`** - Haxe externs and abstractions for Elixir/Phoenix/Ecto functionality (included via `-lib reflaxe.elixir` or vendoring)
 - **`lib/`** - Elixir runtime files needed for Mix integration and compilation support
 - **`src_haxe/`** - User application code written in Haxe (in examples)
 
@@ -306,11 +308,12 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture**:
 ### Enable Source Mapping (New!)
 ```hxml
 # In your compile.hxml or build.hxml
+-lib reflaxe.elixir
 -cp src_haxe
--lib reflaxe
--main Main
 -D elixir_output=lib
+-D reflaxe_runtime
 -D source-map  # Enable source mapping for debugging
+Main
 ```
 
 Now compilation generates `.ex.map` files alongside `.ex` files, enabling:
@@ -496,14 +499,10 @@ All compilation targets exceed performance requirements:
 See [docs/10-contributing/contributing.md](docs/10-contributing/contributing.md) for detailed development guide.
 
 ### Adding Features
-1. Create helper compiler in `src/reflaxe/elixir/helpers/`
-2. Add annotation support to `ElixirCompiler.hx`
-3. Write tests using modern tink_unittest
-4. Run `npm test` for full validation
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+1. Extend the AST pipeline (`src/reflaxe/elixir/ast/`) in builder/transformer/printer layers
+2. Add/adjust std externs in `std/` when exposing Elixir/Phoenix/Ecto APIs
+3. Add snapshot coverage under `test/snapshot/` (and update intended outputs if needed)
+4. Run `npm test` and `npm run qa:sentinel`
 
 ## Roadmap
 
@@ -511,7 +510,7 @@ Check out our [ROADMAP.md](ROADMAP.md) to see what's coming next!
 
 ## License
 
-MIT - See [LICENSE](LICENSE) for details
+GPL-3.0 - See [LICENSE](LICENSE) for details
 
 ## Links
 

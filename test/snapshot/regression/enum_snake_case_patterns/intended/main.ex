@@ -17,9 +17,12 @@ end))
   {:todo_updated, todo} -> "Updated todo: #{(fn -> inspect(todo) end).()}"
   {:todo_deleted, id} -> "Deleted todo: #{(fn -> Kernel.to_string(id) end).()}"
   {:bulk_update, action} -> "Bulk action: #{(fn -> action end).()}"
-  {:user_online, user_id} -> "User #{(fn -> Kernel.to_string(userId) end).()} is online"
-  {:user_offline, user_id} -> "User #{(fn -> Kernel.to_string(userId) end).()} is offline"
-  {:system_alert, level, msg} -> "Alert [#{(fn -> level end).()}]: #{(fn -> msg end).()}"
+  {:user_online, user_id} -> "User #{(fn -> Kernel.to_string(user_id) end).()} is online"
+  {:user_offline, user_id} -> "User #{(fn -> Kernel.to_string(user_id) end).()} is offline"
+  {:system_alert, message, level} ->
+    msg = _g
+    level = _g1
+    "Alert [#{(fn -> level end).()}]: #{(fn -> msg end).()}"
 end))
     nil
   end

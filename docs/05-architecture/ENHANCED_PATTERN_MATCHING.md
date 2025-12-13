@@ -221,4 +221,4 @@ end
 - **Implementation**: `src/reflaxe/elixir/ElixirCompiler.hx` (lines 1413-1540)
 - **Pattern Matching**: `src/reflaxe/elixir/helpers/PatternMatcher.hx`
 - **Guard Compilation**: `src/reflaxe/elixir/helpers/GuardCompiler.hx`
-- **JS Generation Philosophy**: `documentation/JS_GENERATION_PHILOSOPHY.md`
+- **JS Generation Philosophy**: `docs/02-user-guide/JS_GENERATION_PHILOSOPHY.md`

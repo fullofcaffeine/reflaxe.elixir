@@ -4,10 +4,9 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
-  "haxe/log.ex",
   "haxe/iterators/array_iterator.ex"
 ],
-  "id": 1,
+  "id": 0,
   "wasCached": false,
   "version": 1
 }

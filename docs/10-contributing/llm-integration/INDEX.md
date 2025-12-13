@@ -11,7 +11,7 @@ Generated: 2025-08-12 20:58:31
 - [Patterns](./patterns/PATTERNS.md) - Common usage patterns
 - [Troubleshooting](./TROUBLESHOOTING_ADDITIONS.md) - Additional troubleshooting
 
-**Note**: This documentation has been moved from `.taskmaster/docs/` to `documentation/llm/` for better integration with the main project documentation.
+**Note**: This documentation has been moved from `.taskmaster/docs/` to `docs/10-contributing/llm-integration/` for better integration with the main project documentation.
 
 ## Quick Start for LLM Agents
 
@@ -24,4 +24,3 @@ Generated: 2025-08-12 20:58:31
 
 This documentation is optimized for Claude Code CLI.
 The AGENTS.md file in project root is automatically updated.
-

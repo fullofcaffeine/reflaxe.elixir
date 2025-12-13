@@ -228,13 +228,13 @@ if (isResult) {
 
 This approach allows both types to compile to **native platform patterns** while maintaining the same Haxe API across all targets.
 
-**See**: [`documentation/FUNCTIONAL_PATTERNS.md`](FUNCTIONAL_PATTERNS.md) for comprehensive Result and Option usage patterns and examples.
+**See**: [`/docs/07-patterns/FUNCTIONAL_PATTERNS.md`](/docs/07-patterns/FUNCTIONAL_PATTERNS.md) for comprehensive Result and Option usage patterns and examples.
 
 ## Option<T> Type: Pure Haxe Implementation
 
 The `Option<T>` type in `std/haxe/ds/Option.hx` provides type-safe null handling following Gleam's explicit-over-implicit philosophy.
 
-**See Also**: [Haxe→Elixir Mappings](HAXE_ELIXIR_MAPPINGS.md) - Complete mapping reference including Option<T> patterns.
+**See Also**: [Haxe→Elixir Mappings](/docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Complete mapping reference including Option<T> patterns.
 
 ### Why Option<T> Over Nullable Types?
 

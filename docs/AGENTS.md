@@ -194,7 +194,7 @@ docs/
 - **03-compiler-development/**: Specialized AGENTS.md for compiler context
 
 ### 🔄 In Progress
-- **05-architecture/**: Migrating from `/documentation/architecture/`
+- **05-architecture/**: System design and architectural decisions
 - **04-api-reference/**: Consolidating API documentation
 - **06-guides/**: Comprehensive how-to guides
 

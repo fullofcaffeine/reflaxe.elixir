@@ -13,7 +13,7 @@ defmodule Main do
   end
   defp test_shadowing_with_intervening_statements() do
     query = "SELECT * FROM users"
-    query = this1
+    _query = this1
     nil
   end
   defp test_shadowing_in_if_blocks() do
@@ -45,7 +45,7 @@ defmodule Main do
     transformed2 = apply_filter(base_query, "age", "25")
     temp2 = nil
     temp2 = transformed2
-    base_query = temp2
+    _base_query = temp2
     nil
   end
   defp build_base_query() do

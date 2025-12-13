@@ -36,15 +36,22 @@ class DanglingBaseRefAlignTransforms {
     reflaxe.elixir.ast.ASTUtils.walk(body, function(x:ElixirAST){
       switch (x.def) {
         case EBinary(Match, left, _):
-          switch (left.def) { case EVar(n): allDefined.set(n, true); if (n.length>1 && n.charAt(0)=='_') allUnders.set(n, true); default: }
-        case EMatch(PVar(n2), _): allDefined.set(n2, true); if (n2.length>1 && n2.charAt(0)=='_') allUnders.set(n2, true);
+          switch (left.def) {
+            case EVar(n) if (n != null):
+              allDefined.set(n, true);
+              if (n.length > 1 && n.charAt(0) == '_') allUnders.set(n, true);
+            default:
+          }
+        case EMatch(PVar(n2), _) if (n2 != null):
+          allDefined.set(n2, true);
+          if (n2.length > 1 && n2.charAt(0) == '_') allUnders.set(n2, true);
         default:
       }
     });
     // Second pass: rewrite any EVar(base) to _base if base is not defined and _base exists
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
-        case EVar(v):
+        case EVar(v) if (v != null):
           var base = v;
           var underscoreName = "_" + base;
           if (!allDefined.exists(base) && allUnders.exists(underscoreName))

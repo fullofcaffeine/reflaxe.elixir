@@ -2,13 +2,14 @@ defmodule Main do
   defp test_changeset_pattern() do
     
   end
-  defp process_data(_unused, data) do
+  defp process_data(unused, data) do
     data * 2
   end
   defp test_pattern_matching_unused() do
     result = (case get_some_value() do
-      {:some, v} ->
-        _meta = v
+      {:some, value} ->
+        v = value
+        _meta = value
         v
       {:none} -> 0
     end)

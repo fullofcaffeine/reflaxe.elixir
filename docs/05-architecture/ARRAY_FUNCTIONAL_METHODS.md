@@ -250,14 +250,14 @@ The current API is stable and production-ready. Future additions will be backwar
 
 ## Cross-References
 
-- **[Compiler Patterns](COMPILER_PATTERNS.md)** - Development patterns used in array method implementation
-- **[Functional Patterns](FUNCTIONAL_PATTERNS.md)** - Functional programming patterns and Result/Option types
-- **[Standard Library Handling](STANDARD_LIBRARY_HANDLING.md)** - Architecture comparison with StringTools extern pattern
-- **[Haxe→Elixir Mappings](HAXE_ELIXIR_MAPPINGS.md)** - How array methods map to Elixir constructs
+- **[Compiler Patterns](/docs/05-architecture/COMPILER_PATTERNS.md)** - Development patterns used in array method implementation
+- **[Functional Patterns](/docs/07-patterns/FUNCTIONAL_PATTERNS.md)** - Functional programming patterns and Result/Option types
+- **[Standard Library Handling](/docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md)** - Architecture comparison with StringTools extern pattern
+- **[Haxe→Elixir Mappings](/docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** - How array methods map to Elixir constructs
 
 ## Implementation Files
 
 - **`std/ArrayTools.hx`** - Static extension definitions for cross-platform support
 - **`src/reflaxe/elixir/ElixirCompiler.hx`** - Compiler implementation (lines 4121-4317)
 - **`test/tests/arrays/Main.hx`** - Comprehensive test suite
-- **`documentation/ARRAY_FUNCTIONAL_METHODS.md`** - This documentation file
+- **`docs/05-architecture/ARRAY_FUNCTIONAL_METHODS.md`** - This documentation file

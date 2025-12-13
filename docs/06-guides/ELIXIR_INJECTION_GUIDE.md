@@ -165,7 +165,7 @@ class Syntax {
 2. **Test-Time**: With `-D reflaxe_runtime`, methods are available for testing
 3. **Runtime**: In BEAM VM, no trace of elixir.Syntax exists (replaced with generated code)
 
-**See**: [`documentation/REFLAXE_RUNTIME_EXPLAINED.md`](REFLAXE_RUNTIME_EXPLAINED.md) - Complete explanation
+**See**: [`/docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`](/docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md) - Complete explanation
 
 ### Compiler Integration
 

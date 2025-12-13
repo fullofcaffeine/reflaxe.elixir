@@ -8,7 +8,6 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.ast.context.ElixirASTContext;
-import reflaxe.elixir.ast.builders.IBuilder;
 
 /**
  * MockBuildContext: Test implementation of BuildContext for unit testing builders
@@ -174,17 +173,6 @@ class MockBuildContext implements BuildContext {
         return new ClauseContext();
     }
 
-    public function getModuleName(originalName: String): String {
-        recordedCalls.push('getModuleName($originalName)');
-        // Simple snake_case conversion for testing
-        return toSnakeCase(originalName);
-    }
-
-    public function getFunctionName(originalName: String): String {
-        recordedCalls.push('getFunctionName($originalName)');
-        return toSnakeCase(originalName);
-    }
-
     public function isInPattern(): Bool {
         recordedCalls.push("isInPattern");
         return astContext.isInPattern;
@@ -217,23 +205,11 @@ class MockBuildContext implements BuildContext {
         };
     }
 
-    public function getTypeBuilder(): (Type) -> ElixirAST {
-        recordedCalls.push("getTypeBuilder");
-        return function(type: Type): ElixirAST {
-            return ElixirAST.makeAST(EAtom("test_type"));
-        };
-    }
-
     public function getPatternBuilder(clauseContext: ClauseContext): (TypedExpr) -> ElixirAST {
         recordedCalls.push("getPatternBuilder");
         return function(expr: TypedExpr): ElixirAST {
             return ElixirAST.makeAST(EVar("test_pattern"));
         };
-    }
-
-    public function registerBuilder(builderType: String, builder: IBuilder): Void {
-        recordedCalls.push('registerBuilder($builderType)');
-        astContext.registerBuilder(builderType, builder);
     }
 
     public function isFeatureEnabled(flag: String): Bool {
@@ -244,21 +220,6 @@ class MockBuildContext implements BuildContext {
     public function setFeatureFlag(flag: String, enabled: Bool): Void {
         recordedCalls.push('setFeatureFlag($flag, $enabled)');
         featureFlags.set(flag, enabled);
-    }
-
-    // ===== Helper Methods =====
-
-    private static function toSnakeCase(name: String): String {
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            if (char == char.toUpperCase() && i > 0) {
-                result += "_" + char.toLowerCase();
-            } else {
-                result += char.toLowerCase();
-            }
-        }
-        return result;
     }
 
     // ===== Test Assertion Helpers =====

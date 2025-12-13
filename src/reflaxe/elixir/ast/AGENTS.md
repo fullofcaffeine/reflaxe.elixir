@@ -32,7 +32,7 @@ All new AST-related functionality MUST be placed in:
 
 1. **Specialized Builders** (`src/reflaxe/elixir/ast/builders/`)
    - Create new builder classes for specific AST node types
-   - Example: `LoopBuilder.hx`, `PatternMatchBuilder.hx`
+   - Example: `LoopBuilder.hx`, `PatternBuilder.hx`, `SwitchBuilder.hx`
 
 2. **Transformation Passes** (`src/reflaxe/elixir/ast/transformers/`)
    - Add new transformation passes to `ElixirASTTransformer.hx`

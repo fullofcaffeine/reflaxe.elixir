@@ -2,7 +2,7 @@ defmodule TreeNode do
   def get_height(struct) do
     struct._height
   end
-  def to_string(_struct) do
+  def to_string(struct) do
     "#{(fn -> if (struct.left == nil) do
   ""
 else
