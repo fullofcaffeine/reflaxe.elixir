@@ -7,10 +7,10 @@ defmodule TestMigration2 do
   def down(struct) do
     struct.dropTable("comments")
   end
-  defp drop_table(_struct, _name) do
+  defp drop_table(struct, _name) do
     
   end
-  defp add_index(_struct, _table, _columns) do
+  defp add_index(struct, _table, _columns) do
     
   end
 end

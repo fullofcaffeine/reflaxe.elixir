@@ -144,8 +144,8 @@ class ElixirASTPassRegistry {
         // SPECIALIZED REPAIR for LiveView handle_info must run BEFORE the generic
         // collision-avoid renamer so it can see the binder equal to the function arg
         // and fix helper calls (payload first, socket last) in the clause body.
-        // Disabled: This pass risks app-specific name coupling by changing helper calls.
-        // Fix binder collisions via generic binder/name passes only.
+        // This pass is shape-based and restricted to handle_info/2; it avoids
+        // helper-name coupling by only rewriting local calls where arg0==argN==socket.
         passes.push({
             name: "HandleInfoCaseBinderCollisionRepair_Pre",
             description: "Repair {:tag, socket}-style binder collisions in handle_info/2; rewrite local helper arg order (payload first, socket last)",
@@ -1084,7 +1084,7 @@ class ElixirASTPassRegistry {
         // Unify case success vars in {:ok, v} branches to eliminate undefined placeholders
         passes.push({
             name: "CaseSuccessVarUnifier",
-            description: "Rewrite undefined placeholders (todo/updated_todo) to success var in {:ok, v} clauses",
+            description: "Rewrite undefined placeholder locals to the success var in {:ok, v} clauses",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarUnifier.unifySuccessVarPass
         });

@@ -2,7 +2,7 @@
 
 Complete setup guide for Reflaxe.Elixir development with lix package manager and dual-ecosystem architecture.
 
-**⚠️ Having trouble with tests or compilation? See [Self-Referential Library Troubleshooting](documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md) for critical insights and solutions.**
+**⚠️ Having trouble with tests or compilation? See [Self-Referential Library Troubleshooting](/docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md) for critical insights and solutions.**
 
 ## Prerequisites
 
@@ -249,10 +249,10 @@ npm test
 ```
 
 #### Issue: "Library reflaxe.elixir is not installed"
-**Solution:** This is a self-referential library issue. See [troubleshooting guide](documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#error-library-reflaxeelixir-is-not-installed)
+**Solution:** This is a self-referential library issue. See [troubleshooting guide](/docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#error-library-reflaxeelixir-is-not-installed)
 
 #### Issue: "classpath src/ is not a directory"
-**Solution:** Path resolution issue with test setup. See [path resolution section](documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#error-classpath-src-is-not-a-directory-or-cannot-be-read-from)
+**Solution:** Path resolution issue with test setup. See [path resolution section](/docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md#error-classpath-src-is-not-a-directory-or-cannot-be-read-from)
 
 #### Issue: `Error: ENOENT: no such file or directory, open '.haxerc'`
 **Solution:** Ensure you're in the project root directory

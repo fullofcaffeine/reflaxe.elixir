@@ -11,7 +11,6 @@
 3. [TransformContext](#transformcontext)
 4. [ClauseContext](#clausecontext)
 5. [TestProgressTracker](#testprogresstracker)
-6. [PatternMatchBuilder](#patternmatchbuilder)
 
 ---
 
@@ -520,67 +519,6 @@ typedef TestSummary = {
     var inProgress: Int;
     var totalTime: Float;
     var changedTests: Int;
-}
-```
-
----
-
-## PatternMatchBuilder
-
-**Package**: `reflaxe.elixir.ast.builders`
-**Type**: Class (Template)
-**Purpose**: Specialized builder for pattern matching
-
-### Constructor
-
-```haxe
-new PatternMatchBuilder(context: BuildContext)
-```
-
-### Methods
-
-```haxe
-function buildCaseExpression(
-    expr: TypedExpr,
-    cases: Array<Case>,
-    defaultExpr: Null<TypedExpr>,
-    edef: Null<TypedExpr>
-): ElixirAST
-```
-Builds complete case expression.
-
-```haxe
-function buildCaseClause(
-    switchCase: Case,
-    clauseContext: ClauseContext
-): Null<ElixirCaseClause>
-```
-Builds single case clause.
-
-```haxe
-function buildPattern(
-    value: TypedExpr,
-    clauseContext: ClauseContext
-): Null<ElixirAST>
-```
-Builds pattern from value.
-
-```haxe
-function buildEnumPattern(
-    ef: EnumField,
-    args: Array<TypedExpr>,
-    clauseContext: ClauseContext
-): ElixirAST
-```
-Builds enum constructor pattern.
-
-### Types
-
-```haxe
-typedef ElixirCaseClause = {
-    var patterns: Array<ElixirAST>;
-    var guard: Null<ElixirAST>;
-    var body: ElixirAST;
 }
 ```
 

@@ -1,10 +1,8 @@
 # Math Helper Compilation
 # Compiles MathHelper.hx to demonstrate pipe operators
 
--cp ../../src
--cp ../../std
--lib reflaxe
 -cp src_haxe
--main MathHelper
+-lib reflaxe.elixir
+-D elixir_output=lib
 -D reflaxe_runtime
---no-output
+MathHelper

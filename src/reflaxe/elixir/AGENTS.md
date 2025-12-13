@@ -590,11 +590,9 @@ The feature flag system has three layers:
 | Flag Name | Purpose | Default |
 |-----------|---------|---------|
 | `new_module_builder` | Use new ModuleBuilder system | false |
-| `loop_builder_enabled` | Enable LoopBuilder with safety guards | false |
+| `loop_builder_enabled` | Enable LoopBuilder with safety guards | true |
 | `idiomatic_comprehensions` | Generate comprehensions instead of reduce_while | false |
 | `pattern_extraction` | Use new pattern variable extraction | false |
-| `use_new_pattern_builder` | Use modular pattern match builder | false |
-| `use_new_loop_builder` | Use modular loop builder | false |
 
 ### Usage via Command Line
 
@@ -733,10 +731,10 @@ case EMatch(pattern, expr):
 **See**: [`/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md`](/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md#problem-4-parameter-shadowing-in-replacer-callback)
 
 ## 📚 Related Documentation
-- [`/documentation/COMPILER_BEST_PRACTICES.md`](/documentation/COMPILER_BEST_PRACTICES.md) - Complete development practices
-- [`/documentation/COMPILER_PATTERNS.md`](/documentation/COMPILER_PATTERNS.md) - Implementation patterns
-- [`/documentation/ARCHITECTURE.md`](/documentation/ARCHITECTURE.md) - Overall architecture
-- [`/documentation/HAXE_MACRO_APIS.md`](/documentation/HAXE_MACRO_APIS.md) - Correct macro API usage
+- [`/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md`](/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md) - Complete development practices
+- [`/docs/05-architecture/COMPILER_PATTERNS.md`](/docs/05-architecture/COMPILER_PATTERNS.md) - Implementation patterns
+- [`/docs/05-architecture/ARCHITECTURE.md`](/docs/05-architecture/ARCHITECTURE.md) - Overall architecture
+- [`/docs/04-api-reference/HAXE_MACRO_APIS.md`](/docs/04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
 - [`/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md`](/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md) - JsonPrinter fix documentation
 
 ## 🏆 Quality Standards

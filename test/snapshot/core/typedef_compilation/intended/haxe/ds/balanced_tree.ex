@@ -3,7 +3,7 @@ defmodule BalancedTree do
     root = struct.setLoop(key, value, struct.root)
     %{struct | root: root}
   end
-  def get(_struct, _key) do
+  def get(struct, key) do
     Enum.find(node, fn item -> item < 0 end)
   end
   def remove(struct, key) do
@@ -11,7 +11,7 @@ defmodule BalancedTree do
     if (not Kernel.is_nil(result)), do: result.found
     false
   end
-  def exists(struct, _key) do
+  def exists(struct, key) do
     node = struct.root
     _ = Enum.each(node, (fn -> fn _ ->
   cond do
@@ -47,7 +47,7 @@ end end).())
       "[#{(fn -> struct.root.toString() end).()}]"
     end
   end
-  def clear(_struct) do
+  def clear(struct) do
     root = nil
   end
 end

@@ -661,7 +661,7 @@ var result = data
 ### Using PipeOperator Macros
 
 ```haxe
-import reflaxe.elixir.macro.PipeOperator;
+import reflaxe.elixir.macros.PipeOperator;
 
 class MacroPipes {
     public function usePipeMacro(): String {

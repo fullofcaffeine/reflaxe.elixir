@@ -8,4 +8,10 @@ defmodule User do
   def main() do
     nil
   end
+  
+  def changeset(user, attrs) do
+    user
+    |> Ecto.Changeset.cast(attrs, [:name, :age, :balance])
+    |> Ecto.Changeset.validate_required([:name, :age, :balance])
+  end
 end

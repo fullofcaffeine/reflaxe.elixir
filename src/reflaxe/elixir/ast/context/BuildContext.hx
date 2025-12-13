@@ -5,7 +5,6 @@ package reflaxe.elixir.ast.context;
 import haxe.macro.Expr.Position;
 import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.builders.IBuilder;
 
 /**
  * BuildContext: Shared interface for AST builders to access compilation state
@@ -148,24 +147,6 @@ interface BuildContext {
     function popClauseContext(): ClauseContext;
 
     /**
-     * Get module name with proper transformation
-     * Applies naming conventions (snake_case, etc.)
-     *
-     * @param originalName Original module name
-     * @return Transformed Elixir module name
-     */
-    function getModuleName(originalName: String): String;
-
-    /**
-     * Get function name with proper transformation
-     * Applies naming conventions for Elixir
-     *
-     * @param originalName Original function name
-     * @return Transformed Elixir function name
-     */
-    function getFunctionName(originalName: String): String;
-
-    /**
      * Check if currently building within a pattern
      * Affects how certain expressions are compiled
      *
@@ -224,14 +205,6 @@ interface BuildContext {
     function getExpressionBuilder(): (TypedExpr) -> ElixirAST;
 
     /**
-     * Get type builder callback for delegation
-     * Allows builders to compile type references without coupling
-     *
-     * @return Function to compile Type to ElixirAST
-     */
-    function getTypeBuilder(): (Type) -> ElixirAST;
-
-    /**
      * Get pattern builder callback for delegation
      * Allows builders to compile patterns without direct dependencies
      *
@@ -241,19 +214,10 @@ interface BuildContext {
     function getPatternBuilder(clauseContext: ClauseContext): (TypedExpr) -> ElixirAST;
 
     /**
-     * Register a specialized builder for feature-flagged routing
-     * Part of the BuilderFacade pattern for gradual migration
-     *
-     * @param builderType Type of builder (e.g., "loop", "pattern", "function")
-     * @param builder The specialized builder instance implementing IBuilder
-     */
-    function registerBuilder(builderType: String, builder: IBuilder): Void;
-
-    /**
      * Check if a feature flag is enabled
      * Allows conditional use of new builders during migration
      *
-     * @param flag Feature flag name (e.g., "use_new_loop_builder")
+     * @param flag Feature flag name (e.g., "loop_builder_enabled")
      * @return True if flag is enabled
      */
     function isFeatureEnabled(flag: String): Bool;

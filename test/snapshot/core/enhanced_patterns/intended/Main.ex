@@ -28,53 +28,61 @@ end).(), ",") end).()}"
   [head | tail] when length(bytes) > 10 -> "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
   [head | tail] -> "Other binary pattern"
   2 ->
-    cond do
-      arr[0] == 72 and length(arr) > 1 ->
-        "Starts with 'H', rest: " <> Enum.join((fn -> g = []
-g1 = 1
-_g2 = length(arr)
-Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-  i = _g1 + 1
-  _g = Enum.concat(_g, [inspect(arr[i])])
-end end).())
-_g end).(), ",")
-      true ->
-        second = _g1
-        if (first > 64 and first < 90) do
-          "2-byte uppercase start"
+    arr = data
+    if (arr[0] == 72 and length(arr) > 1) do
+      "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
+  g = []
+  g1 = 1
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end end).())
+  _g
+end).(), ",") end).()}"
+    else
+      first = _g
+      second = _g1
+      if (first > 64 and first < 90) do
+        "2-byte uppercase start"
+      else
+        bytes = data
+        if (length(bytes) > 10) do
+          "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
         else
-          if (length(bytes) > 10) do
-            "Large binary: " <> Kernel.to_string(length(bytes)) <> " bytes"
-          else
-            "Other binary pattern"
-          end
+          "Other binary pattern"
         end
+      end
     end
   5 ->
-    cond do
-      arr[0] == 72 and length(arr) > 1 ->
-        "Starts with 'H', rest: " <> Enum.join((fn -> g = []
-g1 = 1
-_g2 = length(arr)
-Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-  i = _g1 + 1
-  _g = Enum.concat(_g, [inspect(arr[i])])
-end end).())
-_g end).(), ",")
-      true ->
-        b = _g1
-        c = arr_length
-        d = _g3
-        e = _g4
-        if (a == 72) do
-          "5-byte message starting with H"
+    arr = data
+    if (arr[0] == 72 and length(arr) > 1) do
+      "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
+  g = []
+  g1 = 1
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end end).())
+  _g
+end).(), ",") end).()}"
+    else
+      a = _g
+      b = _g1
+      c = arr_length
+      d = _g3
+      e = _g4
+      if (a == 72) do
+        "5-byte message starting with H"
+      else
+        bytes = data
+        if (length(bytes) > 10) do
+          "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
         else
-          if (length(bytes) > 10) do
-            "Large binary: " <> Kernel.to_string(length(bytes)) <> " bytes"
-          else
-            "Other binary pattern"
-          end
+          "Other binary pattern"
         end
+      end
     end
   _ ->
     arr = data
@@ -105,8 +113,10 @@ end))
     switch_result_2 = ((case packet do
   3 when _g == 1 ->
     if (_g == 0) do
+      size = arr_length
       "Protocol v1, size=#{(fn -> Kernel.to_string(size) end).()} (header only)"
     else
+      arr = packet
       if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
         "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
   g1 = 3
@@ -118,10 +128,13 @@ end))
   _g
 end).(), ",") end).()}"
       else
+        version = _g
         flags = _g
+        size = arr_length
         if (version > 1) do
           "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
         else
+          header = packet
           if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
         end
       end
@@ -140,19 +153,24 @@ end).(), ",") end).()}"
   3 when length(header) < 3 -> "Incomplete header"
   3 -> "Unknown packet format"
   4 ->
-    cond do
-      length(arr) >= 4 and arr[0] == 1 and arr[1] == 0 ->
-        "Protocol v1, size=" <> Kernel.to_string(arr[2]) <> ", data=" <> Enum.join((fn -> g = []
-g1 = 3
-_g2 = length(arr)
-Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-  i = _g1 + 1
-  _g = Enum.concat(_g, [inspect(arr[i])])
-end end).())
-_g end).(), ",")
-      true ->
-        payload = _g3
-        "Packet: v" <> Kernel.to_string(version) <> ", flags=" <> Kernel.to_string(flags) <> ", size=" <> Kernel.to_string(size)
+    arr = packet
+    if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
+      "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
+  g = []
+  g1 = 3
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end end).())
+  _g
+end).(), ",") end).()}"
+    else
+      version = _g
+      flags = _g1
+      size = arr_length
+      payload = _g3
+      "Packet: v#{(fn -> Kernel.to_string(version) end).()}, flags=#{(fn -> Kernel.to_string(flags) end).()}, size=#{(fn -> Kernel.to_string(size) end).()}"
     end
   _ ->
     arr = packet
@@ -179,7 +197,7 @@ end))
     expected_name = "test"
     test_value = 42
     test_name = "test"
-    result1 = value = test_value
+    result1 = _value = test_value
     if (test_value == expected_value), do: "Matches expected value", else: "Different value"
     result2 = v = test_value
     n = test_name
@@ -191,7 +209,7 @@ end))
       if (v == expected_value) do
         "Value matches, name different"
       else
-        v = test_value
+        _v = test_value
         n = test_name
         if (n == expected_name), do: "Name matches, value different", else: "Neither matches"
       end
@@ -323,9 +341,18 @@ end))
     _ = 3
     array_result = ((case 3 do
   0 -> "Empty"
-  1 -> "Single: #{(fn -> Kernel.to_string(x) end).()}"
-  2 -> "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
-  3 -> "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
+  1 ->
+    x = _g
+    "Single: #{(fn -> Kernel.to_string(x) end).()}"
+  2 ->
+    x = _g
+    y = _g1
+    "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
+  3 ->
+    x = _g
+    y = _g1
+    z = arr_length
+    "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
   _ ->
     cond do
       3 > 3 -> "Many: " <> Kernel.to_string(3) <> " items"
@@ -366,7 +393,7 @@ end))
           if (not active) do
             "Inactive user"
           else
-            active = arr_length
+            _active = arr_length
             if (perms == 0), do: "User without permissions", else: "Other user type"
           end
         end

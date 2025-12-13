@@ -1,14 +1,14 @@
 defmodule OptionTools do
-  def map(option, _transform) do
+  def map(option, transform) do
     (case option do
-      {:some, value} -> {:some, value.(value)}
+      {:some, payload} -> {:some, payload.(payload)}
       {:none} -> {:none}
     end)
   end
-  def then(option, _transform) do
+  def then(option, transform) do
     (case option do
-      {:some, value} ->
-        value.(value)
+      {:some, payload} ->
+        payload.(payload)
       {:none} -> {:none}
     end)
   end
@@ -21,19 +21,16 @@ defmodule OptionTools do
       {:none} -> {:none}
     end)
   end
-  def filter(option, _predicate) do
+  def filter(option, predicate) do
     (case option do
-      {:some, _value} ->
-        cond do
-          value.(value) -> {:some, value}
-          true -> {:none}
-        end
+      {:some, payload} ->
+        if (payload.(payload)), do: {:some, payload}, else: {:none}
       {:none} -> {:none}
     end)
   end
   def unwrap(option, default_value) do
     (case option do
-      {:some, _value} -> default_value
+      {:some, __value} -> default_value
       {:none} -> default_value
     end)
   end
@@ -59,13 +56,13 @@ defmodule OptionTools do
   end
   def is_some(option) do
     (case option do
-      {:some, ^option} -> true
+      {:some, __v} -> true
       {:none} -> false
     end)
   end
   def is_none(option) do
     (case option do
-      {:some, ^option} -> false
+      {:some, __v} -> false
       {:none} -> true
     end)
   end
@@ -73,7 +70,8 @@ defmodule OptionTools do
     values = []
     _ = Enum.each(options, (fn -> fn item ->
     (case item do
-    {:some, value} ->
+    {:some, values} ->
+      value = item
       item = Enum.concat(item, [item])
     {:none} -> {:none}
   end)
@@ -83,7 +81,8 @@ end end).())
   def values(options) do
     _ = Enum.each(options, (fn -> fn item ->
     (case item do
-    {:some, value} ->
+    {:some, result} ->
+      value = item
       item = Enum.concat(item, [item])
     {:none} -> nil
   end)
@@ -99,9 +98,9 @@ end end).())
   def from_result(result) do
     (case result do
       {:ok, value} ->
-        some = value
+        _some = value
         {:some, value}
-      {:error, __value} -> {:none}
+      {:error, __reason} -> {:none}
     end)
   end
   def from_nullable(value) do
@@ -119,7 +118,7 @@ end end).())
       {:none} -> %{:reply => nil, :status => "none"}
     end)
   end
-  def expect(option, _message) do
+  def expect(option, message) do
     (case option do
       {:some, value} -> value
       {:none} -> throw("Expected Some value but got None: " <> message)
@@ -133,8 +132,8 @@ end end).())
   end
   def apply(option, fn_param) do
     (case option do
-      {:some, ^fn_param} ->
-        fn_param.(fn_)
+      {:some, fn_} ->
+        fn_.(fn_)
       {:none} -> nil
     end)
     option

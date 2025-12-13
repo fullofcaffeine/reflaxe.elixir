@@ -149,9 +149,9 @@ npm test
 
 ## 📚 Related Documentation
 
-- [`ROADMAP.md`](../ROADMAP.md) - Future parallel testing improvements
-- [`documentation/architecture/TESTING.md`](architecture/TESTING.md) - Technical testing infrastructure
-- [`documentation/TESTING_PRINCIPLES.md`](TESTING_PRINCIPLES.md) - Testing methodology
+- [`ROADMAP.md`](../../ROADMAP.md) - Future parallel testing improvements
+- [`docs/05-architecture/TESTING.md`](../05-architecture/TESTING.md) - Technical testing infrastructure
+- [`docs/03-compiler-development/TESTING_PRINCIPLES.md`](../03-compiler-development/TESTING_PRINCIPLES.md) - Testing methodology
 
 ## 🎉 Success Metrics
 

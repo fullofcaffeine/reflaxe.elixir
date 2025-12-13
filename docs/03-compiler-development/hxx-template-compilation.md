@@ -450,7 +450,7 @@ trace("[HXX] Template fragment: " + result);
 ## Related Documentation
 
 - [Phoenix HEEx Documentation](https://hexdocs.pm/phoenix_live_view/Phoenix.Component.html)
-- [HXX vs Template Comparison](/documentation/HXX_VS_TEMPLATE.md)
+- [HXX vs Template Comparison](/docs/02-user-guide/HXX_VS_TEMPLATE.md)
 - [LiveView Compiler Documentation](/docs/03-compiler-development/liveview-compilation.md)
 - [Template Compilation Patterns](/docs/07-patterns/template-patterns.md)
 

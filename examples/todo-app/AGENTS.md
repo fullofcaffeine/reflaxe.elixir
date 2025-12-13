@@ -350,7 +350,7 @@ src_haxe/components/Component.hx:30: Unknown identifier : @field
 4. **Never**: Use `${@field}` (causes compilation errors)
 5. **Complex logic**: Use Phoenix conditional syntax, not Haxe ternary
 
-**See**: [`/documentation/guides/HXX_INTERPOLATION_SYNTAX.md`](/documentation/guides/HXX_INTERPOLATION_SYNTAX.md) - Complete technical details
+**See**: [`/docs/06-guides/HXX_INTERPOLATION_SYNTAX.md`](/docs/06-guides/HXX_INTERPOLATION_SYNTAX.md) - Complete technical details
 
 ## 📋 Project Overview
 
@@ -1084,10 +1084,10 @@ mix ecto.compile
 
 ## 📚 Additional Resources
 
-- [Watcher Development Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/guides/WATCHER_DEVELOPMENT_GUIDE.md)
-- [Source Mapping Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/SOURCE_MAPPING.md)
-- [Getting Started Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/guides/GETTING_STARTED.md)
-- [Compiler Testing Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/documentation/COMPILER_TESTING_GUIDE.md)
+- [Watcher Development Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/06-guides/WATCHER_DEVELOPMENT_GUIDE.md)
+- [Source Mapping Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/04-api-reference/SOURCE_MAPPING.md)
+- [Getting Started Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/06-guides/GETTING_STARTED.md)
+- [Compiler Testing Guide](https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/03-compiler-development/COMPILER_TESTING_GUIDE.md)
 
 ---
 

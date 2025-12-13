@@ -77,7 +77,7 @@ A good PRD session results in:
 
 This AGENTS.md provides PRD-specific guidance. For general project context:
 - **Main AGENTS.md**: Overall project rules and architecture
-- **documentation/**: Technical implementation guides
+- **docs/**: Technical implementation guides
 - **src/**: Actual compiler implementation
 
 Remember: PRDs define **what** and **why**, implementation defines **how**.

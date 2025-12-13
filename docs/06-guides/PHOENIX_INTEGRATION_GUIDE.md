@@ -56,10 +56,10 @@ mkdir -p src_haxe/phoenix
 
 # Create build.hxml
 echo "-cp src_haxe" > build.hxml
-echo "-cp ../../src" >> build.hxml
+echo "-lib reflaxe.elixir" >> build.hxml
 echo "-D reflaxe_runtime" >> build.hxml
-echo "--macro reflaxe.elixir.ElixirCompiler.build()" >> build.hxml
-echo "--no-output" >> build.hxml
+echo "-D elixir_output=lib" >> build.hxml
+echo "phoenix.Application" >> build.hxml
 ```
 
 This creates a Phoenix project with:

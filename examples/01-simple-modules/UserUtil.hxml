@@ -1,10 +1,8 @@
 # User Util Compilation
 # Compiles UserUtil.hx to demonstrate public/private functions
 
--cp ../../src
--cp ../../std
--lib reflaxe
 -cp src_haxe
--main UserUtil
+-lib reflaxe.elixir
+-D elixir_output=lib
 -D reflaxe_runtime
---no-output
+UserUtil

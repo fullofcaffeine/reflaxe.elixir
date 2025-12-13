@@ -21,12 +21,11 @@ Haxe Source (.hx) → Haxe Parser → TypedExpr (ModuleType) → ElixirCompiler 
 
 ### After ANY Compiler Change
 1. **Run Full Test Suite**: `npm test` - ALL tests must pass
-2. **Test Todo-App Integration**: 
+2. **Test Todo-App Integration (non-blocking, bounded)**:
    ```bash
-   cd examples/todo-app
-   npx haxe build-server.hxml && mix compile --force
+   scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+   scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
    ```
-3. **Verify Application Runtime**: `mix phx.server && curl localhost:4000`
 
 ## ⚠️ Code Quality Standards
 

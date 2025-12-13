@@ -155,8 +155,8 @@ defmodule Main do
     lower = String.string.downcase(test_string)
     upper = String.string.upcase(test_string)
     capitalized = String.string.capitalize(test_string)
-    trimmed = String.string.trim(test_string)
-    left_trimmed = String.string.trim_leading(test_string)
+    trimmed = String.trim(test_string)
+    left_trimmed = String.trim_leading(test_string)
     padded = String.string.pad_leading("hello", 10)
     slice = String.string.slice(test_string, 2, 5)
     char_at = String.string.at(test_string, 0)
@@ -167,13 +167,13 @@ defmodule Main do
     ends_with = String.string.ends_with?(test_string, "!  ")
     replaced = String.string.replace(test_string, "World", "Elixir")
     prefix_replaced = String.string.replace_prefix(test_string, "  ", "")
-    split = String.string.split("a,b,c")
-    split_on = String.string.split("a,b,c", ",")
+    split = String.split("a,b,c")
+    split_on = String.split("a,b,c", ",")
     split_at = String.string.split_at(test_string, 5)
     to_int_result = String.string.to_integer("123")
     to_float_result = String.string.to_float("123.45")
     is_empty = String.string.length("") == 0
-    is_blank = string = String.string.trim("   ")
+    is_blank = string = String.trim("   ")
     String.string.length(string) == 0
     left_padded = pad_with = "0"
     if (Kernel.is_nil(pad_with)) do

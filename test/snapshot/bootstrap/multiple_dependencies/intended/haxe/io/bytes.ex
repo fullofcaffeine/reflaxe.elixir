@@ -1,5 +1,5 @@
 defmodule Bytes do
-  def get_string(struct, pos, len, _encoding) do
+  def get_string(struct, pos, len, encoding) do
     if (Kernel.is_nil(encoding)) do
       encoding = {:utf8}
     end
@@ -18,7 +18,7 @@ defmodule Bytes do
     end
     :binary.at(struct.b, pos)
   end
-  def set(struct, pos, _v) do
+  def set(struct, pos, v) do
     if (pos < 0 or pos >= length(struct)) do
       throw("Out of bounds")
     end
@@ -60,7 +60,7 @@ defmodule Bytes do
     sub_binary = :binary.part(struct.b, pos, len)
     _ = MyApp.Bytes.new(len, sub_binary)
   end
-  def fill(struct, pos, len, _value) do
+  def fill(struct, pos, len, value) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
@@ -78,14 +78,14 @@ defmodule Bytes do
     b = <<before_part::binary, fill_bytes::binary, after_part::binary>>
     b
   end
-  def compare(_struct, _other) do
+  def compare(struct, other) do
     case struct.b do
             x when x < other.b -> -1
             x when x > other.b -> 1
             _ -> 0
         end
   end
-  def get_data(_struct) do
+  def get_data(struct) do
     struct.b
   end
   def get_double(struct, pos) do
@@ -94,7 +94,7 @@ defmodule Bytes do
     end
     <<value::float-little-size(64)>> = :binary.part(struct.b, pos, 8); value
   end
-  def set_double(struct, pos, _v) do
+  def set_double(struct, pos, v) do
     if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
@@ -117,7 +117,7 @@ defmodule Bytes do
     end
     <<value::float-little-size(32)>> = :binary.part(struct.b, pos, 4); value
   end
-  def set_float(struct, pos, _v) do
+  def set_float(struct, pos, v) do
     if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
@@ -140,7 +140,7 @@ defmodule Bytes do
     end
     <<value::little-unsigned-size(16)>> = :binary.part(struct.b, pos, 2); value
   end
-  def set_u_int16(struct, pos, _v) do
+  def set_u_int16(struct, pos, v) do
     if (pos < 0 or pos + 2 > length(struct)) do
       throw("Out of bounds")
     end
@@ -163,7 +163,7 @@ defmodule Bytes do
     end
     <<value::little-signed-size(32)>> = :binary.part(struct.b, pos, 4); value
   end
-  def set_int32(struct, pos, _v) do
+  def set_int32(struct, pos, v) do
     if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
@@ -186,7 +186,7 @@ defmodule Bytes do
     end
     <<value::little-signed-size(64)>> = :binary.part(struct.b, pos, 8); value
   end
-  def set_int64(struct, pos, _v) do
+  def set_int64(struct, pos, v) do
     if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
@@ -206,28 +206,27 @@ defmodule Bytes do
   def read_string(struct, pos, len) do
     struct.getString(pos, len)
   end
-  def to_hex(_struct) do
+  def to_hex(struct) do
     Base.encode16(struct.b, case: :lower)
   end
-  def alloc(_length) do
+  def alloc(length) do
     b = :binary.copy(<<0>>, length)
     _ = MyApp.Bytes.new(length, b)
   end
-  def of_string(_s, encoding) do
+  def of_string(s, encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
     encoding = MyApp.Bytes.new(length, binary)
-    encoding
   end
-  def fast_get(_b, _pos) do
+  def fast_get(b, pos) do
     :binary.at(b, pos)
   end
-  def of_hex(_s) do
+  def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
     length = byte_size(binary)
     _ = MyApp.Bytes.new(length, binary)
   end
-  def of_data(_b) do
+  def of_data(b) do
     length = byte_size(b)
     _ = MyApp.Bytes.new(length, b)
   end

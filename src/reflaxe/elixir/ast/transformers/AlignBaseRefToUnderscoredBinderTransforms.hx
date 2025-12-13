@@ -41,20 +41,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
       switch (s.def) {
         case EBinary(Match, left, _):
           switch (left.def) {
-            case EVar(n) if (n.length > 1 && n.charAt(0) == "_"):
+            case EVar(n) if (n != null && n.length > 1 && n.charAt(0) == "_"):
               var base = n.substr(1); if (!defined.exists(base)) underscored.set(base, n);
               defined.set(n, true);
-            case EVar(n2): defined.set(n2, true);
+            case EVar(n2) if (n2 != null): defined.set(n2, true);
             default:
           }
         case EMatch(pat, _):
-          switch (pat) { case PVar(pn): defined.set(pn, true); default: }
+          switch (pat) { case PVar(pn) if (pn != null): defined.set(pn, true); default: }
         default:
       }
       // rewrite references within this statement using current map
       var rewritten = ElixirASTTransformer.transformNode(s, function(x: ElixirAST): ElixirAST {
         return switch (x.def) {
-          case EVar(v) if (!defined.exists(v) && underscored.exists(v)):
+          case EVar(v) if (v != null && !defined.exists(v) && underscored.exists(v)):
             makeASTWithMeta(EVar(underscored.get(v)), x.metadata, x.pos);
           default: x;
         }

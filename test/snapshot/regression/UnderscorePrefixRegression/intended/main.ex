@@ -1,5 +1,5 @@
 defmodule Main do
-  defp test_simple_while_loop(_key, limit) do
+  defp test_simple_while_loop(key, limit) do
     count = 0
     _ = Enum.each(0..(limit - 1), (fn -> fn count ->
   if (count == "test"), do: "Found: " <> count

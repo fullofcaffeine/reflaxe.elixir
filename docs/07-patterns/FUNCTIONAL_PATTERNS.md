@@ -435,7 +435,7 @@ function processItems(data: Data): Array<Item> {
 }
 ```
 
-**See**: [`documentation/DYNAMIC_HANDLING.md`](DYNAMIC_HANDLING.md) for comprehensive Dynamic type handling guide.
+**See**: [`/docs/05-architecture/DYNAMIC_HANDLING.md`](/docs/05-architecture/DYNAMIC_HANDLING.md) for comprehensive Dynamic type handling guide.
 
 ## Type-Safe Null Handling with Option<T>
 

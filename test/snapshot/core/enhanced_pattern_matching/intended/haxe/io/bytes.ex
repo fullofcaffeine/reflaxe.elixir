@@ -78,7 +78,7 @@ defmodule Bytes do
     b = <<before_part::binary, fill_bytes::binary, after_part::binary>>
     b
   end
-  def compare(_struct, _other) do
+  def compare(struct, other) do
     case struct.b do
             x when x < other.b -> -1
             x when x > other.b -> 1
@@ -206,7 +206,7 @@ defmodule Bytes do
   def read_string(struct, pos, len) do
     struct.getString(pos, len)
   end
-  def to_hex(_struct) do
+  def to_hex(struct) do
     Base.encode16(struct.b, case: :lower)
   end
   def alloc(length) do
@@ -217,7 +217,6 @@ defmodule Bytes do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
     encoding = MyApp.Bytes.new(length, binary)
-    encoding
   end
   def fast_get(b, pos) do
     :binary.at(b, pos)
