@@ -1,1 +1,0 @@
-typedef phoenix.FormField = { value : phoenix.FormFieldValue, valid : Bool, name : String, id : String, errors : Array<String>, data : phoenix.FormFieldValue }

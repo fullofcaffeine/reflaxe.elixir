@@ -1,15 +1,2 @@
-# Haxe to JavaScript compilation for client-side code
--cp src_haxe
--main client.TodoApp
--js assets/js/todo-app-haxe.js
--dce full
-# NOTE: -D analyzer-optimize removed - destroys functional patterns
--D js-es=6
--D no-traces
-
-# Optimize for production
--D production
--D dead-code-elimination
-
-# Browser target (no Node.js)
---cmd echo "✅ Haxe JavaScript compilation complete!"
+# Legacy alias for JavaScript compilation (use build-client.hxml)
+--next build-client.hxml

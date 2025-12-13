@@ -1,6 +1,0 @@
-@:directlyUsed @:used @:flatEnum
-enum server.types.PresenceTopic {
-	Users;
-	EditingTodos;
-	ActiveRooms;
-}

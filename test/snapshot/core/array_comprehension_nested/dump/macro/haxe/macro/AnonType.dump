@@ -1,1 +1,0 @@
-typedef haxe.macro.AnonType = { status : haxe.macro.AnonStatus, fields : Array<haxe.macro.ClassField> }

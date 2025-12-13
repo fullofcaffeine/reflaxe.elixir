@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.EFnClause = { ?guard : Null<reflaxe.elixir.ast.ElixirAST>, body : reflaxe.elixir.ast.ElixirAST, args : Array<reflaxe.elixir.ast.EPattern> }

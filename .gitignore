@@ -41,6 +41,9 @@ Thumbs.db
 # Claude Code local settings
 .claude/settings.local.json
 
+# Agent/automation artifacts
+.code/
+
 # Elixir
 deps/
 _build/
@@ -63,9 +66,24 @@ compile.protocols
 .temp/
 .tmp/
 
+# Debug/macro dumps (never commit)
+**/dump/
+
+# Test runner artifacts
+test-results/
+examples/*/test-results/
+test-results.txt
+test-failures.txt
+
 # Logs
 logs/
 *.log
+
+# One-off research outputs (never commit)
+repomix-*
+gpt*-analysis-bundle.xml
+haxe-warnings*
+mix-warnings*
 
 # Ad-hoc test files in root (prevent re-accumulation)
 /test_*.hx

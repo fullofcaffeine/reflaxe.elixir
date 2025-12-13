@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.EMapPair = { value : reflaxe.elixir.ast.ElixirAST, key : reflaxe.elixir.ast.ElixirAST }

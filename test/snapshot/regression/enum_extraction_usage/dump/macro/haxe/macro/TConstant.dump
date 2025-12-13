@@ -1,9 +1,0 @@
-enum haxe.macro.TConstant {
-	TInt(i:Int);
-	TFloat(s:String);
-	TString(s:String);
-	TBool(b:Bool);
-	TNull;
-	TThis;
-	TSuper;
-}

@@ -1,1 +1,0 @@
-typedef ecto.RepoConfig = { ?port : Null<Int>, ?poolSize : Null<Int>, ?json : Null<ecto.JsonLibrary>, ?hostname : Null<String>, ?extensions : Null<Array<ecto.PostgresExtension>>, ?database : Null<String>, adapter : ecto.DatabaseAdapter }

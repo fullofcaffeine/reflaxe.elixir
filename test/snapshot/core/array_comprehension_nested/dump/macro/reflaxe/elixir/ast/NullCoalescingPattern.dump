@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.NullCoalescingPattern = { tempVar : haxe.macro.TVar, initExpr : haxe.macro.TypedExpr, defaultExpr : haxe.macro.TypedExpr }

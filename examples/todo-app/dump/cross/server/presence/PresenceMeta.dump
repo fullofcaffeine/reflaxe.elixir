@@ -1,1 +1,0 @@
-typedef server.presence.PresenceMeta = { userName : String, userEmail : String, onlineAt : Float, editingTodoId : Null<Int>, editingStartedAt : Null<Float>, avatar : Null<String> }

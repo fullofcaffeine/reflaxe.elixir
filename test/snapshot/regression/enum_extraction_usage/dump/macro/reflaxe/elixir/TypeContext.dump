@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.TypeContext = { ?modulePath : Null<String>, ?isPhoenix : Null<Bool>, ?isNullable : Null<Bool>, ?isGeneric : Null<Bool>, ?genericBounds : Null<Array<String>> }

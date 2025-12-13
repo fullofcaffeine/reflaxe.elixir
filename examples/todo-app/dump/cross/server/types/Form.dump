@@ -1,1 +1,0 @@
-typedef server.types.Form<T> = { source : server.types.Changeset<server.types.Form.T>, params : Dynamic, options : server.types.FormOptions, name : String, impl : String, id : String, hidden : Array<server.types.FormField>, data : server.types.Form.T }

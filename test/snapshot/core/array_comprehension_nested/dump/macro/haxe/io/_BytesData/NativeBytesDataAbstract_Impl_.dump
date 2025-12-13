@@ -1,8 +1,0 @@
-private class haxe.io._BytesData.NativeBytesDataAbstract_Impl_ {
-
-	@:arrayAccess
-	public static inline function get(this:haxe.io.Bytes, i:Int) return this.get(i)
-
-	@:arrayAccess
-	public static inline function set(this:haxe.io.Bytes, i:Int, v:Dynamic) this.set(i, v)
-}

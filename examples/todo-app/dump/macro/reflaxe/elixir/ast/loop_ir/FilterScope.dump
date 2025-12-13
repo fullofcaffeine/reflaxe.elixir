@@ -1,6 +1,0 @@
-@:flatEnum
-enum reflaxe.elixir.ast.loop_ir.FilterScope {
-	PreIteration;
-	PostIteration;
-	Yield;
-}

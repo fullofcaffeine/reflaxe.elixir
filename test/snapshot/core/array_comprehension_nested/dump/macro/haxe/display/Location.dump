@@ -1,1 +1,0 @@
-typedef haxe.display.Location = { range : haxe.display.Range, file : haxe.display.FsPath }

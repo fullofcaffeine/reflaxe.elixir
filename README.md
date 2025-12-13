@@ -9,7 +9,7 @@
 
 **Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
 
-> **Future Vision**: See [VISION.md](VISION.md) for long-term plans including AI tooling and universal platform support  
+> **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
 > **Current Status**: Production-ready Haxe→Elixir compilation with full Phoenix/LiveView/Ecto support
 
 ## Why Reflaxe.Elixir?
@@ -78,7 +78,7 @@ The foundation for multi-target development:
 - **JavaScript Async/Await** - Native async/await compilation for modern JS development
 
 ### 🔮 Future Expansion
-For the complete roadmap including AI tooling, universal deployment, and multi-platform support, see [VISION.md](VISION.md):
+For the complete roadmap including AI tooling, universal deployment, and multi-platform support, see [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md):
 
 - **JavaScript Integration** - Advanced TypeScript ecosystem access
 - **Mobile Support** - Capacitor and React Native deployment  
@@ -163,7 +163,7 @@ npx lix run reflaxe.elixir create my-app
 npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 ```
 
-🚀 **Get started in 5 minutes!** See [documentation/guides/QUICKSTART.md](documentation/guides/QUICKSTART.md)
+🚀 **Get started in 5 minutes!** See [docs/06-guides/QUICKSTART.md](docs/06-guides/QUICKSTART.md)
 
 ## Development Workflow
 
@@ -213,29 +213,29 @@ your-project/
 ## 📚 Documentation
 
 ### Getting Started
-- **[Tutorial: First Project](documentation/guides/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step guide to build your first app
-- **[Installation Guide](INSTALLATION.md)** - Complete setup with troubleshooting
-- **[Getting Started](documentation/guides/GETTING_STARTED.md)** - Installation and setup guide
+- **[Tutorial: First Project](docs/06-guides/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step guide to build your first app
+- **[Installation Guide](docs/01-getting-started/installation.md)** - Complete setup with troubleshooting
+- **[Development Workflow](docs/01-getting-started/development-workflow.md)** - Day-to-day compiler + app workflow
 
 ### Integration Guides  
-- **[Phoenix Integration](documentation/PHOENIX_INTEGRATION_GUIDE.md)** - Controllers, LiveView, Ecto, Channels
-- **[Idiomatic Syntax](documentation/IDIOMATIC_SYNTAX.md)** - Type-safe Elixir patterns and transformations
-- **[Pipe Operators](documentation/guides/pipe-operators.md)** - Complete guide to pipe operator support
-- **[Escape Hatches](documentation/ESCAPE_HATCHES.md)** - Using Elixir code from Haxe
-- **[Cookbook](documentation/guides/COOKBOOK.md)** - Practical recipes for common tasks
+- **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
+- **[Idiomatic Syntax](docs/04-api-reference/IDIOMATIC_SYNTAX.md)** - Type-safe Elixir patterns and transformations
+- **[Pipe Operators](docs/06-guides/pipe-operators.md)** - Complete guide to pipe operator support
+- **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Using Elixir code from Haxe
+- **[Cookbook](docs/06-guides/COOKBOOK.md)** - Practical recipes for common tasks
 
 ### Reference
-- **[Haxe→Elixir Mappings](documentation/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Complete reference for how Haxe constructs map to Elixir code
-- **[Source Mapping Guide](documentation/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
-- **[Annotations](documentation/reference/ANNOTATIONS.md)** - Complete annotation reference
-- **[LLM Workflow Compatibility](documentation/llm/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
-- **[Troubleshooting](documentation/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Complete reference for how Haxe constructs map to Elixir code
+- **[Source Mapping Guide](docs/04-api-reference/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
+- **[Annotations](docs/04-api-reference/ANNOTATIONS.md)** - Complete annotation reference
+- **[LLM Workflow Compatibility](docs/10-contributing/llm-integration/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
+- **[Troubleshooting](docs/06-guides/troubleshooting.md)** - Common issues and solutions
 - **[Examples](examples/)** - Working code examples
 
 ### Architecture
-- **[Architecture Overview](documentation/architecture/ARCHITECTURE.md)** - Compiler internals
-- **[Testing Guide](documentation/architecture/TESTING.md)** - Test infrastructure and patterns
-- **[Development Guide](DEVELOPMENT.md)** - Contributing and extending
+- **[Architecture Overview](docs/05-architecture/ARCHITECTURE.md)** - Compiler internals
+- **[Testing Guide](docs/05-architecture/TESTING.md)** - Test infrastructure and patterns
+- **[Contributing](docs/10-contributing/contributing.md)** - Contributing and extending
 
 ### Manual Installation (For Contributors)
 
@@ -245,16 +245,16 @@ git clone https://github.com/fullofcaffeine/reflaxe.elixir
 cd reflaxe.elixir
 
 # Install dependencies (both ecosystems)
-npm install       # Installs lix + Haxe dependencies
+npm ci            # Installs lix + Haxe dependencies
 npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
 
 # Run tests
-npm test          # Snapshot tests (62+ tests including source maps)
-npm run test:all  # Full test suite (Haxe + Mix)
+npm test          # Full suite (snapshots + Elixir validation + Mix)
+npm run qa:sentinel  # Todo-app build + boot probe (async)
 ```
 
-📖 **New to lix or Haxe?** See [INSTALLATION.md](INSTALLATION.md) for complete setup guide with troubleshooting.
+📖 **New to lix or Haxe?** See [docs/01-getting-started/installation.md](docs/01-getting-started/installation.md) for complete setup guide with troubleshooting.
 
 ## Project Structure
 
@@ -318,7 +318,7 @@ Now compilation generates `.ex.map` files alongside `.ex` files, enabling:
 - Debugging at the Haxe level while running Elixir
 - LLM agents can use source positions for accurate fixes
 
-See [documentation/SOURCE_MAPPING.md](documentation/SOURCE_MAPPING.md) for complete guide.
+See [docs/04-api-reference/SOURCE_MAPPING.md](docs/04-api-reference/SOURCE_MAPPING.md) for complete guide.
 
 ### Phoenix LiveView
 ```haxe
@@ -407,27 +407,26 @@ class CounterServer {
 The project uses a dual-ecosystem testing approach with self-referential library configuration:
 
 ```bash
-npm test              # Run ALL tests (180 total: 48 Haxe + 19 Generator + 132 Mix)
-npm run test:haxe     # Run Haxe compiler tests only (snapshot tests)
-npm run test:mix      # Run Mix/Elixir tests only (132 runtime tests)
-npm run test:quick    # Run just Haxe tests for rapid feedback
-npm run test:verify   # Quick verification - core functionality only
-npm run test:core     # Test core examples (basic_syntax, liveview_basic)
-npm run test:update   # Update expected snapshot test output
+npm test              # Full suite (snapshots + Elixir validation + Mix)
+npm run test:quick    # Snapshot suite only
+npm run test:mix      # Mix/Elixir tests only
+npm run test:update   # Update expected snapshot outputs
+npm run qa:sentinel   # Todo-app build + boot probe (async)
+npm run ci:guards     # Guardrails (no app heuristics, etc.)
 ```
 
 **Test Infrastructure:**
 - **Complete Coverage**: `npm test` runs Haxe compiler tests, generator tests, AND Mix runtime tests
-- **Snapshot Testing**: Validates compiler output against expected Elixir code (48 tests)
-- **Generator Testing**: Validates project templates and LLM documentation generation (19 tests)
-- **Runtime Validation**: Tests generated Elixir code execution in BEAM VM (132 tests)
+- **Snapshot Testing**: Validates compiler output against expected Elixir code
+- **Generator Testing**: Validates project templates and tooling
+- **Runtime Validation**: Mix tests compile/run generated Elixir code
 - **Self-Referential Library**: Tests use `-lib reflaxe.elixir` via `haxe_libraries/reflaxe.elixir.hxml`
 - **Mix Integration**: Tests real compilation in Phoenix projects
 - **Test Helper**: `test/support/haxe_test_helper.ex` handles project setup
 
-**⚠️ Critical**: For self-referential library configuration issues, see [documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md](documentation/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
+**⚠️ Critical**: For self-referential library configuration issues, see [docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md](docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
 
-For detailed testing documentation, see [documentation/architecture/TESTING.md](documentation/architecture/TESTING.md)
+For detailed testing documentation, see [docs/05-architecture/TESTING.md](docs/05-architecture/TESTING.md)
 
 ### Development Workflow
 ```bash
@@ -494,7 +493,7 @@ All compilation targets exceed performance requirements:
 
 ## Contributing
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guide.
+See [docs/10-contributing/contributing.md](docs/10-contributing/contributing.md) for detailed development guide.
 
 ### Adding Features
 1. Create helper compiler in `src/reflaxe/elixir/helpers/`

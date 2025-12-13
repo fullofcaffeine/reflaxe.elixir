@@ -1,1 +1,0 @@
-typedef haxe.macro.TVar = { t : haxe.macro.Type, name : String, meta : Null<haxe.macro.MetaAccess>, isStatic : Bool, id : Int, extra : Null<{ params : Array<haxe.macro.TypeParameter>, expr : Null<haxe.macro.TypedExpr> }>, capture : Bool }

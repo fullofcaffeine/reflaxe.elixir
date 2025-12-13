@@ -1,8 +1,0 @@
-@:flatEnum
-enum phoenix.ConnState {
-	Unset;
-	Set;
-	Sent;
-	Chunked;
-	FileChunked;
-}

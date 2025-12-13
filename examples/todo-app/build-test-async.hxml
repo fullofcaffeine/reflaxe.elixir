@@ -1,9 +1,0 @@
--cp src_haxe
--cp ../../std
--main test.AsyncTest
--js test_async.js
-
-# Enable the custom async JavaScript generator
---macro reflaxe.js.AsyncJSGenerator.use()
-
--D js-es=6

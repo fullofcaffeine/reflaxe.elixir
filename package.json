@@ -1,6 +1,6 @@
 {
   "name": "reflaxe-elixir",
-  "version": "0.1.0",
+  "version": "1.0.2",
   "description": "Haxe to Elixir compilation target using Reflaxe with Mix integration. Uses npm/lix for Haxe compiler development, mix for Elixir runtime testing.",
   "main": "src/reflaxe/elixir/ElixirCompiler.hx",
   "keywords": [
@@ -14,7 +14,7 @@
     "compiler",
     "reflaxe"
   ],
-  "author": "Claude Code",
+  "author": "fullofcaffeine",
   "license": "GPL-3.0",
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",

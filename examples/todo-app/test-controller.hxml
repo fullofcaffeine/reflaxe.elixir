@@ -1,8 +1,0 @@
--cp src_haxe
--cp ../../std
--cp ../../src
---macro reflaxe.elixir.ElixirCompiler.initialize()
--lib reflaxe
--D reflaxe_elixir
--D reflaxe.output=lib
-controllers.UserController

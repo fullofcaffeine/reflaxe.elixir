@@ -1,1 +1,0 @@
-typedef phoenix.PresenceEntry<TMeta> = { metas : Array<phoenix.PresenceEntry.TMeta> }

@@ -1,9 +1,0 @@
-@:realPath("elixir.Module") @:native("Module")
-extern class Module {
-
-	static function concat(parts:Array<Dynamic>):Dynamic;
-
-	static function split(module:Dynamic):Array<Dynamic>;
-
-	static function safe_concat(parts:Array<Dynamic>):Dynamic;
-}

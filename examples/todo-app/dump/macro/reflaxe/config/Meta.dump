@@ -1,2 +1,0 @@
-@:enum
-abstract reflaxe.config.Meta from String to String {}

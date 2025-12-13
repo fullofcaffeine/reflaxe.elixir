@@ -1,1 +1,0 @@
-typedef server.types.PatchOptions = { ?to : Null<String>, ?replace : Null<Bool> }

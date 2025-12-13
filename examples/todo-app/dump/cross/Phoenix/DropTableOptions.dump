@@ -1,1 +1,0 @@
-typedef phoenix.DropTableOptions = { ?if_exists : Null<Bool>, ?cascade : Null<Bool> }

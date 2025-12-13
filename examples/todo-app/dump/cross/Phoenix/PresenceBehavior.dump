@@ -1,3 +1,0 @@
-@:keep @:used @:autoBuild(phoenix.macros.PresenceMacro.build())
-interface phoenix.PresenceBehavior {
-}

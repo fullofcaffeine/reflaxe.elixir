@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.PatternData = { type : reflaxe.elixir.ast.ASTPatternType, node : reflaxe.elixir.ast.ElixirAST, metadata : Dynamic }

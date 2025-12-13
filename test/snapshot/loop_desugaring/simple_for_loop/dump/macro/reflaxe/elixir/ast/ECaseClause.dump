@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.ECaseClause = { pattern : reflaxe.elixir.ast.EPattern, ?guard : Null<reflaxe.elixir.ast.ElixirAST>, body : reflaxe.elixir.ast.ElixirAST }

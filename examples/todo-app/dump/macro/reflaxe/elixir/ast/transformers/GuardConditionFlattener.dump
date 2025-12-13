@@ -1,3 +1,0 @@
-@:nullSafety(Off)
-class reflaxe.elixir.ast.transformers.GuardConditionFlattener {
-}

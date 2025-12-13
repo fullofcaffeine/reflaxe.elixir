@@ -1,1 +1,0 @@
-typedef Iterator<T> = { next : () -> Iterator.T, hasNext : () -> Bool }

@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.intent.LoopIntentMetadata = { ?wasDesugared : Null<Bool>, ?variableMapping : Null<Map<String, String>>, ?sourcePos : Null<haxe.macro.Position>, ?optimizationHints : Null<Array<String>>, ?infrastructureVars : Null<Array<String>>, ?accumulatorVars : Null<Array<reflaxe.elixir.ast.intent.AccumulatorVar>> }

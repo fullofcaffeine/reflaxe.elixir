@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.analyzers.RangeInfo = { step : Int, start : haxe.macro.TypedExpr, isInclusive : Bool, indexVar : String, end : haxe.macro.TypedExpr }

@@ -1,5 +1,0 @@
-@:directlyUsed @:used
-enum TreeNode<T> {
-	Leaf;
-	Node(left:TreeNode<TreeNode.T>, value:TreeNode.T, right:TreeNode<TreeNode.T>);
-}

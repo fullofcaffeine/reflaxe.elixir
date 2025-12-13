@@ -1,1 +1,0 @@
-typedef phoenix.SelectOption = { value : String, ?selected : Null<Bool>, label : String, ?disabled : Null<Bool> }

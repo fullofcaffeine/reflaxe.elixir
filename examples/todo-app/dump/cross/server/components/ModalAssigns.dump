@@ -1,1 +1,0 @@
-typedef server.components.ModalAssigns = { show : Bool, ?inner_content : Null<String>, id : String }

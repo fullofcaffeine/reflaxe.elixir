@@ -1,1 +1,0 @@
-typedef phoenix.Header = { value : String, name : String }

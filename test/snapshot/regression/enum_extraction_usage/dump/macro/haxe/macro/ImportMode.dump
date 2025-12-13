@@ -1,5 +1,0 @@
-enum haxe.macro.ImportMode {
-	INormal;
-	IAsName(alias:String);
-	IAll;
-}

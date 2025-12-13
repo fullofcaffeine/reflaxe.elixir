@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.loop_ir.ElementPattern = { varName : String, type : haxe.macro.Type, pattern : reflaxe.elixir.ast.ElixirAST }

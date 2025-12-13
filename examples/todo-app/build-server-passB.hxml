@@ -1,7 +1,5 @@
 # Pass B — domain (schemas/migrations/presence)
--lib reflaxe
 -lib reflaxe.elixir
--cp ../../std/_std
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -12,7 +10,6 @@
 -dce full
 --macro exclude('client')
 --macro exclude('test')
--D reflaxe.elixir=0.1.0
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces

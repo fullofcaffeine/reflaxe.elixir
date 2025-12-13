@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.loop_ir.YieldInfo = { targetAccumulator : Null<String>, isConditional : Bool, expr : reflaxe.elixir.ast.ElixirAST }

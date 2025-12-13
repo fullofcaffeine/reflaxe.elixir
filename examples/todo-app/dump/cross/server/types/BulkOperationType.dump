@@ -1,8 +1,0 @@
-@:directlyUsed @:used
-enum server.types.BulkOperationType {
-	CompleteAll;
-	DeleteCompleted;
-	SetPriority(priority:server.types.TodoPriority);
-	AddTag(tag:String);
-	RemoveTag(tag:String);
-}

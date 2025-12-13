@@ -1,1 +1,0 @@
-private typedef ecto._Migration.ConstraintDefinition = { type : ecto._Migration.ConstraintType, name : Null<String>, expression : Null<String>, columns : Null<Array<String>> }

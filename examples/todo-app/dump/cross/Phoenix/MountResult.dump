@@ -1,6 +1,0 @@
-@:directlyUsed @:used
-enum phoenix.MountResult<TAssigns> {
-	Ok(socket:Phoenix.LiveView.Socket<phoenix.MountResult.TAssigns>);
-	OkWithTemporaryAssigns(socket:Phoenix.LiveView.Socket<phoenix.MountResult.TAssigns>, temporary_assigns:Array<String>);
-	Error(reason:String);
-}

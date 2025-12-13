@@ -1,1 +1,0 @@
-typedef server.components.FormAssigns = { ?method : Null<String>, inner_content : String, formFor : server.components.FormTarget, action : String }

@@ -1,1 +1,0 @@
-typedef reflaxe.compiler.TypeUsageMap = Map<reflaxe.compiler.TypeUsageLevel, Array<reflaxe.compiler.TypeOrModuleType>>

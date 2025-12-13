@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.GuardBranch = { pattern : reflaxe.elixir.ast.EPattern, ?originalIfElse : Null<reflaxe.elixir.ast.ElixirAST>, guard : reflaxe.elixir.ast.ElixirAST, ?depth : Null<Int>, body : reflaxe.elixir.ast.ElixirAST }

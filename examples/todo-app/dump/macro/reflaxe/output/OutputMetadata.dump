@@ -1,1 +1,0 @@
-typedef reflaxe.output.OutputMetadata = { wasCached : Bool, version : Int, id : Int, filesGenerated : Array<String> }

@@ -2,10 +2,7 @@
 # and adds @:keep via --macro keep(...) for Phoenix modules so DCE
 # does not drop runtime-invoked functions. No generated .ex edits.
 
--lib reflaxe
 -lib reflaxe.elixir
--cp ../../std/_std
-
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -34,8 +31,7 @@
 --macro keep('phoenix.Sorting')
 --macro keep('phoenix.SafePubSub')
 
-# Compiler version + flags
--D reflaxe.elixir=0.1.0
+# Compiler flags
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces

@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.loop_ir.EarlyExitInfo = { value : Null<reflaxe.elixir.ast.ElixirAST>, kind : reflaxe.elixir.ast.loop_ir.EarlyExitKind, condition : Null<reflaxe.elixir.ast.ElixirAST> }

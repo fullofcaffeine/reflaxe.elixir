@@ -1,1 +1,0 @@
-typedef phoenix.RedirectOptions = { ?to : Null<String>, ?external : Null<String> }

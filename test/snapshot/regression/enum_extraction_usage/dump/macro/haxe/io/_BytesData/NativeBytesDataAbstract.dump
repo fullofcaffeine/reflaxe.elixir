@@ -1,2 +1,0 @@
-@:forward
-private abstract haxe.io._BytesData.NativeBytesDataAbstract from haxe.io.Bytes to haxe.io.Bytes {}

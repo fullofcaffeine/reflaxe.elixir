@@ -25,7 +25,7 @@
  *   end
  *
  * Real-world example: TodoPubSub.parseMessageImpl line 204-206
- * Related: runtime-issues.md Error 2, commits 940c7722, bed3790c
+ * Related: commits 940c7722, bed3790c
  */
 
 enum Option<T> {

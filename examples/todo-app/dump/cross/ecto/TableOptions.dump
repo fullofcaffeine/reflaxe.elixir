@@ -1,1 +1,0 @@
-typedef ecto.TableOptions = { ?temporary : Null<Bool>, ?primaryKey : Null<Bool>, ?engine : Null<String>, ?comment : Null<String>, ?collation : Null<String>, ?charset : Null<String> }

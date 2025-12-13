@@ -1,7 +1,0 @@
-@:directlyUsed @:used @:elixirIdiomatic
-enum elixir.otp.ChildSpecFormat {
-	ModuleRef(module:String);
-	ModuleWithArgs(module:String, args:Array<Dynamic>);
-	ModuleWithConfig(module:String, config:Array<{ value : Dynamic, key : String }>);
-	FullSpec(spec:elixir.otp.ChildSpec);
-}

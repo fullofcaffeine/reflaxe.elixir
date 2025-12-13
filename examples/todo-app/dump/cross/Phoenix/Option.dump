@@ -1,1 +1,0 @@
-typedef phoenix.Option<T> = haxe.ds.Option<phoenix.Option.T>

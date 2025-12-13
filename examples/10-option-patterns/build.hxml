@@ -1,10 +1,8 @@
 # Option patterns example build configuration for Reflaxe.Elixir
 # Demonstrates real-world Option<T> usage with ExUnit tests
 
-# Include Reflaxe.Elixir source directly (for examples running from subdirectories)
--cp ../../src
--cp ../../std
--lib reflaxe
+# Use the compiler via haxelib/lix
+-lib reflaxe.elixir
 
 # Source directories containing your .hx files
 -cp src_haxe
@@ -27,10 +25,6 @@
 
 # Enable source mapping for debugging
 -D source-map
-
-# Define library version and initialize compiler
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Main classes to compile
 models.User

@@ -1,7 +1,0 @@
-@:flatEnum
-enum phoenix.LogLevel {
-	Debug;
-	Info;
-	Warning;
-	Error;
-}

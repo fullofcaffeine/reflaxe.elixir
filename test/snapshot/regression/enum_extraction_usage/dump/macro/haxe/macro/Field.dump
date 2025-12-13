@@ -1,1 +1,0 @@
-typedef haxe.macro.Field = { pos : haxe.macro.Position, name : String, ?meta : Null<haxe.macro.Metadata>, kind : haxe.macro.FieldType, ?doc : Null<String>, ?access : Null<Array<haxe.macro.Access>> }

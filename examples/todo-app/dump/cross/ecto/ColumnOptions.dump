@@ -1,1 +1,0 @@
-typedef ecto.ColumnOptions<T> = { ?unique : Null<Bool>, ?primaryKey : Null<Bool>, ?onUpdate : Null<ecto.OnUpdateAction>, ?onDelete : Null<ecto.OnDeleteAction>, ?nullable : Null<Bool>, ?index : Null<Bool>, ?defaultValue : Null<ecto.ColumnOptions.T>, ?autoGenerate : Null<Bool> }

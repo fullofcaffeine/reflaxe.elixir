@@ -1,1 +1,0 @@
-typedef haxe.macro.TypeParamDecl = { ?params : Null<Array<haxe.macro.TypeParamDecl>>, name : String, ?meta : Null<haxe.macro.Metadata>, ?defaultType : Null<haxe.macro.ComplexType>, ?constraints : Null<Array<haxe.macro.ComplexType>> }

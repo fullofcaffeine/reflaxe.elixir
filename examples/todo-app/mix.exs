@@ -59,7 +59,7 @@ defmodule TodoApp.MixProject do
       {:telemetry_metrics_prometheus_core, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      # Webserver stack pinned for OTP 27 compatibility (see TODOAPP_COWBOY_TOOLCHAIN_ISSUE_REPORT.md)
+      # Webserver stack pinned for OTP 27 compatibility (see docs/09-history/TODOAPP_COWBOY_TOOLCHAIN_ISSUE_REPORT.md)
       {:plug_cowboy, "~> 2.7.5", override: true},
       {:cowboy, "~> 2.14.2", override: true},
       {:cowlib, "~> 2.16.0", override: true},

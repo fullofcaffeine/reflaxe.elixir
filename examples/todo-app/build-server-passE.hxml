@@ -1,7 +1,5 @@
 # Pass E — application entrypoint
--lib reflaxe
 -lib reflaxe.elixir
--cp ../../std/_std
 -cp src_haxe
 -cp src_haxe/server
 -cp src_haxe/shared
@@ -17,7 +15,6 @@
 --macro keep('server.support.FlashTypeTools')
 --macro keep('server.support.TagTools')
 --macro keep('server.live.TodoLiveTypes')
--D reflaxe.elixir=0.1.0
 -D hxx_string_to_sigil
 -D no-traces
 -D no_traces

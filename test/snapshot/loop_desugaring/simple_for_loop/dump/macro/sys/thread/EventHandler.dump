@@ -1,1 +1,0 @@
-abstract sys.thread.EventHandler from sys.thread._EventLoop.RegularEvent to sys.thread._EventLoop.RegularEvent {}

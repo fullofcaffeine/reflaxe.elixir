@@ -1,8 +1,0 @@
-@:realPath("server.infrastructure.Endpoint") @:used @:keep @:native("TodoAppWeb.Endpoint") @:endpoint @:appName("todo_app")
-class TodoAppWeb.Endpoint {
-
-	@:keep
-	public static function static_paths() {
-		return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
-	}
-}

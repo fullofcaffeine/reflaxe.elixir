@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.ContextualTransformPass = (ast : reflaxe.elixir.ast.ElixirAST, context : reflaxe.elixir.CompilationContext) -> reflaxe.elixir.ast.ElixirAST

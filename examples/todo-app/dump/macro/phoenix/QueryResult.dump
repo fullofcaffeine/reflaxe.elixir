@@ -1,1 +1,0 @@
-typedef phoenix.QueryResult = { rows : Array<Array<phoenix.QueryValue>>, num_rows : Int, columns : Array<String> }

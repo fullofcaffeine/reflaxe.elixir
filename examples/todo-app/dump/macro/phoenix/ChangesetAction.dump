@@ -1,8 +1,0 @@
-@:flatEnum
-enum phoenix.ChangesetAction {
-	Insert;
-	Update;
-	Delete;
-	Replace;
-	Ignore;
-}

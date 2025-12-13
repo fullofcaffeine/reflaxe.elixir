@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.loop_ir.BodyEffects = { producesValue : Bool, modifiesAccumulator : Bool, hasSideEffects : Bool, hasNestedLoops : Bool, hasComplexControl : Bool }

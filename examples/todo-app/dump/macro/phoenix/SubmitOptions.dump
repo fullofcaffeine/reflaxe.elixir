@@ -1,1 +1,0 @@
-typedef phoenix.SubmitOptions = { ?id : Null<String>, ?formmethod : Null<String>, ?formaction : Null<String>, ?form : Null<String>, ?disabled : Null<Bool>, ?className : Null<String> }

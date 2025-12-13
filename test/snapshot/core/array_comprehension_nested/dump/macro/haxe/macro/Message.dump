@@ -1,4 +1,0 @@
-enum haxe.macro.Message {
-	Info(msg:String, pos:haxe.macro.Position);
-	Warning(msg:String, pos:haxe.macro.Position);
-}
