@@ -1,1 +1,0 @@
-typedef haxe.macro.CompilerConfiguration = { version : String, verbose : Bool, stdPath : Array<String>, platformConfig : Dynamic, platform : String, packages : Array<String>, mainClass : String, foptimize : Bool, debug : Bool, args : Array<String> }

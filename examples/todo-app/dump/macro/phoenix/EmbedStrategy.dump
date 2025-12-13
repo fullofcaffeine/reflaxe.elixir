@@ -1,5 +1,0 @@
-@:flatEnum
-enum phoenix.EmbedStrategy {
-	Replace;
-	Append;
-}

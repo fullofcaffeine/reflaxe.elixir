@@ -1,1 +1,0 @@
-typedef phoenix.WhereClause = { params : Array<phoenix.QueryValue>, condition : phoenix.QueryConditions }

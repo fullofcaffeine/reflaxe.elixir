@@ -1,1 +1,0 @@
-typedef phoenix.types.EctoChangeset = { ?valid : Null<Bool>, ?errors : Null<Array<{ message : { text : String, ?opts : Null<Array<{ value : String, key : String }>> }, field : String }>> }

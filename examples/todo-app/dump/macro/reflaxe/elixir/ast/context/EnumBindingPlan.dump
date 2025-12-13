@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.context.EnumBindingPlan = Map<Int, { isUsed : Bool, finalName : String }>

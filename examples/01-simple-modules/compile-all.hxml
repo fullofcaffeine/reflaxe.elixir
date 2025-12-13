@@ -2,38 +2,26 @@
 # This file compiles all three examples in the 01-simple-modules directory
 
 # Compile BasicModule
--cp ../../src
--cp ../../std
--lib reflaxe
+-lib reflaxe.elixir
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 BasicModule
 
 --next
 
 # Compile MathHelper
--cp ../../src
--cp ../../std
--lib reflaxe
+-lib reflaxe.elixir
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 MathHelper
 
 --next
 
 # Compile UserUtil
--cp ../../src
--cp ../../std
--lib reflaxe
+-lib reflaxe.elixir
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 UserUtil

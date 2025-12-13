@@ -1,2 +1,0 @@
-@:used
-abstract plug.Conn<TParams> from Dynamic to Dynamic {}

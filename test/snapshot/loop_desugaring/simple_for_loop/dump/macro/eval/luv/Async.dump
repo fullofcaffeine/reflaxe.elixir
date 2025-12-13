@@ -1,2 +1,0 @@
-@:using(eval.luv.Handle) @:coreType
-abstract eval.luv.Async to eval.luv.Handle {}

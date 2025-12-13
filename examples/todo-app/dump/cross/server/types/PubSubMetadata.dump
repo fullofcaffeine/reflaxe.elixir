@@ -1,1 +1,0 @@
-typedef server.types.PubSubMetadata = { ?version : Null<String>, ?user_id : Null<Int>, ?timestamp : Null<Dynamic>, ?source : Null<String> }

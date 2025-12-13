@@ -136,78 +136,32 @@ src/reflaxe/elixir/
 4. Document with WHY/WHAT/HOW pattern
 5. Update this AGENTS.md file
 
-## ⚠️ CRITICAL: CallExprBuilder Duplication and self() Bug (January 2025)
+## ⚠️ CRITICAL: CallExprBuilder Duplication (Resolved)
 
-**INVESTIGATION RESULT**: Two CallExprBuilder files exist, but only ONE is actively used.
+Historically this repo had two `CallExprBuilder` implementations. The legacy
+`src/reflaxe/elixir/helpers/CallExprBuilder.hx` has been removed; the active
+implementation is `src/reflaxe/elixir/ast/builders/CallExprBuilder.hx`.
 
-### File Status
-- **✅ ACTIVE**: `src/reflaxe/elixir/ast/builders/CallExprBuilder.hx` (569 lines)
-  - Package: `reflaxe.elixir.ast.builders`
-  - Imported by: `ElixirASTBuilder.hx:28`
-  - Has `static buildCall()` method
-  - Contains Phoenix self() injection logic (lines 462-542)
-  - **Contains the self() bug** (lines 489, 510)
+### Kernel Call Pattern (self/0, spawn/1, node/0, …)
 
-- **❌ LEGACY/UNUSED**: `src/reflaxe/elixir/helpers/CallExprBuilder.hx` (250 lines)
-  - Package: `reflaxe.elixir.helpers`
-  - NOT imported anywhere
-  - Has instance `buildCall()` method (requires `new`)
-  - NO self() handling
-  - Leftover from failed modularization attempt (commit ecf50d9d)
+When emitting *kernel* function calls like `self()`, always use the kernel-call
+shape:
 
-### The self() Bug in Active CallExprBuilder
-
-**Location**: Lines 489 and 510 in `ast/builders/CallExprBuilder.hx`
-
-**Buggy Code**:
 ```haxe
-// Line 489 (PubSub) and 510 (Presence)
-var selfCall = makeAST(ECall(makeAST(EVar("self")), "", []));
-```
-
-**What This Creates**:
-- `target` = `EVar("self")` (variable "self" as target)
-- `funcName` = `""` (empty function name)
-- `args` = `[]`
-
-**How Printer Interprets It** (`ElixirASTPrinter.hx:639-641`):
-```haxe
-if (funcName == "") {
-    // Function variable call - use .() syntax
-    print(target, indent) + '.(' + argStr + ')';  // Generates: self.()
-}
-```
-
-**Result**: Generates `self.()` which is:
-1. Invalid syntax (`self.()` vs `self()`)
-2. Wrong semantics (function variable invocation vs kernel function call)
-3. Causes compilation error: "undefined variable 'self'"
-
-### The Fix
-
-**Correct Pattern for Kernel Functions**:
-```haxe
-// For kernel functions like self(), spawn(), node(), etc.
 var selfCall = makeAST(ECall(null, "self", []));
 ```
 
-**Why This Works**:
-- `target` = `null` (no module, no variable)
-- `funcName` = `"self"` (the function name)
-- `args` = `[]`
+Do **not** model kernel calls as a function-variable call (which prints as
+`self.()`):
 
-**Printer Handles It** (`ElixirASTPrinter.hx:659-661`):
 ```haxe
-} else {
-    funcName + '(' + argStr + ')';  // Generates: self()
-}
+var bad = makeAST(ECall(makeAST(EVar("self")), "", []));
 ```
-
-**Result**: Generates correct `self()` kernel function call.
 
 ### ECall AST Pattern Reference
 
-From `ElixirAST.hx:161`:
+From `ElixirAST.hx`:
+
 ```haxe
 /** Function call */
 ECall(target: Null<ElixirAST>, funcName: String, args: Array<ElixirAST>);
@@ -217,20 +171,6 @@ ECall(target: Null<ElixirAST>, funcName: String, args: Array<ElixirAST>);
 1. **Kernel/module function**: `ECall(null, "function_name", [args])` → `function_name(args)`
 2. **Function variable**: `ECall(EVar("var"), "", [args])` → `var.(args)`
 3. **Method call**: `ECall(target, "method", [args])` → `target.method(args)`
-
-### Cleanup Action Needed
-
-The legacy `helpers/CallExprBuilder.hx` should be deleted:
-- Not imported anywhere
-- Confusing to have two versions
-- Part of abandoned refactoring (commit ecf50d9d)
-- All functionality is in the active `ast/builders` version
-
-### Git History Context
-
-- `fc489696` - Extract CallExprBuilder from ElixirASTBuilder (active version)
-- `f2acaa11` - Add CallExprBuilder helper (legacy version)
-- `ecf50d9d` - Failed modularization attempt that created duplication
 
 ## ⚠️ CRITICAL: Understanding @:native Metadata in Reflaxe.Elixir
 

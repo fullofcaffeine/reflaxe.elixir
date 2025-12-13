@@ -1,1 +1,0 @@
-typedef haxe.macro.DefType = { type : haxe.macro.Type, pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, pack : Array<String>, name : String, module : String, meta : haxe.macro.MetaAccess, isPrivate : Bool, isExtern : Bool, exclude : () -> Void, doc : Null<String> }

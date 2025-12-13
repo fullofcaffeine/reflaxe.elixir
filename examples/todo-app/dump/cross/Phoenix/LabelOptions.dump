@@ -1,1 +1,0 @@
-typedef phoenix.LabelOptions = { ?text : Null<String>, ?forAttr : Null<String>, ?className : Null<String> }

@@ -1,1 +1,0 @@
-typedef server.types.User = { passwordHash : String, name : String, lastLoginAt : Null<Dynamic>, id : Int, email : String, confirmedAt : Null<Dynamic>, active : Bool }

@@ -1,5 +1,0 @@
-@:using(eval.luv.Result.ResultTools)
-enum eval.luv.Result<T> {
-	Ok(value:eval.luv.Result.T);
-	Error(e:eval.luv.UVError);
-}

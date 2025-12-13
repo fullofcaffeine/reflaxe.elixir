@@ -93,15 +93,11 @@ end
 
 ```hxml
 # build.hxml - Essential configuration
--cp ../../src                           # Include Reflaxe.Elixir source
--cp ../../std                           # Include standard library
--lib reflaxe                            # Reflaxe framework
+-lib reflaxe.elixir                     # Reflaxe.Elixir compiler (includes reflaxe)
 -cp src_haxe                            # Project source files
 
 -D elixir_output=lib                    # Output directory
 -D reflaxe_runtime                      # Required for Reflaxe targets
--D reflaxe.elixir=0.1.0                 # Library version
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Main classes to compile
 TodoApp

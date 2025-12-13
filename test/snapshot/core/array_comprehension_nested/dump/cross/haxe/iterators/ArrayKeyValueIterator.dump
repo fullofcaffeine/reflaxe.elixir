@@ -1,9 +1,0 @@
-@:directlyUsed @:used
-extern class haxe.iterators.ArrayKeyValueIterator<T> {
-
-	function new(array:Array<haxe.iterators.ArrayKeyValueIterator.T>):Void;
-
-	function hasNext():Bool;
-
-	function next():{ value : haxe.iterators.ArrayKeyValueIterator.T, key : Int };
-}

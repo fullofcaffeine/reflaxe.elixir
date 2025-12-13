@@ -1,6 +1,0 @@
-@:used
-enum elixir.otp.ApplicationResult {
-	Ok(state:Dynamic);
-	Error(reason:String);
-	Ignore;
-}

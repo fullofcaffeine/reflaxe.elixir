@@ -1,9 +1,0 @@
-@:using(eval.luv.Handle)
-private class eval.luv._Async.Async_Impl_ {
-
-	@:noExpr
-	public static function init
-
-	@:noExpr
-	public static function send
-}

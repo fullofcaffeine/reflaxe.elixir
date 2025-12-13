@@ -1,1 +1,0 @@
-typedef phoenix.ReferenceOptions = { ?type : Null<String>, ?on_update : Null<phoenix.OnUpdateAction>, ?on_delete : Null<phoenix.OnDeleteAction>, ?column : Null<String> }

@@ -1,1 +1,0 @@
-typedef phoenix.Result<T, E> = haxe.functional.Result<phoenix.Result.T, phoenix.Result.E>

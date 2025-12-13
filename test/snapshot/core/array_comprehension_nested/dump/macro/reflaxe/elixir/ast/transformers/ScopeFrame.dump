@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.transformers.ScopeFrame = { parent : Null<reflaxe.elixir.ast.transformers.ScopeFrame>, kind : reflaxe.elixir.ast.transformers.ScopeKind, bindings : Map<String, Array<reflaxe.elixir.ast.transformers.Binding>> }

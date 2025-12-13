@@ -1,7 +1,0 @@
-@:flatEnum
-enum phoenix.OnUpdateAction {
-	Nothing;
-	Restrict;
-	Update_all;
-	Nilify_all;
-}

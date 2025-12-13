@@ -1,2 +1,0 @@
-@:used
-abstract elixir.otp.ApplicationArgs from Dynamic to Dynamic {}

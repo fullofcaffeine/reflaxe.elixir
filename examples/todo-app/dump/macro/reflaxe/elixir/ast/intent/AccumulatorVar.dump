@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.intent.AccumulatorVar = { type : String, name : String }

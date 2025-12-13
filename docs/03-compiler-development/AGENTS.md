@@ -178,17 +178,14 @@ function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
 
 ### After ANY Compiler Change
 1. **Run full test suite**: `npm test` (ALL tests must pass)
-2. **Test todo-app integration**: 
+2. **Test todo-app integration (non-blocking QA sentinel)**:
    ```bash
-   cd examples/todo-app
-   rm -rf lib/*.ex lib/**/*.ex  # Clean generated files
-   npx haxe build-server.hxml    # Regenerate from Haxe
-   mix compile --force           # Verify Elixir compilation
-   ```
-3. **Verify application runtime**:
-   ```bash
-   mix phx.server                # Must start without errors
-   curl http://localhost:4000    # Must respond correctly
+   # From repo root (recommended)
+   npm run qa:sentinel
+
+   # Or run it directly with explicit caps:
+   scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+   scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
    ```
 
 ### Testing Philosophy

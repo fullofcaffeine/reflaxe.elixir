@@ -1,6 +1,0 @@
-interface reflaxe.elixir.ast.builders.IBuilder {
-
-	function getType():String;
-
-	function isReady():Bool;
-}

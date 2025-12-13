@@ -1,1 +1,0 @@
-typedef server.types.PubSubMessage = { type : server.types.PubSubMessageType, ?metadata : Null<server.types.PubSubMetadata> }

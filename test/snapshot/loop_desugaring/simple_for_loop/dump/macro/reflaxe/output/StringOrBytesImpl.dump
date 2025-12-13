@@ -1,4 +1,0 @@
-enum reflaxe.output.StringOrBytesImpl {
-	String(s:String);
-	Bytes(b:haxe.io.Bytes);
-}

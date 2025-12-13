@@ -1,6 +1,0 @@
-enum phoenix.ConstraintDefinition {
-	Check(condition:String);
-	Unique(columns:Array<String>);
-	ForeignKey(columns:Array<String>, references:String);
-	Exclude(condition:String);
-}

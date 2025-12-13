@@ -1,5 +1,0 @@
-enum haxe.macro.AbstractFlag {
-	AbEnum;
-	AbFrom(ct:haxe.macro.ComplexType);
-	AbTo(ct:haxe.macro.ComplexType);
-}
