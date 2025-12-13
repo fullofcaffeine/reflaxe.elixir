@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.loop_ir.AccumulatorInfo = { updateKind : reflaxe.elixir.ast.loop_ir.AccumulatorUpdate, updateExpr : reflaxe.elixir.ast.ElixirAST, name : String, isMutable : Bool, initialValue : reflaxe.elixir.ast.ElixirAST }

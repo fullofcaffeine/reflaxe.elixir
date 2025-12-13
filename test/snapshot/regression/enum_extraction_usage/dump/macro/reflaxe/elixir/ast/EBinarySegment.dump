@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.EBinarySegment = { value : reflaxe.elixir.ast.ElixirAST, ?type : Null<String>, ?size : Null<reflaxe.elixir.ast.ElixirAST>, ?modifiers : Null<Array<String>> }

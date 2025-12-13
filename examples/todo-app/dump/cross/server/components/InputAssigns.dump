@@ -1,1 +1,0 @@
-typedef server.components.InputAssigns = { ?type : Null<String>, ?required : Null<Bool>, ?placeholder : Null<String>, label : String, field : server.components.FormField }

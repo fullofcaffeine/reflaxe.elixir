@@ -1,1 +1,0 @@
-typedef server.types.SortConfig = { field : String, direction : server.types.SortDirection }

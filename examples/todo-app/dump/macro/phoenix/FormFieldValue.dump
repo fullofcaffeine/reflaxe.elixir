@@ -1,7 +1,0 @@
-enum phoenix.FormFieldValue {
-	StringValue(s:String);
-	IntValue(i:Int);
-	FloatValue(f:Float);
-	BoolValue(b:Bool);
-	ArrayValue(values:Array<phoenix.FormFieldValue>);
-}

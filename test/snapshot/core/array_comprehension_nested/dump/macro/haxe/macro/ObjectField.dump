@@ -1,1 +1,0 @@
-typedef haxe.macro.ObjectField = { ?quotes : Null<haxe.macro.QuoteStatus>, field : String, expr : haxe.macro.Expr }

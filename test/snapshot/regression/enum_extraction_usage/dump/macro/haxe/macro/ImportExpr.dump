@@ -1,1 +1,0 @@
-typedef haxe.macro.ImportExpr = { path : Array<{ pos : haxe.macro.Position, name : String }>, mode : haxe.macro.ImportMode }

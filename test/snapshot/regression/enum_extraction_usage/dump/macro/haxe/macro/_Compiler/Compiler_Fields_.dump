@@ -1,5 +1,0 @@
-private class haxe.macro._Compiler.Compiler_Fields_ {
-
-	@:value("cross")
-	public static var Cross(default,never):String = [Const:String] "cross";
-}

@@ -1,1 +1,0 @@
-typedef server.types.FormOptions = { ?multipart : Null<Bool>, ?method : Null<String>, ?csrf_token : Null<String>, ?as : Null<String> }

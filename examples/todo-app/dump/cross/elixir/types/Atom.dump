@@ -1,1 +1,0 @@
-abstract elixir.types.Atom from String to String {}

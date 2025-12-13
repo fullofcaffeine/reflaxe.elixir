@@ -1,8 +1,0 @@
-@:directlyUsed @:used
-enum phoenix.FlashType {
-	Info;
-	Success;
-	Warning;
-	Error;
-	Custom(type:String);
-}

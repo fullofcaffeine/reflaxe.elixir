@@ -1,1 +1,0 @@
-typedef phoenix.JoinClause = { type : phoenix.JoinType, source : phoenix.QuerySource, condition : phoenix.JoinCondition }

@@ -1,1 +1,0 @@
-typedef server.types.FlashMessages = { ?warning : Null<String>, ?success : Null<String>, ?info : Null<String>, ?error : Null<String> }

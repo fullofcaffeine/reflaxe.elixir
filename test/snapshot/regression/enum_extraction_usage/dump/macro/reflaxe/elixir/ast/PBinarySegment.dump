@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.PBinarySegment = { ?type : Null<String>, ?size : Null<reflaxe.elixir.ast.ElixirAST>, pattern : reflaxe.elixir.ast.EPattern, ?modifiers : Null<Array<String>> }

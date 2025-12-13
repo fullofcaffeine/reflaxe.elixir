@@ -1,5 +1,4 @@
 # Minimal prewarm: prime Haxe std + compiler macros via compile-server cache
--lib reflaxe
 -lib reflaxe.elixir
 -cp src_haxe
 -cp src_haxe/shared
@@ -15,4 +14,3 @@
 -D disable_hygiene_final
 
 PrewarmDummy
-

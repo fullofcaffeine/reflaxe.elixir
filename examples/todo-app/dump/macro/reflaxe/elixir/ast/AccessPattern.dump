@@ -1,8 +1,0 @@
-@:flatEnum
-enum reflaxe.elixir.ast.AccessPattern {
-	Sequential;
-	Random;
-	WriteOnly;
-	ReadOnly;
-	ReadWrite;
-}

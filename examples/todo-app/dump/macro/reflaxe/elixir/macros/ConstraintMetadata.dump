@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.macros.ConstraintMetadata = { type : String, name : String, definition : String }

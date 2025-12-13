@@ -1,7 +1,0 @@
-@:coreApi
-enum sys.thread.NextEventTime {
-	Now;
-	Never;
-	AnyTime(time:Null<Float>);
-	At(time:Float);
-}

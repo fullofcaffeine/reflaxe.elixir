@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.EImportOption = { name : String, arity : Int }

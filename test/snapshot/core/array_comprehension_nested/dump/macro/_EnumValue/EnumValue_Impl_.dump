@@ -1,6 +1,0 @@
-private class _EnumValue.EnumValue_Impl_ {
-
-	public static function match(this:EnumValue, pattern:Dynamic) {
-		return false;
-	}
-}

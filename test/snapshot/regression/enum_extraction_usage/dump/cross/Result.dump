@@ -1,5 +1,0 @@
-@:directlyUsed @:used
-enum Result<T, E> {
-	Ok(value:Result.T);
-	Error(error:Result.E);
-}

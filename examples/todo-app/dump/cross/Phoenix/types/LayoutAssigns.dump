@@ -1,1 +1,0 @@
-typedef phoenix.types.LayoutAssigns = { ?page_title : Null<String>, inner_content : String, ?flash : Null<Dynamic>, ?current_user : Null<Dynamic>, ?csrf_token : Null<String> }

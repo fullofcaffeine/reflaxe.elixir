@@ -1,7 +1,0 @@
-@:directlyUsed @:used @:flatEnum @:elixirIdiomatic
-enum elixir.otp.SupervisorStrategy {
-	OneForOne;
-	OneForAll;
-	RestForOne;
-	SimpleOneForOne;
-}

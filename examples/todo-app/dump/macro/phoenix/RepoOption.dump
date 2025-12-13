@@ -1,7 +1,0 @@
-enum phoenix.RepoOption {
-	Timeout(ms:Int);
-	Log(level:phoenix.LogLevel);
-	Telemetry(metadata:Map<String, String>);
-	Prefix(schema:String);
-	ReadOnly(readonly:Bool);
-}

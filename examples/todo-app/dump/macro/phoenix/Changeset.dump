@@ -1,1 +1,0 @@
-typedef phoenix.Changeset<T> = { valid : Bool, required : Array<String>, repo_opts : Array<phoenix.RepoOption>, repo : Null<Ecto.Repo>, errors : Array<phoenix.ValidationError>, data : phoenix.Changeset.T, changes : phoenix.ChangesetParams, action : Null<phoenix.ChangesetAction> }

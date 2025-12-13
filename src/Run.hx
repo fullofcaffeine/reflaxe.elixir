@@ -14,7 +14,7 @@ using StringTools;
  *   haxelib run reflaxe.elixir create my-app
  */
 class Run {
-	static var VERSION = "0.1.0";
+	static var VERSION = "1.0.2";
 	
 	public static function main() {
 		var args = Sys.args();

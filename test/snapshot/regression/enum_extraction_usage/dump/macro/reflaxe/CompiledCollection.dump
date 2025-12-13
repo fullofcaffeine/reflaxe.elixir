@@ -1,1 +1,0 @@
-typedef reflaxe.CompiledCollection<T> = Array<reflaxe.output.DataAndFileInfo<reflaxe.CompiledCollection.T>>

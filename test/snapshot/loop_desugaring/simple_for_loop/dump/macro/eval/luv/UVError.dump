@@ -1,2 +1,0 @@
-@:enum
-abstract eval.luv.UVError {}

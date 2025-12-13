@@ -1,1 +1,0 @@
-typedef haxe.macro.MetadataDescription = { targets : Array<haxe.display.MetadataTarget>, platforms : Array<String>, params : Array<String>, metadata : String, doc : String }

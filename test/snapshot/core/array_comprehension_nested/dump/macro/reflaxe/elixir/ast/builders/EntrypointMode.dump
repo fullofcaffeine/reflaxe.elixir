@@ -1,6 +1,0 @@
-@:flatEnum @:nullSafety(Off)
-enum reflaxe.elixir.ast.builders.EntrypointMode {
-	Main;
-	Otp;
-	None;
-}

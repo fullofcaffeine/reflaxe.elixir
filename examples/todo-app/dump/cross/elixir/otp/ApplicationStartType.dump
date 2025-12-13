@@ -1,6 +1,0 @@
-@:used @:flatEnum
-enum elixir.otp.ApplicationStartType {
-	Normal;
-	Temporary;
-	Permanent;
-}

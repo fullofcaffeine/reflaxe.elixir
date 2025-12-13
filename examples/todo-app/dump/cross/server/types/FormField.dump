@@ -1,1 +1,0 @@
-typedef server.types.FormField = { value : Dynamic, valid : Bool, name : String, id : String, errors : Array<String>, data : Dynamic }

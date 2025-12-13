@@ -1,5 +1,0 @@
-@:used @:elixirIdiomatic
-enum elixir.types.Result<T, E = String> {
-	Ok(value:elixir.types.Result.T);
-	Error(reason:elixir.types.Result.E);
-}

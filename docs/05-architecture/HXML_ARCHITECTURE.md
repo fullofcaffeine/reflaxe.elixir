@@ -45,10 +45,8 @@ reflaxe.elixir/
 # Haxe→Elixir compilation for Phoenix LiveView server-side code
 # Generates idiomatic Elixir code for the BEAM VM
 
-# Include Reflaxe.Elixir source (for examples running from subdirectories)
--cp ../../src          # Compiler source path
--cp ../../std          # Standard library extensions
--lib reflaxe           # Reflaxe framework dependency
+# Use the compiler via haxelib/lix
+-lib reflaxe.elixir
 
 # Source directories
 -cp src_haxe           # Main source directory
@@ -69,10 +67,6 @@ reflaxe.elixir/
 
 # Exclude client code from server compilation
 --macro exclude('client')
-
-# Initialize the compiler
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Classes to compile (entry points)
 TodoApp

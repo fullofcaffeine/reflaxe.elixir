@@ -1,9 +1,7 @@
 # Haxe→Elixir compilation for ExUnit tests (MIX_ENV=test)
 
-# Include Reflaxe.Elixir compiler sources and stdlib overlays/externs
- -cp ../../src
- -cp ../../std
- -lib reflaxe
+# Use the compiler via haxelib/lix
+-lib reflaxe.elixir
 
 # Test sources only (avoid compiling app/server code into test output)
 -cp src_haxe/test
@@ -20,10 +18,6 @@
 # Avoid re-emitting runtime std modules already compiled in the app build
 --macro exclude('haxe.iterators.ArrayIterator')
 --macro exclude('StringBuf')
-
-# Initialize compiler
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Include test modules (explicit for now; add more as needed)
 web.HealthTest

@@ -1,4 +1,3 @@
--cp ../../std/_std
 # Aggregated server build using micro-passes A..F
 #
 # This file exists to let tools like Mix.Tasks.Compile.Haxe run the same

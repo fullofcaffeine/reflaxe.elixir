@@ -1,1 +1,0 @@
-typedef ecto.IndexOptions = { ?where : Null<String>, ?unique : Null<Bool>, ?name : Null<String>, ?method : Null<ecto.IndexMethod>, ?concurrently : Null<Bool> }

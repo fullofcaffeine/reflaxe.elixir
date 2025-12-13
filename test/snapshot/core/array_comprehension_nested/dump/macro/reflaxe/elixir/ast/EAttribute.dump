@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.EAttribute = { value : reflaxe.elixir.ast.ElixirAST, name : String }

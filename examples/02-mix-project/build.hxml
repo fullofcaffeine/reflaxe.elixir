@@ -1,10 +1,8 @@
 # Example build configuration for Reflaxe.Elixir
 # This shows the minimal setup needed to compile Haxe to Elixir
 
-# Include Reflaxe.Elixir source directly (for examples running from subdirectories)
--cp ../../src
--cp ../../std
--lib reflaxe
+# Use the compiler via haxelib/lix
+-lib reflaxe.elixir
 
 # Source directory containing your .hx files
 -cp src_haxe
@@ -14,10 +12,6 @@
 
 # Required for Reflaxe targets
 -D reflaxe_runtime
-
-# Define library version and initialize compiler
--D reflaxe.elixir=0.1.0
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Main classes to compile (no single entry point for this example)
 services.UserService

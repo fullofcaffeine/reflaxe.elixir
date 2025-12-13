@@ -1,5 +1,0 @@
-enum reflaxe.output.IPluginHookResult<T> {
-	IgnorePlugin;
-	OutputNothing;
-	OverwriteOutput(output:reflaxe.output.IPluginHookResult.T);
-}

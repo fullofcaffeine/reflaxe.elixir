@@ -1,6 +1,7 @@
--cp ../../std
+# Domain validation example build configuration for Reflaxe.Elixir
+
+-lib reflaxe.elixir
+-cp .
 -main UserRegistration
--lib reflaxe
---macro reflaxe.ReflaxeModule.addModuleTypeToDefault("ElixirCompiler")
--D reflaxe-output=lib
--D reflaxe-classes-output=lib
+-D elixir_output=lib
+-D reflaxe_runtime

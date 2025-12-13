@@ -1,8 +1,0 @@
-@:flatEnum
-enum reflaxe.elixir.ast.EUnaryOp {
-	Not;
-	Negate;
-	Positive;
-	BitwiseNot;
-	Bang;
-}

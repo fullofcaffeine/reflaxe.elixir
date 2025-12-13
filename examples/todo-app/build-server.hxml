@@ -1,11 +1,8 @@
 # Haxe→Elixir compilation for Phoenix LiveView server-side code
 # Generates idiomatic Elixir code for the BEAM VM
 
-# Use packaged libraries to avoid repo-level classpaths (faster, no shadowing)
--lib reflaxe
+# Use the compiler via haxelib/lix (avoids repo-level classpaths)
 -lib reflaxe.elixir
--cp ../../std/_std
--cp ../../std
 
 # Source directories
 -cp src_haxe
@@ -66,9 +63,6 @@
 --macro keep('server.live.TodoLive')
 --macro keep('TodoAppChangeset')
 # Skip problematic stdlib structures we don't use in the todo app
-
-# Define library version and initialize compiler
--D reflaxe.elixir=0.1.0
 
 # Debug flags are disabled by default to keep QA builds quiet and fast
 # -D debug_success_unifier

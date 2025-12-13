@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.optimizers.MapIterationPattern = { valueVar : String, mapExpr : reflaxe.elixir.ast.intent.TypedExpr, keyVar : String, iteratorVar : String, body : reflaxe.elixir.ast.intent.TypedExpr }

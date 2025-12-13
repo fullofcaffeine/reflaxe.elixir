@@ -42,7 +42,7 @@ We create a self-referential configuration file that points back to the project'
 -lib reflaxe
 
 # Define the library version
--D reflaxe.elixir=0.1.0
+-D reflaxe.elixir=1.0.1
 
 # Initialize the Elixir compiler
 --macro reflaxe.elixir.CompilerInit.Start()

@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.ast.transformers.HygieneState = { scopeStack : Array<reflaxe.elixir.ast.transformers.ScopeFrame>, requires : Map<String, Bool>, imports : Map<String, Bool>, currentContext : reflaxe.elixir.ast.transformers.BindingContext, aliases : Map<String, Bool> }

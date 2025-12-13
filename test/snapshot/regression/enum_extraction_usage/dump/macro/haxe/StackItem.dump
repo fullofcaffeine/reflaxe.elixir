@@ -1,7 +1,0 @@
-enum haxe.StackItem {
-	CFunction;
-	Module(m:String);
-	FilePos(s:Null<haxe.StackItem>, file:String, line:Int, ?column:Null<Int>);
-	Method(classname:Null<String>, method:String);
-	LocalFunction(?v:Null<Int>);
-}

@@ -1,1 +1,0 @@
-typedef phoenix.types.LiveViewAssigns = { ?socket : Null<Dynamic>, ?live_action : Null<String>, ?flash : Null<Dynamic>, ?current_user : Null<Dynamic> }
