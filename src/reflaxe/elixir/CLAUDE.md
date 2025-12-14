@@ -603,9 +603,6 @@ npx haxe build.hxml -D elixir.feature.new_module_builder=true
 # Enable all experimental features
 npx haxe build.hxml -D elixir.feature.experimental=true
 
-# Force legacy mode (disable all new features)
-npx haxe build.hxml -D elixir.feature.legacy=true
-
 # Debug feature flag state
 npx haxe build.hxml -D debug_feature_flags
 ```
@@ -630,7 +627,6 @@ context.setFeatureFlag("idiomatic_comprehensions", true);
 - Feature flags are initialized in `ElixirCompiler.initializeFeatureFlags()`
 - Flags default to `false` (old behavior) for safety
 - The `experimental` flag enables all new features at once
-- The `legacy` flag explicitly disables all new features
 - Flags are stored in `ElixirASTContext.featureFlags` map
 - All builders and transformers can check flags via `BuildContext`
 
