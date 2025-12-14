@@ -2,11 +2,11 @@
 
 This guide covers how to integrate Reflaxe.Elixir with Phoenix Framework to build type-safe web applications with LiveView, Ecto, and real-time features.
 
-> 💡 **Quick Start**: See [examples/03-phoenix-app](../examples/03-phoenix-app/), [examples/06-user-management](../examples/06-user-management/), and [examples/09-phoenix-router](../examples/09-phoenix-router/) for working Phoenix applications.
+> 💡 **Quick Start**: See [examples/03-phoenix-app](../../examples/03-phoenix-app/), [examples/06-user-management](../../examples/06-user-management/), and [examples/09-phoenix-router](../../examples/09-phoenix-router/) for working Phoenix applications.
 
 > 📚 **Related Guides**: 
-> - [COOKBOOK.md](./COOKBOOK.md) - Ready-to-use Phoenix recipes
-> - [EXAMPLES_GUIDE.md](./EXAMPLES_GUIDE.md) - Step-by-step example walkthroughs
+> - [COOKBOOK.md](../09-history/archive/docs/06-guides/COOKBOOK.md) - Ready-to-use Phoenix recipes (archived)
+> - [EXAMPLES_GUIDE.md](../09-history/archive/docs/06-guides/EXAMPLES_GUIDE.md) - Step-by-step example walkthroughs (archived)
 
 ## Table of Contents
 - [Creating a Phoenix Project](#creating-a-phoenix-project)
@@ -1506,12 +1506,12 @@ end
 - [Phoenix Framework Documentation](https://hexdocs.pm/phoenix)
 - [LiveView Documentation](https://hexdocs.pm/phoenix_live_view)
 - [Ecto Documentation](https://hexdocs.pm/ecto)
-- [Reflaxe.Elixir Examples](../examples/)
-  - [examples/03-phoenix-app](../examples/03-phoenix-app/) - Basic Phoenix application
-  - [examples/06-user-management](../examples/06-user-management/) - LiveView with CRUD
-  - [examples/09-phoenix-router](../examples/09-phoenix-router/) - Router configuration
-- [COOKBOOK.md](./COOKBOOK.md) - Ready-to-use Phoenix recipes
-- [EXAMPLES_GUIDE.md](./EXAMPLES_GUIDE.md) - Step-by-step walkthroughs
+- [Reflaxe.Elixir Examples](../../examples/)
+  - [examples/03-phoenix-app](../../examples/03-phoenix-app/) - Basic Phoenix application
+  - [examples/06-user-management](../../examples/06-user-management/) - LiveView with CRUD
+  - [examples/09-phoenix-router](../../examples/09-phoenix-router/) - Router configuration
+- [COOKBOOK.md](../09-history/archive/docs/06-guides/COOKBOOK.md) - Ready-to-use Phoenix recipes (archived)
+- [EXAMPLES_GUIDE.md](../09-history/archive/docs/06-guides/EXAMPLES_GUIDE.md) - Step-by-step walkthroughs (archived)
 
 ## Summary
 

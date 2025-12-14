@@ -343,26 +343,26 @@ When this doc was added, these files needed updates:
 ```markdown
 # In FUNCTIONAL_PATTERNS.md:
 ## See Also
-- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Option and Result types
+- [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option and Result types
 
 # In PARADIGM_BRIDGE.md:
 ## Related Documentation
-- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Type-safe null handling
+- [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Type-safe null handling
 
 # In STANDARD_LIBRARY_HANDLING.md:
 ## Option Type Compilation
-See [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) for Option patterns
+See [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) for Option patterns
 
 # In README.md:
 ### Core Documentation
-- [BEAM Type Abstractions](/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option/Result types
+- [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option/Result types
 ```
 
 ### Internal Links
 
 Always use relative paths:
 ```markdown
-See [`/docs/04-api-reference/SOURCE_MAPPING.md`](/docs/04-api-reference/SOURCE_MAPPING.md)
+See [`docs/04-api-reference/SOURCE_MAPPING.md`](../../04-api-reference/SOURCE_MAPPING.md)
 ```
 
 ### Section Links
@@ -374,7 +374,7 @@ See [Architecture](#architecture) section below
 
 For other-file sections:
 ```markdown
-See [Architecture](/docs/05-architecture/ARCHITECTURE.md) in the feature guide
+See [Architecture](../../05-architecture/ARCHITECTURE.md) in the feature guide
 ```
 
 ### Code References

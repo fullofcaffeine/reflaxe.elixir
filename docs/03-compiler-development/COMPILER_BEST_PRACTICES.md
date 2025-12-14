@@ -2,7 +2,7 @@
 
 This document consolidates proven compiler development patterns and best practices for Reflaxe.Elixir, distilled from real implementation experience.
 
-**See also**: [`../05-architecture/COMPILER_PATTERNS.md`](../05-architecture/COMPILER_PATTERNS.md) for detailed implementation patterns and lessons learned.
+**See also**: [`COMPILER_PATTERNS.md`](../09-history/archive/docs/05-architecture/COMPILER_PATTERNS.md) for detailed implementation patterns and lessons learned (archived deep dive).
 
 ## Core Development Principles
 
@@ -237,7 +237,7 @@ class Date {
 - **Benefits**: Reduced maintenance burden, clear project scope, better compatibility with JS tooling
 - **Implementation**: Delegate to Haxe's mature JS compiler unless absolutely necessary for custom features
 - **Future**: Consider Genes compiler migration while maintaining separation principle
-- **See**: [`JS_GENERATION_PHILOSOPHY.md`](JS_GENERATION_PHILOSOPHY.md) - Complete philosophical guide
+- **See**: [`JS_GENERATION_PHILOSOPHY.md`](../09-history/archive/docs/02-user-guide/JS_GENERATION_PHILOSOPHY.md) - Complete philosophical guide (archived)
 
 ## Development Workflow Guidelines
 
@@ -497,8 +497,8 @@ grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
 4. **Upstream Contribution**: Share patterns with other Reflaxe compilers
 
 **See Also**:
-- [`AST_CLEANUP_PATTERNS.md`](AST_CLEANUP_PATTERNS.md) - Comprehensive pattern documentation
-- [`ADR-001-handling-unoptimized-ast.md`](../05-architecture/ADR-001-handling-unoptimized-ast.md) - Architectural decision record
+- [`AST_CLEANUP_PATTERNS.md`](../09-history/archive/docs/03-compiler-development/AST_CLEANUP_PATTERNS.md) - Comprehensive pattern documentation (archived)
+- [`ADR-001-handling-unoptimized-ast.md`](../09-history/archive/docs/05-architecture/ADR-001-handling-unoptimized-ast.md) - Architectural decision record (archived)
 - [`COMPILATION_PIPELINE_ARCHITECTURE.md`](COMPILATION_PIPELINE_ARCHITECTURE.md) - Pipeline understanding
 
 **⚠️ CRITICAL RULE**: Never remove test code to fix failures - fix the underlying compiler issue instead.
@@ -506,11 +506,11 @@ grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
 ## Reference Resources
 
 ### Documentation System
-- [`../05-architecture/COMPILER_PATTERNS.md`](../05-architecture/COMPILER_PATTERNS.md) - Detailed implementation patterns and lessons learned
-- [`TESTING_PRINCIPLES.md`](TESTING_PRINCIPLES.md) - Critical testing rules and methodologies
-- [`../05-architecture/TESTING.md`](../05-architecture/TESTING.md) - Technical testing infrastructure
-- [`../07-patterns/PARADIGM_BRIDGE.md`](../07-patterns/PARADIGM_BRIDGE.md) - Understanding imperative→functional transformations
-- [`../06-guides/DEVELOPER_PATTERNS.md`](../06-guides/DEVELOPER_PATTERNS.md) - Best practices and patterns
+- [`COMPILER_PATTERNS.md`](../09-history/archive/docs/05-architecture/COMPILER_PATTERNS.md) - Detailed implementation patterns and lessons learned (archived)
+- [`TESTING_PRINCIPLES.md`](../09-history/archive/docs/03-compiler-development/TESTING_PRINCIPLES.md) - Critical testing rules and methodologies (archived)
+- [`TESTING.md`](../09-history/archive/docs/05-architecture/TESTING.md) - Technical testing infrastructure (archived)
+- [`PARADIGM_BRIDGE.md`](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Understanding imperative→functional transformations (archived)
+- [`DEVELOPER_PATTERNS.md`](../09-history/archive/docs/06-guides/DEVELOPER_PATTERNS.md) - Best practices and patterns (archived)
 
 ### External Resources
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features

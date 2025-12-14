@@ -163,7 +163,7 @@ Now that you have a working project:
 
 1. **Explore Examples**: Check the `examples/` folder in the Reflaxe.Elixir repo
 2. **Read the Guide**: See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed information
-3. **Learn Features**: Review [FEATURES.md](./FEATURES.md) for available functionality
+3. **Learn Features**: Review [FEATURES.md](../04-api-reference/FEATURES.md) for available functionality
 4. **Join Community**: Get help and share your projects
 
 ## 🆘 Troubleshooting

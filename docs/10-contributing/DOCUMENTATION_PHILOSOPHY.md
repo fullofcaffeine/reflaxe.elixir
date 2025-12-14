@@ -109,7 +109,7 @@ This document explains the documentation architecture, the purpose of each docum
 
 ### 3. Cross-Reference Strategy
 - **Don't duplicate**: If content exists in another doc, reference it
-- **Use links**: `See [docs/FEATURE.md](../FEATURE.md)`
+- **Use links**: `See [docs/04-api-reference/FEATURES.md](../04-api-reference/FEATURES.md)`
 - **Keep references current**: Update links when files move or rename
 
 ### 4. Documentation Updates with Code Changes

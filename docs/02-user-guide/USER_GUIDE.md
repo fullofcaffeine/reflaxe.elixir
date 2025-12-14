@@ -582,7 +582,7 @@ end
 
 ## Next Steps
 
-- See [EXAMPLES_GUIDE.md](./EXAMPLES_GUIDE.md) for detailed example walkthroughs
-- Check [PHOENIX_GUIDE.md](./PHOENIX_GUIDE.md) for Phoenix-specific patterns
-- Read [API_REFERENCE.md](./API_REFERENCE.md) for complete API documentation
-- Explore [COOKBOOK.md](./COOKBOOK.md) for copy-paste recipes
+- See [Examples](../../examples/README.md) for runnable walkthroughs
+- Check [Phoenix Integration](PHOENIX_INTEGRATION.md) for Phoenix-specific patterns
+- Read [Annotations](../04-api-reference/ANNOTATIONS.md) for the most important target metadata
+- Explore [Quick Start Patterns](../07-patterns/quick-start-patterns.md) for copy-paste recipes

@@ -3,9 +3,9 @@
 This guide covers how to interoperate with existing Elixir code, call Elixir functions directly, use Elixir libraries, and handle scenarios where you need to drop down to raw Elixir.
 
 **See Also**: 
-- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Understanding when to use escape hatches vs universal code patterns
-- [Dual-Target Compilation](DUAL_TARGET_COMPILATION.md) - Multi-target setup with conditional compilation
-- [Functional Patterns](FUNCTIONAL_PATTERNS.md) - Functional programming patterns that work across all targets
+- [Annotations](../04-api-reference/ANNOTATIONS.md) - `@:native` and other target metadata
+- [Functional Patterns](../07-patterns/FUNCTIONAL_PATTERNS.md) - Portable functional patterns (Result/Option)
+- [Haxe→Elixir Mappings](HAXE_ELIXIR_MAPPINGS.md) - How common Haxe constructs map to Elixir
 
 ## Table of Contents
 - [The @:native Annotation](#the-native-annotation)
@@ -598,7 +598,7 @@ class TupleHandler {
 
 ### Pattern 2: Pipeline Operations
 
-**Note**: Haxe.Elixir has native pipe operator support! See [Pipe Operators Guide](guides/pipe-operators.md) for type-safe pipe operations. Use escape hatches only for complex Elixir-specific pipe patterns.
+**Note**: Reflaxe.Elixir has native pipe operator support. The older standalone pipe-operators guide was archived here: [Pipe Operators Guide](../09-history/archive/docs/06-guides/pipe-operators.md).
 
 ```haxe
 // Preferred: Native pipe support (type-safe)
