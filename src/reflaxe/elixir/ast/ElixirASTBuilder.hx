@@ -2568,18 +2568,34 @@ class ElixirASTBuilder {
                             }
                         }
                         if (declIdx != -1 && declVar != null && declInit != null) {
-                            var varName = VariableAnalyzer.toElixirVarName(declVar.name);
-                            var initAST = buildFromTypedExpr(declInit, currentContext);
-                            var stmts: Array<ElixirAST> = [];
-                            if (initAST != null) stmts.push({def: EMatch(PVar(varName), initAST), metadata: {}, pos: null});
-                            // Emit every statement except the original declaration and the last return
-                            for (i in 0...el.length - 1) if (i != declIdx) {
-                                var midNode = buildFromTypedExpr(el[i], currentContext);
-                                if (midNode != null) stmts.push(midNode);
+                            // IMPORTANT: Only hoist canonical list-building initializers (comprehensions/array blocks).
+                            // Hoisting arbitrary initializers can change evaluation order across early returns:
+                            //   if (x == null) return ...; var y = f(x); ...; return y;
+                            // must not become:
+                            //   y = f(x); if (x == nil) ...  (would crash/alter semantics).
+                            var canonicalInit = false;
+                            switch (declInit.expr) {
+                                case TArrayDecl([inner]) if (switch(inner.expr) { case TBlock(_): true; default: false; }):
+                                    canonicalInit = true;
+                                case TBlock(sts) if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(sts)):
+                                    canonicalInit = true;
+                                default:
                             }
-                            // Return variable
-                            stmts.push({def: EVar(varName), metadata: {}, pos: null});
-                            return EBlock(stmts);
+
+                            if (canonicalInit) {
+                                var varName = VariableAnalyzer.toElixirVarName(declVar.name);
+                                var initAST = buildFromTypedExpr(declInit, currentContext);
+                                var stmts: Array<ElixirAST> = [];
+                                if (initAST != null) stmts.push({def: EMatch(PVar(varName), initAST), metadata: {}, pos: null});
+                                // Emit every statement except the original declaration and the last return
+                                for (i in 0...el.length - 1) if (i != declIdx) {
+                                    var midNode = buildFromTypedExpr(el[i], currentContext);
+                                    if (midNode != null) stmts.push(midNode);
+                                }
+                                // Return variable
+                                stmts.push({def: EVar(varName), metadata: {}, pos: null});
+                                return EBlock(stmts);
+                            }
                         }
                     }
 
