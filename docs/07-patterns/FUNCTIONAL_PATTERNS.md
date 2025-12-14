@@ -2,7 +2,7 @@
 
 This document describes how Reflaxe.Elixir transforms Haxe's imperative programming constructs into Elixir's functional paradigm.
 
-**See Also**: [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Comprehensive guide to the imperative→functional paradigm bridge, including cross-platform development patterns and Result types.
+**See Also**: [Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Comprehensive guide to the imperative→functional paradigm bridge, including cross-platform development patterns and Result types (archived).
 
 ## Overview
 
@@ -643,7 +643,7 @@ function getUserOrFallback(primaryId: Int, fallbackId: Int): Option<User> {
 5. **Performance**: Zero-cost abstractions with optimal code generation
 6. **BEAM Integration**: Seamless integration with Elixir/OTP patterns
 
-**See**: [`std/haxe/ds/Option.hx`](../std/haxe/ds/Option.hx) and [`std/haxe/ds/OptionTools.hx`](../std/haxe/ds/OptionTools.hx) for complete API documentation.
+**See**: [`std/haxe/ds/Option.hx`](../../std/haxe/ds/Option.hx) and [`std/haxe/ds/OptionTools.hx`](../../std/haxe/ds/OptionTools.hx) for complete API documentation.
 
 ## Error Handling with Result<T,E>
 
@@ -804,7 +804,7 @@ function complexValidation(data: UserData): Result<User, ValidationError> {
 5. **Performance**: Zero-cost abstractions with optimal code generation
 6. **Readability**: Clear success/failure paths in code
 
-**See**: [`std/haxe/functional/Result.hx`](../std/haxe/functional/Result.hx) for complete API documentation.
+**See**: [`std/haxe/functional/Result.hx`](../../std/haxe/functional/Result.hx) for complete API documentation.
 
 ## Future Improvements
 
@@ -817,12 +817,12 @@ function complexValidation(data: UserData): Result<User, ValidationError> {
 
 ## See Also
 
-- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Comprehensive guide to Option<T> and Result<T,E> types for type-safe null handling and error management
-- [ExUnit Testing Guide](EXUNIT_TESTING_GUIDE.md) - Testing Option and Result types with type-safe assertions
-- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development patterns and functional transformations
-- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for writing effective Haxe→Elixir code including Option/Result migration patterns
-- [Standard Library Handling](STANDARD_LIBRARY_HANDLING.md) - How standard library types including Option and Result compile to Elixir
-- [Cookbook](COOKBOOK.md) - Practical recipes for common Option and Result patterns
+- [BEAM Type Abstractions](../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Comprehensive guide to Option<T> and Result<T,E> types (archived)
+- [ExUnit Testing](../02-user-guide/exunit-testing.md) - Testing Option and Result types with type-safe assertions
+- [Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Cross-platform development patterns and functional transformations (archived)
+- [Developer Patterns](../09-history/archive/docs/06-guides/DEVELOPER_PATTERNS.md) - Best practices including Option/Result migration patterns (archived)
+- [Standard Library Handling](../04-api-reference/STANDARD_LIBRARY_HANDLING.md) - How standard library types compile to Elixir
+- [Cookbook](../09-history/archive/docs/06-guides/COOKBOOK.md) - Practical recipes for common Option and Result patterns (archived)
 
 ## References
 

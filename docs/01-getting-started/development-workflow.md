@@ -254,7 +254,7 @@ Reflaxe.Elixir enables true full-stack development with a single language:
 3. **Live Reload**: Hot reload for both Elixir and JavaScript changes
 4. **Type Safety**: Full-stack type guarantees at compile time
 
-**See**: [Full-Stack Development Guide](../06-guides/full-stack-development.md) for complete patterns.
+**See**: [Quick Start Patterns](../07-patterns/quick-start-patterns.md) for copy‑paste, end‑to‑end patterns.
 
 ## Contributing to the Compiler
 
@@ -364,22 +364,22 @@ mix compile --force          # Verify Elixir compilation
 ## Next Steps
 
 ### For Application Development
-- **[Phoenix Integration](../02-user-guide/phoenix-integration.md)** - Build Phoenix applications
-- **[LiveView Development](../02-user-guide/liveview-development.md)** - Real-time UI patterns
-- **[Testing Guide](../02-user-guide/testing.md)** - Application testing strategies
+- **[Phoenix Integration](../02-user-guide/PHOENIX_INTEGRATION.md)** - Build Phoenix applications
+- **[LiveView Architecture](../02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md)** - Real-time UI patterns
+- **[ExUnit Testing](../02-user-guide/exunit-testing.md)** - Application testing strategies
 
 ### For Compiler Development  
-- **[Compiler Architecture](../03-compiler-development/architecture.md)** - How the compiler works
-- **[AST Processing](../03-compiler-development/ast-processing.md)** - TypedExpr transformation
-- **[Testing Infrastructure](../03-compiler-development/testing-infrastructure.md)** - Snapshot testing system
+- **[Compiler Architecture](../05-architecture/ARCHITECTURE.md)** - How the compiler works
+- **[AST Pipeline](../05-architecture/UNIFIED_AST_PIPELINE.md)** - TypedExpr → ElixirAST → transforms → print
+- **[Testing Infrastructure](../03-compiler-development/TESTING_INFRASTRUCTURE.md)** - Snapshot testing system
 
 ### For Troubleshooting
-- **[Troubleshooting Guide](../06-guides/troubleshooting.md)** - Comprehensive problem solving
-- **[Performance Optimization](../06-guides/optimizing-performance.md)** - Compilation performance
+- **[Troubleshooting Guide](../06-guides/TROUBLESHOOTING.md)** - Comprehensive problem solving
+- **[Performance Guide](../06-guides/PERFORMANCE_GUIDE.md)** - Compilation performance
 
 ---
 
-**Ready to build?** Check out [Phoenix Integration](../02-user-guide/phoenix-integration.md) to start building applications.
+**Ready to build?** Check out [Phoenix Integration](../02-user-guide/PHOENIX_INTEGRATION.md) to start building applications.
 ## Haxe Compile Server (Automatic & Transparent)
 
 Reflaxe.Elixir uses the Haxe compilation server (`haxe --wait`) to speed up
