@@ -264,7 +264,7 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
   - Uses `build.hxml` to generate idiomatic Elixir under `lib/`
 
 - Client compilation: handled by assets watchers/aliases
-  - Dev: `haxe_client` watcher runs `haxe build-client.hxml --wait` and esbuild bundles `assets/js/phoenix_app.js` (see config/dev.exs)
+  - Dev: `haxe` watcher runs `haxe build-client.hxml --wait 6001` and esbuild bundles `assets/js/phoenix_app.js` (see config/dev.exs)
   - Build: `mix assets.build` (Haxe client + tailwind + esbuild)
   - Deploy: `mix assets.deploy` (Haxe client + tailwind + esbuild + digest)
 
@@ -296,9 +296,9 @@ We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry 
   - Avoids re‑implementing client library externs for a file that has no meaningful state.
 
 Watchers
-- Dev watcher uses npm to run the Haxe client watcher when available:
-  - `npm --prefix assets run watch:haxe` (internally: `haxe build-client.hxml --wait 6001`)
-- Configured in `config/dev.exs`; omitted automatically if `npm` is not on PATH.
+- Dev watcher runs the Haxe client watcher when available:
+  - `haxe build-client.hxml --wait 6001`
+- Configured in `config/dev.exs`; omitted automatically if `haxe` is not on PATH.
 
 CSRF meta
 - The layout emits a standard Plug CSRF meta tag; LiveSocket consumes it:

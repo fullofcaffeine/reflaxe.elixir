@@ -1,7 +1,7 @@
 import Config
 
 # Dynamically enable optional watchers only when the executables are available
-npm_bin = System.find_executable("npm")
+haxe_bin = System.find_executable("haxe")
 
 # Base watchers (always on)
 base_watchers = [
@@ -14,9 +14,10 @@ base_watchers = [
 # Optional watchers (enabled only if binaries are present)
 optional_watchers = []
 optional_watchers =
-  if npm_bin do
-    # Use npm to invoke the Haxe client watcher (portable and PATH-friendly)
-    Keyword.put(optional_watchers, :haxe_client, [npm_bin, "--prefix", Path.expand("../assets", __DIR__), "run", "watch:haxe", cd: Path.expand("../", __DIR__)])
+  if haxe_bin do
+    # Run the client-side Haxe compiler in watch mode (compile JS + source maps).
+    # Optional so the server can boot even when Haxe isn't installed.
+    Keyword.put(optional_watchers, :haxe, ["build-client.hxml", "--wait", "6001", cd: Path.expand("../", __DIR__)])
   else
     optional_watchers
   end
