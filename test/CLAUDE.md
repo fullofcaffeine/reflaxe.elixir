@@ -1,6 +1,6 @@
 # Test Suite Context for AI Assistants
 
-> **⚠️ SYNC DIRECTIVE**: This file (`CLAUDE.md`) and `AGENTS.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
 
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions and [/docs/03-compiler-development/AGENTS.md](/docs/03-compiler-development/AGENTS.md) for compiler development context
 
