@@ -15,6 +15,7 @@ import Type;
  * Type-safe PubSub bridge for the todo-app.
  * Converts typed Haxe enums to Phoenix.PubSub calls.
  */
+@:native("TodoApp.TodoPubSub")
 class TodoPubSub {
     /**
      * Subscribe to a topic.
