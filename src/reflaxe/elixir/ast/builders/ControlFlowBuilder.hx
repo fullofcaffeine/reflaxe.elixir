@@ -7,6 +7,12 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
+import reflaxe.elixir.ast.context.ClauseContext;
+
+private typedef EnumParamBinderRecovery = {
+    var binderNames: Array<Null<String>>;
+    var extractedVarIds: Array<Null<Int>>;
+};
 
 /**
  * ControlFlowBuilder: Handles control flow statement building
@@ -173,29 +179,74 @@ class ControlFlowBuilder {
                 // - Prefer binders recovered from the then-branch (via `var x = TEnumParameter(...)`).
                 // - Fallback to the enum constructor parameter names.
                 // - Emit PWildcard when the binder isn't used in the then-branch.
+                var thenBody: ElixirAST = null;
+                var recovered: Null<EnumParamBinderRecovery> = null;
+                var binderElixirNames: Array<Null<String>> = [for (_ in 0...constructorParams) null];
+
                 var pattern: EPattern = if (constructorParams == 0) {
-                    EPattern.PLiteral(makeAST(EAtom(atomName)));
+                    // All enums are represented as tagged tuples (including 0-arity constructors),
+                    // e.g. `Red` → `{:red}`. Match the tuple shape, not the bare atom.
+                    EPattern.PTuple([EPattern.PLiteral(makeAST(EAtom(atomName)))]);
                 } else {
-                    var recovered = extractEnumParamBindersFromThenBranch(eif, matchingConstructor, constructorParams);
+                    recovered = extractEnumParamBindersFromThenBranch(eif, enumValue, matchingConstructor, constructorParams, context);
                     var binderPatterns: Array<EPattern> = [];
                     for (paramIndex in 0...constructorParams) {
                         var haxeBinderName: Null<String> = null;
-                        if (recovered != null && paramIndex < recovered.length) {
-                            haxeBinderName = recovered[paramIndex];
+                        if (recovered != null && paramIndex < recovered.binderNames.length) {
+                            haxeBinderName = recovered.binderNames[paramIndex];
                         }
                         if ((haxeBinderName == null || haxeBinderName.length == 0) && paramIndex < constructorParamNames.length) {
                             haxeBinderName = constructorParamNames[paramIndex];
                         }
 
                         // Only bind names that the then-branch actually uses.
-                        if (haxeBinderName == null || haxeBinderName.length == 0 || !branchUsesHaxeVarName(eif, haxeBinderName)) {
+                        var binderUsed = haxeBinderName != null && haxeBinderName.length > 0 && branchUsesHaxeVarName(eif, haxeBinderName);
+                        #if debug_enum_param_recovery
+                        trace('[EnumParamRecovery] chosen binder index=' + paramIndex + ' haxe=' + haxeBinderName + ' used=' + binderUsed);
+                        #end
+                        if (haxeBinderName == null || haxeBinderName.length == 0 || !binderUsed) {
                             binderPatterns.push(EPattern.PWildcard);
                         } else {
-                            binderPatterns.push(EPattern.PVar(VariableAnalyzer.toElixirVarName(haxeBinderName)));
+                            var elixirBinderName = VariableAnalyzer.toElixirVarName(haxeBinderName);
+                            binderElixirNames[paramIndex] = elixirBinderName;
+                            binderPatterns.push(EPattern.PVar(elixirBinderName));
                         }
                     }
+
                     EPattern.PTuple([EPattern.PLiteral(makeAST(EAtom(atomName)))].concat(binderPatterns));
                 };
+
+                // Compile the matching-clause body under a clause context so that:
+                // - temp enum extraction vars (_g/_g1/...) resolve to the pattern binders
+                // - redundant TEnumParameter and temp→binder assignments are skipped
+                var parentCtx = context.getCurrentClauseContext();
+                var clauseCtx = new ClauseContext(parentCtx);
+                clauseCtx.enumType = enumTypeInfo;
+                clauseCtx.patternExtractedParams.push(matchingConstructor);
+                for (i in 0...constructorParams) {
+                    var name = binderElixirNames[i];
+                    if (name == null) {
+                        clauseCtx.enumBindingPlan.set(i, { finalName: "_", isUsed: false });
+                    } else {
+                        clauseCtx.enumBindingPlan.set(i, { finalName: name, isUsed: true });
+                    }
+                }
+                if (constructorParams > 0 && recovered != null) {
+                    var bindings:Array<{varId:Int, binderName:String}> = [];
+                    for (i in 0...constructorParams) {
+                        var id = recovered.extractedVarIds[i];
+                        var name = binderElixirNames[i];
+                        if (id != null && name != null) {
+                            bindings.push({ varId: id, binderName: name });
+                        }
+                    }
+                    if (bindings.length > 0) {
+                        clauseCtx.pushPatternBindings(bindings);
+                    }
+                }
+                context.pushClauseContext(clauseCtx);
+                thenBody = buildExpression(eif);
+                context.popClauseContext();
                 
                 // Build case clauses
                 var clauses = [];
@@ -204,7 +255,7 @@ class ControlFlowBuilder {
                 clauses.push({
                     pattern: pattern,
                     guard: null,  // No guards for this case
-                    body: buildExpression(eif)
+                    body: thenBody
                 });
                 
                 // Default case (else branch or raise)
@@ -240,13 +291,19 @@ class ControlFlowBuilder {
      *   same identifiers the branch body references.
      *
      * HOW
-     * - Traverse the then-branch and capture `TVar(name, TEnumParameter(_, ef, index))` where `ef.name`
-     *   matches the constructor name, mapping `index -> name`.
+     * - Traverse the then-branch and capture `TVar(name, TEnumParameter(scrutinee, ef, index))` where:
+     *   - `scrutinee` matches the enum value used in the `TEnumIndex(scrutinee) == N` condition
+     *   - `ef.name` matches the constructor name
+     *   mapping `index -> name`.
      */
-    static function extractEnumParamBindersFromThenBranch(thenBranch: TypedExpr, constructorName: String, paramCount: Int): Array<Null<String>> {
+    static function extractEnumParamBindersFromThenBranch(thenBranch: TypedExpr, enumScrutinee: TypedExpr, constructorName: String, paramCount: Int, context: CompilationContext): EnumParamBinderRecovery {
         var out: Array<Null<String>> = [for (_ in 0...paramCount) null];
+        // Track the first local ID that received the extracted parameter for each index.
+        // This lets us prefer a subsequent alias assignment (binder = extracted_temp) as the
+        // actual binder name without accidentally chasing unrelated locals.
+        var extractedIdByIndex: Array<Null<Int>> = [for (_ in 0...paramCount) null];
 
-        inline function unwrapEnumParameter(expr: TypedExpr): Null<{ ctorName: String, index: Int }> {
+        function unwrapNoOpWrappers(expr: TypedExpr): TypedExpr {
             var cur = expr;
             while (cur != null) {
                 switch (cur.expr) {
@@ -256,14 +313,152 @@ class ControlFlowBuilder {
                     case TMeta(_, inner):
                         cur = inner;
                         continue;
+                    case TCast(inner, _):
+                        cur = inner;
+                        continue;
                     default:
                 }
                 break;
             }
+            return cur;
+        }
 
+        function rememberExtraction(index: Int, v: TVar): Void {
+            if (index < 0 || index >= paramCount) return;
+            if (extractedIdByIndex[index] == null) {
+                extractedIdByIndex[index] = v.id;
+            }
+        }
+
+        #if debug_enum_param_recovery
+        var scrutineeDebug = switch (enumScrutinee.expr) {
+            case TLocal(v): v.name + "#" + v.id;
+            default: Type.enumConstructor(enumScrutinee.expr);
+        };
+        trace('[EnumParamRecovery] ctor=' + constructorName + ' scrutinee=' + scrutineeDebug + ' paramCount=' + paramCount);
+        #end
+
+        function resolveInfraScrutinee(expr: TypedExpr): TypedExpr {
+            // Map infrastructure locals (g/_g/etc.) back to their substituted expression when available.
+            var cur = unwrapNoOpWrappers(expr);
+            if (context != null && context.infraVarSubstitutions != null) {
+                switch (cur.expr) {
+                    case TLocal(v) if (context.infraVarSubstitutions.exists(v.id)):
+                        return unwrapNoOpWrappers(context.infraVarSubstitutions.get(v.id));
+                    default:
+                }
+            }
+            return cur;
+        }
+
+        function scrutineeMatches(sourceExpr: TypedExpr): Bool {
+            var left = resolveInfraScrutinee(enumScrutinee);
+            var right = resolveInfraScrutinee(sourceExpr);
+
+            // Fast path: both locals with same ID.
+            switch (left.expr) {
+                case TLocal(va):
+                    switch (right.expr) {
+                        case TLocal(vb): return va.id == vb.id;
+                        default:
+                    }
+                default:
+            }
+
+            // Conservative structural equality for the common access shapes.
+            function eq(a: TypedExpr, b: TypedExpr): Bool {
+                if (a == null || b == null) return false;
+                var aa = unwrapNoOpWrappers(a);
+                var bb = unwrapNoOpWrappers(b);
+                return switch (aa.expr) {
+                    case TLocal(va):
+                        switch (bb.expr) { case TLocal(vb): va.id == vb.id; default: false; }
+                    case TField(oa, fa):
+                        switch (bb.expr) {
+                            case TField(ob, fb):
+                                // Match field names; ignore resolution differences across fa variants.
+                                var nameA = switch (fa) {
+                                    case FInstance(_, _, cf): cf.get().name;
+                                    case FStatic(_, cf): cf.get().name;
+                                    case FAnon(cf): cf.get().name;
+                                    case FDynamic(s): s;
+                                    default: null;
+                                };
+                                var nameB = switch (fb) {
+                                    case FInstance(_, _, cf2): cf2.get().name;
+                                    case FStatic(_, cf2): cf2.get().name;
+                                    case FAnon(cf2): cf2.get().name;
+                                    case FDynamic(s2): s2;
+                                    default: null;
+                                };
+                                nameA != null && nameB != null && nameA == nameB && eq(oa, ob);
+                            default:
+                                false;
+                        }
+                    default:
+                        false;
+                };
+            }
+
+            return eq(left, right);
+        }
+
+        function tryPromoteAlias(targetVar: TVar, initExpr: TypedExpr): Bool {
+            var initUnwrapped = unwrapNoOpWrappers(initExpr);
+            return switch (initUnwrapped.expr) {
+                case TLocal(src):
+                    // If this assignment aliases a previously-extracted param temp, promote the alias name.
+                    var matched = false;
+                    for (index in 0...paramCount) {
+                        if (extractedIdByIndex[index] != null && extractedIdByIndex[index] == src.id) {
+                            if (out[index] == null || out[index] == src.name) {
+                                out[index] = targetVar.name;
+                            }
+                            matched = true;
+                            #if debug_enum_param_recovery
+                            trace('[EnumParamRecovery] alias by extractedId index=' + index + ' target=' + targetVar.name + '#' + targetVar.id + ' src=' + src.name + '#' + src.id + ' out=' + out[index]);
+                            #end
+                            break;
+                        }
+                    }
+
+                    // If the temp extraction statement was removed by the TypedExpr preprocessor,
+                    // we won't have seen it in this traversal. Recover the index by consulting the
+                    // preprocessor substitution map (tempVar.id -> original extraction expr).
+                    if (!matched && context != null && context.infraVarSubstitutions != null && context.infraVarSubstitutions.exists(src.id)) {
+                        var subst = unwrapNoOpWrappers(context.infraVarSubstitutions.get(src.id));
+                        switch (subst.expr) {
+                            case TEnumParameter(source, ef, index)
+                                if (ef != null
+                                    && ef.name == constructorName
+                                    && index >= 0
+                                    && index < paramCount
+                                    && scrutineeMatches(source)
+                                ):
+                                if (out[index] == null || out[index] == src.name) {
+                                    out[index] = targetVar.name;
+                                }
+                                // Record the temp ID so subsequent alias steps can reuse it.
+                                rememberExtraction(index, src);
+                                matched = true;
+                                #if debug_enum_param_recovery
+                                trace('[EnumParamRecovery] alias by substitution index=' + index + ' target=' + targetVar.name + '#' + targetVar.id + ' src=' + src.name + '#' + src.id + ' out=' + out[index]);
+                                #end
+                            default:
+                        }
+                    }
+
+                    matched;
+                default:
+                    false;
+            };
+        }
+
+        function unwrapEnumParameter(expr: TypedExpr): Null<{ ctorName: String, index: Int, source: TypedExpr }> {
+            var cur = unwrapNoOpWrappers(expr);
             return switch (cur.expr) {
-                case TEnumParameter(_, ef, index):
-                    { ctorName: ef.name, index: index };
+                case TEnumParameter(source, ef, index):
+                    { ctorName: ef.name, index: index, source: source };
                 default:
                     null;
             };
@@ -275,8 +470,24 @@ class ControlFlowBuilder {
             switch (expr.expr) {
                 case TVar(v, init) if (init != null):
                     var info = unwrapEnumParameter(init);
-                    if (info != null && info.ctorName == constructorName && info.index >= 0 && info.index < paramCount) {
+                    if (info != null
+                        && info.ctorName == constructorName
+                        && info.index >= 0
+                        && info.index < paramCount
+                        && scrutineeMatches(info.source)
+                    ) {
                         out[info.index] = v.name;
+                        rememberExtraction(info.index, v);
+                        #if debug_enum_param_recovery
+                        var srcDbg = switch (info.source.expr) { case TLocal(sv): sv.name + "#" + sv.id; default: Type.enumConstructor(info.source.expr); };
+                        trace('[EnumParamRecovery] extract index=' + info.index + ' v=' + v.name + '#' + v.id + ' source=' + srcDbg);
+                        #end
+                    } else {
+                        // Also handle the common pattern:
+                        //   var tmp = TEnumParameter(scrutinee, Ctor, idx);
+                        //   var binder = tmp;
+                        // Promote binder as the recovered name for idx.
+                        tryPromoteAlias(v, init);
                     }
                     traverse(init);
                 case TBlock(exprs):
@@ -332,7 +543,10 @@ class ControlFlowBuilder {
         }
 
         traverse(thenBranch);
-        return out;
+        #if debug_enum_param_recovery
+        trace('[EnumParamRecovery] result names=' + out + ' ids=' + extractedIdByIndex);
+        #end
+        return { binderNames: out, extractedVarIds: extractedIdByIndex };
     }
 
     /**
