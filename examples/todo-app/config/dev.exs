@@ -37,7 +37,7 @@ haxe_wait_port =
       end)
   end
 
-if haxe_bin and haxe_wait_port != requested_haxe_wait_port do
+if haxe_bin != nil and haxe_wait_port != requested_haxe_wait_port do
   IO.puts("[todo-app] Haxe watcher port #{requested_haxe_wait_port} is in use; using #{haxe_wait_port}")
 end
 
