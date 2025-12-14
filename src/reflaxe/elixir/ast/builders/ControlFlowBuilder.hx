@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 
 /**
  * ControlFlowBuilder: Handles control flow statement building
@@ -133,6 +134,7 @@ class ControlFlowBuilder {
             var enumTypeInfo = enumTypeRef.get();
             var matchingConstructor: String = null;
             var constructorParams = 0;
+            var constructorParamNames: Array<String> = [];
             
             // Find constructor by index
             for (name in enumTypeInfo.constructs.keys()) {
@@ -143,6 +145,7 @@ class ControlFlowBuilder {
                     switch(construct.type) {
                         case TFun(args, _):
                             constructorParams = args.length;
+                            constructorParamNames = [for (a in args) a.name];
                         default:
                             constructorParams = 0;
                     }
@@ -158,22 +161,41 @@ class ControlFlowBuilder {
                 // Build case expression
                 var enumExpr = buildExpression(enumValue);
                 var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(matchingConstructor);
-                
-                // Build pattern based on parameter count
-                var patternAST = if (constructorParams == 0) {
-                    // No parameters: just atom
-                    makeAST(EAtom(atomName));
+
+                // Build case pattern based on parameter count, preserving binders when possible.
+                //
+                // WHY: Haxe optimizes single-case switches into `if enumIndex == N`, which loses
+                // the original `case Ctor(binder)` parameter names. The then-branch still references
+                // those binders, so we must recover them to avoid generating wildcard patterns that
+                // break semantics (e.g., {:ok, _} but body uses `value`).
+                //
+                // HOW:
+                // - Prefer binders recovered from the then-branch (via `var x = TEnumParameter(...)`).
+                // - Fallback to the enum constructor parameter names.
+                // - Emit PWildcard when the binder isn't used in the then-branch.
+                var pattern: EPattern = if (constructorParams == 0) {
+                    EPattern.PLiteral(makeAST(EAtom(atomName)));
                 } else {
-                    // With parameters: tuple with wildcards
-                    var elements = [makeAST(EAtom(atomName))];
-                    for (_ in 0...constructorParams) {
-                        elements.push(makeAST(EVar("_")));
+                    var recovered = extractEnumParamBindersFromThenBranch(eif, matchingConstructor, constructorParams);
+                    var binderPatterns: Array<EPattern> = [];
+                    for (paramIndex in 0...constructorParams) {
+                        var haxeBinderName: Null<String> = null;
+                        if (recovered != null && paramIndex < recovered.length) {
+                            haxeBinderName = recovered[paramIndex];
+                        }
+                        if ((haxeBinderName == null || haxeBinderName.length == 0) && paramIndex < constructorParamNames.length) {
+                            haxeBinderName = constructorParamNames[paramIndex];
+                        }
+
+                        // Only bind names that the then-branch actually uses.
+                        if (haxeBinderName == null || haxeBinderName.length == 0 || !branchUsesHaxeVarName(eif, haxeBinderName)) {
+                            binderPatterns.push(EPattern.PWildcard);
+                        } else {
+                            binderPatterns.push(EPattern.PVar(VariableAnalyzer.toElixirVarName(haxeBinderName)));
+                        }
                     }
-                    makeAST(ETuple(elements));
+                    EPattern.PTuple([EPattern.PLiteral(makeAST(EAtom(atomName)))].concat(binderPatterns));
                 };
-                
-                // Convert ElixirAST to EPattern using PLiteral wrapper
-                var pattern = EPattern.PLiteral(patternAST);
                 
                 // Build case clauses
                 var clauses = [];
@@ -206,6 +228,185 @@ class ControlFlowBuilder {
         }
         
         return null; // Not an optimized enum switch
+    }
+
+    /**
+     * Recover enum constructor parameter binder names from the `then` branch of an optimized enum switch.
+     *
+     * WHY
+     * - When Haxe rewrites `switch (e) { case Ctor(x): ...; case _: ... }` into an `if` on TEnumIndex,
+     *   it typically extracts constructor parameters inside the then-branch via `TEnumParameter(...)`.
+     * - We use these extracted local names (when present) to rebuild a `case` pattern that binds the
+     *   same identifiers the branch body references.
+     *
+     * HOW
+     * - Traverse the then-branch and capture `TVar(name, TEnumParameter(_, ef, index))` where `ef.name`
+     *   matches the constructor name, mapping `index -> name`.
+     */
+    static function extractEnumParamBindersFromThenBranch(thenBranch: TypedExpr, constructorName: String, paramCount: Int): Array<Null<String>> {
+        var out: Array<Null<String>> = [for (_ in 0...paramCount) null];
+
+        inline function unwrapEnumParameter(expr: TypedExpr): Null<{ ctorName: String, index: Int }> {
+            var cur = expr;
+            while (cur != null) {
+                switch (cur.expr) {
+                    case TParenthesis(inner):
+                        cur = inner;
+                        continue;
+                    case TMeta(_, inner):
+                        cur = inner;
+                        continue;
+                    default:
+                }
+                break;
+            }
+
+            return switch (cur.expr) {
+                case TEnumParameter(_, ef, index):
+                    { ctorName: ef.name, index: index };
+                default:
+                    null;
+            };
+        }
+
+        function traverse(expr: TypedExpr): Void {
+            if (expr == null) return;
+
+            switch (expr.expr) {
+                case TVar(v, init) if (init != null):
+                    var info = unwrapEnumParameter(init);
+                    if (info != null && info.ctorName == constructorName && info.index >= 0 && info.index < paramCount) {
+                        out[info.index] = v.name;
+                    }
+                    traverse(init);
+                case TBlock(exprs):
+                    for (e in exprs) traverse(e);
+                case TIf(c, t, eelse):
+                    traverse(c);
+                    traverse(t);
+                    if (eelse != null) traverse(eelse);
+                case TBinop(_, left, right):
+                    traverse(left);
+                    traverse(right);
+                case TUnop(_, _, e):
+                    traverse(e);
+                case TCall(e, args):
+                    traverse(e);
+                    for (a in args) traverse(a);
+                case TField(e, _):
+                    traverse(e);
+                case TArray(arrayTarget, arrayIndex):
+                    traverse(arrayTarget);
+                    traverse(arrayIndex);
+                case TReturn(e):
+                    if (e != null) traverse(e);
+                case TThrow(e):
+                    traverse(e);
+                case TSwitch(e, cases, edefault):
+                    traverse(e);
+                    for (c in cases) traverse(c.expr);
+                    if (edefault != null) traverse(edefault);
+                case TWhile(c, e, _):
+                    traverse(c);
+                    traverse(e);
+                case TFor(_, iterator, body):
+                    traverse(iterator);
+                    traverse(body);
+                case TTry(e, catches):
+                    traverse(e);
+                    for (catchClause in catches) traverse(catchClause.expr);
+                case TMeta(_, inner):
+                    traverse(inner);
+                case TParenthesis(inner):
+                    traverse(inner);
+                case TCast(inner, _):
+                    traverse(inner);
+                case TObjectDecl(fields):
+                    for (f in fields) traverse(f.expr);
+                case TArrayDecl(el):
+                    for (e in el) traverse(e);
+                case TNew(_, _, newArgs):
+                    for (newArg in newArgs) traverse(newArg);
+                default:
+            }
+        }
+
+        traverse(thenBranch);
+        return out;
+    }
+
+    /**
+     * Check whether a given Haxe local variable name is referenced anywhere in an expression.
+     *
+     * WHY
+     * - When rebuilding `case` patterns for optimized enum switches, we should only bind
+     *   names that are actually used in the then-branch to avoid unused-variable warnings.
+     */
+    static function branchUsesHaxeVarName(expr: TypedExpr, name: String): Bool {
+        if (expr == null || name == null || name.length == 0) return false;
+        var found = false;
+
+        function traverse(e: TypedExpr): Void {
+            if (e == null || found) return;
+            switch (e.expr) {
+                case TLocal(v) if (v.name == name):
+                    found = true;
+                case TVar(_, init) if (init != null):
+                    traverse(init);
+                case TBlock(exprs):
+                    for (x in exprs) traverse(x);
+                case TIf(c, t, eelse):
+                    traverse(c);
+                    traverse(t);
+                    if (eelse != null) traverse(eelse);
+                case TBinop(_, left, right):
+                    traverse(left);
+                    traverse(right);
+                case TUnop(_, _, inner):
+                    traverse(inner);
+                case TCall(target, args):
+                    traverse(target);
+                    for (a in args) traverse(a);
+                case TField(inner, _):
+                    traverse(inner);
+                case TArray(arrayTarget, arrayIndex):
+                    traverse(arrayTarget);
+                    traverse(arrayIndex);
+                case TReturn(inner):
+                    if (inner != null) traverse(inner);
+                case TThrow(inner):
+                    traverse(inner);
+                case TSwitch(switchTarget, cases, defaultExpr):
+                    traverse(switchTarget);
+                    for (caseClause in cases) traverse(caseClause.expr);
+                    if (defaultExpr != null) traverse(defaultExpr);
+                case TWhile(c, body, _):
+                    traverse(c);
+                    traverse(body);
+                case TFor(_, iterator, body):
+                    traverse(iterator);
+                    traverse(body);
+                case TTry(tryExpr, catches):
+                    traverse(tryExpr);
+                    for (catchClause in catches) traverse(catchClause.expr);
+                case TMeta(_, inner):
+                    traverse(inner);
+                case TParenthesis(inner):
+                    traverse(inner);
+                case TCast(inner, _):
+                    traverse(inner);
+                case TObjectDecl(fields):
+                    for (f in fields) traverse(f.expr);
+                case TArrayDecl(el):
+                    for (item in el) traverse(item);
+                case TNew(_, _, newArgs):
+                    for (newArg in newArgs) traverse(newArg);
+                default:
+            }
+        }
+
+        traverse(expr);
+        return found;
     }
     
     /**
