@@ -403,15 +403,16 @@ if [[ -n "$PREWARM_TIMEOUT" && "$PREWARM_TIMEOUT" != "0" ]]; then
   run_step_best_effort "Step 1.pre: deps prewarm (cowlib)" "$PREWARM_TIMEOUT" /tmp/qa-deps-prewarm.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix deps.compile cowlib --force"
 fi
 
-# Generate .ex files. Prefer a fast hxml if available; else, if pass files
-# exist, run in two bounded passes to respect strict per-step caps.
-# Optionally skip Haxe generation entirely when sources are unchanged.
+# Generate .ex files.
+# Default: run the full build (`build-server.hxml`) so the generated output is
+# complete and consistent.
+# Optional: callers can opt into faster-but-incomplete strategies via env vars.
 if [[ -n "${QA_SKIP_HAXE:-}" ]]; then
   log "[QA] Step 1: Skipping Haxe build (QA_SKIP_HAXE set)"
   : > /tmp/qa-haxe.log
 elif [[ -n "${QA_FORCE_FAST_BUILD:-}" ]] && [[ -f "build-server-fast.hxml" ]]; then
   run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
-elif ls build-server-pass*.hxml >/dev/null 2>&1; then
+elif [[ -n "${QA_USE_PASSES:-}" ]] && ls build-server-pass*.hxml >/dev/null 2>&1; then
   i=0
   for h in $(ls -1 build-server-pass*.hxml | sort); do
     i=$((i+1))
@@ -420,8 +421,6 @@ elif ls build-server-pass*.hxml >/dev/null 2>&1; then
   done
   # Consolidated tail for convenience
   : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
-elif [[ -f "build-server-fast.hxml" ]]; then
-  run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
 else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi
@@ -504,18 +503,25 @@ done
 
 log "[QA] Step 4: Starting Phoenix server on :$PORT (background, non-blocking)"
 export PORT="$PORT"
+# For one-shot validation runs, disable endpoint watchers. Watchers are helpful
+# for interactive dev, but can leak long-lived processes (e.g. `haxe --wait`)
+# after the server is torn down.
+PHX_ENV_PREFIX="MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT"
+if [[ "$KEEP_ALIVE" -eq 0 ]]; then
+  PHX_ENV_PREFIX="DISABLE_WATCHERS=1 HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 ${PHX_ENV_PREFIX}"
+fi
 # Start Phoenix in the background, detached when possible, and capture PID/PGID
 # Prefer setsid; on macOS where `setsid` may not exist, fall back to perl POSIX::setsid;
 # if neither available, start normally but ensure cleanup never targets our own PGID.
 if command -v setsid >/dev/null 2>&1; then
-  setsid sh -c "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix phx.server" >/tmp/qa-phx.log 2>&1 &
+  setsid sh -c "${PHX_ENV_PREFIX} mix phx.server" >/tmp/qa-phx.log 2>&1 &
 elif command -v perl >/dev/null 2>&1; then
   # Create a new session via perl; then exec a shell to run the server
   nohup perl -MPOSIX -e 'POSIX::setsid() or die "setsid failed: $!"; exec @ARGV' \
-    sh -c "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix phx.server" >/tmp/qa-phx.log 2>&1 &
+    sh -c "${PHX_ENV_PREFIX} mix phx.server" >/tmp/qa-phx.log 2>&1 &
 else
   # Fallback: still background, but guard cleanup to avoid killing our own process group
-  nohup env MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix phx.server >/tmp/qa-phx.log 2>&1 &
+  nohup env ${PHX_ENV_PREFIX} mix phx.server >/tmp/qa-phx.log 2>&1 &
 fi
 PHX_PID=$!
 PGID=$(ps -o pgid= "$PHX_PID" 2>/dev/null | tr -d ' ' || true)
