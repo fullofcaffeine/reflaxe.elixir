@@ -4,7 +4,6 @@ test('edit todo updates title', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   await page.goto(base + '/todos')
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
-  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
 
   // Create a fresh todo to edit
   await page.getByTestId('btn-new-todo').click()
@@ -39,8 +38,13 @@ test('edit todo updates title', async ({ page }) => {
     input.value = val as string
     input.dispatchEvent(new Event('input', { bubbles: true }))
   }, updated)
+
+  // Ensure the edit form submits an explicit (possibly empty) description value
+  await editCard.locator('textarea[name="description"]').first().fill('')
   await editCard.getByRole('button', { name: /Save/i }).click()
 
   // Assert the updated title is visible
   await expect(page.locator('h3', { hasText: updated })).toBeVisible({ timeout: 15000 })
+  // Guard: the LiveView should still be connected after save
+  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
 })
