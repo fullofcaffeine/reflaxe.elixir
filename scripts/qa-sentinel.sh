@@ -115,7 +115,8 @@ DEADLINE=""
 RUN_PLAYWRIGHT=0
 E2E_WORKERS=1
 # Default to fast, stable smoke specs; override with --e2e-spec as needed
-E2E_SPEC="e2e/basic.spec.ts e2e/search.spec.ts e2e/create_todo.spec.ts"
+# Keep this list small but regression-focused; add high-value paths only.
+E2E_SPEC="e2e/basic.spec.ts e2e/search.spec.ts e2e/create_todo.spec.ts e2e/edit_todo.spec.ts"
 # Timeouts and probe counts (sane defaults; configurable via env)
 BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 # Optional prewarm to reduce first-build times using the Haxe compilation server
