@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.builders;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
+import haxe.macro.Expr;
 import haxe.macro.Type.TypedExpr;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
@@ -208,7 +209,13 @@ class CallExprBuilder {
                     }
 
                     // SPECIAL-CASE: Ecto.Changeset.validate_required injection → build ERemoteCall (no ERaw)
-                    if (injectionString.indexOf("Ecto.Changeset.validate_required") != -1 && args.length >= 3) {
+                    // IMPORTANT: Only trigger for the simple, single-call template.
+                    // Do not match multi-step pipelines (which should remain ERaw).
+                    var trimmedInjection = StringTools.trim(injectionString);
+                    if (args.length >= 3
+                        && trimmedInjection.indexOf("|>") == -1
+                        && StringTools.startsWith(trimmedInjection, "Ecto.Changeset.validate_required(")
+                    ) {
                         var thisAst = buildExpression(args[1]);
                         var fieldsAst = buildExpression(args[2]);
                         // Build Enum.map(fields, &String.to_atom/1)
@@ -218,7 +225,11 @@ class CallExprBuilder {
                     }
 
                     // SPECIAL-CASE: Ecto.Changeset.validate_length injection → build ERemoteCall
-                    if (injectionString.indexOf("Ecto.Changeset.validate_length") != -1 && args.length >= 3) {
+                    // IMPORTANT: Only trigger for the simple, single-call template.
+                    if (args.length >= 3
+                        && trimmedInjection.indexOf("|>") == -1
+                        && StringTools.startsWith(trimmedInjection, "Ecto.Changeset.validate_length(")
+                    ) {
                         var thisAst = buildExpression(args[1]);
                         var fieldAst = buildExpression(args[2]);
                         var atomField = makeAST(ERemoteCall(makeAST(EVar("String")), "to_atom", [fieldAst]));
@@ -410,7 +421,9 @@ class CallExprBuilder {
                         
                     case FStatic(classRef, cf):
                         // Static method call
-                        var className = classRef.get().name;
+                        var classType = classRef.get();
+                        var className = classType.name;
+                        var moduleName = resolveStaticCallModuleName(classType);
                         var methodName = cf.get().name;
 
                         // Check for special Haxe standard library calls
@@ -456,7 +469,7 @@ class CallExprBuilder {
                             return ECall(null, elixirMethodName, argASTs);
                         } else {
                             // Different module - use qualified call
-                            return ERemoteCall(makeAST(EVar(className)), elixirMethodName, argASTs);
+                            return ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, argASTs);
                         }
                         
                     case FEnum(_, ef):
@@ -791,6 +804,42 @@ class CallExprBuilder {
         }
         
         // Not a Phoenix-specific call
+        return null;
+    }
+
+    static function resolveStaticCallModuleName(classType: ClassType): String {
+        var nativeModuleName = extractNativeModuleName(classType.meta);
+        if (nativeModuleName != null) {
+            // Extern module calls currently use the "encoded path" convention where
+            // method @:native includes the full module path (e.g. "Task.Supervisor.start_link"),
+            // and the module reference keeps only the last segment ("Supervisor") so the
+            // printer emits `Supervisor.task.supervisor.start_link(...)`.
+            if (classType.isExtern && nativeModuleName.indexOf(".") != -1) {
+                var parts = nativeModuleName.split(".");
+                return parts[parts.length - 1];
+            }
+            return nativeModuleName;
+        }
+
+        // Default behavior: keep the Haxe type name as the module name and rely on
+        // later qualification passes (and explicit @:native) for any app/framework
+        // namespacing decisions.
+        return classType.name;
+    }
+
+    static function extractNativeModuleName(meta: MetaAccess): Null<String> {
+        if (meta.has(":native")) {
+            var nativeMeta = meta.extract(":native");
+            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                return switch (nativeMeta[0].params[0].expr) {
+                    case EConst(CString(s, _)):
+                        // Prefer idiomatic Elixir module aliases (String) over fully-qualified
+                        // internal names (Elixir.String) in generated source.
+                        StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
+                    default: null;
+                };
+            }
+        }
         return null;
     }
     
