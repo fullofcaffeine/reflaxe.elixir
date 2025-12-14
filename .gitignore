@@ -71,6 +71,7 @@ compile.protocols
 
 # Test runner artifacts
 test-results/
+test/test-results*
 examples/*/test-results/
 test-results.txt
 test-failures.txt
