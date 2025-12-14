@@ -23,9 +23,9 @@ defmodule HaxeServer do
   ## Configuration
   
   The server can be configured with:
-  - `:port` - Port for Haxe server (default: 6000)
+  - `:port` - Port for Haxe server (default: 6116; tests pick a free port)
   - `:timeout` - Compilation timeout in ms (default: 30000)
-  - `:haxe_cmd` - Haxe command to use (default: "npx haxe")
+  - `:haxe_cmd` - Haxe command to use (default: auto-detected)
   """
   
   use GenServer
@@ -37,14 +37,30 @@ defmodule HaxeServer do
   
   # Don't set a default here, will determine at runtime
   defp default_haxe_cmd() do
-    # Find the project's lix-managed haxe if available
     project_root = find_project_root()
     project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
-    
-    if File.exists?(project_haxe) do
-      project_haxe
-    else
-      "npx haxe"
+    project_lix = Path.join([project_root, "node_modules", ".bin", "lix"])
+
+    cond do
+      # Prefer a project-local haxe shim if present.
+      File.exists?(project_haxe) ->
+        {project_haxe, []}
+
+      # Prefer an already-installed haxe on PATH to avoid implicit npm installs.
+      (haxe_exe = System.find_executable("haxe")) != nil ->
+        {haxe_exe, []}
+
+      # If lix is installed locally, use it to run the configured haxe toolchain.
+      File.exists?(project_lix) ->
+        {project_lix, ["run", "haxe"]}
+
+      # Fall back to any globally installed lix.
+      (lix_exe = System.find_executable("lix")) != nil ->
+        {lix_exe, ["run", "haxe"]}
+
+      # Final fallback: try "haxe" and let startup fail fast if unavailable.
+      true ->
+        {"haxe", []}
     end
   end
 
