@@ -39,7 +39,7 @@ defmodule Main do
       {:processing, progress} ->
         to_string = progress
         description = "Progress: #{(fn -> Kernel.to_string(progress) end).()}%"
-      {:complete, _result} -> description = "Done: #{(fn -> result end).()}"
+      {:complete, result} -> description = "Done: #{(fn -> result end).()}"
       {:error, reason} ->
         msg = reason
         description = "Error: #{(fn -> msg end).()}"

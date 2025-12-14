@@ -608,6 +608,18 @@ enum PhoenixContext {
 }
 
 /**
+ * Router route metadata parsed from @:routes on @:router modules.
+ */
+typedef RouterRouteMeta = {
+    var name: String;
+    var method: String;
+    var path: String;
+    @:optional var controller: String;
+    @:optional var action: String;
+    @:optional var pipeline: String;
+}
+
+/**
  * Ecto-specific context for schemas, queries, etc.
  */
 enum EctoContext {
@@ -742,6 +754,7 @@ typedef ElixirMetadata = {
     ?isApplication: Bool,         // @:application OTP Application
     ?isGenServer: Bool,           // @:genserver GenServer behavior
     ?isRouter: Bool,              // @:router Phoenix.Router
+    ?routerRoutes: Array<RouterRouteMeta>, // Parsed @:routes metadata for Router emission
     ?isController: Bool,          // @:controller Phoenix.Controller
     ?isPresence: Bool,            // @:presence Phoenix.Presence
     ?isPhoenixWeb: Bool,          // @:phoenixWeb AppNameWeb module with macros
@@ -843,10 +856,6 @@ typedef ElixirMetadata = {
     ?fieldMutations: Array<{field: String, expr: ElixirAST}>, // Field mutation operations
     ?returnsThis: Bool,           // Method returns 'this' for fluent chaining
 
-    // Dead Code Elimination (Added January 2025)
-    ?unusedPrivateFunctions: Array<String>,  // List of unused private function names in the module
-    ?unusedPrivateFunctionsWithArity: Array<{name: String, arity: Int}>,  // List with arities for @compile directive
-    
     // Guard Condition Grouping (Added January 2025)
     ?patternKey: String,          // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")
     ?boundVars: Array<String>,    // Variables bound by this pattern (e.g., ["r", "g", "b"])

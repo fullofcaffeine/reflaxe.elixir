@@ -330,28 +330,6 @@ class ElixirASTBuilder {
         return buildFromTypedExprWithContext(expr, context);
     }
 
-    // Helper for recursive calls - creates context from usage map if needed (for backward compatibility)
-    private static function buildFromTypedExprHelper(expr: TypedExpr, usageMapOrContext: Dynamic): ElixirAST {
-        // Check if we got a context or a usage map
-        if (Std.isOfType(usageMapOrContext, reflaxe.elixir.CompilationContext)) {
-            return buildFromTypedExprWithContext(expr, cast usageMapOrContext);
-        } else {
-            // Legacy call with usage map - use current context
-            if (currentContext != null) {
-                // Update the usage map in current context if provided
-                if (usageMapOrContext != null) {
-                    currentContext.variableUsageMap = cast usageMapOrContext;
-                }
-                return buildFromTypedExprWithContext(expr, currentContext);
-            } else {
-                // This shouldn't happen, but create a minimal context
-                var ctx = new reflaxe.elixir.CompilationContext();
-                ctx.variableUsageMap = cast usageMapOrContext;
-                return buildFromTypedExprWithContext(expr, ctx);
-            }
-        }
-    }
-
     private static function buildFromTypedExprWithContext(expr: TypedExpr, context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_compilation_hang
         var exprType = Type.enumConstructor(expr.expr);
@@ -412,16 +390,6 @@ class ElixirASTBuilder {
 
         // Store the compilation context's usage map for context-aware variable naming
         // If no usage map provided in context, analyze now
-        if (context.variableUsageMap != null) {
-            // variableUsageMap is accessed via currentContext
-        } else {
-            // TODO: Restore when VariableUsageAnalyzer is available
-            // Analyze usage for this expression if not already done
-            // var variableUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
-            // context.variableUsageMap = variableUsageMap;
-            context.variableUsageMap = new Map();  // Temporary empty map
-        }
-
         // Set compiler reference from context
         compiler = context.compiler;
 
@@ -440,11 +408,6 @@ class ElixirASTBuilder {
 
         #if debug_ast_builder
         // DISABLED: trace('[XRay AST Builder] Converting TypedExpr: ${expr.expr}');
-        if (currentContext.variableUsageMap != null) {
-            #if debug_ast_builder
-            // DISABLED: trace('[XRay AST Builder] Using variable usage map with ${Lambda.count(currentContext.variableUsageMap)} entries');
-            #end
-        }
         #end
 
         // Check context-local builder cache to avoid re-converting identical subtrees
@@ -1330,23 +1293,9 @@ class ElixirASTBuilder {
                 var baseName = if (currentContext.tempVarRenameMap.exists(idKey)) {
                     currentContext.tempVarRenameMap.get(idKey); // Use mapped name
                 } else {
-                    // Check if we have usage information from VariableUsageAnalyzer
-                    var isUsed = if (currentContext.variableUsageMap != null) {
-                        currentContext.variableUsageMap.exists(v.id) && currentContext.variableUsageMap.get(v.id);
-                    } else {
-                        true; // Conservative default: assume used if no usage map
-                    };
-                    
-                    // For _g variables from Haxe, always strip the underscore
-                    // Haxe generates _g, _g1, etc. for temporaries but in Elixir we want g, g1
-                    // This keeps the names consistent between declaration and reference
-                    if (varName.charAt(0) == "_" && varName.charAt(1) == "g") {
-                        // Always strip underscore from _g variables for consistency
-                        VariableAnalyzer.toElixirVarName(varName, false); // false = strip underscore
-                    } else {
-                        // For non-_g variables, normal conversion
-                        VariableAnalyzer.toElixirVarName(varName, false);
-                    }
+                    // Faithfully convert the declared name; underscore prefixing is handled later
+                    // by HygieneTransforms using full-AST usage analysis.
+                    VariableAnalyzer.toElixirVarName(varName, false);
                 };
                 
                 // ARCHITECTURAL FIX (January 2025): Remove premature underscore prefixing
@@ -2717,11 +2666,9 @@ class ElixirASTBuilder {
                 if (result != null) {
                     return result;
                 }
-                
-                
-                // If BlockBuilder fails, return an error placeholder
-                // DISABLED: trace('[ERROR] BlockBuilder returned null for TBlock - returning placeholder');
-                return ERaw("# ERROR: BlockBuilder failed to compile block");
+
+                currentContext.error("BlockBuilder failed to compile a block expression", expr.pos);
+                return null;
                 
             case TReturn(e):
                 // Delegate to ReturnBuilder for proper return handling
@@ -2730,9 +2677,8 @@ class ElixirASTBuilder {
                     return result;
                 }
                 
-                // If ReturnBuilder fails, return an error placeholder
-                // DISABLED: trace('[ERROR] ReturnBuilder returned null for TReturn - returning placeholder');
-                return ERaw("# ERROR: ReturnBuilder failed to compile return statement");
+                currentContext.error("ReturnBuilder failed to compile a return expression", expr.pos);
+                return null;
                 
             case TBreak:
                 // Delegate to ExceptionBuilder for break control flow
@@ -2756,11 +2702,9 @@ class ElixirASTBuilder {
                 if (result != null) {
                     return result;
                 }
-                
-                // If SwitchBuilder fails, return a placeholder to avoid compilation hang
-                // This should be investigated and fixed properly
-                // DISABLED: trace('[ERROR] SwitchBuilder returned null for TSwitch - returning placeholder');
-                return ERaw("# ERROR: SwitchBuilder failed to compile switch expression");
+
+                currentContext.error("SwitchBuilder failed to compile a switch expression", expr.pos);
+                return null;
                 
                 
             case TTry(e, catches):
@@ -2769,23 +2713,14 @@ class ElixirASTBuilder {
                 if (result != null) {
                     return result;
                 }
-                
-                // If ExceptionBuilder fails, return an error placeholder
-                // DISABLED: trace('[ERROR] ExceptionBuilder returned null for TTry - returning placeholder');
-                return ERaw("# ERROR: ExceptionBuilder failed to compile try expression");
+
+                currentContext.error("ExceptionBuilder failed to compile a try/catch expression", expr.pos);
+                return null;
                 
             // ================================================================
             // Lambda/Anonymous Functions
             // ================================================================
             case TFunction(f):
-                // TODO: FunctionBuilder delegation is temporarily disabled due to variable naming issues
-                // The extraction broke the variable renaming map integration
-                // var result = reflaxe.elixir.ast.builders.FunctionBuilder.build(f, currentContext);
-                // if (result != null) {
-                //     return result;
-                // }
-                
-                // Use legacy implementation until FunctionBuilder is fixed
                 // Debug: Check for abstract method "this" parameter issue
                 #if debug_ast_pipeline
                 for (arg in f.args) {
@@ -3016,20 +2951,6 @@ class ElixirASTBuilder {
                     #end
                 }
                 
-                // Analyze variable usage in the function body
-                // TODO: Restore when VariableUsageAnalyzer is available
-                // This is critical for proper underscore prefixing of unused variables
-                var functionUsageMap: Map<Int, Bool> = null; // if (f.expr != null) {
-                    // reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(f.expr);
-                // } else {
-                    // null;
-                // };
-                
-                // Update context with function-specific usage map
-                if (functionUsageMap != null) {
-                    currentContext.variableUsageMap = functionUsageMap;
-                }
-
                 #if (debug_ast_builder && !no_traces)
                 #if !no_traces
                 // DISABLED: trace('[TFunction DEBUG] BEFORE body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
@@ -3143,22 +3064,18 @@ class ElixirASTBuilder {
                 // Delegate to ObjectBuilder for modular handling
                 var result = reflaxe.elixir.ast.builders.ObjectBuilder.build(fields, currentContext);
                 if (result != null) return result;
-                
-                
-                // If ObjectBuilder fails, return an error placeholder
-                // DISABLED: trace('[ERROR] ObjectBuilder returned null for TObjectDecl - returning placeholder');
-                return ERaw("# ERROR: ObjectBuilder failed to compile object declaration");
+
+                currentContext.error("ObjectBuilder failed to compile an object literal", expr.pos);
+                return null;
                 
             // ================================================================
             case TNew(c, params, el):
                 // Delegate to ConstructorBuilder for modular handling
                 var result = reflaxe.elixir.ast.builders.ConstructorBuilder.build(c, params, el, currentContext);
                 if (result != null) return result;
-                
-                
-                // If ConstructorBuilder fails, return an error placeholder
-                // DISABLED: trace('[ERROR] ConstructorBuilder returned null for TNew - returning placeholder');
-                return ERaw("# ERROR: ConstructorBuilder failed to compile constructor call");
+
+                currentContext.error("ConstructorBuilder failed to compile a constructor call", expr.pos);
+                return null;
                 
             case TFor(v, e1, e2):
                 #if debug_ast_builder
@@ -3477,7 +3394,6 @@ class ElixirASTBuilder {
                                         // Name pattern suggests temp var, but need more context
                                         // Check if this variable was created from TEnumParameter
                                         // For now, be conservative and only treat as temp if we're sure
-                                        // TODO: Use VarOrigin metadata when available
                                         isExtractionTemp = false; // Conservative: avoid false positives
                                     }
 
@@ -3826,15 +3742,6 @@ class ElixirASTBuilder {
     // analyzeLoopBody deleted - now delegated to LoopOptimizer
     
     // extractMapTransformation, extractFilterCondition, containsPush deleted - now delegated to LoopOptimizer
-    
-    /**
-     * Build AST with variable substitution for lambda parameters
-     */
-    static function buildFromTypedExprWithSubstitution(expr: TypedExpr, loopVar: Null<TVar>): ElixirAST {
-        // For now, just use the regular build function
-        // TODO: Implement proper variable substitution
-        return buildFromTypedExpr(expr, currentContext);
-    }
     
     /**
      * Create metadata from TypedExpr
@@ -5174,9 +5081,6 @@ class ElixirASTBuilder {
      * @param body The loop body containing the transformation logic
      * @return ElixirASTDef for the Enum call
      */
-    // TODO: Future version - Use ElixirAST directly to build Enum calls instead of string manipulation
-    // This would allow us to properly construct ERemoteCall(EAtom(ElixirAtom.raw("Enum")), "map", [array, lambda])
-    // with proper EFn nodes for the lambda functions, giving us better control over the output
     static function generateIdiomaticEnumCall(arrayRef: TypedExpr, operation: String, body: TypedExpr): ElixirASTDef {
         // Extract the actual array from the reference
         // arrayRef is the _g2 variable that holds the array

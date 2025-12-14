@@ -187,8 +187,8 @@ class ComprehensionBuilder {
                 #end
                 #end
                 
-                // Return as a list literal for now
-                // TODO: Could potentially reconstruct as a comprehension with constant range
+                // Return as a list literal for now.
+                // Note: this could potentially be reconstructed as a comprehension with a constant range.
                 return makeAST(EList(elements));
             }
         }
@@ -722,33 +722,9 @@ class ComprehensionBuilder {
                     };
                     elements.push(built2);
                 
-                case TIf(condition, thenExpr, elseExpr):
-                    // Conditional unrolled comprehension
-                    // For now, we'll just process the then branch
-                    // TODO: Handle this better by creating a filtered comprehension
-                    switch(thenExpr.expr) {
-                        case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TArrayDecl([value])}) if (v.name == tempVarName):
-                            // Skip conditional elements for now or include them
-                            // This is a simplification - ideally we'd reconstruct as filtered comprehension
-                            var built3 = switch (value.expr) {
-                                case TBlock(innerStmts):
-                                    var nested3 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
-                                    if (nested3 != null) nested3 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));
-                                default:
-                                    context.getExpressionBuilder()(value);
-                            };
-                            elements.push(built3);
-                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}) if (v.name == tempVarName):
-                            var built4 = switch (value.expr) {
-                                case TBlock(innerStmts):
-                                    var nested4 = tryBuildArrayComprehensionFromBlock(innerStmts, context);
-                                    if (nested4 != null) nested4 else (listFromBlock(innerStmts) != null ? listFromBlock(innerStmts) : context.getExpressionBuilder()(value));
-                                default:
-                                    context.getExpressionBuilder()(value);
-                            };
-                            elements.push(built4);
-                        default:
-                    }
+                case TIf(_, _, _):
+                    // Conditional appends aren't safe to rewrite into a literal list; bail out.
+                    return null;
                 
                 default:
             }
@@ -817,34 +793,6 @@ class ComprehensionBuilder {
                     
                 default:
             }
-        }
-        
-        // Try to extract from unrolled conditional pattern
-        var elements: Array<ElixirAST> = [];
-        var hasConditions = false;
-        
-        for (stmt in statements) {
-            switch(stmt.expr) {
-                case TIf(condition, thenExpr, _):
-                    hasConditions = true;
-                    switch(thenExpr.expr) {
-                        case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TArrayDecl([value])}) if (v.name == tempVarName):
-                            // This is a filtered element
-                            // For unrolled comprehensions, we can't easily reconstruct the original comprehension
-                            // Just collect the values for now
-                            elements.push(context.getExpressionBuilder()(value));
-                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([value])})}) if (v.name == tempVarName):
-                            elements.push(context.getExpressionBuilder()(value));
-                        default:
-                    }
-                default:
-            }
-        }
-        
-        if (elements.length > 0) {
-            // Return as a list for now
-            // TODO: Try to reconstruct the original range and filter
-            return makeAST(EList(elements));
         }
         
         return null;

@@ -96,8 +96,6 @@ class WebParamFinalFixTransforms {
                     for (cl in clauses) {
                         // used: all variable identifiers seen in body (not closure-aware)
                         var used = collectUsedVars(cl.body);
-                        // free: variables referenced in the body that are free (closure-aware)
-                        var free = VariableUsageCollector.referencedInFunctionScope(cl.body);
                         var newBodyClause = cl.body;
                         #if debug_web_binder
                         // Debug: list used vars and current args
@@ -106,13 +104,6 @@ class WebParamFinalFixTransforms {
                         inline function patListDbg(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
                         // DISABLED: trace('[WebParamFinalFix][EFn] args=(' + patListDbg(cl.args) + ') used={' + usedList.join(',') + '}');
                         #end
-                        // Capture original single binder (if present) for potential rename mapping
-                        var originalBinder: Null<String> = null;
-                        if (cl.args != null && cl.args.length == 1) switch (cl.args[0]) { case PVar(nm): originalBinder = nm; default: }
-
-                        // Build a set of base arg names present
-                        var argBases = new Map<String,Bool>();
-                        for (a in cl.args) switch (a) { case PVar(nm) if (nm != null): argBases.set(nm, true); default: }
                         var outArgs:Array<EPattern> = [];
                         for (a in cl.args) switch (a) {
                             case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
@@ -121,87 +112,24 @@ class WebParamFinalFixTransforms {
                             default:
                                 outArgs.push(a);
                         }
-                        // If single-arg EFn and body consistently uses a different free var as a struct receiver,
-                        // prefer renaming binder to that var (shape-based, avoids domain heuristics).
-                        if (outArgs.length == 1) {
-                            var currentBinder = switch (outArgs[0]) { case PVar(nm): nm; default: null; };
-                            if (currentBinder != null) {
-                                // Quick repair: if binder is underscored (_x) and body uses x, promote binder to x.
-                                if (currentBinder.length > 1 && currentBinder.charAt(0) == '_') {
-                                    var baseNm = currentBinder.substr(1);
-                                    if (containsVarName(cl.body, baseNm) || erawUsesName(cl.body, baseNm)) {
-                                        outArgs[0] = PVar(baseNm);
-                                        currentBinder = baseNm;
-                                        argBases = new Map<String,Bool>(); argBases.set(baseNm, true);
-                                    }
-                                }
-                                // Deterministic preference for common predicate/reducer binders.
-                                inline function validName(n:String):Bool return (n != null && n.length > 0 && n.charAt(0) != '_' && !~/[\.]/.match(n) && ~/^[a-z_][a-z0-9_]*$/.match(n));
-                                inline function allowedBinder(n:String):Bool return (n == 't' || n == 'elem' || n == 'todo');
 
-                                var chosenBinder:Null<String> = null;
-                                // Prefer 't' then 'elem'; avoid renaming to a name that is also a free var (would shadow outer var)
-                                if (used.exists('t') && currentBinder != 't' && validName('t')) chosenBinder = 't';
-                                else if (used.exists('elem') && currentBinder != 'elem' && validName('elem')) chosenBinder = 'elem';
-                                else {
-                                    // Consider other single candidate heuristics: a single lower_snake identifier used as a field receiver
-                                    var recvCandidates = new Array<String>();
-                                    for (k in used.keys()) if (k != currentBinder && validName(k) && allowedBinder(k)) {
-                                        if (varUsedAsFieldReceiver(cl.body, k)) recvCandidates.push(k);
-                                    }
-                                    if (recvCandidates.length == 1) {
-                                        var cand = recvCandidates[0];
-                                        // Do NOT choose a name that is also a free variable in the EFn body (to avoid shadowing outer vars)
-                                        if (!free.exists(cand)) {
-                                            chosenBinder = cand;
-                                        }
-                                    }
-                                }
-
-                                // Do not rename to arbitrary other names like id/tag. Restrict renames to allowed binders only.
-
-                                if (chosenBinder != null && chosenBinder != currentBinder) {
-                                    outArgs[0] = PVar(chosenBinder);
-                                    argBases = new Map<String,Bool>(); argBases.set(chosenBinder, true);
-                                    #if debug_web_binder
-                                    // DISABLED: trace('[WebParamFinalFix] Renaming EFn binder ' + currentBinder + ' -> ' + chosenBinder + ' (preferred heuristic)');
-                                    #end
-                                } else {
-                                    // Additional repair: if there is exactly one lower_snake non-arg used name remaining, rewrite it to the binder
-                                    var freeVars = new Array<String>();
-                                    for (k in used.keys()) if (k != currentBinder && validName(k) && !argBases.exists(k)) freeVars.push(k);
-                                    if (freeVars.length == 1) {
-                                        var victim = freeVars[0];
-                                        // Only rewrite if the victim itself is an allowed binder name (avoid id/tag/etc.)
-                                        if (allowedBinder(victim)) {
-                                            #if debug_web_binder
-                                            // DISABLED: trace('[WebParamFinalFix] Rewriting free var ' + victim + ' to binder ' + currentBinder + ' inside single-arg EFn');
-                                            #end
-                                            newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n4: ElixirAST): ElixirAST {
-                                                return switch (n4.def) { case EVar(v) if (v == victim): makeASTWithMeta(EVar(currentBinder), n4.metadata, n4.pos); default: n4; }
-                                            });
-                                        } else {
-                                            // Skip unsafe rewrite
-                                        }
-                                    }
-                                }
-                            }
+                        // Collect arg binder names after any underscore promotion above.
+                        var argBases = new Map<String,Bool>();
+                        for (a in outArgs) switch (a) {
+                            case PVar(nm) if (nm != null): argBases.set(nm, true);
+                            case PAlias(nm, _) if (nm != null): argBases.set(nm, true);
+                            default:
                         }
+
                         var renamePairs = new Map<String,String>();
-                        for (i in 0...cl.args.length) switch (cl.args[i]) { case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
-                            var base2 = nm.substr(1);
-                            if (used.exists(nm)) renamePairs.set(nm, base2);
-                            default: }
-                        // newBodyClause may have been updated above; keep using the same variable
-                        // If the single-arg binder itself was renamed (e.g., id -> t), rewrite body occurrences of the old binder to the new name
-                        if (originalBinder != null) {
-                            var newBinder: Null<String> = switch (outArgs.length == 1 ? outArgs[0] : null) { case PVar(nm2): nm2; default: null; };
-                            if (newBinder != null && newBinder != originalBinder) {
-                                renamePairs.set(originalBinder, newBinder);
-                                #if debug_web_binder
-                                // DISABLED: trace('[WebParamFinalFix] Binder rename: ' + originalBinder + ' -> ' + newBinder + ' (apply in body)');
-                                #end
-                            }
+                        for (a in cl.args) switch (a) {
+                            case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
+                                var base2 = nm.substr(1);
+                                if (used.exists(nm)) renamePairs.set(nm, base2);
+                            case PAlias(nm2, _) if (nm2 != null && nm2.length > 1 && nm2.charAt(0) == '_'):
+                                var base3 = nm2.substr(1);
+                                if (used.exists(nm2)) renamePairs.set(nm2, base3);
+                            default:
                         }
                         if (Lambda.count(renamePairs) > 0) newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n2: ElixirAST): ElixirAST {
                             return switch (n2.def) { case EVar(v) if (renamePairs.exists(v)): makeASTWithMeta(EVar(renamePairs.get(v)), n2.metadata, n2.pos); default: n2; }
@@ -226,35 +154,6 @@ class WebParamFinalFixTransforms {
                     x;
             }
         });
-    }
-
-    static function varUsedAsFieldReceiver(node: ElixirAST, varName: String): Bool {
-        var found = false;
-        function walk(n: ElixirAST): Void {
-            if (n == null || n.def == null || found) return;
-            switch (n.def) {
-                case EField(target, _):
-                    switch (target.def) {
-                        case EVar(v) if (v == varName): found = true;
-                        default: walk(target);
-                    }
-                case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s in ss2) walk(s);
-                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
-                case ECase(expr, cls): walk(expr); for (cl in cls) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
-                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
-                case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
-                case ERemoteCall(t2,_,as2): walk(t2); if (as2 != null) for (a2 in as2) walk(a2);
-                case EKeywordList(pairs): for (p in pairs) walk(p.value);
-                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
-                case EStructUpdate(base, fs): walk(base); for (f in fs) walk(f.value);
-                case ETuple(es) | EList(es): for (e in es) walk(e);
-                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
-                default:
-            }
-        }
-        walk(node);
-        return found;
     }
 
     static function computeParamPromotions(args:Array<EPattern>, body:ElixirAST):Map<String,String> {

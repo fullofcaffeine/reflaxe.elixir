@@ -466,28 +466,6 @@ class PatternBuilder {
     }
     
     /**
-     * Apply underscore prefix to unused pattern variables
-     *
-     * WHY: In Elixir, unused variables should be prefixed with underscore to avoid warnings
-     * WHAT: DISABLED - This logic is now handled by UsageAnalysis pass in HygieneTransforms
-     * HOW: Returns pattern unchanged; UsageAnalysis determines actual usage with complete AST
-     *
-     * HISTORICAL NOTE: Previously tried to add underscore prefixes during AST building,
-     * but this was premature - we don't have enough information at build time to know
-     * if a variable is truly unused. The UsageAnalysis pass has the complete AST and
-     * can accurately determine usage.
-     *
-     * @param isEmptyBody IGNORED - kept for API compatibility
-     */
-    public static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>,
-                                                                   extractedParams: Array<String>,
-                                                                   isEmptyBody: Bool = false): EPattern {
-        // NO-OP: Return pattern unchanged
-        // UsageAnalysis pass will handle underscore prefixing with proper usage information
-        return pattern;
-    }
-    
-    /**
      * Compute a key string for a pattern (for deduplication/caching)
      */
     public static function computePatternKey(pattern: EPattern): String {

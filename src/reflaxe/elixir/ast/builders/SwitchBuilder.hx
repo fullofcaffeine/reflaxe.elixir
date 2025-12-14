@@ -304,19 +304,23 @@ class SwitchBuilder {
         caseIndex: Int,
         enumTypeForSwitch: Null<EnumType>
     ): Array<ECaseClause> {
+        // Multi-value cases (`case a, b:`) are compiled as multiple clauses with identical bodies.
+        if (switchCase.values.length == 0) {
+            return [];
+        }
+        if (switchCase.values.length > 1) {
+            var out: Array<ECaseClause> = [];
+            for (v in switchCase.values) {
+                out = out.concat(buildCaseClause({values: [v], expr: switchCase.expr}, targetVarName, context, caseIndex, enumTypeForSwitch));
+            }
+            return out;
+        }
+
         // Per-clause ClauseContext for proper binding and usage tracking
         var parentCtx = context.getCurrentClauseContext();
         var clauseCtx = new ClauseContext(parentCtx);
         if (enumTypeForSwitch != null) clauseCtx.enumType = enumTypeForSwitch;
         context.pushClauseContext(clauseCtx);
-        // Handle multiple values in one case (fall-through pattern)
-        if (switchCase.values.length == 0) {
-            context.popClauseContext();
-            return [];
-        }
-
-        // For now, handle single value cases (most common)
-        // TODO: Handle multiple values with pattern alternatives
         var value = switchCase.values[0];
 
         // OPTIMIZATION: Flatten "Option.Some(param) with inner switch(param)" into a single

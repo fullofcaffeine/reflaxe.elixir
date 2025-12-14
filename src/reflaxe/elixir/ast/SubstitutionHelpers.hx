@@ -261,27 +261,6 @@ class SubstitutionHelpers {
         };
     }
     
-    /**
-     * Build an expression with variable substitution applied
-     * 
-     * WHY: Some contexts need to compile with variable replacements
-     * WHAT: Compiles an expression after applying variable substitution
-     * HOW: Apply substitution then delegate to main builder
-     * 
-     * @param expr The expression to build
-     * @param loopVar Optional loop variable to substitute
-     * @param context Compilation context
-     */
-    public static function buildWithSubstitution(expr: TypedExpr, loopVar: Null<TVar>, context: CompilationContext): ElixirAST {
-        if (loopVar != null) {
-            // Apply substitution before building
-            // TODO: Implement the actual substitution logic
-            // For now, just delegate to regular build
-        }
-        
-        // Delegate to main builder
-        return ElixirASTBuilder.buildFromTypedExpr(expr, context);
-    }
 }
 
 #end

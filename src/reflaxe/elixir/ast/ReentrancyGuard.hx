@@ -161,8 +161,8 @@ class ReentrancyGuard {
      * WHAT: Creates string key from position or unique ID
      * HOW: Uses position when available, generates ID otherwise
      *
-     * TODO: This may need refinement - position alone might not be unique
-     * in some cases (e.g., generated code). Consider using expr hash.
+     * Note: Position alone might not be unique for generated code; if collisions
+     * become observable, incorporate additional identity (e.g., a stable hash).
      */
     function getExpressionKey(expr: TypedExpr): String {
         // Use position as primary key

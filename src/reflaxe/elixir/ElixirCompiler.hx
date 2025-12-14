@@ -26,6 +26,7 @@ import reflaxe.elixir.SourceMapWriter;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
+import reflaxe.elixir.ast.ElixirAST.RouterRouteMeta;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.CompilationContext;
 
@@ -352,17 +353,6 @@ class ElixirCompiler extends GenericCompiler<
         if (shouldSuppressStdEmission(classType)) {
             return false;
         }
-        // Debug for TodoApp investigation
-        #if debug_annotation_transforms
-        if (classType.name == "TodoApp") {
-            // DISABLED: trace('[shouldGenerateClass] Checking TodoApp...');
-            // DISABLED: trace('[shouldGenerateClass]   isExtern: ${classType.isExtern}');
-            // DISABLED: trace('[shouldGenerateClass]   has @:application: ${classType.meta.has(":application")}');
-            // DISABLED: trace('[shouldGenerateClass]   has @:native: ${classType.meta.has(":native")}');
-            var result = super.shouldGenerateClass(classType);
-            // DISABLED: trace('[shouldGenerateClass]   super.shouldGenerateClass returns: ${result}');
-        }
-        #end
         
         // Skip internal Haxe types that shouldn't generate modules
         // Module names in Elixir must start with uppercase letters
@@ -808,26 +798,6 @@ class ElixirCompiler extends GenericCompiler<
 
         if (classType == null) return null;
 
-        // Debug output for TodoApp investigation
-        #if debug_annotation_transforms
-        if (classType.name == "TodoApp") {
-            // DISABLED: trace('[ElixirCompiler.compileClassImpl] === TodoApp Debug Info ===');
-            // DISABLED: trace('[ElixirCompiler.compileClassImpl] funcFields received: ${funcFields.length}');
-            for (f in funcFields) {
-                // DISABLED: trace('[ElixirCompiler.compileClassImpl]   - Function: ${f.field.name}');
-            }
-            // DISABLED: trace('[ElixirCompiler.compileClassImpl] isExtern: ${classType.isExtern}');
-            // DISABLED: trace('[ElixirCompiler.compileClassImpl] metadata: [${[for (m in classType.meta.get()) m.name].join(", ")}]');
-            
-            // Check if GenericCompiler considers this class extern
-            // DISABLED: trace('[ElixirCompiler.compileClassImpl] classType.fields.get().length: ${classType.fields.get().length}');
-            // DISABLED: trace('[ElixirCompiler.compileClassImpl] classType.statics.get().length: ${classType.statics.get().length}');
-            for (field in classType.statics.get()) {
-                // DISABLED: trace('[ElixirCompiler.compileClassImpl]   Static field: ${field.name}, kind: ${field.kind}');
-            }
-        }
-        #end
-
         // Skip standard library/internal classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
             #if debug_compilation_flow
@@ -835,10 +805,6 @@ class ElixirCompiler extends GenericCompiler<
             #end
             return null;
         }
-
-        // Initialize function usage collector for this module
-        var functionUsageCollector = new reflaxe.elixir.helpers.FunctionUsageCollector();
-        functionUsageCollector.currentModule = classType.name;
 
         // Check for @:native annotation to determine base module name/pack
         var moduleName = classType.name;
@@ -920,20 +886,6 @@ class ElixirCompiler extends GenericCompiler<
                 if (moduleAST.metadata == null) moduleAST.metadata = {};
                 Reflect.setField(moduleAST.metadata, "forceEmit", true);
             }
-        }
-
-        // Add function usage information to module metadata
-        if (functionUsageCollector != null && moduleAST != null) {
-            if (moduleAST.metadata == null) {
-                moduleAST.metadata = {};
-            }
-            // Store the list of unused functions in metadata
-            moduleAST.metadata.unusedPrivateFunctions = functionUsageCollector.getUnusedPrivateFunctions();
-            moduleAST.metadata.unusedPrivateFunctionsWithArity = functionUsageCollector.getUnusedPrivateFunctionsWithArity();
-
-            #if debug_function_usage
-            functionUsageCollector.printStats();
-            #end
         }
 
         #if debug_compilation_flow
@@ -1447,21 +1399,9 @@ class ElixirCompiler extends GenericCompiler<
         // This must happen BEFORE any other processing to ensure clean patterns
         expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
 
-        // Capture infrastructure variable substitutions for builder reference
-        // Band-aid fix: Builders re-compile sub-expressions and lose preprocessor work
-        // TODO Phase 2: Refactor builders to accept pre-built AST instead
+        // Capture infrastructure-variable substitutions produced by the TypedExpr preprocessor.
+        // Some builders recompile sub-expressions and need ID-based substitutions available.
         context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
-
-        // Analyze variable usage before building AST
-        // This enables context-aware naming to prevent Elixir compilation warnings
-        var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
-        context.variableUsageMap = usageMap;
-
-        // Collect function calls if we have a collector active
-        // TODO: Restore when FunctionUsageCollector is implemented
-        // if (functionUsageCollector != null) {
-        //     functionUsageCollector.collectCalls(expr);
-        // }
 
         // Build AST for the expression with compilation context
         // Pass context as second parameter to ensure isolated state
@@ -1550,9 +1490,8 @@ class ElixirCompiler extends GenericCompiler<
         // Preprocess the entire function expression
         var preprocessedExpr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
 
-        // Analyze variable usage for the entire function
-        var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(preprocessedExpr);
-        functionContext.variableUsageMap = usageMap;
+        // Capture infrastructure-variable substitutions produced by the TypedExpr preprocessor.
+        functionContext.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
 
         // Build AST using the function-scoped context
         // The builder will process parameters and create the function structure
@@ -1720,9 +1659,8 @@ class ElixirCompiler extends GenericCompiler<
                             // CRITICAL: Preprocess function body to eliminate infrastructure variables
                             tfunc.expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(tfunc.expr);
 
-                            // Analyze variable usage for the function
-                            var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
-                            context.variableUsageMap = usageMap;
+                            // Capture infrastructure-variable substitutions produced by the TypedExpr preprocessor.
+                            context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
 
                             // Build AST which triggers dependency tracking
                             reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
@@ -1758,15 +1696,6 @@ class ElixirCompiler extends GenericCompiler<
         #if debug_behavior_transformer
         // DISABLED: trace('[ElixirCompiler.buildClassAST] Building class: ${classType.name}');
         // DISABLED: trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
-        #end
-
-        #if debug_annotation_transforms
-        if (classType.name == "TodoApp") {
-            // DISABLED: trace('[ElixirCompiler.buildClassAST] TodoApp received ${funcFields.length} functions');
-            for (f in funcFields) {
-                // DISABLED: trace('[ElixirCompiler.buildClassAST] Function: ${f.field.name}');
-            }
-        }
         #end
 
         // Skip built-in types and std/internal classes that shouldn't generate modules
@@ -2443,6 +2372,7 @@ class ElixirCompiler extends GenericCompiler<
         // Enable Router transformation pass for @:router modules
         if (classType.meta.has(":router")) {
             metadata.isRouter = true;
+            metadata.routerRoutes = extractRouterRoutesFromMeta(classType);
             #if debug_annotation_transforms
             // DISABLED: trace('[ElixirCompiler] Set isRouter=true metadata for ${classType.name}');
             #end
@@ -2709,21 +2639,6 @@ class ElixirCompiler extends GenericCompiler<
         
         // Use setExtraFile to generate the companion module
         setExtraFile(outputPath, moduleString);
-    }
-    
-    /**
-     * Helper to build AST from TypedExpr (delegates to builder)
-     */
-    function buildFromTypedExpr(expr: TypedExpr, ?usageMap: Map<Int, Bool>): reflaxe.elixir.ast.ElixirAST {
-        // Create a fresh compilation context for this expression
-        var context = createCompilationContext();
-
-        // Set usage map if provided
-        if (usageMap != null) {
-            context.variableUsageMap = usageMap;
-        }
-
-        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
     }
     
     /**
@@ -3207,6 +3122,109 @@ class ElixirCompiler extends GenericCompiler<
             default:
                 return [];
         }
+    }
+
+    /**
+     * Extract router route definitions from @:routes metadata for @:router modules.
+     */
+    private function extractRouterRoutesFromMeta(classType: ClassType): Null<Array<RouterRouteMeta>> {
+        var routesMeta = classType.meta.extract(":routes");
+        var routesMetaAlt = classType.meta.extract("routes");
+        if (routesMetaAlt != null && routesMetaAlt.length > 0) {
+            routesMeta = routesMeta != null && routesMeta.length > 0 ? routesMeta.concat(routesMetaAlt) : routesMetaAlt;
+        }
+
+        if (routesMeta == null || routesMeta.length == 0) {
+            return null;
+        }
+
+        var entry = routesMeta[0];
+        if (entry.params == null || entry.params.length == 0) {
+            Context.error("@:routes annotation requires an array parameter: @:routes([{...}])", entry.pos);
+            return null;
+        }
+
+        function extractStringValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)): s;
+                case EConst(CIdent(ident)): ident;
+                case EField(_, field): field; // Enum values / type references (e.g., HttpMethod.GET)
+                default:
+                    Context.error('${fieldName} must be a string literal or enum value', pos);
+                    null;
+            };
+        }
+
+        function parseRoute(routeExpr: Expr): Null<RouterRouteMeta> {
+            return switch (routeExpr.expr) {
+                case EObjectDecl(fields):
+                    var name: Null<String> = null;
+                    var method: Null<String> = null;
+                    var path: Null<String> = null;
+                    var controller: Null<String> = null;
+                    var action: Null<String> = null;
+                    var pipeline: Null<String> = null;
+
+                    for (f in fields) {
+                        switch (f.field) {
+                            case "name":
+                                name = extractStringValue(f.expr, "name", f.expr.pos);
+                            case "method":
+                                method = extractStringValue(f.expr, "method", f.expr.pos);
+                            case "path":
+                                path = extractStringValue(f.expr, "path", f.expr.pos);
+                            case "controller":
+                                controller = extractStringValue(f.expr, "controller", f.expr.pos);
+                            case "action":
+                                action = extractStringValue(f.expr, "action", f.expr.pos);
+                            case "pipeline":
+                                pipeline = extractStringValue(f.expr, "pipeline", f.expr.pos);
+                            default:
+                                Context.warning('Unknown route field: ${f.field}', f.expr.pos);
+                        }
+                    }
+
+                    if (name == null || method == null || path == null) {
+                        Context.error("Route definition requires name/method/path", routeExpr.pos);
+                        return null;
+                    }
+
+                    // Validate required fields for method kinds we support.
+                    // LIVE_DASHBOARD is special: controller/action are optional.
+                    var methodUpper = method.toUpperCase();
+                    if (methodUpper != "LIVE_DASHBOARD") {
+                        if (controller == null) Context.error('Route "${name}" is missing controller', routeExpr.pos);
+                        if (action == null) Context.error('Route "${name}" is missing action', routeExpr.pos);
+                    }
+
+                    return {
+                        name: name,
+                        method: methodUpper,
+                        path: path,
+                        controller: controller,
+                        action: action,
+                        pipeline: pipeline
+                    };
+
+                default:
+                    Context.error("Each route in @:routes must be an object: {name: ..., method: ..., path: ...}", routeExpr.pos);
+                    null;
+            }
+        }
+
+        var routesExpr = entry.params[0];
+        return switch (routesExpr.expr) {
+            case EArrayDecl(values):
+                var routes: Array<RouterRouteMeta> = [];
+                for (r in values) {
+                    var parsed = parseRoute(r);
+                    if (parsed != null) routes.push(parsed);
+                }
+                routes.length > 0 ? routes : null;
+            default:
+                Context.error("@:routes parameter must be an array: @:routes([{...}])", routesExpr.pos);
+                null;
+        };
     }
 
     /**

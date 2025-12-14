@@ -154,14 +154,6 @@ class EarlyBootstrap {
       pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.inlineTempBindingInExprPass
     });
 
-    // Presence reduce rewrite very early to catch Enum.each over presence maps before other list rewrites
-    passes.push({
-      name: "PresenceReduceRewrite",
-      description: "Rewrite Presence Enum.each + Reflect.fields/Map.get scans to Enum.reduce(Map.values(map), [], ...) with conditional append",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
-    });
-
     // Debug: XRay map field values that contain EBlock (flag gated)
     passes.push({
       name: "XRayMapBlocks",
@@ -191,4 +183,3 @@ class EarlyBootstrap {
   }
 }
 #end
-

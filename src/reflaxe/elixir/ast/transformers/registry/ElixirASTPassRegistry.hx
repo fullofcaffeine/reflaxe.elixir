@@ -1661,16 +1661,7 @@ class ElixirASTPassRegistry {
         
         // ===== HYGIENE TRANSFORMATION PASSES =====
         // These passes eliminate compilation warnings and ensure idiomatic Elixir
-        // TEMPORARILY DISABLED: Stack overflow issues due to incomplete AST traversal
-        // TODO: Fix recursive traversal to handle all AST node types properly
-        
-        // Hygienic variable naming pass (eliminate shadowing)
-        passes.push({
-            name: "HygienicNaming",
-            description: "Eliminate variable shadowing with scope-aware renaming",
-            enabled: false, // TEMP: Disabled due to stack overflow
-            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.hygienicNamingPass
-        });
+        // NOTE: Some deep hygiene transforms require a full visitor traversal to avoid recursion hazards.
         
         // Usage analysis pass (detect unused variables)
         // NOW USING CONTEXTUAL VARIANT for consistent variable naming
@@ -1680,22 +1671,6 @@ class ElixirASTPassRegistry {
             enabled: #if (fast_boot || disable_hygiene_final) false #else true #end, // disable in fast_boot/hygiene-off
             pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass,
             contextualPass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPassWithContext
-        });
-        
-        // Atom normalization pass (remove unnecessary quotes)
-        passes.push({
-            name: "AtomNormalization",
-            description: "Remove unnecessary quotes from atoms",
-            enabled: false, // TEMP: Disabled - needs more testing
-            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.atomNormalizationPass
-        });
-        
-        // Equality to pattern matching pass (idiomatic comparisons)
-        passes.push({
-            name: "EqualityToPattern",
-            description: "Transform == comparisons to pattern matching",
-            enabled: false, // TEMP: Disabled - needs more testing
-            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.equalityToPatternPass
         });
         
         // Fix bare concatenations in blocks
@@ -2071,13 +2046,6 @@ class ElixirASTPassRegistry {
             description: "(disabled) Do not rewrite ERaw Map.keys pipelines inside Presence modules",
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.PresenceERawTransforms.erawPresenceKeysNormalizePass
-        });
-        // Presence list-building reduce rewrite
-        passes.push({
-            name: "PresenceReduceRewrite",
-            description: "Rewrite Presence Enum.each + Reflect.fields list construction to Enum.reduce(Map.values(map), [], ...) with conditional append",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
         });
         // Presence shadowed binder rename inside EFn clauses (entry vs item clashes)
         passes.push({
@@ -2613,7 +2581,7 @@ class ElixirASTPassRegistry {
 
         // Robust inliner: works on render/1 EBlock/EDo, nested parens, any var name
         // TEMPORARILY DISABLED: Performance issue with O(n²) string processing on large templates
-        // TODO: Fix the performance issue in HeexInlineCapturedContentTransforms before re-enabling
+        // NOTE: Re-enable after addressing the O(n²) template-processing cost.
         passes.push({
             name: "HeexInlineCapturedContent",
             description: "Inline string assigned to a var referenced by Phoenix.HTML.raw(var|@var) inside ~H; drop scaffolding",
@@ -3185,13 +3153,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.FunctionArgBlockToIIFETransforms.pass
         });
-        // Presence reduce rewrite (early) to catch Presence.list scans before generic rewrites
-        passes.push({
-            name: "PresenceReduceRewrite",
-            description: "Rewrite Presence Enum.each + Reflect.fields to Enum.reduce(Map.values(map), [], ...) with conditional append (early)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceReduceRewriteTransforms.presenceReduceRewritePass
-        });
         // Presence safety: ensure concat accumulators have [] initialization if removed upstream
         passes.push({
             name: "PresenceConcatAccumulatorInit",
@@ -3218,29 +3179,6 @@ class ElixirASTPassRegistry {
                 "ParamUnderscoreGlobalAlign_Final",
                 "HandleEventParamsForceBodyRewrite_Final",
                 "HandleEventParamsUltraFinal_Last"
-            ]
-        });
-        // Presence finalizer: ensure get_users_editing_todo/2 initializes and returns accumulator
-        passes.push({
-            name: "PresenceInitMetasInGetUsersEditingTodo",
-            description: "Presence-only: insert metas=[]; return metas in get_users_editing_todo/2",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceInitMetasInGetUsersEditingTodoTransforms.pass,
-            runAfter: [
-                "PresenceReduceWhileAccumulatorRepair",
-                "PresenceConcatAccumulatorInit"
-            ]
-        });
-        // Presence final: rewrite get_users_editing_todo/2 to Enum.reduce over Map.values
-        passes.push({
-            name: "PresenceRewriteGetUsersEditingTodoToReduce_Final",
-            description: "Presence-only: rewrite get_users_editing_todo/2 to Enum.reduce(Map.values(...), [], fn entry, acc -> ... end)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.PresenceRewriteGetUsersEditingTodoToReduceTransforms.pass,
-            runAfter: [
-                "PresenceInitMetasInGetUsersEditingTodo",
-                "PresenceReduceWhileAccumulatorRepair",
-                "PresenceConcatAccumulatorInit"
             ]
         });
         passes.push({
@@ -3679,16 +3617,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms.discardPass
         });
         
-        
-        // Pattern variable origin analysis pass
-        // TODO: Temporarily disabled - needs proper implementation
-        // passes.push({
-        //     name: "PatternVariableOriginAnalysis",
-        //     description: "Use VarOrigin metadata to properly handle pattern variables vs temp extraction variables",
-        //     enabled: false,
-        //     pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_null // patternVariableOriginAnalysisPass
-        // });
-
         // Safety net: ensure `require Ecto.Query` after all late passes
         passes.push({
             name: "EctoQueryRequireInjection",
@@ -3818,18 +3746,6 @@ class ElixirASTPassRegistry {
             description: "In handle_info/2, drop v = case ... when v is unused",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoDropUnusedAssignTransforms.pass
-        });
-        passes.push({
-            name: "HandleEventParamsValueRewrite",
-            description: "Forward specific SafeAssigns values directly from params to avoid ephemeral local mismatches",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamsValueRewriteTransforms.pass
-        });
-        passes.push({
-            name: "HandleEventDropUnusedParamExtract_Final",
-            description: "Drop name = Map.get(params, key) in handle_event/3 when name is unused later",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventDropUnusedParamExtractTransforms.pass
         });
         passes.push({
             name: "MountCaseSocketAssignDrop",
@@ -5644,35 +5560,18 @@ class ElixirASTPassRegistry {
             ]
         });
         passes.push({
-            name: "HandleEventValueBindFromParams_AbsoluteLast",
-            description: "If handle_event/3 uses `value` without a binding, set value = paramsVar",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueBindFromParamsTransforms.pass,
-            runAfter: [
-                "HandleEventMissingSortByExtract_Final",
-                "HandleEventIdExtractNormalize_AbsoluteLast"
-            ]
-        });
-        passes.push({
             name: "HandleEventForceSortByBinding_Final",
             description: "Force sort_by = Map.get(params,\"sort_by\") in handle_event/3 when undeclared",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventForceSortByBindingTransforms.pass,
-            runAfter: ["HandleEventValueBindFromParams_AbsoluteLast"]
-        });
-        passes.push({
-            name: "HandleEventDropUnusedHelperBinds_Final",
-            description: "Drop injected value=params and sort_by=Map.get(...) when unused in handle_event/3 bodies",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventDropUnusedHelperBindsTransforms.pass,
-            runAfter: ["HandleEventForceSortByBinding_Final", "HandleEventAndInfoMissingVar_Final"]
+            runAfter: ["HandleEventMissingSortByExtract_Final"]
         });
         passes.push({
             name: "HandleEventSortByFinalBind",
             description: "Absolute final: ensure sort_by binding exists when referenced in handle_event/3",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventSortByFinalBindTransforms.pass,
-            runAfter: ["HandleEventDropUnusedHelperBinds_Final"]
+            runAfter: ["HandleEventForceSortByBinding_Final"]
         });
         passes.push({
             name: "HandleEventPruneHelperBinds_Final",
@@ -5799,12 +5698,16 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.FinalUnderscoreRepairTransforms.transformPass,
             runAfter: ["HandleInfoAliasAndNoreply_AbsoluteFinal"]
         });
-        // Absolute-final safety net for missing LiveView bindings (value/sort_by/s)
+
+        // Absolute-final replay: ensure case patterns are realigned after late underscore repairs.
+        // WHY: Some late passes can reintroduce `{:ok, _value}` / `{:error, _reason}` patterns while
+        //      controller/json rewrites (and underscore-repair) leave bodies referencing `value`/`reason`,
+        //      which is a hard compile error.
         passes.push({
-            name: "HandleEventAndInfoMissingVar_Final",
-            description: "Last-chance binding insertion for handle_event/3 (value, sort_by) and handle_info/2 (s) when undeclared",
+            name: "CaseBinderUnderscoreAlign_AbsoluteFinal_Replay",
+            description: "Absolute-final replay: align underscored case binders with body references (avoid undefined vars)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventAndInfoMissingVarFinalTransforms.pass,
+            pass: reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms.pass,
             runAfter: ["FinalUnderscoreRepair"]
         });
 

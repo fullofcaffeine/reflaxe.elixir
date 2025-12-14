@@ -239,8 +239,14 @@ class VariableBuilder {
      * HOW: Checks usage and applies naming conventions
      */
     static function resolveDeclarationName(v: TVar, context: CompilationContext): String {
+        // Haxe can produce a local named `__` from source patterns like `var _ = expr`.
+        // In Elixir, `__` is reserved for compiler variables (e.g., __MODULE__), so emitting
+        // it as a binder produces warnings. Treat it as the wildcard discard instead.
+        if (v.name == "__") return "_";
+
         // Convert variable name to snake_case
         var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);
+        if (varName == "__") return "_";
 
         // DISABLED: Underscore prefixing logic removed
         // WHY: We don't have complete usage information during AST building
@@ -401,18 +407,6 @@ class VariableBuilder {
             }
         }
 
-        // Priority 4: Check global variable mappings
-        // TODO: Add variableMappings to context when available
-        /*
-        if (context.variableMappings != null && context.variableMappings.exists(tvarId)) {
-            var mapping = context.variableMappings.get(tvarId);
-            #if debug_variable_mappings
-            // DISABLED: trace('[Variable Mapping] Found global mapping: ${tvar.name} (id: $tvarId) -> $mapping');
-            #end
-            return mapping;
-        }
-        */
-
         // Priority 5: Check for infrastructure variables
         if (isInfrastructureVariable(defaultName)) {
             var infraName = handleInfrastructureVariable(tvar, context);
@@ -420,18 +414,6 @@ class VariableBuilder {
                 return infraName;
             }
         }
-
-        // Priority 6: Check loop preservation
-        // TODO: Add preservedLoopVariables to context when available
-        /*
-        if (context.preservedLoopVariables != null && context.preservedLoopVariables.exists(tvarId)) {
-            var preserved = context.preservedLoopVariables.get(tvarId);
-            #if debug_loop_variables
-            // DISABLED: trace('[Loop Variable] Using preserved name: ${tvar.name} (id: $tvarId) -> $preserved');
-            #end
-            return preserved;
-        }
-        */
 
         // Priority 7: Check if the declaration had underscore prefix
         // CRITICAL: References must match the declaration name exactly
@@ -477,23 +459,8 @@ class VariableBuilder {
         
         // Handle g_ variables (generated temporaries)
         if (name.startsWith("g_")) {
-            // Check if this g_ variable has a specific mapping
-            // TODO: Add generatedVariableMappings when available
-            /*
-            if (context.generatedVariableMappings != null && 
-                context.generatedVariableMappings.exists(tvar.id)) {
-                return context.generatedVariableMappings.get(tvar.id);
-            }
-            */
-            
-            // For switch expressions, g_ variables often need special handling
-            // TODO: Add isInSwitchExpression when available
-            /*
-            if (context.isInSwitchExpression) {
-                // The g_ variable might be the switch expression result variable
-                return name; // Keep as-is for now
-            }
-            */
+            // Generated temporaries are preserved as-is unless the compilation context
+            // explicitly remaps them (handled elsewhere).
         }
         
         // Handle rec_ variables (recursive function helpers)
@@ -550,32 +517,6 @@ class VariableBuilder {
     }
     
     /**
-     * Register a global variable mapping
-     * 
-     * WHY: Variables can be renamed during compilation
-     * WHAT: Maps TVar ID to the new name
-     * HOW: Updates the global variable mappings
-     * 
-     * @param tvarId The variable ID
-     * @param newName The new variable name
-     * @param context The compilation context
-     */
-    public static function registerGlobalVariable(tvarId: Int, newName: String, context: CompilationContext): Void {
-        // TODO: Add variableMappings when available
-        /*
-        if (context.variableMappings == null) {
-            context.variableMappings = new Map<Int, String>();
-        }
-        
-        context.variableMappings.set(tvarId, newName);
-        */
-        
-        #if debug_variable_mappings
-        // DISABLED: trace('[Variable Mapping] Registered global: var $tvarId -> $newName');
-        #end
-    }
-    
-    /**
      * Clear pattern variable registry
      * 
      * WHY: Pattern variables are scoped to their match expression
@@ -592,32 +533,6 @@ class VariableBuilder {
         #end
     }
     
-    /**
-     * Preserve loop variable name
-     * 
-     * WHY: Loop variables need consistent naming across iterations
-     * WHAT: Preserves the variable name for loop body
-     * HOW: Adds to preserved loop variables map
-     * 
-     * @param tvarId The variable ID
-     * @param name The name to preserve
-     * @param context The compilation context
-     */
-    public static function preserveLoopVariable(tvarId: Int, name: String, context: CompilationContext): Void {
-        // TODO: Add preservedLoopVariables to context when available
-        /*
-        if (context.preservedLoopVariables == null) {
-            context.preservedLoopVariables = new Map<Int, String>();
-        }
-        
-        context.preservedLoopVariables.set(tvarId, name);
-        */
-        
-        #if debug_loop_variables
-        // DISABLED: trace('[Loop Variable] Preserved: var $tvarId -> $name');
-        #end
-    }
-
     /**
      * Strip numeric shadow suffix from parameter names
      *

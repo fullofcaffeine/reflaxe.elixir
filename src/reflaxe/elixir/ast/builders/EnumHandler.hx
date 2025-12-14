@@ -321,7 +321,6 @@ class EnumHandler {
         var tag = extractEnumTag(value);
         if (tag == "") return PWildcard;
         
-        var typeName = enumType.name;
         var params = [];
         
         switch(value.expr) {
@@ -338,7 +337,7 @@ class EnumHandler {
         
         // Build module-qualified pattern
         // For now, use tuple pattern with atom tag
-        // TODO: Implement proper module-qualified patterns
+        // NOTE: Regular enums currently compile to tuple patterns with atom tags.
         var atomPattern = PLiteral(makeAST(EAtom(tag.toSnakeCase())));
         if (params.length > 0) {
             return PTuple([atomPattern].concat(params));

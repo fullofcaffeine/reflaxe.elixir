@@ -51,15 +51,24 @@ class ControllerLocalAssignUnusedUnderscoreTransforms {
     for (i in 0...stmts.length) {
       var s = stmts[i];
       var s1 = switch (s.def) {
-        case EBinary(Match, {def: EVar(b)}, rhs) if (!usedLater(stmts, i+1, b) && isSimple(rhs)):
+        case EBinary(Match, {def: EVar(b)}, rhs)
+          if (canUnderscoreBinder(b) && !usedLater(stmts, i + 1, b) && isSimple(rhs)):
           makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b)), rhs), s.metadata, s.pos);
-        case EMatch(PVar(binderName), rhsExpr) if (!usedLater(stmts, i+1, binderName) && isSimple(rhsExpr)):
+        case EMatch(PVar(binderName), rhsExpr)
+          if (canUnderscoreBinder(binderName) && !usedLater(stmts, i + 1, binderName) && isSimple(rhsExpr)):
           makeASTWithMeta(EMatch(PVar('_' + binderName), rhsExpr), s.metadata, s.pos);
         default: s;
       }
       out.push(s1);
     }
     return out;
+  }
+
+  static inline function canUnderscoreBinder(name: String): Bool {
+    // Never double-underscore already-safe binders like `_x` (would become `__x`) and
+    // never rewrite the wildcard discard `_` (would become `__`, which Elixir treats
+    // as an unknown compiler variable).
+    return name != null && name.length > 0 && name.charAt(0) != '_';
   }
 
   static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {

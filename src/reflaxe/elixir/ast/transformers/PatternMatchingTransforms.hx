@@ -202,8 +202,7 @@ class PatternMatchingTransforms {
             }
         }
         
-        // For now, assume non-exhaustive and suggest adding default
-        // TODO: More sophisticated exhaustiveness checking based on type information
+        // Note: Exhaustiveness checking is currently conservative and does not use type information.
         return false; // Changed to false to avoid adding unnecessary wildcards
     }
     
@@ -350,7 +349,7 @@ class PatternMatchingTransforms {
             }
         }
         
-        // TODO: More sophisticated exhaustiveness checking based on type information
+        // Note: Exhaustiveness checking is currently a simple wildcard scan (no type information).
         return false;
     }
     

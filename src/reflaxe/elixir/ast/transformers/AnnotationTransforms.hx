@@ -158,7 +158,10 @@ class AnnotationTransforms {
         var sessionOptions = makeAST(EKeywordList([
             {key: "store", value: makeAST(EAtom(ElixirAtom.raw("cookie")))},
             {key: "key", value: makeAST(EString('_${appName}_key'))},
-            {key: "signing_salt", value: makeAST(EString('generated_salt_${Std.int(Math.random() * 1000000)}'))},
+            // NOTE: Must be stable across builds; generating this randomly causes session cookies
+            // (and therefore LiveView user tokens) to become invalid on every compile/run.
+            // Phoenix salts are not secrets (secret_key_base is); keep it deterministic per app.
+            {key: "signing_salt", value: makeAST(EString('${appName}_signing_salt'))},
             {key: "same_site", value: makeAST(EString("Lax"))}
         ]));
         // Module attribute for session options
@@ -526,12 +529,12 @@ class AnnotationTransforms {
                 #if debug_annotation_transforms
                 #end
                 
-                var routerBody = buildRouterBody(name, body);
+                var routerBody = buildRouterBody(name, body, ast.metadata);
                 return makeASTWithMeta(EDefmodule(name, routerBody), ast.metadata, ast.pos);
             case EModule(name, attrs, body) if (ast.metadata?.isRouter == true):
                 #if debug_annotation_transforms
                 #end
-                var routerBody2 = buildRouterBody(name, makeAST(EBlock(body)));
+                var routerBody2 = buildRouterBody(name, makeAST(EBlock(body)), ast.metadata);
                 return makeASTWithMeta(EDefmodule(name, routerBody2), ast.metadata, ast.pos);
                 
             default:
@@ -542,7 +545,7 @@ class AnnotationTransforms {
     /**
      * Build Phoenix router body with pipelines and routes
      */
-    static function buildRouterBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
+    static function buildRouterBody(moduleName: String, existingBody: ElixirAST, metadata: ElixirMetadata): ElixirAST {
         var statements = [];
         
         // Add use Phoenix.Router
@@ -550,54 +553,138 @@ class AnnotationTransforms {
         
         // Import LiveView router helpers
         statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
-        
-        // For now, generate a simple working router structure using raw Elixir code
-        // TODO: Create proper AST nodes for router DSL elements
-        var routerCode = '
-  pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_live_flash
-    plug :put_root_layout, {${StringTools.replace(moduleName, ".Router", "")}.Layouts, :root}
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-  end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
+        var webModuleName = StringTools.endsWith(moduleName, ".Router")
+            ? moduleName.substr(0, moduleName.length - ".Router".length)
+            : moduleName;
 
-  scope "/", ${StringTools.replace(moduleName, ".Router", "")} do
-    pipe_through :browser
+        // pipeline :browser do ... end
+        var browserPlugs = [
+            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("accepts"))), makeAST(EList([makeAST(EString("html"))]))])),
+            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_session")))])),
+            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_live_flash")))])),
+            makeAST(ECall(null, "plug", [
+                makeAST(EAtom(ElixirAtom.raw("put_root_layout"))),
+                makeAST(ETuple([
+                    makeAST(EVar(webModuleName + ".Layouts")),
+                    makeAST(EAtom(ElixirAtom.raw("root")))
+                ]))
+            ])),
+            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("protect_from_forgery")))])),
+            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("put_secure_browser_headers")))]))
+        ];
+        statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("browser")))], makeAST(EBlock(browserPlugs)))));
 
-    live "/", TodoLive, :index
-    live "/todos", TodoLive, :index
-    live "/todos/:id", TodoLive, :show
-    live "/todos/:id/edit", TodoLive, :edit
-  end
+        var routes = metadata != null ? metadata.routerRoutes : null;
+        var browserRouteCalls: Array<ElixirAST> = [];
+        var apiRouteCalls: Array<ElixirAST> = [];
+        var dashboardRoutes: Array<{scopePath: String, routePath: String}> = [];
 
-  scope "/api", ${StringTools.replace(moduleName, ".Router", "")} do
-    pipe_through :api
+        if (routes != null) {
+            for (route in routes) {
+                var method = route.method != null ? route.method.toUpperCase() : "";
+                var path = route.path;
+                if (path == null) continue;
 
-    get "/users", UserController, :index
-    post "/users", UserController, :create
-    put "/users/:id", UserController, :update
-    delete "/users/:id", UserController, :delete
-  end
+                if (method == "LIVE_DASHBOARD") {
+                    // Split "/dev/dashboard" -> scope "/dev", route "/dashboard"
+                    var lastSlash = path.lastIndexOf("/");
+                    var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
+                    var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
+                    dashboardRoutes.push({scopePath: scopePath, routePath: routePath});
+                    continue;
+                }
 
-  if Mix.env() in [:dev, :test] do
-    import Phoenix.LiveDashboard.Router
+                var pipeline = route.pipeline != null ? route.pipeline : (StringTools.startsWith(path, "/api") ? "api" : "browser");
+                var targetCalls = (pipeline == "api") ? apiRouteCalls : browserRouteCalls;
 
-    scope "/dev" do
-      pipe_through :browser
+                var controllerName = route.controller != null ? NameUtils.getElixirModuleName(route.controller) : null;
+                var actionName = route.action;
+                if (controllerName == null || actionName == null) {
+                    continue;
+                }
+                if (StringTools.startsWith(actionName, ":")) actionName = actionName.substr(1);
+                actionName = NameUtils.toSnakeCase(actionName);
 
-      live_dashboard "/dashboard", metrics: ${StringTools.replace(moduleName, ".Router", "")}.Telemetry
-    end
-  end';
-        
-        // Use raw Elixir code injection for now
-        statements.push(makeAST(ERaw(routerCode)));
-        
+                var routeMacro = switch (method) {
+                    case "LIVE": "live";
+                    case "GET": "get";
+                    case "POST": "post";
+                    case "PUT": "put";
+                    case "PATCH": "patch";
+                    case "DELETE": "delete";
+                    default: null;
+                };
+                if (routeMacro == null) continue;
+
+                var routePathFinal = (pipeline == "api" && StringTools.startsWith(path, "/api"))
+                    ? path.substr("/api".length)
+                    : path;
+                if (routePathFinal == "") routePathFinal = "/";
+
+                targetCalls.push(makeAST(ECall(null, routeMacro, [
+                    makeAST(EString(routePathFinal)),
+                    makeAST(EVar(controllerName)),
+                    makeAST(EAtom(ElixirAtom.raw(actionName)))
+                ])));
+            }
+        }
+
+        // pipeline :api do ... end (only if needed)
+        if (apiRouteCalls.length > 0) {
+            var apiPlugs = [
+                makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("accepts"))), makeAST(EList([makeAST(EString("json"))]))]))
+            ];
+            statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("api")))], makeAST(EBlock(apiPlugs)))));
+        }
+
+        // scope "/", WebModule do ... end (browser)
+        if (browserRouteCalls.length > 0) {
+            var scopeBody = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))].concat(browserRouteCalls);
+            statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBody)))));
+        }
+
+        // scope "/api", WebModule do ... end (api)
+        if (apiRouteCalls.length > 0) {
+            var scopeBodyApi = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("api")))]))].concat(apiRouteCalls);
+            statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/api")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBodyApi)))));
+        }
+
+        // LiveDashboard in dev/test
+        if (dashboardRoutes.length > 0) {
+            var thenStmts: Array<ElixirAST> = [makeAST(EImport("Phoenix.LiveDashboard.Router", null, null))];
+            // Group by scope path
+            var scopeMap: Map<String, Array<String>> = new Map();
+            for (d in dashboardRoutes) {
+                var arr = scopeMap.exists(d.scopePath) ? scopeMap.get(d.scopePath) : [];
+                arr.push(d.routePath);
+                scopeMap.set(d.scopePath, arr);
+            }
+
+            for (scopePath => routePaths in scopeMap) {
+                var calls: Array<ElixirAST> = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))];
+                for (rp in routePaths) {
+                    calls.push(makeAST(ECall(null, "live_dashboard", [
+                        makeAST(EString(rp)),
+                        makeAST(EKeywordList([{key: "metrics", value: makeAST(EVar(webModuleName + ".Telemetry"))}]))
+                    ])));
+                }
+                thenStmts.push(makeAST(EMacroCall("scope", [makeAST(EString(scopePath))], makeAST(EBlock(calls)))));
+            }
+
+            var envCall = makeAST(ERemoteCall(makeAST(EVar("Mix")), "env", []));
+            var condition = makeAST(EBinary(In, envCall, makeAST(EList([makeAST(EAtom(ElixirAtom.raw("dev"))), makeAST(EAtom(ElixirAtom.raw("test")))]))));
+            statements.push(makeAST(EIf(condition, makeAST(EBlock(thenStmts)), null)));
+        }
+
+        // Preserve any user-defined/generated defs after router DSL.
+        switch (existingBody.def) {
+            case EBlock(existingStmts):
+                statements = statements.concat(existingStmts);
+            default:
+                statements.push(existingBody);
+        }
+
         return makeAST(EBlock(statements));
     }
     

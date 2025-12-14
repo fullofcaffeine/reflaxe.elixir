@@ -40,9 +40,6 @@ class ElixirASTPrinter {
     // Counter for generating unique loop function names
     static var loopIdCounter: Int = 0;
 
-    // Track current module's unused functions for dead code elimination
-    static var currentUnusedFunctions: Null<Array<String>> = null;
-    
     /**
      * Public API for printing a single AST (used by ElixirASTBuilder for injection)
      *
@@ -79,11 +76,6 @@ class ElixirASTPrinter {
         // Handle EDefmodule and EModule specially to access metadata
         var result = switch(ast.def) {
             case EDefmodule(name, doBlock):
-                // Extract unused functions from metadata if available
-                if (ast.metadata != null && ast.metadata.unusedPrivateFunctions != null) {
-                    currentUnusedFunctions = ast.metadata.unusedPrivateFunctions;
-                }
-
                 var moduleContent = '';
 
                 // Add @compile directive to silence unused private functions (late sweep)
@@ -249,8 +241,6 @@ class ElixirASTPrinter {
                     moduleContent + '\n' +
                     indentStr(indent) + 'end\n';
 
-                // Clear unused functions after module is printed
-                currentUnusedFunctions = null;
                 moduleResult;
 
             case EModule(name, attributes, body):
@@ -500,17 +490,7 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case EDefp(name, args, guards, body):
-                // M0 STABILIZATION: Disable underscore prefixing temporarily
                 var funcName = name;
-                /* Disabled to prevent variable mismatches
-                if (currentUnusedFunctions != null && currentUnusedFunctions.indexOf(name) != -1) {
-                    // Don't double-prefix if already starts with underscore
-                    if (!name.startsWith("_")) {
-                        funcName = "_" + name;
-                    }
-                }
-                */
-
                 var argStr = printPatterns(args);
                 var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
                 'defp ${funcName}(${argStr})${guardStr} do\n' +

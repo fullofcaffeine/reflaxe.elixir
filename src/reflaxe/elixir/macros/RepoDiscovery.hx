@@ -124,7 +124,7 @@ class RepoDiscovery {
             if (content == null) return;
 
             // Fast reject if no token
-            if (content.indexOf('@:repo(') == -1 && content.indexOf('@:presence') == -1 && content.indexOf('@:endpoint') == -1 && content.indexOf('@:router') == -1 && content.indexOf('@:phoenixWeb') == -1 && content.indexOf('@:phoenixWebModule') == -1 && (content.indexOf('@:native(') == -1 || (content.indexOf('Web.Telemetry') == -1 && content.indexOf('Web.Endpoint') == -1 && content.indexOf('Web.Router') == -1 && (content.indexOf('TodoAppWeb') == -1 && content.indexOf('Web\")') == -1)))) return;
+            if (content.indexOf('@:repo(') == -1 && content.indexOf('@:presence') == -1 && content.indexOf('@:endpoint') == -1 && content.indexOf('@:router') == -1 && content.indexOf('@:phoenixWeb') == -1 && content.indexOf('@:phoenixWebModule') == -1 && (content.indexOf('@:native(') == -1 || (content.indexOf('Web.Telemetry') == -1 && content.indexOf('Web.Endpoint') == -1 && content.indexOf('Web.Router') == -1 && content.indexOf('Web\")') == -1))) return;
 
             // Filter comments (line and block) in a lightweight way
             var hasRepo = false;
@@ -157,7 +157,7 @@ class RepoDiscovery {
                 if (!hasRouter && t.indexOf('@:router') != -1) hasRouter = true;
                 if (!hasPhoenixWeb && t.indexOf('@:phoenixWeb') != -1) hasPhoenixWeb = true;
                 if (!hasPhoenixWebModule && t.indexOf('@:phoenixWebModule') != -1) hasPhoenixWebModule = true;
-                if (!hasTelemetryNative && t.indexOf('@:native(') != -1 && (t.indexOf('Web.Telemetry') != -1 || t.indexOf('Web.Endpoint') != -1 || t.indexOf('Web.Router') != -1 || t.indexOf('TodoAppWeb') != -1)) hasTelemetryNative = true;
+                if (!hasTelemetryNative && t.indexOf('@:native(') != -1 && (t.indexOf('Web.Telemetry') != -1 || t.indexOf('Web.Endpoint') != -1 || t.indexOf('Web.Router') != -1 || t.indexOf('Web\")') != -1)) hasTelemetryNative = true;
 
                 if (pkg == '' && t.startsWith('package ')) {
                     var semi = t.indexOf(';');
