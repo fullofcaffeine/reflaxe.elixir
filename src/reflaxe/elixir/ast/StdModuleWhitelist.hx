@@ -28,6 +28,7 @@ class StdModuleWhitelist {
         for (name in [
             "Kernel","Enum","Map","List","Bitwise","String","Integer","Float","IO","File","Path","System",
             "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
+            "Mix",
             "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex",
             "Keyword","Access","Reflect","Type",
             // PubSub is a Phoenix root module; keep unqualified
@@ -36,7 +37,7 @@ class StdModuleWhitelist {
             // Prevent accidental qualification to <App>.StringBuf inside Web context
             "StringBuf",
             // Common helper modules generated at top-level (project-local utilities)
-            "StringTools","Log","SafeAssigns","TodoPubSub",
+            "StringTools","Log",
             // Framework roots
             "Ecto","Phoenix"
         ]) m.set(name, true);

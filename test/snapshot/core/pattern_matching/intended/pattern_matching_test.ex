@@ -4,7 +4,7 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, _g, _b} ->
+      {:rgb, r, g, b} ->
         b = r
         "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(g) end).()},#{(fn -> Kernel.to_string(b) end).()})"
     end)

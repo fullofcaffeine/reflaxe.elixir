@@ -2,11 +2,11 @@ defmodule EnhancedPatternMatchingTest do
   def match_status(status) do
     (case status do
       {:idle} -> "Currently idle"
-      {:working, _task} -> "Working on: #{(fn -> task end).()}"
-      {:completed, result, _duration} ->
+      {:working, task} -> "Working on: #{(fn -> task end).()}"
+      {:completed, result, duration} ->
         duration = result
         "Completed \"#{(fn -> result end).()}\" in #{(fn -> Kernel.to_string(duration) end).()}ms"
-      {:failed, error, _retries} ->
+      {:failed, error, retries} ->
         retries = error
         "Failed with \"#{(fn -> error end).()}\" after #{(fn -> Kernel.to_string(retries) end).()} retries"
     end)
@@ -14,7 +14,7 @@ defmodule EnhancedPatternMatchingTest do
   def incomplete_match(status) do
     (case status do
       {:idle} -> "idle"
-      {:working, _task} -> "working: #{(fn -> task end).()}"
+      {:working, task} -> "working: #{(fn -> task end).()}"
       _ -> "unknown"
     end)
   end
@@ -25,12 +25,12 @@ defmodule EnhancedPatternMatchingTest do
           {:success, value} ->
             inspect = value
             "Double success: #{(fn -> inspect(value) end).()}"
-          {:error, reason, _context} ->
+          {:error, reason, context} ->
             inner_error = reason
             inner_context = reason
             "Outer success, inner error: #{(fn -> inner_error end).()} (context: #{(fn -> inner_context end).()})"
         end)
-      {:error, reason, _context} ->
+      {:error, reason, context} ->
         outer_error = reason
         outer_context = reason
         "Outer error: #{(fn -> outer_error end).()} (context: #{(fn -> outer_context end).()})"
@@ -198,7 +198,7 @@ end).() == "_suffix") do
   def match_validation_state(state) do
     (case state do
       {:valid} -> "Data is valid"
-      {:invalid, _errors} ->
+      {:invalid, errors} ->
         cond do
           length(errors) == 1 -> "Single error: " <> errors[0]
           true ->
@@ -210,7 +210,7 @@ end).() == "_suffix") do
               "No specific errors"
             end
         end
-      {:pending, _validator} -> "Validation pending by: #{(fn -> validator end).()}"
+      {:pending, validator} -> "Validation pending by: #{(fn -> validator end).()}"
     end)
   end
   def match_binary_pattern(data) do

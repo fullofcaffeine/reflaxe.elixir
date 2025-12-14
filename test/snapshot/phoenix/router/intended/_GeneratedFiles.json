@@ -1,19 +1,10 @@
 {
   "filesGenerated": [
-  "user_live.ex",
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "settings_live.ex",
-  "reflect.ex",
-  "profile_live.ex",
   "my_app_web/router.ex",
-  "my_app_web.ex",
-  "haxe/iterators/array_iterator.ex",
-  "haxe/ds/tree_node.ex",
-  "haxe/ds/enum_value_map.ex",
-  "haxe/ds/balanced_tree.ex",
-  "dashboard_live.ex"
+  "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,
   "wasCached": false,

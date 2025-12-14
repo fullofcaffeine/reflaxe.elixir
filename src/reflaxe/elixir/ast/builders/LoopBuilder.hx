@@ -21,9 +21,6 @@ import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
 using StringTools;
-// Temporarily disabled for debugging
-// import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer;
-// import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer.ArrayBuildingPattern;
 
 /**
  * Variable scope analysis result
@@ -60,9 +57,6 @@ enum LoopTransform {
 
     // Transform to Enum.each with collection
     EnumEachCollection(varName: String, collection: TypedExpr, body: TypedExpr);
-
-    // Transform to comprehension with optional filter
-    Comprehension(targetVar: String, v: TVar, iterator: TypedExpr, filter: Null<TypedExpr>, body: TypedExpr);
 
     // Keep as standard for comprehension
     StandardFor(v: TVar, iterator: TypedExpr, body: TypedExpr);
@@ -127,22 +121,6 @@ class LoopBuilder {
      * It only analyzes the TypedExpr structure and returns instructions.
      */
     public static function analyzeFor(v: TVar, e1: TypedExpr, e2: TypedExpr): LoopTransform {
-        // Temporarily disable array building analysis to debug compilation hang
-        // TODO: Re-enable after fixing compilation issues
-        /*
-        // First check for array building patterns
-        var arrayPattern = ArrayBuildingAnalyzer.analyzeForLoop(v, e1, e2);
-        var transform = ArrayBuildingAnalyzer.generateTransform(arrayPattern, v, e1);
-
-        // If we found a comprehension pattern, use it
-        switch(transform) {
-            case Comprehension(_, _, _, _, _):
-                return transform;
-            case _:
-                // Continue with other pattern detection
-        }
-        */
-        
         // CRITICAL: Check for accumulation patterns BEFORE checking side effects
         // Accumulation needs special handling with Enum.reduce
         var accumulation = detectAccumulationPattern(e2);
@@ -471,15 +449,6 @@ class LoopBuilder {
                 
                 // Wrap with initializations if needed
                 return wrapWithInitializations(loopAst, initializations, toSnakeCase);
-
-            case Comprehension(targetVar, v, iterator, filter, body):
-                // For now, just use standard for pattern to avoid compilation issues
-                // TODO: Implement proper comprehension generation
-                var varName = toSnakeCase(v.name);
-                var pattern = PVar(varName);
-                var iteratorExpr = buildExpr(iterator);
-                var bodyExpr = buildExpr(body);
-                return makeAST(EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false));
 
             case StandardFor(v, iterator, body):
                 // Standard for comprehension
@@ -1061,7 +1030,7 @@ class LoopBuilder {
         // Run analyzers
         var analyzers = [
             new RangeIterationAnalyzer(buildExpr)
-            // Future: ArrayBuildAnalyzer, EarlyExitAnalyzer, etc.
+            // Additional analyzers can be added here as they become production-ready.
         ];
 
         var totalConfidence = 0.0;
@@ -2350,16 +2319,6 @@ class LoopBuilder {
             );
         }
         
-        // Check for Map iteration patterns
-        var mapPattern = detectMapIterationPattern(econd, e);
-        if (mapPattern != null) {
-            return buildIdiomaticMapIterationFromWhile(
-                mapPattern,
-                context,
-                toElixirVarName
-            );
-        }
-        
         // Generate idiomatic while loop implementation
         return buildWhileLoop(econd, e, normalWhile, context, toElixirVarName);
     }
@@ -2394,102 +2353,6 @@ class LoopBuilder {
         }
         
         return null;
-    }
-    
-    /**
-     * Detect Map iteration patterns in while loops
-     * 
-     * WHY: Haxe desugars `for (key => value in map)` into while loops with iterator calls
-     * WHAT: Detects patterns like `while (iterator.hasNext()) { var item = iterator.next(); ... }`
-     * HOW: Checks condition for hasNext() and body for next() calls with key/value extraction
-     */
-    static function detectMapIterationPattern(econd: TypedExpr, body: TypedExpr): Null<{
-        mapExpr: TypedExpr,
-        iteratorVar: String,
-        keyVar: String,
-        valueVar: String
-    }> {
-        // Check if condition is iterator.hasNext()
-        var iteratorVar: String = null;
-        var hasNextCall = switch(econd.expr) {
-            case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, []) 
-                if (cf.get().name == "hasNext"):
-                iteratorVar = v.name;
-                true;
-            default:
-                false;
-        };
-        
-        if (!hasNextCall || iteratorVar == null) return null;
-        
-        // Look for iterator.next() calls and key/value extraction in the body
-        var keyVar: String = null;
-        var valueVar: String = null;
-        var mapExpr: TypedExpr = null;
-        
-        // Helper to scan for patterns
-        function scanForIteratorUsage(expr: TypedExpr): Void {
-            if (expr == null) return;
-            switch(expr.expr) {
-                case TBlock(exprs):
-                    for (e in exprs) scanForIteratorUsage(e);
-                    
-                case TVar(tvar, init) if (init != null):
-                    // Look for: var name = iterator.next().key
-                    switch(init.expr) {
-                        case TField({expr: TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [])}, 
-                                   FInstance(_, _, fieldCf))
-                            if (v.name == iteratorVar && cf.get().name == "next"):
-                            var fieldName = fieldCf.get().name;
-                            if (fieldName == "key") {
-                                keyVar = tvar.name;
-                            } else if (fieldName == "value") {
-                                valueVar = tvar.name;
-                            }
-                        default:
-                    }
-                    
-                default:
-                    TypedExprTools.iter(expr, scanForIteratorUsage);
-            }
-        }
-        
-        scanForIteratorUsage(body);
-        
-        // If we found key/value extraction, this is a Map iteration
-        if (keyVar != null || valueVar != null) {
-            // Try to find the original map expression
-            // Usually the iterator is created before the while loop
-            // For now, we'll return a placeholder - a more complete implementation
-            // would need to track variable assignments before the while loop
-            return {
-                mapExpr: null, // Would need broader context to find this
-                iteratorVar: iteratorVar,
-                keyVar: keyVar != null ? keyVar : "_",
-                valueVar: valueVar != null ? valueVar : "_"
-            };
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Build idiomatic Map iteration from detected while loop pattern
-     */
-    static function buildIdiomaticMapIterationFromWhile(pattern: {
-        mapExpr: TypedExpr,
-        iteratorVar: String,
-        keyVar: String,
-        valueVar: String
-    }, context: BuildContext, toElixirVarName: String -> String): ElixirASTDef {
-        
-        // For now, we can't easily extract the map expression from just the while loop
-        // So we'll generate a TODO comment to indicate the pattern was detected
-        // A complete implementation would need to track variable assignments in a broader scope
-        
-        // This is a placeholder that shows we detected the pattern
-        // The actual fix would require more context about where the iterator was created
-        return EString("# TODO: Map iteration pattern detected but needs broader context to extract map expression");
     }
     
     /**
@@ -2719,11 +2582,11 @@ class LoopBuilder {
     
     /**
      * Transform expression to use pattern-matched variables
-     * This is a simplified version - real implementation would need proper AST traversal
+     *
+     * NOTE: Currently identity because the reducer binds the accumulator variables using
+     * their original Elixir names (so references already resolve correctly).
      */
     static function transformExpressionWithMapping(expr: ElixirAST, varNames: Array<String>): ElixirAST {
-        // For now, return as-is
-        // TODO: Implement proper variable mapping transformation
         return expr;
     }
     

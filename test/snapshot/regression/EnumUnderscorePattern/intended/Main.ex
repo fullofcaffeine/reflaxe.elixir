@@ -12,7 +12,7 @@ defmodule Main do
       {:ok} -> "Success"
       {:custom, __code} -> "Custom status"
       {:error, reason} -> reason
-      {:redirect, _url, __permanent} -> "Redirecting to #{(fn -> url end).()}"
+      {:redirect, url, __permanent} -> "Redirecting to #{(fn -> url end).()}"
     end)
   end
   defp get_redirect_info(status) do

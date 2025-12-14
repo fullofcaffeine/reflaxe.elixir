@@ -100,7 +100,7 @@ typedef ComprehensionInfo = {
  * If we could hook into Haxe BEFORE optimization (using Context.onGenerate or 
  * Context.onAfterTyping with higher priority), we might preserve original loops.
  * This would be cleaner than reverse-engineering unrolled code.
- * TODO: Investigate Reflaxe initialization timing vs Haxe optimizer timing
+ * Note: Investigate Reflaxe initialization timing vs Haxe optimizer timing.
  */
 class LoopTransforms {
 
@@ -1096,7 +1096,7 @@ class LoopTransforms {
                                 loopVar: loopVar,
                                 values: values,
                                 bodyExpr: bodyExpr,
-                                filter: null  // TODO: Extract filter from condition
+                                filter: null  // Note: filter extraction from the condition is not implemented yet.
                             };
                         }
 
@@ -1671,7 +1671,6 @@ class LoopTransforms {
         // STEP 3: Collect if statements with struct updates from INSIDE the block
         var values: Array<ElixirAST> = [];
         var conditions: Array<Bool> = [];  // Track true/false conditions
-        var bodyExpr: Null<ElixirAST> = null;
         var idx = 1;  // Start after the init statement
 
         while (idx < blockStmts.length) {
@@ -1725,11 +1724,6 @@ class LoopTransforms {
                         #end
                         values.push(literalValue);
                         conditions.push(condValue);
-
-                        // Store body expression pattern (they should all be the same structure)
-                        if (bodyExpr == null) {
-                            bodyExpr = literalValue;
-                        }
                     } else {
                         #if debug_loop_transforms
                         // DISABLED: trace('[XRay UnrolledFiltered]       ✗ Could not extract literal value');
@@ -1766,84 +1760,18 @@ class LoopTransforms {
         // DISABLED: trace('[XRay UnrolledFiltered]   ✓ Found ${values.length} values with conditions: ${conditions}');
         #end
 
-        // STEP 4: Reconstruct filter condition
-        // Pattern analysis: true = include, false = exclude
-        // Find the pattern (e.g., "i % 2 == 0" would give [true, false, true, false, ...])
-        var filterCondition = reconstructFilterCondition(values, conditions);
-
-        #if debug_loop_transforms
-        if (filterCondition != null) {
-            // DISABLED: trace('[XRay UnrolledFiltered]   ✓ Reconstructed filter condition');
-        } else {
-            // DISABLED: trace('[XRay UnrolledFiltered]   ! Could not reconstruct filter - will use all values');
+        // STEP 4: Build the result list by applying the evaluated predicates.
+        var filteredValues: Array<ElixirAST> = [];
+        for (i in 0...values.length) {
+            if (conditions[i]) {
+                filteredValues.push(values[i]);
+            }
         }
-        #end
-
-        // STEP 5: Infer loop variable name
-        var loopVar = inferLoopVariableName(filterCondition != null ? filterCondition : makeAST(EBoolean(true)), bodyExpr);
-
-        #if debug_loop_transforms
-        // DISABLED: trace('[XRay UnrolledFiltered]   Loop variable inferred as: $loopVar');
-        #end
-
-        // STEP 6: Build for comprehension
-        var listAST = makeAST(EList(values));
-        var generator: EGenerator = {
-            pattern: PVar(loopVar),
-            expr: listAST
-        };
-
-        var filters = filterCondition != null ? [filterCondition] : [];
-
-        var comprehension = makeAST(EFor(
-            [generator],
-            filters,
-            bodyExpr != null ? bodyExpr : makeAST(EVar(loopVar)),
-            null,   // into: Null<ElixirAST>
-            false   // uniq: Bool
-        ));
-
-        #if debug_loop_transforms
-        // DISABLED: trace('[XRay UnrolledFiltered]   ✓ Built comprehension: for $loopVar <- [${values.length} values]');
-        if (filters.length > 0) {
-            // DISABLED: trace('[XRay UnrolledFiltered]     With ${filters.length} filter(s)');
-        }
-        #end
-
-        // STEP 7: Return transformation
-        var transformed = makeAST(EMatch(PVar(resultVar), comprehension));
-        var stmtCount = 1;  // The entire evens = {...} counts as 1 statement
 
         return {
-            transformed: transformed,
-            count: stmtCount
+            transformed: makeAST(EMatch(PVar(resultVar), makeAST(EList(filteredValues)))),
+            count: 1  // The entire evens = {...} counts as 1 statement
         };
-    }
-
-    /**
-     * Reconstruct filter condition from pattern of true/false conditions
-     *
-     * WHY: Compile-time optimization evaluates conditions, we reverse-engineer them
-     * WHAT: Analyze which values passed filter (true) vs failed (false)
-     * HOW: Pattern recognition on value/condition pairs
-     *
-     * Example: [0, 2, 4, 6] with [true, false, true, false, true, false, true]
-     *          -> infers "i % 2 == 0" pattern
-     */
-    static function reconstructFilterCondition(values: Array<ElixirAST>, conditions: Array<Bool>): Null<ElixirAST> {
-        // For now, if ALL conditions are true, no filter needed
-        var allTrue = Lambda.foreach(conditions, c -> c == true);
-        if (allTrue) {
-            return null;  // No filter
-        }
-
-        // TODO: More sophisticated pattern recognition
-        // - Detect modulo patterns (i % 2 == 0, i % 3 == 0)
-        // - Detect comparison patterns (i > 5, i < 10)
-        // - Detect range patterns (i >= 0 && i <= 10)
-
-        // For now, return null (will use all values but should reconstruct filter)
-        return null;
     }
 
     /**
@@ -1950,9 +1878,7 @@ class LoopTransforms {
      * Defaults to "i" but can be smarter based on context
      */
     static function inferLoopVariableName(filterCondition: ElixirAST, bodyExpr: ElixirAST): String {
-        // For now, use simple default
-        // TODO: Could analyze filter condition structure to pick better names
-        // e.g., if condition has "index" or "item" references, use those
+        // Simple default. More advanced heuristics can use filter/body structure when needed.
         return "i";
     }
 

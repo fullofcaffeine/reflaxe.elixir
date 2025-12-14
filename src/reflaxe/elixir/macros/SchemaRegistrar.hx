@@ -145,8 +145,7 @@ class SchemaRegistrar {
                     var changesetInfo: ChangesetInfo = {
                         name: field.name,
                         isStatic: field.access.indexOf(AStatic) != -1,
-                        params: extractFunctionParams(field),
-                        validations: extractValidations(field)
+                        params: extractFunctionParams(field)
                     };
                     
                     metadata.changesets.push(changesetInfo);
@@ -192,15 +191,6 @@ class SchemaRegistrar {
             default:
                 return [];
         }
-    }
-    
-    /**
-     * Extract validations from changeset function body
-     * (This is a simplified version - could be enhanced with AST analysis)
-     */
-    static function extractValidations(field: Field): Array<String> {
-        // TODO: Parse function body to extract validation calls
-        return [];
     }
     
     /**
@@ -372,8 +362,7 @@ typedef SchemaMetadata = {
 typedef ChangesetInfo = {
     name: String,
     isStatic: Bool,
-    params: Array<{name: String, type: String}>,
-    validations: Array<String>
+    params: Array<{name: String, type: String}>
 }
 
 /**

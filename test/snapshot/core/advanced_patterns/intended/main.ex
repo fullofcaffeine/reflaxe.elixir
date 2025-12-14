@@ -264,6 +264,8 @@ defmodule Main do
       else
         (case color do
           "black" -> "monochrome"
+          "gray" -> "monochrome"
+          "white" -> "monochrome"
           _ -> "unknown color"
         end)
       end
@@ -272,9 +274,17 @@ defmodule Main do
   def match_status(status) do
     (case status do
       "crashed" -> "error state"
+      "error" -> "error state"
+      "failed" -> "error state"
       "disabled" -> "not operational"
+      "offline" -> "not operational"
+      "stopped" -> "not operational"
       "active" -> "operational"
+      "online" -> "operational"
+      "running" -> "operational"
       "paused" -> "temporarily stopped"
+      "suspended" -> "temporarily stopped"
+      "waiting" -> "temporarily stopped"
       _ -> "unknown status"
     end)
   end

@@ -158,7 +158,7 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
     
     /**
      * Convert camelCase to snake_case
-     * TODO: This should use the shared utility from the compiler
+     * Note: Prefer the shared compiler naming utility when available.
      */
     function toSnakeCase(str: String): String {
         var result = "";

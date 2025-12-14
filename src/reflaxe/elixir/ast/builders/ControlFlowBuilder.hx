@@ -179,8 +179,6 @@ class ControlFlowBuilder {
                 var clauses = [];
                 
                 // Matching case
-                // TODO: Consider renaming 'guard' to 'guards' in ECaseClause typedef
-                // since it's conceptually an array of guard conditions
                 clauses.push({
                     pattern: pattern,
                     guard: null,  // No guards for this case

@@ -7,7 +7,7 @@ defmodule Main do
         _fn = value
         _end = value
         "Success: #{(fn -> value end).()}"
-      {:error, _reason} -> "Failed: #{(fn -> reason end).()}"
+      {:error, reason} -> "Failed: #{(fn -> reason end).()}"
     end)
     nil
   end
