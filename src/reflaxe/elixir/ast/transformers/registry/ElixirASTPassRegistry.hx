@@ -145,7 +145,7 @@ class ElixirASTPassRegistry {
         // collision-avoid renamer so it can see the binder equal to the function arg
         // and fix helper calls (payload first, socket last) in the clause body.
         // This pass is shape-based and restricted to handle_info/2; it avoids
-        // helper-name coupling by only rewriting local calls where arg0==argN==socket.
+        // helper-name coupling by only rewriting local calls where the first and last argument are `socket`.
         passes.push({
             name: "HandleInfoCaseBinderCollisionRepair_Pre",
             description: "Repair {:tag, socket}-style binder collisions in handle_info/2; rewrite local helper arg order (payload first, socket last)",

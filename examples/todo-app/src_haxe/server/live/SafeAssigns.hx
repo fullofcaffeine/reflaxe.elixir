@@ -60,6 +60,7 @@ extern class TodoLiveNative {
  * See [Future Assign Syntax Ideas](../../../docs/07-patterns/future-assign-syntax-ideas.md)
  * for proposals like typed field descriptors and fluent builders that might feel more natural.
  */
+@:native("TodoApp.SafeAssigns")
 class SafeAssigns {
     
     /**

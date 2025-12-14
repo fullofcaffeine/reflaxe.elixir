@@ -4870,6 +4870,21 @@ class ElixirASTBuilder {
      * Handles package-based module naming (e.g., ecto.Query → Query for non-externs, Ecto.Query for externs)
      */
     static function moduleTypeToString(m: ModuleType): String {
+        // Respect explicit module names for both extern and non-extern types.
+        // This is required for stdlib bridge modules like ecto.ChangesetBridge which
+        // are implemented in Haxe but must compile to Ecto.ChangesetBridge (via @:native).
+        var nativeModuleName: Null<String> = switch (m) {
+            case TClassDecl(c):
+                extractNativeModuleName(c.get().meta);
+            case TEnumDecl(e):
+                extractNativeModuleName(e.get().meta);
+            case TTypeDecl(t):
+                extractNativeModuleName(t.get().meta);
+            case TAbstract(a):
+                extractNativeModuleName(a.get().meta);
+        };
+        if (nativeModuleName != null) return nativeModuleName;
+
         // Get the basic name first
         var name = switch(m) {
             case TClassDecl(c): c.get().name;
@@ -4924,6 +4939,21 @@ class ElixirASTBuilder {
         }
         
         return name;
+    }
+
+    static function extractNativeModuleName(meta: MetaAccess): Null<String> {
+        if (meta.has(":native")) {
+            var nativeMeta = meta.extract(":native");
+            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                return switch (nativeMeta[0].params[0].expr) {
+                    case EConst(CString(s, _)):
+                        // Prefer idiomatic module aliases (String) over fully-qualified internal names (Elixir.String).
+                        StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
+                    default: null;
+                };
+            }
+        }
+        return null;
     }
 
     /**
