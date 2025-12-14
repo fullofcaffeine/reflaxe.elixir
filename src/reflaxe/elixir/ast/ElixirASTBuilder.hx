@@ -3755,6 +3755,7 @@ class ElixirASTBuilder {
             elixirType: typeToElixir(expr.t),
             purity: PatternDetector.isPure(expr),
             tailPosition: false, // Will be set by transformer
+            fromReturn: switch (expr.expr) { case TReturn(_): true; default: false; }, // Enables early-return reconstruction in transformer
             async: false, // Will be detected by transformer
             requiresReturn: false, // Will be set by context
             requiresTempVar: false, // Will be set by transformer

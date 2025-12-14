@@ -701,6 +701,7 @@ typedef ElixirMetadata = {
     // Semantic Information
     ?purity: Bool,                 // Is expression pure?
     ?tailPosition: Bool,           // Is in tail position?
+    ?fromReturn: Bool,             // Node originates from a Haxe `return` statement (for early-return reconstruction)
     ?async: Bool,                  // Is async operation?
     
     // Transformation Hints
