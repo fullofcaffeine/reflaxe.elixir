@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * CaseBinderUnderscoreAlignTransforms
@@ -50,13 +51,13 @@ class CaseBinderUnderscoreAlignTransforms {
           var newClauses = [];
           for (cl in clauses) {
             var binders = collectPatternBinders(cl.pattern);
-            var used = collectUsedVars(cl.body);
             var renames:Array<{from:String, to:String}> = [];
 
             for (b in binders) {
               if (b != null && b.length > 1 && b.charAt(0) == "_") {
                 var bare = b.substr(1);
-                if (used.indexOf(bare) != -1 && binders.indexOf(bare) == -1) {
+                var bareIsUsed = VarUseAnalyzer.stmtUsesVar(cl.body, bare) || (cl.guard != null && VarUseAnalyzer.stmtUsesVar(cl.guard, bare));
+                if (bareIsUsed && binders.indexOf(bare) == -1) {
                   renames.push({from: b, to: bare});
                 }
               }
@@ -88,28 +89,6 @@ class CaseBinderUnderscoreAlignTransforms {
     }
     walk(p);
     return out;
-  }
-
-  static function collectUsedVars(body: ElixirAST): Array<String> {
-    var names = new Map<String, Bool>();
-
-    // Include builder-provided metadata when present
-    try {
-      var meta:Dynamic = body.metadata;
-      if (meta != null && untyped meta.usedLocalsFromTyped != null) {
-        var arr:Array<String> = untyped meta.usedLocalsFromTyped;
-        for (n in arr) if (n != null && n.length > 0) names.set(n, true);
-      }
-    } catch (_:Dynamic) {}
-
-    ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-      switch (n.def) {
-        case EVar(v): names.set(v, true);
-        default:
-      }
-      return n;
-    });
-    return [for (k in names.keys()) k];
   }
 
   static function renameBinders(p:EPattern, renames:Array<{from:String, to:String}>):EPattern {

@@ -23,7 +23,7 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  * - Detects EMatch patterns where a field is assigned: `root = value`
  * - Checks if this is a struct field assignment context
  * - For now, simply removes the assignment to eliminate the warning
- * - TODO: In the future, this should transform the entire method to return updated structs
+ * - Future improvement: transform the entire method to return updated structs
  * 
  * ARCHITECTURE BENEFITS:
  * - Single Responsibility: Only handles struct field update patterns
@@ -120,7 +120,7 @@ class StructUpdateTransform {
                         // DISABLED: trace('[XRay StructUpdate] Removing problematic assignment in $functionName');
                         #end
                         // Skip this assignment to avoid the warning
-                        // TODO: Transform to proper struct update pattern
+                        // Future improvement: thread struct updates through the function body.
                     }
                 }
                 return makeAST(EBlock(filteredExprs));
