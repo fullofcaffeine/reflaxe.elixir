@@ -33,6 +33,14 @@ class EarlyBootstrap {
       pass: ElixirASTTransformer.alias_identityPass
     });
 
+    // Early-return reconstruction: convert `if cond return x; rest` into `if cond do x else rest end`
+    passes.push({
+      name: "EarlyReturnIfElse",
+      description: "Preserve Haxe early-return semantics by moving remainder-of-block into if/else branches",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.EarlyReturnIfElseTransforms.pass
+    });
+
     // Resolve clause locals pass (must run very early to fix variable references)
     passes.push({
       name: "ResolveClauseLocals",
