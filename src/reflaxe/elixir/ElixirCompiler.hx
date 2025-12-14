@@ -1346,18 +1346,6 @@ class ElixirCompiler extends GenericCompiler<
             }
         }
 
-        // Legacy compatibility mode - defaults to old behavior
-        if (haxe.macro.Context.defined("elixir.feature.legacy")) {
-            var value = haxe.macro.Context.definedValue("elixir.feature.legacy");
-            if (value != "false") {
-                // Explicitly disable all new features
-                context.setFeatureFlag("new_module_builder", false);
-                context.setFeatureFlag("loop_builder_enabled", false);
-                context.setFeatureFlag("idiomatic_comprehensions", false);
-                context.setFeatureFlag("pattern_extraction", false);
-            }
-        }
-
         // Debug flag to print enabled features
         #if debug_feature_flags
         // DISABLED: trace("Feature flags initialized:");

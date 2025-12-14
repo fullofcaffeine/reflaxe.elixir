@@ -89,7 +89,7 @@ class TypeEmitter {
             emitPos(ab.pos);
             write('void');
           case [{pack: [], name: "Null"}, [realT]]: // Haxe 4.x
-            // TODO: do not generate `null |` union if it comes from an optional field?
+            // NOTE: Preserve Haxe semantics by rendering Null<T> as `null | T` in TypeScript.
             emitPos(ab.pos);
             write('null | ');
             emitType(writer, realT);
@@ -103,7 +103,7 @@ class TypeEmitter {
             write(' | ');
             emitType(writer, bT);
           default:
-            // TODO: do we want to handle more `type Name = Underlying` cases?
+            // NOTE: Most non-coreType abstracts are emitted via their underlying type.
             if (ab.meta.has(":coreType")) {
               emitPos(ab.pos);
               write('any');
@@ -137,7 +137,7 @@ class TypeEmitter {
       case TType(_.get() => dt, params):
         switch [dt, params] {
           case [{pack: [], name: "Null"}, [realT]]: // Haxe 3.x
-            // TODO: do not generate `null |` union if it comes from an optional field?
+            // NOTE: Preserve Haxe semantics by rendering Null<T> as `null | T` in TypeScript.
             write('null | ');
             emitType(writer, realT);
           default:

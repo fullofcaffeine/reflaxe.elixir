@@ -143,7 +143,7 @@ Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST tr
 
 - `fast_boot` – default for example/dev builds (including the todo-app)  
   - Minimal macro work:
-    - Macros like `RouterBuildMacro`, `HXXMacro`, `ModuleMacro` still run, but avoid expensive `Context.getType` / project‑wide scans where possible.
+    - Macros like `RouterBuildMacro`, `HXX`, and `ModuleMacro` still run, but avoid expensive `Context.getType` / project‑wide scans where possible.
     - Template processing uses memoization and cheap shape checks when enabled.
   - Core semantic transforms only:
     - Phoenix/Ecto/OTP shape‑driven transforms remain active.

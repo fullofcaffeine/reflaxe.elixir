@@ -159,7 +159,8 @@ class TypeUtil {
               case {expr: TConst(TString(name))}:
                 name;
               case _:
-                continue; // TODO: should error
+                Context.error('genes.Genes.ignore([...]) expects only string literals, got: ' + texpr.toString(), texpr.pos);
+                "";
             }
         ];
         typesInExpr(call).concat(typesInExpr(func).filter(type -> {
