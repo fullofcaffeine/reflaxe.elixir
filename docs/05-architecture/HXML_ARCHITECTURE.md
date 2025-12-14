@@ -442,7 +442,7 @@ Verification:
    - No hot reload setup
 
 4. **Unused/Orphaned Files**
-   - `extraParams.hxml` appears unused
+   - `extraParams.hxml` is used in a few workflows (e.g., vendor packaging); keep it documented or move it under an explicit tooling/ directory
    - Multiple `Test*.hxml` files with unclear purpose
    - Should audit and clean up
 
