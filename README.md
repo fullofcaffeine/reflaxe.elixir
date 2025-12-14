@@ -236,7 +236,7 @@ your-project/
 
 ### Architecture
 - **[Architecture Overview](docs/05-architecture/ARCHITECTURE.md)** - Compiler internals
-- **[Testing Guide](docs/05-architecture/TESTING.md)** - Test infrastructure and patterns
+- **[Testing Guide](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)** - Snapshot + integration testing system
 - **[Contributing](docs/10-contributing/contributing.md)** - Contributing and extending
 
 ### Manual Installation (For Contributors)
@@ -429,7 +429,7 @@ npm run ci:guards     # Guardrails (no app heuristics, etc.)
 
 **⚠️ Critical**: For self-referential library configuration issues, see [docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md](docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
 
-For detailed testing documentation, see [docs/05-architecture/TESTING.md](docs/05-architecture/TESTING.md)
+For detailed testing documentation, see [docs/03-compiler-development/TESTING_INFRASTRUCTURE.md](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
 
 ### Development Workflow
 ```bash
