@@ -1,6 +1,6 @@
 # Elixir Infrastructure Files - DO NOT DELETE
 
-> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
 
 ## ⚠️ CRITICAL: These Are NOT Generated Files
 
