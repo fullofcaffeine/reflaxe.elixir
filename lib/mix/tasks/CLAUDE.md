@@ -1,6 +1,6 @@
 # Mix Tasks Documentation - DO NOT DELETE THESE FILES
 
-> **⚠️ SYNC DIRECTIVE**: This file (`CLAUDE.md`) and `AGENTS.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
 
 ## ⚠️ CRITICAL WARNING FOR AI AGENTS
 

@@ -1,6 +1,6 @@
 # AST Transformers Development Context
 
-> **⚠️ SYNC DIRECTIVE**: This file (`CLAUDE.md`) and `AGENTS.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
 
 > **Parent Context**: See [/src/reflaxe/elixir/ast/AGENTS.md](/src/reflaxe/elixir/ast/AGENTS.md) for AST-wide conventions
 
