@@ -1,6 +1,6 @@
 # AI Compiler Development Instructions
 
-> **⚠️ SYNC DIRECTIVE**: This file (`AGENTS.md`) and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
 
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for complete project context and [/docs/AGENTS.md](/docs/AGENTS.md) for documentation navigation
 
@@ -414,16 +414,16 @@ git bisect reset
 ## 🔗 Related Documentation
 
 ### Essential Reading
-- [Architecture Overview](architecture.md) - Complete system design
-- [Macro-time vs Runtime](macro-time-vs-runtime.md) - Critical distinction details
-- [AST Processing](ast-processing.md) - TypedExpr transformation guide
-- [Testing Infrastructure](testing-infrastructure.md) - Snapshot testing system
-- [Debugging Guide](debugging-guide.md) - XRay methodology details
-- [HXX Template Compilation](hxx-template-compilation.md) - Deep dive into HXX→HEEx transformation
-- [Function Parameter Underscore Fix](FUNCTION_PARAMETER_UNDERSCORE_FIX.md) - Solution for incorrect parameter prefixing
+- [Architecture Overview](COMPILATION_PIPELINE_ARCHITECTURE.md) - Complete system design
+- [Macro Principles](MACRO_PRINCIPLES.md) - Macro-time rules and invariants
+- [AST Pipeline](../05-architecture/UNIFIED_AST_PIPELINE.md) - TypedExpr → ElixirAST → transforms → print
+- [Testing Infrastructure](TESTING_INFRASTRUCTURE.md) - Snapshot testing system
+- [Debugging Guide](DEBUG_XRAY_SYSTEM.md) - XRay methodology details
+- [HXX Template Architecture](../05-architecture/HXX_ARCHITECTURE.md) - HXX→HEEx compilation overview
+- [Function Parameter Underscore Fix](../09-history/archive/docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md) - Historical fix write-up (archived)
 
 ### Reference Materials
-- [Best Practices](best-practices.md) - Development patterns and standards
+- [Best Practices](COMPILER_BEST_PRACTICES.md) - Development patterns and standards
 - [/docs/05-architecture/](../05-architecture/) - Implementation details
 - [/docs/07-patterns/](../07-patterns/) - Common code patterns
 

@@ -430,7 +430,7 @@ The paradigm bridging follows these principles:
 4. **Type Safety**: Use type information to guide transformations
 5. **Module Dependencies**: Auto-import required modules (e.g., Bitwise)
 
-For detailed transformation patterns, see [FUNCTIONAL_PATTERNS.md](../FUNCTIONAL_PATTERNS.md).
+For detailed transformation patterns, see [FUNCTIONAL_PATTERNS.md](../07-patterns/FUNCTIONAL_PATTERNS.md).
 
 ## Macro-Time vs Runtime
 
@@ -840,4 +840,4 @@ npm test
 - [Reflaxe Documentation](https://somerandev.github.io/reflaxe/)
 - [Haxe Macro Documentation](https://haxe.org/manual/macro.html)
 - [TypedExpr API](https://api.haxe.org/haxe/macro/TypedExpr.html)
-- [Haxe Optimization Pipeline Investigation](HAXE_OPTIMIZATION_PIPELINE.md) - Research into leveraging Haxe's optimizer in Reflaxe
+- [Haxe Optimization Pipeline Investigation](../09-history/archive/docs/05-architecture/HAXE_OPTIMIZATION_PIPELINE.md) - Research into leveraging Haxe's optimizer in Reflaxe (archived)

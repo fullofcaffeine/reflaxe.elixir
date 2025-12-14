@@ -1,6 +1,6 @@
 # Documentation Navigation & Context for AI Assistants
 
-> **⚠️ SYNC DIRECTIVE**: This file (`CLAUDE.md`) and `AGENTS.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
 
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for complete project context and development principles
 
@@ -32,16 +32,15 @@ docs/
 
 ### "How do I...?" → Getting Started & Guides
 - **Install and setup** → [01-getting-started/installation.md](01-getting-started/installation.md)
-- **Build my first app** → [01-getting-started/quickstart.md](01-getting-started/quickstart.md)  
+- **Build my first app** → [06-guides/QUICKSTART.md](06-guides/QUICKSTART.md)  
 - **Develop day-to-day** → [01-getting-started/development-workflow.md](01-getting-started/development-workflow.md)
-- **Solve specific problems** → [06-guides/troubleshooting.md](06-guides/troubleshooting.md)
-- **Migrate from Elixir** → [06-guides/migrating-from-elixir.md](06-guides/migrating-from-elixir.md)
+- **Solve specific problems** → [06-guides/TROUBLESHOOTING.md](06-guides/TROUBLESHOOTING.md)
 
 ### "What is...?" → User Guide & Architecture
-- **Haxe→Elixir basics** → [02-user-guide/haxe-basics.md](02-user-guide/haxe-basics.md)
-- **Phoenix integration** → [02-user-guide/phoenix-integration.md](02-user-guide/phoenix-integration.md)
-- **LiveView development** → [02-user-guide/liveview-development.md](02-user-guide/liveview-development.md)
-- **Compilation pipeline** → [05-architecture/compilation-pipeline.md](05-architecture/compilation-pipeline.md)
+- **Haxe→Elixir basics** → [02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md)
+- **Phoenix integration** → [02-user-guide/PHOENIX_INTEGRATION.md](02-user-guide/PHOENIX_INTEGRATION.md)
+- **LiveView architecture** → [02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md)
+- **Compilation flow** → [05-architecture/COMPILATION_FLOW.md](05-architecture/COMPILATION_FLOW.md)
 - **System design** → [05-architecture/](05-architecture/)
 
 ### "Show me examples..." → Patterns
@@ -50,18 +49,17 @@ docs/
 - **Real applications** → `/examples/todo-app/` (reference implementation)
 
 ### "Where can I find...?" → API Reference  
-- **Annotation reference** → [04-api-reference/annotations.md](04-api-reference/annotations.md)
-- **Standard library** → [04-api-reference/standard-library.md](04-api-reference/standard-library.md)
-- **Phoenix externs** → [04-api-reference/phoenix-externs.md](04-api-reference/phoenix-externs.md)
-- **Mix tasks** → [04-api-reference/mix-tasks.md](04-api-reference/mix-tasks.md)
+- **Annotation reference** → [04-api-reference/ANNOTATIONS.md](04-api-reference/ANNOTATIONS.md)
+- **Standard library** → [04-api-reference/STANDARD_LIBRARY_HANDLING.md](04-api-reference/STANDARD_LIBRARY_HANDLING.md)
+- **Mix tasks** → [04-api-reference/MIX_TASKS.md](04-api-reference/MIX_TASKS.md)
 
 ### "How does the compiler...?" → Compiler Development
 **Special Context**: Use [03-compiler-development/AGENTS.md](03-compiler-development/AGENTS.md) for compiler-specific AI context
 
-- **Architecture overview** → [03-compiler-development/architecture.md](03-compiler-development/architecture.md)
-- **AST processing** → [03-compiler-development/ast-processing.md](03-compiler-development/ast-processing.md)
-- **Testing system** → [03-compiler-development/testing-infrastructure.md](03-compiler-development/testing-infrastructure.md)
-- **Debugging guide** → [03-compiler-development/debugging-guide.md](03-compiler-development/debugging-guide.md)
+- **Architecture overview** → [03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md](03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md)
+- **AST processing** → [05-architecture/UNIFIED_AST_PIPELINE.md](05-architecture/UNIFIED_AST_PIPELINE.md)
+- **Testing system** → [03-compiler-development/TESTING_INFRASTRUCTURE.md](03-compiler-development/TESTING_INFRASTRUCTURE.md)
+- **Debugging guide** → [03-compiler-development/DEBUG_XRAY_SYSTEM.md](03-compiler-development/DEBUG_XRAY_SYSTEM.md)
 
 ## 🔍 Navigation Best Practices
 
@@ -147,7 +145,7 @@ docs/
 
 **Complete Reference Index**:
 ```  
-@10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md  # Complete 232-file index
+@09-history/archive/docs/10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md  # Complete (archived) 232-file index
 ```
 
 ## 📋 Documentation Maintenance Guidelines
@@ -175,16 +173,16 @@ docs/
 ## 🚀 Quick Access by Common Tasks
 
 ### For New Users
-**Learning Path**: [installation.md](01-getting-started/installation.md) → [quickstart.md](01-getting-started/quickstart.md) → [project-structure.md](01-getting-started/project-structure.md)
+**Learning Path**: [installation.md](01-getting-started/installation.md) → [QUICKSTART.md](06-guides/QUICKSTART.md) → [Project Structure](../README.md#Project-Structure)
 
 ### For Application Developers
-**Learning Path**: [haxe-basics.md](02-user-guide/haxe-basics.md) → [phoenix-integration.md](02-user-guide/phoenix-integration.md) → [quick-start-patterns.md](07-patterns/quick-start-patterns.md)
+**Learning Path**: [HAXE_LANGUAGE_FUNDAMENTALS.md](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) → [PHOENIX_INTEGRATION.md](02-user-guide/PHOENIX_INTEGRATION.md) → [quick-start-patterns.md](07-patterns/quick-start-patterns.md)
 
 ### For Compiler Contributors  
-**Learning Path**: [architecture.md](03-compiler-development/architecture.md) → [macro-time-vs-runtime.md](03-compiler-development/macro-time-vs-runtime.md) → [testing-infrastructure.md](03-compiler-development/testing-infrastructure.md)
+**Learning Path**: [ARCHITECTURE.md](05-architecture/ARCHITECTURE.md) → [MACRO_PRINCIPLES.md](03-compiler-development/MACRO_PRINCIPLES.md) → [TESTING_INFRASTRUCTURE.md](03-compiler-development/TESTING_INFRASTRUCTURE.md)
 
 ### For Troubleshooting
-**Primary Resource**: [troubleshooting.md](06-guides/troubleshooting.md) with cross-references to specific guides
+**Primary Resource**: [TROUBLESHOOTING.md](06-guides/TROUBLESHOOTING.md) with cross-references to specific guides
 
 ## 🎯 Documentation Migration Status
 

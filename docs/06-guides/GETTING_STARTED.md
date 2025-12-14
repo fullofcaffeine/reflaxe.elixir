@@ -79,7 +79,7 @@ npx lix run reflaxe.elixir create my-app --skip-install
 npx lix run reflaxe.elixir create my-app --verbose
 ```
 
-**For complete generator documentation**, see [PROJECT_GENERATOR_GUIDE.md](../PROJECT_GENERATOR_GUIDE.md).
+**For complete generator documentation**, see [PROJECT_GENERATOR_GUIDE.md](PROJECT_GENERATOR_GUIDE.md).
 
 ## Manual Installation
 
@@ -390,13 +390,13 @@ mix compile.haxe --watch
 # Now edit your .hx files - compilation and source maps update automatically
 ```
 
-For detailed source mapping documentation, see [SOURCE_MAPPING.md](../SOURCE_MAPPING.md).
+For detailed source mapping documentation, see [SOURCE_MAPPING.md](../04-api-reference/SOURCE_MAPPING.md).
 
 ## Development with File Watching
 
 Reflaxe.Elixir includes powerful file watching for rapid development iteration with sub-second recompilation. This feature dramatically improves the development experience by automatically recompiling your Haxe code whenever you save changes.
 
-> 📚 **For comprehensive watcher documentation**, see the [Watcher Development Guide](WATCHER_DEVELOPMENT_GUIDE.md)
+> 📚 **For comprehensive watcher documentation**, see the archived [Watcher Development Guide](../09-history/archive/docs/06-guides/WATCHER_DEVELOPMENT_GUIDE.md)
 
 ### Quick Start with Watcher
 
@@ -672,7 +672,7 @@ mix phx.server
 
 #### Annotation Conflicts
 **Problem**: Incompatible annotations on same class
-**Solution**: Check annotation compatibility in [ANNOTATIONS.md](ANNOTATIONS.md)
+**Solution**: Check annotation compatibility in [ANNOTATIONS.md](../04-api-reference/ANNOTATIONS.md)
 
 #### Build Configuration Issues
 **Problem**: Classpath errors or missing dependencies
@@ -707,8 +707,8 @@ mix compile.haxe --watch --port 6001
 ## Next Steps
 
 1. **Explore Examples**: Work through each example in order
-2. **Read Documentation**: Check [FEATURES.md](FEATURES.md) for current capabilities
-3. **Learn Annotations**: Master annotation usage with [ANNOTATIONS.md](ANNOTATIONS.md)
+2. **Read Documentation**: Check [FEATURES.md](../04-api-reference/FEATURES.md) for current capabilities
+3. **Learn Annotations**: Master annotation usage with [ANNOTATIONS.md](../04-api-reference/ANNOTATIONS.md)
 4. **Build Your Application**: Start with simple modules and gradually add complexity
 5. **Join Community**: Contribute feedback and improvements
 
@@ -732,4 +732,4 @@ mix compile.haxe --watch --port 6001
 - **Leverage Caching**: lix and HaxeServer cache parsed files for speed
 - **Testing**: Use `npm test` for comprehensive validation
 
-For detailed feature status and technical implementation notes, see [FEATURES.md](../FEATURES.md) and the project's AGENTS.md file.
+For detailed feature status and technical implementation notes, see [FEATURES.md](../04-api-reference/FEATURES.md) and the project's AGENTS.md file.

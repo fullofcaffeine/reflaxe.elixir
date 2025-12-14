@@ -145,8 +145,8 @@ Given this architecture:
 ## References
 
 - [Haxe Manual: Dead Code Elimination](https://haxe.org/manual/cr-dce.html)
-- [Reflaxe.CPP Implementation](../reference/reflaxe.CPP/src/cxxcompiler/CompilerInit.hx)
-- [Reflaxe Core Architecture](../reference/reflaxe/src/reflaxe/ReflectCompiler.hx)
+- [Reflaxe.CPP Implementation](https://github.com/SomeRanDev/reflaxe.CPP/blob/master/src/cxxcompiler/CompilerInit.hx)
+- [Reflaxe Core Architecture](https://github.com/SomeRanDev/reflaxe/blob/master/src/reflaxe/ReflectCompiler.hx)
 - [Haxe Compiler Phases Discussion](https://community.haxe.org/t/generate-code-in-onaftertyping/540)
 
 ## Conclusion

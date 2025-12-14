@@ -11,7 +11,7 @@
 - ✅ **Custom JS Generator** - AsyncJSGenerator extends ExampleJSGenerator for proper code generation
 - ✅ **Zero runtime overhead** - Pure compile-time transformation via build macros
 
-**See**: [`ASYNC_AWAIT.md`](ASYNC_AWAIT.md) - Complete usage guide and examples
+**See**: [`async-await-specification.md`](../09-history/archive/docs/04-api-reference/async-await-specification.md) - Async/await specification and examples (archived)
 
 ## Modern Haxe JavaScript Patterns ⚡ **REQUIRED READING**
 

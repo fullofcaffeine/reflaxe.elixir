@@ -227,10 +227,10 @@ HXX.hxx('<div class="user">${assigns.name}</div>')
 
 ## Related Documentation
 
-- **[HXX Implementation](HXX_IMPLEMENTATION.md)** - Technical details of template processing
-- **[HXX Guide](guides/HXX_GUIDE.md)** - User guide for writing templates
+- **[HXX Implementation](../09-history/archive/docs/02-user-guide/HXX_IMPLEMENTATION.md)** - Technical details of template processing (archived)
+- **[HXX Syntax & Comparison](../02-user-guide/HXX_SYNTAX_AND_COMPARISON.md)** - User guide for writing templates
 - **[Compilation Flow](COMPILATION_FLOW.md)** - Overall compilation architecture
-- **[Haxe Language Fundamentals](HAXE_LANGUAGE_FUNDAMENTALS.md)** - Type system insights
+- **[Haxe Language Fundamentals](../02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md)** - Type system insights
 
 ## Key Takeaway
 

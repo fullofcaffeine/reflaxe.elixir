@@ -767,9 +767,9 @@ mix phx.server
 
 Now that you have a generated project:
 
-1. Read [TUTORIAL_FIRST_PROJECT.md](./TUTORIAL_FIRST_PROJECT.md) for a step-by-step tutorial
-2. Explore [EXAMPLES_GUIDE.md](./EXAMPLES_GUIDE.md) for patterns
-3. Check [USER_GUIDE.md](./USER_GUIDE.md) for feature reference
-4. See [DEVELOPMENT_WORKFLOW.md](./DEVELOPMENT_WORKFLOW.md) for productivity tips
+1. Read the archived [TUTORIAL_FIRST_PROJECT.md](../09-history/archive/docs/06-guides/TUTORIAL_FIRST_PROJECT.md) for a step-by-step tutorial
+2. Explore the archived [EXAMPLES_GUIDE.md](../09-history/archive/docs/06-guides/EXAMPLES_GUIDE.md) for patterns
+3. Check [USER_GUIDE.md](../02-user-guide/USER_GUIDE.md) for feature reference
+4. See [development-workflow.md](../01-getting-started/development-workflow.md) for productivity tips
 
 Happy coding with Reflaxe.Elixir! 🚀

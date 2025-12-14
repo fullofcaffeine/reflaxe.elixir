@@ -372,18 +372,18 @@ This setup ensures that both the compiler development and generated code quality
 
 After successful installation:
 
-1. **[Quickstart Tutorial](quickstart.md)** - Build your first Haxe→Elixir project in 5 minutes
-2. **[Project Structure](project-structure.md)** - Understand the directory layout and conventions
+1. **[Quickstart Tutorial](../06-guides/QUICKSTART.md)** - Build your first Haxe→Elixir project in 5 minutes
+2. **[Project Structure](../../README.md#Project-Structure)** - Understand the directory layout and conventions
 3. **[Development Workflow](development-workflow.md)** - Learn day-to-day development practices
-4. **[Phoenix Integration](../02-user-guide/phoenix-integration.md)** - Build Phoenix applications with Haxe
+4. **[Phoenix Integration](../02-user-guide/PHOENIX_INTEGRATION.md)** - Build Phoenix applications with Haxe
 
 ## Additional Resources
 
 - **[User Guide](../02-user-guide/)** - Complete application development documentation
-- **[Troubleshooting Guide](../06-guides/troubleshooting.md)** - Comprehensive problem-solving reference
+- **[Troubleshooting Guide](../06-guides/TROUBLESHOOTING.md)** - Comprehensive problem-solving reference
 - **[API Reference](../04-api-reference/)** - Technical reference for annotations and APIs
 - **[Compiler Development](../03-compiler-development/)** - For contributors to the compiler itself
 
 ---
 
-**Ready to code?** Continue to [Quickstart Tutorial](quickstart.md) for your first Haxe→Elixir project.
+**Ready to code?** Continue to [Quickstart Tutorial](../06-guides/QUICKSTART.md) for your first Haxe→Elixir project.

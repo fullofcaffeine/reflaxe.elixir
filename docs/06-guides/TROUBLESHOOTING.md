@@ -1061,8 +1061,8 @@ If you can't resolve your issue:
 
 1. **Check the documentation:**
    - [Getting Started Guide](./GETTING_STARTED.md)
-   - [API Reference](./API_REFERENCE.md)
-   - [Examples](../examples/)
+   - [Documentation Index](../README.md)
+   - [Examples](../../examples/)
 
 2. **Search existing issues:**
    - [GitHub Issues](https://github.com/fullofcaffeine/reflaxe.elixir/issues)

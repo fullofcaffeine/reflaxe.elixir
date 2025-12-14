@@ -782,12 +782,12 @@ switch (processPayment(100.0)) {
 
 ## See Also
 
-- [Functional Patterns](FUNCTIONAL_PATTERNS.md) - Examples of imperative→functional transformations
-- [BEAM Type Abstractions](BEAM_TYPE_ABSTRACTIONS.md) - Option<T> and Result<T,E> types in detail
-- [Annotations Reference](reference/ANNOTATIONS.md) - Complete annotation documentation
-- [Paradigm Bridge](paradigms/PARADIGM_BRIDGE.md) - Cross-platform development philosophy
-- [Developer Patterns](guides/DEVELOPER_PATTERNS.md) - Best practices for effective Haxe→Elixir development
-- [ExUnit Testing Guide](EXUNIT_TESTING_GUIDE.md) - Testing patterns for mapped constructs
+- [Functional Patterns](../07-patterns/FUNCTIONAL_PATTERNS.md) - Examples of imperative→functional transformations
+- [BEAM Type Abstractions](../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option<T> and Result<T,E> types in detail (archived deep dive)
+- [Annotations Reference](../04-api-reference/ANNOTATIONS.md) - Complete annotation documentation
+- [Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Cross-platform development philosophy (archived)
+- [Developer Patterns](../09-history/archive/docs/06-guides/DEVELOPER_PATTERNS.md) - Best practices for effective Haxe→Elixir development (archived)
+- [ExUnit Testing Guide](exunit-testing.md) - Testing patterns for mapped constructs
 
 ## References
 
