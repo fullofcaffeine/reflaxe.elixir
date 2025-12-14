@@ -3,7 +3,6 @@
 [![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
-[![Tests](https://img.shields.io/badge/tests-240%2B%2F240%2B%20passing-brightgreen)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -214,24 +213,19 @@ your-project/
 
 ## 📚 Documentation
 
-### Getting Started
-- **[Tutorial: First Project](docs/06-guides/TUTORIAL_FIRST_PROJECT.md)** - Step-by-step guide to build your first app
-- **[Installation Guide](docs/01-getting-started/installation.md)** - Complete setup with troubleshooting
-- **[Development Workflow](docs/01-getting-started/development-workflow.md)** - Day-to-day compiler + app workflow
+Start at **[docs/README.md](docs/README.md)** for the curated documentation index.
 
-### Integration Guides  
+### Quick Links
+- **[Installation Guide](docs/01-getting-started/installation.md)** - Setup and prerequisites
+- **[Quickstart](docs/06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
 - **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
-- **[Idiomatic Syntax](docs/04-api-reference/IDIOMATIC_SYNTAX.md)** - Type-safe Elixir patterns and transformations
-- **[Pipe Operators](docs/06-guides/pipe-operators.md)** - Complete guide to pipe operator support
-- **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Using Elixir code from Haxe
-- **[Cookbook](docs/06-guides/COOKBOOK.md)** - Practical recipes for common tasks
+- **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Calling Elixir from Haxe safely
 
 ### Reference
 - **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Complete reference for how Haxe constructs map to Elixir code
 - **[Source Mapping Guide](docs/04-api-reference/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
 - **[Annotations](docs/04-api-reference/ANNOTATIONS.md)** - Complete annotation reference
-- **[LLM Workflow Compatibility](docs/10-contributing/llm-integration/LLM_WORKFLOW_COMPATIBILITY.md)** - Using Reflaxe.Elixir with AI assistants
-- **[Troubleshooting](docs/06-guides/troubleshooting.md)** - Common issues and solutions
+- **[Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Examples](examples/)** - Working code examples
 
 ### Architecture

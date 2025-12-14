@@ -22,9 +22,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
 - [HXX Syntax & Comparison](02-user-guide/HXX_SYNTAX_AND_COMPARISON.md) - Typed HXX UX and comparison with Coconut UI & TSX
-- [Todo App Specifics](02-user-guide/todo-app-specifics.md) - LiveView implementation patterns and project-specific guidance
 - [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
-- [Bootstrap Code Generation](02-user-guide/bootstrap-code-generation.md) - Auto-execution for scripts
 - [User Guide](02-user-guide/USER_GUIDE.md) - Comprehensive development guide
 
 ### ⚙️ Compiler Development
@@ -41,7 +39,6 @@ Most internal research notes were archived to **[09-history/archive/docs/03-comp
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
 - [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
-- [Haxe Stdlib API Reference](04-api-reference/haxe-stdlib-api-reference.md) - Complete Haxe standard library API reference
 - [Haxe Macro APIs](04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
 - [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Source map architecture + usage
 - [Router DSL](04-api-reference/ROUTER_DSL.md) - Phoenix router DSL reference
@@ -77,10 +74,8 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 ### 🗺️ Roadmap & Planning
 **[08-roadmap/](08-roadmap/)** - Project direction and future plans
 - [Vision](08-roadmap/vision.md) - Long-term project vision
-- [V1 Roadmap](08-roadmap/v1-roadmap.md) - Version 1.0 release goals
-- [Compiler + Todo-App 1.0 PRD](prds/HAXE_ELIXIR_1_0_COMPILER_TODOAPP_PRD.md) - Combined compiler and todo-app quality bar for 1.0
-- [Active PRD](08-roadmap/ACTIVE_PRD.md) - Current product requirements
-- [Product Requirements Document](08-roadmap/product-requirements-document.md) - Comprehensive PRD
+  
+Most 1.0 planning docs and historical PRDs were archived under **[09-history/archive/docs/08-roadmap/](09-history/archive/docs/08-roadmap/)** during post‑1.0 cleanup.
 
 ### 📜 History & Records
 **[09-history/](09-history/)** - Historical documentation and decisions
@@ -96,7 +91,6 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
 - [Updating AGENTS.md](10-contributing/updating-agents-md.md) - AI context and unified documentation strategy
 - [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation
-- [LLM Documentation Index](10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md) - Complete 232-file navigation index
 - [Documentation Philosophy](10-contributing/DOCUMENTATION_PHILOSOPHY.md) - How docs are organized and maintained
 - [LLM Integration Index](10-contributing/llm-integration/INDEX.md) - Entry point for AI-facing docs
 
