@@ -3,6 +3,44 @@ import Config
 # Dynamically enable optional watchers only when the executables are available
 haxe_bin = System.find_executable("haxe")
 
+# Phoenix watchers run the Haxe client compiler with `--wait <port>` to keep an incremental
+# compiler server alive in dev. If the BEAM VM is terminated abruptly, that OS process can be
+# orphaned and keep the port bound (EADDRINUSE). Prefer a stable default, but auto-pick the next
+# free port to avoid bringing down `mix phx.server`.
+requested_haxe_wait_port =
+  case System.get_env("HAXE_CLIENT_WAIT_PORT") do
+    nil -> 6001
+    val ->
+      case Integer.parse(val) do
+        {int, _} when int > 0 -> int
+        _ -> 6001
+      end
+  end
+
+is_port_available? = fn port ->
+  case :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true]) do
+    {:ok, socket} ->
+      :gen_tcp.close(socket)
+      true
+    {:error, _} ->
+      false
+  end
+end
+
+haxe_wait_port =
+  cond do
+    is_port_available?.(requested_haxe_wait_port) ->
+      requested_haxe_wait_port
+    true ->
+      Enum.find_value((requested_haxe_wait_port + 1)..(requested_haxe_wait_port + 50), requested_haxe_wait_port, fn port ->
+        if is_port_available?.(port), do: port, else: nil
+      end)
+  end
+
+if haxe_bin and haxe_wait_port != requested_haxe_wait_port do
+  IO.puts("[todo-app] Haxe watcher port #{requested_haxe_wait_port} is in use; using #{haxe_wait_port}")
+end
+
 # Base watchers (always on)
 base_watchers = [
   # esbuild bundling watcher for Phoenix assets
@@ -17,7 +55,7 @@ optional_watchers =
   if haxe_bin do
     # Run the client-side Haxe compiler in watch mode (compile JS + source maps).
     # Optional so the server can boot even when Haxe isn't installed.
-    Keyword.put(optional_watchers, :haxe, ["build-client.hxml", "--wait", "6001", cd: Path.expand("../", __DIR__)])
+    Keyword.put(optional_watchers, :haxe, ["build-client.hxml", "--wait", Integer.to_string(haxe_wait_port), cd: Path.expand("../", __DIR__)])
   else
     optional_watchers
   end
