@@ -9,9 +9,10 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 ### 🚀 Getting Started
 **[01-getting-started/](01-getting-started/)** - Setup, quickstart, and basic concepts
 - [Installation Guide](01-getting-started/installation.md) - Setup Haxe, Reflaxe, and dependencies
-- [Quickstart Tutorial](01-getting-started/quickstart.md) - Hello World in 5 minutes
-- [Project Structure](01-getting-started/project-structure.md) - Understanding the directory layout
 - [Development Workflow](01-getting-started/development-workflow.md) - Day-to-day development practices
+- [Compiler Flags Guide](01-getting-started/compiler-flags-guide.md) - Recommended flags and anti-patterns
+- [Cross-hx Guide](01-getting-started/cross-hx.md) - Target-conditional stdlib overrides
+- [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
 
 ### 📖 User Guide
 **[02-user-guide/](02-user-guide/)** - Complete user documentation for application developers
@@ -33,6 +34,8 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Testing Infrastructure](03-compiler-development/TESTING_INFRASTRUCTURE.md) - Snapshot + integration testing system
 - [XRay Debugging](03-compiler-development/DEBUG_XRAY_SYSTEM.md) - Debugging methodology
 - [Best Practices](03-compiler-development/COMPILER_BEST_PRACTICES.md) - Development patterns
+  
+Most internal research notes were archived to **[09-history/archive/docs/03-compiler-development/](09-history/archive/docs/03-compiler-development/)** during post‑1.0 cleanup. The links above are the curated, up‑to‑date entry points.
 
 ### 📋 API Reference
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
@@ -51,6 +54,8 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [File Naming](05-architecture/FILE_NAMING_ARCHITECTURE.md) - snake_case conversion rules
 - [HXX Templates](05-architecture/HXX_ARCHITECTURE.md) - Template compilation system
 - [Elixir Injection](04-api-reference/ELIXIR_INJECTION_GUIDE.md) - `__elixir__()` / Syntax.code() patterns
+  
+Additional (uncurated) architecture notes were archived to **[09-history/archive/docs/05-architecture/](09-history/archive/docs/05-architecture/)**.
 
 ### 📋 How-To Guides
 **[06-guides/](06-guides/)** - Practical guides for specific tasks
@@ -89,12 +94,11 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
-- [Code Style](10-contributing/code-style.md) - Coding standards
 - [Updating AGENTS.md](10-contributing/updating-agents-md.md) - AI context and unified documentation strategy
 - [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation
 - [LLM Documentation Index](10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md) - Complete 232-file navigation index
-- [Commit Conventions](10-contributing/commit-conventions.md) - Git conventions
-- [Release Process](10-contributing/release-process.md) - Versioning and releases
+- [Documentation Philosophy](10-contributing/DOCUMENTATION_PHILOSOPHY.md) - How docs are organized and maintained
+- [LLM Integration Index](10-contributing/llm-integration/INDEX.md) - Entry point for AI-facing docs
 
 ## 🤖 AI Assistant Integration
 
@@ -106,7 +110,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 ## 🔗 Quick Links
 
 - **[Installation](01-getting-started/installation.md)** - Get started in 5 minutes
-- **[Quickstart](01-getting-started/quickstart.md)** - Your first Haxe→Elixir project
+- **[Quickstart](06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
 - **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Contributing](10-contributing/contributing.md)** - Help improve the project
