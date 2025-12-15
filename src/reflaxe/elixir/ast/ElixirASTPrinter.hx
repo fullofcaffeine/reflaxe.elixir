@@ -2695,19 +2695,21 @@ class ElixirASTPrinter {
                 if (reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedQualified(n)) {
                     return print(module, 0);
                 }
+                inline function isSingleSegmentCamelRoot(name:String):Bool {
+                    if (name == null || name.length == 0) return false;
+                    return name.indexOf(".") == -1
+                        && name.charAt(0).toUpperCase() == name.charAt(0)
+                        && name.charAt(0).toLowerCase() != name.charAt(0);
+                }
                 // In <App>Web.* modules, qualify single-segment CamelCase roots to <App>.<Name>
                 if (currentModuleName != null && currentModuleName.indexOf("Web") != -1) {
                     var idx = currentModuleName.indexOf("Web");
                     var app = idx > 0 ? currentModuleName.substring(0, idx) : null;
-                    inline function isSingleSegmentCamel(name:String):Bool {
-                        if (name == null || name.length == 0) return false;
-                        return name.indexOf(".") == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
-                    }
                     // Do not qualify the application web module itself (e.g., TodoAppWeb)
                     if (app != null && (n == app + "Web")) {
                         return n;
                     }
-                    if (app != null && isSingleSegmentCamel(n)) {
+                    if (app != null && isSingleSegmentCamelRoot(n)) {
                         return app + "." + n;
                     }
                 }
@@ -2717,20 +2719,12 @@ class ElixirASTPrinter {
                 if (currentModuleName != null && currentModuleName.indexOf(".") != -1) {
                     var dot = currentModuleName.indexOf(".");
                     var appPrefix = dot > 0 ? currentModuleName.substring(0, dot) : null;
-                    inline function isSingleSegmentCamel2(name:String):Bool {
-                        if (name == null || name.length == 0) return false;
-                        return name.indexOf(".") == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
-                    }
-                    if (appPrefix != null && isSingleSegmentCamel2(n) && n != appPrefix && n != appPrefix + "Web") {
+                    if (appPrefix != null && isSingleSegmentCamelRoot(n) && n != appPrefix && n != appPrefix + "Web") {
                         return appPrefix + "." + n;
                     }
                 }
                 // Outside Web.* modules, conservatively qualify well-known Phoenix Web modules
                 // e.g., TodoLive, HTML, CoreComponents, Layouts → <App>Web.<Name>
-                inline function isSingleSegmentCamel(name:String):Bool {
-                    if (name == null || name.length == 0) return false;
-                    return name.indexOf(".") == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
-                }
                 inline function isPhoenixWebRoot(name:String):Bool {
                     return name == "Routes" || name == "Gettext" || name == "HTML" || name == "CoreComponents" || name == "Components" || name == "Layouts" || StringTools.endsWith(name, "Live");
                 }
@@ -2739,7 +2733,7 @@ class ElixirASTPrinter {
                     var idx2 = currentModuleName.indexOf("Web");
                     if (idx2 > 0) appPrefix = currentModuleName.substring(0, idx2);
                 }
-                if (appPrefix != null && isSingleSegmentCamel(n) && isPhoenixWebRoot(n)) {
+                if (appPrefix != null && isSingleSegmentCamelRoot(n) && isPhoenixWebRoot(n)) {
                     return appPrefix + "Web." + n;
                 }
                 return print(module, 0);

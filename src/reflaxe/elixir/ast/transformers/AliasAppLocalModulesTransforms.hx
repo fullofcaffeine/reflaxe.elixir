@@ -82,7 +82,7 @@ class AliasAppLocalModulesTransforms {
                                 }
                             case ECall(target, _, _) if (target != null):
                                 switch (target.def) {
-                                    case EVar(m2) if (isCamel(m2) && !whitelisted(m2)): referenced.set(m2, true);
+                                    case EVar(moduleRoot) if (isCamel(moduleRoot) && !whitelisted(moduleRoot)): referenced.set(moduleRoot, true);
                                     default:
                                 }
                             default:
@@ -101,18 +101,18 @@ class AliasAppLocalModulesTransforms {
                     }
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
-                    var app2 = appPrefix(name);
-                    var referenced2 = new Map<String,Bool>();
+                    var app = appPrefix(name);
+                    var referenced = new Map<String,Bool>();
                     ElixirASTTransformer.transformNode(doBlock, function(x:ElixirAST):ElixirAST {
                         switch (x.def) {
                             case ERemoteCall(mod, _, _):
                                 switch (mod.def) {
-                                    case EVar(m) if (isCamel(m) && !whitelisted(m)): referenced2.set(m, true);
+                                    case EVar(m) if (isCamel(m) && !whitelisted(m)): referenced.set(m, true);
                                     default:
                                 }
                             case ECall(target, _, _) if (target != null):
                                 switch (target.def) {
-                                    case EVar(m2) if (isCamel(m2) && !whitelisted(m2)): referenced2.set(m2, true);
+                                    case EVar(moduleRoot) if (isCamel(moduleRoot) && !whitelisted(moduleRoot)): referenced.set(moduleRoot, true);
                                     default:
                                 }
                             default:
@@ -121,10 +121,10 @@ class AliasAppLocalModulesTransforms {
                     });
                     var newDo = doBlock;
                     var aliasNodes:Array<ElixirAST> = [];
-                    for (mname2 in referenced2.keys()) {
-                        var fq2 = (app2 != null) ? (app2 + "." + mname2) : null;
-                        if (fq2 != null && defined.exists(fq2)) {
-                            aliasNodes.push(makeASTWithMeta(EAlias(fq2, null), n.metadata, n.pos));
+                    for (moduleRoot in referenced.keys()) {
+                        var qualifiedName = (app != null) ? (app + "." + moduleRoot) : null;
+                        if (qualifiedName != null && defined.exists(qualifiedName)) {
+                            aliasNodes.push(makeASTWithMeta(EAlias(qualifiedName, null), n.metadata, n.pos));
                         }
                     }
                     if (aliasNodes.length > 0) {
@@ -133,9 +133,9 @@ class AliasAppLocalModulesTransforms {
                             case EDo(stmts):
                                 var merged = aliasNodes.concat(stmts);
                                 newDo = makeASTWithMeta(EDo(merged), newDo.metadata, newDo.pos);
-                            case EBlock(stmts2):
-                                var merged2 = aliasNodes.concat(stmts2);
-                                newDo = makeASTWithMeta(EBlock(merged2), newDo.metadata, newDo.pos);
+                            case EBlock(statements):
+                                var mergedStatements = aliasNodes.concat(statements);
+                                newDo = makeASTWithMeta(EBlock(mergedStatements), newDo.metadata, newDo.pos);
                             default:
                         }
                     }
