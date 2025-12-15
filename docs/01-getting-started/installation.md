@@ -193,7 +193,7 @@ mix haxe.source_map lib/MyModule.ex 10 5
 #### With File Watching (Recommended)
 ```bash
 # 1. Start file watcher with source mapping
-mix compile.haxe --watch
+mix haxe.watch
 
 # 2. Make changes to Haxe files
 vim src_haxe/MyModule.hx

@@ -238,7 +238,7 @@ Let's see the watcher in action with a LiveView counter to understand the rapid 
 
 1. **Start the watcher** (in your project directory):
 ```bash
-mix compile.haxe --watch
+mix haxe.watch
 ```
 
 2. **Create CounterLive.hx** in src_haxe/live/:
@@ -385,7 +385,7 @@ Enable both file watching and source mapping for the best development experience
 
 ```bash
 # Start compilation with watching and source mapping
-mix compile.haxe --watch
+mix haxe.watch
 
 # Now edit your .hx files - compilation and source maps update automatically
 ```
@@ -402,7 +402,7 @@ Reflaxe.Elixir includes powerful file watching for rapid development iteration w
 
 ```bash
 # Start the watcher - it monitors all .hx files in src_haxe/
-mix compile.haxe --watch
+mix haxe.watch
 
 # You'll see:
 [10:30:45] Starting HaxeWatcher...
@@ -424,7 +424,7 @@ For Phoenix applications, the watcher integrates seamlessly with LiveReload:
 config :my_app, MyAppWeb.Endpoint,
   watchers: [
     # Haxe watcher runs alongside Phoenix
-    haxe: ["mix", "compile.haxe", "--watch", cd: Path.expand("../", __DIR__)]
+    haxe: ["mix", "haxe.watch", cd: Path.expand("../", __DIR__)]
   ],
   live_reload: [
     patterns: [
@@ -451,7 +451,7 @@ The watcher provides dramatic speed improvements:
 **Key features**:
 - **Debouncing**: Multiple rapid changes compile together (100ms default)
 - **Incremental compilation**: Only recompiles changed files
-- **HaxeServer**: Maintains compilation server on port 6000 for speed
+- **HaxeServer**: Maintains compilation server on port 6116 for speed
 - **Source map updates**: Debugging information stays in sync
 
 ## Development Workflow
@@ -516,10 +516,10 @@ npx haxe build.hxml
 **Compile with file watching** (recommended for development):
 ```bash
 # Auto-recompile on file changes
-mix compile.haxe --watch
+mix haxe.watch
 
 # Or with verbose output
-mix compile.haxe --watch --verbose
+mix haxe.watch --verbose
 ```
 
 ### 4. Continuous Development Workflow
@@ -536,7 +536,7 @@ iex -S mix phx.server
 **For non-Phoenix projects** (use two terminals):
 ```bash
 # Terminal 1: Start the watcher
-mix compile.haxe --watch
+mix haxe.watch
 
 # Terminal 2: Run your application  
 iex -S mix
@@ -695,13 +695,13 @@ mix phx.server
 **Solution**: Ensure output directory (`lib/`) is not in the watch path. The watcher should only monitor `src_haxe/`
 
 ### Watcher Port Already in Use
-**Problem**: "Could not start HaxeServer on port 6000"
+**Problem**: "Could not start HaxeServer on port 6116"
 **Solution**:
 ```bash
-# Check what's using port 6000
-lsof -i :6000
+# Check what's using the port
+lsof -i :6116
 # Kill the process or use a different port
-mix compile.haxe --watch --port 6001
+HAXE_SERVER_PORT=6117 mix haxe.watch
 ```
 
 ## Next Steps
@@ -717,17 +717,17 @@ mix compile.haxe --watch --port 6001
 ### Compilation Performance
 - **Initial Compilation**: Full project compiles in 2-5 seconds
 - **Incremental with Watcher**: Single file changes recompile in 0.1-0.3s (10-50x faster!)
-- **Use `--watch` Flag**: Essential for development - provides sub-second feedback
+- **Use the watcher**: `mix haxe.watch` provides sub-second feedback
 - **Build Optimization**: Use unified compilation instead of `--next` approach
 
 ### Watcher Optimization
 - **Directory Focus**: Only watch `src_haxe/`, exclude test and output directories
 - **Debounce Tuning**: Default 100ms works well, increase to 200-500ms for slower systems
-- **Port Configuration**: HaxeServer runs on port 6000 by default, change if conflicts
+- **Port Configuration**: HaxeServer runs on port 6116 by default, change if conflicts
 - **Memory Usage**: Watcher uses ~120MB initially, may grow to ~250MB for large projects
 
 ### Development Speed Tips
-- **Keep Watcher Running**: Start once per session with `mix compile.haxe --watch`
+- **Keep Watcher Running**: Start once per session with `mix haxe.watch`
 - **Phoenix Integration**: Use `iex -S mix phx.server` for all-in-one development
 - **Leverage Caching**: lix and HaxeServer cache parsed files for speed
 - **Testing**: Use `npm test` for comprehensive validation

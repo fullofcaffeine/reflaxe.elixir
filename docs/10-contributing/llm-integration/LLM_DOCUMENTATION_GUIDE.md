@@ -114,7 +114,7 @@ class Example {
 ```bash
 # Bash commands with descriptions
 npm test  # Run all tests
-mix compile.haxe --watch  # Start file watcher
+mix haxe.watch  # Start file watcher
 ```
 
 ```elixir

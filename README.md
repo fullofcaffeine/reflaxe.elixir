@@ -3,7 +3,7 @@
 [![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
-[![Haxe](https://img.shields.io/badge/Haxe-4.3.6+-orange)](https://haxe.org)
+[![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
 **Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
@@ -174,8 +174,8 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 # Compile once
 npx haxe build.hxml
 
-# Watch for changes (requires file watching setup)
-mix compile.haxe --watch
+# Watch for changes (long-running)
+mix haxe.watch
 ```
 
 ### Phoenix Integration
@@ -428,7 +428,7 @@ For detailed testing documentation, see [docs/03-compiler-development/TESTING_IN
 ### Development Workflow
 ```bash
 # Start file watching for instant feedback
-mix compile.haxe --watch
+mix haxe.watch
 
 # In another terminal, make changes
 vim src_haxe/MyModule.hx  # Files auto-compile on save
@@ -442,7 +442,7 @@ npm test  # Test compiler changes
 Perfect for AI-assisted development with fast feedback loops:
 ```bash
 # Start watching with LLM-friendly output
-mix compile.haxe --watch --verbose
+mix haxe.watch --verbose
 
 # LLM creates/modifies .hx files → automatic compilation
 # Sub-second feedback enables rapid iteration

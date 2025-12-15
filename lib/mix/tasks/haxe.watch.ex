@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Haxe.Watch do
       mix haxe.watch --verbose     # Show detailed output
       mix haxe.watch --once        # Compile once and exit
       mix haxe.watch --dirs src,lib # Watch specific directories
+      mix haxe.watch --hxml build.hxml # Use a specific HXML file
   
   ## Options
   
@@ -74,21 +75,27 @@ defmodule Mix.Tasks.Haxe.Watch do
     project_config = Mix.Project.config()[:haxe] || []
     
     # Parse directories from command line
-    dirs = case opts[:dirs] do
-      nil -> 
-        Keyword.get(project_config, :watch_dirs, ["src"])
-      dirs_string ->
-        String.split(dirs_string, ",") |> Enum.map(&String.trim/1)
-    end
+    source_dir = Keyword.get(project_config, :source_dir, "src_haxe")
+
+    dirs =
+      case opts[:dirs] do
+        nil ->
+          # Prefer explicit watch_dirs; otherwise default to the project source_dir.
+          Keyword.get(project_config, :watch_dirs, [source_dir])
+
+        dirs_string ->
+          String.split(dirs_string, ",") |> Enum.map(&String.trim/1)
+      end
     
     # Build final configuration
     [
       dirs: dirs,
       debounce_ms: opts[:debounce] || Keyword.get(project_config, :debounce_ms, 100),
-      hxml_file: opts[:hxml] || Keyword.get(project_config, :hxml_file, "build.hxml"),
+      # HaxeWatcher expects :build_file (not :hxml_file)
+      build_file: opts[:hxml] || Keyword.get(project_config, :hxml_file, "build.hxml"),
       verbose: opts[:verbose] || false,
       auto_compile: true,
-      source_dir: Keyword.get(project_config, :source_dir, "src"),
+      source_dir: source_dir,
       target_dir: Keyword.get(project_config, :target_dir, "lib")
     ]
   end
