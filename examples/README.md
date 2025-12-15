@@ -16,8 +16,8 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 3. [03-phoenix-app](./03-phoenix-app/)
 **Difficulty**: Intermediate  
-**Features**: Phoenix LiveView, @:liveview annotation, real-time updates  
-**Use Case**: Building Phoenix applications with Haxe
+**Features**: Phoenix endpoint/router/controller authored in Haxe, JSON responses  
+**Use Case**: Minimal Phoenix web app with Haxe→Elixir compilation
 
 ### 4. [04-ecto-migrations](./04-ecto-migrations/)
 **Difficulty**: Intermediate  
@@ -44,7 +44,27 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: @:behaviour, @:use annotations, callback contracts, GenServer integration  
 **Use Case**: Compile-time behavior contracts with OTP integration and optional callbacks
 
-### 9. [test-integration](./test-integration/)
+### 9. [09-phoenix-router](./09-phoenix-router/)
+**Difficulty**: Intermediate  
+**Features**: Router DSL, route helpers, LiveDashboard routing  
+**Use Case**: Type-safe Phoenix routing from Haxe
+
+### 10. [10-option-patterns](./10-option-patterns/)
+**Difficulty**: Intermediate  
+**Features**: Option patterns and ergonomics  
+**Use Case**: Practical Option usage on the Elixir target
+
+### 11. [11-domain-validation](./11-domain-validation/)
+**Difficulty**: Advanced  
+**Features**: Domain validation patterns, typed constraints  
+**Use Case**: Modeling rich domain logic in Haxe for the BEAM
+
+### 12. [todo-app](./todo-app/)
+**Difficulty**: Advanced  
+**Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
+**Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
+
+### 13. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
@@ -57,7 +77,7 @@ Choose an example based on your experience level:
 Start with [01-simple-modules](./01-simple-modules/):
 ```bash
 cd examples/01-simple-modules
-npx haxe compile-all.hxml
+haxe compile-all.hxml
 ```
 
 ### For Mix Integration
@@ -74,7 +94,7 @@ Explore [03-phoenix-app](./03-phoenix-app/):
 ```bash
 cd examples/03-phoenix-app
 mix deps.get
-npx haxe build.hxml
+mix compile
 mix phx.server
 ```
 
@@ -92,7 +112,7 @@ Each example can be compiled independently:
 
 ```bash
 # For simple Haxe compilation
-npx haxe build.hxml
+haxe build.hxml
 
 # For Mix-integrated projects  
 mix deps.get
@@ -114,7 +134,7 @@ npm test
 
 # Validate specific example
 cd examples/[example-name]
-npx haxe build.hxml
+haxe build.hxml
 ```
 
 ### Continuous Integration
@@ -155,7 +175,7 @@ All examples use project lix dependencies:
 ## 💡 Development Workflow
 
 1. **Edit** Haxe source in `src_haxe/` directories
-2. **Compile** with `npx haxe build.hxml`  
+2. **Compile** with `haxe build.hxml`  
 3. **Generated** Elixir appears in `lib/` directories
 4. **Test** with standard Elixir/Phoenix tools
 
