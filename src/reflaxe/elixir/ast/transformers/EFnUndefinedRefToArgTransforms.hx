@@ -16,7 +16,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Late renames and loop shaping sometimes leave a drifted name inside closures
- *   (e.g., using `todo` when the only clause binder is `item`). This is a clear
+ *   (e.g., using `entry` when the only clause binder is `item`). This is a clear
  *   single-source-of-truth scenario where the only undefined body var should be
  *   the clause binder.
  *
@@ -89,20 +89,11 @@ class EFnUndefinedRefToArgTransforms {
             // Compute undefined references
             var undefined = [for (k in referenced.keys()) if (!declared.exists(k)) k];
             #if debug_ast_transformer
-            if (undefined.length > 0) // DEBUG: Sys.println('[EFnUndefinedRefToArg] arg=' + argName + ' undefined=' + undefined.join(','));
+            if (undefined.length > 0) {
+              // DEBUG: Sys.println('[EFnUndefinedRefToArg] arg=' + argName + ' undefined=' + undefined.join(','));
+            }
             #end
-            var hasTodo = (undefined.indexOf("todo") != -1);
-            if (hasTodo) {
-              #if debug_ast_transformer
-              #end
-              var newBodyTodo = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
-                return switch (x.def) {
-                  case EVar(v) if (v == "todo"): makeASTWithMeta(EVar(argName), x.metadata, x.pos);
-                  default: x;
-                }
-              });
-              newClauses.push({ args: cl.args, guard: cl.guard, body: newBodyTodo });
-            } else if (undefined.length == 1) {
+            if (undefined.length == 1) {
               var u = undefined[0];
               #if debug_ast_transformer
               #end

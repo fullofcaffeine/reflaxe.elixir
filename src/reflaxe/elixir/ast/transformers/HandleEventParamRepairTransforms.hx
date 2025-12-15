@@ -147,12 +147,16 @@ class HandleEventParamRepairTransforms {
         case EBinary(Match, {def: EVar("_")}, rhsD):
           var k = extractMapGetKey(rhsD);
           #if debug_ast_transformer
-          if (k != null) // DEBUG: Sys.println('[HandleEventRepair] seen _ = Map.get(..., ' + k + ')');
+          if (k != null) {
+            // DEBUG: Sys.println('[HandleEventRepair] seen _ = Map.get(..., ' + k + ')');
+          }
           #end
         case EMatch(PVar("_"), rhsD2):
           var k2 = extractMapGetKey(rhsD2);
           #if debug_ast_transformer
-          if (k2 != null) // DEBUG: Sys.println('[HandleEventRepair] seen _ <- Map.get(..., ' + k2 + ')');
+          if (k2 != null) {
+            // DEBUG: Sys.println('[HandleEventRepair] seen _ <- Map.get(..., ' + k2 + ')');
+          }
           #end
         default:
       }

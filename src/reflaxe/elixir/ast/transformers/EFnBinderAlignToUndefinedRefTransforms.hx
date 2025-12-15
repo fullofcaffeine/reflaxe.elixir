@@ -119,19 +119,19 @@ class EFnBinderAlignToUndefinedRefTransforms {
             };
           });
 
-          var receiverList = [for (k in fieldReceivers.keys()) k];
-          if (receiverList.length == 1) {
-            var u = receiverList[0];
-            var newBody2 = ElixirASTTransformer.transformNode(rewrittenBody, function(x: ElixirAST): ElixirAST {
-              return switch (x.def) {
-                case EVar(v) if (v == argName): makeASTWithMeta(EVar(u), x.metadata, x.pos);
-                default: x;
-              }
-            });
-            newClauses.push({ args: [PVar(u)], guard: cl.guard, body: newBody2 });
-          } else {
-            newClauses.push({ args: cl.args, guard: cl.guard, body: rewrittenBody });
-          }
+	          var receiverList = [for (k in fieldReceivers.keys()) k];
+	          if (receiverList.length == 1) {
+	            var u = receiverList[0];
+	            var receiverAlignedBody = ElixirASTTransformer.transformNode(rewrittenBody, function(x: ElixirAST): ElixirAST {
+	              return switch (x.def) {
+	                case EVar(v) if (v == argName): makeASTWithMeta(EVar(u), x.metadata, x.pos);
+	                default: x;
+	              }
+	            });
+	            newClauses.push({ args: [PVar(u)], guard: cl.guard, body: receiverAlignedBody });
+	          } else {
+	            newClauses.push({ args: cl.args, guard: cl.guard, body: rewrittenBody });
+	          }
         }
         makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
 

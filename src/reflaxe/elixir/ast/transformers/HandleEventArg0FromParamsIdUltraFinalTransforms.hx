@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.NameUtils;
 
 /**
  * HandleEventArg0FromParamsIdUltraFinalTransforms
@@ -17,7 +18,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   already selected by earlier passes.
  *
  * WHY
- * - Ensures delete/edit/toggle helpers receive an id instead of the entire
+ * - Ensures id-based helpers receive an id instead of the entire
  *   params map without relying on app names.
  *
  * HOW
@@ -25,9 +26,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   (name→arity→first-parameter-name). Inside each `handle_event/3` clause we
  *   scan for calls where the first argument is the `params` binding and the
  *   last argument is the `socket` binding. If the callee is local and its first
- *   parameter is explicitly named `params`/`_params`, we skip (it expects a map);
- *   otherwise we replace the first argument with `Map.get(params, "id")`,
- *   coercing binary→integer.
+ *   parameter name is `id` or ends with `_id` (and is not explicitly
+ *   `params`/`_params`), we replace the first argument with `Map.get(params, "<key>")`
+ *   (using the parameter name as the key), coercing binary→integer. If a local
+ *   variable for that id key is already bound earlier in the wrapper body, we
+ *   reuse it instead of re-extracting.
  *
  * EXAMPLES
  * Haxe
@@ -74,21 +77,15 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
 
   static inline function needsInt(name:String):Bool return name == "id" || StringTools.endsWith(name, "_id");
 
-  static function buildExtractId(paramsVar:String):ElixirAST {
-    var get = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString("id")) ]));
+  static function buildExtract(paramsVar:String, key:String):ElixirAST {
+    var get = makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [ makeAST(EVar(paramsVar)), makeAST(EString(key)) ]));
+    if (!needsInt(key)) return get;
     var isBin = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_binary", [ get ]));
     var toInt = makeAST(ERemoteCall(makeAST(EVar("String")), "to_integer", [ get ]));
     return makeAST(EIf(isBin, toInt, get));
   }
 
-  static function rewrite(body: ElixirAST, paramsVar:String, socketVar:String, sigs:Map<String, Map<Int, Null<String>>> = null, ?eventName:Null<String>): ElixirAST {
-    // Guardrails: only apply this ultra-final rewrite to conventional id-based events.
-    // This avoids breaking events whose first argument is not an id (e.g., "toggle_tag" expects a "tag").
-    if (eventName != null) {
-      var ev = eventName.toLowerCase();
-      var idBased = (ev == "delete_todo" || ev == "edit_todo" || ev == "toggle_todo");
-      if (!idBased) return body;
-    }
+  static function rewrite(body: ElixirAST, paramsVar:String, socketVar:String, sigs:Map<String, Map<Int, Null<String>>> = null): ElixirAST {
     // Collect declared names to decide if this wrapper likely binds an id/*_id
     var declared = new Map<String,Bool>();
     reflaxe.elixir.ast.ASTUtils.walk(body, function(e:ElixirAST) {
@@ -99,29 +96,17 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
         default:
       }
     });
-    // Prefer local id/*_id when present; otherwise default to extracting
-    // the "id" from params. We no longer gate the rewrite on an explicit
-    // id hint because many wrappers don't predeclare id but still need it.
-    var chosenFirstArg:ElixirAST = chooseFirstArgReplacement(paramsVar, declared);
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
-        case ECall(target, fname, args) if (args != null && args.length >= 2):
+        case ECall(target, fname, args) if (target == null && args != null && args.length >= 2):
           var lastArgIsSocket = switch (args[args.length - 1].def) { case EVar(v) if (v == socketVar): true; default: false; };
           var firstArgIsParams = switch (args[0].def) { case EVar(v) if (v == paramsVar): true; default: false; };
-          var permittedByCallee = shouldRewriteByCallee(fname, args.length, sigs);
-          if (permittedByCallee && lastArgIsSocket && firstArgIsParams) {
+          var expectedIdVar = expectedIdVarName(fname, args.length, sigs);
+          if (expectedIdVar != null && lastArgIsSocket && firstArgIsParams) {
+            var chosenFirstArg = chooseFirstArgReplacement(paramsVar, expectedIdVar, declared);
             var newArgs = args.copy();
             newArgs[0] = chosenFirstArg;
             makeASTWithMeta(ECall(target, fname, newArgs), x.metadata, x.pos);
-          } else x;
-        case ERemoteCall(mod, fname, args) if (args != null && args.length >= 2):
-          var lastArgIsSocket = switch (args[args.length - 1].def) { case EVar(v) if (v == socketVar): true; default: false; };
-          var firstArgIsParams = switch (args[0].def) { case EVar(v) if (v == paramsVar): true; default: false; };
-          var permittedByCallee = shouldRewriteByCallee(fname, args.length, sigs);
-          if (permittedByCallee && lastArgIsSocket && firstArgIsParams) {
-            var newArgs = args.copy();
-            newArgs[0] = chosenFirstArg;
-            makeASTWithMeta(ERemoteCall(mod, fname, newArgs), x.metadata, x.pos);
           } else x;
         default:
           x;
@@ -129,9 +114,6 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
     });
   }
 
-  static function hasIdSuffix(declared:Map<String,Bool>):Bool {
-    for (k in declared.keys()) if (StringTools.endsWith(k, '_id')) return true; return false;
-  }
   static function collectPat(p:EPattern, out:Map<String,Bool>):Void {
     switch (p) {
       case PVar(n): out.set(n, true);
@@ -164,15 +146,17 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
     return m;
   }
 
-  // Decide rewrite permissibility by callee definition: if a local function with same name/arity exists and its first arg is explicitly named `params` or `_params`, skip rewrite; otherwise permit.
-  static function shouldRewriteByCallee(fname:String, arity:Int, sigs:Map<String, Map<Int, Null<String>>>):Bool {
-    if (sigs == null) return true; // no info → allow based on hasIdHint
+  static function expectedIdVarName(fname:String, arity:Int, sigs:Map<String, Map<Int, Null<String>>>): Null<String> {
+    if (sigs == null) return null;
     var byAr = sigs.get(fname);
-    if (byAr == null) return true; // external/remote → allow based on hasIdHint
+    if (byAr == null) return null;
     var first = byAr.get(arity);
-    if (first == null) return true; // unknown → allow based on hasIdHint
-    // If callee explicitly names its first argument params/_params, we assume it expects a map → do not rewrite.
-    return !(first == "params" || first == "_params");
+    if (first == null) return null;
+    if (first == "params" || first == "_params") return null;
+    var normalized = first;
+    if (StringTools.startsWith(normalized, "_") && normalized.length > 1) normalized = normalized.substr(1);
+    var key = NameUtils.toSnakeCase(normalized);
+    return needsInt(key) ? normalized : null;
   }
 
   static function rewriteInBody(body:Array<ElixirAST>, sigs:Map<String, Map<Int, Null<String>>>):Array<ElixirAST> {
@@ -181,33 +165,23 @@ class HandleEventArg0FromParamsIdUltraFinalTransforms {
       case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
         var paramsVar = secondArgVar(args);
         var socketVar = thirdArgVar(args);
-        var evName:Null<String> = switch (args[0]) { case PLiteral({def: EString(ev)}): ev; default: null; };
-        out.push(makeASTWithMeta(EDef(name, args, guards, rewrite(body, paramsVar, socketVar, sigs, evName)), s.metadata, s.pos));
+        out.push(makeASTWithMeta(EDef(name, args, guards, rewrite(body, paramsVar, socketVar, sigs)), s.metadata, s.pos));
       case EDefp(name, args, guards, body) if (isHandleEvent3(name, args)):
         var paramsVar = secondArgVar(args);
         var socketVar = thirdArgVar(args);
-        var evName:Null<String> = switch (args[0]) { case PLiteral({def: EString(ev2)}): ev2; default: null; };
-        out.push(makeASTWithMeta(EDefp(name, args, guards, rewrite(body, paramsVar, socketVar, sigs, evName)), s.metadata, s.pos));
+        out.push(makeASTWithMeta(EDefp(name, args, guards, rewrite(body, paramsVar, socketVar, sigs)), s.metadata, s.pos));
       default:
         out.push(s);
     }
     return out;
   }
 
-  static inline function chooseFirstArgReplacement(paramsVar:String, declared:Map<String,Bool>):ElixirAST {
-    // Prefer local `id`, else a declared `*_id`, else extract from params.
-    if (declared.exists('id')) return makeAST(EVar('id'));
-    var suffix = firstIdSuffixVar(declared);
-    if (suffix != null) return makeAST(EVar(suffix));
-    return buildExtractId(paramsVar);
-  }
-
-  static function firstIdSuffixVar(declared:Map<String,Bool>):Null<String> {
-    var candidate:Null<String> = null;
-    for (k in declared.keys()) if (StringTools.endsWith(k, '_id')) {
-      if (candidate == null || k.length < candidate.length || (k.length == candidate.length && k < candidate)) candidate = k;
-    }
-    return candidate;
+  static inline function chooseFirstArgReplacement(paramsVar:String, expectedVar:String, declared:Map<String,Bool>):ElixirAST {
+    if (expectedVar != null && declared.exists(expectedVar)) return makeAST(EVar(expectedVar));
+    var key = NameUtils.toSnakeCase(expectedVar);
+    if (declared.exists(key)) return makeAST(EVar(key));
+    if (declared.exists('_' + key)) return makeAST(EVar('_' + key));
+    return buildExtract(paramsVar, key);
   }
 }
 

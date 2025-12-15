@@ -42,10 +42,13 @@ class CaseBodyCamelRefToSnakeBinderTransforms {
     });
   }
 
-  static function rewriteClause(cl: ECaseClause): ECaseClause {
-    // Collect binders (snake and underscored variants)
-    var binders = new Map<String, Bool>();
-    collectBinders(cl.pattern, binders);
+ static function rewriteClause(cl: ECaseClause): ECaseClause {
+    // Collect binders: base snake names, and which ones are underscored in the pattern.
+    var binderBases = new Map<String, Bool>();
+    var underscoredBases = new Map<String, Bool>();
+    collectBinders(cl.pattern, binderBases, underscoredBases);
+    // Track which underscored binders we actually used in the body.
+    var usedUnderscoredBases = new Map<String, Bool>();
     // Transform body: camelCase -> snakeCase if snake binder exists
     function toSnake(s:String):String {
       return reflaxe.elixir.ast.NameUtils.toSnakeCase(s);
@@ -56,7 +59,10 @@ class CaseBodyCamelRefToSnakeBinderTransforms {
           var isCamel = (v != null && v.length > 0 && v.charAt(0) == v.charAt(0).toLowerCase() && v.indexOf("_") == -1 && ~/.*[A-Z].*/.match(v));
           if (isCamel) {
             var s = toSnake(v);
-            if (binders.exists(s) || binders.exists('_' + s)) {
+            if (binderBases.exists(s)) {
+              // If the pattern binder is underscored, and we rewrite the body to use it,
+              // we must un-underscore the binder to make it a real binding.
+              if (underscoredBases.exists(s)) usedUnderscoredBases.set(s, true);
               return makeASTWithMeta(EVar(s), x.metadata, x.pos);
             }
           }
@@ -65,54 +71,42 @@ class CaseBodyCamelRefToSnakeBinderTransforms {
           x;
       }
     });
-    // If binder exists as _snake, rewrite the pattern to plain snake
-    var newPattern = cl.pattern;
-    if (hasUnderscoredBinder(cl.pattern)) {
-      newPattern = rewriteUnderscoredBinders(cl.pattern);
-    }
+    // Only un-underscore pattern binders that are actually used by the rewritten body.
+    var newPattern = rewriteUnderscoredBindersUsedInBody(cl.pattern, usedUnderscoredBases);
     return { pattern: newPattern, guard: cl.guard, body: rewrittenBody };
   }
 
-  static function collectBinders(p:EPattern, out:Map<String,Bool>):Void {
+  static function collectBinders(p:EPattern, bases:Map<String,Bool>, underscoredBases:Map<String,Bool>):Void {
     switch (p) {
       case PVar(n):
         if (n != null && n.length > 0) {
-          var base = StringTools.startsWith(n, "_") ? n.substr(1) : n;
-          if (base != null && base.length > 0) out.set(base, true);
+          var isUnderscored = StringTools.startsWith(n, "_");
+          var base = isUnderscored ? n.substr(1) : n;
+          if (base != null && base.length > 0) {
+            bases.set(base, true);
+            if (isUnderscored) underscoredBases.set(base, true);
+          }
         }
-      case PTuple(ps) | PList(ps): for (q in ps) collectBinders(q, out);
-      case PCons(h,t): collectBinders(h, out); collectBinders(t, out);
-      case PMap(kvs): for (kv in kvs) collectBinders(kv.value, out);
-      case PStruct(_,fs): for (f in fs) collectBinders(f.value, out);
-      case PPin(inner): collectBinders(inner, out);
+      case PTuple(ps) | PList(ps): for (q in ps) collectBinders(q, bases, underscoredBases);
+      case PCons(h,t): collectBinders(h, bases, underscoredBases); collectBinders(t, bases, underscoredBases);
+      case PMap(kvs): for (kv in kvs) collectBinders(kv.value, bases, underscoredBases);
+      case PStruct(_,fs): for (f in fs) collectBinders(f.value, bases, underscoredBases);
+      case PPin(inner): collectBinders(inner, bases, underscoredBases);
       default:
     }
   }
 
-  static function hasUnderscoredBinder(p:EPattern):Bool {
-    var found = false;
-    switch (p) {
-      case PVar(n): if (n != null && StringTools.startsWith(n, "_")) return true;
-      case PTuple(ps) | PList(ps): for (q in ps) if (hasUnderscoredBinder(q)) return true;
-      case PCons(h,t): if (hasUnderscoredBinder(h) || hasUnderscoredBinder(t)) return true;
-      case PMap(kvs): for (kv in kvs) if (hasUnderscoredBinder(kv.value)) return true;
-      case PStruct(_,fs): for (f in fs) if (hasUnderscoredBinder(f.value)) return true;
-      case PPin(inner): return hasUnderscoredBinder(inner);
-      default:
-    }
-    return found;
-  }
-
-  static function rewriteUnderscoredBinders(p:EPattern):EPattern {
+  static function rewriteUnderscoredBindersUsedInBody(p:EPattern, usedBases:Map<String,Bool>):EPattern {
     return switch (p) {
       case PVar(n) if (n != null && StringTools.startsWith(n, "_")):
-        PVar(n.substr(1));
-      case PTuple(ps): PTuple([for (q in ps) rewriteUnderscoredBinders(q)]);
-      case PList(ps): PList([for (q in ps) rewriteUnderscoredBinders(q)]);
-      case PCons(h,t): PCons(rewriteUnderscoredBinders(h), rewriteUnderscoredBinders(t));
-      case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: rewriteUnderscoredBinders(kv.value) }]);
-      case PStruct(name,fs): PStruct(name, [for (f in fs) { key: f.key, value: rewriteUnderscoredBinders(f.value) }]);
-      case PPin(inner): PPin(rewriteUnderscoredBinders(inner));
+        var base = n.substr(1);
+        usedBases.exists(base) ? PVar(base) : p;
+      case PTuple(ps): PTuple([for (q in ps) rewriteUnderscoredBindersUsedInBody(q, usedBases)]);
+      case PList(ps): PList([for (q in ps) rewriteUnderscoredBindersUsedInBody(q, usedBases)]);
+      case PCons(h,t): PCons(rewriteUnderscoredBindersUsedInBody(h, usedBases), rewriteUnderscoredBindersUsedInBody(t, usedBases));
+      case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: rewriteUnderscoredBindersUsedInBody(kv.value, usedBases) }]);
+      case PStruct(name,fs): PStruct(name, [for (f in fs) { key: f.key, value: rewriteUnderscoredBindersUsedInBody(f.value, usedBases) }]);
+      case PPin(inner): PPin(rewriteUnderscoredBindersUsedInBody(inner, usedBases));
       default:
         p;
     }
@@ -120,4 +114,3 @@ class CaseBodyCamelRefToSnakeBinderTransforms {
 }
 
 #end
-

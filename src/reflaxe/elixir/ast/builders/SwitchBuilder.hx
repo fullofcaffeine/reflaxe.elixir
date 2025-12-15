@@ -199,9 +199,6 @@ class SwitchBuilder {
             return null;
         }
 
-        // Store the old clause context; per-clause contexts will be pushed for each arm
-        var oldClauseContext = context.currentClauseContext;
-        
         // Build case clauses (may generate multiple clauses per case due to guard chains)
         var caseClauses: Array<ECaseClause> = [];
 
@@ -244,10 +241,16 @@ class SwitchBuilder {
             }
         }
         
-        // Restore previous clause context
-        context.currentClauseContext = oldClauseContext;
-        
-        // Repair inner case scrutinees in clause bodies using binder metadata
+        // Repair inner case scrutinees in clause bodies using binder metadata.
+        //
+        // WHY
+        // - Haxe lowering sometimes emits nested cases that scrutinee on temporary vars (g/_g/_g1...).
+        // - Rewriting *all* infra temps to a single binder is incorrect for multi-parameter enums
+        //   (it can rewrite a right-branch scrutinee to the left binder).
+        //
+        // HOW
+        // - Build a mapping from infra-temp names to tuple payload binders from the clause pattern.
+        // - Rewrite only when the scrutinee is an infra temp that maps to a known binder.
         if (caseClauses.length > 0) {
             var repaired:Array<ECaseClause> = [];
             for (cl in caseClauses) {
@@ -255,7 +258,7 @@ class SwitchBuilder {
                 if (cl.body != null && cl.body.metadata != null) {
                     // Use binder computed during case building when available
                     binder = try {
-                        untyped cl.body.metadata.primaryCaseBinder; 
+                        untyped cl.body.metadata.primaryCaseBinder;
                     } catch (e:Dynamic) {
                         null;
                     }
@@ -269,9 +272,10 @@ class SwitchBuilder {
                 if (targetVarName != null && binder != null && binder != targetVarName) {
                     newBody = rewriteInnerCaseScrutinee(newBody, targetVarName, binder);
                 }
-                // Strategy B: regardless of target var, replace infra-temp scrutinee (g/_g/gN) with binder
-                if (binder != null) {
-                    newBody = rewriteInnerCaseScrutineeInfra(newBody, binder);
+                // Strategy B: infra-temp scrutinee → corresponding tuple binder (per-parameter)
+                var infraMap = buildInfraScrutineeMapFromPattern(cl.pattern);
+                if (infraMap != null) {
+                    newBody = rewriteInnerCaseScrutineeInfraMap(newBody, infraMap);
                 }
                 repaired.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
             }
@@ -405,6 +409,7 @@ class SwitchBuilder {
                         }
                     }
                     if (flattened.length > 0) {
+                        context.popClauseContext();
                         return flattened;
                     }
                 }
@@ -450,8 +455,21 @@ class SwitchBuilder {
             // DISABLED: trace('[SwitchBuilder ERROR] ClauseContext is NULL - cannot register mappings!');
         } #end
 
-        // Build pattern from case value (pass pattern variables and case body for usage analysis)
-        var pattern = buildPattern(value, targetVarName, patternVars, switchCase.expr, context);
+        // Build pattern from case value.
+        //
+        // NOTE
+        // - `patternVars` are extracted from the *case body* to recover binder names when Haxe lowers
+        //   enum switches to integer indices (TEnumIndex → TInt case patterns).
+        // - For direct enum constructor patterns (TCall/FEnum), `patternVars` is not positional and
+        //   must not be used as enum parameter names.
+        var guardVarsForPattern: Array<String> = [];
+        switch (value.expr) {
+            case TConst(TInt(_)):
+                guardVarsForPattern = patternVars;
+            default:
+                guardVarsForPattern = [];
+        }
+        var pattern = buildPattern(value, targetVarName, guardVarsForPattern, switchCase.expr, context);
         if (pattern == null) {
             context.popClauseContext();
             return [];
@@ -517,6 +535,7 @@ class SwitchBuilder {
             }
         }
 
+        context.popClauseContext();
         return clauses;
     }
 
@@ -562,11 +581,85 @@ class SwitchBuilder {
 
                 #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
 
+        // Guard clauses (`when`) cannot reference locals that are only defined inside the clause body.
+        // Haxe lowering for nested enum patterns sometimes introduces infra temps (g/_g/g1/...) for
+        // intermediate checks; if we lift those into a guard, we create undefined-variable errors.
+        // When the condition references an infra temp that is not bound by the clause pattern,
+        // do NOT extract the guard chain; keep the original body intact.
+        var patternBinders = new Map<String,Bool>();
+        function collectBinders(p:EPattern):Void {
+            switch (p) {
+                case PVar(n) if (n != null && n.length > 0):
+                    patternBinders.set(n, true);
+                case PAlias(nm, inner):
+                    if (nm != null && nm.length > 0) patternBinders.set(nm, true);
+                    collectBinders(inner);
+                case PPin(inner):
+                    collectBinders(inner);
+                case PTuple(es) | PList(es):
+                    for (e in es) collectBinders(e);
+                case PCons(h, t):
+                    collectBinders(h);
+                    collectBinders(t);
+                case PMap(kvs):
+                    for (kv in kvs) collectBinders(kv.value);
+                case PStruct(_, fs):
+                    for (f in fs) collectBinders(f.value);
+                default:
+            }
+        }
+        collectBinders(pattern);
+
+        function guardUsesUnsafeInfraTemp(econd:TypedExpr):Bool {
+            var hit = false;
+            function walk(te:TypedExpr):Void {
+                if (hit || te == null) return;
+                switch (te.expr) {
+                    case TLocal(v):
+                        if (v != null && v.name != null && isInfrastructureVar(v.name)) {
+                            var elixirName = VariableAnalyzer.toElixirVarName(v.name);
+                            if (!patternBinders.exists(elixirName)) {
+                                hit = true;
+                                return;
+                            }
+                        }
+                    default:
+                }
+                TypedExprTools.iter(te, walk);
+            }
+            walk(econd);
+            return hit;
+        }
+
         // Traverse the if-else chain
         while (true) {
             switch(current.expr) {
                 case TIf(econd, eif, eelse):
                         #if debug_switch_builder trace('[GuardChain] Found TIf - extracting guard'); #end
+                    if (guardUsesUnsafeInfraTemp(econd)) {
+                        #if debug_switch_builder
+                        trace('[GuardChain]   Unsafe infra temp in condition; keeping original body (no when-guards)');
+                        #end
+                        var substitutedWhole = context.substituteIfNeeded(originalCaseBody);
+                        var rawWhole = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedWhole, context);
+                        var metaWhole = (function(b:ElixirAST){
+                            if (b == null) return b;
+                            try {
+                                var meta:Dynamic = b.metadata;
+                                if (meta == null) meta = {};
+                                if (primaryBinder != null) untyped meta.primaryCaseBinder = primaryBinder;
+                                untyped meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+                                return makeASTWithMeta(b.def, meta, b.pos);
+                            } catch (e:Dynamic) { return b; }
+                        })(rawWhole);
+                        var bodyWhole = cleanupTempBinderAliases(metaWhole);
+                        context.popClauseContext();
+                        return [{
+                            pattern: pattern,
+                            guard: null,
+                            body: bodyWhole
+                        }];
+                    }
                     // Extract guard condition
                     var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
 
@@ -823,42 +916,80 @@ class SwitchBuilder {
         });
     }
 
-    /**
-     * Rewrite inner case scrutinee when it references an infrastructure temp (g/_g/gN)
-     */
-    static function rewriteInnerCaseScrutineeInfra(body: ElixirAST, newName:String): ElixirAST {
+    static function buildInfraScrutineeMapFromPattern(pattern: EPattern): Null<Map<String, String>> {
+        // Only attempt for tagged tuples: {:atom, ...payload}
+        var payload: Array<EPattern> = null;
+        switch (pattern) {
+            case PTuple(es) if (es.length >= 2):
+                switch (es[0]) {
+                    case PLiteral(ast):
+                        switch (ast.def) {
+                            case EAtom(_):
+                                payload = es.slice(1);
+                            default:
+                        }
+                    default:
+                }
+            default:
+        }
+        if (payload == null) return null;
+
+        var binderNames: Array<Null<String>> = [];
+        for (p in payload) {
+            binderNames.push(switch (p) { case PVar(n): n; default: null; });
+        }
+
+        var map: Map<String, String> = new Map();
+        for (i in 0...binderNames.length) {
+            var binderName = binderNames[i];
+            if (binderName == null) continue;
+
+            // Index 0 uses g/_g without suffix, subsequent indices use gN/_gN.
+            var keys = (i == 0)
+                ? ["g", "_g", "g0", "_g0"]
+                : ["g" + i, "_g" + i];
+            for (k in keys) map.set(k, binderName);
+        }
+
+        return map;
+    }
+
+    static function rewriteInnerCaseScrutineeInfraMap(body: ElixirAST, renameMap: Map<String, String>): ElixirAST {
+        if (renameMap == null) return body;
         return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             if (n == null || n.def == null) return n;
             return switch (n.def) {
                 case ECase(scrut, cls):
                     var nscrut = switch (scrut.def) {
-                        case EVar(v) if (isInfrastructureVar(v)): { def: EVar(newName), metadata: scrut.metadata, pos: scrut.pos };
-                        default: scrut;
+                        case EVar(v) if (v != null && renameMap.exists(v)):
+                            { def: EVar(renameMap.get(v)), metadata: scrut.metadata, pos: scrut.pos };
+                        default:
+                            scrut;
                     };
                     var ncls = [];
-                    for (c in cls) ncls.push({ pattern: c.pattern, guard: c.guard == null ? null : rewriteInnerCaseScrutineeInfra(c.guard, newName), body: rewriteInnerCaseScrutineeInfra(c.body, newName) });
+                    for (c in cls) ncls.push({ pattern: c.pattern, guard: c.guard == null ? null : rewriteInnerCaseScrutineeInfraMap(c.guard, renameMap), body: rewriteInnerCaseScrutineeInfraMap(c.body, renameMap) });
                     { def: ECase(nscrut, ncls), metadata: n.metadata, pos: n.pos };
                 case EBlock(stmts):
                     var out:Array<ElixirAST> = [];
-                    for (s in stmts) out.push(rewriteInnerCaseScrutineeInfra(s, newName));
+                    for (s in stmts) out.push(rewriteInnerCaseScrutineeInfraMap(s, renameMap));
                     { def: EBlock(out), metadata: n.metadata, pos: n.pos };
                 case EDo(statements):
                     var outDo:Array<ElixirAST> = [];
-                    for (s in statements) outDo.push(rewriteInnerCaseScrutineeInfra(s, newName));
+                    for (s in statements) outDo.push(rewriteInnerCaseScrutineeInfraMap(s, renameMap));
                     { def: EDo(outDo), metadata: n.metadata, pos: n.pos };
                 case EIf(c,t,e):
-                    { def: EIf(rewriteInnerCaseScrutineeInfra(c, newName), rewriteInnerCaseScrutineeInfra(t, newName), e == null ? null : rewriteInnerCaseScrutineeInfra(e, newName)), metadata: n.metadata, pos: n.pos };
+                    { def: EIf(rewriteInnerCaseScrutineeInfraMap(c, renameMap), rewriteInnerCaseScrutineeInfraMap(t, renameMap), e == null ? null : rewriteInnerCaseScrutineeInfraMap(e, renameMap)), metadata: n.metadata, pos: n.pos };
                 case EBinary(op, l, r):
-                    { def: EBinary(op, rewriteInnerCaseScrutineeInfra(l, newName), rewriteInnerCaseScrutineeInfra(r, newName)), metadata: n.metadata, pos: n.pos };
+                    { def: EBinary(op, rewriteInnerCaseScrutineeInfraMap(l, renameMap), rewriteInnerCaseScrutineeInfraMap(r, renameMap)), metadata: n.metadata, pos: n.pos };
                 case EMatch(pat, rhs):
-                    { def: EMatch(pat, rewriteInnerCaseScrutineeInfra(rhs, newName)), metadata: n.metadata, pos: n.pos };
+                    { def: EMatch(pat, rewriteInnerCaseScrutineeInfraMap(rhs, renameMap)), metadata: n.metadata, pos: n.pos };
                 case ECall(tgt, fnm, args):
-                    var nt = tgt == null ? null : rewriteInnerCaseScrutineeInfra(tgt, newName);
-                    var nargs = [for (a in args) rewriteInnerCaseScrutineeInfra(a, newName)];
+                    var nt = tgt == null ? null : rewriteInnerCaseScrutineeInfraMap(tgt, renameMap);
+                    var nargs = [for (a in args) rewriteInnerCaseScrutineeInfraMap(a, renameMap)];
                     { def: ECall(nt, fnm, nargs), metadata: n.metadata, pos: n.pos };
                 case ERemoteCall(moduleExpr, functionName, remoteArgs):
-                    var nmod = rewriteInnerCaseScrutineeInfra(moduleExpr, newName);
-                    var nargs = [for (a in remoteArgs) rewriteInnerCaseScrutineeInfra(a, newName)];
+                    var nmod = rewriteInnerCaseScrutineeInfraMap(moduleExpr, renameMap);
+                    var nargs = [for (a in remoteArgs) rewriteInnerCaseScrutineeInfraMap(a, renameMap)];
                     { def: ERemoteCall(nmod, functionName, nargs), metadata: n.metadata, pos: n.pos };
                 default:
                     n;
@@ -1032,6 +1163,103 @@ class SwitchBuilder {
 
             var usedLower = collectUsedLowerLocals(caseBody);
 
+            // Recover enum-parameter binder names from the case body when the typed pattern
+            // has lost its binder args (common under enum-index optimizations).
+            //
+            // We look for `TVar(binder, TEnumParameter(..., ctorName, idx))` and the common
+            // alias shape `TVar(binder, TLocal(tmp))` where tmp was an extracted parameter.
+            // If an extraction TVar was removed by preprocessing, consult infraVarSubstitutions
+            // to recover the original `TEnumParameter` index.
+            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int): Array<Null<String>> {
+                var out:Array<Null<String>> = [for (_ in 0...paramCount) null];
+                var extractedIdByIndex:Array<Null<Int>> = [for (_ in 0...paramCount) null];
+
+                function unwrapNoOp(e:TypedExpr):TypedExpr {
+                    var cur = e;
+                    while (cur != null) {
+                        switch (cur.expr) {
+                            case TParenthesis(inner):
+                                cur = inner;
+                                continue;
+                            case TMeta(_, inner2):
+                                cur = inner2;
+                                continue;
+                            default:
+                                return cur;
+                        }
+                    }
+                    return cur;
+                }
+
+                function rememberExtraction(index:Int, v:TVar):Void {
+                    if (index >= 0 && index < paramCount) extractedIdByIndex[index] = v.id;
+                }
+
+                function tryPromoteAlias(targetVar:TVar, initExpr:TypedExpr):Bool {
+                    var initUnwrapped = unwrapNoOp(initExpr);
+                    return switch (initUnwrapped.expr) {
+                        case TLocal(src):
+                            // 1) Alias by extracted temp-var ID
+                            for (index in 0...paramCount) {
+                                if (extractedIdByIndex[index] != null && extractedIdByIndex[index] == src.id) {
+                                    if (out[index] == null || out[index] == src.name) out[index] = targetVar.name;
+                                    return true;
+                                }
+                            }
+                            // 2) Alias by substitution map (tempVar.id -> original TEnumParameter)
+                            if (context != null && context.infraVarSubstitutions != null && context.infraVarSubstitutions.exists(src.id)) {
+                                var subst = unwrapNoOp(context.infraVarSubstitutions.get(src.id));
+                                switch (subst.expr) {
+                                    case TEnumParameter(_, ef2, index)
+                                        if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+                                        if (out[index] == null || out[index] == src.name) out[index] = targetVar.name;
+                                        extractedIdByIndex[index] = src.id;
+                                        return true;
+                                    default:
+                                }
+                            }
+                            false;
+                        default:
+                            false;
+                    };
+                }
+
+                function traverse(expr:TypedExpr):Void {
+                    if (expr == null) return;
+                    switch (expr.expr) {
+                        case TSwitch(switchExpr, _, _):
+                            // IMPORTANT: Do not descend into nested switches when recovering
+                            // binders for an outer enum constructor. Nested switches frequently
+                            // destructure *inner* values of the same constructor name (e.g. TreeNode.Node),
+                            // which would overwrite the outer binder recovery and corrupt the
+                            // top-level pattern.
+                            traverse(switchExpr);
+                            return;
+                        case TVar(v, init):
+                            if (init != null) {
+                                var initUnwrapped = unwrapNoOp(init);
+                                switch (initUnwrapped.expr) {
+                                    case TEnumParameter(_, ef2, index)
+                                        if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+                                        out[index] = v.name;
+                                        rememberExtraction(index, v);
+                                    default:
+                                        // Promote common alias: binder = tmp
+                                        tryPromoteAlias(v, init);
+                                }
+                                traverse(init);
+                            }
+                        default:
+                    }
+                    TypedExprTools.iter(expr, traverse);
+                }
+
+                traverse(body);
+                return out;
+            }
+
+            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length);
+
             // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
             function isFunctionParamByName(n:String):Bool {
                 if (n == null || n.length == 0) return false;
@@ -1065,7 +1293,7 @@ class SwitchBuilder {
                 localUsage = new Map<String,Bool>();
             } else {
                 usedFlags = computeEnumParamUsage(caseBody, parameterNames.length);
-                localUsage = collectLocalNameUsage(caseBody);
+                localUsage = collectReadLocalNameUsage(caseBody);
             }
             #if debug_switch_builder
             trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
@@ -1079,6 +1307,16 @@ class SwitchBuilder {
                 // (like "searchSocket", "refreshedTodos"), not just enum parameters!
                 var enumParamName = parameterNames[i];
                 var candidate:Null<String> = enumParamName;
+
+                function isAutoTempName(name: String): Bool {
+                    if (name == null || name.length == 0) return true;
+                    if (name.charAt(0) == "_") return true;
+                    for (j in 0...name.length) {
+                        var c = name.charCodeAt(j);
+                        if (c >= 48 && c <= 57) return true;
+                    }
+                    return false;
+                }
 
                 // Only consider guardVars if the enum parameter name is generic
                 // (single char, starts with _, contains digits, or is "value"/"arg")
@@ -1095,11 +1333,36 @@ class SwitchBuilder {
                     return hasDigit;
                 }
 
-                // Only use guardVars if enum parameter name is generic AND guardVar is better
-                if (isGenericOrAutoName(enumParamName) && guardVars != null && i < guardVars.length) {
+                // Highest priority: if we can recover a binder name that the body actually uses,
+                // prefer it (this preserves the user's pattern variable names under enum-index
+                // optimizations and avoids undefined locals). Only apply when the enum param name
+                // is generic (e.g. `value`) so we don't override meaningful signature names.
+                if (isGenericOrAutoName(enumParamName)) {
+                    var rb:Null<String> = (recoveredBinders != null && i < recoveredBinders.length) ? recoveredBinders[i] : null;
+                    var rbUsed = (rb != null) && (bodyIsLarge || localUsage.exists(rb));
+                    if (rb != null && rbUsed && !isEnvLikeName(rb) && !isFunctionParamByName(rb) && !isAutoTempName(rb)) {
+                        candidate = rb;
+                    }
+                }
+
+                // Only use guardVars for single-parameter constructors. For multi-parameter ctors,
+                // guardVars extracted from case bodies are not positional and can corrupt binder order.
+                if (parameterNames.length == 1 && isGenericOrAutoName(enumParamName) && guardVars != null && i < guardVars.length) {
                     var gv = guardVars[i];
                     if (gv != null && !isEnvLikeName(gv) && !isFunctionParamByName(gv) && !isGenericOrAutoName(gv)) {
                         candidate = gv;
+                    }
+                }
+
+                // Fallback to recovered binder names from the clause body (generic param only).
+                if (isGenericOrAutoName(enumParamName)
+                    && candidate == enumParamName
+                    && recoveredBinders != null
+                    && i < recoveredBinders.length
+                ) {
+                    var rb2 = recoveredBinders[i];
+                    if (rb2 != null && !isEnvLikeName(rb2) && !isFunctionParamByName(rb2) && !isGenericOrAutoName(rb2)) {
+                        candidate = rb2;
                     }
                 }
 
@@ -1111,7 +1374,13 @@ class SwitchBuilder {
                 #if debug_switch_builder
                 trace('[SwitchBuilder]     baseParamName after toElixirVarName = "$baseParamName"');
                 #end
-                if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
+                // Result.Ok/1 and Result.Error/1 are commonly named `value`/`reason` in Elixir,
+                // but we must preserve explicit (recovered) binder names (e.g., `Ok(result)`) to avoid
+                // introducing undefined locals in the clause body. Only apply the canonical
+                // names when the selected candidate is generic/auto (e.g., `value`, `_g0`, `v`).
+                if (isResultCtor && i == 0 && candidate != null && isGenericOrAutoName(candidate)) {
+                    baseParamName = (ef.name == "Ok") ? "value" : "reason";
+                }
 
                 // NOTE: The preferredLower logic was removed because it incorrectly replaced
                 // meaningful parameter names (like "query") with body variables (like "searchSocket").
@@ -1123,14 +1392,11 @@ class SwitchBuilder {
                     var rawParamName = candidate;
                     if (rawParamName != null) isUsed = (localUsage.exists(rawParamName));
                 }
-                // Result constructors (Ok/Error) should always be considered used
-                if (!isUsed && isResultCtor) isUsed = true;
-                // Conservative fallback: if usage cannot be proven, treat the parameter as used to avoid
-                // introducing underscore binders that later appear in clause bodies.
-                if (!isUsed) isUsed = true;
 
-                // Always keep the original base parameter name to avoid mismatched underscore binders.
                 var paramName = baseParamName;
+                if (!isUsed && paramName != null && paramName.length > 0 && paramName.charAt(0) != "_") {
+                    paramName = "_" + paramName;
+                }
 
                 #if debug_switch_builder trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}'); #end
 
@@ -1170,50 +1436,139 @@ class SwitchBuilder {
     // ----------------------------------------------------------------------
     static function computeEnumParamUsage(caseBody: TypedExpr, paramCount:Int): Array<Bool> {
         var used:Array<Bool> = [for (_ in 0...paramCount) false];
-        var assignedFromParam = new Map<String, Int>();
+        var assignedFromParam = new Map<String, Int>(); // localName -> enumParamIndex
+        var extractionTemps = new Map<String, Bool>();  // locals that only exist as extraction scaffolding (_g/_g1/...)
 
-        // First pass: mark direct TEnumParameter uses and capture TVar assignments
+        inline function registerAssignment(name:String, idx:Int):Void {
+            if (name == null) return;
+            if (idx >= 0 && idx < paramCount) assignedFromParam.set(name, idx);
+            if (isInfrastructureVar(name)) extractionTemps.set(name, true);
+        }
+
+        function unwrapNoOp(cur:TypedExpr):TypedExpr {
+            var x = cur;
+            while (x != null) {
+                switch (x.expr) {
+                    case TParenthesis(inner):
+                        x = inner;
+                        continue;
+                    case TMeta(_, inner2):
+                        x = inner2;
+                        continue;
+                    default:
+                        return x;
+                }
+            }
+            return cur;
+        }
+
+        // First pass: collect extraction/alias assignments and mark direct uses of TEnumParameter
         function pass1(te:TypedExpr):Void {
+            if (te == null) return;
             switch (te.expr) {
                 case TEnumParameter(_, _, idx):
+                    // Direct usage (not just extraction into a local)
                     if (idx >= 0 && idx < paramCount) used[idx] = true;
+
                 case TVar(v, init) if (init != null):
-                    switch (init.expr) {
+                    var initU = unwrapNoOp(init);
+                    switch (initU.expr) {
                         case TEnumParameter(_, _, idx2):
-                            if (idx2 >= 0 && idx2 < paramCount) assignedFromParam.set(v.name, idx2);
-                        case _:
+                            // Extraction into a local; usage depends on later reads
+                            registerAssignment(v.name, idx2);
+                        case TLocal(src) if (assignedFromParam.exists(src.name)):
+                            // Alias: v = tmp; tmp was extracted from enum param
+                            registerAssignment(v.name, assignedFromParam.get(src.name));
+                        default:
+                            // Traverse init for real uses
+                            pass1(initU);
                     }
+
+                case TBinop(OpAssign, lhs, rhs):
+                    var rhsU = unwrapNoOp(rhs);
+                    switch (lhs.expr) {
+                        case TLocal(v):
+                            switch (rhsU.expr) {
+                                case TEnumParameter(_, _, idx3):
+                                    registerAssignment(v.name, idx3);
+                                    return;
+                                case TLocal(src2) if (assignedFromParam.exists(src2.name)):
+                                    registerAssignment(v.name, assignedFromParam.get(src2.name));
+                                    return;
+                                default:
+                            }
+                        default:
+                    }
+                    // Only traverse RHS (LHS is a write position)
+                    pass1(rhsU);
+
                 default:
                     haxe.macro.TypedExprTools.iter(te, pass1);
             }
         }
-        if (caseBody != null) pass1(caseBody);
+        pass1(caseBody);
 
-        // Second pass: if a variable assigned from parameter is later referenced, mark used
-        function pass2(te:TypedExpr):Void {
-            switch (te.expr) {
-                case TLocal(v):
-                    if (assignedFromParam.exists(v.name)) {
-                        var pi = assignedFromParam.get(v.name);
-                        if (pi >= 0 && pi < paramCount) used[pi] = true;
-                    }
-                default:
-                    haxe.macro.TypedExprTools.iter(te, pass2);
+        // Second pass: mark parameters as used when a local extracted from them is actually read.
+        var readLocals = collectReadLocalNameUsage(caseBody);
+        for (k in readLocals.keys()) {
+            if (extractionTemps.exists(k)) continue;
+            if (assignedFromParam.exists(k)) {
+                var pi = assignedFromParam.get(k);
+                if (pi >= 0 && pi < paramCount) used[pi] = true;
             }
         }
-        if (caseBody != null) pass2(caseBody);
         return used;
     }
 
-    static function collectLocalNameUsage(caseBody:TypedExpr):Map<String,Bool> {
+    /**
+     * Collect local variable names that are READ in the TypedExpr.
+     *
+     * WHY
+     * - Enum-lowered switch bodies often contain extraction scaffolding like `left = _g`.
+     *   The LHS `left` is a write, not a read; counting it as "used" prevents correct
+     *   underscore prefixing in patterns and can keep redundant assignments alive.
+     *
+     * HOW
+     * - Walk the TypedExpr tree and only record TLocal occurrences that are not in
+     *   known write positions (LHS of OpAssign, declared TVar name).
+     */
+    static function collectReadLocalNameUsage(caseBody:TypedExpr):Map<String,Bool> {
         var used = new Map<String,Bool>();
-        function walk(te:TypedExpr):Void {
+
+        function walk(te:TypedExpr, isWrite:Bool):Void {
+            if (te == null) return;
             switch (te.expr) {
-                case TLocal(v): used.set(v.name, true);
-                default: haxe.macro.TypedExprTools.iter(te, walk);
+                case TLocal(v):
+                    if (!isWrite) used.set(v.name, true);
+
+                case TVar(_, init):
+                    // Declaring the var isn't a read; init is evaluated as a read context.
+                    if (init != null) walk(init, false);
+
+                case TBinop(op, e1, e2):
+                    switch (op) {
+                        case OpAssign:
+                            walk(e1, true);
+                            walk(e2, false);
+                        case OpAssignOp(_):
+                            // Read + write
+                            walk(e1, false);
+                            walk(e2, false);
+                        default:
+                            walk(e1, false);
+                            walk(e2, false);
+                    }
+
+                case TUnop(OpIncrement, _, e) | TUnop(OpDecrement, _, e):
+                    // Read + write; treat as read for usage
+                    walk(e, false);
+
+                default:
+                    TypedExprTools.iter(te, function(child) walk(child, false));
             }
         }
-        if (caseBody != null) walk(caseBody);
+
+        walk(caseBody, false);
         return used;
     }
 
@@ -1236,32 +1591,54 @@ class SwitchBuilder {
      * WHY: Haxe enum field arg names sometimes default to `value`, but callers often bind
      *      meaningful names in TCall (e.g., TodoCreated(todo)). Prefer those names.
      */
-    static function generateIdiomaticEnumPatternWithBodyArgs(ef: EnumField, callArgs: Array<TypedExpr>, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): EPattern {
-        var atomName = NameUtils.toSnakeCase(ef.name);
-        var paramCount = 0;
-        switch(ef.type) {
-            case TFun(args, _): paramCount = args.length;
+	    static function generateIdiomaticEnumPatternWithBodyArgs(ef: EnumField, callArgs: Array<TypedExpr>, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): EPattern {
+	        var atomName = NameUtils.toSnakeCase(ef.name);
+	        var paramCount = 0;
+	        switch(ef.type) {
+	            case TFun(args, _): paramCount = args.length;
             default:
         }
         if (paramCount == 0) {
             return PLiteral(makeAST(EAtom(atomName)));
         }
-        var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
-        var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
-        for (i in 0...paramCount) {
-            // Priority: guard var > enum field param name (if meaningful) > TLocal name from arg > enum field param name (fallback)
-            // CRITICAL FIX: Prefer enum definition names over TCall arg names because Haxe often generates
-            // generic names like "value" in TCall args while the enum definition has meaningful names.
-            var guardName = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
-            var argLocal: Null<String> = null;
-            if (i < callArgs.length) {
-                switch (callArgs[i].expr) {
-                    case TLocal(v): argLocal = v.name;
-                    case TParenthesis(inner):
-                        switch(inner.expr) { case TLocal(v2): argLocal = v2.name; default: }
-                    default:
-                }
-            }
+	        var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
+	        var isResultCtor = (ef.name == "Ok" || ef.name == "Error");
+	        var bodyIsLarge = isLargeCaseBody(caseBody);
+	        var usedFlags:Array<Bool> = bodyIsLarge ? [for (_ in 0...paramCount) true] : computeEnumParamUsage(caseBody, paramCount);
+	        var localUsage = bodyIsLarge ? new Map<String,Bool>() : collectReadLocalNameUsage(caseBody);
+
+	        function extractBinderNameFromArg(arg: TypedExpr): Null<String> {
+	            var cur = arg;
+	            while (cur != null) {
+	                switch (cur.expr) {
+	                    case TParenthesis(inner):
+	                        cur = inner;
+	                        continue;
+	                    case TMeta(_, inner2):
+	                        cur = inner2;
+	                        continue;
+	                    default:
+	                        break;
+	                }
+	            }
+	            if (cur == null) return null;
+	            return switch (cur.expr) {
+	                case TLocal(v): v.name;
+	                case TVar(v, _): v.name;
+	                default: null;
+	            };
+	        }
+
+	        for (i in 0...paramCount) {
+	            // NOTE
+	            // - For direct TCall enum patterns, binder names should come from the pattern args and/or
+	            //   the enum field signature. `guardVars` is only meaningful for enum-index recovery and
+	            //   is not positional here.
+	            var guardName = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
+	            var argLocal: Null<String> = null;
+	            if (i < callArgs.length) {
+	                argLocal = extractBinderNameFromArg(callArgs[i]);
+	            }
             var enumParamName: Null<String> = null;
             switch(ef.type) { case TFun(args, _): if (i < args.length) enumParamName = args[i].name; default: }
 
@@ -1280,34 +1657,36 @@ class SwitchBuilder {
                 return hasDigit;
             }
 
-            // Choose best name: guardName first, then prefer non-generic names from enum definition
+            // Choose best name: prefer enum signature names, then pattern-arg locals, then guardName.
             var chosen: Null<String> = null;
-            if (guardName != null && !isGenericParamName(guardName)) {
-                chosen = guardName;
-            } else if (enumParamName != null && !isGenericParamName(enumParamName)) {
+            if (enumParamName != null && !isGenericParamName(enumParamName)) {
                 // Prefer meaningful enum parameter name over potentially generic argLocal
                 chosen = enumParamName;
             } else if (argLocal != null && !isGenericParamName(argLocal)) {
                 chosen = argLocal;
+            } else if (guardName != null && !isGenericParamName(guardName)) {
+                chosen = guardName;
             } else {
                 // Fallback: use whatever we have (prefer non-null)
                 chosen = guardName != null ? guardName : (enumParamName != null ? enumParamName : argLocal);
             }
             var baseParamName = VariableAnalyzer.toElixirVarName(chosen);
-            if (isResultCtor && i == 0) baseParamName = (ef.name == "Ok") ? "value" : "reason";
-            // Usage detection must be conservative to avoid underscoring binders that are actually used.
-            // Always check the resolved base name, even when the original enum param name is missing.
-            var localNameUsed = baseParamName != null && EnumHandler.isLocalNameUsed(baseParamName, caseBody);
-            var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody) || localNameUsed;
-            if (!isUsed && chosen != null && chosen != baseParamName) {
-                isUsed = EnumHandler.isLocalNameUsed(chosen, caseBody);
+            // Result.Ok/1 and Result.Error/1 are commonly named `value`/`reason` in Elixir,
+            // but preserve explicit Haxe binder names (e.g., `Ok(result)`) to avoid
+            // generating undefined locals in the clause body.
+            if (isResultCtor && i == 0 && isGenericParamName(chosen)) {
+                baseParamName = (ef.name == "Ok") ? "value" : "reason";
             }
-            // If usage cannot be proven, default to treating the parameter as used to avoid false
-            // negatives that lead to undefined-variable errors downstream.
-            if (!isUsed) isUsed = true;
-            if (!isUsed && isResultCtor) isUsed = true;
-            // Always keep the base parameter name to avoid mismatched underscore binders.
+            var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
+            if (!isUsed && chosen != null) {
+                isUsed = localUsage.exists(chosen);
+            }
+
             var finalName = baseParamName;
+            if (!isUsed && finalName != null && finalName.length > 0 && finalName.charAt(0) != "_") {
+                finalName = "_" + finalName;
+            }
+
             patterns.push(PVar(finalName));
             if (context.currentClauseContext != null) {
                 context.currentClauseContext.enumBindingPlan.set(i, { finalName: finalName, isUsed: isUsed });
