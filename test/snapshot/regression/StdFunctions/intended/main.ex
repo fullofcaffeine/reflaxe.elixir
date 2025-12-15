@@ -39,8 +39,8 @@ defmodule Main do
     arr = [1, 2, 3]
     _ = nil
     obj_field = "value"
-    str_is_string = str_is_string.(str)
-    arr_is_array = str_is_string.(arr)
+    str_is_string = is_binary.(str)
+    arr_is_array = is_list.(arr)
     nil
   end
   defp test_random_and_int() do

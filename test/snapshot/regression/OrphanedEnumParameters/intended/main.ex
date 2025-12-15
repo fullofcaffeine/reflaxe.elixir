@@ -1,33 +1,24 @@
 defmodule Main do
   defp test_basic_enum() do
     msg = (case {:created, "item"} do
-      {:created, __content} -> nil
-      {:updated, id, __content} ->
-        _content = id
-        nil
-      {:deleted, __id} -> nil
+      {:created, _content} -> nil
+      {:updated, _id, _content} -> nil
+      {:deleted, _id} -> nil
       {:empty} -> nil
     end)
   end
   defp test_multiple_parameters() do
     action = (case {:move, 10, 20, 30} do
-      {:move, x, __y, __z} ->
-        _y = x
-        _z = x
-        nil
-      {:rotate, angle, __axis} ->
-        _axis = angle
-        nil
-      {:scale, __factor} -> nil
+      {:move, _x, _y, _z} -> nil
+      {:rotate, _angle, _axis} -> nil
+      {:scale, _factor} -> nil
     end)
   end
   defp test_empty_cases() do
     event = (case {:click, 100, 200} do
-      {:click, x, __y} ->
-        _y = x
-      {:hover, x, __y} ->
-        _y = x
-      {:key_press, __key} -> nil
+      {:click, _x, _y} -> nil
+      {:hover, _x, _y} -> nil
+      {:key_press, _key} -> nil
     end)
     nil
   end
@@ -35,14 +26,10 @@ defmodule Main do
     state = {:loading, 50}
     description = ""
     (case state do
-      {:loading, __progress} -> nil
-      {:processing, progress} ->
-        to_string = progress
-        description = "Progress: #{(fn -> Kernel.to_string(progress) end).()}%"
-      {:complete, result} -> description = "Done: #{(fn -> result end).()}"
-      {:error, reason} ->
-        msg = reason
-        description = "Error: #{(fn -> msg end).()}"
+      {:loading, _progress} -> nil
+      {:processing, _description} -> description = "Progress: #{(fn -> Kernel.to_string(progress) end).()}%"
+      {:complete, _description} -> description = "Done: #{(fn -> result end).()}"
+      {:error, _description} -> description = "Error: #{(fn -> msg end).()}"
     end)
     nil
   end
@@ -50,25 +37,19 @@ defmodule Main do
     container = (case {:box, {:text, "Hello"}} do
       {:box, content} ->
         (case content do
-          {:text, __value} -> nil
-          {:number, __value} -> nil
+          {:text, _str} -> nil
+          {:number, _value} -> nil
           {:empty} -> nil
         end)
-      {:list, __items} -> nil
+      {:list, _items} -> nil
       {:empty} -> nil
     end)
   end
   defp test_mixed_cases() do
     result = (case {:success, "Done", 42} do
-      {:success, message, __code} ->
-        _msg = message
-        _code = message
-        nil
-      {:warning, __message} -> nil
-      {:error, reason, __code} ->
-        _msg = reason
-        _code = reason
-        nil
+      {:success, _message, _code} -> nil
+      {:warning, _message} -> nil
+      {:error, _message, _code} -> nil
       {:pending} -> nil
     end)
   end

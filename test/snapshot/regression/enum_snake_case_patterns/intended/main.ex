@@ -19,10 +19,7 @@ end))
   {:bulk_update, action} -> "Bulk action: #{(fn -> action end).()}"
   {:user_online, user_id} -> "User #{(fn -> Kernel.to_string(user_id) end).()} is online"
   {:user_offline, user_id} -> "User #{(fn -> Kernel.to_string(user_id) end).()} is offline"
-  {:system_alert, message, level} ->
-    msg = _g
-    level = _g1
-    "Alert [#{(fn -> level end).()}]: #{(fn -> msg end).()}"
+  {:system_alert, _message, level} -> "Alert [#{(fn -> level end).()}]: #{(fn -> msg end).()}"
 end))
     nil
   end

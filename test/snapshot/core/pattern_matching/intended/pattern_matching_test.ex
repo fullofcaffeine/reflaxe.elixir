@@ -4,17 +4,13 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} ->
-        b = r
-        "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(g) end).()},#{(fn -> Kernel.to_string(b) end).()})"
+      {:rgb, r, _g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(b) end).()})"
     end)
   end
   def match_option(option) do
     (case option do
       {:none} -> "none"
-      {:some, value} ->
-        inspect = value
-        "some(#{(fn -> inspect(value) end).()})"
+      {:some, value} -> "some(#{(fn -> inspect(value) end).()})"
     end)
   end
   def match_int(value) do
@@ -43,9 +39,7 @@ defmodule PatternMatchingTest do
   def match_array(arr) do
     (case arr do
       [] -> "empty"
-      [head | __tail] ->
-        x = head
-        "single(#{(fn -> Kernel.to_string(x) end).()})"
+      [_head | _tail] -> "single(#{(fn -> Kernel.to_string(x) end).()})"
       2 -> "pair(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()})"
       3 -> "triple(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()})"
       _ -> "many"
@@ -59,12 +53,11 @@ defmodule PatternMatchingTest do
           {:red} -> "red color"
           {:green} -> "green color"
           {:blue} -> "blue color"
-          {:rgb, r, __g, __b} ->
-            b = r
+          {:rgb, r, _g, _b} ->
             if (r > 128) do
               "bright rgb"
             else
-              b = r
+              _b = r
               "dark rgb"
             end
         end)

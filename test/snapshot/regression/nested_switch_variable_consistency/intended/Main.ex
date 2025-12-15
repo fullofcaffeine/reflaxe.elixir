@@ -13,10 +13,10 @@ defmodule Main do
     (case parse_message(msg) do
       {:some, parsed_msg} ->
         (case parsed_msg do
-          {:todo_created, __todo} -> nil
-          {:todo_updated, __todo} -> nil
-          {:todo_deleted, __id} -> nil
-          {:system_alert, __message} -> nil
+          {:todo_created, _todo} -> nil
+          {:todo_updated, _todo} -> nil
+          {:todo_deleted, _id} -> nil
+          {:system_alert, _message} -> nil
         end)
       {:none} -> nil
     end)

@@ -7,10 +7,8 @@ defmodule Main do
   end
   def to_option(result) do
     (case result do
-      {:ok, value} ->
-        _some = value
-        {:some, value}
-      {:error, __reason} -> {:none}
+      {:ok, value} -> {:some, value}
+      {:error, _error} -> {:none}
     end)
   end
   def unwrap_or(result, default_value) do
@@ -18,7 +16,7 @@ defmodule Main do
       {:ok, value} ->
         default_value = value
         default_value
-      {:error, reason} -> reason
+      {:error, payload} -> payload
     end)
   end
 end

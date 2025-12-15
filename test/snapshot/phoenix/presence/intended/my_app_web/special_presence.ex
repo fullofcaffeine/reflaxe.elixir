@@ -1,5 +1,5 @@
 defmodule MyAppWeb.SpecialPresence do
-  use Phoenix.Presence, otp_app: :my_app
+  use Phoenix.Presence, otp_app: :my_app, pubsub_server: MyApp.PubSub
   def track_special(socket, key, meta) do
     MyAppWeb.Presence.track(self(), socket, key, meta)
   end

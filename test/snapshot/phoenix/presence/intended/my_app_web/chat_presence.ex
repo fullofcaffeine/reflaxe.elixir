@@ -1,5 +1,5 @@
 defmodule MyAppWeb.ChatPresence do
-  use Phoenix.Presence, otp_app: :my_app
+  use Phoenix.Presence, otp_app: :my_app, pubsub_server: MyApp.PubSub
   def track_user(socket, user_id, meta) do
     MyAppWeb.Presence.track(self(), socket, user_id, meta)
   end

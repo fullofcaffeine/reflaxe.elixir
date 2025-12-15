@@ -32,8 +32,8 @@ end end).())
     []
   end
   defp test_complex_indexed_operation() do
-    sum = 0
     numbers = [10, 20, 30, 40, 50]
+    sum = 0
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, sum}, (fn -> fn _, {numbers, sum} ->
   if (0 < length(numbers)) do
     i = 1
