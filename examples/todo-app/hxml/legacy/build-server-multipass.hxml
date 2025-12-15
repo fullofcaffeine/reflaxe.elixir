@@ -1,19 +1,20 @@
-# Aggregated server build using micro-passes A..F
+# Aggregated server build using micro-passes A..F (legacy)
 #
-# This file exists to let tools like Mix.Tasks.Compile.Haxe run the same
-# micro-pass partitioning strategy that QA sentinel uses, without hard-coding
-# pass names in the compiler. It simply chains the existing pass hxml files.
+# This file exists for historical/perf investigation work. The default todo-app
+# build is a single, complete `build-server.hxml`.
+#
+# The QA sentinel can optionally run these passes when `QA_USE_PASSES=1` is set.
 #
 # Passes:
 #   - A1..A3: Repo and core infrastructure
 #   - B..E:   additional server modules and infrastructure
 #   - F:      LiveView main (TodoLive)
 
---next examples/todo-app/build-server-passA1.hxml
---next examples/todo-app/build-server-passA2.hxml
---next examples/todo-app/build-server-passA3.hxml
---next examples/todo-app/build-server-passB.hxml
---next examples/todo-app/build-server-passC.hxml
---next examples/todo-app/build-server-passD.hxml
---next examples/todo-app/build-server-passE.hxml
---next examples/todo-app/build-server-passF.hxml
+--next hxml/legacy/build-server-passA1.hxml
+--next hxml/legacy/build-server-passA2.hxml
+--next hxml/legacy/build-server-passA3.hxml
+--next hxml/legacy/build-server-passB.hxml
+--next hxml/legacy/build-server-passC.hxml
+--next hxml/legacy/build-server-passD.hxml
+--next hxml/legacy/build-server-passE.hxml
+--next hxml/legacy/build-server-passF.hxml

@@ -7,7 +7,7 @@ LOG_PATH="/tmp/passF-macro.log"
 rm -f "$LOG_PATH"
 
 echo "[profile-passF] Running pass-F with hxx_pass_timing; log -> $LOG_PATH"
-npx haxe -D hxx_pass_timing examples/todo-app/build-server-passF.hxml || true
+npx haxe -D hxx_pass_timing examples/todo-app/hxml/legacy/build-server-passF.hxml || true
 
 if [ -f "$LOG_PATH" ]; then
   echo "[profile-passF] --- begin macro timing log ---"
