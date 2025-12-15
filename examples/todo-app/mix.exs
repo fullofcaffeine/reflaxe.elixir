@@ -14,7 +14,8 @@ defmodule TodoApp.MixProject do
       deps: deps(),
       haxe: [
         # Use the full server build to ensure all modules are generated together.
-        # The multipass approach deletes files from previous passes.
+        # Legacy "multipass" / micro-pass build configs were archived under `hxml/legacy/` and are not part
+        # of the normal development flow.
         hxml_file: "build-server.hxml",
         source_dir: "src_haxe",
         target_dir: "lib",

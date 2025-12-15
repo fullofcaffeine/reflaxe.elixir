@@ -1,82 +1,12 @@
 # Ecto Integration Patterns
 
-## Current Implementation Status 🎯
+This document moved.
 
-> **Important Update (August 2025)**: The Ecto Query DSL is now **IMPLEMENTED** in Reflaxe.Elixir! 
-> This document has been updated to reflect the current reality where typed Ecto queries work natively,
-> with escape hatches only needed for missing features like changesets and migrations.
+The canonical, up-to-date guide lives here:
 
-### What's Working Today ✅
+- `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`
 
-- **Query DSL**: Full expression parsing and compilation to proper Ecto pipe syntax
-- **Where Clauses**: Complex conditions with AND/OR operators compile correctly
-- **Select Expressions**: Field and map selections with proper syntax
-- **Joins**: Association-based joins with correct binding arrays
-- **Order/Group By**: Multiple field support with proper compilation
-- **Schema Validation**: Compile-time field checking with helpful error messages
-
-### What Still Needs Escape Hatches ❌
-
-- **Changesets**: Not implemented - use Elixir modules
-- **Migrations**: Not implemented - write standard Ecto migrations
-- **Complex Aggregations**: Subqueries and CTEs need Elixir
-- **Database-Specific Features**: Raw SQL for PostgreSQL-specific functions
-
-## Table of Contents
-
-- [Native Haxe Ecto Queries (NEW!)](#native-haxe-ecto-queries)
-- [Changeset Workarounds](#changeset-workarounds)
-- [Migration Strategies](#migration-strategies)
-- [Complex Query Patterns](#complex-query-patterns)
-- [Recommended Architecture](#recommended-architecture)
-
-## Native Haxe Ecto Queries
-
-**NEW**: You can now write type-safe Ecto queries directly in Haxe!
-
-```haxe
-import reflaxe.elixir.macros.EctoQueryMacros.*;
-
-@:module
-class UserQueries {
-    // Simple where clause - WORKS TODAY!
-    function getActiveUsers(): String {
-        var query = analyzeCondition(macro u -> u.active == true);
-        return generateWhereQuery(query);
-        // Generates: |> where([u], u.active == ^true)
-    }
-    
-    // Complex conditions - WORKS TODAY!
-    function getAdultActiveUsers(): String {
-        var condition = analyzeCondition(macro u -> u.age >= 18 && u.active == true);
-        return generateWhereQuery(condition);
-        // Generates: |> where([u], u.age >= ^18 and u.active == ^true)
-    }
-    
-    // Select with map - WORKS TODAY!
-    function getUserSummary(): String {
-        var select = analyzeSelectExpression(macro u -> {
-            name: u.name,
-            email: u.email,
-            joined: u.inserted_at
-        });
-        return generateSelectQuery(select);
-        // Generates: |> select([u], %{name: u.name, email: u.email, joined: u.inserted_at})
-    }
-    
-    // Join operations - WORKS TODAY!
-    function getUsersWithPosts(): String {
-        var join = {
-            schema: "Post",
-            alias: "posts",
-            type: "inner",
-            on: "user.id == posts.user_id"
-        };
-        return generateJoinQuery(join);
-        // Generates: |> join(:inner, [u], p in assoc(u, :posts), as: :p)
-    }
-}
-```
+This file intentionally remains as a short redirect to avoid breaking older links.
 
 ### Schema Validation (WORKING!)
 

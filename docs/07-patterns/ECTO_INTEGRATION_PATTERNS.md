@@ -2,9 +2,8 @@
 
 ## Current Implementation Status 🎯
 
-> **Important Update (August 2025)**: The Ecto Query DSL is now **IMPLEMENTED** in Reflaxe.Elixir! 
-> This document has been updated to reflect the current reality where typed Ecto queries work natively,
-> with escape hatches only needed for missing features like changesets and migrations.
+> **Update (Reflaxe.Elixir 1.0+)**: Typed Ecto integration is available end-to-end (queries, changesets, and migrations).
+> Escape hatches are still supported for advanced Ecto features, but are no longer the default path.
 
 ### What's Working Today ✅
 
@@ -14,13 +13,13 @@
 - **Joins**: Association-based joins with correct binding arrays
 - **Order/Group By**: Multiple field support with proper compilation
 - **Schema Validation**: Compile-time field checking with helpful error messages
+- **Changesets**: Typed helpers over `Ecto.Changeset` for cast/validate flows
+- **Migrations**: Typed migration DSL (`std/ecto/Migration.hx`) for common operations
 
 ### What Still Needs Escape Hatches ❌
 
-- **Changesets**: Not implemented - use Elixir modules
-- **Migrations**: Not implemented - write standard Ecto migrations
-- **Complex Aggregations**: Subqueries and CTEs need Elixir
-- **Database-Specific Features**: Raw SQL for PostgreSQL-specific functions
+- **CTEs / complex subqueries**: Use `fragment/1`, `with_cte/3`, or raw Ecto constructs as needed
+- **Database-specific functions**: Use `fragment/1` / raw SQL when you need vendor features
 
 ## Table of Contents
 
