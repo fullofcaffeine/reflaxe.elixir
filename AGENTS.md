@@ -17,7 +17,7 @@ Agents must never block the terminal when validating the todo-app. Use the provi
     - Stop server: `kill -TERM $QA_SENTINEL_PID`
 - Keep server alive for manual browsing:
   - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
-  - Prints `PHX_PID` and `PORT`; stop with `kill -TERM $PHX_PID`.
+  - Prints `PHX_PID`, `PHX_PGID`, and `PORT`; stop with `kill -TERM -$PHX_PGID`.
 - App-local helper (one-shot, :4000):
   - `examples/todo-app/scripts/qa-sentinel-local.sh`
 
@@ -956,9 +956,15 @@ bd ready --json                  # Get unblocked work (for automation)
 - Recommended pattern (background + readiness + teardown):
   ```bash
   # Start (background) and capture PID
-  MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
+  # Start Phoenix in a new session so teardown can terminate the whole process group (watchers included).
+  if command -v setsid >/dev/null 2>&1; then
+    setsid MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
+  else
+    nohup MIX_ENV=dev mix phx.server >/tmp/qa-phx.log 2>&1 &
+  fi
   PHX_PID=$!
-  trap 'kill $PHX_PID >/dev/null 2>&1 || true' EXIT
+  PHX_PGID=$(ps -o pgid= "$PHX_PID" 2>/dev/null | tr -d ' ' || true)
+  trap 'if [[ -n "$PHX_PGID" ]]; then kill -TERM -"$PHX_PGID" >/dev/null 2>&1 || true; else kill -TERM "$PHX_PID" >/dev/null 2>&1 || true; fi' EXIT
 
   # Wait until ready
   for i in $(seq 1 60); do
