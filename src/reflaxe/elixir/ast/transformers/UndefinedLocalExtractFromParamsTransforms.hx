@@ -25,15 +25,15 @@ class UndefinedLocalExtractFromParamsTransforms {
     return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
       return switch (node.def) {
         case EDef(name, args, guards, body):
-          var pv = findParamsVar(args);
-          if (pv == null) return node;
-          var nb = synthesize(body, pv, args);
-          makeASTWithMeta(EDef(name, args, guards, nb), node.metadata, node.pos);
+          var paramsVar = findParamsVar(args);
+          if (paramsVar == null) return node;
+          var newBody = synthesize(body, paramsVar, args);
+          makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
         case EDefp(name, args, guards, body):
-          var pv2 = findParamsVar(args);
-          if (pv2 == null) return node;
-          var nb2 = synthesize(body, pv2, args);
-          makeASTWithMeta(EDefp(name, args, guards, nb2), node.metadata, node.pos);
+          var paramsVarForPrivate = findParamsVar(args);
+          if (paramsVarForPrivate == null) return node;
+          var newBodyForPrivate = synthesize(body, paramsVarForPrivate, args);
+          makeASTWithMeta(EDefp(name, args, guards, newBodyForPrivate), node.metadata, node.pos);
         default:
           node;
       }
