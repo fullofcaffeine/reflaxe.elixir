@@ -411,17 +411,38 @@ fi
 if [[ -n "${QA_SKIP_HAXE:-}" ]]; then
   log "[QA] Step 1: Skipping Haxe build (QA_SKIP_HAXE set)"
   : > /tmp/qa-haxe.log
-elif [[ -n "${QA_FORCE_FAST_BUILD:-}" ]] && [[ -f "build-server-fast.hxml" ]]; then
-  run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD build-server-fast.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server-fast.hxml" || exit 1
-elif [[ -n "${QA_USE_PASSES:-}" ]] && ls build-server-pass*.hxml >/dev/null 2>&1; then
-  i=0
-  for h in $(ls -1 build-server-pass*.hxml | sort); do
-    i=$((i+1))
-    # Use the compilation server for all micro‑passes so later passes reuse cache
-    run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
-  done
-  # Consolidated tail for convenience
-  : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
+elif [[ -n "${QA_FORCE_FAST_BUILD:-}" ]]; then
+  FAST_HXML=""
+  if [[ -f "build-server-fast.hxml" ]]; then
+    FAST_HXML="build-server-fast.hxml"
+  elif [[ -f "hxml/legacy/build-server-fast.hxml" ]]; then
+    FAST_HXML="hxml/legacy/build-server-fast.hxml"
+  fi
+  if [[ -n "$FAST_HXML" ]]; then
+    run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD $FAST_HXML)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD $FAST_HXML" || exit 1
+  else
+    run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
+  fi
+elif [[ -n "${QA_USE_PASSES:-}" ]]; then
+  PASS_DIR=""
+  if ls build-server-pass*.hxml >/dev/null 2>&1; then
+    PASS_DIR="."
+  elif ls hxml/legacy/build-server-pass*.hxml >/dev/null 2>&1; then
+    PASS_DIR="hxml/legacy"
+  fi
+
+  if [[ -n "$PASS_DIR" ]]; then
+    i=0
+    for h in $(ls -1 "$PASS_DIR"/build-server-pass*.hxml | sort); do
+      i=$((i+1))
+      # Use the compilation server for all micro‑passes so later passes reuse cache
+      run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
+    done
+    # Consolidated tail for convenience
+    : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
+  else
+    run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
+  fi
 else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi

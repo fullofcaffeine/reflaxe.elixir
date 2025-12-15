@@ -313,7 +313,7 @@ if (coreComponentsModule != null && coreComponentsModule != "") {
    - Generated LiveView files now gracefully handle missing CoreComponents
 
 2. **Updated Build Configurations**
-   - build-js.hxml: Changed from SimpleTodoApp to TodoApp
+   - hxml/legacy/build-js.hxml: Changed from SimpleTodoApp to TodoApp
    - build-client.hxml: Fixed non-existent PhoenixApp reference to TodoApp
    - build-all.hxml: Already correct (TodoApp)
 
@@ -379,7 +379,7 @@ Established **mandatory cleanup protocols**:
 - `src/reflaxe/elixir/ElixirCompiler.hx`: Updated generateModuleHeader call
 
 #### Build Configurations
-- `examples/todo-app/build-js.hxml`: Updated to use client.TodoApp
+- `examples/todo-app/hxml/legacy/build-js.hxml`: Updated to use client.TodoApp
 - `examples/todo-app/build-client.hxml`: Fixed PhoenixApp → TodoApp reference
 
 #### File Consolidation

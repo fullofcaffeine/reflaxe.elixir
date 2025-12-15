@@ -9,8 +9,9 @@
 - Compiler is fully **AST‑based**:
   - TypedExpr → ElixirAST → transforms → printed Elixir.
   - Core pipeline in `src/reflaxe/elixir/ast` (Builder, Transformer, Printer).
-- Server build for `examples/todo-app` is split into micro‑passes:
-  - `build-server-passA1.hxml` … `build-server-passF.hxml` to keep each pass bounded and cache‑friendly.
+- Server build for `examples/todo-app` previously used micro‑passes for perf investigation:
+  - `examples/todo-app/hxml/legacy/build-server-passA1.hxml` … `build-server-passF.hxml`.
+  - The default build is now `examples/todo-app/build-server.hxml`.
 - QA layers:
   1. Haxe snapshot tests (no runtime).
   2. Todo‑app integration via **QA sentinel** (`scripts/qa-sentinel.sh`):  
@@ -72,11 +73,11 @@ Under `scripts/with-timeout.sh` caps:
     - Compiles fast.
     - Zero Haxe warnings.
 
-- **Todo‑app server Haxe micro‑passes A1..E**:
+- **Todo‑app server Haxe micro‑passes A1..E (legacy)**:
   - Each of:
-    - `build-server-passA1.hxml`, `build-server-passA2.hxml`, `build-server-passA3.hxml`, `build-server-passB.hxml`, `build-server-passC.hxml`, `build-server-passD.hxml`, `build-server-passE.hxml`
+    - `hxml/legacy/build-server-passA1.hxml`, `hxml/legacy/build-server-passA2.hxml`, `hxml/legacy/build-server-passA3.hxml`, `hxml/legacy/build-server-passB.hxml`, `hxml/legacy/build-server-passC.hxml`, `hxml/legacy/build-server-passD.hxml`, `hxml/legacy/build-server-passE.hxml`
   - Run via:
-    - `scripts/with-timeout.sh --secs 10 --cwd examples/todo-app -- env HAXE_USE_SERVER=0 haxe <that-pass>.hxml`
+    - `scripts/with-timeout.sh --secs 10 --cwd examples/todo-app -- env HAXE_USE_SERVER=0 haxe hxml/legacy/<that-pass>.hxml`
   - Behavior:
     - All complete under the cap.
     - Known warnings (e.g., `@:extern` with bodies, deprecated attributes in `examples/todo-app/src_haxe/server/i18n/Gettext.hx`) were fixed by converting them to proper `extern` declarations without bodies.
@@ -405,9 +406,9 @@ We need GPT‑5 Pro to:
      mix compile
 
      # Haxe server passes A..F (bounded)
-     env HAXE_USE_SERVER=0 haxe build-server-passA1.hxml
+     env HAXE_USE_SERVER=0 haxe hxml/legacy/build-server-passA1.hxml
      # ...
-     env HAXE_USE_SERVER=0 haxe build-server-passF.hxml
+     env HAXE_USE_SERVER=0 haxe hxml/legacy/build-server-passF.hxml
 
      # QA sentinel + Playwright
      scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e \
@@ -431,4 +432,3 @@ We need GPT‑5 Pro to:
      - The sentinel + Playwright flow is enforced in CI as the 1.0 gate.
 
 This report captures what is already working, exactly where the problem lies (cowboy on OTP 27), the constraints we must uphold, and the desired end state. The key missing piece is an environment‑level, version‑matrix‑based plan for cowboy/cowlib that GPT‑5 Pro can help design. 
-

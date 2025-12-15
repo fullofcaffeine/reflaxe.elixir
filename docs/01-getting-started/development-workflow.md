@@ -155,7 +155,7 @@ Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST tr
   - Hygiene and final sweep passes run to enforce the strictest shape and naming invariants.
   - Intended for full validation, not for tight dev loops.
 
-For the todo‑app, `build-server-fast.hxml` and `build-server-passA1..F.hxml` define `-D fast_boot` (and `-D disable_hygiene_final`) to select the fast profile. Snapshot and CI hxmls omit these flags to exercise the full pipeline.
+For the todo‑app, the Mix compiler injects `-D fast_boot` automatically in `:dev`, `:test`, and `:e2e` (see `lib/haxe_compiler.ex`). The extra `examples/todo-app/hxml/legacy/*` build files are historical perf/debug experiments and are not required for normal development.
 
 ## Haxe Compilation Server Policy
 
@@ -178,7 +178,7 @@ The Haxe compilation server (`haxe --wait`) is **opt-in**:
   iex> HaxeServer.status()
 
   # In another shell, reuse the server:
-  HAXE_USE_SERVER=1 haxe --connect 6116 examples/todo-app/build-server-passF.hxml
+  HAXE_USE_SERVER=1 haxe --connect 6116 examples/todo-app/build-server.hxml
 
   # When done:
   iex> HaxeServer.stop()
