@@ -141,7 +141,7 @@ Running BEAM Application
 
 Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST transformers**:
 
-- `fast_boot` – default for example/dev builds (including the todo-app)  
+- `fast_boot` – opt-in “fast profile” for large codebases  
   - Minimal macro work:
     - Macros like `RouterBuildMacro`, `HXX`, and `ModuleMacro` still run, but avoid expensive `Context.getType` / project‑wide scans where possible.
     - Template processing uses memoization and cheap shape checks when enabled.
@@ -149,13 +149,23 @@ Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST tr
     - Phoenix/Ecto/OTP shape‑driven transforms remain active.
     - Ultra‑late cosmetic hygiene passes (naming, underscore promotion, unused assignment cleanup) are skipped when `fast_boot` and `disable_hygiene_final` are defined.
   - Goal: keep cold todo‑app builds bounded and responsive during day‑to‑day work.
+  - Implementation:
+    - Haxe macros read it via `Context.defined("fast_boot")` and avoid project‑wide scans.
+    - The AST pass registry gates selected expensive passes with `#if fast_boot`.
+    - It should never be required for correctness; it exists to trade “perfect hygiene” for speed.
 
 - `full_prepasses` / full hygiene – used for compiler/snapshot/CI runs  
   - All macros and transforms are enabled.
   - Hygiene and final sweep passes run to enforce the strictest shape and naming invariants.
   - Intended for full validation, not for tight dev loops.
 
-For the todo‑app, the Mix compiler injects `-D fast_boot` automatically in `:dev`, `:test`, and `:e2e` (see `lib/haxe_compiler.ex`). The extra `examples/todo-app/hxml/legacy/*` build files are historical perf/debug experiments and are not required for normal development.
+`fast_boot` is enabled by passing `-D fast_boot` to Haxe. For Mix builds, this repo treats it as opt-in via:
+
+```bash
+HAXE_FAST_BOOT=1 mix compile
+```
+
+See `lib/haxe_compiler.ex` for the injection point. The extra `examples/todo-app/hxml/legacy/*` build files are historical perf/debug experiments and are not required for normal development.
 
 ## Haxe Compilation Server Policy
 
