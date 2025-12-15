@@ -8,6 +8,20 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: todo_app_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d todo_app_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,6 +30,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Cache npm
         uses: actions/cache@v4
@@ -46,6 +61,12 @@ jobs:
         with:
           haxe-version: '4.3.7'
 
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+
       - name: Verify JS client classpath (no repo std/src)
         env:
           WORKSPACE: ${{ github.workspace }}
@@ -67,6 +88,10 @@ jobs:
       - name: Run QA Sentinel smoke (bounded)
         env:
           MIX_ENV: e2e
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGPORT: '5432'
         run: |
           set -euo pipefail
           scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-run.log

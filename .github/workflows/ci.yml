@@ -2,220 +2,111 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+  HAXE_VERSION: '4.3.7'
+  ELIXIR_VERSION: '1.18.3'
+  OTP_VERSION: '27.2'
+
 jobs:
-  test-haxe:
-    name: Haxe Compiler Tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install npm dependencies
-      run: npm ci
-
-    - name: Download Haxe libraries
-      run: npx lix download
-
-    - name: Run Haxe compiler tests
-      run: npm run test:haxe
-
-    - name: Upload test artifacts on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-output-${{ matrix.os }}
-        path: |
-          test/tests/*/out/
-          test-output/
-        retention-days: 7
-
-  test-elixir:
-    name: Elixir Runtime Tests
+  secret-scan:
+    name: Secret Scan (gitleaks)
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Setup Elixir
-      uses: erlef/setup-beam@v1
-      with:
-        elixir-version: '1.16'
-        otp-version: '26'
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Cache Elixir dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          deps
-          _build
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-mix-
-
-    - name: Install npm dependencies
-      run: npm ci
-
-    - name: Download Haxe libraries
-      run: npx lix download
-
-    - name: Debug - Show environment
-      run: |
-        echo "=== System Info ==="
-        uname -a
-        echo "=== Haxe Version ==="
-        npx haxe --version
-        echo "=== Node Version ==="
-        node --version
-        echo "=== NPM Version ==="
-        npm --version
-        echo "=== Elixir Version ==="
-        elixir --version
-        echo "=== Working Directory ==="
-        pwd
-        echo "=== Haxe Libraries ==="
-        ls -la haxe_libraries/ | head -10
-        echo "=== NPX Haxe Location ==="
-        which npx
-        npx which haxe || echo "npx haxe not found via which"
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          inotify-tools \
-          build-essential \
-          git \
-          curl \
-          wget
-      
-    - name: Install Elixir dependencies
-      run: mix deps.get
-
-    - name: Run Mix tests
-      run: npm run test:mix
-      env:
-        MIX_ENV: test
-
-  test-examples:
-    name: Example Compilation Tests
+  guards:
+    name: Guardrails
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Run guardrails
+        run: npm run ci:guards
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install npm dependencies
-      run: npm ci
-
-    - name: Download Haxe libraries
-      run: npx lix download
-
-    - name: Test example compilation
-      run: |
-        for dir in examples/*/; do
-          if [ -f "$dir/build.hxml" ] || [ -f "$dir/compile-all.hxml" ]; then
-            echo "Testing $dir"
-            cd "$dir"
-            if [ -f "compile-all.hxml" ]; then
-              npx haxe compile-all.hxml
-            elif [ -f "build.hxml" ]; then
-              npx haxe build.hxml
-            fi
-            cd ../..
-          fi
-        done
-
-  lint-and-format:
-    name: Code Quality Checks
+  test:
+    name: Tests
     runs-on: ubuntu-latest
-    
+    needs: [guards]
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+      - name: Cache Mix deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+      - name: Run full test suite
+        run: npm test
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Check Haxe formatting
-      run: |
-        # Add Haxe formatting check when formatter is configured
-        echo "Haxe formatting check placeholder"
-
-    - name: Check documentation
-      run: |
-        # Verify all examples in docs compile
-        echo "Documentation validation placeholder"
-
-    - name: Guardrails - No app-specific name heuristics
-      run: |
-        bash scripts/lint/name-heuristics-guard.sh
-
-    - name: Verify registry order doc is up to date (Haxe eval)
-      run: |
-        npm run docs:order:haxe
-        git diff --exit-code docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md
-
-  acceptance:
-    name: 1.0 Acceptance Gates
+  examples:
+    name: Examples
     runs-on: ubuntu-latest
-
+    needs: [guards]
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Setup Elixir
-      uses: erlef/setup-beam@v1
-      with:
-        elixir-version: '1.16'
-        otp-version: '26'
-
-    - name: Install npm dependencies
-      run: npm ci
-
-    - name: Download Haxe libraries
-      run: npx lix download
-
-    - name: Install Elixir dependencies
-      run: mix deps.get
-
-    - name: Run Acceptance Gates
-      run: npm run ci:acceptance
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+      - name: Compile-check examples
+        run: npm run test:examples

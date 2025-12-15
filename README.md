@@ -1,8 +1,8 @@
 # Reflaxe.Elixir
 
-[![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?include_prereleases)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Version](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?display_name=tag&sort=semver)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CI Status](https://github.com/fullofcaffeine/reflaxe.elixir/workflows/CI/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/fullofcaffeine/reflaxe.elixir/ci.yml?branch=main)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -102,7 +102,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.2
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.3
 
 # Add to existing project
 npx lix use
