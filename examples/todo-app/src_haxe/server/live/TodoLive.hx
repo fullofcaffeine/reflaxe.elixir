@@ -632,11 +632,22 @@ class TodoLive {
     public static function save_edited_todo_typed(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         if (socket.assigns.editing_todo == null) return socket;
         var todo = socket.assigns.editing_todo;
-        // Inline computed title into changeset map to avoid local-binder rename mismatches
+        // LiveView form params arrive as a map with string keys; extract safely.
+        var rawTitle: Null<String> = Reflect.field(params, "title");
+        var rawDesc: Null<String> = Reflect.field(params, "description");
+        var rawPriority: Null<String> = Reflect.field(params, "priority");
+        var rawDue: Null<String> = Reflect.field(params, "due_date");
+        var rawTags: Null<String> = Reflect.field(params, "tags");
+
+        // Inline computed fields into changeset map to avoid local-binder rename mismatches
         switch (Repo.update(server.schemas.Todo.changeset(todo, {
-            title: (Reflect.field(params, "title") != null)
-                ? (cast Reflect.field(params, "title") : String)
-                : todo.title
+            title: (rawTitle != null) ? rawTitle : todo.title,
+            description: (rawDesc != null) ? rawDesc : (todo.description != null ? todo.description : ""),
+            priority: (rawPriority != null && rawPriority != "") ? rawPriority : todo.priority,
+            dueDate: (rawDue != null) ? parseDueDate(rawDue) : todo.dueDate,
+            tags: (rawTags != null) ? (rawTags != "" ? parseTags(rawTags) : []) : (todo.tags != null ? todo.tags : []),
+            completed: todo.completed,
+            userId: todo.userId
         }))) {
             case Ok(value):
                 // Best-effort broadcast
