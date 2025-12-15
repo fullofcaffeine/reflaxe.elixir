@@ -27,12 +27,12 @@ class UndefinedLocalExtractFromParamsTransforms {
         case EDef(name, args, guards, body):
           var pv = findParamsVar(args);
           if (pv == null) return node;
-          var nb = synthesize(body, pv);
+          var nb = synthesize(body, pv, args);
           makeASTWithMeta(EDef(name, args, guards, nb), node.metadata, node.pos);
         case EDefp(name, args, guards, body):
           var pv2 = findParamsVar(args);
           if (pv2 == null) return node;
-          var nb2 = synthesize(body, pv2);
+          var nb2 = synthesize(body, pv2, args);
           makeASTWithMeta(EDefp(name, args, guards, nb2), node.metadata, node.pos);
         default:
           node;
@@ -109,12 +109,14 @@ class UndefinedLocalExtractFromParamsTransforms {
     return makeAST(EIf(isBin, toInt, get));
   }
 
-  static function synthesize(body: ElixirAST, paramsVar:String): ElixirAST {
+  static function synthesize(body: ElixirAST, paramsVar:String, args:Array<EPattern>): ElixirAST {
     var declared = new Map<String,Bool>();
     collectDecls(body, declared);
     var used = collectUsed(body);
     // avoid extracting assigns/env names
     declared.set("socket", true); declared.set("params", true); declared.set("_params", true);
+    // Function arguments are in-scope bindings; never treat them as missing locals.
+    if (args != null) for (a in args) collectPattern(a, declared);
 
     var missing:Array<String> = [];
     for (u in used.keys()) if (!declared.exists(u) && allow(u)) missing.push(u);
