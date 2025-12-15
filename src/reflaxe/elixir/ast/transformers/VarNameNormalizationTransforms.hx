@@ -91,8 +91,8 @@ class VarNameNormalizationTransforms {
                     if (name == null || name.length == 0) n;
                     else if (name.indexOf(".") != -1) n;
                     else {
-                        var c0 = name.charAt(0);
-                        if (c0 != "_" && c0.toLowerCase() != c0) {
+                        var firstChar = name.charAt(0);
+                        if (firstChar != "_" && firstChar.toLowerCase() != firstChar) {
                             n;
                         } else {
                             var snake = toSnake(name);
