@@ -2,6 +2,23 @@ package ecto;
 
 #if (elixir || reflaxe_runtime)
 
+/**
+ * ChangesetApi
+ *
+ * WHAT
+ * - Low-level extern mapping to the canonical Elixir module `Ecto.Changeset`.
+ *
+ * WHY
+ * - Ecto is an Elixir library, so Haxe code needs externs at the boundary.
+ * - This is the “no string injection” option: it calls `Ecto.Changeset.*` via `@:native`
+ *   instead of `untyped __elixir__()`.
+ *
+ * HOW
+ * - Methods are declared as externs and map directly to the Elixir function names.
+ * - Types are `Dynamic` at this boundary because Ecto changesets/params/keyword options
+ *   are runtime data structures that are not modeled as a fully-typed Haxe API (yet).
+ *   Prefer higher-level wrappers (e.g. `ecto.Changeset`) when you want a typed builder.
+ */
 @:native("Ecto.Changeset")
 extern class ChangesetApi {
     @:native("change")
