@@ -1832,9 +1832,9 @@ class BinderTransforms {
                 case EMatch(PVar(lhs), rhs):
                     var rhsName = extractSimpleVarName(rhs);
                     (lhs != null && rhsName != null) ? { lhs: lhs, rhs: rhsName } : null;
-                case EBinary(Match, {def: EVar(lhs)}, rhs2):
-                    var rhsName2 = extractSimpleVarName(rhs2);
-                    (lhs != null && rhsName2 != null) ? { lhs: lhs, rhs: rhsName2 } : null;
+                case EBinary(Match, {def: EVar(lhs)}, rhsExpr):
+                    var rhsName = extractSimpleVarName(rhsExpr);
+                    (lhs != null && rhsName != null) ? { lhs: lhs, rhs: rhsName } : null;
                 default:
                     null;
             };
