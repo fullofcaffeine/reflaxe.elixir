@@ -27,7 +27,7 @@ This example demonstrates how to write Ecto database migrations using Haxe with 
 cd examples/04-ecto-migrations
 
 # Compile Haxe migrations to Elixir
-haxe build.hxml
+npx haxe build.hxml
 
 # Run migrations (if you have a database configured)
 mix ecto.migrate
@@ -114,7 +114,7 @@ mix haxe.gen.migration CreateUsers
 
 ### Development Flow
 1. Write migration in Haxe using `@:migration`
-2. Compile with `haxe build.hxml`
+2. Compile with `npx haxe build.hxml`
 3. Run with `mix ecto.migrate`
 4. Rollback with `mix ecto.rollback` if needed
 

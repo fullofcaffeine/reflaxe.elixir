@@ -75,7 +75,7 @@ var result = UserId.parse(input)
 
 ```bash
 # Compile Haxe to Elixir
-haxe build.hxml
+npx haxe build.hxml
 
 # Run the generated Elixir code  
 mix run
