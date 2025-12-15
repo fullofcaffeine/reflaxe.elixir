@@ -56,7 +56,10 @@ class CaseBinderUnderscoreAlignTransforms {
             for (b in binders) {
               if (b != null && b.length > 1 && b.charAt(0) == "_") {
                 var bare = b.substr(1);
-                var bareIsUsed = VarUseAnalyzer.stmtUsesVar(cl.body, bare) || (cl.guard != null && VarUseAnalyzer.stmtUsesVar(cl.guard, bare));
+                // Strict: only trigger when the body/guard references the bare name itself.
+                // The general VarUseAnalyzer also considers underscore variants which would
+                // incorrectly treat `_value` as a use of `value` here.
+                var bareIsUsed = VarUseAnalyzer.stmtUsesVarExact(cl.body, bare) || (cl.guard != null && VarUseAnalyzer.stmtUsesVarExact(cl.guard, bare));
                 if (bareIsUsed && binders.indexOf(bare) == -1) {
                   renames.push({from: b, to: bare});
                 }

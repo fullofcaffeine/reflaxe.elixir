@@ -52,6 +52,13 @@ class EFnLastChanceFixTransforms {
                         // DISABLED: trace('[EFnLastChance] binder=' + b + ' applied _' + b + ' -> ' + b);
                         #end
                         var used = collectUsedVars(newBody);
+                        // If the binder is already referenced in the body, do not rewrite other free
+                        // variables to the binder. Single-arg closures frequently capture outer vars
+                        // (e.g., comparing `todo.id` to `id`), and rewriting that capture breaks semantics.
+                        if (used.exists(b)) {
+                            newClauses.push({args: [outArg], guard: cl.guard, body: newBody});
+                            continue;
+                        }
                         used.remove(b);
                         used.remove('_' + b);
                         // If there is exactly one underscored free var (e.g., _elem), rewrite it to binder

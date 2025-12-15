@@ -33,7 +33,7 @@ class ClauseUndefinedVarBindToBinderTransforms {
         case ECase(target, clauses):
           var out:Array<ECaseClause> = [];
           for (cl in clauses) {
-            var b = extractBinder(cl.pattern);
+            var b = extractOkBinder(cl.pattern);
             if (b != null) {
               #if debug_transforms
               #end
@@ -44,33 +44,13 @@ class ClauseUndefinedVarBindToBinderTransforms {
               #if debug_transforms
               var declArr = [for (k in declared.keys()) k];
               #end
-              if (undef.length >= 1) {
-                // Choose the most frequently referenced undefined variable in the body
-                var freq = new haxe.ds.StringMap<Int>();
-                for (c in undef) freq.set(c, 0);
-                reflaxe.elixir.ast.ASTUtils.walk(cl.body, function(w: ElixirAST) {
-                  switch (w.def) { case EVar(nm) if (freq.exists(nm)): freq.set(nm, freq.get(nm) + 1); default: }
-                });
-                var best:Null<String> = null; var bestCount = -1;
-                for (c in undef) { var cnt = freq.exists(c) ? freq.get(c) : 0; if (cnt > bestCount) { bestCount = cnt; best = c; } }
-                if (best != null) {
-                  var prefixes:Array<ElixirAST> = [];
-                  // Use the binder name exactly as in the pattern (no renaming here)
-                  var binderName = b;
-                  // If binder is underscored and best equals its base name, emit two aliases to match intended shapes:
-                  // fn_ = _binder; base = _binder
-                  if (binderName.length > 1 && binderName.charAt(0) == '_' && best == binderName.substr(1)) {
-                    if (!hasAliasInBody(cl.body, 'fn_', binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar('fn_')), makeAST(EVar(binderName)))));
-                    if (!hasAliasInBody(cl.body, best, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName)))));
-                  } else {
-                    // If binder is non-underscored and best equals binder base, also add helper alias for snapshots expecting `_value = value`
-                    if (binderName.length > 0 && binderName.charAt(0) != '_' && best == binderName) {
-                      // create _<base> = <binderName> in addition to fn_ alias
-                      var underscored = '_' + binderName;
-                      if (!hasAliasInBody(cl.body, underscored, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(underscored)), makeAST(EVar(binderName)))));
-                    }
-                    if (!hasAliasInBody(cl.body, best, binderName)) prefixes.push(makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName)))));
-                  }
+              if (undef.length == 1) {
+                var best = undef[0];
+                var binderName = b;
+                if (best != null && best.length > 0 && best != binderName && !hasAliasInBody(cl.body, best, binderName)) {
+                  var prefixes:Array<ElixirAST> = [
+                    makeAST(EBinary(Match, makeAST(EVar(best)), makeAST(EVar(binderName))))
+                  ];
                   var newBody = switch (cl.body.def) {
                     case EBlock(sts): makeASTWithMeta(EBlock(prefixes.concat(sts)), cl.body.metadata, cl.body.pos);
                     case EDo(sts2): makeASTWithMeta(EDo(prefixes.concat(sts2)), cl.body.metadata, cl.body.pos);
@@ -108,6 +88,20 @@ class ClauseUndefinedVarBindToBinderTransforms {
       case PTuple(es) if (es.length == 2):
         switch (es[1]) { case PVar(n): n; default: null; }
       default: null;
+    }
+  }
+
+  static function extractOkBinder(p: EPattern): Null<String> {
+    return switch (p) {
+      case PTuple(es) if (es.length == 2):
+        switch (es[0]) {
+          case PLiteral({def: EAtom(a)}) if ((a : String) == ":ok" || (a : String) == "ok"):
+            switch (es[1]) { case PVar(n): n; default: null; }
+          default:
+            null;
+        }
+      default:
+        null;
     }
   }
 
@@ -163,7 +157,27 @@ class ClauseUndefinedVarBindToBinderTransforms {
             var tpos = 0;
             while (tok.matchSub(inner, tpos)) {
               var id = tok.matched(0);
-              if (allow(id)) names.set(id, true);
+              if (allow(id)) {
+                var mp = tok.matchedPos();
+                var before = mp.pos > 0 ? inner.substr(mp.pos - 1, 1) : null;
+                var afterIdx = mp.pos + mp.len;
+                var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
+
+                // Skip atoms/keywords (`:ok`, `key:`) and function calls (`inspect(...)`).
+                var nextNonWsIdx = afterIdx;
+                while (nextNonWsIdx < inner.length) {
+                  var ch = inner.substr(nextNonWsIdx, 1);
+                  if (ch != " " && ch != "\t" && ch != "\n" && ch != "\r") break;
+                  nextNonWsIdx++;
+                }
+                var nextNonWs = nextNonWsIdx < inner.length ? inner.substr(nextNonWsIdx, 1) : null;
+
+                if (before == ":" || after == ":" || nextNonWs == "(") {
+                  // ignore
+                } else {
+                  names.set(id, true);
+                }
+              }
               tpos = tok.matchedPos().pos + tok.matchedPos().len;
             }
             pos = block.matchedPos().pos + block.matchedPos().len;
@@ -171,23 +185,6 @@ class ClauseUndefinedVarBindToBinderTransforms {
         default:
       }
     });
-    // Fallback: scan printed body text for interpolation identifiers and bare identifiers
-    try {
-      var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(ast, 0);
-      var block = new EReg("\\#\\{([^}]*)\\}", "g");
-      var pos = 0;
-      while (block.matchSub(printed, pos)) {
-        var inner = block.matched(1);
-        var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "gi");
-        var tpos = 0;
-        while (tok.matchSub(inner, tpos)) {
-          var id = tok.matched(0);
-          if (allow(id)) names.set(id, true);
-          tpos = tok.matchedPos().pos + tok.matchedPos().len;
-        }
-        pos = block.matchedPos().pos + block.matchedPos().len;
-      }
-    } catch (e:Dynamic) {}
     return names;
   }
 

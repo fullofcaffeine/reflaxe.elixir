@@ -35,6 +35,138 @@ class VarUseAnalyzer {
         return false;
     }
 
+    /**
+     * Strict variable-use check that matches only the exact name provided.
+     *
+     * WHY
+     * - Some transforms (e.g. case-binder underscore alignment) must distinguish
+     *   between `value` and `_value`. The general-purpose `stmtUsesVar/2`
+     *   intentionally considers underscore/case variants, which can produce
+     *   false positives for these shape-sensitive passes.
+     */
+    public static function stmtUsesVarExact(n: ElixirAST, name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        var found = false;
+        inline function isIdentChar(c: String): Bool {
+            if (c == null || c.length == 0) return false;
+            var ch = c.charCodeAt(0);
+            return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_" || c == ".";
+        }
+        function scanStringInterpolation(str: String): Void {
+            var i = 0;
+            while (!found && str != null && i < str.length) {
+                var idx = str.indexOf("#{", i);
+                if (idx == -1) break;
+                var j = str.indexOf("}", idx + 2);
+                if (j == -1) break;
+                var inner = str.substr(idx + 2, j - (idx + 2));
+                if (inner.indexOf(name) != -1) { found = true; break; }
+                i = j + 1;
+            }
+        }
+        function walk(x: ElixirAST, inPattern: Bool): Void {
+            if (x == null || found) return;
+            switch (x.def) {
+                case EVar(v) if (!inPattern && v == name):
+                    found = true;
+                case EPin(inner):
+                    walk(inner, false);
+                case ERaw(code):
+                    var start = 0;
+                    while (!found && code != null) {
+                        var pos = code.indexOf(name, start);
+                        if (pos == -1) break;
+                        var before = pos > 0 ? code.substr(pos - 1, 1) : null;
+                        var afterIdx = pos + name.length;
+                        var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                        if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                        start = pos + name.length;
+                    }
+                case EString(str):
+                    scanStringInterpolation(str);
+                case EBinary(Match, _left, rhs):
+                    walk(rhs, false);
+                case EBinary(_, leftAny, rightAny):
+                    walk(leftAny, false);
+                    walk(rightAny, false);
+                case EMatch(_pat, rhsExpr):
+                    walk(rhsExpr, false);
+                case EBlock(ss):
+                    for (s in ss) walk(s, false);
+                case EDo(statements):
+                    for (s in statements) walk(s, false);
+                case EIf(c, t, e):
+                    walk(c, false);
+                    walk(t, false);
+                    if (e != null) walk(e, false);
+                case ECase(expr, clauses):
+                    walk(expr, false);
+                    for (c in clauses) {
+                        if (c.guard != null) walk(c.guard, false);
+                        walk(c.body, false);
+                    }
+                case EWith(clauses, doBlock, elseBlock):
+                    for (wc in clauses) walk(wc.expr, false);
+                    walk(doBlock, false);
+                    if (elseBlock != null) walk(elseBlock, false);
+                case ECall(tgt, _, args):
+                    if (tgt != null) walk(tgt, false);
+                    for (a in args) walk(a, false);
+                case ERemoteCall(targetExpr, _, argsList):
+                    walk(targetExpr, false);
+                    for (a in argsList) walk(a, false);
+                case EField(obj, _):
+                    walk(obj, false);
+                case EAccess(objectExpr, key):
+                    walk(objectExpr, false);
+                    walk(key, false);
+                case EKeywordList(pairs):
+                    for (p in pairs) walk(p.value, false);
+                case EMap(pairs):
+                    for (p in pairs) {
+                        walk(p.key, false);
+                        walk(p.value, false);
+                    }
+                case EStructUpdate(base, fields):
+                    walk(base, false);
+                    for (f in fields) walk(f.value, false);
+                case ETuple(elems) | EList(elems):
+                    for (e in elems) walk(e, false);
+                case EFn(clauses):
+                    for (cl in clauses) walk(cl.body, false);
+                case ECond(condClauses):
+                    for (cl in condClauses) {
+                        walk(cl.condition, false);
+                        walk(cl.body, false);
+                    }
+                case ERange(startExpr, endExpr, _):
+                    walk(startExpr, false);
+                    walk(endExpr, false);
+                case EUnary(_, innerExpr):
+                    walk(innerExpr, false);
+                case EParen(innerExpr):
+                    walk(innerExpr, false);
+                case EPipe(pipeLeft, pipeRight):
+                    walk(pipeLeft, false);
+                    walk(pipeRight, false);
+                case EUnless(unlessCond, unlessBody, unlessElse):
+                    walk(unlessCond, false);
+                    walk(unlessBody, false);
+                    if (unlessElse != null) walk(unlessElse, false);
+                case EFor(generators, filters, body, into, _uniq):
+                    for (gen in generators) walk(gen.expr, false);
+                    for (filter in filters) walk(filter, false);
+                    if (body != null) walk(body, false);
+                    if (into != null) walk(into, false);
+                case ECapture(capturedExpr, _):
+                    walk(capturedExpr, false);
+                default:
+            }
+        }
+        walk(n, false);
+        return found;
+    }
+
     public static function stmtUsesVar(n:ElixirAST, name:String):Bool {
         var found = false;
         inline function isIdentChar(c: String): Bool {
@@ -193,6 +325,9 @@ class VarUseAnalyzer {
                     walk(endExpr, false);
                 case EUnary(_, innerExpr):
                     // Unary operators wrap expressions
+                    walk(innerExpr, false);
+                case EParen(innerExpr):
+                    // Parentheses are transparent for usage analysis
                     walk(innerExpr, false);
                 case EPipe(pipeLeft, pipeRight):
                     // Pipeline operator - both sides can use variables

@@ -80,18 +80,13 @@ class CaseOkBinderPrefixBindAllUndefinedTransforms {
   }
   static function collectUsed(body:ElixirAST): Map<String,Bool> {
     var m = new Map<String,Bool>();
-    ASTUtils.walk(body, function(x:ElixirAST){ switch (x.def) { case EVar(n): if (allow(n)) m.set(n,true); default: } });
-    // Fallback: scan printed body for additional identifiers that AST walk may miss (e.g., inside generated ERaw)
-    try {
-      var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(body, 0);
-      var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
-      var pos = 0;
-      while (tok.matchSub(printed, pos)) {
-        var id = tok.matched(0);
-        if (allow(id)) m.set(id, true);
-        pos = tok.matchedPos().pos + tok.matchedPos().len;
+    ASTUtils.walk(body, function(x:ElixirAST){
+      switch (x.def) {
+        case EVar(n):
+          if (allow(n)) m.set(n, true);
+        default:
       }
-    } catch (e:Dynamic) {}
+    });
     return m;
   }
 }
