@@ -7,6 +7,7 @@ import haxe.ds.Option;
 
 using haxe.functional.ResultTools;
 using haxe.ds.OptionTools;
+using ArrayTools;
 
 /**
  * Real-world user registration system demonstrating type-safe domain abstractions.
@@ -89,12 +90,12 @@ class UserRegistration {
     /**
      * Core user registration function with comprehensive validation
      */
-    static function registerUser(userIdStr: String, emailStr: String, displayNameStr: String, ageStr: String): Result<RegisteredUser, String> {
+    public static function registerUser(userIdStr: String, emailStr: String, displayNameStr: String, ageStr: String): Result<RegisteredUser, String> {
         // Chain validations using functional composition
         return UserId.parse(userIdStr)
             .mapError(e -> 'Invalid User ID: ${e}')
             .flatMap(userId -> {
-                return Email.parse(emailStr.trim())
+                return Email.parse(StringTools.trim(emailStr))
                     .mapError(e -> 'Invalid Email: ${e}')
                     .flatMap(email -> {
                         return NonEmptyString.parseAndTrim(displayNameStr)
@@ -290,7 +291,7 @@ class UserRegistration {
     /**
      * Aggregate users by email domain
      */
-    static function aggregateByEmailDomain(users: Array<RegisteredUser>): Map<String, Int> {
+    public static function aggregateByEmailDomain(users: Array<RegisteredUser>): Map<String, Int> {
         var domainCounts = new Map<String, Int>();
         
         for (user in users) {
