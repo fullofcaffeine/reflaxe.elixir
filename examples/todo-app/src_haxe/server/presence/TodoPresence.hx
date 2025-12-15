@@ -3,20 +3,20 @@ package server.presence;
 import phoenix.PresenceBehavior;
 
 /**
- * Extern presence module for the Todo app.
+ * Presence module for the Todo app.
  *
  * WHAT
- * - Declares the presence surface used by the app without generating code.
+ * - Declares the Presence module used by the app and generates a valid Phoenix.Presence
+ *   module via the @:presence transform.
  *
  * WHY
- * - Generated presence modules were emitting malformed references (e.g., nullWeb).
- *   Treating the module as extern lets a hand-written Elixir module supply the
- *   behavior while keeping typed references for the rest of the app.
+ * - The app expects a concrete `TodoAppWeb.Presence` module in the supervision tree.
+ *   Keeping this in Haxe ensures the example app is self-contained and the compiler
+ *   output remains the single source of truth.
  *
  * HOW
- * - Marked @:native to bind to the runtime module `TodoAppWeb.Presence`.
- * - Only the functions the app may call are declared here; others fall back to
- *   the Phoenix.Presence defaults via the runtime module.
+ * - Marked @:native to generate the runtime module `TodoAppWeb.Presence`.
+ * - Marked @:presence so the compiler injects `use Phoenix.Presence, ...`.
  */
 typedef PresenceMeta = {
     var onlineAt: Float;
@@ -28,5 +28,6 @@ typedef PresenceMeta = {
 }
 
 @:native("TodoAppWeb.Presence")
-extern class TodoPresence implements PresenceBehavior {
+@:presence
+class TodoPresence implements PresenceBehavior {
 }

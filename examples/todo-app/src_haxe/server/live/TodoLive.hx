@@ -3,6 +3,8 @@ package server.live;
 import HXX; // Import HXX for template rendering
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
+import elixir.Atom;
+import elixir.ElixirMap;
 import elixir.Task; // Background work via Task.start
 import elixir.DateTime.NaiveDateTime;
 import elixir.Enum;
@@ -212,11 +214,9 @@ class TodoLive {
                     case _:
                         NoReply(socket);
                 }
-            case UserOnline(userId):
-                var _ = userId;
+            case UserOnline(_userId):
                 NoReply(socket);
-            case UserOffline(userId):
-                var _ = userId;
+            case UserOffline(_userId):
                 NoReply(socket);
             case _:
                 NoReply(socket);
@@ -305,9 +305,7 @@ class TodoLive {
                 });
                 var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
                 return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
-            case Error(reason):
-                // Touch reason to silence unused warning in generated Elixir
-                var _ignoredReason = reason;
+            case Error(_reason):
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
             case _:
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
@@ -333,16 +331,7 @@ class TodoLive {
         var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
         var toggledTodos = s.assigns.todos.map(function(todo) {
             if (todo.id == id) {
-                return (cast {
-                    id: todo.id,
-                    title: todo.title,
-                    description: todo.description,
-                    completed: !todo.completed,
-                    priority: todo.priority,
-                    dueDate: todo.dueDate,
-                    tags: todo.tags,
-                    userId: todo.userId
-                }: server.schemas.Todo);
+                return cast ElixirMap.put(todo, Atom.create("completed"), !todo.completed);
             }
             return todo;
         });
@@ -458,10 +447,7 @@ class TodoLive {
         var iso = (rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue;
         return switch (NaiveDateTime.from_iso8601(iso)) {
             case Ok(dt): dt;
-            case Error(reason):
-                // Touch reason to avoid unused warnings in generated Elixir while still returning nil
-                var _ignore = reason;
-                null;
+            case Error(_reason): null;
         };
     }
 	
