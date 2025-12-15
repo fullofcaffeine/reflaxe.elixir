@@ -166,12 +166,6 @@ defmodule HaxeServer do
 
   @impl GenServer
   def handle_info(:start_server, state) do
-    # Preflight: if something already listens on the port and responds, reuse it
-    case preflight_connect(state) do
-      {:ok, :connected} ->
-        Logger.info("Haxe server detected on port #{state.port}; reusing existing server")
-        {:noreply, %{state | status: :running}}
-      :error ->
     case start_haxe_server(state) do
       {:ok, pid} -> 
         Logger.debug("Haxe server started on port #{state.port}")
@@ -191,7 +185,6 @@ defmodule HaxeServer do
             Process.send_after(self(), :start_server, 2000)
             {:noreply, %{relocated | status: :error}}
         end
-    end
     end
   end
 
@@ -343,19 +336,6 @@ defmodule HaxeServer do
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
   end
 
-  # Try a lightweight connect probe to determine if a compatible server is already running
-  defp preflight_connect(state) do
-    args = state.haxe_args ++ ["--connect", to_string(state.port), "-version"]
-    try do
-      case System.cmd(state.haxe_cmd, args, stderr_to_stdout: true) do
-        {_out, 0} -> {:ok, :connected}
-        _ -> :error
-      end
-    rescue
-      _ -> :error
-    end
-  end
-  
   defp find_available_port() do
     # Use process ID and timestamp to ensure uniqueness in parallel tests
     base_port = 7000 + rem(System.unique_integer([:positive]), 2000)
