@@ -137,7 +137,7 @@ if [ -f tmp_run_bg.pid ]; then kill "$(cat tmp_run_bg.pid)" 2>/dev/null || true;
 ```
 
 Tips
-- Use `mix compile --force` (or `mix compile.haxe --watch`) on source changes; add the curl+logs check to catch assign shape issues, HEEx contract violations, Presence wiring, etc.
+- Use `mix compile --force` (or `mix haxe.watch`) on source changes; add the curl+logs check to catch assign shape issues, HEEx contract violations, Presence wiring, etc.
 - Prefer fixing transforms/Haxe source over editing generated Elixir. If you patch generated files for triage, follow up with proper fixes in the AST pipeline.
 - If custom Postgrex `types:` config causes local TypeManager errors, either define the types module or remove the option for local debugging.
 
