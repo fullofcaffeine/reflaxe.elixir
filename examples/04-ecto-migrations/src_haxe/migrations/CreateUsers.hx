@@ -1,36 +1,28 @@
 package migrations;
 
-import reflaxe.elixir.helpers.MigrationDSL;
-import reflaxe.elixir.helpers.MigrationDSL.TableBuilder;
+import ecto.Migration;
+import ecto.Migration.ColumnType;
 
 /**
- * Example migration using Haxe→Elixir Migration DSL
- * Demonstrates @:migration annotation with table creation, indexes, and constraints
+ * Example migration using the typed Ecto Migration DSL (`std/ecto/Migration.hx`).
  */
 @:migration
-class CreateUsers {
-    public static function up(): String {
-        return MigrationDSL.createTable("users", function(t) {
-            t.addColumn("name", "string", {"null": false});
-            t.addColumn("email", "string", {"null": false});
-            t.addColumn("age", "integer");
-            t.addColumn("active", "boolean", {"default": true});
-            t.addColumn("inserted_at", "naive_datetime", {"null": false});
-            t.addColumn("updated_at", "naive_datetime", {"null": false});
-            
-            t.addIndex(["email"], {unique: true});
-            t.addIndex(["name", "active"]);
-        });
+class CreateUsers extends Migration {
+    public function new() {}
+
+    public function up(): Void {
+        createTable("users")
+            .addId()
+            .addColumn("name", ColumnType.String(), {nullable: false})
+            .addColumn("email", ColumnType.String(), {nullable: false})
+            .addColumn("age", ColumnType.Integer)
+            .addColumn("active", ColumnType.Boolean, {defaultValue: true})
+            .addTimestamps()
+            .addIndex(["email"], {unique: true})
+            .addIndex(["name", "active"]);
     }
-    
-    public static function down(): String {
-        return MigrationDSL.dropTable("users");
-    }
-    
-    // Main function for compilation testing
-    public static function main(): Void {
-        trace("CreateUsers migration with real DSL helpers compiled successfully!");
-        trace("Up migration: " + up());
-        trace("Down migration: " + down());
+
+    public function down(): Void {
+        dropTable("users");
     }
 }
