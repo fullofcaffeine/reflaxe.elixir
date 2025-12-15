@@ -8,8 +8,13 @@
 
 **Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
 
+> [!WARNING]
+> **Alpha software — not ready for production.**
+>
+> Reflaxe.Elixir is under active development and may have breaking changes, bugs, and incomplete semantics. Use in production at your own risk.
+
 > **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
-> **Current Status**: Production-ready Haxe→Elixir compilation with full Phoenix/LiveView/Ecto support
+> **Current Status**: Alpha (feature-complete Phoenix/LiveView/Ecto coverage, but not production hardened yet)
 
 ## Why Reflaxe.Elixir?
 
@@ -64,7 +69,7 @@ The foundation for multi-target development:
 
 ## Current Status & Roadmap
 
-### ✅ Production Ready (v1.0)
+### 🧪 Alpha (v1.0)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
 - **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
