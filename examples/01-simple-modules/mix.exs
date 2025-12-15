@@ -8,7 +8,14 @@ defmodule SimpleModules.MixProject do
       elixir: "~> 1.14",
       compilers: [:haxe] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      haxe: [
+        hxml_file: "compile-all.hxml",
+        source_dir: "src_haxe",
+        target_dir: "lib",
+        watch: false,
+        verbose: Mix.env() == :dev
+      ]
     ]
   end
 
@@ -19,6 +26,8 @@ defmodule SimpleModules.MixProject do
   end
 
   defp deps do
-    []
+    [
+      {:reflaxe_elixir, path: "../..", runtime: false}
+    ]
   end
 end
