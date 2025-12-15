@@ -22,7 +22,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
 - [HXX Syntax & Comparison](02-user-guide/HXX_SYNTAX_AND_COMPARISON.md) - Typed HXX UX and comparison with Coconut UI & TSX
-- [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
+- [Ecto Integration Patterns](07-patterns/ECTO_INTEGRATION_PATTERNS.md) - Database integration patterns (canonical)
 - [User Guide](02-user-guide/USER_GUIDE.md) - Comprehensive development guide
 
 ### ⚙️ Compiler Development

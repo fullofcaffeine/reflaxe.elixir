@@ -745,7 +745,7 @@ mix clean && mix compile
 ## 📚 Related Documentation
 
 - **[LiveView Architecture](../02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md)** - Complete LiveView guide
-- **[Ecto Integration Patterns](../02-user-guide/ECTO_INTEGRATION_PATTERNS.md)** - Database integration patterns
+- **[Ecto Integration Patterns](ECTO_INTEGRATION_PATTERNS.md)** - Database integration patterns
 - **[Functional Patterns](FUNCTIONAL_PATTERNS.md)** - Advanced patterns
 - **[API Reference](../04-api-reference/)** - Complete annotation reference
 
