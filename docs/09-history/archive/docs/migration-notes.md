@@ -20,7 +20,7 @@ The following documentation files contain outdated references and should be upda
 3. `/docs/07-patterns/TODO_APP_CLEANUP_LESSONS.md` - Remove reflaxe.js.Async references
 4. `/docs/06-guides/FULL_STACK_DEVELOPMENT.md` - Update to genes approach
 5. `/docs/05-architecture/ASYNC_AWAIT_ARCHITECTURE.md` - Remove (outdated)
-6. `/docs/09-history/task-history.md` - Historical, can keep as-is
+6. `/docs/09-history/archive/records/task-history.md` - Historical, can keep as-is
 7. `/docs/03-compiler-development/MACRO_PRINCIPLES.md` - Update examples
 8. `/docs/03-compiler-development/MACRO_CASE_STUDIES.md` - Update examples
 

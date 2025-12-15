@@ -155,7 +155,7 @@ if (isOrphanedParameterExtraction(e, ef, index)) {
 - [AST_CLEANUP_PATTERNS.md](../03-compiler-development/AST_CLEANUP_PATTERNS.md) - Detailed pattern documentation
 - [COMPILATION_PIPELINE_ARCHITECTURE.md](../03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md) - Pipeline overview
 - [Reflaxe BaseCompiler Source](https://github.com/SomeRanDev/reflaxe) - Framework implementation
-- [Task History Entry](../09-history/task-history.md) - Session documentation
+- [Task History Entry](../../records/task-history.md) - Session documentation
 
 ## Appendix: Other Reflaxe Compilers
 
