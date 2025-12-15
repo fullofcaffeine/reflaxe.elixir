@@ -25,7 +25,7 @@ set +m
 #   --env NAME       Mix environment (dev|test|e2e|prod). Default: dev
 #   --reuse-db       For non-dev envs, do not drop DB; ensure created + migrate only
 #   --seeds PATH     Run a seeds script after migrations (e.g., priv/repo/seeds.e2e.exs)
-#   --keep-alive     Do not kill Phoenix on exit; print PHX_PID and PORT
+#   --keep-alive     Do not kill Phoenix on exit; print PHX_PID, PHX_PGID, and PORT
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
 #   --deadline SECS  Hard cap: watchdog kills background job after SECS
@@ -656,6 +656,7 @@ fi
 if [[ "$KEEP_ALIVE" -eq 1 ]]; then
   log "[QA] KEEP-ALIVE enabled. Phoenix continues running."
   echo "PHX_PID=$PHX_PID"
+  echo "PHX_PGID=$PGID"
   echo "PORT=$PORT"
 fi
 popd >/dev/null

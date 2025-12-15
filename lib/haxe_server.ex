@@ -173,6 +173,18 @@ defmodule HaxeServer do
 
   @impl GenServer
   def handle_info(:start_server, state) do
+    state =
+      if port_available?(state.port) do
+        state
+      else
+        # The configured port is already bound. Do not attempt to "reuse" an external server
+        # (toolchain mismatch + lifecycle ownership). Instead, relocate before starting to avoid
+        # noisy EADDRINUSE crashes from the underlying node haxeshim wrapper.
+        new_port = find_available_port()
+        Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
+        %{state | port: new_port}
+      end
+
     case start_haxe_server(state) do
       {:ok, pid} -> 
         Logger.debug("Haxe server started on port #{state.port}")
@@ -343,37 +355,39 @@ defmodule HaxeServer do
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
   end
 
+  defp port_available?(port) do
+    # Haxe (via lix/haxeshim) typically binds to the IPv6 wildcard (::) as a dual-stack
+    # socket (v6only=false). Probe IPv6 dual-stack first, fall back to IPv4.
+    #
+    # NOTE: Avoid `reuseaddr` here. On some platforms it can mask an in-use port and lead
+    # to false positives, which then crash the node-side server with EADDRINUSE.
+    ipv6_opts = [:binary, active: false, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+
+    case :gen_tcp.listen(port, ipv6_opts) do
+      {:ok, socket} ->
+        :gen_tcp.close(socket)
+        true
+
+      {:error, _} ->
+        case :gen_tcp.listen(port, [:binary, active: false]) do
+          {:ok, socket} ->
+            :gen_tcp.close(socket)
+            true
+
+          {:error, _} ->
+            false
+        end
+    end
+  end
+
   defp find_available_port() do
     # Pick from a mid-range that avoids common dev ports (<10k) and OS ephemeral ports (often 49k+).
     # This reduces collisions with both local services and active outbound connections.
     base_port = 15_000 + rem(System.unique_integer([:positive]), 20_000)
-
-    port_available? = fn port ->
-      # Haxe (via lix/haxeshim) binds to the IPv6 wildcard (::) by default, typically
-      # as a dual-stack socket (v6only=false). Probe with an IPv6 dual-stack listen
-      # first, falling back to IPv4 when IPv6 isn't available.
-      ipv6_opts = [:binary, packet: :line, active: false, reuseaddr: true, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
-
-      case :gen_tcp.listen(port, ipv6_opts) do
-        {:ok, socket} ->
-          :gen_tcp.close(socket)
-          true
-
-        {:error, _} ->
-          case :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true]) do
-            {:ok, socket} ->
-              :gen_tcp.close(socket)
-              true
-
-            {:error, _} ->
-              false
-          end
-      end
-    end
     
     Enum.reduce_while(0..50, nil, fn offset, _acc ->
       port = base_port + offset
-      if port_available?.(port), do: {:halt, port}, else: {:cont, nil}
+      if port_available?(port), do: {:halt, port}, else: {:cont, nil}
     end) || 35_000 + :rand.uniform(5_000)  # Better fallback with randomization
   end
   
