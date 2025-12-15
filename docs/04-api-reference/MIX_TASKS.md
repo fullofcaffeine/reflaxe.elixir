@@ -258,10 +258,10 @@ Set in your `build.hxml` or `compile.hxml`:
 MIX_QUIET=1 mix haxe.source_map lib/User.ex 10 5
 
 # Custom Haxe command
-HAXE_CMD="npx haxe" mix compile.haxe
+HAXE_CMD="haxe" mix compile.haxe
 
-# Server configuration
-HAXE_SERVER_PORT=7000 mix haxe.server start
+# Haxe compilation server configuration
+HAXE_SERVER_PORT=7000 mix haxe.watch
 ```
 
 ## Examples & Workflows

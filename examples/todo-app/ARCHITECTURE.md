@@ -73,16 +73,16 @@ graph LR
 
 ```bash
 # One-time compilation
-npx haxe build.hxml          # Compile everything
-npx haxe build-server.hxml   # Compile server only (Haxe→Elixir)
-npx haxe build-client.hxml   # Compile client only (Haxe→JS)
+haxe build.hxml          # Compile everything
+haxe build-server.hxml   # Compile server only (Haxe→Elixir)
+haxe build-client.hxml   # Compile client only (Haxe→JS)
 
 # Development with file watching
-mix compile.haxe --watch     # Watch src_haxe/ and auto-compile
+mix haxe.watch     # Watch src_haxe/ and auto-compile
 
 # Clean and rebuild
 rm -rf lib/*.ex lib/**/*.ex  # Remove all generated files
-npx haxe build-server.hxml   # Regenerate fresh
+haxe build-server.hxml   # Regenerate fresh
 ```
 
 ## 🚀 Getting Started
@@ -105,7 +105,7 @@ mix deps.get
 npm install
 
 # 3. Compile Haxe→Elixir (generates all .ex files)
-npx haxe build-server.hxml
+haxe build-server.hxml
 
 # 4. Setup database
 mix ecto.create
@@ -124,7 +124,7 @@ Visit http://localhost:4000 to see the app!
 
 ```bash
 # Terminal 1: File watcher for Haxe→Elixir compilation
-mix compile.haxe --watch
+mix haxe.watch
 
 # Terminal 2: Phoenix server with live reload
 mix phx.server
