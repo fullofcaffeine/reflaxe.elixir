@@ -1,7 +1,6 @@
 defmodule CounterLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {CounterLive.Layouts, :app}
-  require Ecto.Query
   def mount(_params, session, socket) do
     socket = Phoenix.Component.assign(socket, "count", 0)
     %{:ok => socket}
