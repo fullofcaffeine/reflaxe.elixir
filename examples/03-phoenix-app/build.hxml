@@ -17,4 +17,4 @@
 -D app_name=PhoenixHaxeExample
 
 # Main class to compile (entry point)
-phoenix.Application
+PhoenixHaxeExample
